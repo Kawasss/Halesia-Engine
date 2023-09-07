@@ -8,15 +8,15 @@
 #include <typeinfo>
 #include <array>
 #include <chrono>
-
-#include "Vulkan.h"
+#include <filesystem>
+#include "renderer/Vulkan.h"
 #include "vulkan/vk_enum_string_helper.h"
-#include "SystemMetrics.h"
-#include "Window.h"
-#include "Swapchain.h"
-#include "Surface.h"
-#include "Input.h"
-#include "Texture.h"
+#include "system/SystemMetrics.h"
+#include "system/Window.h"
+#include "renderer/Swapchain.h"
+#include "renderer/Surface.h"
+#include "system/Input.h"
+#include "renderer/Texture.h"
 #include "Console.h"
 
 #define IMGUI_IMPLEMENTATION
@@ -29,7 +29,7 @@
 #include "imgui-1.89.8/imgui-1.89.8/backends/imgui_impl_vulkan.cpp"
 #include "imgui-1.89.8/imgui-1.89.8/backends/imgui_impl_win32.cpp"
 
-#include "Renderer.h"
+#include "renderer/Renderer.h"
 
 #define VariableToString(name) variableToString(#name)
 std::string variableToString(const char* name)

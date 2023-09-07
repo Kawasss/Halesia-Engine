@@ -1,5 +1,5 @@
 #include "Camera.h"
-#include "Input.h"
+#include "system/Input.h"
 
 void Camera::Update(Win32Window* window, float delta)
 {

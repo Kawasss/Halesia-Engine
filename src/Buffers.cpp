@@ -1,8 +1,8 @@
 #include <vulkan/vulkan.h>
 #include <vector>
-#include "Vulkan.h"
-#include "PhysicalDevice.h"
-#include "Buffers.h"
+#include "renderer/Vulkan.h"
+#include "renderer/PhysicalDevice.h"
+#include "renderer/Buffers.h"
 #include "Vertex.h"
 #include <iostream>
 

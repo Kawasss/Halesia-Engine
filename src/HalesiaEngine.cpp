@@ -1,10 +1,10 @@
 #include <iostream>
 #include <future>
 #include "HalesiaEngine.h"
-#include "Input.h"
+#include "system/Input.h"
 #include "Console.h"
-#include "SystemMetrics.h"
-#include "GPUUsage.h"
+#include "system/SystemMetrics.h"
+#include "system/GPUUsage.h"
 #include "CreationObjects.h"
 
 template<typename T> struct ScrollingBuffer //dont know where to put this struct

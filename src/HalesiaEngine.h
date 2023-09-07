@@ -1,9 +1,9 @@
 #pragma once
-#include "Renderer.h"
+#include "renderer/Renderer.h"
 #include "Physics.h"
-#include "Window.h"
+#include "system/Window.h"
 #include "Scene.h"
-#include "Input.h"
+#include "system/Input.h"
 
 enum HalesiaExitCode
 {

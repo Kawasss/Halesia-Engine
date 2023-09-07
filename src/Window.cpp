@@ -1,8 +1,8 @@
-#include "Window.h"
+#include "system/Window.h"
 #include <windowsx.h>
 #include <iostream>
 #include <stdexcept>
-#include "SystemMetrics.h"
+#include "system/SystemMetrics.h"
 #include "Console.h"
 
 std::map<HWND, Win32Window*> Win32Window::windowBinding;

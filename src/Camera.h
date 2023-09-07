@@ -1,6 +1,6 @@
 #pragma once
 #include "glm.h"
-#include "Window.h"
+#include "system/Window.h"
 
 class Camera
 {

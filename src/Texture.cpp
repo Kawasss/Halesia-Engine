@@ -1,7 +1,7 @@
 #define NOMINMAX
-#include "Vulkan.h"
-#include "physicalDevice.h"
-#include "Texture.h"
+#include "renderer/Vulkan.h"
+#include "renderer/physicalDevice.h"
+#include "renderer/Texture.h"
 #include "Console.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"

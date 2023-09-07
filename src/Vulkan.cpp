@@ -16,7 +16,7 @@ const bool enableValidationLayers = true;
 #include <algorithm>
 #include <fstream>
 
-#include "Vulkan.h"
+#include "renderer/Vulkan.h"
 #include "Console.h"
 
 PhysicalDevice Vulkan::GetBestPhysicalDevice(VkInstance instance, Surface surface)

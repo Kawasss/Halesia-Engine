@@ -3,10 +3,10 @@
 #include <assimp/scene.h>
 #include <vector>
 #include <future>
-#include "Buffers.h"
-#include "PhysicalDevice.h"
+#include "renderer/Buffers.h"
+#include "renderer/PhysicalDevice.h"
 #include "Vertex.h"
-#include "PhysicalDevice.h"
+#include "renderer/PhysicalDevice.h"
 #include "Transform.h"
 #include "CreationObjects.h"
 

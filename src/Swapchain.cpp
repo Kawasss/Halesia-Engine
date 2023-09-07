@@ -1,11 +1,11 @@
 #include <array>
 
 #include <vulkan/vulkan.h>
-#include "Swapchain.h"
-#include "Window.h"
-#include "Vulkan.h"
-#include "PhysicalDevice.h"
-#include "Surface.h"
+#include "renderer/Swapchain.h"
+#include "system/Window.h"
+#include "renderer/Vulkan.h"
+#include "renderer/PhysicalDevice.h"
+#include "renderer/Surface.h"
 
 Swapchain::Swapchain(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window)
 {

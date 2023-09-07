@@ -1,5 +1,5 @@
 #include <Windows.h>
-#include "Input.h"
+#include "system/Input.h"
 
 bool Input::IsKeyPressed(VirtualKey key)
 {
