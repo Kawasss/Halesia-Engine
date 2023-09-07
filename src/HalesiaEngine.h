@@ -37,6 +37,7 @@ public:
 	bool showRAM = false;
 	bool showCPU = false;
 	bool showGPU = false;
+	bool showAsyncTimes = false;
 	int minimumFPS = 60;
 	Scene* scene;
 

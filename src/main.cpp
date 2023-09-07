@@ -17,12 +17,9 @@ public:
 		if (window->CursorIsLocked())
 		{
 			front = objectToView->transform.GetForward();
-			position.y = 100;
+			position.y = 10;
 			right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
 			up = glm::normalize(glm::cross(right, front));
-			//UpdateVectors();
-
-			//DefaultUpdate(window, delta);
 		}
 	}
 };
@@ -72,7 +69,6 @@ int main(int argsCount, char** args)
 	createInfo.args = args;
 	createInfo.startingScene = new TestScene();
 	createInfo.windowCreateInfo.windowName = L"Halesia Engine";
-	//createInfo.windowCreateInfo.style = WindowStyle::PopUp;
 	createInfo.windowCreateInfo.windowMode = WINDOW_MODE_BORDERLESS_WINDOWED;
 	createInfo.windowCreateInfo.height = 600;
 	createInfo.windowCreateInfo.width = 800;

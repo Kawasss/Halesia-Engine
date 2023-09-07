@@ -26,6 +26,7 @@ public:
 	void RenderFPS(int FPS);
     void RenderGraph(const std::vector<uint64_t>& buffer, const char* label);
 	void RenderGraph(const std::vector<float>& buffer, const char* label);
+	void RenderPieGraph(float* data, const char* label = nullptr);
 	MeshCreationObjects GetMeshCreationObjects();
 	std::optional<std::string> RenderDevConsole(bool render);
 

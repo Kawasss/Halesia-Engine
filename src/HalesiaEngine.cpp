@@ -121,14 +121,26 @@ void HalesiaInstance::LoadScene(Scene* newScene)
 	scene = newScene;
 }
 
-void UpdateScene(Scene* scene, Win32Window* window, float delta, bool pauseGame, bool* playOneFrame)
+struct UpdateSceneData
 {
-	if (!pauseGame || *playOneFrame)
+	Scene* scene;
+	Win32Window* window;
+	float delta;
+	float* timeToComplete;
+	bool pauseGame;
+	bool* playOneFrame;
+};
+
+void UpdateScene(UpdateSceneData* sceneData)
+{
+	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
+	
+	if (!sceneData->pauseGame || *sceneData->playOneFrame)
 	{
-		scene->Update(window, delta);
-		*playOneFrame = false;
+		sceneData->scene->Update(sceneData->window, sceneData->delta);
+		*sceneData->playOneFrame = false;
 	}
-		
+	*sceneData->timeToComplete = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 }
 
 void WriteAllCommandsToConsole()
@@ -136,9 +148,10 @@ void WriteAllCommandsToConsole()
 	Console::WriteLine("-----------------------------------------------");
 	Console::WriteLine("\"pauseGame 1 or 0\" pauses or unpauses the game");      // or ctrl + F1
 	Console::WriteLine("\"showFPS 1 or 0\" shows or hides the FPS counter");     // or ctrl + F2
-	Console::WriteLine("\"showRAM 1 or 0\" shows or hides the RAM usage graph"); // or ctrl + f3
-	Console::WriteLine("\"showCPU 1 or 0\" shows or hides the CPU usage graph"); // or ctrl + f4
+	Console::WriteLine("\"showRAM 1 or 0\" shows or hides the RAM usage graph"); // or ctrl + F3
+	Console::WriteLine("\"showCPU 1 or 0\" shows or hides the CPU usage graph"); // or ctrl + F4
 	Console::WriteLine("\"showGPU 1 or 0\" shows or hides the CPU usage graph"); // or ctrl + F5
+	Console::WriteLine("\"showAsyncTimes 1 or 0\" shows or hides the the time it took to run the async tasks"); // or ctrl + F6
 	Console::WriteLine("\"playOneFrame 1\" plays one frame");
 	Console::WriteLine("\"exit\" terminates the program");
 	Console::WriteLine("-----------------------------------------------");
@@ -159,20 +172,42 @@ ScrollingBuffer<float> CPUUsage(100);
 ScrollingBuffer<float> GPUUsage(100);
 ScrollingBuffer<uint64_t> ramUsed(500);
 
-std::optional<std::string> UpdateRenderer(Renderer* renderer, Camera* camera, std::vector<Object*> objects, float delta, bool renderDevConsole, bool showFPS, bool showRAM, bool showCPU, bool showGPU)
+struct UpdateRendererData
 {
-	std::optional<std::string> command = renderer->RenderDevConsole(renderDevConsole);
-	if (showFPS)
-		renderer->RenderFPS(1 / delta * 1000);
+	Renderer* renderer;
+	Camera* camera;
+	std::vector<Object*> objects;
+	float delta;
+	float* timeToComplete;
+	float* pieChartValues;
+	bool renderDevConsole;
+	bool showFPS;
+	bool showRAM;
+	bool showCPU;
+	bool showGPU;
+	bool showAsyncTimes;
+};
+
+std::optional<std::string> UpdateRenderer(UpdateRendererData* rendererData)
+{
+	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
+	std::optional<std::string> command = rendererData->renderer->RenderDevConsole(rendererData->renderDevConsole);
+	if (rendererData->showFPS)
+		rendererData->renderer->RenderFPS(1 / rendererData->delta * 1000);
 
 	ramUsed.Add(GetPhysicalMemoryUsedByApp() / (1024 * 1024));
-	if (showRAM)
-		renderer->RenderGraph(ramUsed.buffer, "RAM in MB");
-	if (showCPU)
-		renderer->RenderGraph(CPUUsage.buffer, "CPU %");
-	if (showGPU)
-		renderer->RenderGraph(GPUUsage.buffer, "GPU %");
-	renderer->DrawFrame(objects, camera, delta);
+	if (rendererData->showRAM)
+		rendererData->renderer->RenderGraph(ramUsed.buffer, "RAM in MB");
+	if (rendererData->showCPU)
+		rendererData->renderer->RenderGraph(CPUUsage.buffer, "CPU %");
+	if (rendererData->showGPU)
+		rendererData->renderer->RenderGraph(GPUUsage.buffer, "GPU %");
+	if (rendererData->showAsyncTimes)
+		rendererData->renderer->RenderPieGraph(rendererData->pieChartValues, "Async Times (µs)");
+
+	rendererData->renderer->DrawFrame(rendererData->objects, rendererData->camera, rendererData->delta);
+
+	*rendererData->timeToComplete = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 	return command;
 }
 
@@ -181,6 +216,9 @@ HalesiaExitCode HalesiaInstance::Run()
 	bool devKeyIsPressedLastFrame = false;
 	std::string lastCommand;
 	float timeSinceLastCPUUpdate = 0;
+	float timeSinceLastGraphUpdate = 0;
+	float dummy[] = {0, 0, 0};
+	float* pieChartValuesPtr = dummy;
 
 	Console::commandVariables["pauseGame"] = &pauseGame;
 	Console::commandVariables["showFPS"] = &showFPS;
@@ -188,6 +226,7 @@ HalesiaExitCode HalesiaInstance::Run()
 	Console::commandVariables["showRAM"] = &showRAM;
 	Console::commandVariables["showCPU"] = &showCPU;
 	Console::commandVariables["showGPU"] = &showGPU;
+	Console::commandVariables["showAsyncTimes"] = &showAsyncTimes;
 
 	if (renderer == nullptr || window == nullptr || physics == nullptr)
 		return EXIT_CODE_UNKNOWN_EXCEPTION;
@@ -195,6 +234,8 @@ HalesiaExitCode HalesiaInstance::Run()
 	try
 	{
 		float frameDelta = 0;
+		float asyncRendererCompletionTime = 0;
+		float asyncScriptsCompletionTime = 0;
 		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
 		scene->Start();
@@ -207,9 +248,13 @@ HalesiaExitCode HalesiaInstance::Run()
 			showRAM = !showRAM ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F3) : true;
 			showCPU = !showCPU ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F4) : true;
 			showGPU = !showGPU ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F5) : true;
+			showAsyncTimes = !showAsyncTimes ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F6) : true;
 
-			std::future<void> asyncScripts = std::async(UpdateScene, scene, window, frameDelta, pauseGame, &playOneFrame);
-			std::future<std::optional<std::string>> asyncRenderer = std::async(UpdateRenderer, renderer, scene->camera, scene->allObjects, frameDelta, renderDevConsole, showFPS, showRAM, showCPU, showGPU);
+			UpdateSceneData sceneData{ scene, window, frameDelta, &asyncScriptsCompletionTime, pauseGame, &playOneFrame };
+			std::future<void> asyncScripts = std::async(UpdateScene, &sceneData);
+
+			UpdateRendererData rendererData{ renderer, scene->camera, scene->allObjects, frameDelta, &asyncRendererCompletionTime, pieChartValuesPtr, renderDevConsole, showFPS, showRAM, showCPU, showGPU, showAsyncTimes };
+			std::future<std::optional<std::string>> asyncRenderer = std::async(UpdateRenderer, &rendererData);
 
 			if (window->ContainsDroppedFile())
 				scene->SubmitStaticModel(window->GetDroppedFile(), renderer->GetMeshCreationObjects());
@@ -241,16 +286,26 @@ HalesiaExitCode HalesiaInstance::Run()
 
 			Win32Window::PollEvents();
 
-			//asyncScripts.get();
 			std::optional<std::string> command = asyncRenderer.get();
 			if (command.has_value() && lastCommand != command.value())
 			{
 				HandleConsoleCommand(command.value());
 				lastCommand = command.value();
 			}
+			asyncScripts.get();
 
 			frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();
 			timeSinceLastFrame = std::chrono::high_resolution_clock::now();
+
+			timeSinceLastGraphUpdate += frameDelta;
+			if (timeSinceLastGraphUpdate > 500)
+			{
+				float timeSpentInMainThread = frameDelta - asyncScriptsCompletionTime - asyncRendererCompletionTime;
+				
+				float timeValues[] = { timeSpentInMainThread * 1000, asyncScriptsCompletionTime * 1000, asyncRendererCompletionTime * 1000 };
+				pieChartValuesPtr = timeValues;
+				timeSinceLastGraphUpdate = 0;
+			}
 		}
 		return EXIT_CODE_SUCESS;
 	}

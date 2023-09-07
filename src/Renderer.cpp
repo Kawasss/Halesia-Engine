@@ -23,6 +23,7 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui-1.89.8/imgui-1.89.8/implot.cpp"
 #include "imgui-1.89.8/imgui-1.89.8/implot_items.cpp"
+#include "imgui-1.89.8/imgui-1.89.8/implot_demo.cpp"
 #include "imgui-1.89.8/imgui-1.89.8/misc/single_file/imgui_single_file.h"
 #include "imgui-1.89.8/imgui-1.89.8/misc/cpp/imgui_stdlib.cpp"
 #include "imgui-1.89.8/imgui-1.89.8/backends/imgui_impl_vulkan.cpp"
@@ -339,12 +340,19 @@ void Renderer::CreateRenderPass()
 
 void Renderer::CreateDescriptorSets()
 {
+	VkDescriptorSetVariableDescriptorCountAllocateInfoEXT countAllocateInfo{};
+	countAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
+	countAllocateInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	uint32_t maxBinding = MAX_BINDLESS_TEXTURES - 1;
+	countAllocateInfo.pDescriptorCounts = &maxBinding;
+
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocateInfo.descriptorPool = descriptorPool;
 	allocateInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 	allocateInfo.pSetLayouts = layouts.data();
+	allocateInfo.pNext = &countAllocateInfo;
 
 	descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
 	if (vkAllocateDescriptorSets(logicalDevice, &allocateInfo, descriptorSets.data()) != VK_SUCCESS)
@@ -404,13 +412,13 @@ void Renderer::CreateDescriptorPool()
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES);
 
 	VkDescriptorPoolCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	createInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	createInfo.pPoolSizes = poolSizes.data();
-	createInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	createInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES);
 	createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
 
 	if (vkCreateDescriptorPool(logicalDevice, &createInfo, nullptr, &descriptorPool) != VK_SUCCESS)
@@ -442,13 +450,17 @@ void Renderer::CreateDescriptorSetLayout()
 
 	std::array<VkDescriptorSetLayoutBinding, 3> bindings = { layoutBinding, modelLayoutBinding, samplerLayoutBinding };
 
-	VkDescriptorSetLayoutBindingFlagsCreateInfo bindingFlagsCreateInfo{};
-	bindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo{};
+	VkDescriptorBindingFlags bindingFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
+	bindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
+	bindingFlagsCreateInfo.bindingCount = 1;
+	bindingFlagsCreateInfo.pBindingFlags = &bindingFlags;
 
 	VkDescriptorSetLayoutCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 	createInfo.pBindings = bindings.data();
+	createInfo.pNext = &bindingFlagsCreateInfo;
 
 	if (vkCreateDescriptorSetLayout(logicalDevice, &createInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create the descriptor set layout");
@@ -761,9 +773,8 @@ void Renderer::RenderFPS(int FPS)
 	ImGui::End();
 }
 
-void Renderer::RenderGraph(const std::vector<uint64_t>& buffer, const char* label)
+void SetImGuiColors()
 {
-	ImGui::Begin("RAM Usage", nullptr, ImGuiWindowFlags_NoScrollbar);
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.WindowRounding = 5;
 	style.WindowBorderSize = 2;
@@ -773,6 +784,26 @@ void Renderer::RenderGraph(const std::vector<uint64_t>& buffer, const char* labe
 	colors[ImGuiCol_WindowBg] = ImVec4(0.01f, 0.01f, 0.01f, 0.9f);
 	colors[ImGuiCol_Border] = ImVec4(0.05f, 0.05f, 0.05f, 1);
 	colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
+}
+
+void Renderer::RenderPieGraph(float* data, const char* label)
+{
+	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
+	SetImGuiColors();
+	
+	ImPlot::BeginPlot("##Time Per Async Task", ImVec2(-1, 0), ImPlotFlags_Equal | ImPlotFlags_NoMouseText | ImPlotFlags_NoFrame);
+	ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoDecorations, ImPlotAxisFlags_NoDecorations);
+	ImPlot::SetupAxesLimits(0, 1, 0, 1);
+	const char* labels[] = { "Main Thread", "Script Thread", "Renderer Thread" };
+	ImPlot::PlotPieChart(labels, data, 3, 0.5, 0.5, 0.5, "%.1f", 180);
+	ImPlot::EndPlot();
+	ImGui::End();
+}
+
+void Renderer::RenderGraph(const std::vector<uint64_t>& buffer, const char* label)
+{
+	ImGui::Begin("RAM Usage", nullptr, ImGuiWindowFlags_NoScrollbar);
+	SetImGuiColors();
 
 	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
 	ImPlot::SetupAxisLimits(ImAxis_X1, 0, 500);
@@ -786,15 +817,7 @@ void Renderer::RenderGraph(const std::vector<uint64_t>& buffer, const char* labe
 void Renderer::RenderGraph(const std::vector<float>& buffer, const char* label)
 {
 	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
-	ImGuiStyle& style = ImGui::GetStyle();
-	style.WindowRounding = 5;
-	style.WindowBorderSize = 2;
-
-	ImVec4* colors = style.Colors;
-
-	colors[ImGuiCol_WindowBg] = ImVec4(0.01f, 0.01f, 0.01f, 0.9f);
-	colors[ImGuiCol_Border] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-	colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
+	SetImGuiColors();
 
 	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
 	ImPlot::SetupAxisLimits(ImAxis_X1, 0, 100);
