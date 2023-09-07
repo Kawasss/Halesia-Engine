@@ -30,21 +30,21 @@ public:
 
 private:
 	void* attachedScript = nullptr;
-
-	float nearPlane = 0.01f, farPlane = 1000, aspectRatio = monitorWidth / monitorHeight;
-
-	glm::vec3 up = glm::vec3(0, 1, 0);
-	glm::vec3 right = glm::vec3(1, 0, 0);
-
-protected:
 	void UpdateVectors();
 
+	float nearPlane = 0.01f, farPlane = 1000, aspectRatio = monitorWidth / (float)monitorHeight;
+
+	
+
+protected:
 	/// <summary>
 	/// This function sets the script for the base class. This makes it so that GetScript can be used.
 	/// </summary>
 	/// <param name="script"></param>
 	void SetScript(void* script) { attachedScript = script; }
 
+	glm::vec3 up = glm::vec3(0, 1, 0);
+	glm::vec3 right = glm::vec3(1, 0, 0);
 	glm::vec3 front = glm::vec3(1, 0, 0);
 	const float SENSITIVITY = 0.1f;
 };

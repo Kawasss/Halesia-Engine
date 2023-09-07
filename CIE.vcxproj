@@ -156,13 +156,6 @@
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="renderer\Buffers.h" />
-    <ClInclude Include="renderer\PhysicalDevice.h" />
-    <ClInclude Include="renderer\Renderer.h" />
-    <ClInclude Include="renderer\Surface.h" />
-    <ClInclude Include="renderer\Swapchain.h" />
-    <ClInclude Include="renderer\Texture.h" />
-    <ClInclude Include="renderer\Vulkan.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\Console.h" />
     <ClInclude Include="src\CreationObjects.h" />
@@ -170,15 +163,20 @@
     <ClInclude Include="src\HalesiaEngine.h" />
     <ClInclude Include="src\Object.h" />
     <ClInclude Include="src\Physics.h" />
-    <ClInclude Include="src\PhysXErrorHandler.h" />
+    <ClInclude Include="src\renderer\Buffers.h" />
+    <ClInclude Include="src\renderer\PhysicalDevice.h" />
+    <ClInclude Include="src\renderer\Renderer.h" />
+    <ClInclude Include="src\renderer\Surface.h" />
+    <ClInclude Include="src\renderer\Swapchain.h" />
+    <ClInclude Include="src\renderer\Texture.h" />
+    <ClInclude Include="src\renderer\Vulkan.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\Scene.h" />
+    <ClInclude Include="src\system\Input.h" />
+    <ClInclude Include="src\system\SystemMetrics.h" />
+    <ClInclude Include="src\system\Window.h" />
     <ClInclude Include="src\Transform.h" />
     <ClInclude Include="src\Vertex.h" />
-    <ClInclude Include="system\GPUUsage.h" />
-    <ClInclude Include="system\Input.h" />
-    <ClInclude Include="system\SystemMetrics.h" />
-    <ClInclude Include="system\Window.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />

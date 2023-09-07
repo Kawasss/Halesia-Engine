@@ -17,3 +17,4 @@ std::string GetLastErrorAsString();
 uint64_t GetPhysicalMemoryUsedByApp();
 float GetCPUPercentageUsedByApp();
 SystemInformation GetCpuInfo();
+double GetGPUUsage();

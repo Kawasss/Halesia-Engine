@@ -15,7 +15,15 @@ public:
 	void Update(Win32Window* window, float delta) override
 	{
 		if (window->CursorIsLocked())
-			DefaultUpdate(window, delta);
+		{
+			front = objectToView->transform.GetForward();
+			position.y = 100;
+			right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
+			up = glm::normalize(glm::cross(right, front));
+			//UpdateVectors();
+
+			//DefaultUpdate(window, delta);
+		}
 	}
 };
 
@@ -31,7 +39,13 @@ public:
 
 	void Update(float delta) override
 	{
-		transform.rotation.y -= delta * 0.1f;
+		transform.scale = glm::vec3(0.1);
+		if (Input::IsKeyPressed(VirtualKey::R))
+			transform.rotation.y += delta * 0.1f;
+		if (Input::IsKeyPressed(VirtualKey::T))
+			transform.position += delta * 0.1f * transform.GetForward();
+		if (Input::IsKeyPressed(VirtualKey::Space))
+			transform.position.y += delta * 0.1f;
 	}
 
 	~TestObject()
@@ -65,6 +79,7 @@ int main(int argsCount, char** args)
 	createInfo.windowCreateInfo.setTimer = true;
 	createInfo.windowCreateInfo.icon = (HICON)LoadImageW(NULL, L"logo4.ico", IMAGE_ICON, 128, 128, LR_LOADFROMFILE);
 	createInfo.windowCreateInfo.extendedWindowStyle = ExtendedWindowStyle::DragAndDropFiles;
+	createInfo.windowCreateInfo.startMaximized = false;
 
 	HalesiaInstance::GenerateHalesiaInstance(instance, createInfo);
 

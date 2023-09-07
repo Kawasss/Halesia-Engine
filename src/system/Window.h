@@ -54,8 +54,9 @@ struct Win32WindowCreateInfo //thanks Vulkan for this idea
 
 	WindowStyle style = WindowStyle::OverlappedWindow;
 	ExtendedWindowStyle extendedWindowStyle = ExtendedWindowStyle::SunkenEdgeBorder;
-
 	WindowMode windowMode = WINDOW_MODE_WINDOWED;
+
+	bool startMaximized = false;
 	bool setTimer = false;
 	unsigned int timeOutValue = USER_TIMER_MINIMUM;
 };
@@ -77,6 +78,7 @@ class Win32Window
 		static void PollEvents(); //PollMessages is a better name, no need to stick to GLFW's name
 
 		bool resized = false;
+		bool maximized = true; // if this is false the window should be minimized
 		bool cursorHasMoved = false;
 
 		std::string GetDroppedFile();
@@ -93,6 +95,7 @@ class Win32Window
 		void GetRelativeCursorPosition(int& x, int& y);
 		void LockCursor();
 		void UnlockCursor();
+
 		void GetWindowDimensions(int* width, int* height);
 		void ChangeWindowStyle(WindowStyle newWindowStyle);
 		void Destroy();

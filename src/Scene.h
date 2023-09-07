@@ -10,7 +10,6 @@
 class Scene 
 {
 public:
-	//std::map<std::string, Object* (*)(std::string, const MeshCreationObjects&)> objectsWithAttachedScript; //expects a pointer to the constructor of the class, but the location of a constructor can't be taken. Instead it asks for a pointer to a function that itself points to the constructor
 	Camera* camera;
 
 	template<typename T> Object* AddCustomObject(std::string path)

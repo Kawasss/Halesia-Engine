@@ -4,7 +4,6 @@
 #include "system/Input.h"
 #include "Console.h"
 #include "system/SystemMetrics.h"
-#include "system/GPUUsage.h"
 #include "CreationObjects.h"
 
 template<typename T> struct ScrollingBuffer //dont know where to put this struct
@@ -199,6 +198,7 @@ HalesiaExitCode HalesiaInstance::Run()
 		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
 		scene->Start();
+		window->maximized = true;
 
 		while (!window->ShouldClose())
 		{

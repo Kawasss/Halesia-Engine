@@ -22,7 +22,6 @@
 #define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui-1.89.8/imgui-1.89.8/implot.cpp"
-#include "imgui-1.89.8/imgui-1.89.8/implot_demo.cpp"
 #include "imgui-1.89.8/imgui-1.89.8/implot_items.cpp"
 #include "imgui-1.89.8/imgui-1.89.8/misc/single_file/imgui_single_file.h"
 #include "imgui-1.89.8/imgui-1.89.8/misc/cpp/imgui_stdlib.cpp"
@@ -764,7 +763,7 @@ void Renderer::RenderFPS(int FPS)
 
 void Renderer::RenderGraph(const std::vector<uint64_t>& buffer, const char* label)
 {
-	ImGui::Begin("RAM Usage", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar);
+	ImGui::Begin("RAM Usage", nullptr, ImGuiWindowFlags_NoScrollbar);
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.WindowRounding = 5;
 	style.WindowBorderSize = 2;

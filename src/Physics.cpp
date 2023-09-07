@@ -1,8 +1,8 @@
 #define PX_PHYSX_STATIC_LIB
 #include "Physics.h"
+#include <string>
+#include <iostream>
 #include <extensions/PxExtensionsAPI.h>
-
-using namespace physx;
 
 Physics::Physics()
 {
@@ -12,7 +12,7 @@ Physics::Physics()
 
 	bool recordAllocations = true;
 
-	physicsObject = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, PxTolerancesScale(), recordAllocations);
+	physicsObject = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, physx::PxTolerancesScale(), recordAllocations);
 	if (!physicsObject)
 		throw std::runtime_error("Failed to create a PxPhysics object");
 }

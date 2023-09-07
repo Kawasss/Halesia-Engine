@@ -14,6 +14,11 @@ Mesh::Mesh(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool 
 {
 	ProcessIndices(mesh);
 	ProcessVertices(mesh);
+	Recreate(logicalDevice, physicalDevice, commandPool, queue);
+}
+
+void Mesh::Recreate(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue)
+{
 	vertexBuffer = VertexBuffer(logicalDevice, physicalDevice, commandPool, queue, vertices);
 	indexBuffer = IndexBuffer(logicalDevice, physicalDevice, commandPool, queue, indices);
 }
@@ -102,10 +107,15 @@ void GenerateObject(Object* object, VkDevice logicalDevice, PhysicalDevice physi
 
 	#ifdef _DEBUG
 		char* str;
-
 		UuidToStringA(&object->uuid, (RPC_CSTR*)&str);
 		Console::WriteLine("Created new object \"" + object->name + "\" with unique id \"" + str + '\"');
 	#endif
+}
+
+void Object::RecreateMeshes(const MeshCreationObjects& creationObjects)
+{
+	for (Mesh& mesh : meshes)
+		mesh.Recreate(creationObjects.logicalDevice, creationObjects.physicalDevice, creationObjects.commandPool, creationObjects.queue);
 }
 
 void Object::CreateObject(void* customClassPointer, std::string path, const MeshCreationObjects& creationObjects)

@@ -17,6 +17,6 @@ public:
 	glm::vec3 position, scale, rotation;
 
 private:
-	glm::mat4 model;
+	glm::mat4 model = glm::identity<glm::mat4>();
 	glm::vec3 extents, center; //should be moved to bounding box
 };

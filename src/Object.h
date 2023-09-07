@@ -32,6 +32,8 @@ struct Mesh
 
 	void ProcessIndices(aiMesh* mesh);
 	void ProcessVertices(aiMesh* mesh);
+
+	void Recreate(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue);
 };
 
 class Object
@@ -47,6 +49,7 @@ public:
 
 	bool HasFinishedLoading();
 	void AwaitGeneration();
+	void RecreateMeshes(const MeshCreationObjects& creationObjects);
 
 	void* scriptClass = nullptr;
 	template<typename T> T GetScript() { return static_cast<T>(scriptClass); };

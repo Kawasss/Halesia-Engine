@@ -12,9 +12,9 @@ Transform::Transform(glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, gl
 glm::mat4 Transform::GetModelMatrix()
 {
 	glm::mat4 rotationModel = glm::rotate(glm::mat4(1), glm::radians(rotation.x), glm::vec3(1, 0, 0)) * glm::rotate(glm::mat4(1), glm::radians(rotation.y), glm::vec3(0, 1, 0)) * glm::rotate(glm::mat4(1), glm::radians(rotation.z), glm::vec3(0, 0, 1));
-	glm::mat4 scaleModel = glm::scale(rotationModel, scale);
-	glm::mat4 translationModel = glm::translate(scaleModel, position);
-	model = translationModel;
+	glm::mat4 scaleModel = glm::scale(glm::identity<glm::mat4>(), scale);
+	glm::mat4 translationModel = glm::translate(glm::identity<glm::mat4>(), position);
+	model = translationModel * rotationModel * scaleModel;
 	return model;
 }
 

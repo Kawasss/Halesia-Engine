@@ -53,7 +53,8 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 	if (window == NULL)
 		throw std::runtime_error("Failed to create a window: " + GetLastErrorAsString());
 
-	ShowWindow(window, SW_NORMAL);
+	maximized = createInfo.startMaximized;
+	ShowWindow(window, maximized);
 	UpdateWindow(window);
 
 	SetTimer(window, 0, USER_TIMER_MINIMUM, NULL); //makes sure the window is being updated even when if the cursor isnt moving
@@ -75,6 +76,8 @@ void Win32Window::PollEvents()
 		w->cursorX = 0;
 		w->cursorY = 0;
 		w->allMessagesFromLastPoll.clear();
+
+		ShowWindow(w->window, w->maximized); // dont know if this call is expensive to make every frame
 	}
 	while (PeekMessageW(&message, NULL, 0, 0, PM_REMOVE)) 
 	{
