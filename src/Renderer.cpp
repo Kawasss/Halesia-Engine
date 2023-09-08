@@ -44,9 +44,9 @@ struct UniformBufferObject
 	alignas(16) glm::mat4 projection;
 };
 
-const int MAX_MESHES = 1000; //mooore than enough
-const int MAX_BINDLESS_TEXTURES = MAX_MESHES * 5; //amount of pbr textures per mesh
-const int MAX_FRAMES_IN_FLIGHT = 2;
+constexpr uint32_t MAX_MESHES = 1000; //mooore than enough
+constexpr uint32_t MAX_BINDLESS_TEXTURES = MAX_MESHES * 5; //amount of pbr textures per mesh
+constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 Renderer::Renderer(Win32Window* window)
 {
@@ -340,17 +340,22 @@ void Renderer::CreateRenderPass()
 
 void Renderer::CreateDescriptorSets()
 {
+	std::vector<uint32_t> setCounts;
+	setCounts.push_back(MAX_FRAMES_IN_FLIGHT);
+	setCounts.push_back(MAX_FRAMES_IN_FLIGHT);
+	setCounts.push_back(MAX_BINDLESS_TEXTURES - 1);
+
 	VkDescriptorSetVariableDescriptorCountAllocateInfoEXT countAllocateInfo{};
 	countAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
-	countAllocateInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	countAllocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
 	uint32_t maxBinding = MAX_BINDLESS_TEXTURES - 1;
-	countAllocateInfo.pDescriptorCounts = &maxBinding;
+	countAllocateInfo.pDescriptorCounts = setCounts.data();
 
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocateInfo.descriptorPool = descriptorPool;
-	allocateInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
 	allocateInfo.pSetLayouts = layouts.data();
 	allocateInfo.pNext = &countAllocateInfo;
 
@@ -408,17 +413,17 @@ void Renderer::CreateDescriptorPool()
 {
 	std::array<VkDescriptorPoolSize, 3> poolSizes{};
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	poolSizes[0].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+	poolSizes[1].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES);
+	poolSizes[2].descriptorCount = MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES;
 
 	VkDescriptorPoolCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	createInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	createInfo.pPoolSizes = poolSizes.data();
-	createInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES);
+	createInfo.maxSets = MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES;
 	createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
 
 	if (vkCreateDescriptorPool(logicalDevice, &createInfo, nullptr, &descriptorPool) != VK_SUCCESS)
@@ -450,16 +455,21 @@ void Renderer::CreateDescriptorSetLayout()
 
 	std::array<VkDescriptorSetLayoutBinding, 3> bindings = { layoutBinding, modelLayoutBinding, samplerLayoutBinding };
 
+	std::vector<VkDescriptorBindingFlags> bindingFlags;
+	bindingFlags.push_back(0);
+	bindingFlags.push_back(0);
+	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo{};
-	VkDescriptorBindingFlags bindingFlags = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT_EXT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT_EXT;
 	bindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-	bindingFlagsCreateInfo.bindingCount = 1;
-	bindingFlagsCreateInfo.pBindingFlags = &bindingFlags;
+	bindingFlagsCreateInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+	bindingFlagsCreateInfo.pBindingFlags = bindingFlags.data();
 
 	VkDescriptorSetLayoutCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 	createInfo.pBindings = bindings.data();
+	createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 	createInfo.pNext = &bindingFlagsCreateInfo;
 
 	if (vkCreateDescriptorSetLayout(logicalDevice, &createInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)

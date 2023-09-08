@@ -100,9 +100,17 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface surface)
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
+    VkPhysicalDeviceVulkan11Features features{};
+    features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+    features.shaderDrawParameters = VK_TRUE; //this is needed for gl_DrawID
+
     //check for bindless support
     VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
     indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
+    indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+    indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+    indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+    indexingFeatures.pNext = &features;
 
     VkPhysicalDeviceFeatures2 deviceFeatures2{};
     deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
@@ -114,11 +122,6 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface surface)
     if (!indexingFeatures.descriptorBindingPartiallyBound || !indexingFeatures.runtimeDescriptorArray)
         throw std::runtime_error("Bindless textures aren't supported, the engine can't work without them");
 
-    VkPhysicalDeviceVulkan11Features features{};
-    features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-    features.shaderDrawParameters = VK_TRUE;
-
-    deviceFeatures2.pNext = &features;
 
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

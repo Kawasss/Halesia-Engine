@@ -16,10 +16,11 @@ public:
 	{
 		if (window->CursorIsLocked())
 		{
-			front = objectToView->transform.GetForward();
-			position.y = 10;
+			front = glm::vec3(0, 1, 0);
+			position = objectToView->transform.position;
 			right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
 			up = glm::normalize(glm::cross(right, front));
+			std::cout << right.y << std::endl;
 		}
 	}
 };
