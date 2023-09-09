@@ -188,7 +188,6 @@ struct UpdateRendererData
 	bool showAsyncTimes;
 };
 
-std::mutex mutex;
 std::optional<std::string> UpdateRenderer(UpdateRendererData* rendererData)
 {
 	
@@ -207,7 +206,6 @@ std::optional<std::string> UpdateRenderer(UpdateRendererData* rendererData)
 	if (rendererData->showAsyncTimes)
 		rendererData->renderer->RenderPieGraph(rendererData->pieChartValues, "Async Times (µs)");
 
-	std::lock_guard<std::mutex> guard(mutex);
 	rendererData->renderer->DrawFrame(rendererData->objects, rendererData->camera, rendererData->delta);
 
 	*rendererData->timeToComplete = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
