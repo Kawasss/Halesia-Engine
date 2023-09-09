@@ -8,6 +8,7 @@
 #include <set>
 #include <optional>
 #include <iostream>
+#include <mutex>
 
 #include "PhysicalDevice.h"
 
@@ -31,6 +32,8 @@ class Vulkan
             std::vector<VkSurfaceFormatKHR> formats;
             std::vector<VkPresentModeKHR> presentModes;
         };
+
+        static std::mutex globalThreadingMutex;
 
         static SwapChainSupportDetails      QuerySwapChainSupport(PhysicalDevice device, Surface surface);
         static std::vector<PhysicalDevice>  GetPhysicalDevices(VkInstance instance);

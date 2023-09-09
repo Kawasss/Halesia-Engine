@@ -844,6 +844,8 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 
 	ImGui::Render();
 
+	std::lock_guard<std::mutex> guard(Vulkan::globalThreadingMutex);
+
 	WaitForSingleObject(queueMutex, INFINITE); // the queue must not be used by another thread during vkQueueSubmit
 
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);

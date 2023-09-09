@@ -19,6 +19,8 @@ const bool enableValidationLayers = true;
 #include "renderer/Vulkan.h"
 #include "Console.h"
 
+std::mutex Vulkan::globalThreadingMutex;
+
 PhysicalDevice Vulkan::GetBestPhysicalDevice(VkInstance instance, Surface surface)
 {
     std::vector<PhysicalDevice> devices = GetPhysicalDevices(instance);
