@@ -14,14 +14,7 @@ public:
 
 	void Update(Win32Window* window, float delta) override
 	{
-		if (window->CursorIsLocked())
-		{
-			front = glm::vec3(0, 1, 0);
-			position = objectToView->transform.position;
-			right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
-			up = glm::normalize(glm::cross(right, front));
-			std::cout << right.y << std::endl;
-		}
+		DefaultUpdate(window, delta);
 	}
 };
 

@@ -6,32 +6,44 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
-Texture::Texture(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::string filePath, bool useMipMaps)
+void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string>& filePath, bool useMipMaps)
 {
 	this->logicalDevice = logicalDevice;
 	this->commandPool = commandPool;
 	this->queue = queue;
 	this->phyiscalDevice = physicalDevice;
 
+	layerCount = filePath.size();
 	int textureChannels = 0;
-	stbi_uc* pixels = stbi_load(filePath.c_str(), &width, &height, &textureChannels, STBI_rgb_alpha);
-	VkDeviceSize imageSize = width * height * 4;
-	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
-	if (!pixels)
-		throw std::runtime_error("Failed the read the given texture");
 
+	if (useMipMaps)
+		mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+
+	// read every side of the cubemap
+	std::vector<stbi_uc*> pixels(filePath.size());
+	for (int i = 0; i < layerCount; i++)
+		pixels[i] = stbi_load(filePath[i].c_str(), &width, &height, &textureChannels, STBI_rgb_alpha);
+
+	VkDeviceSize layerSize = width * height * 4;
+	VkDeviceSize imageSize = layerSize * layerCount;
+	
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-	
+
+	// copy all of the different sides of the cubemap into a single buffer
 	void* data;
 	vkMapMemory(logicalDevice, stagingBufferMemory, 0, imageSize, 0, &data);
-	memcpy(data, pixels, static_cast<size_t>(imageSize));
+	for (int i = 0; i < layerCount; i++)
+		memcpy((char*)data + (layerSize * i), pixels[i], static_cast<size_t>(imageSize)); // cast the void* to char for working arithmetic
 	vkUnmapMemory(logicalDevice, stagingBufferMemory);
 
-	stbi_image_free(pixels);
-	Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, mipLevels, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, image, imageMemory);
+	for (int i = 0; i < layerCount; i++) // dont know if this can be put in the other for loop used for reading the files
+		stbi_image_free(pixels[i]);
+
+	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
+	Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, mipLevels, (uint32_t)layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
 
 	TransitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	CopyBufferToImage(stagingBuffer);
@@ -39,11 +51,26 @@ Texture::Texture(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPoo
 	vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
 	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
 
-	imageView = Vulkan::CreateImageView(logicalDevice, image, mipLevels, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
+	imageView = Vulkan::CreateImageView(logicalDevice, image, viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	if (useMipMaps) GenerateMipMaps(VK_FORMAT_R8G8B8A8_SRGB);
 }
 
-void Texture::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+Cubemap::Cubemap(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string>& filePath, bool useMipMaps)
+{
+	if (filePath.size() != 6) 
+		throw new std::runtime_error("Invalid amount of images given for a cubemap: expected 6, but got " + std::to_string(filePath.size()));
+	GenerateImages(logicalDevice, queue, commandPool, physicalDevice, filePath, useMipMaps);
+}
+
+Texture::Texture(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::string filePath, bool useMipMaps)
+{
+	std::vector<std::string> paths = { filePath };
+	GenerateImages(logicalDevice, queue, commandPool, physicalDevice, paths, useMipMaps);
+	
+}
+
+void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 
@@ -58,7 +85,7 @@ void Texture::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, Vk
 	memoryBarrier.subresourceRange.baseMipLevel = 0;
 	memoryBarrier.subresourceRange.levelCount = mipLevels;
 	memoryBarrier.subresourceRange.baseArrayLayer = 0;
-	memoryBarrier.subresourceRange.layerCount = 1;
+	memoryBarrier.subresourceRange.layerCount = layerCount;
 
 	VkPipelineStageFlags sourceStage{};
 	VkPipelineStageFlags destinationStage{};
@@ -86,7 +113,7 @@ void Texture::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, Vk
 	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
 }
 
-void Texture::CopyBufferToImage(VkBuffer buffer)
+void Image::CopyBufferToImage(VkBuffer buffer)
 {
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 
@@ -97,7 +124,7 @@ void Texture::CopyBufferToImage(VkBuffer buffer)
 	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	region.imageSubresource.mipLevel = 0;
 	region.imageSubresource.baseArrayLayer = 0;
-	region.imageSubresource.layerCount = 1;
+	region.imageSubresource.layerCount = layerCount;
 	region.imageOffset = { 0, 0, 0 };
 	region.imageExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 };
 
@@ -106,7 +133,7 @@ void Texture::CopyBufferToImage(VkBuffer buffer)
 	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
 }
 
-void Texture::GenerateMipMaps(VkFormat imageFormat)
+void Image::GenerateMipMaps(VkFormat imageFormat)
 {
 	VkFormatProperties formatProperties;
 	vkGetPhysicalDeviceFormatProperties(phyiscalDevice.Device(), imageFormat, &formatProperties);
@@ -143,13 +170,13 @@ void Texture::GenerateMipMaps(VkFormat imageFormat)
 		blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		blit.srcSubresource.mipLevel = i - 1;
 		blit.srcSubresource.baseArrayLayer = 0;
-		blit.srcSubresource.layerCount = 1;
+		blit.srcSubresource.layerCount = layerCount;
 		blit.dstOffsets[0] = { 0, 0, 0 };
 		blit.dstOffsets[1] = { mipMapWidth > 1 ? mipMapWidth / 2 : 1, mipMapHeight > 1 ? mipMapHeight / 2 : 1, 1 };
 		blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		blit.dstSubresource.mipLevel = i;
 		blit.dstSubresource.baseArrayLayer = 0;
-		blit.dstSubresource.layerCount = 1;
+		blit.dstSubresource.layerCount = layerCount;
 
 		vkCmdBlitImage(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 
@@ -175,22 +202,22 @@ void Texture::GenerateMipMaps(VkFormat imageFormat)
 	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
 }
 
-int Texture::GetWidth()
+int Image::GetWidth()
 {
 	return width;
 }
 
-int Texture::GetHeight()
+int Image::GetHeight()
 {
 	return height;
 }
 
-int Texture::GetMipLevels()
+int Image::GetMipLevels()
 {
 	return mipLevels;
 }
 
-void Texture::Destroy()
+void Image::Destroy()
 {
 	vkDestroyImageView(logicalDevice, imageView, nullptr);
 	vkDestroyImage(logicalDevice, image, nullptr);

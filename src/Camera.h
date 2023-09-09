@@ -1,6 +1,7 @@
 #pragma once
 #include "glm.h"
 #include "system/Window.h"
+#include "Transform.h"
 
 class Camera
 {
@@ -9,7 +10,7 @@ public:
 
 	float cameraSpeed = 5;
 	float pitch = 0, yaw = -(glm::pi<float>() / 2), fov = glm::pi<float>() / 2;
-	
+
 	glm::vec3 position = glm::vec3(0);
 
 	void SetNearPlane(float newNearPlane);
