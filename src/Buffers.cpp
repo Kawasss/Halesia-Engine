@@ -20,6 +20,8 @@ VkBuffer VulkanBuffer::GetVkBuffer()
 
 template<typename T> void VulkanBuffer::GenerateBuffer(PhysicalDevice physicalDevice, VkBufferUsageFlags usage, VkCommandPool commandPool, VkQueue queue, const std::vector<T> bufferData)
 {
+	std::lock_guard<std::mutex> guard(Vulkan::globalThreadingMutex);
+
 	VkDeviceSize size = sizeof(bufferData[0]) * bufferData.size();
 
 	VkBuffer stagingBuffer;

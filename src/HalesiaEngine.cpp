@@ -190,6 +190,7 @@ struct UpdateRendererData
 
 std::optional<std::string> UpdateRenderer(UpdateRendererData* rendererData)
 {
+	
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	std::optional<std::string> command = rendererData->renderer->RenderDevConsole(rendererData->renderDevConsole);
 	if (rendererData->showFPS)
