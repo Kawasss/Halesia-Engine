@@ -1,11 +1,14 @@
 #pragma once
 #include <string>
 #include <vulkan/vulkan.h>
+#include <future>
 
 class Image
 {
 public:
-	void GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string>& filePath, bool useMipMaps);
+	void GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string> filePath, bool useMipMaps);
+	void AwaitGeneration();
+	bool HasFinishedLoading();
 	void Destroy();
 
 	int GetWidth();
@@ -16,10 +19,8 @@ public:
 	VkImageView imageView;
 	VkDeviceMemory imageMemory;
 
-private:
-	
-
 protected:
+	std::future<void> generation;
 	int width = 0, height = 0;
 	uint32_t mipLevels = 1, layerCount = 0;
 	VkDevice logicalDevice;
@@ -32,10 +33,10 @@ protected:
 	void GenerateMipMaps(VkFormat imageFormat);
 };
 
-class Cubemap : public Image//merge with texture into template + inheritance class
+class Cubemap : public Image
 {
 public:
-	Cubemap(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string>& filePath, bool useMipMaps);
+	Cubemap(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string> filePath, bool useMipMaps);
 };
 
 class Texture : public Image

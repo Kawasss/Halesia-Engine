@@ -6,7 +6,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 
-void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string>& filePath, bool useMipMaps)
+void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string> filePath, bool useMipMaps)
 {
 	this->logicalDevice = logicalDevice;
 	this->commandPool = commandPool;
@@ -56,17 +56,27 @@ void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool 
 	if (useMipMaps) GenerateMipMaps(VK_FORMAT_R8G8B8A8_SRGB);
 }
 
-Cubemap::Cubemap(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string>& filePath, bool useMipMaps)
+void Image::AwaitGeneration()
+{
+	generation.get();
+}
+
+bool Image::HasFinishedLoading()
+{
+	return generation._Is_ready();
+}
+
+Cubemap::Cubemap(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string> filePath, bool useMipMaps)
 {
 	if (filePath.size() != 6) 
 		throw new std::runtime_error("Invalid amount of images given for a cubemap: expected 6, but got " + std::to_string(filePath.size()));
-	GenerateImages(logicalDevice, queue, commandPool, physicalDevice, filePath, useMipMaps);
+	generation = std::async(&Image::GenerateImages, this, logicalDevice, queue, commandPool, physicalDevice, filePath, useMipMaps);
 }
 
 Texture::Texture(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::string filePath, bool useMipMaps)
 {
 	std::vector<std::string> paths = { filePath };
-	GenerateImages(logicalDevice, queue, commandPool, physicalDevice, paths, useMipMaps);
+	generation = std::async(&Image::GenerateImages, this, logicalDevice, queue, commandPool, physicalDevice, paths, useMipMaps);
 	
 }
 
@@ -115,6 +125,8 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 
 void Image::CopyBufferToImage(VkBuffer buffer)
 {
+	std::lock_guard <std::mutex> guard(Vulkan::globalThreadingMutex);
+
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 
 	VkBufferImageCopy region{};
@@ -135,6 +147,8 @@ void Image::CopyBufferToImage(VkBuffer buffer)
 
 void Image::GenerateMipMaps(VkFormat imageFormat)
 {
+	std::lock_guard <std::mutex> guard(Vulkan::globalThreadingMutex);
+
 	VkFormatProperties formatProperties;
 	vkGetPhysicalDeviceFormatProperties(phyiscalDevice.Device(), imageFormat, &formatProperties);
 	if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
