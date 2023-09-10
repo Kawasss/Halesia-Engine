@@ -30,6 +30,8 @@ void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 
+	std::lock_guard <std::mutex> guard(Vulkan::globalThreadingMutex);
+
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 	// copy all of the different sides of the cubemap into a single buffer

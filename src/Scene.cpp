@@ -9,7 +9,7 @@ Object* Scene::FindObjectByName(std::string name)
 	for (Object* object : allObjects)
 		if (object->name == name)
 			return object;
-	Console::WriteLine("Failed to find an object matching the name \"" + name + '"');
+	Console::WriteLine("Failed to find an object matching the name \"" + name + '"', MESSAGE_SEVERITY_ERROR);
 	return nullptr; //not really that safe
 }
 
@@ -54,7 +54,7 @@ void Scene::Free(Object* object)
 			object->Destroy();
 			return;
 		}
-	Console::WriteLine("!! Failed to free an object, because it isn't registered in the scene. Perhaps the object is already freed?");
+	Console::WriteLine("Failed to free an object, because it isn't registered in the scene. Perhaps the object is already freed?", MESSAGE_SEVERITY_ERROR);
 }
 
 void Scene::Start()

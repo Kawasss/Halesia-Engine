@@ -52,6 +52,8 @@ class TestScene : public Scene
 		AddCustomObject<TestObject>("./blahaj.obj")->AwaitGeneration();
 		this->camera = new TestCamera();
 		camera->GetScript<TestCamera*>()->objectToView = FindObjectByName("blahaj");
+		FindObjectByName("");
+		Console::WriteLine("warning", MESSAGE_SEVERITY_WARNING);
 	}
 };
 

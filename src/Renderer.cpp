@@ -757,10 +757,12 @@ std::optional<std::string> Renderer::RenderDevConsole(bool render)
 		style.WindowBorderSize = 2;
 
 		for (std::string message : Console::messages)
-			ImGui::Text(message.c_str());
+		{
+			glm::vec3 color = Console::GetColorFromMessage(message);
+			ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1), message.c_str());
+		}
 
 		std::string result = "";
-		//ImGui::SetCursorPos(ImVec2(style.FramePadding.x * 2, ImGui::GetWindowHeight() - ImGui::GetFontSize() - style.FramePadding.y * 5));
 		ImGui::InputTextWithHint("##input", "Console commands...", &result);
 
 		if (Input::IsKeyPressed(VirtualKey::Return)) // if enter is pressed place the input value into the optional variable

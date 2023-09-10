@@ -108,7 +108,7 @@ void GenerateObject(Object* object, VkDevice logicalDevice, PhysicalDevice physi
 	#ifdef _DEBUG
 		char* str;
 		UuidToStringA(&object->uuid, (RPC_CSTR*)&str);
-		Console::WriteLine("Created new object \"" + object->name + "\" with unique id \"" + str + '\"');
+		Console::WriteLine("Created new object \"" + object->name + "\" with unique id \"" + str + '\"', MESSAGE_SEVERITY_DEBUG);
 	#endif
 }
 

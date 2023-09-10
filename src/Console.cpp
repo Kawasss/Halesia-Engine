@@ -2,13 +2,18 @@
 #include <regex>
 #include <iostream>
 #include <vector>
+#include <mutex>
 
 std::vector<std::string> Console::messages{};
-std::map <std::string, void*> Console::commandVariables{};
+std::map<std::string, void*> Console::commandVariables{};
+std::map<std::string, MessageSeverity> Console::messageColorBinding{};
 
-void Console::WriteLine(std::string message)
+std::mutex writingLinesMutex;
+void Console::WriteLine(std::string message, MessageSeverity severity)
 {
+	std::lock_guard<std::mutex> guard(writingLinesMutex);
 	messages.push_back(message);
+	messageColorBinding[message] = severity;
 }
 
 void Console::InterpretCommand(std::string command)
@@ -35,5 +40,22 @@ void Console::InterpretCommand(std::string command)
 			WriteLine("Set engine variable \"" + variableName + "\" to " + std::to_string(value));
 			return;
 		}
+	}
+}
+
+glm::vec3 Console::GetColorFromMessage(std::string message)
+{
+	switch (messageColorBinding[message])
+	{
+	case MESSAGE_SEVERITY_NORMAL:
+		return glm::vec3(1);
+	case MESSAGE_SEVERITY_WARNING:
+		return glm::vec3(1, 1, 0);
+	case MESSAGE_SEVERITY_ERROR:
+		return glm::vec3(1, 0, 0);
+	case MESSAGE_SEVERITY_DEBUG:
+		return glm::vec3(.1f, .1f, 1);
+	default:
+		return glm::vec3(1);
 	}
 }
