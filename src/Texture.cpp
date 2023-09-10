@@ -84,6 +84,8 @@ Texture::Texture(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPoo
 
 void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
+	std::lock_guard <std::mutex> guard(Vulkan::globalThreadingMutex);
+
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 
 	VkImageMemoryBarrier memoryBarrier{};
