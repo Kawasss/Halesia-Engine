@@ -15,8 +15,10 @@ public:
 	int GetHeight();
 	int GetMipLevels();
 
+	static bool TexturesHaveChanged(int& amount);
+
 	VkImage image;
-	VkImageView imageView;
+	VkImageView imageView = VK_NULL_HANDLE;
 	VkDeviceMemory imageMemory;
 
 protected:
@@ -31,6 +33,9 @@ protected:
 	void TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void CopyBufferToImage(VkBuffer buffer);
 	void GenerateMipMaps(VkFormat imageFormat);
+
+	static bool texturesHaveChanged;
+	static int amountChanged;
 };
 
 class Cubemap : public Image

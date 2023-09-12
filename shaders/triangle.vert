@@ -17,9 +17,11 @@ layout(location = 2) in vec2 inTexCoord;
 
 layout(location = 0) out vec3 fragNormal;
 layout(location = 1) out vec2 fragTexCoord;
+flat layout (location = 2) out int drawID;
 
 void main() {
     gl_Position = ubo.proj * ubo.view * model.models[gl_DrawID] * vec4(inPosition, 1.0);
     fragNormal = normalize(mat3(transpose(inverse(model.models[gl_DrawID]))) * inNormal);
     fragTexCoord = inTexCoord;
+    drawID = gl_DrawID;
 }

@@ -57,8 +57,6 @@ Renderer::Renderer(Win32Window* window)
 
 void Renderer::Destroy()
 {
-	CloseHandle(queueMutex);
-
 	vkDeviceWaitIdle(logicalDevice);
 
 	vkDestroyDescriptorPool(logicalDevice, imGUIDescriptorPool, nullptr);
@@ -180,6 +178,7 @@ void Renderer::InitVulkan()
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(renderPass);
 	textureImage = new Texture(logicalDevice, graphicsQueue, commandPool, physicalDevice, "textures/texture.jpg", true);
+	//textureImage->AwaitGeneration();
 	CreateTextureSampler();
 	CreateUniformBuffers();
 	CreateModelBuffers();
@@ -188,7 +187,6 @@ void Renderer::InitVulkan()
 	CreateCommandBuffer();
 	CreateSyncObjects();
 	CreateImGUI();
-	queueMutex = CreateMutex(NULL, FALSE, NULL);
 }
 
 std::vector<VkDynamicState> dynamicStates =
@@ -343,12 +341,11 @@ void Renderer::CreateDescriptorSets()
 	std::vector<uint32_t> setCounts;
 	setCounts.push_back(MAX_FRAMES_IN_FLIGHT);
 	setCounts.push_back(MAX_FRAMES_IN_FLIGHT);
-	setCounts.push_back(MAX_BINDLESS_TEXTURES - 1);
+	setCounts.push_back(MAX_FRAMES_IN_FLIGHT * (MAX_BINDLESS_TEXTURES - 1));
 
 	VkDescriptorSetVariableDescriptorCountAllocateInfoEXT countAllocateInfo{};
 	countAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
 	countAllocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
-	uint32_t maxBinding = MAX_BINDLESS_TEXTURES - 1;
 	countAllocateInfo.pDescriptorCounts = setCounts.data();
 
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
@@ -846,9 +843,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 
 	ImGui::Render();
 
-	std::lock_guard<std::mutex> guard(Vulkan::globalThreadingMutex);
-
-	WaitForSingleObject(queueMutex, INFINITE); // the queue must not be used by another thread during vkQueueSubmit
+	//std::lock_guard<std::mutex> guard(Vulkan::globalThreadingMutex);
 
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
 
@@ -888,7 +883,10 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 
 	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
 		throw std::runtime_error("Failed to submit the queue");
-	
+
+	std::vector<Texture*> textures = { textureImage };
+	UpdateBindlessTextures(currentFrame, 1, textures);
+
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.waitSemaphoreCount = 1;
@@ -910,9 +908,66 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	else if (result != VK_SUCCESS)
 		throw std::runtime_error("Failed to present the swap chain image");
 
-	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	/*int amountTexturesChanged = 0;
+	if (Image::TexturesHaveChanged(amountTexturesChanged))
+	{
+		std::vector<Texture*> textures = { textureImage };
+		UpdateBindlessTextures(currentFrame, amountTexturesChanged, textures);
+	}*/
 
-	ReleaseMutex(queueMutex);
+	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void Renderer::UpdateBindlessTextures(uint32_t currentFrame, int numberToUpdate, std::vector<Texture*>& textures)
+{
+	/*if (!numberToUpdate)
+		return; // not really needed but just in case
+
+	std::vector<VkWriteDescriptorSet> bindlessDescriptorWrites(textures.size());
+	std::vector<VkDescriptorImageInfo> bindlessDescriptorInfo(textures.size());
+
+	uint32_t amountToUpdate = 0;
+	for (uint32_t i = numberToUpdate - 1; i >= 0; i--) // maybe start at the end, because new textures are added at the end. this way this doesnt have to loop through the entire vector
+	{
+		VkWriteDescriptorSet& writeSet = bindlessDescriptorWrites[amountToUpdate];
+		writeSet = {};
+		writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeSet.descriptorCount = 1;
+		writeSet.dstArrayElement = 0; // dont know if its 0
+		writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		writeSet.dstSet = descriptorSets[currentFrame];
+		writeSet.dstBinding = 2;
+
+		VkDescriptorImageInfo& imageInfo = bindlessDescriptorInfo[amountToUpdate];
+		imageInfo.sampler = textureSampler;
+		imageInfo.imageView = textures[i]->imageView;
+		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+		writeSet.pImageInfo = &imageInfo;
+
+		amountToUpdate++;
+	}
+	if (amountToUpdate)
+		vkUpdateDescriptorSets(logicalDevice, amountToUpdate, bindlessDescriptorWrites.data(), 0, nullptr);*/
+	
+	if (!textures[0]->HasFinishedLoading())
+		return;
+
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = textureImage->imageView;
+	imageInfo.sampler = textureSampler;
+
+	VkWriteDescriptorSet writeDescriptorSet{};
+	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSet.dstSet = descriptorSets[currentFrame];
+	writeDescriptorSet.dstBinding = 2;
+	writeDescriptorSet.dstArrayElement = 0;
+	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writeDescriptorSet.descriptorCount = 1;
+	writeDescriptorSet.pImageInfo = &imageInfo;
+
+	vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
 }
 
 void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)

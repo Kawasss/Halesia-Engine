@@ -115,6 +115,7 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface surface)
     indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
     indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
     indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+    indexingFeatures.runtimeDescriptorArray = VK_TRUE;
     indexingFeatures.pNext = &imageFeatures;
 
     VkPhysicalDeviceFeatures2 deviceFeatures2{};
