@@ -15,8 +15,7 @@ public:
 	int GetHeight();
 	int GetMipLevels();
 
-	static bool TexturesHaveChanged(int& amount);
-	static std::vector<Image*> imagesToUpdate; // probably not the best way to update bindless textures
+	static bool TexturesHaveChanged();
 
 	VkImage image;
 	VkImageView imageView = VK_NULL_HANDLE;
@@ -36,7 +35,6 @@ protected:
 	void GenerateMipMaps(VkFormat imageFormat);
 
 	static bool texturesHaveChanged;
-	static int amountChanged;
 };
 
 class Cubemap : public Image

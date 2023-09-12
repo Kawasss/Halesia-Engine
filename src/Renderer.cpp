@@ -900,46 +900,41 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 
 void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects)
 {
-	int amountChanged = 0;
-	if (!Image::TexturesHaveChanged(amountChanged))
+	if (!Image::TexturesHaveChanged())
 		return;
+		
+	// !! this for loop currently updates the textures for all descriptor sets at once which is not that good. itd be better to update the currently used descriptor set
+	std::vector<VkDescriptorImageInfo> imageInfos;
 
-	//this for loop updates every descriptor set, otherwise only one frame per MAX_FRAMES_IN_FLIGHT has the updated textures
-	for (int j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) // !! this doesnt really seem optimized + placing a needed variable in Texture.h doesnt really feel right, maybe instead give every texture a unique id and stores those in a vector to make sure that id doesnt get updated again
-	{			
-		// !! this for loop currently updates the textures for all descriptor sets at once which is not that good. itd be better to update the currently used descriptor set
-		std::vector<VkDescriptorImageInfo> imageInfos;
+	for (Object* object : objects) // its wasteful to update the textures of all the meshes if those arent changed, its wasting resources. its better to have a look up table or smth like that to look up if a material has already been updated, dstArrayElement also needs to be made dynamic for that
+		for (Mesh mesh : object->meshes)
+			for (int i = 0; i < 2/*5*/; i++) // 5 textures per material (using 2 now because the rest aren't implemented yet)
+			{
+				//if (!mesh.material.At(i)->HasFinishedLoading())
+				//	continue;
 
-		for (Object* object : objects) // its wasteful to update the textures of all the meshes if those arent changed, its wasting resources. its better to have a look up table or smth like that to look up if a material has already been updated, dstArrayElement also needs to be made dynamic for that
-			for (Mesh mesh : object->meshes)
-				for (int i = 0; i < 2/*5*/; i++) // 5 textures per material (using 2 now because the rest aren't implemented yet)
-				{
-					if (!mesh.material.At(i)->HasFinishedLoading())
-						continue;
+				VkDescriptorImageInfo imageInfo{};
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo.imageView = mesh.material.At(i)->imageView;
+				imageInfo.sampler = textureSampler;
 
-					VkDescriptorImageInfo imageInfo{};
-					imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-					imageInfo.imageView = mesh.material.At(i)->imageView;
-					imageInfo.sampler = textureSampler;
+				imageInfos.push_back(imageInfo);
+			}
 
-					imageInfos.push_back(imageInfo);
-				}
-		if (imageInfos.size() == 0)
-			return;
-
+	// this for loop updates every descriptor set with the textures that are only really relevant for the current frame, this can be wasteful if there are textures that stop being used after this frame. this cant be changed easily because of Image::TexturesHaveChanged
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
 		VkWriteDescriptorSet writeSet{};
 		writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		writeSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
 		writeSet.dstBinding = 2;
-		writeSet.dstSet = descriptorSets[j];
+		writeSet.dstSet = descriptorSets[i];
 		writeSet.pImageInfo = imageInfos.data();
 		writeSet.dstArrayElement = 0; // should be made dynamic if this function no longer updates from the beginning of the array
 
 		vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
 	}
-	if (amountChanged == 0)
-		Image::imagesToUpdate.clear();
 }
 
 void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
