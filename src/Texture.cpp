@@ -7,12 +7,9 @@
 #include "stb/stb_image.h"
 
 bool Image::texturesHaveChanged = false;
-int Image::amountChanged = 0;
-std::vector<Image*> Image::imagesToUpdate;
 
-bool Image::TexturesHaveChanged(int& amount)
+bool Image::TexturesHaveChanged()
 {
-	amount = amountChanged;
 	bool ret = texturesHaveChanged;
 	texturesHaveChanged = false;
 	return ret;
@@ -20,7 +17,6 @@ bool Image::TexturesHaveChanged(int& amount)
 
 void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string> filePath, bool useMipMaps)
 {
-	imagesToUpdate.push_back(this);
 	this->logicalDevice = logicalDevice;
 	this->commandPool = commandPool;
 	this->queue = queue;
@@ -73,7 +69,6 @@ void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool 
 	Vulkan::globalThreadingMutex->unlock();
 	
 	this->texturesHaveChanged = true;
-	this->amountChanged++;
 }
 
 void Image::AwaitGeneration()
