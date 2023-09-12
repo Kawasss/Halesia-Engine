@@ -33,7 +33,7 @@ void Console::InterpretCommand(std::string command)
 			value = (int)(command.c_str()[i + 1] - '0'); // turn the ascii version of the number into an integer
 			if (commandVariables.count(variableName) == 0)
 			{
-				Console::WriteLine("!! Failed to find the engine variable \"" + variableName + "\"");
+				Console::WriteLine("!! Failed to find the engine variable \"" + variableName + "\"", MESSAGE_SEVERITY_ERROR);
 				return;
 			}
 			*static_cast<int*>(commandVariables[variableName]) = value;

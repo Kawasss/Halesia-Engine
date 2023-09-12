@@ -20,7 +20,7 @@ VkBuffer VulkanBuffer::GetVkBuffer()
 
 template<typename T> void VulkanBuffer::GenerateBuffer(PhysicalDevice physicalDevice, VkBufferUsageFlags usage, VkCommandPool commandPool, VkQueue queue, const std::vector<T> bufferData)
 {
-	std::lock_guard<std::mutex> guard(Vulkan::globalThreadingMutex);
+	Vulkan::globalThreadingMutex->lock();
 
 	VkDeviceSize size = sizeof(bufferData[0]) * bufferData.size();
 
@@ -38,6 +38,8 @@ template<typename T> void VulkanBuffer::GenerateBuffer(PhysicalDevice physicalDe
 
 	vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
 	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
+
+	Vulkan::globalThreadingMutex->unlock();
 }
 
 VertexBuffer::VertexBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, const std::vector<Vertex> vertices)

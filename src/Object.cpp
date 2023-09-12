@@ -10,8 +10,9 @@
 #include <future>
 #include "Console.h"
 
-Mesh::Mesh(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, aiMesh* mesh)
+Mesh::Mesh(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, aiMesh* mesh, aiMaterial* material)
 {
+	ProcessMaterial(material, logicalDevice, queue, commandPool, physicalDevice);
 	ProcessIndices(mesh);
 	ProcessVertices(mesh);
 	Recreate(logicalDevice, physicalDevice, commandPool, queue);
@@ -25,9 +26,20 @@ void Mesh::Recreate(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCom
 
 void Mesh::Destroy()
 {
+	material.Destroy();
 	vertexBuffer.Destroy();
 	indexBuffer.Destroy();
 	delete this;
+}
+
+void Mesh::ProcessMaterial(aiMaterial* material, VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice)
+{
+	aiString path;
+	aiReturn ret = material->GetTexture(aiTextureType_DIFFUSE, 0, &path);
+	if (ret == -1)
+		return;
+	
+	this->material = { new Texture(logicalDevice, queue, commandPool, physicalDevice, (std::string)path.C_Str(), true) };
 }
 
 void Mesh::ProcessIndices(aiMesh* mesh)
@@ -93,11 +105,12 @@ void GenerateObject(Object* object, VkDevice logicalDevice, PhysicalDevice physi
 
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + path);
-	
+
 	for (int i = 0; i < scene->mNumMeshes; i++) // convert the assimp resources into the engines resources
 	{
 		aiMesh* pMesh = scene->mMeshes[i];
-		object->meshes.push_back(Mesh{ logicalDevice, physicalDevice, commandPool, queue, pMesh });
+		aiMaterial* material = scene->mMaterials[pMesh->mMaterialIndex];
+		object->meshes.push_back(Mesh{ logicalDevice, physicalDevice, commandPool, queue, pMesh, material });
 	}
 	object->transform = Transform(glm::vec3(0), glm::vec3(0), glm::vec3(1), object->meshes[0].extents, object->meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
 

@@ -1,17 +1,12 @@
 #pragma once
-#include <windows.h>
 #include <vector>
-#include <array>
 #include <string>
 #include <vulkan/vulkan.h>
-#include <chrono>
 
 #include "PhysicalDevice.h"
 #include "Surface.h"
 #include "Swapchain.h"
 #include "Texture.h"
-#include "Buffers.h"
-#include "glm.h"
 #include "Vertex.h"
 #include "Object.h"
 #include "Camera.h"
@@ -57,7 +52,6 @@ private:
 	std::vector<VkDeviceMemory> modelBuffersMemory;
 	std::vector<void*> modelBuffersMapped;
 
-	Texture* textureImage;
 	VkSampler textureSampler;
 
 	PhysicalDevice physicalDevice;

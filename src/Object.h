@@ -8,6 +8,7 @@
 #include "Vertex.h"
 #include "renderer/PhysicalDevice.h"
 #include "Transform.h"
+#include "renderer/Texture.h"
 #include "CreationObjects.h"
 
 enum ObjectState
@@ -17,11 +18,22 @@ enum ObjectState
 	STATUS_DISABLED   // disabled doesn't run the script and doesn't render the object
 };
 
+struct Material
+{
+	Texture* albedo;
+
+	void Destroy()
+	{
+		albedo->Destroy();
+	}
+};
+
 struct Mesh
 {
-	Mesh(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, aiMesh* mesh);
+	Mesh(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, aiMesh* mesh, aiMaterial* material);
 	void Destroy();
 
+	Material material;
 	VertexBuffer vertexBuffer;
 	IndexBuffer indexBuffer;
 
@@ -30,6 +42,7 @@ struct Mesh
 
 	glm::vec3 min, max, center, extents;
 
+	void ProcessMaterial(aiMaterial* material, VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice);
 	void ProcessIndices(aiMesh* mesh);
 	void ProcessVertices(aiMesh* mesh);
 

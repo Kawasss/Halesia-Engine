@@ -19,7 +19,8 @@ const bool enableValidationLayers = true;
 #include "renderer/Vulkan.h"
 #include "Console.h"
 
-std::mutex Vulkan::globalThreadingMutex;
+std::mutex Vulkan::graphicsQueueThreadingMutex;
+std::mutex* Vulkan::globalThreadingMutex = &graphicsQueueThreadingMutex;
 
 PhysicalDevice Vulkan::GetBestPhysicalDevice(VkInstance instance, Surface surface)
 {
@@ -80,7 +81,7 @@ void Vulkan::CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice,
     createInfo.size = size;
     createInfo.usage = usage;
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
+    
     if (vkCreateBuffer(logicalDevice, &createInfo, nullptr, &buffer) != VK_SUCCESS)
         throw std::runtime_error("Failed to create the vertex buffer");
 

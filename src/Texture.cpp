@@ -41,8 +41,8 @@ void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 
-	std::lock_guard <std::mutex> guard(Vulkan::globalThreadingMutex);
-	
+	Vulkan::globalThreadingMutex->lock();
+
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 	// copy all of the different sides of the cubemap into a single buffer
@@ -67,6 +67,8 @@ void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 	imageView = Vulkan::CreateImageView(logicalDevice, image, viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	if (useMipMaps) GenerateMipMaps(VK_FORMAT_R8G8B8A8_SRGB);
+
+	Vulkan::globalThreadingMutex->unlock();
 
 	this->texturesHaveChanged = true;
 	this->amountChanged++;
@@ -98,7 +100,6 @@ Texture::Texture(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPoo
 
 void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
-	//std::lock_guard <std::mutex> guard(Vulkan::globalThreadingMutex);
 
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 
@@ -143,8 +144,6 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 
 void Image::CopyBufferToImage(VkBuffer buffer)
 {
-	//std::lock_guard <std::mutex> guard(Vulkan::globalThreadingMutex);
-
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 
 	VkBufferImageCopy region{};
@@ -165,8 +164,6 @@ void Image::CopyBufferToImage(VkBuffer buffer)
 
 void Image::GenerateMipMaps(VkFormat imageFormat)
 {
-	std::lock_guard <std::mutex> guard(Vulkan::globalThreadingMutex);
-
 	VkFormatProperties formatProperties;
 	vkGetPhysicalDeviceFormatProperties(phyiscalDevice.Device(), imageFormat, &formatProperties);
 	if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))

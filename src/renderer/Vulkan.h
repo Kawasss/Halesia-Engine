@@ -33,7 +33,7 @@ class Vulkan
             std::vector<VkPresentModeKHR> presentModes;
         };
 
-        static std::mutex globalThreadingMutex;
+        static std::mutex* globalThreadingMutex;
 
         static SwapChainSupportDetails      QuerySwapChainSupport(PhysicalDevice device, Surface surface);
         static std::vector<PhysicalDevice>  GetPhysicalDevices(VkInstance instance);
@@ -94,6 +94,8 @@ class Vulkan
         }
 
     private:
+        static std::mutex graphicsQueueThreadingMutex;
+
         static bool IsDeviceCompatible(PhysicalDevice device, Surface surface)
         {
             //VkPhysicalDeviceProperties properties = GetPhyiscalDeviceProperties(device);
