@@ -71,7 +71,7 @@ void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool 
 	if (useMipMaps) GenerateMipMaps(VK_FORMAT_R8G8B8A8_SRGB);
 
 	Vulkan::globalThreadingMutex->unlock();
-
+	
 	this->texturesHaveChanged = true;
 	this->amountChanged++;
 }

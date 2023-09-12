@@ -20,11 +20,37 @@ enum ObjectState
 
 struct Material
 {
+	// dont know if dynamically allocated is necessary since the material will always be used for the lifetime of the mesh, the class is sort of big so not so sure if copying is cheap
 	Texture* albedo;
+	Texture* normal = nullptr;
+	Texture* metallic = nullptr; // nullptr indicates that they havent been implemented yet
+	Texture* roughness = nullptr;
+	Texture* ambientOcclusion = nullptr;
+
+	Texture* At(int i)
+	{
+		switch (i) 
+		{
+		case 0:
+			return albedo;
+		case 1:
+			return normal;
+		case 2:
+			return metallic;
+		case 3:
+			return roughness;
+		case 4:
+			return ambientOcclusion;
+		default:
+			return albedo;
+		}
+	}
 
 	void Destroy()
 	{
 		albedo->Destroy();
+		normal->Destroy();
+		// add deleting other textures here after theyve been implemented
 	}
 };
 

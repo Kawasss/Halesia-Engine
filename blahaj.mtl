@@ -11,3 +11,4 @@ newmtl wire_020020020
 	Kd 0.0784 0.0784 0.0784
 	Ks 0.3500 0.3500 0.3500
 map_Kd blahaj.jpg
+map_Kn placeholder.png

@@ -32,21 +32,31 @@ void Mesh::Destroy()
 	delete this;
 }
 
-void Mesh::ProcessMaterial(aiMaterial* material, VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice)
+aiString GetTexturePath(aiMaterial* material, aiTextureType textureType)
 {
 	aiString path;
-	aiReturn ret = material->GetTexture(aiTextureType_DIFFUSE, 0, &path);
+	aiReturn ret = material->GetTexture(textureType, 0, &path);
 	if (ret == -1)
-		return;
-	
-	this->material = { new Texture(logicalDevice, queue, commandPool, physicalDevice, (std::string)path.C_Str(), true)};
+		throw std::runtime_error("A given object doesn't have a required texture");
+	return path;
+}
+
+void Mesh::ProcessMaterial(aiMaterial* material, VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice)
+{
+	aiString albedoPath = GetTexturePath(material, aiTextureType_DIFFUSE);
+	Texture* albedo = new Texture(logicalDevice, queue, commandPool, physicalDevice, (std::string)albedoPath.C_Str(), true);
+
+	aiString normalPath = GetTexturePath(material, aiTextureType_NORMALS);
+	Texture* normal = new Texture(logicalDevice, queue, commandPool, physicalDevice, (std::string)normalPath.C_Str(), true);
+
+	this->material = { albedo, normal };
 }
 
 void Mesh::ProcessIndices(aiMesh* mesh)
 {
-	for (int j = 0; j < mesh->mNumFaces; j++)
-		for (int i = 0; i < mesh->mFaces[j].mNumIndices; i++)
-			indices.push_back(mesh->mFaces[j].mIndices[i]);
+	for (int i = 0; i < mesh->mNumFaces; i++)
+		for (int j = 0; j < mesh->mFaces[i].mNumIndices; j++)
+			indices.push_back(mesh->mFaces[i].mIndices[j]);
 }
 
 void Mesh::ProcessVertices(aiMesh* mesh)
@@ -101,7 +111,7 @@ void GenerateObject(Object* object, VkDevice logicalDevice, PhysicalDevice physi
 	std::string fileNameWithExtension = path.substr(path.find_last_of("/\\") + 1);
 	object->name = fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 
-	const aiScene* scene = aiImportFile(path.c_str(), aiProcess_OptimizeMeshes | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
+	const aiScene* scene = aiImportFile(path.c_str(), aiProcess_FixInfacingNormals | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_RemoveComponent);
 
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + path);

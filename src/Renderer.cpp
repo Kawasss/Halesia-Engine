@@ -403,13 +403,13 @@ void Renderer::CreateDescriptorPool()
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[1].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[2].descriptorCount = MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES;
+	poolSizes[2].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 
 	VkDescriptorPoolCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	createInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	createInfo.pPoolSizes = poolSizes.data();
-	createInfo.maxSets = MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES;
+	createInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
 	createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
 
 	if (vkCreateDescriptorPool(logicalDevice, &createInfo, nullptr, &descriptorPool) != VK_SUCCESS)
@@ -685,12 +685,12 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		if (object->state == STATUS_VISIBLE && object->HasFinishedLoading())
 			for (Mesh mesh : object->meshes)
 			{
-				VkBuffer vertexBuffers[] = { /*vertexBuffer->GetVkBuffer()*/mesh.vertexBuffer.GetVkBuffer() };
+				VkBuffer vertexBuffers[] = { mesh.vertexBuffer.GetVkBuffer() };
 				VkDeviceSize offsets[] = { 0 };
 				vkCmdBindVertexBuffers(lCommandBuffer, 0, 1, vertexBuffers, offsets);
-				vkCmdBindIndexBuffer(lCommandBuffer, /*indexBuffer->GetVkBuffer()*/mesh.indexBuffer.GetVkBuffer(), 0, VK_INDEX_TYPE_UINT16);
+				vkCmdBindIndexBuffer(lCommandBuffer, mesh.indexBuffer.GetVkBuffer(), 0, VK_INDEX_TYPE_UINT16);
 
-				vkCmdDrawIndexed(lCommandBuffer, static_cast<uint32_t>(/*indices.size()*/mesh.indices.size()), 1, 0, 0, 0);
+				vkCmdDrawIndexed(lCommandBuffer, static_cast<uint32_t>(mesh.indices.size()), 1, 0, 0, 0);
 			}
 	
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), lCommandBuffer);
@@ -853,7 +853,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	UpdateUniformBuffers(currentFrame, camera);
 	SetModelMatrices(currentFrame, objects);
 
-	UpdateBindlessTextures(currentFrame, 1);
+	UpdateBindlessTextures(currentFrame, objects);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -894,55 +894,52 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	}
 	else if (result != VK_SUCCESS)
 		throw std::runtime_error("Failed to present the swap chain image");
-
-	/*int amountChanged = 0;
-	if (Image::TexturesHaveChanged(amountChanged))
-	{
-		std::vector<Texture*> textures;
-		for (Object* object : objects)
-			for (Mesh mesh : object->meshes)
-				textures.push_back(mesh.material.albedo);
-		UpdateBindlessTextures(currentFrame, textures.size(), textures);
-	}*/
 	
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::UpdateBindlessTextures(uint32_t currentFrame, int numberToUpdate)
+void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects)
 {
-	int dummy = 0;
-	if (!Image::TexturesHaveChanged(dummy))
+	int amountChanged = 0;
+	if (!Image::TexturesHaveChanged(amountChanged))
 		return;
 
 	//this for loop updates every descriptor set, otherwise only one frame per MAX_FRAMES_IN_FLIGHT has the updated textures
 	for (int j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) // !! this doesnt really seem optimized + placing a needed variable in Texture.h doesnt really feel right, maybe instead give every texture a unique id and stores those in a vector to make sure that id doesnt get updated again
-	{
-		std::vector<VkWriteDescriptorSet> writeSets;
-		for (int i = 0; i < Image::imagesToUpdate.size(); i++) // heavily unoptimized
-		{
-			if (!Image::imagesToUpdate[i]->HasFinishedLoading())
-				continue;
+	{			
+		// !! this for loop currently updates the textures for all descriptor sets at once which is not that good. itd be better to update the currently used descriptor set
+		std::vector<VkDescriptorImageInfo> imageInfos;
 
-			VkDescriptorImageInfo imageInfo{};
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = Image::imagesToUpdate[i]->imageView;
-			imageInfo.sampler = textureSampler;
+		for (Object* object : objects) // its wasteful to update the textures of all the meshes if those arent changed, its wasting resources. its better to have a look up table or smth like that to look up if a material has already been updated, dstArrayElement also needs to be made dynamic for that
+			for (Mesh mesh : object->meshes)
+				for (int i = 0; i < 2/*5*/; i++) // 5 textures per material (using 2 now because the rest aren't implemented yet)
+				{
+					if (!mesh.material.At(i)->HasFinishedLoading())
+						continue;
 
-			VkWriteDescriptorSet writeDescriptorSet{};
-			writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeDescriptorSet.dstSet = descriptorSets[j];
-			writeDescriptorSet.dstBinding = 2;
-			writeDescriptorSet.dstArrayElement = 0;
-			writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			writeDescriptorSet.descriptorCount = 1;
-			writeDescriptorSet.pImageInfo = &imageInfo;
+					VkDescriptorImageInfo imageInfo{};
+					imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					imageInfo.imageView = mesh.material.At(i)->imageView;
+					imageInfo.sampler = textureSampler;
 
-			writeSets.push_back(writeDescriptorSet);
-		}
+					imageInfos.push_back(imageInfo);
+				}
+		if (imageInfos.size() == 0)
+			return;
 
-		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeSets.size()), writeSets.data(), 0, nullptr);
+		VkWriteDescriptorSet writeSet{};
+		writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		writeSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
+		writeSet.dstBinding = 2;
+		writeSet.dstSet = descriptorSets[j];
+		writeSet.pImageInfo = imageInfos.data();
+		writeSet.dstArrayElement = 0; // should be made dynamic if this function no longer updates from the beginning of the array
+
+		vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
 	}
-	Image::imagesToUpdate.clear();
+	if (amountChanged == 0)
+		Image::imagesToUpdate.clear();
 }
 
 void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
