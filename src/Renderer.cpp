@@ -76,9 +76,6 @@ void Renderer::Destroy()
 	vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, nullptr);
 
-	//for (Object* model : models)
-	//	model->Destroy();
-
 	vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
 
@@ -856,6 +853,8 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	UpdateUniformBuffers(currentFrame, camera);
 	SetModelMatrices(currentFrame, objects);
 
+	UpdateBindlessTextures(currentFrame, 1);
+
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -874,12 +873,6 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	Vulkan::globalThreadingMutex->lock();
 	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
 		throw std::runtime_error("Failed to submit the queue");
-
-	std::vector<Texture*> textures;
-	for (Object* object : objects)
-		for (Mesh mesh : object->meshes)
-			textures.push_back(mesh.material.albedo);
-	UpdateBindlessTextures(currentFrame, textures.size(), textures);
 
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -902,72 +895,54 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	else if (result != VK_SUCCESS)
 		throw std::runtime_error("Failed to present the swap chain image");
 
-	/*int amountTexturesChanged = 0;
-	if (Image::TexturesHaveChanged(amountTexturesChanged))
+	/*int amountChanged = 0;
+	if (Image::TexturesHaveChanged(amountChanged))
 	{
-		std::vector<Texture*> textures = { textureImage };
-		UpdateBindlessTextures(currentFrame, amountTexturesChanged, textures);
+		std::vector<Texture*> textures;
+		for (Object* object : objects)
+			for (Mesh mesh : object->meshes)
+				textures.push_back(mesh.material.albedo);
+		UpdateBindlessTextures(currentFrame, textures.size(), textures);
 	}*/
-
+	
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::UpdateBindlessTextures(uint32_t currentFrame, int numberToUpdate, std::vector<Texture*>& textures)
+void Renderer::UpdateBindlessTextures(uint32_t currentFrame, int numberToUpdate)
 {
-	/*if (!numberToUpdate)
-		return; // not really needed but just in case
+	int dummy = 0;
+	if (!Image::TexturesHaveChanged(dummy))
+		return;
 
-	std::vector<VkWriteDescriptorSet> bindlessDescriptorWrites(textures.size());
-	std::vector<VkDescriptorImageInfo> bindlessDescriptorInfo(textures.size());
-
-	uint32_t amountToUpdate = 0;
-	for (uint32_t i = numberToUpdate - 1; i >= 0; i--) // maybe start at the end, because new textures are added at the end. this way this doesnt have to loop through the entire vector
+	//this for loop updates every descriptor set, otherwise only one frame per MAX_FRAMES_IN_FLIGHT has the updated textures
+	for (int j = 0; j < MAX_FRAMES_IN_FLIGHT; j++) // !! this doesnt really seem optimized + placing a needed variable in Texture.h doesnt really feel right, maybe instead give every texture a unique id and stores those in a vector to make sure that id doesnt get updated again
 	{
-		VkWriteDescriptorSet& writeSet = bindlessDescriptorWrites[amountToUpdate];
-		writeSet = {};
-		writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeSet.descriptorCount = 1;
-		writeSet.dstArrayElement = 0; // dont know if its 0
-		writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writeSet.dstSet = descriptorSets[currentFrame];
-		writeSet.dstBinding = 2;
+		std::vector<VkWriteDescriptorSet> writeSets;
+		for (int i = 0; i < Image::imagesToUpdate.size(); i++) // heavily unoptimized
+		{
+			if (!Image::imagesToUpdate[i]->HasFinishedLoading())
+				continue;
 
-		VkDescriptorImageInfo& imageInfo = bindlessDescriptorInfo[amountToUpdate];
-		imageInfo.sampler = textureSampler;
-		imageInfo.imageView = textures[i]->imageView;
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			VkDescriptorImageInfo imageInfo{};
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo.imageView = Image::imagesToUpdate[i]->imageView;
+			imageInfo.sampler = textureSampler;
 
-		writeSet.pImageInfo = &imageInfo;
+			VkWriteDescriptorSet writeDescriptorSet{};
+			writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeDescriptorSet.dstSet = descriptorSets[j];
+			writeDescriptorSet.dstBinding = 2;
+			writeDescriptorSet.dstArrayElement = 0;
+			writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			writeDescriptorSet.descriptorCount = 1;
+			writeDescriptorSet.pImageInfo = &imageInfo;
 
-		amountToUpdate++;
+			writeSets.push_back(writeDescriptorSet);
+		}
+
+		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeSets.size()), writeSets.data(), 0, nullptr);
 	}
-	if (amountToUpdate)
-		vkUpdateDescriptorSets(logicalDevice, amountToUpdate, bindlessDescriptorWrites.data(), 0, nullptr);*/
-	std::vector<VkWriteDescriptorSet> writeSets;
-	for (int i = 0; i < textures.size(); i++) // heavily unoptimized
-	{
-		if (!textures[i]->HasFinishedLoading())
-			continue;
-
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = textures[i]->imageView;
-		imageInfo.sampler = textureSampler;
-
-		VkWriteDescriptorSet writeDescriptorSet{};
-		writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSet.dstSet = descriptorSets[currentFrame];
-		writeDescriptorSet.dstBinding = 2;
-		writeDescriptorSet.dstArrayElement = 0;
-		writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writeDescriptorSet.descriptorCount = 1;
-		writeDescriptorSet.pImageInfo = &imageInfo;
-
-		writeSets.push_back(writeDescriptorSet);
-	}
-	
-
-	vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeSets.size()), writeSets.data(), 0, nullptr);
+	Image::imagesToUpdate.clear();
 }
 
 void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)

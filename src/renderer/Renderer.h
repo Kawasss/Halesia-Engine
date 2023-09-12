@@ -77,7 +77,7 @@ private:
 	void CreateRenderPass();
 	void CreateModelBuffers();
 	void CreateImGUI();
-	void UpdateBindlessTextures(uint32_t currentFrame, int numberToUpdate, std::vector<Texture*>& textures);
+	void UpdateBindlessTextures(uint32_t currentFrame, int numberToUpdate);
 	void SetModelMatrices(uint32_t currentImage, std::vector<Object*> models); //parameter is used for potential culling, this allows for 500 meshes in view rather than in scene
 
 	void UpdateUniformBuffers(uint32_t currentImage, Camera* camera);

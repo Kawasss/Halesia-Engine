@@ -39,7 +39,7 @@ void Mesh::ProcessMaterial(aiMaterial* material, VkDevice logicalDevice, VkQueue
 	if (ret == -1)
 		return;
 	
-	this->material = { new Texture(logicalDevice, queue, commandPool, physicalDevice, (std::string)path.C_Str(), true) };
+	this->material = { new Texture(logicalDevice, queue, commandPool, physicalDevice, (std::string)path.C_Str(), true)};
 }
 
 void Mesh::ProcessIndices(aiMesh* mesh)
@@ -97,11 +97,11 @@ void Object::AwaitGeneration()
 
 void GenerateObject(Object* object, VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, std::string path)
 {
-	// this take the filename out of the full path by indexing the \'s and the file extension
+	// this takes the filename out of the full path by indexing the \'s and the file extension
 	std::string fileNameWithExtension = path.substr(path.find_last_of("/\\") + 1);
 	object->name = fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 
-	const aiScene* scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast);
+	const aiScene* scene = aiImportFile(path.c_str(), aiProcess_OptimizeMeshes | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices);
 
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + path);

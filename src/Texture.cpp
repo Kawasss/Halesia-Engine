@@ -8,6 +8,7 @@
 
 bool Image::texturesHaveChanged = false;
 int Image::amountChanged = 0;
+std::vector<Image*> Image::imagesToUpdate;
 
 bool Image::TexturesHaveChanged(int& amount)
 {
@@ -19,6 +20,7 @@ bool Image::TexturesHaveChanged(int& amount)
 
 void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string> filePath, bool useMipMaps)
 {
+	imagesToUpdate.push_back(this);
 	this->logicalDevice = logicalDevice;
 	this->commandPool = commandPool;
 	this->queue = queue;
@@ -42,7 +44,7 @@ void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool 
 	VkDeviceMemory stagingBufferMemory;
 
 	Vulkan::globalThreadingMutex->lock();
-
+	
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 	// copy all of the different sides of the cubemap into a single buffer
@@ -248,6 +250,7 @@ int Image::GetMipLevels()
 
 void Image::Destroy()
 {
+	this->texturesHaveChanged = true;
 	vkDestroyImageView(logicalDevice, imageView, nullptr);
 	vkDestroyImage(logicalDevice, image, nullptr);
 	vkFreeMemory(logicalDevice, imageMemory, nullptr);

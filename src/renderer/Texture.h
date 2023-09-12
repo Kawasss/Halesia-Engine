@@ -16,6 +16,7 @@ public:
 	int GetMipLevels();
 
 	static bool TexturesHaveChanged(int& amount);
+	static std::vector<Image*> imagesToUpdate; // probably not the best way to update bindless textures
 
 	VkImage image;
 	VkImageView imageView = VK_NULL_HANDLE;
