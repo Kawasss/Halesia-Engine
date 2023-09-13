@@ -1,6 +1,7 @@
 #include <Windows.h>
 
 #include "HalesiaEngine.h"
+#include "SceneLoader.h"
 
 class TestCamera : public Camera
 {
@@ -75,6 +76,10 @@ int main(int argsCount, char** args)
 	createInfo.windowCreateInfo.startMaximized = false;
 
 	HalesiaInstance::GenerateHalesiaInstance(instance, createInfo);
+
+	SceneLoader loader("C:\\Users\\wveen\\source\\repos\\CORERenderer\\test.crs");
+	loader.LoadScene();
+	std::cout << loader.objects[0].meshes[0].amountOfVertices << std::endl;
 
 	instance.Run();
 

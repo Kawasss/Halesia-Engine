@@ -172,6 +172,7 @@
     <ClInclude Include="src\renderer\Vulkan.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\Scene.h" />
+    <ClInclude Include="src\SceneLoader.h" />
     <ClInclude Include="src\system\Input.h" />
     <ClInclude Include="src\system\SystemMetrics.h" />
     <ClInclude Include="src\system\Window.h" />
