@@ -34,7 +34,8 @@ std::string variableToString(const char* name)
 
 struct UniformBufferObject
 {
-	//alignas(16) glm::mat4 model;
+	glm::vec3 cameraPos;
+	
 	alignas(16) glm::mat4 view;
 	alignas(16) glm::mat4 projection;
 };
@@ -72,6 +73,8 @@ void Renderer::Destroy()
 		vkDestroyBuffer(logicalDevice, modelBuffers[i], nullptr);
 		vkFreeMemory(logicalDevice, modelBuffersMemory[i], nullptr);
 	}
+
+	Texture::DestroyPlaceholderTextures();
 
 	vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, nullptr);
@@ -168,6 +171,7 @@ void Renderer::InitVulkan()
 	CreateCommandPool();
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(renderPass);
+	Texture::GeneratePlaceholderTextures(logicalDevice, graphicsQueue, commandPool, physicalDevice);
 	CreateTextureSampler();
 	CreateUniformBuffers();
 	CreateModelBuffers();
@@ -330,7 +334,7 @@ void Renderer::CreateDescriptorSets()
 	std::vector<uint32_t> setCounts;
 	setCounts.push_back(MAX_FRAMES_IN_FLIGHT);
 	setCounts.push_back(MAX_FRAMES_IN_FLIGHT);
-	setCounts.push_back(MAX_FRAMES_IN_FLIGHT * (MAX_BINDLESS_TEXTURES - 1));
+	setCounts.push_back(MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES);
 
 	VkDescriptorSetVariableDescriptorCountAllocateInfoEXT countAllocateInfo{};
 	countAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
@@ -390,7 +394,7 @@ void Renderer::CreateDescriptorSets()
 		writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		writeDescriptorSets[2].descriptorCount = 1;
 		writeDescriptorSets[2].pImageInfo = &imageInfo;
-
+		
 		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
 	}
 }
@@ -403,7 +407,7 @@ void Renderer::CreateDescriptorPool()
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[1].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[2].descriptorCount = MAX_FRAMES_IN_FLIGHT;
+	poolSizes[2].descriptorCount = MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES;
 
 	VkDescriptorPoolCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -532,7 +536,7 @@ void Renderer::CreateGraphicsPipeline()
 	rasterizer.depthClampEnable = false;
 	rasterizer.rasterizerDiscardEnable = false;
 	rasterizer.lineWidth = 1;
-	rasterizer.cullMode = VK_CULL_MODE_NONE;
+	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.depthBiasEnable = false;
 
@@ -908,7 +912,7 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 
 	for (Object* object : objects) // its wasteful to update the textures of all the meshes if those arent changed, its wasting resources. its better to have a look up table or smth like that to look up if a material has already been updated, dstArrayElement also needs to be made dynamic for that
 		for (Mesh mesh : object->meshes)
-			for (int i = 0; i < 2/*5*/; i++) // 5 textures per material (using 2 now because the rest aren't implemented yet)
+			for (int i = 0; i < 5; i++) // 5 textures per material (using 2 now because the rest aren't implemented yet)
 			{
 				VkDescriptorImageInfo imageInfo{};
 				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -929,7 +933,7 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 		writeSet.dstSet = descriptorSets[i];
 		writeSet.pImageInfo = imageInfos.data();
 		writeSet.dstArrayElement = 0; // should be made dynamic if this function no longer updates from the beginning of the array
-
+		std::cout << "a" << std::endl;
 		vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
 	}
 }
@@ -937,6 +941,7 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
 {
 	UniformBufferObject ubo{};
+	ubo.cameraPos = camera->position;
 	ubo.view = camera->GetViewMatrix();
 	ubo.projection = camera->GetProjectionMatrix();
 	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));

@@ -7,6 +7,11 @@
 #include "stb/stb_image.h"
 
 bool Image::texturesHaveChanged = false;
+Texture* Texture::placeholderAlbedo = nullptr;
+Texture* Texture::placeholderNormal = nullptr;
+Texture* Texture::placeholderMetallic = nullptr;
+Texture* Texture::placeholderRoughness = nullptr;
+Texture* Texture::placeholderAmbientOcclusion = nullptr;
 
 bool Image::TexturesHaveChanged()
 {
@@ -93,6 +98,29 @@ Texture::Texture(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPoo
 	std::vector<std::string> paths = { filePath };
 	generation = std::async(&Image::GenerateImages, this, logicalDevice, queue, commandPool, physicalDevice, paths, useMipMaps);
 	
+}
+
+void Texture::GeneratePlaceholderTextures(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice)
+{
+	placeholderAlbedo = new Texture(logicalDevice, queue, commandPool, physicalDevice, "textures/placeholderAlbedo.png", false);
+	placeholderAlbedo->AwaitGeneration();
+	placeholderNormal = new Texture(logicalDevice, queue, commandPool, physicalDevice, "textures/placeholderNormal.png", false);
+	placeholderNormal->AwaitGeneration();
+	placeholderMetallic = new Texture(logicalDevice, queue, commandPool, physicalDevice, "textures/placeholderMetallic.png", false);
+	placeholderMetallic->AwaitGeneration();
+	placeholderRoughness = new Texture(logicalDevice, queue, commandPool, physicalDevice, "textures/placeholderRoughness.png", false);
+	placeholderRoughness->AwaitGeneration();
+	placeholderAmbientOcclusion = new Texture(logicalDevice, queue, commandPool, physicalDevice, "textures/placeholderAO.png", false);
+	placeholderAmbientOcclusion->AwaitGeneration();
+}
+
+void Texture::DestroyPlaceholderTextures()
+{
+	placeholderAlbedo->Destroy();
+	placeholderNormal->Destroy();
+	placeholderMetallic->Destroy();
+	placeholderRoughness->Destroy();
+	placeholderAmbientOcclusion->Destroy();
 }
 
 void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)

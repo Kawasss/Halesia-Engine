@@ -43,13 +43,13 @@ aiString GetTexturePath(aiMaterial* material, aiTextureType textureType)
 
 void Mesh::ProcessMaterial(aiMaterial* material, VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice)
 {
-	aiString albedoPath = GetTexturePath(material, aiTextureType_DIFFUSE);
-	Texture* albedo = new Texture(logicalDevice, queue, commandPool, physicalDevice, (std::string)albedoPath.C_Str(), true);
+	//aiString albedoPath = GetTexturePath(material, aiTextureType_DIFFUSE);
+	//Texture* albedo = new Texture(logicalDevice, queue, commandPool, physicalDevice, (std::string)albedoPath.C_Str(), true);
 
-	aiString normalPath = GetTexturePath(material, aiTextureType_NORMALS);
-	Texture* normal = new Texture(logicalDevice, queue, commandPool, physicalDevice, (std::string)normalPath.C_Str(), true);
+	//aiString normalPath = GetTexturePath(material, aiTextureType_NORMALS);
+	//Texture* normal = new Texture(logicalDevice, queue, commandPool, physicalDevice, (std::string)normalPath.C_Str(), true);
 
-	this->material = { albedo, normal };
+	//this->material = { albedo };
 }
 
 void Mesh::ProcessIndices(aiMesh* mesh)
@@ -111,7 +111,7 @@ void GenerateObject(Object* object, VkDevice logicalDevice, PhysicalDevice physi
 	std::string fileNameWithExtension = path.substr(path.find_last_of("/\\") + 1);
 	object->name = fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 
-	const aiScene* scene = aiImportFile(path.c_str(), aiProcess_FixInfacingNormals | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_RemoveComponent);
+	const aiScene* scene = aiImportFile(path.c_str(), aiProcess_FixInfacingNormals | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_RemoveComponent | aiProcess_GenSmoothNormals);
 
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + path);

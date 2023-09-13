@@ -112,9 +112,9 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface surface)
     //check for bindless support
     VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
     indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-    indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
+    //indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
     indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
-    indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+    //indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
     indexingFeatures.runtimeDescriptorArray = VK_TRUE;
     indexingFeatures.pNext = &imageFeatures;
 

@@ -21,11 +21,11 @@ enum ObjectState
 struct Material
 {
 	// dont know if dynamically allocated is necessary since the material will always be used for the lifetime of the mesh, the class is sort of big so not so sure if copying is cheap
-	Texture* albedo;
-	Texture* normal = nullptr;
-	Texture* metallic = nullptr; // nullptr indicates that they havent been implemented yet
-	Texture* roughness = nullptr;
-	Texture* ambientOcclusion = nullptr;
+	Texture* albedo = Texture::placeholderAlbedo;
+	Texture* normal = Texture::placeholderNormal;
+	Texture* metallic = Texture::placeholderMetallic;
+	Texture* roughness = Texture::placeholderRoughness;
+	Texture* ambientOcclusion = Texture::placeholderAmbientOcclusion;
 
 	Texture* At(int i)
 	{
@@ -46,11 +46,13 @@ struct Material
 		}
 	}
 
-	void Destroy()
+	void Destroy() // only delete the textures if they arent the placeholders
 	{
-		albedo->Destroy();
-		normal->Destroy();
-		// add deleting other textures here after theyve been implemented
+		if (albedo != Texture::placeholderAlbedo) albedo->Destroy();
+		if (normal != Texture::placeholderNormal) normal->Destroy();
+		if (metallic != Texture::placeholderMetallic) metallic->Destroy();
+		if (roughness != Texture::placeholderRoughness) roughness->Destroy();
+		if (ambientOcclusion != Texture::placeholderAmbientOcclusion) ambientOcclusion->Destroy();
 	}
 };
 

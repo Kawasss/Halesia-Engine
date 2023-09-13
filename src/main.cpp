@@ -49,9 +49,10 @@ class TestScene : public Scene
 {
 	void Start() override
 	{
-		AddCustomObject<TestObject>("blahaj.obj")->AwaitGeneration();
+		//AddCustomObject<TestObject>("blahaj.obj")->AwaitGeneration();
+		AddCustomObject<TestObject>("television.obj")->AwaitGeneration();
 		this->camera = new TestCamera();
-		camera->GetScript<TestCamera*>()->objectToView = FindObjectByName("blahaj");
+		//camera->GetScript<TestCamera*>()->objectToView = FindObjectByName("blahaj");
 		FindObjectByName("");
 		Console::WriteLine("warning", MESSAGE_SEVERITY_WARNING);
 	}

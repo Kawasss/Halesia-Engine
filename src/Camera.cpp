@@ -10,15 +10,15 @@ void Camera::Update(Win32Window* window, float delta)
 void Camera::DefaultUpdate(Win32Window* window, float delta)
 {
 	if (Input::IsKeyPressed(VirtualKey::W))
-		position += front * (cameraSpeed * delta * 0.1f);
+		position += front * (cameraSpeed * delta * 0.001f);
 	if (Input::IsKeyPressed(VirtualKey::S))
-		position -= front * (cameraSpeed * delta * 0.1f);
+		position -= front * (cameraSpeed * delta * 0.001f);
 	if (Input::IsKeyPressed(VirtualKey::A))
-		position -= right * (cameraSpeed * delta * 0.1f);
+		position -= right * (cameraSpeed * delta * 0.001f);
 	if (Input::IsKeyPressed(VirtualKey::D))
-		position += right * (cameraSpeed * delta * 0.1f);
+		position += right * (cameraSpeed * delta * 0.001f);
 	if (Input::IsKeyPressed(VirtualKey::Space))
-		position += up * (cameraSpeed * delta * 0.1f);
+		position += up * (cameraSpeed * delta * 0.001f);
 	//if (Input::IsKeyPressed(VirtualKey::LeftControl))
 	//	position -= up * (cameraSpeed * delta * 0.1f);
 

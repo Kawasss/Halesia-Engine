@@ -46,5 +46,13 @@ public:
 class Texture : public Image
 {
 public:
+	static Texture* placeholderAlbedo;
+	static Texture* placeholderNormal;
+	static Texture* placeholderMetallic;
+	static Texture* placeholderRoughness;
+	static Texture* placeholderAmbientOcclusion;
+	static void GeneratePlaceholderTextures(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice phyiscalDevice);
+	static void DestroyPlaceholderTextures();
+
 	Texture(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::string filePath, bool useMipMaps);
 };
