@@ -14,9 +14,18 @@
 
 enum ObjectState
 {
-	STATUS_VISIBLE,   // visible runs the script and renders the object
-	STATUS_INVISIBLE, // invisible runs the script, but doesn't render the object
-	STATUS_DISABLED   // disabled doesn't run the script and doesn't render the object
+	/// <summary>
+	/// The attached script is run and the object is rendered
+	/// </summary>
+	STATUS_VISIBLE,
+	/// <summary>
+	/// The attached script is run, but the object isn't rendered
+	/// </summary>
+	STATUS_INVISIBLE,
+	/// <summary>
+	/// The attached script isn't run and the object isn't rendered
+	/// </summary>
+	STATUS_DISABLED
 };
 
 struct Material
@@ -83,7 +92,6 @@ class Object
 {
 public:
 	Object() = default;
-	Object(std::string path, const MeshCreationObjects& creationObjects); // maybe seperate the MeshCreationObjects into a CreateMeshes function to allow the meshes to be loaded in later
 	Object(const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects);
 
 	virtual ~Object() {};
@@ -92,10 +100,21 @@ public:
 	virtual void Update(float delta) {};
 
 	bool HasFinishedLoading();
+
+	/// <summary>
+	/// Awaits the async generation process of the object and meshes
+	/// </summary>
 	void AwaitGeneration();
+
 	void RecreateMeshes(const MeshCreationObjects& creationObjects);
 
 	void* scriptClass = nullptr;
+
+	/// <summary>
+	/// Gets the script attached to the object, if no script is attached it will return an invalid pointer
+	/// </summary>
+	/// <typeparam name="T">: The name of the script's class</typeparam>
+	/// <returns>Pointer to the given class</returns>
 	template<typename T> T GetScript() { return static_cast<T>(scriptClass); };
 
 	Transform transform;

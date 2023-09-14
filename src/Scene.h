@@ -27,6 +27,13 @@ public:
 
 	Camera* camera = defaultCamera;
 
+	/// <summary>
+	/// Creates an object with a given class as attached script
+	/// </summary>
+	/// <typeparam name="T"></typeparam>
+	/// <param name="name">: The name of the object to find and create</param>
+	/// <param name="objectType">: The type of object: either from inside the scene file or an outside file</param>
+	/// <returns>A pointer to the base object of the custom object. A nullptr will be returned if an object matching the name can't be found</returns>
 	template<typename T> Object* AddCustomObject(std::string name, ObjectImportType objectType = OBJECT_IMPORT_INTERNAL)
 	{
 		for (auto i = objectCreationDatas.begin(); i != objectCreationDatas.end(); i++)
@@ -42,11 +49,7 @@ public:
 			}
 		}
 		Console::WriteLine("Failed to the creation data for the given name \"" + name + '"', MESSAGE_SEVERITY_ERROR);
-		/*
-		Object* objPtr = new T(path, GetMeshCreationObjects());
-		allObjects.push_back(objPtr);
-		objectsWithScripts.push_back(objPtr);
-		return objPtr;*/
+		return nullptr;
 	}
 	
 	bool HasFinishedLoading()
@@ -58,8 +61,19 @@ public:
 	std::vector<Object*> allObjects;
 	std::vector<ObjectCreationData> objectCreationDatas;
 
-	void SubmitStaticModel(const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects);
+	/// <summary>
+	/// Submit an object without a script
+	/// </summary>
+	/// <param name="creationData"></param>
+	/// <param name="creationObjects"></param>
+	void SubmitStaticObject(const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects);
+
+	/// <summary>
+	/// Loads a new scene from a given scene file async
+	/// </summary>
+	/// <param name="path"></param>
 	void LoadScene(std::string path);
+
 	void LoadUninitializedObjects();
 	virtual void Start();
 	virtual void Update(Win32Window* window, float delta);
@@ -74,6 +88,11 @@ private:
 	std::vector<Object*> staticObjects;
 
 protected:
+	/// <summary>
+	/// Finds an object by name and returns the pointer to it
+	/// </summary>
+	/// <param name="name"></param>
+	/// <returns>Will return a nullptr if the name doesn't match</returns>
 	Object* FindObjectByName(std::string name);
 	void Free(Object* object);
 };
