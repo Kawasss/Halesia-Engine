@@ -10,6 +10,7 @@
 #include "Transform.h"
 #include "renderer/Texture.h"
 #include "CreationObjects.h"
+#include "SceneLoader.h"
 
 enum ObjectState
 {
@@ -59,9 +60,10 @@ struct Material
 struct Mesh
 {
 	Mesh(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, aiMesh* mesh, aiMaterial* material);
+	Mesh(MeshCreationData creationData, VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue);
 	void Destroy();
 
-	Material material;
+	Material material{};
 	VertexBuffer vertexBuffer;
 	IndexBuffer indexBuffer;
 
@@ -81,7 +83,8 @@ class Object
 {
 public:
 	Object() = default;
-	Object(std::string path, const MeshCreationObjects& creationObjects);
+	Object(std::string path, const MeshCreationObjects& creationObjects); // maybe seperate the MeshCreationObjects into a CreateMeshes function to allow the meshes to be loaded in later
+	Object(const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects);
 
 	virtual ~Object() {};
 	virtual void Destroy();
@@ -114,7 +117,7 @@ protected:
 	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
 	/// <param name="path"></param>
 	/// <param name="creationObjects">: The objects needed to create the meshes</param>
-	void CreateObject(void* customClassInstancePointer, std::string path, const MeshCreationObjects& creationObjects);
+	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects);
 
 	/// <summary>
 	/// The async version of CreateObject. This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.
@@ -123,7 +126,7 @@ protected:
 	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
 	/// <param name="path"></param>
 	/// <param name="creationObjects">: The objects needed to create the meshes</param>
-	void CreateObjectAsync(void* customClassInstancePointer, std::string path, const MeshCreationObjects& creationObjects);
+	void CreateObjectAsync(void* customClassInstancePointer, const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects);
 
 	static void Free(Object* objPtr)
 	{

@@ -85,13 +85,13 @@ void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, Halesia
 
 		if (createInfo.startingScene == nullptr)
 		{
-			Console::WriteLine("!! The given HalesiaInstanceCreateInfo doesn't contain a valid starting scene");
+			Console::WriteLine("The given HalesiaInstanceCreateInfo doesn't contain a valid starting scene", MESSAGE_SEVERITY_ERROR);
 			instance.scene = new Scene();
 		}
 		else
 			instance.scene = createInfo.startingScene;
-		//instance.scene->SubmitStaticModel("./blahaj.obj", instance.renderer->GetMeshCreationObjects());
-		//instance.scene->AddCustomObject<Test>("./blahaj.obj", instance.renderer->GetMeshCreationObjects());
+		if (createInfo.sceneFile != "")
+			instance.scene->LoadScene(createInfo.sceneFile);
 	}
 	catch (const std::exception& e) //catch any normal exception and return
 	{
@@ -239,11 +239,14 @@ HalesiaExitCode HalesiaInstance::Run()
 		float asyncScriptsCompletionTime = 0;
 		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
-		scene->Start();
+		//scene->Start();
 		window->maximized = true;
 
 		while (!window->ShouldClose())
 		{
+			if (!scene->HasFinishedLoading())
+				continue; // quick patch to prevent read access violation
+
 			showFPS = !showFPS ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F1) : true;
 			pauseGame = !pauseGame ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F2) : true;
 			showRAM = !showRAM ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F3) : true;
@@ -257,8 +260,8 @@ HalesiaExitCode HalesiaInstance::Run()
 			UpdateRendererData rendererData{ renderer, scene->camera, scene->allObjects, frameDelta, &asyncRendererCompletionTime, pieChartValuesPtr, renderDevConsole, showFPS, showRAM, showCPU, showGPU, showAsyncTimes };
 			std::future<std::optional<std::string>> asyncRenderer = std::async(UpdateRenderer, &rendererData);
 
-			if (window->ContainsDroppedFile())
-				scene->SubmitStaticModel(window->GetDroppedFile(), renderer->GetMeshCreationObjects());
+			//if (window->ContainsDroppedFile())
+			//	scene->SubmitStaticModel(window->GetDroppedFile(), renderer->GetMeshCreationObjects());
 
 			if (!Input::IsKeyPressed(devConsoleKey) && devKeyIsPressedLastFrame)
 				renderDevConsole = !renderDevConsole;

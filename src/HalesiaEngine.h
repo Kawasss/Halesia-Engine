@@ -3,6 +3,7 @@
 #include "Physics.h"
 #include "system/Window.h"
 #include "Scene.h"
+#include "SceneLoader.h"
 #include "system/Input.h"
 
 enum HalesiaExitCode
@@ -15,6 +16,7 @@ enum HalesiaExitCode
 struct HalesiaInstanceCreateInfo
 {
 	Scene* startingScene = nullptr;
+	std::string sceneFile = "";
 	Win32WindowCreateInfo windowCreateInfo{};
 	VirtualKey devConsoleKey = VirtualKey::Tilde;
 	bool enableDevConsole = true;

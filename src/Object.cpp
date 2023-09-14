@@ -18,6 +18,13 @@ Mesh::Mesh(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool 
 	Recreate(logicalDevice, physicalDevice, commandPool, queue);
 }
 
+Mesh::Mesh(MeshCreationData creationData, VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue)
+{
+	vertices = creationData.vertices;
+	indices = creationData.indices;
+	Recreate(logicalDevice, physicalDevice, commandPool, queue);
+}
+
 void Mesh::Recreate(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue)
 {
 	vertexBuffer = VertexBuffer(logicalDevice, physicalDevice, commandPool, queue, vertices);
@@ -135,28 +142,46 @@ void GenerateObject(Object* object, VkDevice logicalDevice, PhysicalDevice physi
 	#endif
 }
 
+void GenerateObjectWithData(Object* object, VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, const ObjectCreationData& creationData)
+{
+	object->name = creationData.name;
+	for (MeshCreationData meshData : creationData.meshes)
+		object->meshes.push_back(Mesh{ meshData, logicalDevice, physicalDevice, commandPool, queue });
+	
+	object->transform = Transform(creationData.position, creationData.rotation, creationData.scale, object->meshes[0].extents, object->meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
+	GenerateUUID(&object->uuid);
+
+	object->finishedLoading = true; //maybe use mutex here or just find better solution
+
+#ifdef _DEBUG
+	char* str;
+	UuidToStringA(&object->uuid, (RPC_CSTR*)&str);
+	Console::WriteLine("Created new object \"" + object->name + "\" with unique id \"" + str + '\"', MESSAGE_SEVERITY_DEBUG);
+#endif
+}
+
 void Object::RecreateMeshes(const MeshCreationObjects& creationObjects)
 {
 	for (Mesh& mesh : meshes)
 		mesh.Recreate(creationObjects.logicalDevice, creationObjects.physicalDevice, creationObjects.commandPool, creationObjects.queue);
 }
 
-void Object::CreateObject(void* customClassPointer, std::string path, const MeshCreationObjects& creationObjects)
+void Object::CreateObject(void* customClassPointer, const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects)
 {
 	scriptClass = customClassPointer;
-	GenerateObject(this, creationObjects.logicalDevice, creationObjects.physicalDevice, creationObjects.commandPool, creationObjects.queue, path);
+	GenerateObjectWithData(this, creationObjects.logicalDevice, creationObjects.physicalDevice, creationObjects.commandPool, creationObjects.queue, creationData);
 	finishedLoading = true;
 }
 
-void Object::CreateObjectAsync(void* customClassPointer, std::string path, const MeshCreationObjects& creationObjects)
+void Object::CreateObjectAsync(void* customClassPointer, const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects)
 {
 	scriptClass = customClassPointer;
-	generationProcess = std::async(GenerateObject, this, creationObjects.logicalDevice, creationObjects.physicalDevice, creationObjects.commandPool, creationObjects.queue, path);
+	generationProcess = std::async(GenerateObjectWithData, this, creationObjects.logicalDevice, creationObjects.physicalDevice, creationObjects.commandPool, creationObjects.queue, creationData);
 }
 
-Object::Object(std::string path, const MeshCreationObjects& creationObjects)
+Object::Object(const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects)
 {
-	CreateObjectAsync(nullptr, path, creationObjects);
+	generationProcess = std::async(GenerateObjectWithData, this, creationObjects.logicalDevice, creationObjects.physicalDevice, creationObjects.commandPool, creationObjects.queue, creationData);
 }
 
 bool Object::HasFinishedLoading()

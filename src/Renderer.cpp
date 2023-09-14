@@ -904,13 +904,15 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 
 void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects)
 {
-	if (!Image::TexturesHaveChanged())
-		return;
+	//if (!Image::TexturesHaveChanged()) // disabled since there is a racing condition for the meshes. If the meshes are done loading after the textures, the textures get written off as being updated, whilst the meshes material isnt
+	//	return;
 		
 	// !! this for loop currently updates the textures for all descriptor sets at once which is not that good. itd be better to update the currently used descriptor set
 	std::vector<VkDescriptorImageInfo> imageInfos;
 
 	for (Object* object : objects) // its wasteful to update the textures of all the meshes if those arent changed, its wasting resources. its better to have a look up table or smth like that to look up if a material has already been updated, dstArrayElement also needs to be made dynamic for that
+	{
+		std::cout << std::to_string(object->meshes.size()) + object->name << std::endl;
 		for (Mesh mesh : object->meshes)
 			for (int i = 0; i < 5; i++) // 5 textures per material (using 2 now because the rest aren't implemented yet)
 			{
@@ -921,6 +923,9 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 
 				imageInfos.push_back(imageInfo);
 			}
+	}
+	if (imageInfos.size() == 0)
+		return;
 
 	// this for loop updates every descriptor set with the textures that are only really relevant for the current frame, this can be wasteful if there are textures that stop being used after this frame. this cant be changed easily because of Image::TexturesHaveChanged
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)

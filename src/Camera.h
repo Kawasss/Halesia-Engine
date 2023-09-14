@@ -6,7 +6,7 @@
 class Camera
 {
 public:
-	Camera(glm::vec3 position = glm::vec3(0), float aspectRatio = monitorWidth / monitorHeight);
+	Camera(glm::vec3 position = glm::vec3(0), float aspectRatio = monitorWidth / (float)monitorHeight);
 
 	float cameraSpeed = 5;
 	float pitch = 0, yaw = -(glm::pi<float>() / 2), fov = glm::pi<float>() / 2;

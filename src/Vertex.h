@@ -42,4 +42,9 @@ struct Vertex
 
 		return descriptions;
 	}
+
+	bool operator==(const Vertex& vert2)
+	{
+		return position == vert2.position && textureCoordinates == vert2.textureCoordinates && normal == vert2.normal;
+	}
 };

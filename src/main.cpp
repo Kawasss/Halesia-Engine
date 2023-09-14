@@ -24,14 +24,14 @@ class TestObject : public Object
 public:
 	int health = 10;
 
-	TestObject(std::string path, const MeshCreationObjects& creationObjects)
+	TestObject(const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects)
 	{
-		CreateObjectAsync(this, path, creationObjects);
+		CreateObjectAsync(this, creationData, creationObjects);
 	}
 
 	void Update(float delta) override
 	{
-		transform.scale = glm::vec3(0.1);
+		std::cout << meshes.size() << std::endl;
 		if (Input::IsKeyPressed(VirtualKey::R))
 			transform.rotation.y += delta * 0.1f;
 		if (Input::IsKeyPressed(VirtualKey::T))
@@ -50,12 +50,9 @@ class TestScene : public Scene
 {
 	void Start() override
 	{
-		//AddCustomObject<TestObject>("blahaj.obj")->AwaitGeneration();
-		AddCustomObject<TestObject>("television.obj")->AwaitGeneration();
+		std::cout << objectCreationDatas[0].name << std::endl;
+		AddCustomObject<TestObject>("table");
 		this->camera = new TestCamera();
-		//camera->GetScript<TestCamera*>()->objectToView = FindObjectByName("blahaj");
-		FindObjectByName("");
-		Console::WriteLine("warning", MESSAGE_SEVERITY_WARNING);
 	}
 };
 
@@ -66,6 +63,7 @@ int main(int argsCount, char** args)
 	createInfo.argsCount = argsCount;
 	createInfo.args = args;
 	createInfo.startingScene = new TestScene();
+	createInfo.sceneFile = "C:\\Users\\wveen\\source\\repos\\CORERenderer\\halesia.crs";
 	createInfo.windowCreateInfo.windowName = L"Halesia Engine";
 	createInfo.windowCreateInfo.windowMode = WINDOW_MODE_BORDERLESS_WINDOWED;
 	createInfo.windowCreateInfo.height = 600;
@@ -76,10 +74,6 @@ int main(int argsCount, char** args)
 	createInfo.windowCreateInfo.startMaximized = false;
 
 	HalesiaInstance::GenerateHalesiaInstance(instance, createInfo);
-
-	SceneLoader loader("C:\\Users\\wveen\\source\\repos\\CORERenderer\\test.crs");
-	loader.LoadScene();
-	std::cout << loader.objects[0].meshes[0].amountOfVertices << std::endl;
 
 	instance.Run();
 

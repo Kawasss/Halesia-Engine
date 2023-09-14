@@ -73,7 +73,7 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 
 void main() {
     int baseIndex = TEXTURES_PER_MATERIAL * drawID;
-    vec3 albedo = pow(texture(texSampler[baseIndex + 2], fragTexCoord).rgb, vec3(2.2));
+    vec3 albedo = pow(texture(texSampler[baseIndex], fragTexCoord).rgb, vec3(2.2));
     float metallic = texture(texSampler[baseIndex + 2], fragTexCoord).r;
     float roughness = texture(texSampler[baseIndex + 3], fragTexCoord).g;
     float ao = texture(texSampler[baseIndex + 4], fragTexCoord).b;

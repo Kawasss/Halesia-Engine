@@ -1,8 +1,40 @@
 #include <algorithm>
+#include <execution>
 #include "Scene.h"
 #include "Console.h"
+#include "SceneLoader.h"
 
 MeshCreationObjects (*Scene::GetMeshCreationObjects)() = nullptr;
+Camera* Scene::defaultCamera = new Camera();
+
+SceneLoader loader("");
+void Scene::LoadScene(std::string path)
+{
+	loadingProcess = std::async(&Scene::LoadFileIntoScene, this, path);
+}
+
+void Scene::LoadFileIntoScene(std::string path)
+{
+	loader = SceneLoader(path);
+	loader.LoadScene();
+	
+	objectCreationDatas = loader.objects;
+	Start();
+	LoadUninitializedObjects();
+}
+
+void Scene::LoadUninitializedObjects()
+{
+	camera->position = loader.cameraPos;
+	camera->yaw = loader.cameraYaw;
+	camera->pitch = loader.cameraPitch;
+	for (const ObjectCreationData& creationData : objectCreationDatas)
+	{
+		Object* objPtr = new Object(creationData, GetMeshCreationObjects());
+		allObjects.push_back(objPtr);
+		staticObjects.push_back(objPtr);
+	}
+}
 
 Object* Scene::FindObjectByName(std::string name)
 {
@@ -19,9 +51,9 @@ std::string GetNameFromPath(std::string path)
 	return fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 }
 
-void Scene::SubmitStaticModel(std::string path, const MeshCreationObjects& creationObjects)
+void Scene::SubmitStaticModel(const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects)
 {
-	Object* objPtr = new Object(path, creationObjects);
+	Object* objPtr = new Object(creationData, creationObjects);
 
 	allObjects.push_back(objPtr);
 	staticObjects.push_back(objPtr);
@@ -65,15 +97,17 @@ void Scene::Start()
 
 void Scene::Update(Win32Window* window, float delta)
 {
+	if (!HasFinishedLoading())
+		return;
+
 	camera->Update(window, delta);
-	for (Object* object : objectsWithScripts)
-	{
-		if (object->shouldBeDestroyed)
-			Free(object);
-		else
-			object->Update(delta);
-	}
-		
+	std::for_each(std::execution::par, objectsWithScripts.begin(), objectsWithScripts.end(), [&](Object* object) // update all of the scripts in parallel
+		{
+			if (object->shouldBeDestroyed)
+				Free(object);
+			else
+				object->Update(delta);
+		});
 }
 
 void Scene::Destroy()

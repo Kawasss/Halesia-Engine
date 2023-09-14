@@ -21,7 +21,7 @@ class VertexBuffer : public VulkanBuffer
 {
 public:
 	VertexBuffer() = default;
-	VertexBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, const std::vector<Vertex> vertices);
+	VertexBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, const std::vector<Vertex> vertices); // maybe its better to get the vertices / indices via reference, since they can contain a lot of data and it all needs to be copied
 };
 
 class IndexBuffer : public VulkanBuffer

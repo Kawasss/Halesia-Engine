@@ -250,9 +250,9 @@ VkInstance Vulkan::GenerateInstance()
 
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "CIE";
+    appInfo.pApplicationName = "Halesia";
     appInfo.applicationVersion = VK_VERSION_1_3;
-    appInfo.pEngineName = "CIE";
+    appInfo.pEngineName = "Halesia";
     appInfo.engineVersion = VK_VERSION_1_3;
     appInfo.apiVersion = VK_API_VERSION_1_3;
 
