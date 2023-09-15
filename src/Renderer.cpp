@@ -102,7 +102,7 @@ void Renderer::Destroy()
 	delete this;
 }
 
-MeshCreationObjects Renderer::GetMeshCreationObjects()
+MeshCreationObjects Renderer::GetVulkanCreationObjects()
 {
 	return MeshCreationObjects{ logicalDevice, physicalDevice, commandPool, graphicsQueue };
 }
@@ -171,7 +171,7 @@ void Renderer::InitVulkan()
 	CreateCommandPool();
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(renderPass);
-	Texture::GeneratePlaceholderTextures(logicalDevice, graphicsQueue, commandPool, physicalDevice);
+	Texture::GeneratePlaceholderTextures(GetVulkanCreationObjects());
 	CreateTextureSampler();
 	CreateUniformBuffers();
 	CreateModelBuffers();
@@ -911,8 +911,6 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 	std::vector<VkDescriptorImageInfo> imageInfos;
 
 	for (Object* object : objects) // its wasteful to update the textures of all the meshes if those arent changed, its wasting resources. its better to have a look up table or smth like that to look up if a material has already been updated, dstArrayElement also needs to be made dynamic for that
-	{
-		std::cout << std::to_string(object->meshes.size()) + object->name << std::endl;
 		for (Mesh mesh : object->meshes)
 			for (int i = 0; i < 5; i++) // 5 textures per material (using 2 now because the rest aren't implemented yet)
 			{
@@ -923,7 +921,6 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 
 				imageInfos.push_back(imageInfo);
 			}
-	}
 	if (imageInfos.size() == 0)
 		return;
 
@@ -938,7 +935,7 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 		writeSet.dstSet = descriptorSets[i];
 		writeSet.pImageInfo = imageInfos.data();
 		writeSet.dstArrayElement = 0; // should be made dynamic if this function no longer updates from the beginning of the array
-		std::cout << "a" << std::endl;
+		
 		vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
 	}
 }

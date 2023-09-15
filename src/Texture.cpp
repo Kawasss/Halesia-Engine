@@ -1,4 +1,5 @@
 #define NOMINMAX
+#include <fstream>
 #include "renderer/Vulkan.h"
 #include "renderer/physicalDevice.h"
 #include "renderer/Texture.h"
@@ -20,23 +21,23 @@ bool Image::TexturesHaveChanged()
 	return ret;
 }
 
-void Image::GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string> filePath, bool useMipMaps)
+void Image::GenerateImages(const TextureCreationObjects& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps)
 {
-	this->logicalDevice = logicalDevice;
-	this->commandPool = commandPool;
-	this->queue = queue;
-	this->phyiscalDevice = physicalDevice;
+	this->logicalDevice = creationObjects.logicalDevice;
+	this->commandPool = creationObjects.commandPool;
+	this->queue = creationObjects.queue;
+	this->physicalDevice = creationObjects.physicalDevice;
 
-	layerCount = filePath.size();
+	layerCount = textureData.size();
 	int textureChannels = 0;
 
 	if (useMipMaps)
 		mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 
 	// read every side of the cubemap
-	std::vector<stbi_uc*> pixels(filePath.size());
+	std::vector<stbi_uc*> pixels(layerCount);
 	for (int i = 0; i < layerCount; i++)
-		pixels[i] = stbi_load(filePath[i].c_str(), &width, &height, &textureChannels, STBI_rgb_alpha);
+		pixels[i] = stbi_load_from_memory((unsigned char*)textureData[i].data(), textureData[i].size(), &width, &height, &textureChannels, STBI_rgb_alpha);
 
 	VkDeviceSize layerSize = width * height * 4;
 	VkDeviceSize imageSize = layerSize * layerCount;
@@ -86,31 +87,73 @@ bool Image::HasFinishedLoading()
 	return generation._Is_ready();
 }
 
-Cubemap::Cubemap(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string> filePath, bool useMipMaps)
+std::vector<char> ReadFile(const std::string& filePath)
+{
+	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
+	if (!file.is_open())
+		throw std::runtime_error("Failed to open the file at " + filePath);
+
+	size_t fileSize = (size_t)file.tellg();
+	std::vector<char> buffer(fileSize);
+
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+
+	file.close();
+	return buffer;
+}
+
+std::vector<std::vector<char>> GetAllImageData(std::vector<std::string> filePaths) // dont know if the copy speed is a concern
+{
+	std::vector<std::vector<char>> fileDatas;
+	for (int i = 0; i < filePaths.size(); i++)
+		fileDatas.push_back(ReadFile(filePaths[i]));
+	return fileDatas;
+}
+
+Cubemap::Cubemap(const TextureCreationObjects& creationObjects, std::vector<std::string> filePath, bool useMipMaps)
 {
 	if (filePath.size() != 6) 
 		throw new std::runtime_error("Invalid amount of images given for a cubemap: expected 6, but got " + std::to_string(filePath.size()));
-	generation = std::async(&Image::GenerateImages, this, logicalDevice, queue, commandPool, physicalDevice, filePath, useMipMaps);
+
+	// this async can't use the capture list ( [&] ), because then filePath gets wiped clean (??)
+	generation = std::async([](Cubemap* cubemap, const TextureCreationObjects& creationObjects, std::vector<std::string> filePath, bool useMipMaps)
+		{
+			std::vector<std::vector<char>> data = GetAllImageData(filePath);
+			cubemap->GenerateImages(creationObjects, data, useMipMaps);
+		}, this, creationObjects, filePath, useMipMaps);
 }
 
-Texture::Texture(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::string filePath, bool useMipMaps)
+Texture::Texture(const TextureCreationObjects& creationObjects, std::string filePath, bool useMipMaps)
 {
-	std::vector<std::string> paths = { filePath };
-	generation = std::async(&Image::GenerateImages, this, logicalDevice, queue, commandPool, physicalDevice, paths, useMipMaps);
-	
+	// this async can't use the capture list ( [&] ), because then filePath gets wiped clean (??)
+	generation = std::async([](Texture* texture, const TextureCreationObjects& creationObjects, std::string filePath, bool useMipMaps)
+		{
+			std::vector<std::vector<char>> data = GetAllImageData({ filePath });
+			texture->GenerateImages(creationObjects, data, useMipMaps);
+		}, this, creationObjects, filePath, useMipMaps);
 }
 
-void Texture::GeneratePlaceholderTextures(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice)
+Texture::Texture(const TextureCreationObjects& creationObjects, std::vector<char> imageData, bool useMipMaps)
 {
-	placeholderAlbedo = new Texture(logicalDevice, queue, commandPool, physicalDevice, "textures/placeholderAlbedo.png", false);
+	generation = std::async([](Texture* texture, const TextureCreationObjects& creationObjects, std::vector<char> imageData, bool useMipMaps) 
+		{
+			std::vector<std::vector<char>> data{ imageData };
+			texture->GenerateImages(creationObjects, data, useMipMaps);
+		}, this, creationObjects, imageData, useMipMaps);
+}
+
+void Texture::GeneratePlaceholderTextures(const TextureCreationObjects& creationObjects)
+{
+	placeholderAlbedo = new Texture(creationObjects, "textures/placeholderAlbedo.png", false);
 	placeholderAlbedo->AwaitGeneration();
-	placeholderNormal = new Texture(logicalDevice, queue, commandPool, physicalDevice, "textures/placeholderNormal.png", false);
+	placeholderNormal = new Texture(creationObjects, "textures/placeholderNormal.png", false);
 	placeholderNormal->AwaitGeneration();
-	placeholderMetallic = new Texture(logicalDevice, queue, commandPool, physicalDevice, "textures/placeholderMetallic.png", false);
+	placeholderMetallic = new Texture(creationObjects, "textures/placeholderMetallic.png", false);
 	placeholderMetallic->AwaitGeneration();
-	placeholderRoughness = new Texture(logicalDevice, queue, commandPool, physicalDevice, "textures/placeholderRoughness.png", false);
+	placeholderRoughness = new Texture(creationObjects, "textures/placeholderRoughness.png", false);
 	placeholderRoughness->AwaitGeneration();
-	placeholderAmbientOcclusion = new Texture(logicalDevice, queue, commandPool, physicalDevice, "textures/placeholderAO.png", false);
+	placeholderAmbientOcclusion = new Texture(creationObjects, "textures/placeholderAO.png", false);
 	placeholderAmbientOcclusion->AwaitGeneration();
 }
 
@@ -190,7 +233,7 @@ void Image::CopyBufferToImage(VkBuffer buffer)
 void Image::GenerateMipMaps(VkFormat imageFormat)
 {
 	VkFormatProperties formatProperties;
-	vkGetPhysicalDeviceFormatProperties(phyiscalDevice.Device(), imageFormat, &formatProperties);
+	vkGetPhysicalDeviceFormatProperties(physicalDevice.Device(), imageFormat, &formatProperties);
 	if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
 		throw std::runtime_error("Failed to find support for optimal tiling with the given format");
 

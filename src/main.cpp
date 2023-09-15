@@ -31,7 +31,6 @@ public:
 
 	void Update(float delta) override
 	{
-		std::cout << meshes.size() << std::endl;
 		if (Input::IsKeyPressed(VirtualKey::R))
 			transform.rotation.y += delta * 0.1f;
 		if (Input::IsKeyPressed(VirtualKey::T))
@@ -50,7 +49,6 @@ class TestScene : public Scene
 {
 	void Start() override
 	{
-		std::cout << objectCreationDatas[0].name << std::endl;
 		AddCustomObject<TestObject>("table");
 		this->camera = new TestCamera();
 	}
@@ -63,7 +61,7 @@ int main(int argsCount, char** args)
 	createInfo.argsCount = argsCount;
 	createInfo.args = args;
 	createInfo.startingScene = new TestScene();
-	createInfo.sceneFile = "C:\\Users\\wveen\\source\\repos\\CORERenderer\\halesia.crs";
+	createInfo.sceneFile = "../CORERenderer/halesia.crs";
 	createInfo.windowCreateInfo.windowName = L"Halesia Engine";
 	createInfo.windowCreateInfo.windowMode = WINDOW_MODE_BORDERLESS_WINDOWED;
 	createInfo.windowCreateInfo.height = 600;

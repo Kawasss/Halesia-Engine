@@ -64,7 +64,7 @@ void DetermineArgs(int argsCount, char** args, Win32WindowCreateInfo& createInfo
 Renderer* localRenderer; // really bad behavior
 MeshCreationObjects GetMeshCreationObjects()
 {
-	return localRenderer->GetMeshCreationObjects();
+	return localRenderer->GetVulkanCreationObjects();
 }
 
 void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, HalesiaInstanceCreateInfo& createInfo)
@@ -244,8 +244,8 @@ HalesiaExitCode HalesiaInstance::Run()
 
 		while (!window->ShouldClose())
 		{
-			if (!scene->HasFinishedLoading())
-				continue; // quick patch to prevent read access violation
+			//if (!scene->HasFinishedLoading())
+			//	continue; // quick patch to prevent read access violation
 
 			showFPS = !showFPS ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F1) : true;
 			pauseGame = !pauseGame ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F2) : true;

@@ -2,11 +2,12 @@
 #include <string>
 #include <vulkan/vulkan.h>
 #include <future>
+#include "../CreationObjects.h"
 
 class Image
 {
 public:
-	void GenerateImages(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string> filePath, bool useMipMaps);
+	void GenerateImages(const TextureCreationObjects& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps);
 	void AwaitGeneration();
 	bool HasFinishedLoading();
 	void Destroy();
@@ -28,7 +29,7 @@ protected:
 	VkDevice logicalDevice;
 	VkCommandPool commandPool;
 	VkQueue queue;
-	PhysicalDevice phyiscalDevice;
+	PhysicalDevice physicalDevice;
 
 	void TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void CopyBufferToImage(VkBuffer buffer);
@@ -40,7 +41,8 @@ protected:
 class Cubemap : public Image
 {
 public:
-	Cubemap(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::vector<std::string> filePath, bool useMipMaps);
+	Cubemap(const TextureCreationObjects& creationObjects, std::vector<std::string> filePath, bool useMipMaps);
+	Cubemap(const TextureCreationObjects& creationObjects, std::vector<std::vector<char>> filePath, bool useMipMaps);
 };
 
 class Texture : public Image
@@ -51,8 +53,9 @@ public:
 	static Texture* placeholderMetallic;
 	static Texture* placeholderRoughness;
 	static Texture* placeholderAmbientOcclusion;
-	static void GeneratePlaceholderTextures(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice phyiscalDevice);
+	static void GeneratePlaceholderTextures(const TextureCreationObjects& creationObjects);
 	static void DestroyPlaceholderTextures();
 
-	Texture(VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice, std::string filePath, bool useMipMaps);
+	Texture(const TextureCreationObjects& creationObjects, std::string filePath, bool useMipMaps);
+	Texture(const TextureCreationObjects& creationObjects, std::vector<char> imageData, bool useMipMaps);
 };
