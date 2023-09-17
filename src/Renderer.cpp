@@ -102,9 +102,9 @@ void Renderer::Destroy()
 	delete this;
 }
 
-MeshCreationObjects Renderer::GetVulkanCreationObjects()
+MeshCreationObject Renderer::GetVulkanCreationObjects()
 {
-	return MeshCreationObjects{ logicalDevice, physicalDevice, commandPool, graphicsQueue };
+	return MeshCreationObject{ logicalDevice, physicalDevice, commandPool, graphicsQueue };
 }
 
 void Renderer::CreateImGUI()

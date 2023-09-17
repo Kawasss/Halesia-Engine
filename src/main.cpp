@@ -24,9 +24,9 @@ class TestObject : public Object
 public:
 	int health = 10;
 
-	TestObject(const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects)
+	TestObject(const ObjectCreationData& creationData, const MeshCreationObject& creationObjects)
 	{
-		CreateObjectAsync(this, creationData, creationObjects);
+		CreateObject(this, creationData, creationObjects);
 	}
 
 	void Update(float delta) override
@@ -49,6 +49,7 @@ class TestScene : public Scene
 {
 	void Start() override
 	{
+		//AddCustomObject<TestObject>("blahaj.obj", OBJECT_IMPORT_EXTERNAL);
 		AddCustomObject<TestObject>("table");
 		this->camera = new TestCamera();
 	}

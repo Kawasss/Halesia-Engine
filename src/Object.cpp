@@ -10,36 +10,15 @@
 #include <future>
 #include "Console.h"
 
-Mesh::Mesh(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, aiMesh* mesh, aiMaterial* material)
+/*Mesh::Mesh(const MeshCreationObject& creationObject, aiMesh* mesh, aiMaterial* material)
 {
-	ProcessMaterial(material, logicalDevice, queue, commandPool, physicalDevice);
+	//ProcessMaterial(creationObject, material);
 	ProcessIndices(mesh);
-	ProcessVertices(mesh);
-	Recreate(logicalDevice, physicalDevice, commandPool, queue);
-}
+	//ProcessVertices(mesh);
+	Recreate(creationObject);
+}*/
 
-Mesh::Mesh(MeshCreationData creationData, VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue)
-{
-	vertices = creationData.vertices;
-	indices = creationData.indices;
-	Recreate(logicalDevice, physicalDevice, commandPool, queue);
-}
-
-void Mesh::Recreate(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue)
-{
-	vertexBuffer = VertexBuffer(logicalDevice, physicalDevice, commandPool, queue, vertices);
-	indexBuffer = IndexBuffer(logicalDevice, physicalDevice, commandPool, queue, indices);
-}
-
-void Mesh::Destroy()
-{
-	material.Destroy();
-	vertexBuffer.Destroy();
-	indexBuffer.Destroy();
-	delete this;
-}
-
-aiString GetTexturePath(aiMaterial* material, aiTextureType textureType)
+/*aiString GetTexturePath(aiMaterial* material, aiTextureType textureType)
 {
 	aiString path;
 	aiReturn ret = material->GetTexture(textureType, 0, &path);
@@ -48,22 +27,28 @@ aiString GetTexturePath(aiMaterial* material, aiTextureType textureType)
 	return path;
 }
 
-void Mesh::ProcessMaterial(aiMaterial* material, VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice)
-{
-	//aiString albedoPath = GetTexturePath(material, aiTextureType_DIFFUSE);
-	//Texture* albedo = new Texture(logicalDevice, queue, commandPool, physicalDevice, (std::string)albedoPath.C_Str(), true);
-
-	//aiString normalPath = GetTexturePath(material, aiTextureType_NORMALS);
-	//Texture* normal = new Texture(logicalDevice, queue, commandPool, physicalDevice, (std::string)normalPath.C_Str(), true);
-
-	//this->material = { albedo };
-}
-
 void Mesh::ProcessIndices(aiMesh* mesh)
 {
 	for (int i = 0; i < mesh->mNumFaces; i++)
 		for (int j = 0; j < mesh->mFaces[i].mNumIndices; j++)
 			indices.push_back(mesh->mFaces[i].mIndices[j]);
+}*/
+
+/*glm::vec3 ConvertToGlm(aiVector3D vector)
+{
+	glm::vec3 ret;
+	ret.x = vector.x;
+	ret.y = vector.y;
+	ret.z = vector.z;
+	return ret;
+}
+
+glm::vec2 ConverToGlm(aiVector3D vector)
+{
+	glm::vec2 ret;
+	ret.x = vector.x;
+	ret.y = vector.y;
+	return ret;
 }
 
 void Mesh::ProcessVertices(aiMesh* mesh)
@@ -72,9 +57,7 @@ void Mesh::ProcessVertices(aiMesh* mesh)
 	{
 		Vertex vertex{};
 
-		vertex.position.x = mesh->mVertices[i].x;
-		vertex.position.y = mesh->mVertices[i].y;
-		vertex.position.z = mesh->mVertices[i].z;
+		vertex.position = ConvertToGlm(mesh->mVertices[i]);
 
 		max.x = vertex.position.x > max.x ? vertex.position.x : max.x;
 		max.y = vertex.position.y > max.y ? vertex.position.y : max.y;
@@ -85,21 +68,48 @@ void Mesh::ProcessVertices(aiMesh* mesh)
 		min.z = vertex.position.z < min.z ? vertex.position.z : min.z;
 
 		if (mesh->HasNormals())
-		{
-			vertex.normal.x = mesh->mNormals[i].x;
-			vertex.normal.y = mesh->mNormals[i].y;
-			vertex.normal.z = mesh->mNormals[i].z;
-		}
+			vertex.normal = ConvertToGlm(mesh->mNormals[i]);
 		if (mesh->mTextureCoords[0])
-		{
-			vertex.textureCoordinates.x = mesh->mTextureCoords[0][i].x;
-			vertex.textureCoordinates.y = mesh->mTextureCoords[0][i].y;
-		}
+			vertex.textureCoordinates = ConverToGlm(mesh->mTextureCoords[0][i]);
+
 		vertices.push_back(vertex);
 	}
 	center = (min + max) * 0.5f;
 	extents = max - center;
+}*/
+
+void Mesh::ProcessMaterial(const TextureCreationObject& creationObjects, const MaterialCreationData& creationData)
+{
+	Texture* albedo = !creationData.albedoIsDefault ? new Texture(creationObjects, creationData.albedoData) : Texture::placeholderAlbedo;
+	Texture* normal = !creationData.normalIsDefault ? new Texture(creationObjects, creationData.normalData) : Texture::placeholderNormal;
+	Texture* metallic = !creationData.metallicIsDefault ? new Texture(creationObjects, creationData.metallicData) : Texture::placeholderMetallic;
+	Texture* roughness = !creationData.roughnessIsDefault ? new Texture(creationObjects, creationData.roughnessData) : Texture::placeholderRoughness;
+	Texture* ambientOcclusion = !creationData.ambientOcclusionIsDefault ? new Texture(creationObjects, creationData.ambientOcclusionData) : Texture::placeholderAmbientOcclusion;
+	this->material = { albedo, normal, metallic, roughness, ambientOcclusion };
 }
+
+Mesh::Mesh(const MeshCreationObject& creationObject, const MeshCreationData& creationData)
+{
+	vertices = creationData.vertices;
+	indices = creationData.indices;
+	ProcessMaterial(creationObject, creationData.material);
+	Recreate(creationObject);
+}
+
+void Mesh::Recreate(const MeshCreationObject& creationObject)
+{
+	vertexBuffer = VertexBuffer(creationObject, vertices);
+	indexBuffer = IndexBuffer(creationObject, indices);
+}
+
+void Mesh::Destroy()
+{
+	material.Destroy();
+	vertexBuffer.Destroy();
+	indexBuffer.Destroy();
+	delete this;
+}
+
 
 void GenerateUUID(UUID* uuid)
 {
@@ -112,42 +122,17 @@ void Object::AwaitGeneration()
 	generationProcess.get();
 }
 
-void GenerateObject(Object* object, VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, std::string path)
-{
-	// this takes the filename out of the full path by indexing the \'s and the file extension
-	std::string fileNameWithExtension = path.substr(path.find_last_of("/\\") + 1);
-	object->name = fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
-
-	const aiScene* scene = aiImportFile(path.c_str(), aiProcess_FixInfacingNormals | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_RemoveComponent | aiProcess_GenSmoothNormals);
-
-	if (scene == nullptr) // check if the file could be read
-		throw std::runtime_error("Failed to find or read file at " + path);
-
-	for (int i = 0; i < scene->mNumMeshes; i++) // convert the assimp resources into the engines resources
-	{
-		aiMesh* pMesh = scene->mMeshes[i];
-		aiMaterial* material = scene->mMaterials[pMesh->mMaterialIndex];
-		object->meshes.push_back(Mesh{ logicalDevice, physicalDevice, commandPool, queue, pMesh, material });
-	}
-	object->transform = Transform(glm::vec3(0), glm::vec3(0), glm::vec3(1), object->meshes[0].extents, object->meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
-
-	GenerateUUID(&object->uuid);
-
-	object->finishedLoading = true; //maybe use mutex here or just find better solution
-
-	#ifdef _DEBUG
-		char* str;
-		UuidToStringA(&object->uuid, (RPC_CSTR*)&str);
-		Console::WriteLine("Created new object \"" + object->name + "\" with unique id \"" + str + '\"', MESSAGE_SEVERITY_DEBUG);
-	#endif
-}
-
-void GenerateObjectWithData(Object* object, VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, const ObjectCreationData& creationData)
+void GenerateObjectWithData(Object* object, ObjectCreationObject creationObject, ObjectCreationData creationData)
 {
 	object->name = creationData.name;
+
+#ifdef _DEBUG
+	Console::WriteLine("Attempting to create new model \"" + object->name + '\"', MESSAGE_SEVERITY_DEBUG);
+#endif
+
 	for (MeshCreationData meshData : creationData.meshes)
-		object->meshes.push_back(Mesh{ meshData, logicalDevice, physicalDevice, commandPool, queue });
-	
+		object->meshes.push_back(Mesh{ creationObject, meshData });
+
 	object->transform = Transform(creationData.position, creationData.rotation, creationData.scale, object->meshes[0].extents, object->meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
 	GenerateUUID(&object->uuid);
 
@@ -160,28 +145,72 @@ void GenerateObjectWithData(Object* object, VkDevice logicalDevice, PhysicalDevi
 #endif
 }
 
-void Object::RecreateMeshes(const MeshCreationObjects& creationObjects)
+void GenerateObject(Object* object, const ObjectCreationObject& creationObject, std::string path)
+{
+	ObjectCreationData creationData = GenericLoader::LoadObjectFile(path);
+	GenerateObjectWithData(object, creationObject, creationData);
+
+	/*// this takes the filename out of the full path by indexing the \'s and the file extension
+	std::string fileNameWithExtension = path.substr(path.find_last_of("/\\") + 1);
+	object->name = fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
+
+	const aiScene* scene = aiImportFile(path.c_str(), aiProcess_FixInfacingNormals | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_RemoveComponent | aiProcess_GenSmoothNormals);
+
+	if (scene == nullptr) // check if the file could be read
+		throw std::runtime_error("Failed to find or read file at " + path);
+
+	for (int i = 0; i < scene->mNumMeshes; i++) // convert the assimp resources into the engines resources
+	{
+		aiMesh* pMesh = scene->mMeshes[i];
+		aiMaterial* material = scene->mMaterials[pMesh->mMaterialIndex];
+		object->meshes.push_back(Mesh{ creationObject, pMesh, material });
+	}
+	object->transform = Transform(glm::vec3(0), glm::vec3(0), glm::vec3(1), object->meshes[0].extents, object->meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
+
+	GenerateUUID(&object->uuid);
+
+	object->finishedLoading = true; //maybe use mutex here or just find better solution
+
+	#ifdef _DEBUG
+		char* str;
+		UuidToStringA(&object->uuid, (RPC_CSTR*)&str);
+		Console::WriteLine("Created new object \"" + object->name + "\" with unique id \"" + str + '\"', MESSAGE_SEVERITY_DEBUG);
+	#endif*/
+}
+
+void Object::RecreateMeshes(const MeshCreationObject& creationObject)
 {
 	for (Mesh& mesh : meshes)
-		mesh.Recreate(creationObjects.logicalDevice, creationObjects.physicalDevice, creationObjects.commandPool, creationObjects.queue);
+		mesh.Recreate(creationObject);
 }
-
-void Object::CreateObject(void* customClassPointer, const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects)
+/*
+void Object::CreateObject(void* customClassPointer, const ObjectCreationData& creationData, const MeshCreationObject& creationObject)
 {
 	scriptClass = customClassPointer;
-	GenerateObjectWithData(this, creationObjects.logicalDevice, creationObjects.physicalDevice, creationObjects.commandPool, creationObjects.queue, creationData);
+	GenerateObjectWithData(this, creationObject, creationData);
 	finishedLoading = true;
 }
-
-void Object::CreateObjectAsync(void* customClassPointer, const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects)
+*/
+void Object::CreateObject/*Async*/(void* customClassPointer, const ObjectCreationData& creationData, const MeshCreationObject& creationObject)
 {
 	scriptClass = customClassPointer;
-	generationProcess = std::async(GenerateObjectWithData, this, creationObjects.logicalDevice, creationObjects.physicalDevice, creationObjects.commandPool, creationObjects.queue, creationData);
+	GenerateObjectWithData(this, creationObject, creationData);//generationProcess = std::async(GenerateObjectWithData, this, creationObject, creationData);
 }
 
-Object::Object(const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects)
+void Object::CreateObject(void* customClassPointer, std::string path, const MeshCreationObject& creationObject)
 {
-	generationProcess = std::async(GenerateObjectWithData, this, creationObjects.logicalDevice, creationObjects.physicalDevice, creationObjects.commandPool, creationObjects.queue, creationData);
+	scriptClass = customClassPointer;
+	generationProcess = std::async(GenerateObject, this, creationObject, path);
+}
+
+Object::Object(const ObjectCreationData& creationData, const ObjectCreationObject& creationObject)
+{
+	generationProcess = std::async(GenerateObjectWithData, this, creationObject, creationData);
+}
+
+Object::Object(std::string path, const ObjectCreationObject& creationObject)
+{
+	generationProcess = std::async(GenerateObject, this, creationObject, path);
 }
 
 bool Object::HasFinishedLoading()

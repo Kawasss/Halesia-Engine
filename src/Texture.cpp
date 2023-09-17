@@ -21,7 +21,7 @@ bool Image::TexturesHaveChanged()
 	return ret;
 }
 
-void Image::GenerateImages(const TextureCreationObjects& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps)
+void Image::GenerateImages(const TextureCreationObject& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps)
 {
 	this->logicalDevice = creationObjects.logicalDevice;
 	this->commandPool = creationObjects.commandPool;
@@ -41,7 +41,10 @@ void Image::GenerateImages(const TextureCreationObjects& creationObjects, std::v
 
 	VkDeviceSize layerSize = width * height * 4;
 	VkDeviceSize imageSize = layerSize * layerCount;
-	
+
+	if (layerSize == 0)
+		throw std::runtime_error("Invalid image found: layer size is 0");
+
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 
@@ -111,39 +114,42 @@ std::vector<std::vector<char>> GetAllImageData(std::vector<std::string> filePath
 	return fileDatas;
 }
 
-Cubemap::Cubemap(const TextureCreationObjects& creationObjects, std::vector<std::string> filePath, bool useMipMaps)
+Cubemap::Cubemap(const TextureCreationObject& creationObjects, std::vector<std::string> filePath, bool useMipMaps)
 {
 	if (filePath.size() != 6) 
 		throw new std::runtime_error("Invalid amount of images given for a cubemap: expected 6, but got " + std::to_string(filePath.size()));
 
 	// this async can't use the capture list ( [&] ), because then filePath gets wiped clean (??)
-	generation = std::async([](Cubemap* cubemap, const TextureCreationObjects& creationObjects, std::vector<std::string> filePath, bool useMipMaps)
+	generation = std::async([](Cubemap* cubemap, const TextureCreationObject& creationObjects, std::vector<std::string> filePath, bool useMipMaps)
 		{
 			std::vector<std::vector<char>> data = GetAllImageData(filePath);
 			cubemap->GenerateImages(creationObjects, data, useMipMaps);
 		}, this, creationObjects, filePath, useMipMaps);
 }
 
-Texture::Texture(const TextureCreationObjects& creationObjects, std::string filePath, bool useMipMaps)
+Texture::Texture(const TextureCreationObject& creationObjects, std::string filePath, bool useMipMaps)
 {
 	// this async can't use the capture list ( [&] ), because then filePath gets wiped clean (??)
-	generation = std::async([](Texture* texture, const TextureCreationObjects& creationObjects, std::string filePath, bool useMipMaps)
+	generation = std::async([](Texture* texture, const TextureCreationObject& creationObjects, std::string filePath, bool useMipMaps)
 		{
 			std::vector<std::vector<char>> data = GetAllImageData({ filePath });
 			texture->GenerateImages(creationObjects, data, useMipMaps);
 		}, this, creationObjects, filePath, useMipMaps);
 }
 
-Texture::Texture(const TextureCreationObjects& creationObjects, std::vector<char> imageData, bool useMipMaps)
+Texture::Texture(const TextureCreationObject& creationObjects, std::vector<char> imageData, bool useMipMaps)
 {
-	generation = std::async([](Texture* texture, const TextureCreationObjects& creationObjects, std::vector<char> imageData, bool useMipMaps) 
+	if (imageData.size() <= 0)
+		throw std::runtime_error("Invalid texture size: imageData.size <= 0");
+
+	generation = std::async([](Texture* texture, const TextureCreationObject& creationObjects, std::vector<char> imageData, bool useMipMaps) 
 		{
 			std::vector<std::vector<char>> data{ imageData };
 			texture->GenerateImages(creationObjects, data, useMipMaps);
 		}, this, creationObjects, imageData, useMipMaps);
 }
 
-void Texture::GeneratePlaceholderTextures(const TextureCreationObjects& creationObjects)
+void Texture::GeneratePlaceholderTextures(const TextureCreationObject& creationObjects)
 {
 	placeholderAlbedo = new Texture(creationObjects, "textures/placeholderAlbedo.png", false);
 	placeholderAlbedo->AwaitGeneration();

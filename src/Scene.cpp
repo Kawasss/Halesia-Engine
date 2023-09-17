@@ -4,7 +4,7 @@
 #include "Console.h"
 #include "SceneLoader.h"
 
-MeshCreationObjects (*Scene::GetMeshCreationObjects)() = nullptr;
+MeshCreationObject (*Scene::GetMeshCreationObjects)() = nullptr;
 Camera* Scene::defaultCamera = new Camera();
 
 SceneLoader loader("");
@@ -51,7 +51,7 @@ std::string GetNameFromPath(std::string path)
 	return fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 }
 
-void Scene::SubmitStaticObject(const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects)
+void Scene::SubmitStaticObject(const ObjectCreationData& creationData, const MeshCreationObject& creationObjects)
 {
 	Object* objPtr = new Object(creationData, creationObjects);
 

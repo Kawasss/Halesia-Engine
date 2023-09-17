@@ -68,8 +68,8 @@ struct Material
 
 struct Mesh
 {
-	Mesh(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue, aiMesh* mesh, aiMaterial* material);
-	Mesh(MeshCreationData creationData, VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue);
+	//Mesh(const MeshCreationObject& creationObject, aiMesh* mesh, aiMaterial* material);
+	Mesh(const MeshCreationObject& creationObject, const MeshCreationData& creationData);
 	void Destroy();
 
 	Material material{};
@@ -81,18 +81,19 @@ struct Mesh
 
 	glm::vec3 min, max, center, extents;
 
-	void ProcessMaterial(aiMaterial* material, VkDevice logicalDevice, VkQueue queue, VkCommandPool commandPool, PhysicalDevice physicalDevice);
-	void ProcessIndices(aiMesh* mesh);
-	void ProcessVertices(aiMesh* mesh);
+	void ProcessMaterial(const TextureCreationObject& creationObjects, const MaterialCreationData& creationData);
+	//void ProcessIndices(aiMesh* mesh); // change this to accept MeshCreationData
+	//void ProcessVertices(aiMesh* mesh);
 
-	void Recreate(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue queue);
+	void Recreate(const MeshCreationObject& creationObject);
 };
 
 class Object
 {
 public:
 	Object() = default;
-	Object(const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects);
+	Object(const ObjectCreationData& creationData, const ObjectCreationObject& creationObjects);
+	Object(std::string path, const ObjectCreationObject& creationObject);
 
 	virtual ~Object() {};
 	virtual void Destroy();
@@ -106,7 +107,7 @@ public:
 	/// </summary>
 	void AwaitGeneration();
 
-	void RecreateMeshes(const MeshCreationObjects& creationObjects);
+	void RecreateMeshes(const MeshCreationObject& creationObject);
 
 	void* scriptClass = nullptr;
 
@@ -129,23 +130,34 @@ private:
 	std::future<void> generationProcess;
 	
 protected:
+	/*
 	/// <summary>
 	/// This function is used for custom classes. This function must be called before any other actions are done.
 	/// It creates the meshes and connects the custom class to the base class.
 	/// </summary>
 	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
 	/// <param name="path"></param>
-	/// <param name="creationObjects">: The objects needed to create the meshes</param>
-	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects);
+	/// <param name="creationObject">: The objects needed to create the meshes</param>
+	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
+	*/
 
 	/// <summary>
 	/// The async version of CreateObject. This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.
 	/// Be weary of accessing members in the constructor, since they don't have to be loaded in. AwaitGeneration awaits the async thread.
 	/// </summary>
 	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
-	/// <param name="path"></param>
-	/// <param name="creationObjects">: The objects needed to create the meshes</param>
-	void CreateObjectAsync(void* customClassInstancePointer, const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects);
+	/// <param name="creationData"></param>
+	/// <param name="creationObject">: The objects needed to create the meshes</param>
+	void CreateObject/*Async*/(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
+
+	/// <summary>
+	/// The async version of CreateObject. This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.
+	/// Be weary of accessing members in the constructor, since they don't have to be loaded in. AwaitGeneration awaits the async thread.
+	/// </summary>
+	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
+	/// <param name="path">: The path to a 3D model file</param>
+	/// <param name="creationObject">: The objects needed to create the meshes</param>
+	void CreateObject(void* customClassInstancePointer, std::string path, const ObjectCreationObject& creationObject);
 
 	static void Free(Object* objPtr)
 	{

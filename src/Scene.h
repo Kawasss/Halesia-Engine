@@ -28,14 +28,23 @@ public:
 	Camera* camera = defaultCamera;
 
 	/// <summary>
-	/// Creates an object with a given class as attached script
+	/// Creates an object with a given class as attached script. Loading an external file will not happen async, so load times will be longer
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
-	/// <param name="name">: The name of the object to find and create</param>
+	/// <param name="name">: The name of the object to find and create. If objectType is OBJECT_IMPORT_EXTERNAL this needs to be the path to the file</param>
 	/// <param name="objectType">: The type of object: either from inside the scene file or an outside file</param>
 	/// <returns>A pointer to the base object of the custom object. A nullptr will be returned if an object matching the name can't be found</returns>
 	template<typename T> Object* AddCustomObject(std::string name, ObjectImportType objectType = OBJECT_IMPORT_INTERNAL)
 	{
+		if (objectType == OBJECT_IMPORT_EXTERNAL)
+		{
+			ObjectCreationData creationData = GenericLoader::LoadObjectFile(name);
+			Object* objPtr = new T(creationData, GetMeshCreationObjects());
+			allObjects.push_back(objPtr);
+			objectsWithScripts.push_back(objPtr);
+			return objPtr;
+		}
+
 		for (auto i = objectCreationDatas.begin(); i != objectCreationDatas.end(); i++)
 		{
 			int index = i - objectCreationDatas.begin();
@@ -48,7 +57,7 @@ public:
 				return objPtr;
 			}
 		}
-		Console::WriteLine("Failed to the creation data for the given name \"" + name + '"', MESSAGE_SEVERITY_ERROR);
+		Console::WriteLine("Failed to find the creation data for the given name \"" + name + '"', MESSAGE_SEVERITY_ERROR);
 		return nullptr;
 	}
 	
@@ -57,7 +66,7 @@ public:
 		return loadingProcess._Is_ready();
 	}
 
-	static MeshCreationObjects(*GetMeshCreationObjects)();
+	static MeshCreationObject(*GetMeshCreationObjects)();
 	std::vector<Object*> allObjects;
 	std::vector<ObjectCreationData> objectCreationDatas;
 
@@ -66,7 +75,7 @@ public:
 	/// </summary>
 	/// <param name="creationData"></param>
 	/// <param name="creationObjects"></param>
-	void SubmitStaticObject(const ObjectCreationData& creationData, const MeshCreationObjects& creationObjects);
+	void SubmitStaticObject(const ObjectCreationData& creationData, const MeshCreationObject& creationObjects);
 
 	/// <summary>
 	/// Loads a new scene from a given scene file async

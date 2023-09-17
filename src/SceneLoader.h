@@ -15,11 +15,17 @@ constexpr int normalOffset = 20;
 struct MaterialCreationData // dont know how smart it is to copy around possible megabytes of data, maybe make the stream read to the vector.data()
 {
 	std::string name;
+	bool albedoIsDefault;
 	std::vector<char> albedoData;
+	bool normalIsDefault;
 	std::vector<char> normalData;
+	bool metallicIsDefault;
 	std::vector<char> metallicData;
+	bool roughnessIsDefault;
 	std::vector<char> roughnessData;
+	bool ambientOcclusionIsDefault;
 	std::vector<char> ambientOcclusionData;
+	bool heightIsDefault;
 	std::vector<char> heightData;
 };
 
@@ -30,6 +36,8 @@ struct MeshCreationData
 
 	bool hasBones;
 	bool hasMaterial;
+	
+	glm::vec3 center = glm::vec3(0), extents = glm::vec3(0);
 
 	int amountOfVertices;
 	std::vector<Vertex> vertices;
@@ -39,12 +47,12 @@ struct MeshCreationData
 
 struct ObjectCreationData
 {
-	std::string name;
-	glm::vec3 position;
-	glm::vec3 rotation;
-	glm::vec3 scale;
+	std::string name = "";
+	glm::vec3 position = glm::vec3(0);
+	glm::vec3 rotation = glm::vec3(0);
+	glm::vec3 scale = glm::vec3(1);
 
-	int amountOfMeshes;
+	int amountOfMeshes = 0;
 	std::vector<MeshCreationData> meshes;
 };
 
@@ -85,7 +93,7 @@ private:
 
 	std::string RetrieveName();
 	glm::vec3 RetrieveTransformData();
-	void RetrieveTexture(std::vector<char>& vectorToWriteTo);
+	void RetrieveTexture(std::vector<char>& vectorToWriteTo, bool& isDefault);
 	void RetrieveOneMaterial(MaterialCreationData& creationData);
 	Vertex RetrieveOneVertex();
 	void RetrieveOneMesh(MeshCreationData& creationData);
@@ -98,3 +106,8 @@ private:
 
 	void OpenInputFile(std::string path);
 };
+
+namespace GenericLoader
+{
+	ObjectCreationData LoadObjectFile(std::string path);
+}

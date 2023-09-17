@@ -7,7 +7,7 @@
 class Image
 {
 public:
-	void GenerateImages(const TextureCreationObjects& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps);
+	void GenerateImages(const TextureCreationObject& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps = true);
 	void AwaitGeneration();
 	bool HasFinishedLoading();
 	void Destroy();
@@ -41,8 +41,8 @@ protected:
 class Cubemap : public Image
 {
 public:
-	Cubemap(const TextureCreationObjects& creationObjects, std::vector<std::string> filePath, bool useMipMaps);
-	Cubemap(const TextureCreationObjects& creationObjects, std::vector<std::vector<char>> filePath, bool useMipMaps);
+	Cubemap(const TextureCreationObject& creationObjects, std::vector<std::string> filePath, bool useMipMaps = true);
+	Cubemap(const TextureCreationObject& creationObjects, std::vector<std::vector<char>> filePath, bool useMipMaps = true);
 };
 
 class Texture : public Image
@@ -53,9 +53,9 @@ public:
 	static Texture* placeholderMetallic;
 	static Texture* placeholderRoughness;
 	static Texture* placeholderAmbientOcclusion;
-	static void GeneratePlaceholderTextures(const TextureCreationObjects& creationObjects);
+	static void GeneratePlaceholderTextures(const TextureCreationObject& creationObjects);
 	static void DestroyPlaceholderTextures();
 
-	Texture(const TextureCreationObjects& creationObjects, std::string filePath, bool useMipMaps);
-	Texture(const TextureCreationObjects& creationObjects, std::vector<char> imageData, bool useMipMaps);
+	Texture(const TextureCreationObject& creationObjects, std::string filePath, bool useMipMaps = true);
+	Texture(const TextureCreationObject& creationObjects, std::vector<char> imageData, bool useMipMaps = true);
 };

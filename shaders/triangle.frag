@@ -126,6 +126,8 @@ void main() {
     color = color / (color + vec3(1.0));
     // gamma correct
     color = pow(color, vec3(1.0/2.2)); 
+    if (color == vec3(0))
+    color = vec3(1);
 
     outColor = vec4(color, 1.0);
 }

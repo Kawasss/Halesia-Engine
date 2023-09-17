@@ -62,7 +62,7 @@ void DetermineArgs(int argsCount, char** args, Win32WindowCreateInfo& createInfo
 }
 
 Renderer* localRenderer; // really bad behavior
-MeshCreationObjects GetMeshCreationObjects()
+MeshCreationObject GetMeshCreationObjects()
 {
 	return localRenderer->GetVulkanCreationObjects();
 }

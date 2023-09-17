@@ -1,4 +1,7 @@
 #include "SceneLoader.h"
+#include <assimp/cimport.h>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
 
 SceneLoader::SceneLoader(std::string sceneLocation)
 {
@@ -47,33 +50,39 @@ glm::vec3 SceneLoader::RetrieveTransformData()
 	return GetVec3(posBytes);
 }
 
-void SceneLoader::RetrieveTexture(std::vector<char>& vectorToWriteTo)
+void SceneLoader::RetrieveTexture(std::vector<char>& vectorToWriteTo, bool& isDefault)
 {
-
 	char isDefaultByte;
 	stream.read(&isDefaultByte, 1);
-	bool isDefault = GetType<int8_t>(&isDefaultByte);
+	isDefault = GetType<int8_t>(&isDefaultByte);
 	if (isDefault)
 		return;
 
 	char lengthBytes[4];
 	stream.read(lengthBytes, 4);
+	
+	int textureLength = GetType<int>(lengthBytes);
+	if (textureLength <= 0)
+	{
+		isDefault = true;
+		return;
+	}
 
-	int textureLength = GetType<int>(lengthBytes + 1);
 	vectorToWriteTo = std::vector<char>(textureLength);
 
 	stream.read(vectorToWriteTo.data(), textureLength);
+	std::cout << vectorToWriteTo.size() << std::endl;
 }
 
 void SceneLoader::RetrieveOneMaterial(MaterialCreationData& creationData)
 {
-	creationData.name = RetrieveName();
-	RetrieveTexture(creationData.albedoData);
-	RetrieveTexture(creationData.normalData);
-	RetrieveTexture(creationData.metallicData);
-	RetrieveTexture(creationData.roughnessData);
-	RetrieveTexture(creationData.ambientOcclusionData);
-	RetrieveTexture(creationData.heightData);
+	//creationData.name = RetrieveName();
+	RetrieveTexture(creationData.albedoData, creationData.albedoIsDefault);
+	RetrieveTexture(creationData.normalData, creationData.normalIsDefault);
+	RetrieveTexture(creationData.metallicData, creationData.metallicIsDefault);
+	RetrieveTexture(creationData.roughnessData, creationData.roughnessIsDefault);
+	RetrieveTexture(creationData.ambientOcclusionData, creationData.ambientOcclusionIsDefault);
+	RetrieveTexture(creationData.heightData, creationData.heightIsDefault);
 }
 
 Vertex SceneLoader::RetrieveOneVertex()
@@ -99,17 +108,32 @@ void SceneLoader::RetrieveOneMesh(MeshCreationData& creationData)
 	creationData.hasMaterial = GetType<int8_t>(&containsBonesOrTextures);
 	stream.read(&containsBonesOrTextures, 1);
 	creationData.hasBones = GetType<int8_t>(&containsBonesOrTextures);
-
+	
 	char amountOfVerticesBytes[4];
 	stream.read(amountOfVerticesBytes, 4);
 	creationData.amountOfVertices = GetType<int>(amountOfVerticesBytes) * 3;
-
+	
+	glm::vec3 max = glm::vec3(0), min = glm::vec3(0);
 	for (int i = 0; i < creationData.amountOfVertices; i++)
 	{
-		creationData.vertices.push_back(RetrieveOneVertex()); // could do resize like in RetrieveOneObject, but one mesh can have thousands of vertices so i dont know about the copying speed of that
+		Vertex vertex = RetrieveOneVertex();
+
+		max.x = vertex.position.x > max.x ? vertex.position.x : max.x;
+		max.y = vertex.position.y > max.y ? vertex.position.y : max.y;
+		max.z = vertex.position.z > max.z ? vertex.position.z : max.z;
+
+		min.x = vertex.position.x < min.x ? vertex.position.x : min.x;
+		min.y = vertex.position.y < min.y ? vertex.position.y : min.y;
+		min.z = vertex.position.z < min.z ? vertex.position.z : min.z;
+
+		creationData.vertices.push_back(vertex); // could do resize like in RetrieveOneObject, but one mesh can have thousands of vertices so i dont know about the copying speed of that
 		creationData.indices.push_back(i); // since CRS doesnt support indices (yet), this is filled like there are no indices
 	}
-	RetrieveOneMaterial(creationData.material);
+	creationData.center = (min + max) * 0.5f;
+	creationData.extents = max - creationData.center;
+	
+	if (creationData.hasMaterial)
+		RetrieveOneMaterial(creationData.material);
 }
 
 void SceneLoader::RetrieveOneObject(int index)
@@ -120,13 +144,13 @@ void SceneLoader::RetrieveOneObject(int index)
 	creationData.position = RetrieveTransformData();
 	creationData.scale = RetrieveTransformData();
 	creationData.rotation = RetrieveTransformData();
-
+	
 	char amountOfMeshesBytes[4];
 	stream.read(amountOfMeshesBytes, 4);
-
+	
 	creationData.amountOfMeshes = GetType<int>(amountOfMeshesBytes);
 	creationData.meshes.resize(creationData.amountOfMeshes);
-
+	
 	for (int i = 0; i < creationData.amountOfMeshes; i++)
 		RetrieveOneMesh(creationData.meshes[i]);
 }
@@ -174,4 +198,96 @@ void SceneLoader::OpenInputFile(std::string path)
 	stream.open(path, std::ios::in | std::ios::binary);
 	if (!stream)
 		throw std::runtime_error("Failed to open the scene file at " + path + ", the path is either invalid or outdated / corrupt");
+}
+
+glm::vec3 ConvertToGlm(aiVector3D vector)
+{
+	glm::vec3 ret;
+	ret.x = vector.x;
+	ret.y = vector.y;
+	ret.z = vector.z;
+	return ret;
+}
+
+glm::vec2 ConverToGlm(aiVector3D vector)
+{
+	glm::vec2 ret;
+	ret.x = vector.x;
+	ret.y = vector.y;
+	return ret;
+}
+
+
+std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& max)
+{
+	std::vector<Vertex> ret;
+	for (int i = 0; i < pMesh->mNumVertices; i++)
+	{
+		Vertex vertex{};
+
+		vertex.position = ConvertToGlm(pMesh->mVertices[i]);
+
+		max.x = vertex.position.x > max.x ? vertex.position.x : max.x;
+		max.y = vertex.position.y > max.y ? vertex.position.y : max.y;
+		max.z = vertex.position.z > max.z ? vertex.position.z : max.z;
+
+		min.x = vertex.position.x < min.x ? vertex.position.x : min.x;
+		min.y = vertex.position.y < min.y ? vertex.position.y : min.y;
+		min.z = vertex.position.z < min.z ? vertex.position.z : min.z;
+
+		if (pMesh->HasNormals())
+			vertex.normal = ConvertToGlm(pMesh->mNormals[i]);
+		if (pMesh->mTextureCoords[0])
+			vertex.textureCoordinates = ConverToGlm(pMesh->mTextureCoords[0][i]);
+
+		ret.push_back(vertex);
+	}
+	return ret;
+}
+
+std::vector<uint16_t> RetrieveIndices(aiMesh* pMesh)
+{
+	std::vector<uint16_t> ret;
+	for (int i = 0; i < pMesh->mNumFaces; i++)
+		for (int j = 0; j < pMesh->mFaces[i].mNumIndices; j++)
+			ret.push_back(pMesh->mFaces[i].mIndices[j]);
+	return ret;
+}
+
+MeshCreationData RetrieveMeshData(aiMesh* pMesh)
+{
+	MeshCreationData ret{};
+
+	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
+	ret.amountOfVertices = pMesh->mNumVertices;
+	ret.vertices = RetrieveVertices(pMesh, min, max);
+	ret.indices = RetrieveIndices(pMesh);
+
+	ret.center = (min + max) * 0.5f;
+	ret.extents = max - ret.center;
+
+	return ret;
+}
+
+ObjectCreationData GenericLoader::LoadObjectFile(std::string path)
+{
+	ObjectCreationData ret{};
+
+	// this takes the filename out of the full path by indexing the \'s and the file extension
+	std::string fileNameWithExtension = path.substr(path.find_last_of("/\\") + 1);
+	ret.name = fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
+
+	const aiScene* scene = aiImportFile(path.c_str(), aiProcess_FixInfacingNormals | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_RemoveComponent | aiProcess_GenSmoothNormals);
+
+	if (scene == nullptr) // check if the file could be read
+		throw std::runtime_error("Failed to find or read file at " + path);
+
+	ret.amountOfMeshes = scene->mNumMeshes;
+	for (int i = 0; i < scene->mNumMeshes; i++) // convert the assimp resources into the engines resources
+	{
+		aiMesh* pMesh = scene->mMeshes[i];
+		aiMaterial* pMaterial = scene->mMaterials[pMesh->mMaterialIndex];
+		ret.meshes.push_back(RetrieveMeshData(pMesh));
+	}
+	return ret;
 }

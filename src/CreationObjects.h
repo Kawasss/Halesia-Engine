@@ -2,12 +2,14 @@
 #include <vulkan/vulkan.h>
 #include "renderer/PhysicalDevice.h"
 
-struct VulkanCreationObjects
+struct VulkanCreationObject
 {
 	VkDevice logicalDevice;
 	PhysicalDevice physicalDevice;
 	VkCommandPool commandPool;
 	VkQueue queue;
 };
-typedef VulkanCreationObjects TextureCreationObjects;
-typedef VulkanCreationObjects MeshCreationObjects;
+typedef VulkanCreationObject TextureCreationObject;
+typedef VulkanCreationObject MeshCreationObject;
+typedef VulkanCreationObject ObjectCreationObject;
+typedef VulkanCreationObject BufferCreationObject;
