@@ -95,12 +95,16 @@ void Scene::Start()
 	Free(nullptr);
 }
 
-void Scene::Update(Win32Window* window, float delta)
+void Scene::UpdateCamera(Win32Window* window, float delta)
+{
+	camera->Update(window, delta);
+}
+
+void Scene::UpdateScripts(float delta)
 {
 	if (!HasFinishedLoading())
 		return;
 
-	camera->Update(window, delta);
 	std::for_each(std::execution::par, objectsWithScripts.begin(), objectsWithScripts.end(), [&](Object* object) // update all of the scripts in parallel
 		{
 			if (object->shouldBeDestroyed)

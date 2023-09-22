@@ -177,6 +177,7 @@
     <ClInclude Include="src\system\Input.h" />
     <ClInclude Include="src\system\SystemMetrics.h" />
     <ClInclude Include="src\system\Window.h" />
+    <ClInclude Include="src\tools\CameraInjector.h" />
     <ClInclude Include="src\Transform.h" />
     <ClInclude Include="src\Vertex.h" />
   </ItemGroup>

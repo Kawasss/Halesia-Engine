@@ -33,7 +33,7 @@ void Image::GenerateImages(const TextureCreationObject& creationObjects, std::ve
 
 	if (useMipMaps)
 		mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
-
+	stbi_set_flip_vertically_on_load(1);
 	// read every side of the cubemap
 	std::vector<stbi_uc*> pixels(layerCount);
 	for (int i = 0; i < layerCount; i++)

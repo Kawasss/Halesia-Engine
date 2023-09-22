@@ -5,6 +5,7 @@
 #include "Console.h"
 #include "system/SystemMetrics.h"
 #include "CreationObjects.h"
+#include "tools/CameraInjector.h"
 
 template<typename T> struct ScrollingBuffer //dont know where to put this struct
 {
@@ -135,9 +136,11 @@ void UpdateScene(UpdateSceneData* sceneData)
 {
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	
+	sceneData->scene->UpdateCamera(sceneData->window, sceneData->delta);
 	if (!sceneData->pauseGame || *sceneData->playOneFrame)
 	{
-		sceneData->scene->Update(sceneData->window, sceneData->delta);
+		sceneData->scene->UpdateScripts(sceneData->delta);
+		sceneData->scene->Update(sceneData->delta);
 		*sceneData->playOneFrame = false;
 	}
 	*sceneData->timeToComplete = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
@@ -260,8 +263,8 @@ HalesiaExitCode HalesiaInstance::Run()
 			UpdateRendererData rendererData{ renderer, scene->camera, scene->allObjects, frameDelta, &asyncRendererCompletionTime, pieChartValuesPtr, renderDevConsole, showFPS, showRAM, showCPU, showGPU, showAsyncTimes };
 			std::future<std::optional<std::string>> asyncRenderer = std::async(UpdateRenderer, &rendererData);
 
-			//if (window->ContainsDroppedFile())
-			//	scene->SubmitStaticModel(window->GetDroppedFile(), renderer->GetMeshCreationObjects());
+			if (window->ContainsDroppedFile())
+				scene->SubmitStaticObject(GenericLoader::LoadObjectFile(window->GetDroppedFile(), scene->allObjects.size()), renderer->GetVulkanCreationObjects());
 
 			if (!Input::IsKeyPressed(devConsoleKey) && devKeyIsPressedLastFrame)
 				renderDevConsole = !renderDevConsole;

@@ -38,7 +38,7 @@ public:
 	{
 		if (objectType == OBJECT_IMPORT_EXTERNAL)
 		{
-			ObjectCreationData creationData = GenericLoader::LoadObjectFile(name);
+			ObjectCreationData creationData = GenericLoader::LoadObjectFile(name, allObjects.size());
 			Object* objPtr = new T(creationData, GetMeshCreationObjects());
 			allObjects.push_back(objPtr);
 			objectsWithScripts.push_back(objPtr);
@@ -85,7 +85,9 @@ public:
 
 	void LoadUninitializedObjects();
 	virtual void Start();
-	virtual void Update(Win32Window* window, float delta);
+	void UpdateCamera(Win32Window* window, float delta);
+	void UpdateScripts(float delta);
+	virtual void Update(float delta) {};
 	//virtual ~Scene() {};
 	void Destroy();
 

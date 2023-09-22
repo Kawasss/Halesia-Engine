@@ -67,16 +67,12 @@ void SceneLoader::RetrieveTexture(std::vector<char>& vectorToWriteTo, bool& isDe
 		isDefault = true;
 		return;
 	}
-
 	vectorToWriteTo = std::vector<char>(textureLength);
-
 	stream.read(vectorToWriteTo.data(), textureLength);
-	std::cout << vectorToWriteTo.size() << std::endl;
 }
 
 void SceneLoader::RetrieveOneMaterial(MaterialCreationData& creationData)
 {
-	//creationData.name = RetrieveName();
 	RetrieveTexture(creationData.albedoData, creationData.albedoIsDefault);
 	RetrieveTexture(creationData.normalData, creationData.normalIsDefault);
 	RetrieveTexture(creationData.metallicData, creationData.metallicIsDefault);
@@ -93,7 +89,7 @@ Vertex SceneLoader::RetrieveOneVertex()
 	ret.position = GetVec3(vecBytes);
 	ret.textureCoordinates = GetVec2(vecBytes + 12);
 	ret.normal = GetVec3(vecBytes + 20);
-
+	ret.drawID = 0;
 	return ret;
 }
 
@@ -218,7 +214,7 @@ glm::vec2 ConverToGlm(aiVector3D vector)
 }
 
 
-std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& max)
+std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& max, int index)
 {
 	std::vector<Vertex> ret;
 	for (int i = 0; i < pMesh->mNumVertices; i++)
@@ -239,7 +235,7 @@ std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& m
 			vertex.normal = ConvertToGlm(pMesh->mNormals[i]);
 		if (pMesh->mTextureCoords[0])
 			vertex.textureCoordinates = ConverToGlm(pMesh->mTextureCoords[0][i]);
-
+		vertex.drawID = index;
 		ret.push_back(vertex);
 	}
 	return ret;
@@ -254,13 +250,13 @@ std::vector<uint16_t> RetrieveIndices(aiMesh* pMesh)
 	return ret;
 }
 
-MeshCreationData RetrieveMeshData(aiMesh* pMesh)
+MeshCreationData RetrieveMeshData(aiMesh* pMesh, int index)
 {
 	MeshCreationData ret{};
 
 	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
 	ret.amountOfVertices = pMesh->mNumVertices;
-	ret.vertices = RetrieveVertices(pMesh, min, max);
+	ret.vertices = RetrieveVertices(pMesh, min, max, index);
 	ret.indices = RetrieveIndices(pMesh);
 
 	ret.center = (min + max) * 0.5f;
@@ -269,7 +265,7 @@ MeshCreationData RetrieveMeshData(aiMesh* pMesh)
 	return ret;
 }
 
-ObjectCreationData GenericLoader::LoadObjectFile(std::string path)
+ObjectCreationData GenericLoader::LoadObjectFile(std::string path, int index)
 {
 	ObjectCreationData ret{};
 
@@ -277,7 +273,7 @@ ObjectCreationData GenericLoader::LoadObjectFile(std::string path)
 	std::string fileNameWithExtension = path.substr(path.find_last_of("/\\") + 1);
 	ret.name = fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 
-	const aiScene* scene = aiImportFile(path.c_str(), aiProcess_FixInfacingNormals | aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_RemoveComponent | aiProcess_GenSmoothNormals);
+	const aiScene* scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast | aiProcess_GenSmoothNormals);
 
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + path);
@@ -287,7 +283,7 @@ ObjectCreationData GenericLoader::LoadObjectFile(std::string path)
 	{
 		aiMesh* pMesh = scene->mMeshes[i];
 		aiMaterial* pMaterial = scene->mMaterials[pMesh->mMaterialIndex];
-		ret.meshes.push_back(RetrieveMeshData(pMesh));
+		ret.meshes.push_back(RetrieveMeshData(pMesh, index));
 	}
 	return ret;
 }

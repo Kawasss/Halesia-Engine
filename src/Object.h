@@ -68,7 +68,6 @@ struct Material
 
 struct Mesh
 {
-	//Mesh(const MeshCreationObject& creationObject, aiMesh* mesh, aiMaterial* material);
 	Mesh(const MeshCreationObject& creationObject, const MeshCreationData& creationData);
 	void Destroy();
 
@@ -82,9 +81,6 @@ struct Mesh
 	glm::vec3 min, max, center, extents;
 
 	void ProcessMaterial(const TextureCreationObject& creationObjects, const MaterialCreationData& creationData);
-	//void ProcessIndices(aiMesh* mesh); // change this to accept MeshCreationData
-	//void ProcessVertices(aiMesh* mesh);
-
 	void Recreate(const MeshCreationObject& creationObject);
 };
 
@@ -130,17 +126,6 @@ private:
 	std::future<void> generationProcess;
 	
 protected:
-	/*
-	/// <summary>
-	/// This function is used for custom classes. This function must be called before any other actions are done.
-	/// It creates the meshes and connects the custom class to the base class.
-	/// </summary>
-	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
-	/// <param name="path"></param>
-	/// <param name="creationObject">: The objects needed to create the meshes</param>
-	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
-	*/
-
 	/// <summary>
 	/// The async version of CreateObject. This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.
 	/// Be weary of accessing members in the constructor, since they don't have to be loaded in. AwaitGeneration awaits the async thread.
@@ -148,7 +133,7 @@ protected:
 	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
 	/// <param name="creationData"></param>
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
-	void CreateObject/*Async*/(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
+	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
 
 	/// <summary>
 	/// The async version of CreateObject. This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.

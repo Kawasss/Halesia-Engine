@@ -488,7 +488,7 @@ void Renderer::CreateGraphicsPipeline()
 	dynamicState.flags = 0;
 
 	VkVertexInputBindingDescription bindingDescription = Vertex::GetBindingDescription();
-	std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = Vertex::GetAttributeDescriptions();
+	std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions = Vertex::GetAttributeDescriptions();
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -660,7 +660,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	renderPassBeginInfo.renderArea.extent = swapchain->extent;
 
 	std::array<VkClearValue, 2> clearColors{};
-	clearColors[0].color = { 0, 0, 0, 1 };
+	clearColors[0].color = { 0.085f, 0.085f, 0.085f, 1 };
 	clearColors[1].depthStencil = { 1, 0 };
 
 	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
@@ -833,7 +833,7 @@ void Renderer::RenderGraph(const std::vector<float>& buffer, const char* label)
 void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
 {
 	//add culling here too
-
+	
 	ImGui::Render();
 
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
@@ -902,10 +902,11 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
+std::vector<Object*> processedObjects;
 void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects)
 {
-	//if (!Image::TexturesHaveChanged()) // disabled since there is a racing condition for the meshes. If the meshes are done loading after the textures, the textures get written off as being updated, whilst the meshes material isnt
-	//	return;
+	if (!Image::TexturesHaveChanged()) // disabled since there is a racing condition for the meshes. If the meshes are done loading after the textures, the textures get written off as being updated, whilst the meshes material isnt
+		return;
 		
 	// !! this for loop currently updates the textures for all descriptor sets at once which is not that good. itd be better to update the currently used descriptor set
 	std::vector<VkDescriptorImageInfo> imageInfos;
@@ -920,7 +921,7 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 				imageInfo.sampler = textureSampler;
 
 				imageInfos.push_back(imageInfo);
-			}
+	}
 	if (imageInfos.size() == 0)
 		return;
 

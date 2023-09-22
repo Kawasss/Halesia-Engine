@@ -20,8 +20,8 @@ void Camera::DefaultUpdate(Win32Window* window, float delta)
 		position += right * (cameraSpeed * delta * 0.001f);
 	if (Input::IsKeyPressed(VirtualKey::Space))
 		position += up * (cameraSpeed * delta * 0.001f);
-	//if (Input::IsKeyPressed(VirtualKey::LeftControl))
-	//	position -= up * (cameraSpeed * delta * 0.1f);
+	if (Input::IsKeyPressed(VirtualKey::LeftControl))
+		position -= up * (cameraSpeed * delta * 0.1f);
 
 	int newPosX, newPosY;
 	window->GetRelativeCursorPosition(newPosX, newPosY);

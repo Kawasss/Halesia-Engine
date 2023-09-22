@@ -109,5 +109,5 @@ private:
 
 namespace GenericLoader
 {
-	ObjectCreationData LoadObjectFile(std::string path);
+	ObjectCreationData LoadObjectFile(std::string path, int index);
 }

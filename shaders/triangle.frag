@@ -74,9 +74,18 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 void main() {
     int baseIndex = TEXTURES_PER_MATERIAL * drawID;
     vec3 albedo = pow(texture(texSampler[baseIndex], fragTexCoord).rgb, vec3(2.2));
-    float metallic = texture(texSampler[baseIndex + 2], fragTexCoord).r;
+    float metallic = texture(texSampler[baseIndex + 2], fragTexCoord).b;
     float roughness = texture(texSampler[baseIndex + 3], fragTexCoord).g;
-    float ao = texture(texSampler[baseIndex + 4], fragTexCoord).b;
+    float ao = texture(texSampler[baseIndex + 4], fragTexCoord).r;
+
+    if (albedo == vec3(0))
+        albedo = vec3(1);
+    if (metallic == 0)
+        metallic = 0.5;
+    if (roughness == 0)
+        roughness = 0.5;
+    if (ao == 0)
+        ao = 0.5;
 
     vec3 N = getNormalFromMap(baseIndex + 1);
     vec3 V = normalize(camPos - worldPos);
@@ -86,9 +95,9 @@ void main() {
 
     vec3 Lo = vec3(0.0);
 
-    vec3 L = normalize(vec3(0, 5, 0) - worldPos);
+    vec3 L = normalize(vec3(0, 0, 0) - worldPos);
     vec3 H = normalize(V + L);
-    float distance = length(vec3(0, 5, 0) - worldPos);
+    float distance = length(vec3(0, 0, 0) - worldPos);
     float attenuation = 1.0 / (distance * distance);
     vec3 radiance = vec3(2);// * attenuation;
 
@@ -126,8 +135,6 @@ void main() {
     color = color / (color + vec3(1.0));
     // gamma correct
     color = pow(color, vec3(1.0/2.2)); 
-    if (color == vec3(0))
-    color = vec3(1);
 
     outColor = vec4(color, 1.0);
 }
