@@ -291,7 +291,7 @@ HalesiaExitCode HalesiaInstance::Run()
 
 			devKeyIsPressedLastFrame = Input::IsKeyPressed(devConsoleKey);
 
-			Win32Window::PollEvents();
+			Win32Window::PollMessages();
 
 			std::optional<std::string> command = asyncRenderer.get();
 			if (command.has_value() && lastCommand != command.value())

@@ -69,13 +69,12 @@ class Win32Window
 	public:
 		HWND window;
 		HINSTANCE hInstance;
-		std::vector<UINT> allMessagesFromLastPoll;
 		LRESULT(*additionalPollCallback)(HWND, UINT, WPARAM, LPARAM) = nullptr;
 
 		Win32Window(const Win32WindowCreateInfo& createInfo);
 		~Win32Window();
 
-		static void PollEvents(); //PollMessages is a better name, no need to stick to GLFW's name
+		static void PollMessages();
 
 		bool resized = false;
 		bool maximized = true; // if this is false the window should be minimized
@@ -96,8 +95,6 @@ class Win32Window
 		void LockCursor();
 		void UnlockCursor();
 
-		void GetWindowDimensions(int* width, int* height);
-		void ChangeWindowStyle(WindowStyle newWindowStyle);
 		void Destroy();
 
 	private:

@@ -20,7 +20,9 @@ const std::vector<const char*> validationLayers =
 const std::vector<const char*> requiredExtensions =
 {
     "VK_KHR_surface",
-    "VK_KHR_win32_surface"
+    "VK_KHR_win32_surface"//,
+    //"VK_KHR_acceleration_structure",
+    //"VK_KHR_ray_tracing_pipeline"
 };
 
 class Vulkan

@@ -44,6 +44,9 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 		height = GetSystemMetrics(SM_CYSCREEN);
 		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, createInfo.className.c_str(), createInfo.windowName.c_str(), (DWORD)WindowStyle::PopUp, createInfo.x, createInfo.y, monitorWidth, monitorHeight, NULL, NULL, hInstance, NULL);
 	}
+	else if (createInfo.windowMode == WINDOW_MODE_WINDOWED)
+		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, createInfo.className.c_str(), createInfo.windowName.c_str(), (DWORD)(WindowStyle::OverlappedWindow), createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
+
 	else
 		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, createInfo.className.c_str(), createInfo.windowName.c_str(), (DWORD)createInfo.style, createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
 
@@ -69,13 +72,12 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 		throw std::runtime_error("Failed to register the raw input device for the mouse");
 }
 
-void Win32Window::PollEvents()
+void Win32Window::PollMessages()
 {
 	for (Win32Window* w : windows)
 	{
 		w->cursorX = 0;
 		w->cursorY = 0;
-		w->allMessagesFromLastPoll.clear();
 
 		ShowWindow(w->window, w->maximized); // dont know if this call is expensive to make every frame
 	}
@@ -84,12 +86,6 @@ void Win32Window::PollEvents()
 		TranslateMessage(&message);
 		DispatchMessageW(&message);
 	}
-}
-
-void Win32Window::ChangeWindowStyle(WindowStyle newWindowStyle)
-{
-	SetWindowLongPtr(window, GWL_STYLE, (DWORD)newWindowStyle);
-	SetWindowPos(window, 0, x, y, width, height, SWP_SHOWWINDOW);
 }
 
 WindowMode Win32Window::GetWindowMode()
@@ -110,12 +106,6 @@ int Win32Window::GetWidth()
 int Win32Window::GetHeight()
 {
 	return height;
-}
-
-void Win32Window::GetWindowDimensions(int* width, int* height)
-{
-	*width = this->width;
-	*height = this->height;
 }
 
 void Win32Window::GetRelativeCursorPosition(int& x, int& y)
@@ -164,8 +154,6 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 
 	if (windowBinding[hwnd]->additionalPollCallback != nullptr)
 		windowBinding[hwnd]->additionalPollCallback(hwnd, message, wParam, lParam);
-
-	windowBinding[hwnd]->allMessagesFromLastPoll.push_back(message);
 
 	switch (message)
 	{

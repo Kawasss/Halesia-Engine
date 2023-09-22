@@ -100,7 +100,7 @@ void Swapchain::Recreate(VkRenderPass renderPass)
     while (width == 0 || height == 0)
     {
         window->GetWindowDimensions(&width, &height);
-        window->PollEvents();
+        window->PollMessages();
     }
 
     vkDeviceWaitIdle(logicalDevice);
