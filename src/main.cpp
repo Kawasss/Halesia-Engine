@@ -95,10 +95,6 @@ class TestScene : public Scene
 
 		this->camera = new TestCamera();
 	}
-	
-	void Update(float delta) override
-	{
-	}
 };
 
 int main(int argsCount, char** args)
@@ -110,7 +106,7 @@ int main(int argsCount, char** args)
 	createInfo.startingScene = new TestScene();
 	createInfo.sceneFile = "../CORERenderer/halesia.crs";
 	createInfo.windowCreateInfo.windowName = L"Halesia Engine";
-	createInfo.windowCreateInfo.windowMode = WINDOW_MODE_WINDOWED;
+	createInfo.windowCreateInfo.windowMode = WINDOW_MODE_BORDERLESS_WINDOWED;
 	createInfo.windowCreateInfo.height = 600;
 	createInfo.windowCreateInfo.width = 800;
 	createInfo.windowCreateInfo.setTimer = true;

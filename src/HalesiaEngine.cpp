@@ -242,11 +242,13 @@ HalesiaExitCode HalesiaInstance::Run()
 		float asyncScriptsCompletionTime = 0;
 		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
-		//scene->Start();
+		scene->Start();
 		window->maximized = true;
 
 		while (!window->ShouldClose())
 		{
+			if (Input::IsKeyPressed(VirtualKey::F11))
+				window->Recreate(WINDOW_MODE_BORDERLESS_WINDOWED);
 			//if (!scene->HasFinishedLoading())
 			//	continue; // quick patch to prevent read access violation
 
@@ -273,6 +275,7 @@ HalesiaExitCode HalesiaInstance::Run()
 				window->LockCursor();
 			if (Input::IsKeyPressed(VirtualKey::E))
 				window->UnlockCursor();
+			
 
 			if (timeSinceLastCPUUpdate > 300)
 			{

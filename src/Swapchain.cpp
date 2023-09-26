@@ -89,8 +89,7 @@ void Swapchain::Destroy()
 
 void Swapchain::Recreate(VkRenderPass renderPass)
 {
-    int width = 0, height = 0;
-    window->GetWindowDimensions(&width, &height);
+    int width = window->GetWidth(), height = window->GetHeight();
 
     #ifndef NDEBUG
     if (width == 0 || height == 0)
@@ -99,7 +98,8 @@ void Swapchain::Recreate(VkRenderPass renderPass)
 
     while (width == 0 || height == 0)
     {
-        window->GetWindowDimensions(&width, &height);
+        width = window->GetWidth();
+        height = window->GetHeight();
         window->PollMessages();
     }
 

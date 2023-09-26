@@ -17,7 +17,11 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 	x = createInfo.x;
 	y = createInfo.y;
 	className = createInfo.className;
+	windowName = createInfo.windowName;
 	currentWindowMode = createInfo.windowMode;
+	extendedWindowStyle = createInfo.extendedWindowStyle;
+	icon = createInfo.icon;
+	cursor = createInfo.cursor;
 
 	hInstance = GetModuleHandle(NULL);
 
@@ -28,12 +32,12 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 	wc.cbClsExtra = 0;
 	wc.cbWndExtra = 0;
 	wc.hInstance = hInstance;
-	wc.hIcon = createInfo.icon;
-	wc.hCursor = createInfo.cursor;
+	wc.hIcon = icon;
+	wc.hCursor = cursor;
 	wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	wc.lpszMenuName = NULL;
-	wc.lpszClassName = createInfo.className.c_str();
-	wc.hIconSm = createInfo.icon;
+	wc.lpszClassName = className.c_str();
+	wc.hIconSm = icon;
 
 	if (!RegisterClassExW(&wc))
 		throw std::runtime_error("Failed to register a window: " + GetLastErrorAsString());
@@ -42,13 +46,13 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 	{
 		width = GetSystemMetrics(SM_CXSCREEN);
 		height = GetSystemMetrics(SM_CYSCREEN);
-		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, createInfo.className.c_str(), createInfo.windowName.c_str(), (DWORD)WindowStyle::PopUp, createInfo.x, createInfo.y, monitorWidth, monitorHeight, NULL, NULL, hInstance, NULL);
+		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)WindowStyle::PopUp, createInfo.x, createInfo.y, monitorWidth, monitorHeight, NULL, NULL, hInstance, NULL);
 	}
 	else if (createInfo.windowMode == WINDOW_MODE_WINDOWED)
-		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, createInfo.className.c_str(), createInfo.windowName.c_str(), (DWORD)(WindowStyle::OverlappedWindow), createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
+		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)WindowStyle::OverlappedWindow, createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
 
 	else
-		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, createInfo.className.c_str(), createInfo.windowName.c_str(), (DWORD)createInfo.style, createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
+		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)createInfo.style, createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
 
 	windowBinding[window] = this;
 	windows.push_back(this);
@@ -65,11 +69,29 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 	RAWINPUTDEVICE rawInputDevice{};
 	rawInputDevice.usUsagePage = 0x01;
 	rawInputDevice.usUsage = 0x02;
-	rawInputDevice.dwFlags = 0;
-	rawInputDevice.hwndTarget = 0;
+	rawInputDevice.dwFlags = 0; // no flags
+	rawInputDevice.hwndTarget = NULL;
 
 	if (!RegisterRawInputDevices(&rawInputDevice, 1, sizeof(rawInputDevice)))
 		throw std::runtime_error("Failed to register the raw input device for the mouse");
+}
+
+void Win32Window::Recreate(WindowMode windowMode)
+{
+	if (windowMode == currentWindowMode)
+		return;
+
+	DestroyWindow(window);
+	this->currentWindowMode = windowMode;
+	if (currentWindowMode == WINDOW_MODE_BORDERLESS_WINDOWED)
+	{
+		width = GetSystemMetrics(SM_CXSCREEN);
+		height = GetSystemMetrics(SM_CYSCREEN);
+		window = CreateWindowExW((DWORD)extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)WindowStyle::PopUp, 0, 0, monitorWidth, monitorHeight, NULL, NULL, hInstance, NULL);
+	}
+	else if (currentWindowMode == WINDOW_MODE_WINDOWED)
+		window = CreateWindowExW((DWORD)extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)WindowStyle::OverlappedWindow, x, y, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
+	//std::cout << GetLastErrorAsString() << std::endl;
 }
 
 void Win32Window::PollMessages()
@@ -157,61 +179,52 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 
 	switch (message)
 	{
-		case WM_CREATE:
+		case WM_CREATE: // when the window is created
 			break;
-		case WM_CLOSE:
+		case WM_CLOSE: // when the window should close
 			windowBinding[hwnd]->shouldClose = true;
 			DestroyWindow(hwnd);
 			break;
-		case WM_DESTROY:
+		case WM_DESTROY: // when the window is getting destroyed
 			PostQuitMessage(0);
 			break;
-		case WM_SIZE:
+		case WM_SIZE: // when the window is resized
 		{
 			windowBinding[hwnd]->resized = true;
 			windowBinding[hwnd]->width = LOWORD(lParam);
 			windowBinding[hwnd]->height = HIWORD(lParam);
 		}
 			break;
-		case WM_MOUSEMOVE:
-			if (windowBinding[hwnd]->lockCursor)
-			{
-				ShowCursor(false);
+		case WM_MOUSEMOVE: // when the cursor has moved
+			if (windowBinding[hwnd]->lockCursor) // if the cursor is locked it has to stay inside the window, so this locks resets it to the center of the screen
 				SetCursorPos(windowBinding[hwnd]->width / 2, windowBinding[hwnd]->height / 2);
-			}
-			else
-				ShowCursor(true);
 			break;
-		case WM_MOUSEWHEEL:
+		case WM_MOUSEWHEEL: // when the mouse wheel has moved
 			windowBinding[hwnd]->wheelRotation = GET_WHEEL_DELTA_WPARAM(wParam);
 			break;
-		case WM_INPUT:
+		case WM_INPUT: // when an input has been detected
 		{
-			UINT dwSize = sizeof(RAWINPUT);
+			UINT sizeOfStruct = sizeof(RAWINPUT);
 
-			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &dwSize, sizeof(RAWINPUTHEADER));
-			LPBYTE lpb = new BYTE[dwSize];
-			if (lpb == NULL)
+			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &sizeOfStruct, sizeof(RAWINPUTHEADER));
+			LPBYTE bytePointer = new BYTE[sizeOfStruct];
+			if (bytePointer == NULL)
 				return 0;
 
-			if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER)) != dwSize)
+			if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, bytePointer, &sizeOfStruct, sizeof(RAWINPUTHEADER)) != sizeOfStruct)
 				throw std::runtime_error("GetRawInputData does not return correct size");
 
-			RAWINPUT* rawInput = (RAWINPUT*)lpb;
-			if (rawInput->header.dwType == RIM_TYPEMOUSE)
-			{
-				windowBinding[hwnd]->cursorX = rawInput->data.mouse.lLastX;
-				windowBinding[hwnd]->cursorY = rawInput->data.mouse.lLastY;
-			}
-			else
-			{
-				windowBinding[hwnd]->cursorX = 0;
-				windowBinding[hwnd]->cursorY = 0;
-			}
-			delete[] lpb;
+			RAWINPUT* rawInput = (RAWINPUT*)bytePointer;
+			if (!(rawInput->header.dwType == RIM_TYPEMOUSE))
+				break;
+
+			windowBinding[hwnd]->cursorX = rawInput->data.mouse.lLastX;
+			windowBinding[hwnd]->cursorY = rawInput->data.mouse.lLastY;
+
+			delete[] bytePointer;
 			break;
 		}
-		case WM_DROPFILES:
+		case WM_DROPFILES: // when a file has been dropped on the window
 		{
 			HDROP hDrop = (HDROP)wParam;
 			UINT bufferSize = DragQueryFileA(hDrop, 0, NULL, 512); // DragQueryFileA returns the length of the path of the file if the pointer to the file buffer is NULL
@@ -221,9 +234,9 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 			windowBinding[hwnd]->containsDroppedFile = true;
 			windowBinding[hwnd]->droppedFile = std::string(fileBuffer);
 
-#ifdef _DEBUG
-			std::cout << "Detected dropped file: " + windowBinding[hwnd]->droppedFile << std::endl;
-#endif
+			#ifdef _DEBUG
+				std::cout << "Detected dropped file: " + windowBinding[hwnd]->droppedFile << std::endl;
+			#endif
 
 			delete[] fileBuffer;
 			break;
@@ -231,6 +244,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 	
 		case WM_TIMER:
 			break;
+
 		default:
 			return DefWindowProc(hwnd, message, wParam, lParam);
 	}

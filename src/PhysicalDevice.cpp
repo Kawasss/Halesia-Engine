@@ -100,21 +100,14 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface surface)
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    VkPhysicalDeviceVulkan11Features features{};
-    features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-    features.shaderDrawParameters = VK_TRUE; //this is needed for gl_DrawID
-
     VkPhysicalDeviceRobustness2FeaturesEXT imageFeatures{}; // is needed for using empty textures (allows for easy async loading)
     imageFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
     imageFeatures.nullDescriptor = VK_TRUE;
-    imageFeatures.pNext = &features;
 
     //check for bindless support
     VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
     indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-    //indexingFeatures.descriptorBindingSampledImageUpdateAfterBind = VK_TRUE;
     indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
-    //indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
     indexingFeatures.runtimeDescriptorArray = VK_TRUE;
     indexingFeatures.pNext = &imageFeatures;
 

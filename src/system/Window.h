@@ -43,7 +43,7 @@ enum class WindowStyle : uint32_t
 	TitleBar = WS_CAPTION
 };
 
-struct Win32WindowCreateInfo //thanks Vulkan for this idea
+struct Win32WindowCreateInfo
 {
 	std::wstring windowName = L"", className = L"GenericWindow";
 
@@ -52,9 +52,9 @@ struct Win32WindowCreateInfo //thanks Vulkan for this idea
 	HICON icon = LoadIconW(NULL, IDI_APPLICATION);
 	HCURSOR cursor = LoadCursorW(NULL, IDC_ARROW);
 
+	WindowMode windowMode = WINDOW_MODE_WINDOWED;
 	WindowStyle style = WindowStyle::OverlappedWindow;
 	ExtendedWindowStyle extendedWindowStyle = ExtendedWindowStyle::SunkenEdgeBorder;
-	WindowMode windowMode = WINDOW_MODE_WINDOWED;
 
 	bool startMaximized = false;
 	bool setTimer = false;
@@ -94,18 +94,22 @@ class Win32Window
 		void GetRelativeCursorPosition(int& x, int& y);
 		void LockCursor();
 		void UnlockCursor();
+		void Recreate(WindowMode windowMode);
 
 		void Destroy();
 
 	private:
 		static MSG message;
+		HICON icon;
+		HCURSOR cursor;
 		static std::map<HWND, Win32Window*> windowBinding;
 		static std::vector<Win32Window*> windows;
 		std::string droppedFile = "";
-		std::wstring className = L"";
+		std::wstring className = L"", windowName = L"";
 		int width = 0, height = 0, x = 0, y = 0, cursorX = 0, cursorY = 0, wheelRotation;
 		bool shouldClose = false, lockCursor = false, containsDroppedFile;
 		WindowMode currentWindowMode;
+		ExtendedWindowStyle extendedWindowStyle;
 		
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 };

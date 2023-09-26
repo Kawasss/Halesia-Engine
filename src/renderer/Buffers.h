@@ -11,7 +11,7 @@ public:
 	VkBuffer GetVkBuffer();
 
 protected:
-	template<typename T> void GenerateBuffer(BufferCreationObject creationObject,/*PhysicalDevice physicalDevice,*/ VkBufferUsageFlags usage, /*VkCommandPool commandPool, VkQueue queue,*/ const std::vector<T> bufferData);
+	template<typename T> void GenerateBuffer(BufferCreationObject creationObject, VkBufferUsageFlags usage, const std::vector<T> bufferData);
 
 	VkDevice logicalDevice;
 	VkBuffer buffer;
