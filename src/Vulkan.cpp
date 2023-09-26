@@ -260,8 +260,8 @@ VkInstance Vulkan::GenerateInstance()
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;   
 
-    createInfo.enabledExtensionCount = (uint32_t)requiredExtensions.size();
-    createInfo.ppEnabledExtensionNames = requiredExtensions.data();
+    createInfo.enabledExtensionCount = (uint32_t)requiredInstanceExtensions.size();
+    createInfo.ppEnabledExtensionNames = requiredInstanceExtensions.data();
 
     if (enableValidationLayers)
     {
@@ -270,6 +270,12 @@ VkInstance Vulkan::GenerateInstance()
     }
     else
         createInfo.enabledLayerCount = 0;
+
+#ifdef _DEBUG
+    std::cout << "Enabled instance extensions:" << std::endl;
+    for (const char* extension : requiredInstanceExtensions)
+        std::cout << "  " + (std::string)extension << std::endl;
+#endif
 
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS)
         throw std::runtime_error("Couldn't create a Vulkan instance");

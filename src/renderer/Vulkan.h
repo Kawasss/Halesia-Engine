@@ -17,12 +17,22 @@ const std::vector<const char*> validationLayers =
     "VK_LAYER_KHRONOS_validation"
 };
 
-const std::vector<const char*> requiredExtensions =
+// for some reason VK_KHR_WIN32_SURFACE_EXTENSION_NAME throws an "undeclared identifier" error so this just redefines it
+#undef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+#define VK_KHR_WIN32_SURFACE_EXTENSION_NAME "VK_KHR_win32_surface"
+
+const std::vector<const char*> requiredInstanceExtensions =
 {
-    "VK_KHR_surface",
-    "VK_KHR_win32_surface"//,
-    //"VK_KHR_acceleration_structure",
-    //"VK_KHR_ray_tracing_pipeline"
+    VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+    VK_KHR_SURFACE_EXTENSION_NAME,
+};
+
+const std::vector<const char*> requiredLogicalDeviceExtensions =
+{
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME, 
+    VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+    VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME
 };
 
 class Vulkan

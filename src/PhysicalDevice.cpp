@@ -81,8 +81,6 @@ uint64_t PhysicalDevice::VRAM()
 
 VkDevice PhysicalDevice::GetLogicalDevice(Surface surface)
 {
-    std::vector<const char*> requiredExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-
     VkDevice device;
     QueueFamilyIndices indices = QueueFamilies(surface);
 
@@ -121,18 +119,23 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface surface)
     if (!indexingFeatures.descriptorBindingPartiallyBound || !indexingFeatures.runtimeDescriptorArray)
         throw std::runtime_error("Bindless textures aren't supported, the engine can't work without them");
 
-
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.pNext = &deviceFeatures2;
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-    createInfo.enabledExtensionCount = requiredExtensions.size();
-    createInfo.ppEnabledExtensionNames = requiredExtensions.data();
+    createInfo.enabledExtensionCount = requiredLogicalDeviceExtensions.size();
+    createInfo.ppEnabledExtensionNames = requiredLogicalDeviceExtensions.data();
     createInfo.enabledLayerCount = 0;
 
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
         throw std::runtime_error("Failed to create the logical device for the physical device " + (std::string)Properties().deviceName);
+
+#ifdef _DEBUG
+    std::cout << "Enabled logical device extensions:" << std::endl;
+    for (const char* extension : requiredLogicalDeviceExtensions)
+        std::cout << "  " + (std::string)extension << std::endl;
+#endif
 
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 
