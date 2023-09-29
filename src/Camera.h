@@ -54,6 +54,7 @@ class OrbitCamera : public Camera
 {
 public:
 	glm::vec3 pivot = glm::vec3(0);
+	float radius = 2;
 
 	OrbitCamera() { SetScript(this); }
 	void Update(Win32Window* window, float delta) override;
