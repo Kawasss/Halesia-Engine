@@ -132,10 +132,25 @@ struct UpdateSceneData
 	bool* playOneFrame;
 };
 
+CameraInjector cameraInjector;
+Camera* orbitCamera = new OrbitCamera();
+void ManageCameraInjector(Scene* scene, bool pauseGame)
+{
+	if (pauseGame && !cameraInjector.IsInjected())
+	{
+		cameraInjector = CameraInjector{ scene };
+		cameraInjector.Inject(orbitCamera);
+	}
+	else if (!pauseGame && cameraInjector.IsInjected())
+		cameraInjector.Eject();
+}
+
 void UpdateScene(UpdateSceneData* sceneData)
 {
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	
+	ManageCameraInjector(sceneData->scene, sceneData->pauseGame);
+
 	sceneData->scene->UpdateCamera(sceneData->window, sceneData->delta);
 	if (!sceneData->pauseGame || *sceneData->playOneFrame)
 	{
@@ -251,7 +266,8 @@ HalesiaExitCode HalesiaInstance::Run()
 				window->Recreate(WINDOW_MODE_BORDERLESS_WINDOWED);
 			//if (!scene->HasFinishedLoading())
 			//	continue; // quick patch to prevent read access violation
-
+			if (Input::IsKeyPressed(VirtualKey::C))
+				pauseGame = false;
 			showFPS = !showFPS ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F1) : true;
 			pauseGame = !pauseGame ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F2) : true;
 			showRAM = !showRAM ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F3) : true;

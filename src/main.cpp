@@ -6,20 +6,14 @@
 class TestCamera : public Camera
 {
 public:
-	Object* objectToView;
-
 	TestCamera()
 	{
 		SetScript(this);
 	}
 
+	float sumX = 0, sumY = 0;
 	void Update(Win32Window* window, float delta) override
 	{
-		if (Input::IsKeyPressed(VirtualKey::R))
-		{
-			pitch = 0;
-			yaw = -(glm::pi<float>() / 2);
-		}
 		DefaultUpdate(window, delta);
 	}
 };
@@ -66,17 +60,16 @@ public:
 	{
 		CreateObject(this, creationData, creationObjects);
 	}
+
 	float progress = -1;
 	void Update(float delta) override
 	{
-		transform.scale = glm::vec3(0.1f);
+		/*transform.scale = glm::vec3(0.1f);
 		progress += delta * 0.001f* index;
-		//if (progress >= 2 * glm::pi<float>())
-		//{
+		
 		transform.position.x = cos(progress);
 		transform.position.y = sin(progress);
-		transform.position.z = cos(progress) * sin(progress);
-		//}
+		transform.position.z = cos(progress) * sin(progress);*/
 	}
 };
 
@@ -86,12 +79,14 @@ class TestScene : public Scene
 	void Start() override
 	{
 		//AddCustomObject<TestObject>("blahaj.obj", OBJECT_IMPORT_EXTERNAL);
-		objectToPause = AddCustomObject<TestObject>("monkey");
+		/*objectToPause = AddCustomObject<TestObject>("monkey");
 		for (int i = 0; i < 10; i++)
 		{
 			Object* objPtr = AddCustomObject<RotatingCube>("stdObj/monkey.obj", OBJECT_IMPORT_EXTERNAL);
 			objPtr->GetScript<RotatingCube*>()->index = i + 1;
-		}
+		}*/
+		Object* objPtr = AddCustomObject<RotatingCube>("stdObj/monkey.obj", OBJECT_IMPORT_EXTERNAL);
+		objPtr->GetScript<RotatingCube*>()->index = 0;
 
 		this->camera = new TestCamera();
 	}

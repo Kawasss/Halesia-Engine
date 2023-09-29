@@ -2,28 +2,64 @@
 #include "../Scene.h"
 #include "../Console.h"
 
-Camera* cameraHeldInStatis = nullptr; // it would be better to make a map to hold a scnene and camera, so that its possible to inject into multiple scenes at once
-void InjectCamera(Scene* scene, Camera* camera) // if culling is added make it so that the culling is still done via the normal camera
+class CameraInjector
 {
-	if (!scene->HasFinishedLoading())
+public:
+	CameraInjector(Scene* scene = nullptr, bool inheritCameraTransformProperties = true)
 	{
-		Console::WriteLine("Failed to inject a camera, the scene hasn't fininsed loading", MESSAGE_SEVERITY_ERROR);
-		return;
+		sceneToInjectInto = scene;
+		inheritTransformProperties = inheritCameraTransformProperties;
 	}
-	camera->position = scene->camera->position;
-	camera->pitch = scene->camera->pitch;
-	camera->yaw = scene->camera->yaw;
 
-	cameraHeldInStatis = scene->camera;
-	scene->camera = camera;
-}
+	void Inject(Camera* newCamera = Scene::defaultCamera)
+	{
+		if (sceneToInjectInto == nullptr || newCamera == nullptr)
+		{
+			Console::WriteLine("Failed to inject a camera: the scene or camera is invalid.", MESSAGE_SEVERITY_ERROR);
+			return;
+		}
+		if (inheritTransformProperties)
+		{
+			newCamera->position = sceneToInjectInto->camera->position;
+			newCamera->pitch = sceneToInjectInto->camera->pitch;
+			newCamera->yaw = sceneToInjectInto->camera->yaw;
+		}
 
-bool CameraIsInjected(Scene* scene)
-{
-	return !(scene->camera == cameraHeldInStatis);
-}
+		cameraHeldInStasis = sceneToInjectInto->camera;
+		sceneToInjectInto->camera = newCamera;
+	}
 
-void EjectCamera(Scene* scene)
-{
-	scene->camera = cameraHeldInStatis;
-}
+	void Eject()
+	{
+		if (cameraHeldInStasis == nullptr)
+		{
+			Console::WriteLine("Failed to eject the camera: no camera has been injected.", MESSAGE_SEVERITY_ERROR);
+			return;
+		}
+		sceneToInjectInto->camera = cameraHeldInStasis;
+		cameraHeldInStasis = nullptr;
+	}
+
+	bool IsInjected()
+	{
+		return cameraHeldInStasis != nullptr;
+	}
+
+	Camera* GetStoredCamera()
+	{
+		if (cameraHeldInStasis == nullptr)
+		{
+			Console::WriteLine("The stored camera has been requested, but can't given since no camera has been injected, returning a nullptr.", MESSAGE_SEVERITY_ERROR);
+			return nullptr;
+		}
+
+		return cameraHeldInStasis;
+	}
+
+private:
+	Scene* sceneToInjectInto = nullptr;
+	Camera* cameraHeldInStasis = nullptr;
+	bool inheritTransformProperties = true;
+};
+
+

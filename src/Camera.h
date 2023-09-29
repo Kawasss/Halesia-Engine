@@ -49,3 +49,15 @@ protected:
 	glm::vec3 front = glm::vec3(1, 0, 0);
 	const float SENSITIVITY = 0.1f;
 };
+
+class OrbitCamera : public Camera
+{
+public:
+	glm::vec3 pivot = glm::vec3(0);
+
+	OrbitCamera() { SetScript(this); }
+	void Update(Win32Window* window, float delta) override;
+
+private:
+	float sumX = 0, sumY = 0;
+};

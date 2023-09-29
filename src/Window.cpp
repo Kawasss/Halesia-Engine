@@ -11,7 +11,7 @@ std::vector<Win32Window*> Win32Window::windows;
 MSG Win32Window::message;
 
 Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
-{;
+{
 	width = createInfo.width;
 	height = createInfo.height;
 	x = createInfo.x;
@@ -91,7 +91,6 @@ void Win32Window::Recreate(WindowMode windowMode)
 	}
 	else if (currentWindowMode == WINDOW_MODE_WINDOWED)
 		window = CreateWindowExW((DWORD)extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)WindowStyle::OverlappedWindow, x, y, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
-	//std::cout << GetLastErrorAsString() << std::endl;
 }
 
 void Win32Window::PollMessages()
@@ -185,23 +184,26 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 			windowBinding[hwnd]->shouldClose = true;
 			DestroyWindow(hwnd);
 			break;
+
 		case WM_DESTROY: // when the window is getting destroyed
 			PostQuitMessage(0);
 			break;
+
 		case WM_SIZE: // when the window is resized
-		{
 			windowBinding[hwnd]->resized = true;
 			windowBinding[hwnd]->width = LOWORD(lParam);
 			windowBinding[hwnd]->height = HIWORD(lParam);
-		}
 			break;
+
 		case WM_MOUSEMOVE: // when the cursor has moved
 			if (windowBinding[hwnd]->lockCursor) // if the cursor is locked it has to stay inside the window, so this locks resets it to the center of the screen
 				SetCursorPos(windowBinding[hwnd]->width / 2, windowBinding[hwnd]->height / 2);
 			break;
+
 		case WM_MOUSEWHEEL: // when the mouse wheel has moved
 			windowBinding[hwnd]->wheelRotation = GET_WHEEL_DELTA_WPARAM(wParam);
 			break;
+
 		case WM_INPUT: // when an input has been detected
 		{
 			UINT sizeOfStruct = sizeof(RAWINPUT);
@@ -215,7 +217,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 				throw std::runtime_error("GetRawInputData does not return correct size");
 
 			RAWINPUT* rawInput = (RAWINPUT*)bytePointer;
-			if (!(rawInput->header.dwType == RIM_TYPEMOUSE))
+			if (rawInput->header.dwType != RIM_TYPEMOUSE)
 				break;
 
 			windowBinding[hwnd]->cursorX = rawInput->data.mouse.lLastX;
@@ -224,6 +226,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 			delete[] bytePointer;
 			break;
 		}
+
 		case WM_DROPFILES: // when a file has been dropped on the window
 		{
 			HDROP hDrop = (HDROP)wParam;

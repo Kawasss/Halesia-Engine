@@ -1,6 +1,7 @@
 #include "Camera.h"
 #include "system/Input.h"
 #include <iostream>
+#include <algorithm>
 #include "system/Window.h"
 
 void Camera::Update(Win32Window* window, float delta)
@@ -20,7 +21,7 @@ void Camera::DefaultUpdate(Win32Window* window, float delta)
 		position += right * (cameraSpeed * delta * 0.001f);
 	if (Input::IsKeyPressed(VirtualKey::Space))
 		position += up * (cameraSpeed * delta * 0.001f);
-	if (Input::IsKeyPressed(VirtualKey::LeftControl))
+	if (Input::IsKeyPressed(VirtualKey::LeftShift))
 		position -= up * (cameraSpeed * delta * 0.1f);
 
 	int newPosX, newPosY;
@@ -97,6 +98,44 @@ void Camera::UpdateVectors()
 
 	front = glm::normalize(front);
 	
+	right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
+	up = glm::normalize(glm::cross(right, front));
+}
+
+// orbit camera
+
+void OrbitCamera::Update(Win32Window* window, float delta)
+{
+	if (Input::IsKeyPressed(VirtualKey::W))
+		pivot += front * (cameraSpeed * delta * 0.001f);
+	if (Input::IsKeyPressed(VirtualKey::S))
+		pivot -= front * (cameraSpeed * delta * 0.001f);
+	if (Input::IsKeyPressed(VirtualKey::A))
+		pivot -= right * (cameraSpeed * delta * 0.001f);
+	if (Input::IsKeyPressed(VirtualKey::D))
+		pivot += right * (cameraSpeed * delta * 0.001f);
+	if (Input::IsKeyPressed(VirtualKey::Space))
+		pivot += up * (cameraSpeed * delta * 0.001f);
+	if (Input::IsKeyPressed(VirtualKey::LeftShift))
+		pivot -= up * (cameraSpeed * delta * 0.1f);
+
+	int x, y;
+	window->GetRelativeCursorPosition(x, y);
+
+	sumX += x;
+	sumY += y;
+
+	float phi = sumX * 2 * glm::pi<float>() / window->GetWidth();
+	float theta = sumY * glm::pi<float>() / window->GetHeight();
+	theta = std::clamp(theta, -1.0f, 1.0f);
+
+	position.x = 2 * (cos(phi) * cos(theta));
+	position.y = 2 * sin(theta);
+	position.z = 2 * (cos(theta) * sin(phi));
+	position += pivot;
+
+	front = glm::normalize(pivot - position);
+
 	right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
 	up = glm::normalize(glm::cross(right, front));
 }
