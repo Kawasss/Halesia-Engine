@@ -1,11 +1,8 @@
-#pragma comment(lib, "rpcrt4.lib")
 #include "Object.h"
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <stdexcept>
-#include <rpc.h>
-#include <winerror.h>
 #include <iostream>
 #include <future>
 #include "Console.h"
@@ -42,11 +39,9 @@ void Mesh::Destroy()
 	indexBuffer.Destroy();
 	delete this;
 }
-
-void GenerateUUID(UUID* uuid)
+void GenerateHandle(Handle& handle)
 {
-	if (HRESULT_FROM_WIN32(UuidCreate(uuid)) != S_OK)
-		throw std::runtime_error("Failed to create a UUID for its parent object");
+	handle = ResourceManager::GenerateHandle();
 }
 
 void Object::AwaitGeneration()
@@ -66,21 +61,13 @@ void GenerateObjectWithData(Object* object, ObjectCreationObject creationObject,
 		object->meshes.push_back(Mesh{ creationObject, meshData });
 
 	object->transform = Transform(creationData.position, creationData.rotation, creationData.scale, object->meshes[0].extents, object->meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
-	GenerateUUID(&object->uuid);
+	GenerateHandle(object->hObject);
 
 	object->finishedLoading = true; //maybe use mutex here or just find better solution
 
 #ifdef _DEBUG
-	char* str;
-	UuidToStringA(&object->uuid, (RPC_CSTR*)&str);
-	Console::WriteLine("Created new object \"" + object->name + "\" with unique id \"" + str + '\"', MESSAGE_SEVERITY_DEBUG);
+	Console::WriteLine("Created new object \"" + object->name + "\" with unique id \"" + std::to_string(object->hObject) + '\"', MESSAGE_SEVERITY_DEBUG);
 #endif
-}
-
-void GenerateObject(Object* object, const ObjectCreationObject& creationObject, std::string path)
-{
-	//ObjectCreationData creationData = GenericLoader::LoadObjectFile(path);
-	//GenerateObjectWithData(object, creationObject, creationData);
 }
 
 void Object::RecreateMeshes(const MeshCreationObject& creationObject)
@@ -94,20 +81,9 @@ void Object::CreateObject(void* customClassPointer, const ObjectCreationData& cr
 	GenerateObjectWithData(this, creationObject, creationData);
 }
 
-void Object::CreateObject(void* customClassPointer, std::string path, const MeshCreationObject& creationObject)
-{
-	scriptClass = customClassPointer;
-	generationProcess = std::async(GenerateObject, this, creationObject, path);
-}
-
 Object::Object(const ObjectCreationData& creationData, const ObjectCreationObject& creationObject)
 {
 	generationProcess = std::async(GenerateObjectWithData, this, creationObject, creationData);
-}
-
-Object::Object(std::string path, const ObjectCreationObject& creationObject)
-{
-	generationProcess = std::async(GenerateObject, this, creationObject, path);
 }
 
 bool Object::HasFinishedLoading()

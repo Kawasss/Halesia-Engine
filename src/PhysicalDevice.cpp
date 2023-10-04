@@ -98,8 +98,34 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface surface)
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
+    //ray tracing support
+    VkPhysicalDeviceBufferDeviceAddressFeatures addressFeatures{};
+    addressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
+    addressFeatures.bufferDeviceAddress = VK_TRUE;
+    addressFeatures.bufferDeviceAddressCaptureReplay = VK_FALSE;
+    addressFeatures.bufferDeviceAddressMultiDevice = VK_TRUE;
+
+    VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure{};
+    accelerationStructure.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    accelerationStructure.pNext = &addressFeatures;
+    accelerationStructure.accelerationStructure = VK_TRUE;
+    accelerationStructure.accelerationStructureCaptureReplay = VK_FALSE;
+    accelerationStructure.accelerationStructureIndirectBuild = VK_FALSE;
+    accelerationStructure.accelerationStructureHostCommands = VK_FALSE;
+    accelerationStructure.descriptorBindingAccelerationStructureUpdateAfterBind = VK_FALSE;
+
+    VkPhysicalDeviceRayTracingPipelineFeaturesKHR rayTracingFeatures{};
+    rayTracingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_FEATURES_KHR;
+    rayTracingFeatures.pNext = &accelerationStructure;
+    rayTracingFeatures.rayTracingPipeline = VK_TRUE;
+    rayTracingFeatures.rayTracingPipelineShaderGroupHandleCaptureReplay = VK_FALSE;
+    rayTracingFeatures.rayTracingPipelineShaderGroupHandleCaptureReplayMixed = VK_FALSE;
+    rayTracingFeatures.rayTracingPipelineTraceRaysIndirect = VK_FALSE;
+    rayTracingFeatures.rayTraversalPrimitiveCulling = VK_FALSE;
+
     VkPhysicalDeviceRobustness2FeaturesEXT imageFeatures{}; // is needed for using empty textures (allows for easy async loading)
     imageFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ROBUSTNESS_2_FEATURES_EXT;
+    imageFeatures.pNext = &rayTracingFeatures;
     imageFeatures.nullDescriptor = VK_TRUE;
 
     //check for bindless support

@@ -186,6 +186,7 @@ void SceneLoader::RetrieveHeader()
 {
 	char lHeader[101];
 	stream.read(lHeader, 100);
+	lHeader[100] = '\0';
 	this->header = std::string(lHeader);
 }
 

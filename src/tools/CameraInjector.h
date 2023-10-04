@@ -56,6 +56,11 @@ public:
 		return cameraHeldInStasis;
 	}
 
+	~CameraInjector()
+	{
+		Eject();
+	}
+
 private:
 	Scene* sceneToInjectInto = nullptr;
 	Camera* cameraHeldInStasis = nullptr;

@@ -33,17 +33,6 @@ public:
 	{
 		transform.scale = glm::vec3(0.3f);
 		transform.position.z = -1;
-		
-		//if (progress >= 2 * glm::pi<float>())
-		//{
-			//transform.position.x = cos(progress) * 2;
-		//}
-		/*if (Input::IsKeyPressed(VirtualKey::R))
-			transform.rotation.y += delta * 0.1f;
-		if (Input::IsKeyPressed(VirtualKey::T))
-			transform.position += delta * 0.1f * transform.GetForward();
-		if (Input::IsKeyPressed(VirtualKey::Space))
-			transform.position.y += delta * 0.1f;*/
 	}
 
 	~TestObject()
@@ -78,13 +67,6 @@ class TestScene : public Scene
 	Object* objectToPause = nullptr;
 	void Start() override
 	{
-		//AddCustomObject<TestObject>("blahaj.obj", OBJECT_IMPORT_EXTERNAL);
-		/*objectToPause = AddCustomObject<TestObject>("monkey");
-		for (int i = 0; i < 10; i++)
-		{
-			Object* objPtr = AddCustomObject<RotatingCube>("stdObj/monkey.obj", OBJECT_IMPORT_EXTERNAL);
-			objPtr->GetScript<RotatingCube*>()->index = i + 1;
-		}*/
 		Object* objPtr = AddCustomObject<RotatingCube>("stdObj/monkey.obj", OBJECT_IMPORT_EXTERNAL);
 		objPtr->GetScript<RotatingCube*>()->index = 0;
 

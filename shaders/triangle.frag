@@ -95,9 +95,9 @@ void main() {
 
     vec3 Lo = vec3(0.0);
 
-    vec3 L = normalize(vec3(0, 0, 0) - worldPos);
+    vec3 L = normalize(vec3(0, 2, 0) - worldPos);
     vec3 H = normalize(V + L);
-    float distance = length(vec3(0, 0, 0) - worldPos);
+    float distance = length(vec3(0, 2, 0) - worldPos);
     float attenuation = 1.0 / (distance * distance);
     vec3 radiance = vec3(2);// * attenuation;
 

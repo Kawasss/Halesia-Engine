@@ -8,9 +8,10 @@
 #include "Vertex.h"
 #include "renderer/PhysicalDevice.h"
 #include "Transform.h"
-#include "renderer/Texture.h"
+#include "Material.h"
 #include "CreationObjects.h"
 #include "SceneLoader.h"
+#include "ResourceManager.h"
 
 enum ObjectState
 {
@@ -26,44 +27,6 @@ enum ObjectState
 	/// The attached script isn't run and the object isn't rendered
 	/// </summary>
 	STATUS_DISABLED
-};
-
-struct Material
-{
-	// dont know if dynamically allocated is necessary since the material will always be used for the lifetime of the mesh, the class is sort of big so not so sure if copying is cheap
-	Texture* albedo = Texture::placeholderAlbedo;
-	Texture* normal = Texture::placeholderNormal;
-	Texture* metallic = Texture::placeholderMetallic;
-	Texture* roughness = Texture::placeholderRoughness;
-	Texture* ambientOcclusion = Texture::placeholderAmbientOcclusion;
-
-	Texture* At(int i)
-	{
-		switch (i) 
-		{
-		case 0:
-			return albedo;
-		case 1:
-			return normal;
-		case 2:
-			return metallic;
-		case 3:
-			return roughness;
-		case 4:
-			return ambientOcclusion;
-		default:
-			return albedo;
-		}
-	}
-
-	void Destroy() // only delete the textures if they arent the placeholders
-	{
-		if (albedo != Texture::placeholderAlbedo) albedo->Destroy();
-		if (normal != Texture::placeholderNormal) normal->Destroy();
-		if (metallic != Texture::placeholderMetallic) metallic->Destroy();
-		if (roughness != Texture::placeholderRoughness) roughness->Destroy();
-		if (ambientOcclusion != Texture::placeholderAmbientOcclusion) ambientOcclusion->Destroy();
-	}
 };
 
 struct Mesh
@@ -118,7 +81,7 @@ public:
 	std::vector<Mesh> meshes;
 	ObjectState state = STATUS_VISIBLE;
 	std::string name;
-	UUID uuid{};
+	Handle hObject{};
 	bool finishedLoading = false;
 	bool shouldBeDestroyed = false;
 
@@ -134,15 +97,6 @@ protected:
 	/// <param name="creationData"></param>
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
 	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
-
-	/// <summary>
-	/// The async version of CreateObject. This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.
-	/// Be weary of accessing members in the constructor, since they don't have to be loaded in. AwaitGeneration awaits the async thread.
-	/// </summary>
-	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
-	/// <param name="path">: The path to a 3D model file</param>
-	/// <param name="creationObject">: The objects needed to create the meshes</param>
-	void CreateObject(void* customClassInstancePointer, std::string path, const ObjectCreationObject& creationObject);
 
 	static void Free(Object* objPtr)
 	{

@@ -4,6 +4,7 @@
 #include <stdexcept>
 #include "system/SystemMetrics.h"
 #include "Console.h"
+#include "system/Input.h"
 
 std::map<HWND, Win32Window*> Win32Window::windowBinding;
 std::vector<Win32Window*> Win32Window::windows;
@@ -46,7 +47,7 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 	{
 		width = GetSystemMetrics(SM_CXSCREEN);
 		height = GetSystemMetrics(SM_CYSCREEN);
-		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)WindowStyle::PopUp, createInfo.x, createInfo.y, monitorWidth, monitorHeight, NULL, NULL, hInstance, NULL);
+		window = CreateWindowExW(/*(DWORD)createInfo.extendedWindowStyle*/WS_EX_APPWINDOW, className.c_str(), windowName.c_str(), /*(DWORD)WindowStyle::PopUp*/WS_POPUPWINDOW, createInfo.x, createInfo.y, monitorWidth, monitorHeight, NULL, NULL, hInstance, NULL);
 	}
 	else if (createInfo.windowMode == WINDOW_MODE_WINDOWED)
 		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)WindowStyle::OverlappedWindow, createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
@@ -76,21 +77,29 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 		throw std::runtime_error("Failed to register the raw input device for the mouse");
 }
 
-void Win32Window::Recreate(WindowMode windowMode)
+void Win32Window::ChangeWindowMode(WindowMode windowMode)
 {
 	if (windowMode == currentWindowMode)
 		return;
 
-	DestroyWindow(window);
-	this->currentWindowMode = windowMode;
 	if (currentWindowMode == WINDOW_MODE_BORDERLESS_WINDOWED)
 	{
-		width = GetSystemMetrics(SM_CXSCREEN);
-		height = GetSystemMetrics(SM_CYSCREEN);
-		window = CreateWindowExW((DWORD)extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)WindowStyle::PopUp, 0, 0, monitorWidth, monitorHeight, NULL, NULL, hInstance, NULL);
+		width = monitorWidth / 2;
+		height = monitorHeight / 2;
+		SetWindowLongPtr(window, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+		if (SetWindowPos(window, NULL, width / 2, height / 2, width, height, SWP_FRAMECHANGED) == 0)
+			throw std::runtime_error("Failed to resize the window to windowed mode: " + GetLastErrorAsString());
+		currentWindowMode = WINDOW_MODE_WINDOWED;
 	}
 	else if (currentWindowMode == WINDOW_MODE_WINDOWED)
-		window = CreateWindowExW((DWORD)extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)WindowStyle::OverlappedWindow, x, y, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, hInstance, NULL);
+	{
+		width = monitorWidth;
+		height = monitorHeight;
+		SetWindowLong(window, GWL_STYLE, WS_POPUPWINDOW);
+		if (SetWindowPos(window, NULL, 0, 0, monitorWidth, monitorHeight, SWP_FRAMECHANGED) == 0)
+			throw std::runtime_error("Failed to resize the window to borderless windowed mode: " + GetLastErrorAsString());
+		currentWindowMode = WINDOW_MODE_BORDERLESS_WINDOWED;
+	}
 }
 
 void Win32Window::PollMessages()
@@ -203,6 +212,16 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 		case WM_MOUSEWHEEL: // when the mouse wheel has moved
 			windowBinding[hwnd]->wheelRotation = GET_WHEEL_DELTA_WPARAM(wParam);
 			break;
+
+		case WM_KEYDOWN:
+		{
+			if (wParam != (DWORD)VirtualKey::F11)
+				break;
+
+			WindowMode newWindowMode = windowBinding[hwnd]->currentWindowMode == WINDOW_MODE_BORDERLESS_WINDOWED ? WINDOW_MODE_WINDOWED : WINDOW_MODE_BORDERLESS_WINDOWED; // take the other window mode then the one used right now
+			windowBinding[hwnd]->ChangeWindowMode(newWindowMode);
+			break;
+		}
 
 		case WM_INPUT: // when an input has been detected
 		{

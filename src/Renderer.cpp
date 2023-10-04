@@ -5,13 +5,14 @@
 #include <array>
 #include <chrono>
 #include "renderer/Vulkan.h"
+#include "renderer/Swapchain.h"
+#include "renderer/Surface.h"
+#include "renderer/PipelineBuilder.h"
+#include "renderer/Texture.h"
 #include "vulkan/vk_enum_string_helper.h"
 #include "system/SystemMetrics.h"
 #include "system/Window.h"
-#include "renderer/Swapchain.h"
-#include "renderer/Surface.h"
 #include "system/Input.h"
-#include "renderer/Texture.h"
 #include "Console.h"
 
 #define IMGUI_IMPLEMENTATION
@@ -529,6 +530,7 @@ void Renderer::CreateGraphicsPipeline()
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
 	scissor.extent = swapchain->extent;
+	PipelineBuilder builder{};
 
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
@@ -575,8 +577,10 @@ void Renderer::CreateGraphicsPipeline()
 
 	if (vkCreatePipelineLayout(logicalDevice, &layoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create a pipeline layout");
-
+		
 	CreateRenderPass();
+	
+	//graphicsPipeline = builder.BuildGraphicsPipeline(logicalDevice, descriptorSetLayout, renderPass, pipelineLayout, vertexShaderSource, fragmentShaderSource, dynamicStates, viewport, scissor);
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
 	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -930,7 +934,7 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 			{
 				VkDescriptorImageInfo imageInfo{};
 				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				imageInfo.imageView = mesh.material.At(i)->imageView;
+				imageInfo.imageView = mesh.material[i]->imageView;
 				imageInfo.sampler = textureSampler;
 
 				imageInfos.push_back(imageInfo);

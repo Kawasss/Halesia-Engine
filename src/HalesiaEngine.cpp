@@ -145,20 +145,22 @@ void ManageCameraInjector(Scene* scene, bool pauseGame)
 		cameraInjector.Eject();
 }
 
-void UpdateScene(UpdateSceneData* sceneData)
+void UpdateScene(UpdateSceneData& sceneData)
 {
+	SetThreadDescription(GetCurrentThread(), L"SceneUpdatingThread");
+
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	
-	ManageCameraInjector(sceneData->scene, sceneData->pauseGame);
+	ManageCameraInjector(sceneData.scene, sceneData.pauseGame);
 
-	sceneData->scene->UpdateCamera(sceneData->window, sceneData->delta);
-	if (!sceneData->pauseGame || *sceneData->playOneFrame)
+	sceneData.scene->UpdateCamera(sceneData.window, sceneData.delta);
+	if (!sceneData.pauseGame || *sceneData.playOneFrame)
 	{
-		sceneData->scene->UpdateScripts(sceneData->delta);
-		sceneData->scene->Update(sceneData->delta);
-		*sceneData->playOneFrame = false;
+		sceneData.scene->UpdateScripts(sceneData.delta);
+		sceneData.scene->Update(sceneData.delta);
+		*sceneData.playOneFrame = false;
 	}
-	*sceneData->timeToComplete = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
+	*sceneData.timeToComplete = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 }
 
 void WriteAllCommandsToConsole()
@@ -206,27 +208,28 @@ struct UpdateRendererData
 	bool showAsyncTimes;
 };
 
-std::optional<std::string> UpdateRenderer(UpdateRendererData* rendererData)
+std::optional<std::string> UpdateRenderer(UpdateRendererData& rendererData)
 {
-	
+	SetThreadDescription(GetCurrentThread(), L"VulkanRenderingThread");
+
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
-	std::optional<std::string> command = rendererData->renderer->RenderDevConsole(rendererData->renderDevConsole);
-	if (rendererData->showFPS)
-		rendererData->renderer->RenderFPS(1 / rendererData->delta * 1000);
+	std::optional<std::string> command = rendererData.renderer->RenderDevConsole(rendererData.renderDevConsole);
+	if (rendererData.showFPS)
+		rendererData.renderer->RenderFPS(1 / rendererData.delta * 1000);
 
 	ramUsed.Add(GetPhysicalMemoryUsedByApp() / (1024 * 1024));
-	if (rendererData->showRAM)
-		rendererData->renderer->RenderGraph(ramUsed.buffer, "RAM in MB");
-	if (rendererData->showCPU)
-		rendererData->renderer->RenderGraph(CPUUsage.buffer, "CPU %");
-	if (rendererData->showGPU)
-		rendererData->renderer->RenderGraph(GPUUsage.buffer, "GPU %");
-	if (rendererData->showAsyncTimes)
-		rendererData->renderer->RenderPieGraph(rendererData->pieChartValues, "Async Times (µs)");
+	if (rendererData.showRAM)
+		rendererData.renderer->RenderGraph(ramUsed.buffer, "RAM in MB");
+	if (rendererData.showCPU)
+		rendererData.renderer->RenderGraph(CPUUsage.buffer, "CPU %");
+	if (rendererData.showGPU)
+		rendererData.renderer->RenderGraph(GPUUsage.buffer, "GPU %");
+	if (rendererData.showAsyncTimes)
+		rendererData.renderer->RenderPieGraph(rendererData.pieChartValues, "Async Times (µs)");
 
-	rendererData->renderer->DrawFrame(rendererData->objects, rendererData->camera, rendererData->delta);
+	rendererData.renderer->DrawFrame(rendererData.objects, rendererData.camera, rendererData.delta);
 
-	*rendererData->timeToComplete = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
+	*rendererData.timeToComplete = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 	return command;
 }
 
@@ -262,8 +265,6 @@ HalesiaExitCode HalesiaInstance::Run()
 
 		while (!window->ShouldClose())
 		{
-			if (Input::IsKeyPressed(VirtualKey::F11))
-				window->Recreate(WINDOW_MODE_BORDERLESS_WINDOWED);
 			//if (!scene->HasFinishedLoading())
 			//	continue; // quick patch to prevent read access violation
 			if (Input::IsKeyPressed(VirtualKey::C))
@@ -276,10 +277,10 @@ HalesiaExitCode HalesiaInstance::Run()
 			showAsyncTimes = !showAsyncTimes ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F6) : true;
 
 			UpdateSceneData sceneData{ scene, window, frameDelta, &asyncScriptsCompletionTime, pauseGame, &playOneFrame };
-			std::future<void> asyncScripts = std::async(UpdateScene, &sceneData);
+			std::future<void> asyncScripts = std::async(UpdateScene, std::ref(sceneData));
 
 			UpdateRendererData rendererData{ renderer, scene->camera, scene->allObjects, frameDelta, &asyncRendererCompletionTime, pieChartValuesPtr, renderDevConsole, showFPS, showRAM, showCPU, showGPU, showAsyncTimes };
-			std::future<std::optional<std::string>> asyncRenderer = std::async(UpdateRenderer, &rendererData);
+			std::future<std::optional<std::string>> asyncRenderer = std::async(UpdateRenderer, std::ref(rendererData));
 
 			if (window->ContainsDroppedFile())
 				scene->SubmitStaticObject(GenericLoader::LoadObjectFile(window->GetDroppedFile(), scene->allObjects.size()), renderer->GetVulkanCreationObjects());
@@ -310,7 +311,7 @@ HalesiaExitCode HalesiaInstance::Run()
 
 			devKeyIsPressedLastFrame = Input::IsKeyPressed(devConsoleKey);
 
-			Win32Window::PollMessages();
+			Win32Window::PollMessages(); // moved for swapchain / surface interference
 
 			std::optional<std::string> command = asyncRenderer.get();
 			if (command.has_value() && lastCommand != command.value())
@@ -318,6 +319,7 @@ HalesiaExitCode HalesiaInstance::Run()
 				HandleConsoleCommand(command.value());
 				lastCommand = command.value();
 			}
+
 			asyncScripts.get();
 
 			frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();

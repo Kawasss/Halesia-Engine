@@ -94,7 +94,7 @@ class Win32Window
 		void GetRelativeCursorPosition(int& x, int& y);
 		void LockCursor();
 		void UnlockCursor();
-		void Recreate(WindowMode windowMode);
+		void ChangeWindowMode(WindowMode windowMode);
 
 		void Destroy();
 

@@ -106,7 +106,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\physx\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies\spirv-reflect;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -124,7 +124,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\physx\include;C:\VulkanSDK\1.3.261.1\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\physx\include;C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\source\additionalDependencies\spirv-reflect;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -140,6 +140,9 @@
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Console.cpp" />
     <ClCompile Include="src\HalesiaEngine.cpp" />
+    <ClCompile Include="src\pipelineBuilder.cpp" />
+    <ClCompile Include="src\RayTracing.cpp" />
+    <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Object.cpp" />
@@ -162,6 +165,10 @@
     <ClInclude Include="src\CreationObjects.h" />
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\HalesiaEngine.h" />
+    <ClInclude Include="src\Material.h" />
+    <ClInclude Include="src\renderer\PipelineBuilder.h" />
+    <ClInclude Include="src\renderer\RayTracing.h" />
+    <ClInclude Include="src\ResourceManager.h" />
     <ClInclude Include="src\Object.h" />
     <ClInclude Include="src\Physics.h" />
     <ClInclude Include="src\renderer\Buffers.h" />
@@ -188,6 +195,10 @@
     <ResourceCompile Include="src\Halesia.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\gen.rgen" />
+    <None Include="shaders\hit.rchit" />
+    <None Include="shaders\miss.rmiss" />
+    <None Include="shaders\rayTracingCommon.glsl" />
     <None Include="shaders\triangle.frag" />
     <None Include="shaders\triangle.vert" />
   </ItemGroup>
