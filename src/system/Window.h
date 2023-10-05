@@ -57,7 +57,7 @@ struct Win32WindowCreateInfo
 	ExtendedWindowStyle extendedWindowStyle = ExtendedWindowStyle::SunkenEdgeBorder;
 
 	bool startMaximized = false;
-	bool setTimer = false;
+	bool setTimer = true;
 	unsigned int timeOutValue = USER_TIMER_MINIMUM;
 };
 

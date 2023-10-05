@@ -22,7 +22,7 @@ void Camera::DefaultUpdate(Win32Window* window, float delta)
 	if (Input::IsKeyPressed(VirtualKey::Space))
 		position += up * (cameraSpeed * delta * 0.001f);
 	if (Input::IsKeyPressed(VirtualKey::LeftShift))
-		position -= up * (cameraSpeed * delta * 0.1f);
+		position -= up * (cameraSpeed * delta * 0.001f);
 
 	int newPosX, newPosY;
 	window->GetRelativeCursorPosition(newPosX, newPosY);
@@ -98,6 +98,11 @@ void Camera::UpdateVectors()
 
 	front = glm::normalize(front);
 	
+	UpdateUpAndRightVectors();
+}
+
+void Camera::UpdateUpAndRightVectors()
+{
 	right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
 	up = glm::normalize(glm::cross(right, front));
 }

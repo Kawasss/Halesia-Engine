@@ -44,6 +44,11 @@ protected:
 	/// <param name="script"></param>
 	void SetScript(void* script) { attachedScript = script; }
 
+	/// <summary>
+	/// Updates the up and right vector based on the current front vector
+	/// </summary>
+	void UpdateUpAndRightVectors();
+
 	glm::vec3 up = glm::vec3(0, 1, 0);
 	glm::vec3 right = glm::vec3(1, 0, 0);
 	glm::vec3 front = glm::vec3(1, 0, 0);
