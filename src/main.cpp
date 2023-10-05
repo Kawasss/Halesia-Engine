@@ -1,7 +1,4 @@
-#include <Windows.h>
-
 #include "HalesiaEngine.h"
-#include "SceneLoader.h"
 
 class TestCamera : public Camera
 {

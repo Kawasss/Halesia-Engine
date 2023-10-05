@@ -26,9 +26,9 @@ void Camera::DefaultUpdate(Win32Window* window, float delta)
 
 	int newPosX, newPosY;
 	window->GetRelativeCursorPosition(newPosX, newPosY);
-
-	SetYaw(glm::degrees(yaw) + newPosX * SENSITIVITY);
-	SetPitch(glm::degrees(pitch) - newPosY * SENSITIVITY);
+	
+	SetYaw(glm::degrees(yaw) + newPosX * delta * SENSITIVITY);
+	SetPitch(glm::degrees(pitch) - newPosY * delta * SENSITIVITY);
 }
 
 Camera::Camera(glm::vec3 position, float aspectRatio)
@@ -122,7 +122,7 @@ void OrbitCamera::Update(Win32Window* window, float delta)
 	if (Input::IsKeyPressed(VirtualKey::Space))
 		pivot += up * (cameraSpeed * delta * 0.001f);
 	if (Input::IsKeyPressed(VirtualKey::LeftShift))
-		pivot -= up * (cameraSpeed * delta * 0.1f);
+		pivot -= up * (cameraSpeed * delta * 0.001f);
 
 	int x, y;
 	window->GetRelativeCursorPosition(x, y);

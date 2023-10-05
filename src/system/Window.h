@@ -106,8 +106,8 @@ class Win32Window
 		static std::vector<Win32Window*> windows;
 		std::string droppedFile = "";
 		std::wstring className = L"", windowName = L"";
-		int width = 0, height = 0, x = 0, y = 0, cursorX = 0, cursorY = 0, wheelRotation;
-		bool shouldClose = false, lockCursor = false, containsDroppedFile;
+		int width = 0, height = 0, x = 0, y = 0, cursorX = 0, cursorY = 0, wheelRotation = 0;
+		bool shouldClose = false, lockCursor = false, containsDroppedFile = false;
 		WindowMode currentWindowMode;
 		ExtendedWindowStyle extendedWindowStyle;
 		

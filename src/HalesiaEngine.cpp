@@ -323,6 +323,8 @@ HalesiaExitCode HalesiaInstance::Run()
 			asyncScripts.get();
 
 			frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();
+			/*while (frameDelta < 1.0f / 165 * 1000)
+				frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();*/
 			timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
 			timeSinceLastGraphUpdate += frameDelta;
