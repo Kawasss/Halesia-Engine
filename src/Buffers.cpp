@@ -18,7 +18,7 @@ VkBuffer VulkanBuffer::GetVkBuffer()
 	return buffer;
 }
 
-template<typename T> void VulkanBuffer::GenerateBuffer(BufferCreationObject creationObject,/*PhysicalDevice physicalDevice,*/ VkBufferUsageFlags usage, /*VkCommandPool commandPool, VkQueue queue,*/ const std::vector<T> bufferData)
+template<typename T> void VulkanBuffer::GenerateBuffer(BufferCreationObject creationObject, VkBufferUsageFlags usage, const std::vector<T> bufferData)
 {
 	Vulkan::globalThreadingMutex->lock();
 
@@ -46,11 +46,11 @@ template<typename T> void VulkanBuffer::GenerateBuffer(BufferCreationObject crea
 VertexBuffer::VertexBuffer(const BufferCreationObject& creationObject, const std::vector<Vertex> vertices)
 {
 	this->logicalDevice = creationObject.logicalDevice;
-	GenerateBuffer<Vertex>(creationObject, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertices); //creationObject.physicalDevice, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, creationObject.commandPool, creationObject.queue, vertices
+	GenerateBuffer<Vertex>(creationObject, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, vertices);
 }
 
 IndexBuffer::IndexBuffer(const BufferCreationObject& creationObject, const std::vector<uint16_t> indices)
 {
 	this->logicalDevice = creationObject.logicalDevice;
-	GenerateBuffer<uint16_t>(creationObject, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indices); //creationObject.physicalDevice, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, creationObject.commandPool, creationObject.queue, indices
+	GenerateBuffer<uint16_t>(creationObject, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, indices);
 }

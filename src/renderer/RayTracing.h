@@ -4,5 +4,5 @@
 class RayTracing
 {
 private:
-	void Init(PhysicalDevice physicalDevice);
+	void Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface);
 };
