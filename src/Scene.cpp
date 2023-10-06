@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <execution>
+#include <optional>
 #include "Scene.h"
 #include "Console.h"
 #include "SceneLoader.h"
@@ -59,34 +60,47 @@ void Scene::SubmitStaticObject(const ObjectCreationData& creationData, const Mes
 	staticObjects.push_back(objPtr);
 }
 
-template<typename T> void EraseMemberFromVector(std::vector<T>& vector, T memberToErase)
+ void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberToErase)
 {
-	for (auto i = vector.begin(); i != vector.end(); i++)
+	for (auto i = vector.begin(); i < vector.end(); i++)
 		if (*i == memberToErase)
+		{
 			vector.erase(i);
+			return;
+		}
 }
 
 void Scene::Free(Object* object)
 {
+	if (object == nullptr)
+	{
+		Console::WriteLine("Failed to delete the given object since it is a null pointer", MESSAGE_SEVERITY_ERROR);
+		return;
+	}
+	
+	std::optional<std::vector<Object*>::iterator> removeObjectIndex;
+	bool objectIsStatic = true;
+
 	for (auto i = allObjects.begin(); i != allObjects.end(); i++)
 		if (*i == object) // this checks if the object exists
 		{
-			allObjects.erase(i);
+			removeObjectIndex = i;
 
 			for (auto i = objectsWithScripts.begin(); i != objectsWithScripts.end(); i++)
 				if (*i == object)
-				{
-					objectsWithScripts.erase(i);
-					Console::WriteLine("Freed object with script \"" + object->name + '\"');
-					object->Destroy();
-					return;
-				}
-			EraseMemberFromVector(staticObjects, object); // if the object doesnt have a script it must be static
-			Console::WriteLine("Freed static object \"" + object->name + '\"');
-			object->Destroy();
-			return;
+					objectIsStatic = false;
+			break;
 		}
-	Console::WriteLine("Failed to free an object, because it isn't registered in the scene. Perhaps the object is already freed?", MESSAGE_SEVERITY_ERROR);
+	if (!removeObjectIndex.has_value())
+	{
+		Console::WriteLine("Failed to free an object, because it isn't registered in the scene. Maybe the object is already freed?", MESSAGE_SEVERITY_ERROR);
+		return;
+	}
+	
+	allObjects.erase(removeObjectIndex.value());
+	EraseMemberFromVector(objectIsStatic ? staticObjects : objectsWithScripts, object);
+	object->Destroy();
+	Console::WriteLine("Freed " + (std::string)(objectIsStatic ? "static" : "scripted") + " object "/* + object->name*/, MESSAGE_SEVERITY_DEBUG);
 }
 
 void Scene::Start()

@@ -37,7 +37,9 @@ void Mesh::Destroy()
 	material.Destroy();
 	vertexBuffer.Destroy();
 	indexBuffer.Destroy();
-	delete this;
+	indices.clear();
+	vertices.clear();
+	//delete this;
 }
 void GenerateHandle(Handle& handle)
 {

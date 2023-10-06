@@ -854,6 +854,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	ImGui::Render();
 
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
+	Vulkan::globalThreadingMutex->lock();
 
 	uint32_t imageIndex;
 	VkResult result = vkAcquireNextImageKHR(logicalDevice, swapchain->vkSwapchain, UINT64_MAX, imageAvaibleSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
@@ -891,7 +892,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	Vulkan::globalThreadingMutex->lock();
+	
 	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
 		throw std::runtime_error("Failed to submit the queue");
 

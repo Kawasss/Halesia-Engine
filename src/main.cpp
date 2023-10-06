@@ -39,12 +39,22 @@ public:
 
 class TestScene : public Scene
 {
+	Object* objPtr = nullptr;
 	void Start() override
 	{
-		Object* objPtr = AddCustomObject<RotatingObject>("stdObj/monkey.obj", OBJECT_IMPORT_EXTERNAL);
+		objPtr = AddCustomObject<RotatingObject>("stdObj/monkey.obj", OBJECT_IMPORT_EXTERNAL);
 
 		this->camera = new TestCamera();
 		camera->GetScript<TestCamera*>()->objectToLookAt = nullptr;//objPtr;
+	}
+
+	void Update(float delta) override
+	{
+		if (Input::IsKeyPressed(VirtualKey::R) && objPtr != nullptr)
+		{
+			Free(objPtr);
+			objPtr = nullptr;
+		}
 	}
 };
 
