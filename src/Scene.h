@@ -63,7 +63,7 @@ public:
 	
 	bool HasFinishedLoading()
 	{
-		return loadingProcess._Is_ready();
+		return loadingProcess._Is_ready() || !sceneIsLoading;
 	}
 
 	static MeshCreationObject(*GetMeshCreationObjects)();
@@ -97,6 +97,8 @@ private:
 	std::future<void> loadingProcess;
 	std::vector<Object*> objectsWithScripts;
 	std::vector<Object*> staticObjects;
+
+	bool sceneIsLoading = false;
 
 protected:
 	/// <summary>

@@ -11,6 +11,7 @@ Camera* Scene::defaultCamera = new Camera();
 SceneLoader loader("");
 void Scene::LoadScene(std::string path)
 {
+	sceneIsLoading = true;
 	loadingProcess = std::async(&Scene::LoadFileIntoScene, this, path);
 }
 
@@ -22,6 +23,7 @@ void Scene::LoadFileIntoScene(std::string path)
 	objectCreationDatas = loader.objects;
 	Start();
 	LoadUninitializedObjects();
+	sceneIsLoading = false;
 }
 
 void Scene::LoadUninitializedObjects()
@@ -118,7 +120,7 @@ void Scene::UpdateScripts(float delta)
 {
 	if (!HasFinishedLoading())
 		return;
-
+	
 	std::for_each(std::execution::par, objectsWithScripts.begin(), objectsWithScripts.end(), [&](Object* object) // update all of the scripts in parallel
 		{
 			if (object->shouldBeDestroyed)
