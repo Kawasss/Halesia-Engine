@@ -46,10 +46,13 @@ constexpr uint32_t MAX_MESHES = 1000; //mooore than enough
 constexpr uint32_t MAX_BINDLESS_TEXTURES = MAX_MESHES * 5; //amount of pbr textures per mesh
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
+VkMemoryAllocateFlagsInfo allocateFlagsInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO, nullptr, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT, 0 };
+
 Renderer::Renderer(Win32Window* window)
 {
 	testWindow = window;
 	window->additionalPollCallback = ImGui_ImplWin32_WndProcHandler;
+	Vulkan::optionalMemoryAllocationFlags = &allocateFlagsInfo;
 	InitVulkan();
 }
 
@@ -840,7 +843,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	if (!initRT)
 	{
 		RayTracing rayTracing;
-		//rayTracing.Init(logicalDevice, physicalDevice, surface, objects[0]);
+		rayTracing.Init(logicalDevice, physicalDevice, surface, objects[0]);
 		initRT = true;
 	} // not a good place to do this
 

@@ -47,6 +47,7 @@ class Vulkan
             std::vector<VkPresentModeKHR> presentModes;
         };
 
+        static VkMemoryAllocateFlagsInfo* optionalMemoryAllocationFlags;
         static std::mutex* globalThreadingMutex;
 
         static SwapChainSupportDetails      QuerySwapChainSupport(PhysicalDevice device, Surface surface);

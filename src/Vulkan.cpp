@@ -21,6 +21,7 @@ const bool enableValidationLayers = true;
 
 std::mutex Vulkan::graphicsQueueThreadingMutex;
 std::mutex* Vulkan::globalThreadingMutex = &graphicsQueueThreadingMutex;
+VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 
 VkShaderModule Vulkan::CreateShaderModule(VkDevice logicalDevice, const std::vector<char>& code)
 {
@@ -103,6 +104,7 @@ void Vulkan::CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice,
 
     VkMemoryAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocateInfo.pNext = optionalMemoryAllocationFlags;
     allocateInfo.allocationSize = memoryRequirements.size;
     allocateInfo.memoryTypeIndex = Vulkan::GetMemoryType(memoryRequirements.memoryTypeBits, properties, physicalDevice);
 

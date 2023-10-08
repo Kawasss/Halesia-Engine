@@ -16,10 +16,9 @@ std::vector<VkDescriptorSet> descriptorSets;
 VkPipelineLayout pipelineLayout;
 VkPipeline pipeline;
 
-VkShaderModule genShader;
-VkShaderModule hitShader;
-VkShaderModule missShader;
-VkShaderModule shadowShader;
+VkBuffer BLASBuffer; // todo: seperate BLAS into indepedent class
+VkDeviceMemory BLASDeviceMemory;
+VkAccelerationStructureKHR BLAS;
 
 std::vector<char> ReadShaderFile(const std::string& filePath)
 {
@@ -39,6 +38,9 @@ std::vector<char> ReadShaderFile(const std::string& filePath)
 
 void RayTracing::Destroy(VkDevice logicalDevice)
 {
+	vkDestroyBuffer(logicalDevice, BLASBuffer, nullptr);
+	vkFreeMemory(logicalDevice, BLASDeviceMemory, nullptr);
+
 	vkDestroyPipeline(logicalDevice, pipeline, nullptr);
 	vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
 
@@ -64,6 +66,7 @@ void FetchRayTracingFunctions(VkDevice logicalDevice)
 	pvkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetBufferDeviceAddressKHR");
 	pvkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)vkGetDeviceProcAddr(logicalDevice, "vkCreateRayTracingPipelinesKHR");
 	pvkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetAccelerationStructureBuildSizesKHR");
+	pvkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)vkGetDeviceProcAddr(logicalDevice, "vkCreateAccelerationStructureKHR");
 }
 
 void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object)
@@ -82,12 +85,14 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	if (!physicalDevice.QueueFamilies(surface).graphicsFamily.has_value())
 		throw std::runtime_error("No appropriate graphics family could be found for ray tracing");
 
+	uint32_t queueFamilyIndex = physicalDevice.QueueFamilies(surface).graphicsFamily.value();
+
 	// command pool
 
 	VkCommandPoolCreateInfo commandPoolCreateInfo{};
 	commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	commandPoolCreateInfo.queueFamilyIndex = physicalDevice.QueueFamilies(surface).graphicsFamily.value();
+	commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndex;
 
 	VkResult result = vkCreateCommandPool(logicalDevice, &commandPoolCreateInfo, nullptr, &commandPool);
 	if (vkCreateCommandPool(logicalDevice, &commandPoolCreateInfo, nullptr, &commandPool) != VK_SUCCESS)
@@ -221,16 +226,16 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	// shaders (raygen rayhit raymiss)
 
 	std::vector<char> genShaderSource = ReadShaderFile("shaders/gen.rgen.spv");
-	genShader = Vulkan::CreateShaderModule(logicalDevice, genShaderSource);
+	VkShaderModule genShader = Vulkan::CreateShaderModule(logicalDevice, genShaderSource);
 
 	std::vector<char> chitShaderSource = ReadShaderFile("shaders/hit.rchit.spv");
-	hitShader = Vulkan::CreateShaderModule(logicalDevice, chitShaderSource);
+	VkShaderModule hitShader = Vulkan::CreateShaderModule(logicalDevice, chitShaderSource);
 
 	std::vector<char> missShaderSource = ReadShaderFile("shaders/miss.rmiss.spv");
-	missShader = Vulkan::CreateShaderModule(logicalDevice, missShaderSource);
+	VkShaderModule missShader = Vulkan::CreateShaderModule(logicalDevice, missShaderSource);
 
 	std::vector<char> shadowShaderSource = ReadShaderFile("shaders/shadow.rmiss.spv");
-	shadowShader = Vulkan::CreateShaderModule(logicalDevice, shadowShaderSource);
+	VkShaderModule shadowShader = Vulkan::CreateShaderModule(logicalDevice, shadowShaderSource);
 
 	// pipeline
 
@@ -325,6 +330,45 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	std::vector<uint32_t> BLMaxPrimitiveCounts = { static_cast<uint32_t>(object->meshes[0].vertices.size()) };
 	pvkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &BLASBuildGeometryInfo, BLMaxPrimitiveCounts.data(), &BLASBuildSizesInfo);
+
+	VkBufferCreateInfo BLASBufferCreateInfo{};
+	BLASBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	BLASBufferCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+	BLASBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	BLASBufferCreateInfo.size = BLASBuildSizesInfo.accelerationStructureSize;
+	BLASBufferCreateInfo.queueFamilyIndexCount = 1;
+	BLASBufferCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
+
+	if (vkCreateBuffer(logicalDevice, &BLASBufferCreateInfo, nullptr, &BLASBuffer) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create the BLAS buffer for ray tracing");
+
+	VkMemoryRequirements BLASMemRequirements;
+	vkGetBufferMemoryRequirements(logicalDevice, BLASBuffer, &BLASMemRequirements);
+
+	uint32_t BLASMemoryTypeIndex = Vulkan::GetMemoryType(BLASMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDevice);
+
+	VkMemoryAllocateInfo BLASMemAllocateInfo{};
+	BLASMemAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	BLASMemAllocateInfo.allocationSize = BLASMemRequirements.size;
+	BLASMemAllocateInfo.memoryTypeIndex = BLASMemoryTypeIndex;
+
+	if (vkAllocateMemory(logicalDevice, &BLASMemAllocateInfo, nullptr, &BLASDeviceMemory) != VK_SUCCESS)
+		throw std::runtime_error("Failed to allocate the memory for a BLAS");
+
+	if (vkBindBufferMemory(logicalDevice, BLASBuffer, BLASDeviceMemory, 0) != VK_SUCCESS)
+		throw std::runtime_error("Failed to bind the BLAS buffer memory");
+
+	VkAccelerationStructureCreateInfoKHR BLASCreateInfo{};
+	BLASCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+	BLASCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+	BLASCreateInfo.size = BLASBuildSizesInfo.accelerationStructureSize;
+	BLASCreateInfo.buffer = BLASBuffer;
+	BLASCreateInfo.offset = 0;
+
+	if (pvkCreateAccelerationStructureKHR(logicalDevice, &BLASCreateInfo, nullptr, &BLAS) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create the BLAS");
+
+	// build BLAS (presumably for a frame)
 
 	Destroy(logicalDevice);
 }
