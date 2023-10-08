@@ -106,8 +106,9 @@ void Win32Window::PollMessages()
 {
 	for (Win32Window* w : windows)
 	{
-			w->cursorX = 0;
-			w->cursorY = 0;
+		w->cursorX = 0;
+		w->cursorY = 0;
+		w->wheelRotation = 0;
 
 		ShowWindow(w->window, w->maximized); // dont know if this call is expensive to make every frame
 	}
