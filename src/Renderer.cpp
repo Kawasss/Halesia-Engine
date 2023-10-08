@@ -14,6 +14,7 @@
 #include "system/Window.h"
 #include "system/Input.h"
 #include "Console.h"
+#include "renderer/RayTracing.h"
 
 #define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -272,19 +273,6 @@ void Renderer::CreateUniformBuffers()
 	}
 }
 
-VkShaderModule Renderer::CreateShaderModule(const std::vector<char>& code)
-{
-	VkShaderModuleCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = code.size();
-	createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-
-	VkShaderModule module;
-	if (vkCreateShaderModule(logicalDevice, &createInfo, nullptr, &module) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create a shader module");
-	return module;
-}
-
 void Renderer::CreateRenderPass()
 {
 	VkAttachmentDescription colorAttachment{};
@@ -485,11 +473,11 @@ void Renderer::CreateGraphicsPipeline()
 	std::vector<char> vertexShaderSource = ReadFile("shaders/vert.spv");
 	std::vector<char> fragmentShaderSource = ReadFile("shaders/frag.spv");
 
-	VkShaderModule vertexShaderModule = CreateShaderModule(vertexShaderSource);
-	VkShaderModule fragmentShaderModule = CreateShaderModule(fragmentShaderSource);
+	VkShaderModule vertexShaderModule = Vulkan::CreateShaderModule(logicalDevice, vertexShaderSource);
+	VkShaderModule fragmentShaderModule = Vulkan::CreateShaderModule(logicalDevice, fragmentShaderSource);
 
-	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericVertexShaderCreateInfo(vertexShaderModule);
-	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericFragmentShaderCreateInfo(fragmentShaderModule);
+	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(vertexShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
+	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(fragmentShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexCreateInfo, fragmentCreateInfo };
 
@@ -846,9 +834,16 @@ void Renderer::RenderGraph(const std::vector<float>& buffer, const char* label)
 	ImPlot::EndPlot();
 	ImGui::End();
 }
-
+bool initRT = false;
 void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
 {
+	if (!initRT)
+	{
+		RayTracing rayTracing;
+		//rayTracing.Init(logicalDevice, physicalDevice, surface, objects[0]);
+		initRT = true;
+	} // not a good place to do this
+
 	//add culling here too
 	
 	ImGui::Render();

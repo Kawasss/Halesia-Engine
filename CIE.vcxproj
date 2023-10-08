@@ -121,7 +121,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalIncludeDirectories>C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\physx\include;C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\source\additionalDependencies\spirv-reflect;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -199,6 +199,7 @@
     <None Include="shaders\hit.rchit" />
     <None Include="shaders\miss.rmiss" />
     <None Include="shaders\rayTracingCommon.glsl" />
+    <None Include="shaders\shadow.rmiss" />
     <None Include="shaders\triangle.frag" />
     <None Include="shaders\triangle.vert" />
   </ItemGroup>

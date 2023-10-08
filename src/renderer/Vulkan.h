@@ -58,6 +58,7 @@ class Vulkan
         static VkPresentModeKHR             ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& presentModes);
         static VkExtent2D                   ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, Win32Window* window);
         static VkImageView                  CreateImageView(VkDevice logicalDevice, VkImage image, VkImageViewType viewType, uint32_t mipLevels, uint32_t layerCount, VkFormat format, VkImageAspectFlags aspectFlags);
+        static VkShaderModule               CreateShaderModule(VkDevice logicalDevice, const std::vector<char>& code);
         static VkCommandBuffer              BeginSingleTimeCommands(VkDevice logicalDevice, VkCommandPool commandPool);
         static void                         EndSingleTimeCommands(VkDevice logicalDevice, VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool);
         static bool                         HasStencilComponent(VkFormat format);
@@ -85,24 +86,13 @@ class Vulkan
             return extensions;
         }
 
-        static VkPipelineShaderStageCreateInfo GetGenericVertexShaderCreateInfo(VkShaderModule shader)
+        static VkPipelineShaderStageCreateInfo GetGenericShaderStageCreateInfo(VkShaderModule module, VkShaderStageFlagBits shaderStageBit, const char* name = "main")
         {
             VkPipelineShaderStageCreateInfo createInfo{};
             createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            createInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-            createInfo.module = shader;
-            createInfo.pName = "main";
-
-            return createInfo;
-        }
-
-        static VkPipelineShaderStageCreateInfo GetGenericFragmentShaderCreateInfo(VkShaderModule shader)
-        {
-            VkPipelineShaderStageCreateInfo createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-            createInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-            createInfo.module = shader;
-            createInfo.pName = "main";
+            createInfo.stage = shaderStageBit;
+            createInfo.module = module;
+            createInfo.pName = name;
 
             return createInfo;
         }

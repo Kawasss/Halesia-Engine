@@ -83,5 +83,4 @@ private:
 
 	void UpdateUniformBuffers(uint32_t currentImage, Camera* camera);
 	void RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> object);
-	VkShaderModule CreateShaderModule(const std::vector<char>& code);
 };

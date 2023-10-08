@@ -102,8 +102,8 @@ VkPipeline PipelineBuilder::BuildGraphicsPipeline(VkDevice logicalDevice, VkDesc
 	VkShaderModule vertexShaderModule = CreateShaderModule(logicalDevice, vertexShaderSource);
 	VkShaderModule fragmentShaderModule = CreateShaderModule(logicalDevice, fragmentShaderSource);
 
-	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericVertexShaderCreateInfo(vertexShaderModule);
-	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericFragmentShaderCreateInfo(fragmentShaderModule);
+	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(vertexShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
+	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(fragmentShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	std::vector<const SpvReflectInterfaceVariable*> inputVariables = GetInputVariables(module);
 

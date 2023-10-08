@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include "HalesiaEngine.h"
 
 class TestCamera : public Camera

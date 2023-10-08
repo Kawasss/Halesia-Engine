@@ -22,6 +22,19 @@ const bool enableValidationLayers = true;
 std::mutex Vulkan::graphicsQueueThreadingMutex;
 std::mutex* Vulkan::globalThreadingMutex = &graphicsQueueThreadingMutex;
 
+VkShaderModule Vulkan::CreateShaderModule(VkDevice logicalDevice, const std::vector<char>& code)
+{
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = code.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+    VkShaderModule module;
+    if (vkCreateShaderModule(logicalDevice, &createInfo, nullptr, &module) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create a shader module");
+    return module;
+}
+
 PhysicalDevice Vulkan::GetBestPhysicalDevice(VkInstance instance, Surface surface)
 {
     std::vector<PhysicalDevice> devices = GetPhysicalDevices(instance);
