@@ -36,29 +36,43 @@ public:
 	/// <returns>A pointer to the base object of the custom object. A nullptr will be returned if an object matching the name can't be found</returns>
 	template<typename T> Object* AddCustomObject(std::string name, ObjectImportType objectType = OBJECT_IMPORT_INTERNAL)
 	{
+		ObjectCreationData creationData;
+		Object* objPtr = nullptr;
+		T* customPointer = nullptr;
+		bool foundCreationData = false;
+
 		if (objectType == OBJECT_IMPORT_EXTERNAL)
 		{
-			ObjectCreationData creationData = GenericLoader::LoadObjectFile(name, allObjects.size());
-			Object* objPtr = new T(creationData, GetMeshCreationObjects());
-			allObjects.push_back(objPtr);
-			objectsWithScripts.push_back(objPtr);
-			return objPtr;
+			creationData = GenericLoader::LoadObjectFile(name, allObjects.size());
 		}
-
-		for (auto i = objectCreationDatas.begin(); i != objectCreationDatas.end(); i++)
+		else // if (objectType == OBJECT_IMPORT_INTERNAL)
 		{
-			int index = i - objectCreationDatas.begin();
-			if (objectCreationDatas[index].name == name)
+			for (auto i = objectCreationDatas.begin(); i != objectCreationDatas.end(); i++)
 			{
-				Object* objPtr = new T(objectCreationDatas[index], GetMeshCreationObjects());
-				allObjects.push_back(objPtr);
-				objectsWithScripts.push_back(objPtr);
-				objectCreationDatas.erase(i);
-				return objPtr;
+				int index = i - objectCreationDatas.begin();
+				if (objectCreationDatas[index].name == name)
+				{
+					creationData = objectCreationDatas[index];
+					objectCreationDatas.erase(i);
+					foundCreationData = true;
+					break;
+				}
 			}
 		}
-		Console::WriteLine("Failed to find the creation data for the given name \"" + name + '"', MESSAGE_SEVERITY_ERROR);
-		return nullptr;
+
+		if (!foundCreationData && objectType == OBJECT_IMPORT_INTERNAL)
+		{
+			Console::WriteLine("Failed to find the creation data for the given name \"" + name + '"', MESSAGE_SEVERITY_ERROR);
+			return nullptr;
+		}
+
+		customPointer = new T();
+		objPtr = customPointer;
+		objPtr->CreateObject(customPointer, creationData, GetMeshCreationObjects());
+
+		allObjects.push_back(objPtr);
+		objectsWithScripts.push_back(objPtr);
+		return objPtr;
 	}
 	
 	bool HasFinishedLoading()

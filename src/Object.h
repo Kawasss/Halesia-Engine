@@ -77,6 +77,15 @@ public:
 	/// <returns>Pointer to the given class</returns>
 	template<typename T> T GetScript() { return static_cast<T>(scriptClass); };
 
+	/// <summary>
+	/// This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.
+	/// Be weary of accessing members in the constructor, since they don't have to be loaded in. AwaitGeneration awaits the async thread.
+	/// </summary>
+	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
+	/// <param name="creationData"></param>
+	/// <param name="creationObject">: The objects needed to create the meshes</param>
+	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
+
 	Transform transform;
 	std::vector<Mesh> meshes;
 	ObjectState state = STATUS_VISIBLE;
@@ -89,15 +98,6 @@ private:
 	std::future<void> generationProcess;
 	
 protected:
-	/// <summary>
-	/// The async version of CreateObject. This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.
-	/// Be weary of accessing members in the constructor, since they don't have to be loaded in. AwaitGeneration awaits the async thread.
-	/// </summary>
-	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
-	/// <param name="creationData"></param>
-	/// <param name="creationObject">: The objects needed to create the meshes</param>
-	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
-
 	static void Free(Object* objPtr)
 	{
 		objPtr->shouldBeDestroyed = true;

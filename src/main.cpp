@@ -27,11 +27,6 @@ public:
 class RotatingObject : public Object
 {
 public:
-	RotatingObject(const ObjectCreationData& creationData, const MeshCreationObject& creationObjects)
-	{
-		CreateObject(this, creationData, creationObjects);
-	}
-
 	void Update(float delta) override
 	{
 		transform.rotation.y += delta * 0.1f;
