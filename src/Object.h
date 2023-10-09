@@ -73,7 +73,7 @@ public:
 	/// <summary>
 	/// Gets the script attached to the object, if no script is attached it will return an invalid pointer
 	/// </summary>
-	/// <typeparam name="T">: The name of the script's class</typeparam>
+	/// <typeparam name="T">: The name of the script's class as a pointer</typeparam>
 	/// <returns>Pointer to the given class</returns>
 	template<typename T> T GetScript() { return static_cast<T>(scriptClass); };
 

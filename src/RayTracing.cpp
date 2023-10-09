@@ -13,12 +13,17 @@ VkDescriptorSetLayout descriptorSetLayout;
 VkDescriptorSetLayout materialSetLayout;
 std::vector<VkDescriptorSet> descriptorSets;
 
+VkQueue queue;
+
 VkPipelineLayout pipelineLayout;
 VkPipeline pipeline;
 
 VkBuffer BLASBuffer; // todo: seperate BLAS into indepedent class
 VkDeviceMemory BLASDeviceMemory;
 VkAccelerationStructureKHR BLAS;
+
+VkBuffer BLASScratchBuffer;
+VkDeviceMemory BLASSscratchDeviceMemory;
 
 std::vector<char> ReadShaderFile(const std::string& filePath)
 {
@@ -36,8 +41,23 @@ std::vector<char> ReadShaderFile(const std::string& filePath)
 	return buffer;
 }
 
+PFN_vkGetBufferDeviceAddressKHR pvkGetBufferDeviceAddressKHR;
+PFN_vkCreateRayTracingPipelinesKHR pvkCreateRayTracingPipelinesKHR;
+PFN_vkGetAccelerationStructureBuildSizesKHR pvkGetAccelerationStructureBuildSizesKHR;
+PFN_vkCreateAccelerationStructureKHR pvkCreateAccelerationStructureKHR;
+PFN_vkDestroyAccelerationStructureKHR pvkDestroyAccelerationStructureKHR;
+PFN_vkGetAccelerationStructureDeviceAddressKHR pvkGetAccelerationStructureDeviceAddressKHR;
+PFN_vkCmdBuildAccelerationStructuresKHR pvkCmdBuildAccelerationStructuresKHR;
+PFN_vkGetRayTracingShaderGroupHandlesKHR pvkGetRayTracingShaderGroupHandlesKHR;
+PFN_vkCmdTraceRaysKHR pvkCmdTraceRaysKHR;
+
 void RayTracing::Destroy(VkDevice logicalDevice)
 {
+	pvkDestroyAccelerationStructureKHR(logicalDevice, BLAS, nullptr);
+
+	vkDestroyBuffer(logicalDevice, BLASScratchBuffer, nullptr);
+	vkFreeMemory(logicalDevice, BLASSscratchDeviceMemory, nullptr);
+
 	vkDestroyBuffer(logicalDevice, BLASBuffer, nullptr);
 	vkFreeMemory(logicalDevice, BLASDeviceMemory, nullptr);
 
@@ -51,22 +71,15 @@ void RayTracing::Destroy(VkDevice logicalDevice)
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
 
-PFN_vkGetBufferDeviceAddressKHR pvkGetBufferDeviceAddressKHR;
-PFN_vkCreateRayTracingPipelinesKHR pvkCreateRayTracingPipelinesKHR;
-PFN_vkGetAccelerationStructureBuildSizesKHR pvkGetAccelerationStructureBuildSizesKHR;
-PFN_vkCreateAccelerationStructureKHR pvkCreateAccelerationStructureKHR;
-PFN_vkDestroyAccelerationStructureKHR pvkDestroyAccelerationStructureKHR;
-PFN_vkGetAccelerationStructureDeviceAddressKHR pvkGetAccelerationStructureDeviceAddressKHR;
-PFN_vkCmdBuildAccelerationStructuresKHR pvkCmdBuildAccelerationStructuresKHR;
-PFN_vkGetRayTracingShaderGroupHandlesKHR pvkGetRayTracingShaderGroupHandlesKHR;
-PFN_vkCmdTraceRaysKHR pvkCmdTraceRaysKHR;
-
 void FetchRayTracingFunctions(VkDevice logicalDevice)
 {
 	pvkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetBufferDeviceAddressKHR");
 	pvkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)vkGetDeviceProcAddr(logicalDevice, "vkCreateRayTracingPipelinesKHR");
 	pvkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetAccelerationStructureBuildSizesKHR");
 	pvkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)vkGetDeviceProcAddr(logicalDevice, "vkCreateAccelerationStructureKHR");
+	pvkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetAccelerationStructureDeviceAddressKHR");
+	pvkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetDeviceProcAddr(logicalDevice, "vkCmdBuildAccelerationStructuresKHR");
+	pvkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)vkGetDeviceProcAddr(logicalDevice, "vkDestroyAccelerationStructureKHR");
 }
 
 void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object)
@@ -86,6 +99,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 		throw std::runtime_error("No appropriate graphics family could be found for ray tracing");
 
 	uint32_t queueFamilyIndex = physicalDevice.QueueFamilies(surface).graphicsFamily.value();
+	vkGetDeviceQueue(logicalDevice, queueFamilyIndex, 0, &queue);
 
 	// command pool
 
@@ -370,5 +384,59 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// build BLAS (presumably for a frame)
 
+	VkAccelerationStructureDeviceAddressInfoKHR BLASAddressInfo{};
+	BLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+	BLASAddressInfo.accelerationStructure = BLAS;
+
+	VkDeviceAddress BLASDeviceAddress = pvkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &BLASAddressInfo);
+
+	VkBufferCreateInfo BLASScratchBufferCreateInfo{};
+	BLASScratchBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	BLASScratchBufferCreateInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+	BLASScratchBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	BLASScratchBufferCreateInfo.size = BLASBuildSizesInfo.buildScratchSize;
+	BLASScratchBufferCreateInfo.queueFamilyIndexCount = 1;
+	BLASScratchBufferCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
+
+	if (vkCreateBuffer(logicalDevice, &BLASScratchBufferCreateInfo, nullptr, &BLASScratchBuffer) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create the scratch buffer for a BLAS");
+
+	VkMemoryRequirements BLASScratchMemRequirements;
+	vkGetBufferMemoryRequirements(logicalDevice, BLASScratchBuffer, &BLASScratchMemRequirements);
+	
+	uint32_t BLASScratchMemTypeIndex = Vulkan::GetMemoryType(BLASScratchMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDevice);
+
+	VkMemoryAllocateInfo BLASScratchAllocateInfo{};
+	BLASScratchAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	BLASScratchAllocateInfo.pNext = Vulkan::optionalMemoryAllocationFlags;
+	BLASScratchAllocateInfo.allocationSize = BLASScratchMemRequirements.size;
+	BLASScratchAllocateInfo.memoryTypeIndex = BLASScratchMemTypeIndex;
+
+	if (vkAllocateMemory(logicalDevice, &BLASScratchAllocateInfo, nullptr, &BLASSscratchDeviceMemory) != VK_SUCCESS)
+		throw std::runtime_error("Failed to allocate the memory for the BLAS scratch buffer");
+
+	if (vkBindBufferMemory(logicalDevice, BLASScratchBuffer, BLASSscratchDeviceMemory, 0) != VK_SUCCESS)
+		throw std::runtime_error("Failed to bind the scratch buffer");
+
+	VkBufferDeviceAddressInfo scratchDeviceAddressInfo{};
+	scratchDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+	scratchDeviceAddressInfo.buffer = BLASScratchBuffer;
+
+	VkDeviceAddress scratchDeviceAddress = vkGetBufferDeviceAddress(logicalDevice, &scratchDeviceAddressInfo);
+
+	BLASBuildGeometryInfo.scratchData = { scratchDeviceAddress };
+	BLASBuildGeometryInfo.dstAccelerationStructure = BLAS;
+
+	VkAccelerationStructureBuildRangeInfoKHR BLASBuildRangeInfo{};
+	BLASBuildRangeInfo.primitiveCount = object->meshes[0].vertices.size();
+	BLASBuildRangeInfo.primitiveOffset = 0;
+	BLASBuildRangeInfo.firstVertex = 0;
+	BLASBuildRangeInfo.transformOffset = 0;
+	const VkAccelerationStructureBuildRangeInfoKHR* pBLASBuildRangeInfo = &BLASBuildRangeInfo;
+
+	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
+	pvkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &BLASBuildGeometryInfo, &pBLASBuildRangeInfo);
+	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
+	
 	Destroy(logicalDevice);
 }
