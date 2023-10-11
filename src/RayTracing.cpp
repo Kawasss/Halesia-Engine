@@ -28,6 +28,10 @@ VkDeviceMemory BLASSscratchDeviceMemory;
 VkBuffer BLGeometryInstanceBuffer;
 VkDeviceMemory BLGeometryInstanceBufferMemory;
 
+VkBuffer TLASBuffer;
+VkDeviceMemory TLASBufferMemory;
+VkAccelerationStructureKHR TLAS;
+
 std::vector<char> ReadShaderFile(const std::string& filePath)
 {
 	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
@@ -56,6 +60,11 @@ PFN_vkCmdTraceRaysKHR pvkCmdTraceRaysKHR;
 
 void RayTracing::Destroy(VkDevice logicalDevice)
 {
+	pvkDestroyAccelerationStructureKHR(logicalDevice, TLAS, nullptr);
+
+	vkFreeMemory(logicalDevice, TLASBufferMemory, nullptr);
+	vkDestroyBuffer(logicalDevice, TLASBuffer, nullptr);
+
 	vkFreeMemory(logicalDevice, BLGeometryInstanceBufferMemory, nullptr);
 	vkDestroyBuffer(logicalDevice, BLGeometryInstanceBuffer, nullptr);
 
@@ -303,6 +312,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	vkDestroyShaderModule(logicalDevice, genShader, nullptr);
 
 	// bottom level acceleration structure
+
 	VkBufferDeviceAddressInfo bufferAddressInfo{};
 	bufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
 	bufferAddressInfo.buffer = object->meshes[0].vertexBuffer.GetVkBuffer();
@@ -446,12 +456,12 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	
 	// TLAS
 
-	VkAccelerationStructureInstanceKHR ACInstance{};
-	ACInstance.transform = {  1, 0, 0, 0,  0, 1, 0, 0, 0, 0, 1, 0 };
-	ACInstance.instanceCustomIndex = 0;
-	ACInstance.mask = 0xFF;
-	ACInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-	ACInstance.accelerationStructureReference = BLASDeviceAddress;
+	VkAccelerationStructureInstanceKHR BLASInstance{};
+	BLASInstance.transform = {  1, 0, 0, 0,  0, 1, 0, 0, 0, 0, 1, 0 };
+	BLASInstance.instanceCustomIndex = 0;
+	BLASInstance.mask = 0xFF;
+	BLASInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+	BLASInstance.accelerationStructureReference = BLASDeviceAddress;
 
 	VkBufferCreateInfo BLGeometryInstanceCreateInfo{};
 	BLGeometryInstanceCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -476,6 +486,96 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	if (vkAllocateMemory(logicalDevice, &BLGeometryInstanceMemoryInfo, nullptr, &BLGeometryInstanceBufferMemory) != VK_SUCCESS)
 		throw std::runtime_error("Failed to allocate the memory for the bottom level geometry instance buffer");
+
+	if (vkBindBufferMemory(logicalDevice, BLGeometryInstanceBuffer, BLGeometryInstanceBufferMemory, 0) != VK_SUCCESS)
+		throw std::runtime_error("Failed to bind the buffer memory of the bottom level geometry instance buffer");
+
+	void* BLGeometryInstanceBufferMemPtr;
+	if (vkMapMemory(logicalDevice, BLGeometryInstanceBufferMemory, 0, sizeof(VkAccelerationStructureInstanceKHR), 0, &BLGeometryInstanceBufferMemPtr) != VK_SUCCESS)
+		throw std::runtime_error("Failed to map the memory of the bottom level geometry instance buffer");
+
+	memcpy(BLGeometryInstanceBufferMemPtr, &BLASInstance, sizeof(VkAccelerationStructureInstanceKHR));
+	vkUnmapMemory(logicalDevice, BLGeometryInstanceBufferMemory);
+
+	VkBufferDeviceAddressInfo BLGeometryInstanceAddressInfo{};
+	BLGeometryInstanceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+	BLGeometryInstanceAddressInfo.buffer = BLGeometryInstanceBuffer;
+
+	VkDeviceAddress BLGeometryInstanceAddress = pvkGetBufferDeviceAddressKHR(logicalDevice, &BLGeometryInstanceAddressInfo);
+
+	VkAccelerationStructureGeometryInstancesDataKHR instances{};
+	instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+	instances.arrayOfPointers = VK_FALSE;
+	instances.data = { BLGeometryInstanceAddress };
+
+	VkAccelerationStructureGeometryDataKHR TLASGeometryData{};
+	TLASGeometryData.instances = instances;
+
+	VkAccelerationStructureGeometryKHR TLASGeometry{};
+	TLASGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+	TLASGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+	TLASGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+	TLASGeometry.geometry = TLASGeometryData;
+
+	VkAccelerationStructureBuildGeometryInfoKHR TLASBuildGeometryInfo{};
+	TLASBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+	TLASBuildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+	TLASBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+	TLASBuildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+	TLASBuildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
+	TLASBuildGeometryInfo.geometryCount = 1;
+	TLASBuildGeometryInfo.pGeometries = &TLASGeometry;
+	TLASBuildGeometryInfo.scratchData = { 0 };
+
+	VkAccelerationStructureBuildSizesInfoKHR TLASBuildSizesInfo{};
+	TLASBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+	TLASBuildSizesInfo.accelerationStructureSize = 0;
+	TLASBuildSizesInfo.updateScratchSize = 0;
+	TLASBuildSizesInfo.buildScratchSize = 0;
+
+	std::vector<uint32_t> TLASMaxPrimitiveCounts = { 1 };
+
+	pvkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &TLASBuildGeometryInfo, TLASMaxPrimitiveCounts.data(), &TLASBuildSizesInfo);
+
+	VkBufferCreateInfo TLASBufferCreateInfo{};
+	TLASBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	TLASBufferCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
+	TLASBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	TLASBufferCreateInfo.size = TLASBuildSizesInfo.accelerationStructureSize;
+	TLASBufferCreateInfo.queueFamilyIndexCount = 1;
+	TLASBufferCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
+
+	if (vkCreateBuffer(logicalDevice, &TLASBufferCreateInfo, nullptr, &TLASBuffer) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create the TLAS buffer");
+
+	VkMemoryRequirements TLASMemRequirements;
+	vkGetBufferMemoryRequirements(logicalDevice, TLASBuffer, &TLASMemRequirements);
+	uint32_t TLASMemTypeIndex = Vulkan::GetMemoryType(TLASMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDevice);
+
+	VkMemoryAllocateInfo TLASBufferAllocateInfo{};
+	TLASBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	TLASBufferAllocateInfo.allocationSize = TLASMemRequirements.size;
+	TLASBufferAllocateInfo.memoryTypeIndex = TLASMemTypeIndex;
+
+	if (vkAllocateMemory(logicalDevice, &TLASBufferAllocateInfo, nullptr, &TLASBufferMemory) != VK_SUCCESS)
+		throw std::runtime_error("Failed to allocate the TLAS buffer");
+
+	if (vkBindBufferMemory(logicalDevice, TLASBuffer, TLASBufferMemory, 0) != VK_SUCCESS)
+		throw std::runtime_error("Failed to bind the TLAS buffer's memory");
+
+	VkAccelerationStructureCreateInfoKHR TLASCreateInfo{};
+	TLASCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+	TLASCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+	TLASCreateInfo.size = TLASBuildSizesInfo.accelerationStructureSize;
+	TLASCreateInfo.buffer = TLASBuffer;
+	TLASCreateInfo.deviceAddress = 0;
+
+	if (pvkCreateAccelerationStructureKHR(logicalDevice, &TLASCreateInfo, nullptr, &TLAS) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create the TLAS");
+
+	// build TLAS
+
+
 
 	Destroy(logicalDevice);
 }

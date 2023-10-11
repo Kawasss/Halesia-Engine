@@ -68,8 +68,6 @@ public:
 
 	void RecreateMeshes(const MeshCreationObject& creationObject);
 
-	void* scriptClass = nullptr;
-
 	/// <summary>
 	/// Gets the script attached to the object, if no script is attached it will return an invalid pointer
 	/// </summary>
@@ -86,6 +84,19 @@ public:
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
 	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
 
+	template<typename T> static Object* Duplicate(Object* objPtr)
+	{
+		T* customPtr = new T();
+		Object* newObjPtr = customPtr;
+		newObjPtr->meshes = objPtr->meshes;
+		newObjPtr->transform = objPtr->transform;
+		newObjPtr->name = objPtr->name; // better to create new version of the name
+		newObjPtr->finishedLoading = true;
+		newObjPtr->scriptClass = customPtr;
+
+		return newObjPtr;
+	}
+
 	Transform transform;
 	std::vector<Mesh> meshes;
 	ObjectState state = STATUS_VISIBLE;
@@ -95,6 +106,7 @@ public:
 	bool shouldBeDestroyed = false;
 
 private:
+	void* scriptClass = nullptr;
 	std::future<void> generationProcess;
 	
 protected:

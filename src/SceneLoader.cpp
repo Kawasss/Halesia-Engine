@@ -274,7 +274,7 @@ ObjectCreationData GenericLoader::LoadObjectFile(std::string path, int index)
 	std::string fileNameWithExtension = path.substr(path.find_last_of("/\\") + 1);
 	ret.name = fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 
-	const aiScene* scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast | aiProcess_GenSmoothNormals);
+	const aiScene* scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast);
 
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + path);
