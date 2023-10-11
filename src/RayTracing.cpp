@@ -35,6 +35,19 @@ VkAccelerationStructureKHR TLAS;
 VkBuffer TLASScratchBuffer;
 VkDeviceMemory TLASScratchMemory;
 
+VkBuffer uniformBufferBuffer;
+VkDeviceMemory uniformBufferMemory;
+
+struct UniformBuffer
+{
+	glm::vec3 position;
+	glm::vec3 right;
+	glm::vec3 up;
+	glm::vec3 forward;
+
+	uint32_t frameCount;
+};
+
 std::vector<char> ReadShaderFile(const std::string& filePath)
 {
 	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
@@ -63,6 +76,12 @@ PFN_vkCmdTraceRaysKHR pvkCmdTraceRaysKHR;
 
 void RayTracing::Destroy(VkDevice logicalDevice)
 {
+	vkFreeMemory(logicalDevice, uniformBufferMemory, nullptr);
+	vkDestroyBuffer(logicalDevice, uniformBufferBuffer, nullptr);
+
+	vkFreeMemory(logicalDevice, TLASScratchMemory, nullptr);
+	vkDestroyBuffer(logicalDevice, TLASScratchBuffer, nullptr);
+
 	pvkDestroyAccelerationStructureKHR(logicalDevice, TLAS, nullptr);
 
 	vkFreeMemory(logicalDevice, TLASBufferMemory, nullptr);
@@ -100,7 +119,7 @@ void FetchRayTracingFunctions(VkDevice logicalDevice)
 	pvkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)vkGetDeviceProcAddr(logicalDevice, "vkDestroyAccelerationStructureKHR");
 }
 
-void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object)
+void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera)
 {
 	FetchRayTracingFunctions(logicalDevice);
 
@@ -255,19 +274,12 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	if (vkCreatePipelineLayout(logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
 		throw std::runtime_error("Failed to create the pipeline layout for ray tracing");
 
-	// shaders (raygen rayhit raymiss)
+	// shaders
 
-	std::vector<char> genShaderSource = ReadShaderFile("shaders/gen.rgen.spv");
-	VkShaderModule genShader = Vulkan::CreateShaderModule(logicalDevice, genShaderSource);
-
-	std::vector<char> chitShaderSource = ReadShaderFile("shaders/hit.rchit.spv");
-	VkShaderModule hitShader = Vulkan::CreateShaderModule(logicalDevice, chitShaderSource);
-
-	std::vector<char> missShaderSource = ReadShaderFile("shaders/miss.rmiss.spv");
-	VkShaderModule missShader = Vulkan::CreateShaderModule(logicalDevice, missShaderSource);
-
-	std::vector<char> shadowShaderSource = ReadShaderFile("shaders/shadow.rmiss.spv");
-	VkShaderModule shadowShader = Vulkan::CreateShaderModule(logicalDevice, shadowShaderSource);
+	VkShaderModule genShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/gen.rgen.spv"));
+	VkShaderModule hitShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/hit.rchit.spv"));
+	VkShaderModule missShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/miss.rmiss.spv"));
+	VkShaderModule shadowShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/shadow.rmiss.spv"));
 
 	// pipeline
 
@@ -357,39 +369,11 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	VkAccelerationStructureBuildSizesInfoKHR BLASBuildSizesInfo{};
 	BLASBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-	BLASBuildSizesInfo.accelerationStructureSize = 0;
-	BLASBuildSizesInfo.updateScratchSize = 0;
-	BLASBuildSizesInfo.buildScratchSize = 0;
 
 	std::vector<uint32_t> BLMaxPrimitiveCounts = { static_cast<uint32_t>(object->meshes[0].vertices.size()) };
 	pvkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &BLASBuildGeometryInfo, BLMaxPrimitiveCounts.data(), &BLASBuildSizesInfo);
 
-	VkBufferCreateInfo BLASBufferCreateInfo{};
-	BLASBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	BLASBufferCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-	BLASBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	BLASBufferCreateInfo.size = BLASBuildSizesInfo.accelerationStructureSize;
-	BLASBufferCreateInfo.queueFamilyIndexCount = 1;
-	BLASBufferCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
-
-	if (vkCreateBuffer(logicalDevice, &BLASBufferCreateInfo, nullptr, &BLASBuffer) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the BLAS buffer for ray tracing");
-
-	VkMemoryRequirements BLASMemRequirements;
-	vkGetBufferMemoryRequirements(logicalDevice, BLASBuffer, &BLASMemRequirements);
-
-	uint32_t BLASMemoryTypeIndex = Vulkan::GetMemoryType(BLASMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDevice);
-
-	VkMemoryAllocateInfo BLASMemAllocateInfo{};
-	BLASMemAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	BLASMemAllocateInfo.allocationSize = BLASMemRequirements.size;
-	BLASMemAllocateInfo.memoryTypeIndex = BLASMemoryTypeIndex;
-
-	if (vkAllocateMemory(logicalDevice, &BLASMemAllocateInfo, nullptr, &BLASDeviceMemory) != VK_SUCCESS)
-		throw std::runtime_error("Failed to allocate the memory for a BLAS");
-
-	if (vkBindBufferMemory(logicalDevice, BLASBuffer, BLASDeviceMemory, 0) != VK_SUCCESS)
-		throw std::runtime_error("Failed to bind the BLAS buffer memory");
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, BLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, BLASBuffer, BLASDeviceMemory);
 
 	VkAccelerationStructureCreateInfoKHR BLASCreateInfo{};
 	BLASCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -409,33 +393,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	VkDeviceAddress BLASDeviceAddress = pvkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &BLASAddressInfo);
 
-	VkBufferCreateInfo BLASScratchBufferCreateInfo{};
-	BLASScratchBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	BLASScratchBufferCreateInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-	BLASScratchBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	BLASScratchBufferCreateInfo.size = BLASBuildSizesInfo.buildScratchSize;
-	BLASScratchBufferCreateInfo.queueFamilyIndexCount = 1;
-	BLASScratchBufferCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
-
-	if (vkCreateBuffer(logicalDevice, &BLASScratchBufferCreateInfo, nullptr, &BLASScratchBuffer) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the scratch buffer for a BLAS");
-
-	VkMemoryRequirements BLASScratchMemRequirements;
-	vkGetBufferMemoryRequirements(logicalDevice, BLASScratchBuffer, &BLASScratchMemRequirements);
-	
-	uint32_t BLASScratchMemTypeIndex = Vulkan::GetMemoryType(BLASScratchMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDevice);
-
-	VkMemoryAllocateInfo BLASScratchAllocateInfo{};
-	BLASScratchAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	BLASScratchAllocateInfo.pNext = Vulkan::optionalMemoryAllocationFlags;
-	BLASScratchAllocateInfo.allocationSize = BLASScratchMemRequirements.size;
-	BLASScratchAllocateInfo.memoryTypeIndex = BLASScratchMemTypeIndex;
-
-	if (vkAllocateMemory(logicalDevice, &BLASScratchAllocateInfo, nullptr, &BLASSscratchDeviceMemory) != VK_SUCCESS)
-		throw std::runtime_error("Failed to allocate the memory for the BLAS scratch buffer");
-
-	if (vkBindBufferMemory(logicalDevice, BLASScratchBuffer, BLASSscratchDeviceMemory, 0) != VK_SUCCESS)
-		throw std::runtime_error("Failed to bind the scratch buffer");
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, BLASBuildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, BLASScratchBuffer, BLASSscratchDeviceMemory);
 
 	VkBufferDeviceAddressInfo scratchDeviceAddressInfo{};
 	scratchDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
@@ -448,9 +406,6 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	VkAccelerationStructureBuildRangeInfoKHR BLASBuildRangeInfo{};
 	BLASBuildRangeInfo.primitiveCount = object->meshes[0].vertices.size();
-	BLASBuildRangeInfo.primitiveOffset = 0;
-	BLASBuildRangeInfo.firstVertex = 0;
-	BLASBuildRangeInfo.transformOffset = 0;
 	const VkAccelerationStructureBuildRangeInfoKHR* pBLASBuildRangeInfo = &BLASBuildRangeInfo;
 
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
@@ -466,32 +421,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	BLASInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 	BLASInstance.accelerationStructureReference = BLASDeviceAddress;
 
-	VkBufferCreateInfo BLGeometryInstanceCreateInfo{};
-	BLGeometryInstanceCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	BLGeometryInstanceCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-	BLGeometryInstanceCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	BLGeometryInstanceCreateInfo.size = sizeof(VkAccelerationStructureInstanceKHR);
-	BLGeometryInstanceCreateInfo.queueFamilyIndexCount = 1;
-	BLGeometryInstanceCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
-
-	if (vkCreateBuffer(logicalDevice, &BLGeometryInstanceCreateInfo, nullptr, &BLGeometryInstanceBuffer) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the bottom level geometry instance buffer");
-
-	VkMemoryRequirements BLGeometryInstanceBufferMemRequirements;
-	vkGetBufferMemoryRequirements(logicalDevice, BLGeometryInstanceBuffer, &BLGeometryInstanceBufferMemRequirements);
-	uint32_t BLGeometryInstanceMemTypeIndex = Vulkan::GetMemoryType(BLGeometryInstanceBufferMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, physicalDevice);
-
-	VkMemoryAllocateInfo BLGeometryInstanceMemoryInfo{};
-	BLGeometryInstanceMemoryInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	BLGeometryInstanceMemoryInfo.pNext = Vulkan::optionalMemoryAllocationFlags;
-	BLGeometryInstanceMemoryInfo.allocationSize = BLGeometryInstanceBufferMemRequirements.size;
-	BLGeometryInstanceMemoryInfo.memoryTypeIndex = BLGeometryInstanceMemTypeIndex;
-
-	if (vkAllocateMemory(logicalDevice, &BLGeometryInstanceMemoryInfo, nullptr, &BLGeometryInstanceBufferMemory) != VK_SUCCESS)
-		throw std::runtime_error("Failed to allocate the memory for the bottom level geometry instance buffer");
-
-	if (vkBindBufferMemory(logicalDevice, BLGeometryInstanceBuffer, BLGeometryInstanceBufferMemory, 0) != VK_SUCCESS)
-		throw std::runtime_error("Failed to bind the buffer memory of the bottom level geometry instance buffer");
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(VkAccelerationStructureInstanceKHR), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, BLGeometryInstanceBuffer, BLGeometryInstanceBufferMemory);
 
 	void* BLGeometryInstanceBufferMemPtr;
 	if (vkMapMemory(logicalDevice, BLGeometryInstanceBufferMemory, 0, sizeof(VkAccelerationStructureInstanceKHR), 0, &BLGeometryInstanceBufferMemPtr) != VK_SUCCESS)
@@ -540,31 +470,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	pvkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &TLASBuildGeometryInfo, TLASMaxPrimitiveCounts.data(), &TLASBuildSizesInfo);
 
-	VkBufferCreateInfo TLASBufferCreateInfo{};
-	TLASBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	TLASBufferCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR;
-	TLASBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	TLASBufferCreateInfo.size = TLASBuildSizesInfo.accelerationStructureSize;
-	TLASBufferCreateInfo.queueFamilyIndexCount = 1;
-	TLASBufferCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
-
-	if (vkCreateBuffer(logicalDevice, &TLASBufferCreateInfo, nullptr, &TLASBuffer) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the TLAS buffer");
-
-	VkMemoryRequirements TLASMemRequirements;
-	vkGetBufferMemoryRequirements(logicalDevice, TLASBuffer, &TLASMemRequirements);
-	uint32_t TLASMemTypeIndex = Vulkan::GetMemoryType(TLASMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDevice);
-
-	VkMemoryAllocateInfo TLASBufferAllocateInfo{};
-	TLASBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	TLASBufferAllocateInfo.allocationSize = TLASMemRequirements.size;
-	TLASBufferAllocateInfo.memoryTypeIndex = TLASMemTypeIndex;
-
-	if (vkAllocateMemory(logicalDevice, &TLASBufferAllocateInfo, nullptr, &TLASBufferMemory) != VK_SUCCESS)
-		throw std::runtime_error("Failed to allocate the TLAS buffer");
-
-	if (vkBindBufferMemory(logicalDevice, TLASBuffer, TLASBufferMemory, 0) != VK_SUCCESS)
-		throw std::runtime_error("Failed to bind the TLAS buffer's memory");
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, TLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLASBuffer, TLASBufferMemory);
 
 	VkAccelerationStructureCreateInfoKHR TLASCreateInfo{};
 	TLASCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
@@ -584,32 +490,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	VkDeviceAddress TLASDeviceAddress = pvkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &TLASAddressInfo);
 
-	VkBufferCreateInfo TLASScratchBufferCreateInfo{};
-	TLASScratchBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-	TLASScratchBufferCreateInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-	TLASScratchBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	TLASScratchBufferCreateInfo.queueFamilyIndexCount = 1;
-	TLASScratchBufferCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
-	TLASScratchBufferCreateInfo.size = TLASBuildSizesInfo.buildScratchSize;
-
-	if (vkCreateBuffer(logicalDevice, &TLASScratchBufferCreateInfo, nullptr, &TLASScratchBuffer) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the TLAS scratch buffer");
-
-	VkMemoryRequirements TLASScratchMemRequirements;
-	vkGetBufferMemoryRequirements(logicalDevice, TLASScratchBuffer, &TLASScratchMemRequirements);
-	uint32_t TLASScratchBufferMemTypeIndex = Vulkan::GetMemoryType(TLASScratchMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDevice);
-
-	VkMemoryAllocateInfo TLASScratchBufferAllocateInfo{};
-	TLASScratchBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	TLASScratchBufferAllocateInfo.pNext = Vulkan::optionalMemoryAllocationFlags;
-	TLASScratchBufferAllocateInfo.allocationSize = TLASScratchMemRequirements.size;
-	TLASScratchBufferAllocateInfo.memoryTypeIndex = TLASScratchBufferMemTypeIndex;
-
-	if (vkAllocateMemory(logicalDevice, &TLASScratchBufferAllocateInfo, nullptr, &TLASScratchMemory) != VK_SUCCESS)
-		throw std::runtime_error("Failed to allocate TLAS scratch buffer's memory");
-
-	if (vkBindBufferMemory(logicalDevice, TLASScratchBuffer, TLASScratchMemory, 0) != VK_SUCCESS)
-		throw std::runtime_error("Failed to bind the TLAS scratch buffer's memory");
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, TLASBuildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLASScratchBuffer, TLASScratchMemory);
 
 	VkBufferDeviceAddressInfo TLASSratchBufferAddressInfo{};
 	TLASSratchBufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
@@ -627,6 +508,12 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 	pvkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &TLASBuildGeometryInfo, &pTLASBuildRangeInfos);
 	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
+
+	// uniform buffer
+
+	UniformBuffer uniformBuffer{ camera->position, camera->right, camera->up, camera->front, 0 };
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(UniformBuffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, uniformBufferBuffer, uniformBufferMemory);
 
 	Destroy(logicalDevice);
 }

@@ -12,6 +12,9 @@ public:
 	float pitch = 0, yaw = -(glm::pi<float>() / 2), fov = glm::pi<float>() / 2;
 
 	glm::vec3 position = glm::vec3(0);
+	glm::vec3 up = glm::vec3(0, 1, 0);
+	glm::vec3 right = glm::vec3(1, 0, 0);
+	glm::vec3 front = glm::vec3(1, 0, 0);
 
 	void SetNearPlane(float newNearPlane);
 	void SetFarPlane(float newFarPlane);
@@ -49,9 +52,6 @@ protected:
 	/// </summary>
 	void UpdateUpAndRightVectors();
 
-	glm::vec3 up = glm::vec3(0, 1, 0);
-	glm::vec3 right = glm::vec3(1, 0, 0);
-	glm::vec3 front = glm::vec3(1, 0, 0);
 	const float SENSITIVITY = 0.1f;
 };
 

@@ -843,7 +843,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	if (!initRT)
 	{
 		RayTracing rayTracing;
-		rayTracing.Init(logicalDevice, physicalDevice, surface, objects[0]);
+		rayTracing.Init(logicalDevice, physicalDevice, surface, objects[0], camera);
 		initRT = true;
 	} // not a good place to do this
 
