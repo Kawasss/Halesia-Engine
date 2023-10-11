@@ -25,6 +25,9 @@ VkAccelerationStructureKHR BLAS;
 VkBuffer BLASScratchBuffer;
 VkDeviceMemory BLASSscratchDeviceMemory;
 
+VkBuffer BLGeometryInstanceBuffer;
+VkDeviceMemory BLGeometryInstanceBufferMemory;
+
 std::vector<char> ReadShaderFile(const std::string& filePath)
 {
 	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
@@ -53,6 +56,9 @@ PFN_vkCmdTraceRaysKHR pvkCmdTraceRaysKHR;
 
 void RayTracing::Destroy(VkDevice logicalDevice)
 {
+	vkFreeMemory(logicalDevice, BLGeometryInstanceBufferMemory, nullptr);
+	vkDestroyBuffer(logicalDevice, BLGeometryInstanceBuffer, nullptr);
+
 	pvkDestroyAccelerationStructureKHR(logicalDevice, BLAS, nullptr);
 
 	vkDestroyBuffer(logicalDevice, BLASScratchBuffer, nullptr);
@@ -438,5 +444,38 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	pvkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &BLASBuildGeometryInfo, &pBLASBuildRangeInfo);
 	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
 	
+	// TLAS
+
+	VkAccelerationStructureInstanceKHR ACInstance{};
+	ACInstance.transform = {  1, 0, 0, 0,  0, 1, 0, 0, 0, 0, 1, 0 };
+	ACInstance.instanceCustomIndex = 0;
+	ACInstance.mask = 0xFF;
+	ACInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+	ACInstance.accelerationStructureReference = BLASDeviceAddress;
+
+	VkBufferCreateInfo BLGeometryInstanceCreateInfo{};
+	BLGeometryInstanceCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	BLGeometryInstanceCreateInfo.usage = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+	BLGeometryInstanceCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	BLGeometryInstanceCreateInfo.size = sizeof(VkAccelerationStructureInstanceKHR);
+	BLGeometryInstanceCreateInfo.queueFamilyIndexCount = 1;
+	BLGeometryInstanceCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
+
+	if (vkCreateBuffer(logicalDevice, &BLGeometryInstanceCreateInfo, nullptr, &BLGeometryInstanceBuffer) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create the bottom level geometry instance buffer");
+
+	VkMemoryRequirements BLGeometryInstanceBufferMemRequirements;
+	vkGetBufferMemoryRequirements(logicalDevice, BLGeometryInstanceBuffer, &BLGeometryInstanceBufferMemRequirements);
+	uint32_t BLGeometryInstanceMemTypeIndex = Vulkan::GetMemoryType(BLGeometryInstanceBufferMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, physicalDevice);
+
+	VkMemoryAllocateInfo BLGeometryInstanceMemoryInfo{};
+	BLGeometryInstanceMemoryInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	BLGeometryInstanceMemoryInfo.pNext = Vulkan::optionalMemoryAllocationFlags;
+	BLGeometryInstanceMemoryInfo.allocationSize = BLGeometryInstanceBufferMemRequirements.size;
+	BLGeometryInstanceMemoryInfo.memoryTypeIndex = BLGeometryInstanceMemTypeIndex;
+
+	if (vkAllocateMemory(logicalDevice, &BLGeometryInstanceMemoryInfo, nullptr, &BLGeometryInstanceBufferMemory) != VK_SUCCESS)
+		throw std::runtime_error("Failed to allocate the memory for the bottom level geometry instance buffer");
+
 	Destroy(logicalDevice);
 }
