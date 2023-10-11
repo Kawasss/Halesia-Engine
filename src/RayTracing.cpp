@@ -32,6 +32,9 @@ VkBuffer TLASBuffer;
 VkDeviceMemory TLASBufferMemory;
 VkAccelerationStructureKHR TLAS;
 
+VkBuffer TLASScratchBuffer;
+VkDeviceMemory TLASScratchMemory;
+
 std::vector<char> ReadShaderFile(const std::string& filePath)
 {
 	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
@@ -575,7 +578,55 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// build TLAS
 
+	VkAccelerationStructureDeviceAddressInfoKHR TLASAddressInfo{};
+	TLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+	TLASAddressInfo.accelerationStructure = TLAS;
 
+	VkDeviceAddress TLASDeviceAddress = pvkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &TLASAddressInfo);
+
+	VkBufferCreateInfo TLASScratchBufferCreateInfo{};
+	TLASScratchBufferCreateInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+	TLASScratchBufferCreateInfo.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+	TLASScratchBufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+	TLASScratchBufferCreateInfo.queueFamilyIndexCount = 1;
+	TLASScratchBufferCreateInfo.pQueueFamilyIndices = &queueFamilyIndex;
+	TLASScratchBufferCreateInfo.size = TLASBuildSizesInfo.buildScratchSize;
+
+	if (vkCreateBuffer(logicalDevice, &TLASScratchBufferCreateInfo, nullptr, &TLASScratchBuffer) != VK_SUCCESS)
+		throw std::runtime_error("Failed to create the TLAS scratch buffer");
+
+	VkMemoryRequirements TLASScratchMemRequirements;
+	vkGetBufferMemoryRequirements(logicalDevice, TLASScratchBuffer, &TLASScratchMemRequirements);
+	uint32_t TLASScratchBufferMemTypeIndex = Vulkan::GetMemoryType(TLASScratchMemRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, physicalDevice);
+
+	VkMemoryAllocateInfo TLASScratchBufferAllocateInfo{};
+	TLASScratchBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	TLASScratchBufferAllocateInfo.pNext = Vulkan::optionalMemoryAllocationFlags;
+	TLASScratchBufferAllocateInfo.allocationSize = TLASScratchMemRequirements.size;
+	TLASScratchBufferAllocateInfo.memoryTypeIndex = TLASScratchBufferMemTypeIndex;
+
+	if (vkAllocateMemory(logicalDevice, &TLASScratchBufferAllocateInfo, nullptr, &TLASScratchMemory) != VK_SUCCESS)
+		throw std::runtime_error("Failed to allocate TLAS scratch buffer's memory");
+
+	if (vkBindBufferMemory(logicalDevice, TLASScratchBuffer, TLASScratchMemory, 0) != VK_SUCCESS)
+		throw std::runtime_error("Failed to bind the TLAS scratch buffer's memory");
+
+	VkBufferDeviceAddressInfo TLASSratchBufferAddressInfo{};
+	TLASSratchBufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+	TLASSratchBufferAddressInfo.buffer = TLASScratchBuffer;
+
+	VkDeviceAddress TLASScratchBufferAddress = pvkGetBufferDeviceAddressKHR(logicalDevice, &TLASSratchBufferAddressInfo);
+
+	TLASBuildGeometryInfo.dstAccelerationStructure = TLAS;
+	TLASBuildGeometryInfo.scratchData = { TLASScratchBufferAddress };
+
+	VkAccelerationStructureBuildRangeInfoKHR TLASBuildRangeInfo{};
+	TLASBuildRangeInfo.primitiveCount = 1;
+	const VkAccelerationStructureBuildRangeInfoKHR* pTLASBuildRangeInfos = &TLASBuildRangeInfo;
+
+	commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
+	pvkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &TLASBuildGeometryInfo, &pTLASBuildRangeInfos);
+	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
 
 	Destroy(logicalDevice);
 }
