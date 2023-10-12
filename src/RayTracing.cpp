@@ -1,4 +1,5 @@
 #include <fstream>
+#include <thread>
 #include "renderer/RayTracing.h"
 #include "renderer/Vulkan.h"
 #include "SceneLoader.h"
@@ -8,18 +9,24 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb/stb_image_write.h"
+
 #define nameof(s) #s
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
 
-VkCommandPool commandPool;
 std::vector<VkCommandBuffer> commandBuffers(MAX_FRAMES_IN_FLIGHT);
 VkDescriptorPool descriptorPool;
 VkDescriptorSetLayout descriptorSetLayout;
 VkDescriptorSetLayout materialSetLayout;
 std::vector<VkDescriptorSet> descriptorSets;
 
+VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{};
+
+VulkanCreationObject creationObject;
+uint32_t queueFamilyIndex;
 VkQueue queue;
 
 VkPipelineLayout pipelineLayout;
@@ -110,6 +117,9 @@ PFN_vkCmdTraceRaysKHR pvkCmdTraceRaysKHR;
 
 void RayTracing::Destroy(VkDevice logicalDevice)
 {
+	testObjectIndexBuffer.Destroy();
+	testObjectVertexBuffer.Destroy();
+
 	vkFreeMemory(logicalDevice, uniformBufferMemory, nullptr);
 	vkDestroyBuffer(logicalDevice, uniformBufferBuffer, nullptr);
 
@@ -151,15 +161,19 @@ void FetchRayTracingFunctions(VkDevice logicalDevice)
 	pvkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetAccelerationStructureDeviceAddressKHR");
 	pvkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetDeviceProcAddr(logicalDevice, "vkCmdBuildAccelerationStructuresKHR");
 	pvkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)vkGetDeviceProcAddr(logicalDevice, "vkDestroyAccelerationStructureKHR");
+	pvkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetRayTracingShaderGroupHandlesKHR");
+	pvkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vkGetDeviceProcAddr(logicalDevice, "vkCmdTraceRaysKHR");
 }
 
 void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera)
 {
 	VkResult result = VK_SUCCESS;
 
+	this->logicalDevice = logicalDevice;
+	this->physicalDevice = physicalDevice;
+
 	FetchRayTracingFunctions(logicalDevice);
 
-	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{};
 	rayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
 
 	VkPhysicalDeviceProperties2 properties2{};
@@ -171,7 +185,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	if (!physicalDevice.QueueFamilies(surface).graphicsFamily.has_value())
 		throw VulkanAPIError("No appropriate graphics family could be found for ray tracing", VK_SUCCESS, nameof(physicalDevice.QueueFamilies(surface).graphicsFamily.has_value()), __FILENAME__, std::to_string(__LINE__));
 
-	uint32_t queueFamilyIndex = physicalDevice.QueueFamilies(surface).graphicsFamily.value();
+	queueFamilyIndex = physicalDevice.QueueFamilies(surface).graphicsFamily.value();
 	vkGetDeviceQueue(logicalDevice, queueFamilyIndex, 0, &queue);
 
 	// command pool
@@ -187,7 +201,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// creation object
 
-	VulkanCreationObject creationObject{ logicalDevice, physicalDevice, commandPool, queue };
+	creationObject = { logicalDevice, physicalDevice, commandPool, queue };
 	CreateTestObject(creationObject);
 	Vulkan::globalThreadingMutex->lock();
 
@@ -290,7 +304,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	materialLayoutCreateInfo.bindingCount = static_cast<uint32_t>(materialLayoutBindings.size());
 	materialLayoutCreateInfo.pBindings = materialLayoutBindings.data();
 
-	result = vkCreateDescriptorSetLayout(logicalDevice, &layoutCreateInfo, nullptr, &materialSetLayout);
+	result = vkCreateDescriptorSetLayout(logicalDevice, &materialLayoutCreateInfo, nullptr, &materialSetLayout);
 	if (result != VK_SUCCESS)
 		throw VulkanAPIError("Failed to create the material descriptor set layout for ray tracing", result, nameof(vkCreateDescriptorSetLayout), __FILENAME__, std::to_string(__LINE__));
 
@@ -569,7 +583,345 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(UniformBuffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, uniformBufferBuffer, uniformBufferMemory);
 
+	void* uniformBufferMemPtr;
+	vkMapMemory(logicalDevice, uniformBufferMemory, 0, sizeof(UniformBuffer), 0, &uniformBufferMemPtr);
+	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
+
 	Vulkan::globalThreadingMutex->unlock();
 	
 	//Destroy(logicalDevice);
+}
+
+
+void RayTracing::DrawFrame(Win32Window* window, Camera* camera)
+{
+	/*image = new Image();
+	image->GenerateEmptyImages(creationObject, window->GetWidth(), window->GetHeight(), 1);*/
+
+	// image
+	
+	VkImage RTImage;
+	VkDeviceMemory RTImageMemory;
+
+	Vulkan::CreateImage(logicalDevice, physicalDevice, window->GetWidth(), window->GetHeight(), 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, RTImage, RTImageMemory);
+	VkImageView RTImageView = Vulkan::CreateImageView(logicalDevice, RTImage, VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	VkImageMemoryBarrier RTImageMemoryBarrier{};
+	RTImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	RTImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	RTImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	RTImageMemoryBarrier.srcAccessMask = 0;
+	RTImageMemoryBarrier.dstAccessMask = 0;
+	RTImageMemoryBarrier.srcQueueFamilyIndex = queueFamilyIndex;
+	RTImageMemoryBarrier.dstQueueFamilyIndex = queueFamilyIndex;
+	RTImageMemoryBarrier.image = RTImage;
+	RTImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	RTImageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+	RTImageMemoryBarrier.subresourceRange.levelCount = 1;
+	RTImageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+	RTImageMemoryBarrier.subresourceRange.layerCount = 1;
+
+	VkCommandBuffer imageBarrierCommandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
+	vkCmdPipelineBarrier(imageBarrierCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &RTImageMemoryBarrier);
+	Vulkan::EndSingleTimeCommands(logicalDevice, queue, imageBarrierCommandBuffer, commandPool);
+
+	// descriptor infos
+
+	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
+	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+	ASDescriptorInfo.accelerationStructureCount = 1;
+	ASDescriptorInfo.pAccelerationStructures = &TLAS;
+
+	VkDescriptorBufferInfo uniformDescriptorInfo{};
+	uniformDescriptorInfo.buffer = uniformBufferBuffer;
+	uniformDescriptorInfo.offset = 0;
+	uniformDescriptorInfo.range = VK_WHOLE_SIZE;
+
+	VkDescriptorBufferInfo indexDescriptorInfo{};
+	indexDescriptorInfo.buffer = testObjectIndexBuffer.GetVkBuffer();
+	indexDescriptorInfo.offset = 0;
+	indexDescriptorInfo.range = VK_WHOLE_SIZE;
+
+	VkDescriptorBufferInfo vertexDescriptorInfo{};
+	vertexDescriptorInfo.buffer = testObjectVertexBuffer.GetVkBuffer();
+	vertexDescriptorInfo.offset = 0;
+	vertexDescriptorInfo.range = VK_WHOLE_SIZE;
+	
+	VkDescriptorImageInfo RTImageDescriptorImageInfo{};
+	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
+	RTImageDescriptorImageInfo.imageView = RTImageView;//image->imageView;
+	RTImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+	std::vector<VkWriteDescriptorSet> writeDescriptorSets(5);
+
+	writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+	writeDescriptorSets[0].pNext = &ASDescriptorInfo;
+	writeDescriptorSets[0].dstSet = descriptorSets[0];
+	writeDescriptorSets[0].descriptorCount = 1;
+	writeDescriptorSets[0].dstBinding = 0;
+	
+	writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	writeDescriptorSets[1].pNext = &ASDescriptorInfo;
+	writeDescriptorSets[1].dstSet = descriptorSets[0];
+	writeDescriptorSets[1].descriptorCount = 1;
+	writeDescriptorSets[1].dstBinding = 1;
+	writeDescriptorSets[1].pBufferInfo = &uniformDescriptorInfo;
+
+	writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	writeDescriptorSets[2].pNext = &ASDescriptorInfo;
+	writeDescriptorSets[2].dstSet = descriptorSets[0];
+	writeDescriptorSets[2].descriptorCount = 1;
+	writeDescriptorSets[2].dstBinding = 2;
+	writeDescriptorSets[2].pBufferInfo = &indexDescriptorInfo;
+
+	writeDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	writeDescriptorSets[3].pNext = &ASDescriptorInfo;
+	writeDescriptorSets[3].dstSet = descriptorSets[0];
+	writeDescriptorSets[3].descriptorCount = 1;
+	writeDescriptorSets[3].dstBinding = 3;
+	writeDescriptorSets[3].pBufferInfo = &vertexDescriptorInfo;
+
+	writeDescriptorSets[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSets[4].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	writeDescriptorSets[4].pNext = &ASDescriptorInfo;
+	writeDescriptorSets[4].dstSet = descriptorSets[0];
+	writeDescriptorSets[4].descriptorCount = 1;
+	writeDescriptorSets[4].dstBinding = 4;
+	writeDescriptorSets[4].pImageInfo = &RTImageDescriptorImageInfo;
+	
+	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
+
+	// material index list
+
+	std::vector<uint32_t> materialIndices;
+	materialIndices.push_back(0);
+
+	VkBuffer materialIndexBuffer;
+	VkDeviceMemory materialIndexBufferMemory;
+	VkDeviceSize materialIndexBufferSize = sizeof(uint32_t) * materialIndices.size();
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, materialIndexBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, materialIndexBuffer, materialIndexBufferMemory);
+
+	void* materialIndexBufferMemPtr;
+	VkResult result = vkMapMemory(logicalDevice, materialIndexBufferMemory, 0, materialIndexBufferSize, 0, &materialIndexBufferMemPtr);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to map the ray tracing material index buffer memory", result, nameof(vkMapMemory), __FILENAME__, std::to_string(__LINE__));
+
+	memcpy(materialIndexBufferMemPtr, materialIndices.data(), materialIndexBufferSize);
+	vkUnmapMemory(logicalDevice, materialIndexBufferMemory);
+
+	// material buffer
+
+	struct Material 
+	{
+		float ambient[4] = { 0.2f, 0.2f, 0.2f, 0.2f };
+		float diffuse[4] = { 0.5f, 0.3f, 0.7f, 1.0f };
+		float specular[4] = { 0.3f, 0.3f, 0.3f, 0.3f };
+		float emission[4] = { 0, 0, 0, 0 };
+	};
+
+	std::vector<Material> materials(1);
+
+	VkBuffer materialBuffer;
+	VkDeviceMemory materialBufferMemory;
+	VkDeviceSize materialBufferSize = sizeof(Material) * materials.size();
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, materialBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, materialBuffer, materialBufferMemory);
+
+	void* materialsBufferMemPtr;
+	result = vkMapMemory(logicalDevice, materialBufferMemory, 0, materialBufferSize, 0, &materialsBufferMemPtr);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to map the ray tracing material buffer memory", result, nameof(vkMapMemory), __FILENAME__, std::to_string(__LINE__));
+
+	memcpy(materialsBufferMemPtr, materials.data(), materialBufferSize);
+	vkUnmapMemory(logicalDevice, materialBufferMemory);
+
+	// update material descriptor set
+
+	VkDescriptorBufferInfo materialIndexDescriptorInfo{};
+	materialIndexDescriptorInfo.buffer = materialIndexBuffer;
+	materialIndexDescriptorInfo.offset = 0;
+	materialIndexDescriptorInfo.range = VK_WHOLE_SIZE;
+
+	VkDescriptorBufferInfo materialBufferDescriptorInfo{};
+	materialBufferDescriptorInfo.buffer = materialBuffer;
+	materialBufferDescriptorInfo.offset = 0;
+	materialBufferDescriptorInfo.range = VK_WHOLE_SIZE;
+
+	std::vector<VkWriteDescriptorSet> materialWriteDescriptorSets(2);
+
+	materialWriteDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	materialWriteDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	materialWriteDescriptorSets[0].dstSet = descriptorSets[1];
+	materialWriteDescriptorSets[0].dstBinding = 0;
+	materialWriteDescriptorSets[0].descriptorCount = 1;
+	materialWriteDescriptorSets[0].pBufferInfo = &materialIndexDescriptorInfo;
+
+	materialWriteDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	materialWriteDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	materialWriteDescriptorSets[1].dstSet = descriptorSets[1];
+	materialWriteDescriptorSets[1].dstBinding = 1;
+	materialWriteDescriptorSets[1].descriptorCount = 1;
+	materialWriteDescriptorSets[1].pBufferInfo = &materialBufferDescriptorInfo;
+
+	vkUpdateDescriptorSets(logicalDevice, (uint32_t)materialWriteDescriptorSets.size(), materialWriteDescriptorSets.data(), 0, nullptr);
+
+	// shader binding table
+
+	VkDeviceSize progSize = rayTracingProperties.shaderGroupBaseAlignment;
+	VkDeviceSize shaderBindingTableSize = progSize * 4;
+
+	VkBuffer shaderBindingTableBuffer;
+	VkDeviceMemory shaderBindingTableMemory;
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, shaderBindingTableSize, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, shaderBindingTableBuffer, shaderBindingTableMemory);
+
+	std::vector<char> shaderBuffer(shaderBindingTableSize);
+	result = pvkGetRayTracingShaderGroupHandlesKHR(logicalDevice, pipeline, 0, 4, shaderBindingTableSize, shaderBuffer.data());
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to get the ray tracing shader group handles", result, nameof(pvkGetRayTracingShaderGroupHandlesKHR), __FILENAME__, std::to_string(__LINE__));
+
+	void* shaderBindingTableMemPtr;
+	result = vkMapMemory(logicalDevice, shaderBindingTableMemory, 0, shaderBindingTableSize, 0, &shaderBindingTableMemPtr);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to map the shader binding table memory", result, nameof(vkMapMemory), __FILENAME__, std::to_string(__LINE__));
+
+	for (uint32_t i = 0; i < 4; i++) // 4 = amount of shaders
+	{
+		memcpy(shaderBindingTableMemPtr, shaderBuffer.data() + i * rayTracingProperties.shaderGroupHandleSize, rayTracingProperties.shaderGroupHandleSize);
+		shaderBindingTableMemPtr = static_cast<char*>(shaderBindingTableMemPtr) + rayTracingProperties.shaderGroupBaseAlignment;
+	}
+	vkUnmapMemory(logicalDevice, shaderBindingTableMemory);
+
+	VkBufferDeviceAddressInfo shaderBindingTableBufferAddressInfo{};
+	shaderBindingTableBufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+	shaderBindingTableBufferAddressInfo.buffer = shaderBindingTableBuffer;
+
+	VkDeviceAddress shaderBindingTableBufferAddress = pvkGetBufferDeviceAddressKHR(logicalDevice, &shaderBindingTableBufferAddressInfo);
+
+	VkDeviceSize hitGroupOffset = 0;
+	VkDeviceSize rayGenOffset = progSize;
+	VkDeviceSize missOffset = 2 * progSize;
+
+	VkStridedDeviceAddressRegionKHR rchitShaderBindingTable{};
+	rchitShaderBindingTable.deviceAddress = shaderBindingTableBufferAddress + hitGroupOffset;
+	rchitShaderBindingTable.size = progSize;
+	rchitShaderBindingTable.stride = progSize;
+
+	VkStridedDeviceAddressRegionKHR rgenShaderBindingTable{};
+	rgenShaderBindingTable.deviceAddress = shaderBindingTableBufferAddress + rayGenOffset;
+	rgenShaderBindingTable.size = progSize;
+	rgenShaderBindingTable.stride = progSize;
+
+	VkStridedDeviceAddressRegionKHR rmissShaderBindingTable{};
+	rmissShaderBindingTable.deviceAddress = shaderBindingTableBufferAddress + missOffset;
+	rmissShaderBindingTable.size = progSize;
+	rmissShaderBindingTable.stride = progSize;
+
+	VkStridedDeviceAddressRegionKHR callableShaderBindingTable{};
+
+	// end buffer for the image
+
+	VkBuffer resultBuffer;
+	VkDeviceMemory resultBufferMemory;
+
+	VkMemoryRequirements RTMemRequirements;
+	vkGetImageMemoryRequirements(logicalDevice, RTImage/*image->image*/, &RTMemRequirements);
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, RTMemRequirements.size/*window->GetWidth() * window->GetHeight() * 4*/, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, resultBuffer, resultBufferMemory); // not sure about the size
+	
+	// record the render pass command buffer
+
+	VkImageMemoryBarrier RTCopyMemoryBarrier{};
+	RTCopyMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	//RTCopyMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	RTCopyMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+	RTCopyMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+	RTCopyMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	RTCopyMemoryBarrier.srcQueueFamilyIndex = queueFamilyIndex;
+	RTCopyMemoryBarrier.dstQueueFamilyIndex = queueFamilyIndex;
+	RTCopyMemoryBarrier.image = RTImage;/*image->image*/
+	RTCopyMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	RTCopyMemoryBarrier.subresourceRange.baseMipLevel = 0;
+	RTCopyMemoryBarrier.subresourceRange.levelCount = 1;
+	RTCopyMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+	RTCopyMemoryBarrier.subresourceRange.layerCount = 1;
+
+	VkBufferImageCopy imageCopy{};
+	imageCopy.bufferOffset = 0;
+	imageCopy.bufferRowLength = 0;
+	imageCopy.bufferImageHeight = 0;
+	imageCopy.imageOffset = { 0, 0, 0 };
+	imageCopy.imageExtent.width = window->GetWidth();
+	imageCopy.imageExtent.height = window->GetHeight();
+	imageCopy.imageExtent.depth = 1;
+	imageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageCopy.imageSubresource.baseArrayLayer = 0;
+	imageCopy.imageSubresource.mipLevel = 0;
+	imageCopy.imageSubresource.layerCount = 1;
+
+	VkCommandBufferBeginInfo commandBufferBeginInfo{};
+	commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+
+	result = vkBeginCommandBuffer(commandBuffers[0], &commandBufferBeginInfo);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to begin the ray tracing render pass command buffer", result, nameof(vkBeginCommandBuffer), __FILENAME__, std::to_string(__LINE__));
+	
+	vkCmdBindPipeline(commandBuffers[0], VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+	vkCmdBindDescriptorSets(commandBuffers[0], VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+	pvkCmdTraceRaysKHR(commandBuffers[0], &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, window->GetWidth(), window->GetHeight(), 1);
+	vkCmdPipelineBarrier(commandBuffers[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &RTCopyMemoryBarrier);
+	vkCmdCopyImageToBuffer(commandBuffers[0], RTImage/*image->image*/, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, resultBuffer, 1, &imageCopy);
+	
+	result = vkEndCommandBuffer(commandBuffers[0]);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to end the ray tracing render pass command buffer", result, nameof(vkBeginCommandBuffer), __FILENAME__, std::to_string(__LINE__));
+
+	// fence
+
+	VkFence imageFence;
+
+	VkFenceCreateInfo imageFenceCreateInfo{};
+	imageFenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	imageFenceCreateInfo.flags = 0;
+
+	result = vkCreateFence(logicalDevice, &imageFenceCreateInfo, nullptr, &imageFence);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create a ray tracing fence", result, nameof(vkCreateFence), __FILENAME__, std::to_string(__LINE__));
+
+	// submit
+
+	VkPipelineStageFlags pipelineStageFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.waitSemaphoreCount = 0;
+	submitInfo.pWaitDstStageMask = &pipelineStageFlags;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffers[0];
+	submitInfo.signalSemaphoreCount = 0;
+
+	result = vkQueueSubmit(queue, 1, &submitInfo, imageFence);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to submit the ray tracing queue", result, nameof(vkQueueSubmit), __FILENAME__, std::to_string(__LINE__));
+	
+	// read the image
+	
+	void* resultMemPtr;
+	result = vkMapMemory(logicalDevice, resultBufferMemory, 0, RTMemRequirements.size, 0, &resultMemPtr);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to map the image memory", result, nameof(vkMapMemory), __FILENAME__, std::to_string(__LINE__));
+
+	stbi_write_png("result.png", window->GetWidth(), window->GetHeight(), 4, resultMemPtr, 4 * window->GetHeight());
+	/*vkUnmapMemory(logicalDevice, resultBufferMemory);
+
+	vkFreeMemory(logicalDevice, resultBufferMemory, nullptr);
+	vkDestroyBuffer(logicalDevice, resultBuffer, nullptr);
+	vkDestroyFence(logicalDevice, imageFence, nullptr);*/
+
+	std::cout << "end" << std::endl;
 }

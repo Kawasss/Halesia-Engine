@@ -80,6 +80,43 @@ void Image::GenerateImages(const TextureCreationObject& creationObjects, std::ve
 	this->texturesHaveChanged = true;
 }
 
+void Image::GenerateEmptyImages(const TextureCreationObject& creationObjects, int width, int height, int amount)
+{
+	this->logicalDevice = creationObjects.logicalDevice;
+	this->commandPool = creationObjects.commandPool;
+	this->queue = creationObjects.queue;
+	this->physicalDevice = creationObjects.physicalDevice;
+	this->width = width;
+	this->height = height;
+	this->layerCount = static_cast<uint32_t>(amount);
+
+	VkDeviceSize layerSize = width * height * 4;
+	VkDeviceSize imageSize = layerSize * amount;
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+
+	Vulkan::globalThreadingMutex->lock();
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
+	Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
+
+	TransitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	CopyBufferToImage(stagingBuffer);
+
+	vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
+	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
+
+	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
+	imageView = Vulkan::CreateImageView(logicalDevice, image, viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	Vulkan::globalThreadingMutex->unlock();
+
+	this->texturesHaveChanged = true;
+}
+
 void Image::AwaitGeneration()
 {
 	generation.get();
@@ -209,7 +246,7 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
-	else throw std::invalid_argument("Invalid layout transition");
+	else throw std::invalid_argument("Invalid layout transition: " + (std::string)string_VkImageLayout(newLayout));
 
 	vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
 

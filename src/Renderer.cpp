@@ -28,6 +28,8 @@
 
 #include "renderer/Renderer.h"
 
+#define nameof(s) #s
+#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define VariableToString(name) variableToString(#name)
 std::string variableToString(const char* name)
 {
@@ -148,8 +150,9 @@ void Renderer::CreateImGUI()
 	poolCreateInfo.poolSizeCount = std::size(poolSizes);
 	poolCreateInfo.pPoolSizes = poolSizes;
 
-	if (vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &imGUIDescriptorPool) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the descriptor pool for imGUI");
+	VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &imGUIDescriptorPool);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the descriptor pool for imGUI", result, nameof(vkCreateDescriptorPool), __FILENAME__, std::to_string(__LINE__));
 
 	ImGui::CreateContext();
 	ImPlot::CreateContext();
@@ -227,8 +230,9 @@ void Renderer::CreateTextureSampler()
 	createInfo.minLod = 0;
 	createInfo.maxLod = VK_LOD_CLAMP_NONE;//static_cast<uint32_t>(textureImage->GetMipLevels());
 
-	if (vkCreateSampler(logicalDevice, &createInfo, nullptr, &textureSampler) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the texture sampler");
+	VkResult result = vkCreateSampler(logicalDevice, &createInfo, nullptr, &textureSampler);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the texture sampler", result, nameof(vkCreateSampler), __FILENAME__, std::to_string(__LINE__));
 }
 
 void Renderer::CreateModelBuffers()
@@ -328,8 +332,9 @@ void Renderer::CreateRenderPass()
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 
-	if (vkCreateRenderPass(logicalDevice, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create a render pass");
+	VkResult result = vkCreateRenderPass(logicalDevice, &renderPassInfo, nullptr, &renderPass);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create a render pass", result, nameof(vkCreateRenderPass), __FILENAME__, std::to_string(__LINE__));
 
 	std::cout << "creating render pass: SUCCESS" << std::endl;
 }
@@ -355,8 +360,10 @@ void Renderer::CreateDescriptorSets()
 	allocateInfo.pNext = &countAllocateInfo;
 
 	descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-	if (vkAllocateDescriptorSets(logicalDevice, &allocateInfo, descriptorSets.data()) != VK_SUCCESS)
-		throw std::runtime_error("Failed to allocate the descriptor sets");
+
+	VkResult result = vkAllocateDescriptorSets(logicalDevice, &allocateInfo, descriptorSets.data());
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to allocate the descriptor sets", result, nameof(vkAllocateDescriptorSets), __FILENAME__, std::to_string(__LINE__));
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -421,8 +428,9 @@ void Renderer::CreateDescriptorPool()
 	createInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
 	createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
 
-	if (vkCreateDescriptorPool(logicalDevice, &createInfo, nullptr, &descriptorPool) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the descriptor pool");
+	VkResult result = vkCreateDescriptorPool(logicalDevice, &createInfo, nullptr, &descriptorPool);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the descriptor pool", result, nameof(vkCreateDescriptorPool), __FILENAME__, std::to_string(__LINE__));
 }
 
 void Renderer::CreateDescriptorSetLayout()
@@ -467,8 +475,9 @@ void Renderer::CreateDescriptorSetLayout()
 	createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 	createInfo.pNext = &bindingFlagsCreateInfo;
 
-	if (vkCreateDescriptorSetLayout(logicalDevice, &createInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the descriptor set layout");
+	VkResult result = vkCreateDescriptorSetLayout(logicalDevice, &createInfo, nullptr, &descriptorSetLayout);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the descriptor set layout", result, nameof(vkCreateDescriptorSetLayout), __FILENAME__, std::to_string(__LINE__));
 }
 
 void Renderer::CreateGraphicsPipeline()
@@ -566,8 +575,9 @@ void Renderer::CreateGraphicsPipeline()
 	layoutInfo.setLayoutCount = 1;
 	layoutInfo.pSetLayouts = &descriptorSetLayout;
 
-	if (vkCreatePipelineLayout(logicalDevice, &layoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create a pipeline layout");
+	VkResult result = vkCreatePipelineLayout(logicalDevice, &layoutInfo, nullptr, &pipelineLayout);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create a pipeline layout", result, nameof(vkCreatePipelineLayout), __FILENAME__, std::to_string(__LINE__));
 		
 	CreateRenderPass();
 	
@@ -589,8 +599,9 @@ void Renderer::CreateGraphicsPipeline()
 	pipelineCreateInfo.renderPass = renderPass;
 	pipelineCreateInfo.subpass = 0;
 
-	if (vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create a graphics pipeline");
+	result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create a graphics pipeline", result, nameof(vkCreateGraphicsPipelines), __FILENAME__, std::to_string(__LINE__));
 
 	vkDestroyShaderModule(logicalDevice, vertexShaderModule, nullptr);
 	vkDestroyShaderModule(logicalDevice, fragmentShaderModule, nullptr);
@@ -634,8 +645,9 @@ void Renderer::CreateCommandPool()
 	createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	createInfo.queueFamilyIndex = indices.graphicsFamily.value();
 
-	if (vkCreateCommandPool(logicalDevice, &createInfo, nullptr, &commandPool) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create a command pool");
+	VkResult result = vkCreateCommandPool(logicalDevice, &createInfo, nullptr, &commandPool);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create a command pool", result, nameof(vkCreateCommandPool), __FILENAME__, std::to_string(__LINE__));
 }
 
 void Renderer::CreateCommandBuffer()
@@ -648,8 +660,9 @@ void Renderer::CreateCommandBuffer()
 	allocationInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocationInfo.commandBufferCount = (uint32_t)commandBuffers.size();
 
-	if (vkAllocateCommandBuffers(logicalDevice, &allocationInfo, commandBuffers.data()) != VK_SUCCESS)
-		throw std::runtime_error("Failed to allocate the command buffer");
+	VkResult result = vkAllocateCommandBuffers(logicalDevice, &allocationInfo, commandBuffers.data());
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to allocate the command buffer", result, nameof(vkAllocateCommandBuffers), __FILENAME__, std::to_string(__LINE__));
 }
 
 void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> objects)
@@ -657,8 +670,9 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-	if (vkBeginCommandBuffer(lCommandBuffer, &beginInfo) != VK_SUCCESS)
-		throw std::runtime_error("Failed to begin the given command buffer");
+	VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer), __FILENAME__, std::to_string(__LINE__));
 
 	VkRenderPassBeginInfo renderPassBeginInfo{};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -708,8 +722,10 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), lCommandBuffer);
 
 	vkCmdEndRenderPass(lCommandBuffer);
-	if (vkEndCommandBuffer(lCommandBuffer) != VK_SUCCESS)
-		throw std::runtime_error("Failed to record / end the command buffer");
+
+	result = vkEndCommandBuffer(lCommandBuffer);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer), __FILENAME__, std::to_string(__LINE__));
 }
 
 void Renderer::CreateSyncObjects()
@@ -726,8 +742,10 @@ void Renderer::CreateSyncObjects()
 	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
 		if (vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &imageAvaibleSemaphores[i]) != VK_SUCCESS || vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS || vkCreateFence(logicalDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]))
-			throw std::runtime_error("Failed to create the required semaphores and fence");
+			throw VulkanAPIError("Failed to create the required semaphores and fence", VK_SUCCESS, nameof(CreateSyncObjects), __FILENAME__, std::to_string(__LINE__)); // too difficult / annoying to put all of these calls into result = ...
+	}
 }
 
 std::optional<std::string> Renderer::RenderDevConsole(bool render)
@@ -844,6 +862,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	{
 		RayTracing rayTracing;
 		rayTracing.Init(logicalDevice, physicalDevice, surface, objects[0], camera);
+		rayTracing.DrawFrame(testWindow, camera);
 		initRT = true;
 	} // not a good place to do this
 
@@ -863,7 +882,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 		testWindow->resized = false;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-		throw std::runtime_error("Failed to acquire the next swap chain image");
+		throw VulkanAPIError("Failed to acquire the next swap chain image", result, nameof(vkAcquireNextImageKHR), __FILENAME__, std::to_string(__LINE__));
 
 	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
 
@@ -890,9 +909,9 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
-	
-	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
-		throw std::runtime_error("Failed to submit the queue");
+	result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to submit the queue", result, nameof(vkQueueSubmit), __FILENAME__, std::to_string(__LINE__));
 
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -913,7 +932,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 		Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
 	}
 	else if (result != VK_SUCCESS)
-		throw std::runtime_error("Failed to present the swap chain image");
+		throw VulkanAPIError("Failed to present the swap chain image", result, nameof(vkQueuePresentKHR), __FILENAME__, std::to_string(__LINE__));
 	
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }

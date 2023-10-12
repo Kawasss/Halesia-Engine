@@ -8,6 +8,7 @@ class Image
 {
 public:
 	void GenerateImages(const TextureCreationObject& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps = true);
+	void GenerateEmptyImages(const TextureCreationObject& creationObjects, int width, int height, int amount);
 	void AwaitGeneration();
 	bool HasFinishedLoading();
 	void Destroy();
