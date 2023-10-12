@@ -10,6 +10,17 @@ enum WindowMode // enum for scalability
 	WINDOW_MODE_BORDERLESS_WINDOWED
 };
 
+inline std::string WindowModeToString(WindowMode windowMode)
+{
+	switch (windowMode)
+	{
+	case WINDOW_MODE_BORDERLESS_WINDOWED:
+		return "WINDOW_MODE_BORDERLESS_WINDOWED";
+	case WINDOW_MODE_WINDOWED:
+		return "WINDOW_MODE_WINDOWED";
+	}
+}
+
 enum class ExtendedWindowStyle : uint32_t // uint32_t as underlying type to combat int's incompetence
 {
 	DragAndDropFiles = WS_EX_ACCEPTFILES,

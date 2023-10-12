@@ -28,7 +28,7 @@ void Image::GenerateImages(const TextureCreationObject& creationObjects, std::ve
 	this->queue = creationObjects.queue;
 	this->physicalDevice = creationObjects.physicalDevice;
 
-	layerCount = textureData.size();
+	layerCount = static_cast<uint32_t>(textureData.size());
 	int textureChannels = 0;
 
 	if (useMipMaps)
@@ -36,8 +36,8 @@ void Image::GenerateImages(const TextureCreationObject& creationObjects, std::ve
 	stbi_set_flip_vertically_on_load(1);
 	// read every side of the cubemap
 	std::vector<stbi_uc*> pixels(layerCount);
-	for (int i = 0; i < layerCount; i++)
-		pixels[i] = stbi_load_from_memory((unsigned char*)textureData[i].data(), textureData[i].size(), &width, &height, &textureChannels, STBI_rgb_alpha);
+	for (uint32_t i = 0; i < layerCount; i++)
+		pixels[i] = stbi_load_from_memory((unsigned char*)textureData[i].data(), (int)textureData[i].size(), &width, &height, &textureChannels, STBI_rgb_alpha);
 
 	VkDeviceSize layerSize = width * height * 4;
 	VkDeviceSize imageSize = layerSize * layerCount;
@@ -55,16 +55,16 @@ void Image::GenerateImages(const TextureCreationObject& creationObjects, std::ve
 	// copy all of the different sides of the cubemap into a single buffer
 	void* data;
 	vkMapMemory(logicalDevice, stagingBufferMemory, 0, imageSize, 0, &data);
-	for (int i = 0; i < layerCount; i++)
+	for (uint32_t i = 0; i < layerCount; i++)
 		memcpy((char*)data + (layerSize * i), pixels[i], static_cast<size_t>(imageSize)); // cast the void* to char for working arithmetic
 	vkUnmapMemory(logicalDevice, stagingBufferMemory);
 
-	for (int i = 0; i < layerCount; i++) // dont know if this can be put in the other for loop used for reading the files
+	for (uint32_t i = 0; i < layerCount; i++) // dont know if this can be put in the other for loop used for reading the files
 		stbi_image_free(pixels[i]);
 
 	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-	Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, mipLevels, (uint32_t)layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
-
+	Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
+	
 	TransitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	CopyBufferToImage(stagingBuffer);
 

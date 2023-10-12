@@ -197,24 +197,6 @@ void SceneLoader::OpenInputFile(std::string path)
 		throw std::runtime_error("Failed to open the scene file at " + path + ", the path is either invalid or outdated / corrupt");
 }
 
-glm::vec3 ConvertToGlm(aiVector3D vector)
-{
-	glm::vec3 ret;
-	ret.x = vector.x;
-	ret.y = vector.y;
-	ret.z = vector.z;
-	return ret;
-}
-
-glm::vec2 ConverToGlm(aiVector3D vector)
-{
-	glm::vec2 ret;
-	ret.x = vector.x;
-	ret.y = vector.y;
-	return ret;
-}
-
-
 std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& max, int index)
 {
 	std::vector<Vertex> ret;
@@ -222,7 +204,7 @@ std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& m
 	{
 		Vertex vertex{};
 
-		vertex.position = ConvertToGlm(pMesh->mVertices[i]);
+		vertex.position = glm::vec3(pMesh->mVertices[i].x, pMesh->mVertices[i].y, pMesh->mVertices[i].z);
 
 		max.x = vertex.position.x > max.x ? vertex.position.x : max.x;
 		max.y = vertex.position.y > max.y ? vertex.position.y : max.y;
@@ -233,9 +215,9 @@ std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& m
 		min.z = vertex.position.z < min.z ? vertex.position.z : min.z;
 
 		if (pMesh->HasNormals())
-			vertex.normal = ConvertToGlm(pMesh->mNormals[i]);
+			vertex.normal = glm::vec3(pMesh->mNormals[i].x, pMesh->mNormals[i].y, pMesh->mNormals[i].z);
 		if (pMesh->mTextureCoords[0])
-			vertex.textureCoordinates = ConverToGlm(pMesh->mTextureCoords[0][i]);
+			vertex.textureCoordinates = glm::vec2(pMesh->mTextureCoords[0][i].x, pMesh->mTextureCoords[0][i].y);
 		vertex.drawID = index;
 		ret.push_back(vertex);
 	}

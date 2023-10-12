@@ -8,10 +8,23 @@
 
 enum HalesiaExitCode
 {
-	EXIT_CODE_SUCESS,            // succes means that the engine was told to exit or reached the end of its loop, i.e. the game window closes
-	EXIT_CODE_UNKNOWN_EXCEPTION, // an unknown exception occured, since the cause is unknown the engine has to terminate
-	EXIT_CODE_EXCEPTION          // an error was thrown, this can be user defined or engine defined
+	HALESIA_EXIT_CODE_SUCESS,            // succes means that the engine was told to exit or reached the end of its loop, i.e. the game window closes
+	HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION, // an unknown exception occured, since the cause is unknown the engine has to terminate
+	HALESIA_EXIT_CODE_EXCEPTION          // an error was thrown, this can be user defined or engine defined
 };
+
+inline std::string HalesiaExitCodeToString(HalesiaExitCode exitCode)
+{
+	switch (exitCode)
+	{
+	case HALESIA_EXIT_CODE_SUCESS:
+		return "HALESIA_EXIT_CODE_SUCESS";
+	case HALESIA_EXIT_CODE_EXCEPTION:
+		return "HALESIA_EXIT_CODE_EXCEPTION";
+	case HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION:
+		return "HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION";
+	}
+}
 
 struct HalesiaInstanceCreateInfo
 {

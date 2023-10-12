@@ -1,6 +1,7 @@
 #pragma once
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.h>
+#include <vulkan/vk_enum_string_helper.h>
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
@@ -37,14 +38,35 @@ const std::vector<const char*> requiredLogicalDeviceExtensions =
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
 };
 
+class VulkanAPIError : public std::exception
+{
+public:
+    VulkanAPIError(std::string message, VkResult result = VK_SUCCESS, std::string functionName = "", std::string file = "", std::string line = "")
+    {
+        std::string vulkanError = result == VK_SUCCESS ? "" : ": " + (std::string)string_VkResult(result); // result can be VK_SUCCESS for functions that dont use a vulkan functions, i.e. looking for a physical device but there are none that fit the bill
+        std::string location = functionName == "" ? "" : " from " + functionName;
+        location += line == "" ? "" : " at line " + line;
+        location += file == "" ? "" : " in " + file;
+        this->message = message + vulkanError + location;
+    }
+
+    const char* what() const override
+    {
+        return message.c_str();
+    }
+
+private:
+    std::string message;
+};
+
 class Vulkan
 {
     public:
         struct SwapChainSupportDetails
         {
-            VkSurfaceCapabilitiesKHR capabilities;
-            std::vector<VkSurfaceFormatKHR> formats;
-            std::vector<VkPresentModeKHR> presentModes;
+            VkSurfaceCapabilitiesKHR capabilities{};
+            std::vector<VkSurfaceFormatKHR> formats{};
+            std::vector<VkPresentModeKHR> presentModes{};
         };
 
         static VkMemoryAllocateFlagsInfo* optionalMemoryAllocationFlags;

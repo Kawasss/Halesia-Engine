@@ -4,6 +4,13 @@
 #include "SceneLoader.h"
 #include "Vertex.h"
 
+#include <assimp/cimport.h>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+
+#define nameof(s) #s
+#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
 
 VkCommandPool commandPool;
@@ -38,6 +45,11 @@ VkDeviceMemory TLASScratchMemory;
 VkBuffer uniformBufferBuffer;
 VkDeviceMemory uniformBufferMemory;
 
+uint32_t verticesSize;
+uint32_t indicesSize;
+VulkanBuffer testObjectVertexBuffer;
+IndexBuffer testObjectIndexBuffer;
+
 struct UniformBuffer
 {
 	glm::vec3 position;
@@ -62,6 +74,28 @@ std::vector<char> ReadShaderFile(const std::string& filePath)
 
 	file.close();
 	return buffer;
+}
+
+void CreateTestObject(BufferCreationObject creationObject)
+{
+	const aiScene* scene = aiImportFile("stdObj/monkey.obj", aiProcessPreset_TargetRealtime_Fast);
+	if (scene == nullptr)
+		throw std::runtime_error("Failed to read the test model");
+
+	std::vector<glm::vec3> vertices;
+	std::vector<uint16_t> indices;
+
+	for (int i = 0; i < scene->mMeshes[0]->mNumVertices; i++)
+		vertices.push_back({ scene->mMeshes[0]->mVertices[i].x, scene->mMeshes[0]->mVertices[i].y, scene->mMeshes[0]->mVertices[i].z });
+
+	for (int i = 0; i < scene->mMeshes[0]->mNumFaces; i++)
+		for (int j = 0; j < scene->mMeshes[0]->mFaces[i].mNumIndices; j++)
+			indices.push_back(scene->mMeshes[0]->mFaces[i].mIndices[j]);
+
+	testObjectVertexBuffer = VulkanBuffer(creationObject, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vertices);
+	testObjectIndexBuffer = IndexBuffer(creationObject, indices);
+	verticesSize = vertices.size();
+	indicesSize = indices.size();
 }
 
 PFN_vkGetBufferDeviceAddressKHR pvkGetBufferDeviceAddressKHR;
@@ -121,6 +155,8 @@ void FetchRayTracingFunctions(VkDevice logicalDevice)
 
 void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera)
 {
+	VkResult result = VK_SUCCESS;
+
 	FetchRayTracingFunctions(logicalDevice);
 
 	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{};
@@ -133,7 +169,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	vkGetPhysicalDeviceProperties2(physicalDevice.Device(), &properties2);
 
 	if (!physicalDevice.QueueFamilies(surface).graphicsFamily.has_value())
-		throw std::runtime_error("No appropriate graphics family could be found for ray tracing");
+		throw VulkanAPIError("No appropriate graphics family could be found for ray tracing", VK_SUCCESS, nameof(physicalDevice.QueueFamilies(surface).graphicsFamily.has_value()), __FILENAME__, std::to_string(__LINE__));
 
 	uint32_t queueFamilyIndex = physicalDevice.QueueFamilies(surface).graphicsFamily.value();
 	vkGetDeviceQueue(logicalDevice, queueFamilyIndex, 0, &queue);
@@ -145,9 +181,15 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndex;
 
-	VkResult result = vkCreateCommandPool(logicalDevice, &commandPoolCreateInfo, nullptr, &commandPool);
-	if (vkCreateCommandPool(logicalDevice, &commandPoolCreateInfo, nullptr, &commandPool) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create a command pool for ray tracing");
+	result = vkCreateCommandPool(logicalDevice, &commandPoolCreateInfo, nullptr, &commandPool);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create a command pool for ray tracing", result, nameof(vkCreateCommandPool), __FILENAME__, std::to_string(__LINE__));
+
+	// creation object
+
+	VulkanCreationObject creationObject{ logicalDevice, physicalDevice, commandPool, queue };
+	CreateTestObject(creationObject);
+	Vulkan::globalThreadingMutex->lock();
 
 	// command buffer
 
@@ -157,8 +199,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	commandBufferAllocateInfo.commandPool = commandPool;
 	commandBufferAllocateInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
 
-	if (vkAllocateCommandBuffers(logicalDevice, &commandBufferAllocateInfo, commandBuffers.data()) != VK_SUCCESS)
-		throw std::runtime_error("Failed to allocate the command buffers for ray tracing");
+	result = vkAllocateCommandBuffers(logicalDevice, &commandBufferAllocateInfo, commandBuffers.data());
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to allocate the command buffers for ray tracing", result, nameof(vkAllocateCommandBuffers), __FILENAME__, std::to_string(__LINE__));
 
 	// descriptor pool (frames in flight not implemented)
 
@@ -179,8 +222,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
 	descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
 
-	if (vkCreateDescriptorPool(logicalDevice, &descriptorPoolCreateInfo, nullptr, &descriptorPool) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the descriptor pool for ray tracing");
+	result = vkCreateDescriptorPool(logicalDevice, &descriptorPoolCreateInfo, nullptr, &descriptorPool);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the descriptor pool for ray tracing", result, nameof(vkCreateDescriptorPool), __FILENAME__, std::to_string(__LINE__));
 
 	// descriptor set layout (frames in flight not implemented)
 
@@ -221,8 +265,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	layoutCreateInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
 	layoutCreateInfo.pBindings = setLayoutBindings.data();
 
-	if (vkCreateDescriptorSetLayout(logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayout) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the descriptor set layout for ray tracing");
+	result = vkCreateDescriptorSetLayout(logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayout);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the descriptor set layout for ray tracing", result, nameof(vkCreateDescriptorSetLayout), __FILENAME__, std::to_string(__LINE__));
 
 	// material set layouts (placeholder material, not Material.h materials) (frames in flight not implemented)
 
@@ -245,8 +290,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	materialLayoutCreateInfo.bindingCount = static_cast<uint32_t>(materialLayoutBindings.size());
 	materialLayoutCreateInfo.pBindings = materialLayoutBindings.data();
 
-	if (vkCreateDescriptorSetLayout(logicalDevice, &layoutCreateInfo, nullptr, &materialSetLayout) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the material descriptor set layout for ray tracing");
+	result = vkCreateDescriptorSetLayout(logicalDevice, &layoutCreateInfo, nullptr, &materialSetLayout);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the material descriptor set layout for ray tracing", result, nameof(vkCreateDescriptorSetLayout), __FILENAME__, std::to_string(__LINE__));
 
 	// allocate the descriptor sets
 
@@ -259,8 +305,10 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	setAllocateInfo.pSetLayouts = descriptorSetLayouts.data();
 
 	descriptorSets.resize(descriptorSetLayouts.size());
-	if (vkAllocateDescriptorSets(logicalDevice, &setAllocateInfo, descriptorSets.data()) != VK_SUCCESS)
-		throw std::runtime_error("Failed to allocate the descriptor sets for ray tracing");
+
+	result = vkAllocateDescriptorSets(logicalDevice, &setAllocateInfo, descriptorSets.data());
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to allocate the descriptor sets for ray tracing", result, nameof(vkAllocateDescriptorSets), __FILENAME__, std::to_string(__LINE__));
 
 	// pipeline layout
 
@@ -271,8 +319,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
 	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
 
-	if (vkCreatePipelineLayout(logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the pipeline layout for ray tracing");
+	result = vkCreatePipelineLayout(logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the pipeline layout for ray tracing", result, nameof(vkCreatePipelineLayout), __FILENAME__, std::to_string(__LINE__));
 
 	// shaders
 
@@ -318,8 +367,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	RTPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
 	RTPipelineCreateInfo.basePipelineIndex = 0;
 
-	if (pvkCreateRayTracingPipelinesKHR(logicalDevice, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &RTPipelineCreateInfo, nullptr, &pipeline) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the pipeline for ray tracing");
+	result = pvkCreateRayTracingPipelinesKHR(logicalDevice, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &RTPipelineCreateInfo, nullptr, &pipeline);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the pipeline for ray tracing", result, nameof(pvkCreateRayTracingPipelinesKHR), __FILENAME__, std::to_string(__LINE__));
 
 	vkDestroyShaderModule(logicalDevice, shadowShader, nullptr);
 	vkDestroyShaderModule(logicalDevice, missShader, nullptr);
@@ -330,11 +380,11 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	VkBufferDeviceAddressInfo bufferAddressInfo{};
 	bufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-	bufferAddressInfo.buffer = object->meshes[0].vertexBuffer.GetVkBuffer();
+	bufferAddressInfo.buffer = testObjectVertexBuffer.GetVkBuffer();
 
 	VkDeviceAddress vertexBufferAddress = pvkGetBufferDeviceAddressKHR(logicalDevice, &bufferAddressInfo);
 
-	bufferAddressInfo.buffer = object->meshes[0].indexBuffer.GetVkBuffer();
+	bufferAddressInfo.buffer = testObjectIndexBuffer.GetVkBuffer();
 	
 	VkDeviceAddress indexBufferAddress = pvkGetBufferDeviceAddressKHR(logicalDevice, &bufferAddressInfo);
 
@@ -343,7 +393,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
 	triangles.vertexData = { vertexBufferAddress };
 	triangles.vertexStride = sizeof(Vertex);
-	triangles.maxVertex = static_cast<uint32_t>(object->meshes[0].vertices.size());
+	triangles.maxVertex = verticesSize;//static_cast<uint32_t>(object->meshes[0].vertices.size());
 	triangles.indexType = VK_INDEX_TYPE_UINT16;
 	triangles.indexData = { indexBufferAddress };
 	triangles.transformData = { 0 };
@@ -370,7 +420,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	VkAccelerationStructureBuildSizesInfoKHR BLASBuildSizesInfo{};
 	BLASBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
 
-	std::vector<uint32_t> BLMaxPrimitiveCounts = { static_cast<uint32_t>(object->meshes[0].vertices.size()) };
+	std::vector<uint32_t> BLMaxPrimitiveCounts = { verticesSize/*static_cast<uint32_t>(object->meshes[0].vertices.size())*/ };
 	pvkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &BLASBuildGeometryInfo, BLMaxPrimitiveCounts.data(), &BLASBuildSizesInfo);
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, BLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, BLASBuffer, BLASDeviceMemory);
@@ -382,10 +432,11 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	BLASCreateInfo.buffer = BLASBuffer;
 	BLASCreateInfo.offset = 0;
 
-	if (pvkCreateAccelerationStructureKHR(logicalDevice, &BLASCreateInfo, nullptr, &BLAS) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the BLAS");
+	result = pvkCreateAccelerationStructureKHR(logicalDevice, &BLASCreateInfo, nullptr, &BLAS);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the BLAS", result, nameof(pvkCreateAccelerationStructureKHR), __FILENAME__, std::to_string(__LINE__));
 
-	// build BLAS (presumably for a frame)
+	// build BLAS
 
 	VkAccelerationStructureDeviceAddressInfoKHR BLASAddressInfo{};
 	BLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
@@ -405,7 +456,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	BLASBuildGeometryInfo.dstAccelerationStructure = BLAS;
 
 	VkAccelerationStructureBuildRangeInfoKHR BLASBuildRangeInfo{};
-	BLASBuildRangeInfo.primitiveCount = object->meshes[0].vertices.size();
+	BLASBuildRangeInfo.primitiveCount = verticesSize / 3;// object->meshes[0].vertices.size();
 	const VkAccelerationStructureBuildRangeInfoKHR* pBLASBuildRangeInfo = &BLASBuildRangeInfo;
 
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
@@ -415,17 +466,19 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	// TLAS
 
 	VkAccelerationStructureInstanceKHR BLASInstance{};
-	BLASInstance.transform = {  1, 0, 0, 0,  0, 1, 0, 0, 0, 0, 1, 0 };
+	BLASInstance.transform = {  1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0 };
 	BLASInstance.instanceCustomIndex = 0;
 	BLASInstance.mask = 0xFF;
 	BLASInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 	BLASInstance.accelerationStructureReference = BLASDeviceAddress;
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(VkAccelerationStructureInstanceKHR), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, BLGeometryInstanceBuffer, BLGeometryInstanceBufferMemory);
-
+	
 	void* BLGeometryInstanceBufferMemPtr;
-	if (vkMapMemory(logicalDevice, BLGeometryInstanceBufferMemory, 0, sizeof(VkAccelerationStructureInstanceKHR), 0, &BLGeometryInstanceBufferMemPtr) != VK_SUCCESS)
-		throw std::runtime_error("Failed to map the memory of the bottom level geometry instance buffer");
+
+	result = vkMapMemory(logicalDevice, BLGeometryInstanceBufferMemory, 0, sizeof(VkAccelerationStructureInstanceKHR), 0, &BLGeometryInstanceBufferMemPtr);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to map the memory of the bottom level geometry instance buffer", result, nameof(vkMapMemory), __FILENAME__, std::to_string(__LINE__));
 
 	memcpy(BLGeometryInstanceBufferMemPtr, &BLASInstance, sizeof(VkAccelerationStructureInstanceKHR));
 	vkUnmapMemory(logicalDevice, BLGeometryInstanceBufferMemory);
@@ -479,8 +532,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	TLASCreateInfo.buffer = TLASBuffer;
 	TLASCreateInfo.deviceAddress = 0;
 
-	if (pvkCreateAccelerationStructureKHR(logicalDevice, &TLASCreateInfo, nullptr, &TLAS) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create the TLAS");
+	result = pvkCreateAccelerationStructureKHR(logicalDevice, &TLASCreateInfo, nullptr, &TLAS);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the TLAS", result, nameof(pvkCreateAccelerationStructureKHR), __FILENAME__, std::to_string(__LINE__));
 
 	// build TLAS
 
@@ -504,7 +558,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	VkAccelerationStructureBuildRangeInfoKHR TLASBuildRangeInfo{};
 	TLASBuildRangeInfo.primitiveCount = 1;
 	const VkAccelerationStructureBuildRangeInfoKHR* pTLASBuildRangeInfos = &TLASBuildRangeInfo;
-
+	
 	commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 	pvkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &TLASBuildGeometryInfo, &pTLASBuildRangeInfos);
 	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
@@ -515,5 +569,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(UniformBuffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, uniformBufferBuffer, uniformBufferMemory);
 
-	Destroy(logicalDevice);
+	Vulkan::globalThreadingMutex->unlock();
+	
+	//Destroy(logicalDevice);
 }

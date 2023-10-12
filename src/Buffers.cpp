@@ -21,30 +21,35 @@ VkBuffer VulkanBuffer::GetVkBuffer()
 	return buffer;
 }
 
-template<typename T> void VulkanBuffer::GenerateBuffer(BufferCreationObject creationObject, VkBufferUsageFlags usage, const std::vector<T> bufferData)
-{
-	Vulkan::globalThreadingMutex->lock();
-
-	VkDeviceSize size = sizeof(bufferData[0]) * bufferData.size();
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	
-	Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-	void* data;
-	vkMapMemory(logicalDevice, stagingBufferMemory, 0, size, 0, &data);
-	memcpy(data, bufferData.data(), (size_t)size);
-	vkUnmapMemory(logicalDevice, stagingBufferMemory);
-
-	Vulkan::CreateBuffer(logicalDevice, creationObject.physicalDevice, size, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, bufferMemory);
-	Vulkan::CopyBuffer(logicalDevice, creationObject.commandPool, creationObject.queue, stagingBuffer, buffer, size);
-
-	vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
-	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
-
-	Vulkan::globalThreadingMutex->unlock();
-}
+//template<typename t> void vulkanbuffer::generatebuffer(buffercreationobject creationobject, vkbufferusageflags usage, const std::vector<t>& bufferdata)
+//{
+//	vulkan::globalthreadingmutex->lock();
+//
+//	vkdevicesize size = sizeof(bufferdata[0]) * bufferdata.size();
+//
+//	vkbuffer stagingbuffer;
+//	vkdevicememory stagingbuffermemory;
+//	
+//	vulkan::createbuffer(creationobject.logicaldevice, creationobject.physicaldevice, size, vk_buffer_usage_transfer_src_bit, vk_memory_property_host_visible_bit | vk_memory_property_host_coherent_bit, stagingbuffer, stagingbuffermemory);
+//
+//	void* data;
+//	vkmapmemory(logicaldevice, stagingbuffermemory, 0, size, 0, &data);
+//	memcpy(data, bufferdata.data(), (size_t)size);
+//	vkunmapmemory(logicaldevice, stagingbuffermemory);
+//
+//	vulkan::createbuffer(logicaldevice, creationobject.physicaldevice, size, usage, vk_memory_property_device_local_bit, buffer, buffermemory);
+//	vulkan::copybuffer(logicaldevice, creationobject.commandpool, creationobject.queue, stagingbuffer, buffer, size);
+//
+//	vkdestroybuffer(logicaldevice, stagingbuffer, nullptr);
+//	vkfreememory(logicaldevice, stagingbuffermemory, nullptr);
+//
+//	vulkan::globalthreadingmutex->unlock();
+//}
+//
+//template<typename T> VulkanBuffer::VulkanBuffer(BufferCreationObject creationObject, VkBufferUsageFlags usage, const std::vector<T>& bufferData) 
+//{ 
+//	GenerateBuffer<T>(creationObject, usage, bufferData); 
+//}
 
 VertexBuffer::VertexBuffer(const BufferCreationObject& creationObject, const std::vector<Vertex> vertices)
 {

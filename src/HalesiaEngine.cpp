@@ -251,7 +251,7 @@ HalesiaExitCode HalesiaInstance::Run()
 	Console::commandVariables["showAsyncTimes"] = &showAsyncTimes;
 
 	if (renderer == nullptr || window == nullptr || physics == nullptr)
-		return EXIT_CODE_UNKNOWN_EXCEPTION;
+		return HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION;
 
 	try
 	{
@@ -337,18 +337,20 @@ HalesiaExitCode HalesiaInstance::Run()
 				timeSinceLastGraphUpdate = 0;
 			}
 		}
-		return EXIT_CODE_SUCESS;
+		return HALESIA_EXIT_CODE_SUCESS;
 	}
 	catch (const std::exception& e) //catch any normal exception and return
 	{
 		std::string fullError = e.what();
-		MessageBoxA(nullptr, fullError.c_str(), "Engine error", MB_OK | MB_ICONERROR);
+		ShowWindow(window->window, 0);
+
+		MessageBoxA(nullptr, fullError.c_str(), ((std::string)"Engine error (" + (std::string)typeid(e).name() + ')').c_str(), MB_OK | MB_ICONERROR);
 		std::cerr << e.what() << std::endl;
-		return EXIT_CODE_EXCEPTION;
+		return HALESIA_EXIT_CODE_EXCEPTION;
 	}
 	catch (...) //catch any unknown exceptions and return, doesnt catch any read or write errors etc.
 	{
 		MessageBoxA(nullptr, "Caught an unknown error, this build is most likely corrupt and can't be used.", "Unknown engine error", MB_OK | MB_ICONERROR);
-		return EXIT_CODE_UNKNOWN_EXCEPTION;
+		return HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION;
 	}
 }

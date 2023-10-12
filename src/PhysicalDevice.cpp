@@ -17,7 +17,7 @@ QueueFamilyIndices PhysicalDevice::QueueFamilies(Surface surface)
     std::vector<VkQueueFamilyProperties> properties(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, properties.data());
 
-    for (int i = 0; i < properties.size(); i++)
+    for (uint32_t i = 0; i < properties.size(); i++)
     {
         if (properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
             queueFamily.graphicsFamily = i;
@@ -150,7 +150,7 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface surface)
     createInfo.pNext = &deviceFeatures2;
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-    createInfo.enabledExtensionCount = requiredLogicalDeviceExtensions.size();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredLogicalDeviceExtensions.size());
     createInfo.ppEnabledExtensionNames = requiredLogicalDeviceExtensions.data();
     createInfo.enabledLayerCount = 0;
 

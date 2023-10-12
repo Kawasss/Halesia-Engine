@@ -75,6 +75,11 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 
 	if (!RegisterRawInputDevices(&rawInputDevice, 1, sizeof(rawInputDevice)))
 		throw std::runtime_error("Failed to register the raw input device for the mouse");
+
+#ifdef _DEBUG
+	std::string message = "Created new window with dimensions " + std::to_string(width) + 'x' + std::to_string(height) + " and mode " + WindowModeToString(currentWindowMode);
+	std::cout << message << std::endl;
+#endif
 }
 
 void Win32Window::ChangeWindowMode(WindowMode windowMode)
