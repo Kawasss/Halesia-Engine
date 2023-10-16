@@ -65,7 +65,7 @@ public:
 private:
     std::string message;
 };
-
+// the idea here is to use a different command pool per thread to avoid threading errors, command pools get reused / destroyed depending on how many are idle
 class QueueCommandPoolStorage
 {
 public:
@@ -74,6 +74,7 @@ public:
     ~QueueCommandPoolStorage();
     VkCommandPool GetNewCommandPool();
     void ReturnCommandPool(VkCommandPool commandPool);
+    void DestroyIdleCommandPools();
 
     QueueCommandPoolStorage& operator=(const QueueCommandPoolStorage& oldStorage);
 

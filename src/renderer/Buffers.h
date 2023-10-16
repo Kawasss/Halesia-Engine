@@ -8,7 +8,7 @@ class VulkanBuffer // maybe struct because its fairly small and used for the ent
 {
 public:
 	VulkanBuffer() = default;
-	template<typename T> VulkanBuffer(BufferCreationObject creationObject, VkBufferUsageFlags usage, const std::vector<T>& bufferData)
+	template<typename T> VulkanBuffer(const BufferCreationObject& creationObject, VkBufferUsageFlags usage, const std::vector<T>& bufferData)
 	{
 		this->logicalDevice = creationObject.logicalDevice;
 		GenerateBuffer<T>(creationObject, usage, bufferData);
@@ -18,7 +18,7 @@ public:
 	VkBuffer GetVkBuffer();
 
 protected:
-	template<typename T> void GenerateBuffer(BufferCreationObject creationObject, VkBufferUsageFlags usage, const std::vector<T> bufferData)
+	template<typename T> void GenerateBuffer(const BufferCreationObject& creationObject, VkBufferUsageFlags usage, const std::vector<T> bufferData)
 	{
 		VkDeviceSize size = sizeof(bufferData[0]) * bufferData.size();
 		
@@ -32,11 +32,15 @@ protected:
 		memcpy(data, bufferData.data(), (size_t)size);
 		vkUnmapMemory(creationObject.logicalDevice, stagingBufferMemory);
 
+		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(creationObject);
+
 		Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, size, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, bufferMemory);
-		Vulkan::CopyBuffer(creationObject.logicalDevice, creationObject.commandPool, creationObject.queue, stagingBuffer, buffer, size);
+		Vulkan::CopyBuffer(creationObject.logicalDevice, commandPool/*creationObject.commandPool*/, creationObject.queue, stagingBuffer, buffer, size);
 		
 		vkDestroyBuffer(creationObject.logicalDevice, stagingBuffer, nullptr);
 		vkFreeMemory(creationObject.logicalDevice, stagingBufferMemory, nullptr);
+
+		Vulkan::YieldCommandPool(creationObject.queueIndex, commandPool);
 	}
 
 	VkDevice logicalDevice;

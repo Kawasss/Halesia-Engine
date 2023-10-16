@@ -81,7 +81,7 @@ void Image::GenerateImages(const TextureCreationObject& creationObjects, std::ve
 void Image::GenerateEmptyImages(const TextureCreationObject& creationObjects, int width, int height, int amount)
 {
 	this->logicalDevice = creationObjects.logicalDevice;
-	this->commandPool = creationObjects.commandPool;
+	this->commandPool = Vulkan::FetchNewCommandPool(creationObjects);
 	this->queue = creationObjects.queue;
 	this->physicalDevice = creationObjects.physicalDevice;
 	this->width = width;
@@ -107,6 +107,8 @@ void Image::GenerateEmptyImages(const TextureCreationObject& creationObjects, in
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 	imageView = Vulkan::CreateImageView(logicalDevice, image, viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	Vulkan::YieldCommandPool(creationObjects.queueIndex, commandPool);
 
 	this->texturesHaveChanged = true;
 }

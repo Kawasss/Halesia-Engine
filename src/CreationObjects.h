@@ -6,7 +6,7 @@ struct VulkanCreationObject
 {
 	VkDevice logicalDevice;
 	PhysicalDevice physicalDevice;
-	VkCommandPool commandPool;
+	//VkCommandPool commandPool;
 	VkQueue queue;
 	uint32_t queueIndex;
 };

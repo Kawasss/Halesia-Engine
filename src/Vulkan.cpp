@@ -61,6 +61,10 @@ VkCommandPool QueueCommandPoolStorage::GetNewCommandPool()
 
         VkResult result = vkCreateCommandPool(logicalDevice, &createInfo, nullptr, &commandPool);
         CheckVulkanResult("Failed to create a command pool for the storage buffer", result, vkCreateCommandPool);
+
+#ifdef _DEBUG
+        Console::WriteLine("Created a new command pool for queue index " + std::to_string(queueIndex), MESSAGE_SEVERITY_DEBUG);
+#endif
     }
     else
     {
@@ -68,6 +72,12 @@ VkCommandPool QueueCommandPoolStorage::GetNewCommandPool()
         commandPool = unusedCommandPools[unusedCommandPools.size() - 1];
         unusedCommandPools.erase(unusedCommandPools.end() - 1);
         commandPoolStorageMutex.unlock();
+
+#ifdef _DEBUG
+        Console::WriteLine("Reused an existing command pool for queue index " + std::to_string(queueIndex) + ", amount left idle: " + std::to_string(unusedCommandPools.size()), MESSAGE_SEVERITY_DEBUG);
+#endif
+        if (unusedCommandPools.size() > 16)
+            DestroyIdleCommandPools();
     }
     return commandPool;
 }
@@ -101,8 +111,16 @@ void Vulkan::YieldCommandPool(uint32_t index, VkCommandPool commandPool)
 
 QueueCommandPoolStorage::~QueueCommandPoolStorage()
 {
-    for (VkCommandPool& commandPool : unusedCommandPools)
+    DestroyIdleCommandPools();
+}
+
+void QueueCommandPoolStorage::DestroyIdleCommandPools()
+{
+    commandPoolStorageMutex.lock();
+    for (const VkCommandPool& commandPool : unusedCommandPools)
         vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+    unusedCommandPools.clear();
+    commandPoolStorageMutex.unlock();
 }
 
 QueueCommandPoolStorage& QueueCommandPoolStorage::operator=(const QueueCommandPoolStorage& oldStorage)

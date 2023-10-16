@@ -264,7 +264,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// creation object
 
-	creationObject = { logicalDevice, physicalDevice, commandPool, queue };
+	creationObject = { logicalDevice, physicalDevice, /*commandPool,*/ queue, queueFamilyIndex };
 	CreateTestObject(creationObject);
 	Vulkan::graphicsQueueMutex->lock();
 
