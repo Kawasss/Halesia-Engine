@@ -165,6 +165,8 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface surface)
 
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 
+    Vulkan::ActivateLogicalDeviceExtensionFunctions(device, requiredLogicalDeviceExtensions);
+
     return device;
 }
 

@@ -10,6 +10,7 @@ public:
     Swapchain() = default;
     Swapchain(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window);
 
+    void Recreate();
     void Recreate(VkRenderPass renderPass);
     void Generate(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window);
 

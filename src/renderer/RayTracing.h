@@ -3,17 +3,58 @@
 #include "../Object.h"
 #include "../Camera.h"
 #include "Texture.h"
+#include "Swapchain.h"
+
+struct BottomLevelAccelerationStructure
+{
+	VkBuffer buffer;
+	VkDeviceMemory deviceMemory;
+	VkAccelerationStructureKHR accelerationStructure;
+
+	VkBuffer scratchBuffer;
+	VkDeviceMemory scratchDeviceMemory;
+
+	VkBuffer geometryInstanceBuffer;
+	VkDeviceMemory geometryInstanceBufferMemory;
+
+	VkDeviceAddress deviceAddress;
+};
 
 class RayTracing
 {
 public:
 	void Destroy(VkDevice logicalDevice);
-	void Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera);
-	void DrawFrame(Win32Window* window, Camera* camera);
+	void Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera, Win32Window* window, Swapchain* swapchain);
+	void DrawFrame(Win32Window* window, Camera* camera, Swapchain* swapchain, Surface surface);
 
 private:
+	void UpdateMaterialDescriptorSets();
+	void CreateMaterialBuffers();
+	void CreateShaderBindingTable();
+	void CreateImage(uint32_t width, uint32_t height);
+	void CreateBLAS(BottomLevelAccelerationStructure& BLAS, VulkanBuffer vertexBuffer, IndexBuffer indexBuffer, uint32_t vertexSize, uint32_t faceCount);
+
+	BottomLevelAccelerationStructure BLAS;
+
+	Win32Window* window;
+	Swapchain* swapchain;
+
 	VkDevice logicalDevice;
+
+	VkSemaphore imageSemaphore;
+	VkSemaphore renderSemaphore;
+	VkFence fence;
+
+	VkImage RTImage = VK_NULL_HANDLE;
+	VkDeviceMemory RTImageMemory = VK_NULL_HANDLE;
+	VkImageView RTImageView = VK_NULL_HANDLE;
+
 	VkCommandPool commandPool;
-	//Image* image;
 	PhysicalDevice physicalDevice;
+
+	VkBuffer materialBuffer;
+	VkDeviceMemory materialBufferMemory;
+
+	VkBuffer materialIndexBuffer;
+	VkDeviceMemory materialIndexBufferMemory;
 };

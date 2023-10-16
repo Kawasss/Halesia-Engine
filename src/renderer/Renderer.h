@@ -72,7 +72,6 @@ private:
 	void CreateUniformBuffers();
 	void CreateDescriptorPool();
 	void CreateDescriptorSets();
-	void InitRayTracing();
 	void CreateCommandBuffer();
 	void CreateSyncObjects();
 	void CreateRenderPass();

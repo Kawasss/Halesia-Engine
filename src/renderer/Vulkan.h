@@ -13,6 +13,10 @@
 
 #include "PhysicalDevice.h"
 
+#define nameof(s) #s
+#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#define __STRLINE__ std::to_string(__LINE__)
+
 const std::vector<const char*> validationLayers =
 {
     "VK_LAYER_KHRONOS_validation"
@@ -43,7 +47,7 @@ class VulkanAPIError : public std::exception
 public:
     VulkanAPIError(std::string message, VkResult result = VK_SUCCESS, std::string functionName = "", std::string file = "", std::string line = "")
     {
-        std::string vulkanError = result == VK_SUCCESS ? "" : ": " + (std::string)string_VkResult(result); // result can be VK_SUCCESS for functions that dont use a vulkan functions, i.e. looking for a physical device but there are none that fit the bill
+        std::string vulkanError = result == VK_SUCCESS ? "\n\n" : ":\n\n " + (std::string)string_VkResult(result); // result can be VK_SUCCESS for functions that dont use a vulkan functions, i.e. looking for a physical device but there are none that fit the bill
         std::string location = functionName == "" ? "" : " from " + functionName;
         location += line == "" ? "" : " at line " + line;
         location += file == "" ? "" : " in " + file;
@@ -83,13 +87,13 @@ class Vulkan
         static VkImageView                  CreateImageView(VkDevice logicalDevice, VkImage image, VkImageViewType viewType, uint32_t mipLevels, uint32_t layerCount, VkFormat format, VkImageAspectFlags aspectFlags);
         static VkShaderModule               CreateShaderModule(VkDevice logicalDevice, const std::vector<char>& code);
         static VkCommandBuffer              BeginSingleTimeCommands(VkDevice logicalDevice, VkCommandPool commandPool);
-        static void                         EndSingleTimeCommands(VkDevice logicalDevice, VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool);
-        static bool                         HasStencilComponent(VkFormat format);
-        static void                         CreateImage(VkDevice logicalDevice, PhysicalDevice physicalDevice, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags, VkImage& image, VkDeviceMemory& memory);
         static uint32_t                     GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice);
+        static bool                         HasStencilComponent(VkFormat format);
+        static void                         EndSingleTimeCommands(VkDevice logicalDevice, VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool);
+        static void                         CreateImage(VkDevice logicalDevice, PhysicalDevice physicalDevice, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags, VkImage& image, VkDeviceMemory& memory);
         static void                         CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         static void                         CopyBuffer(VkDevice logicalDevice, VkCommandPool commandPool, VkQueue queue, VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size);
-        
+        static void                         ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, const std::vector<const char*>& logicalDeviceExtensions);
 
         static VkPhysicalDeviceMemoryProperties GetPhysicalDeviceMemoryProperties(VkPhysicalDevice device)
         {

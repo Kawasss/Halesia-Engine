@@ -37,7 +37,7 @@ void Swapchain::Generate(VkDevice logicalDevice, PhysicalDevice physicalDevice, 
     createInfo.imageColorSpace = surfaceFormat.colorSpace;
     createInfo.imageExtent = extent2D;
     createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
     QueueFamilyIndices indices = physicalDevice.QueueFamilies(surface);
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
@@ -60,8 +60,9 @@ void Swapchain::Generate(VkDevice logicalDevice, PhysicalDevice physicalDevice, 
     createInfo.clipped = true;
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(logicalDevice, &createInfo, nullptr, &vkSwapchain) != VK_SUCCESS)
-        throw std::runtime_error("Couldn't create a swapchain with the current logical device");
+    VkResult result = vkCreateSwapchainKHR(logicalDevice, &createInfo, nullptr, &vkSwapchain);
+    if (result != VK_SUCCESS)
+        throw VulkanAPIError("Couldn't create a swapchain with the current logical device", result, nameof(vkCreateSwapchainKHR), __FILENAME__, __STRLINE__);
 
     uint32_t swapchainImageCount;
     vkGetSwapchainImagesKHR(logicalDevice, vkSwapchain, &swapchainImageCount, nullptr);
@@ -74,17 +75,41 @@ void Swapchain::Generate(VkDevice logicalDevice, PhysicalDevice physicalDevice, 
 
 void Swapchain::Destroy()
 {
-    vkDestroyImageView(logicalDevice, depthImageView, nullptr);
+    /*vkDestroyImageView(logicalDevice, depthImageView, nullptr);
     vkDestroyImage(logicalDevice, depthImage, nullptr);
     vkFreeMemory(logicalDevice, depthImageMemory, nullptr);
 
     for (const VkFramebuffer& framebuffer : framebuffers)
-        vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
+        vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);*/
 
     for (const VkImageView& imageView : imageViews)
         vkDestroyImageView(logicalDevice, imageView, nullptr);
 
     vkDestroySwapchainKHR(logicalDevice, vkSwapchain, nullptr);
+}
+
+void Swapchain::Recreate() // hopefully a temporary fix, used for ray tracing
+{
+    int width = window->GetWidth(), height = window->GetHeight();
+
+#ifndef NDEBUG
+    if (width == 0 || height == 0)
+        std::cout << "Window is minimized, waiting until it is maximized" << std::endl;
+#endif
+
+    while (width == 0 || height == 0)
+    {
+        width = window->GetWidth();
+        height = window->GetHeight();
+        window->PollMessages();
+    }
+
+    vkDeviceWaitIdle(logicalDevice);
+
+    Destroy();
+
+    Generate(logicalDevice, physicalDevice, surface, window);
+    CreateImageViews();
 }
 
 void Swapchain::Recreate(VkRenderPass renderPass)

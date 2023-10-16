@@ -62,7 +62,9 @@ int main(int argsCount, char** args)
 	createInfo.args = args;
 	createInfo.startingScene = new TestScene();
 	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
-	createInfo.windowCreateInfo.windowMode = WINDOW_MODE_BORDERLESS_WINDOWED;
+	createInfo.windowCreateInfo.width = 800;
+	createInfo.windowCreateInfo.height = 600;
+	createInfo.windowCreateInfo.windowMode = WINDOW_MODE_WINDOWED;
 	createInfo.windowCreateInfo.icon = (HICON)LoadImageW(NULL, L"logo4.ico", IMAGE_ICON, 128, 128, LR_LOADFROMFILE);
 	createInfo.windowCreateInfo.extendedWindowStyle = ExtendedWindowStyle::DragAndDropFiles;
 	createInfo.windowCreateInfo.startMaximized = false;

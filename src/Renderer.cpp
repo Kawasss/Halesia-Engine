@@ -14,19 +14,18 @@
 #include "system/Window.h"
 #include "system/Input.h"
 #include "Console.h"
-#include "renderer/RayTracing.h"
 
 #define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui-1.89.8/imgui-1.89.8/implot.cpp"
-#include "imgui-1.89.8/imgui-1.89.8/implot_items.cpp"
-#include "imgui-1.89.8/imgui-1.89.8/implot_demo.cpp"
-#include "imgui-1.89.8/imgui-1.89.8/misc/single_file/imgui_single_file.h"
 #include "imgui-1.89.8/imgui-1.89.8/misc/cpp/imgui_stdlib.cpp"
+#include "imgui-1.89.8/imgui-1.89.8/implot_items.cpp"
+#include "imgui-1.89.8/imgui-1.89.8/misc/single_file/imgui_single_file.h"
 #include "imgui-1.89.8/imgui-1.89.8/backends/imgui_impl_vulkan.cpp"
 #include "imgui-1.89.8/imgui-1.89.8/backends/imgui_impl_win32.cpp"
 
 #include "renderer/Renderer.h"
+#include "renderer/RayTracing.h"
 
 #define nameof(s) #s
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
@@ -114,18 +113,6 @@ MeshCreationObject Renderer::GetVulkanCreationObjects()
 	return MeshCreationObject{ logicalDevice, physicalDevice, commandPool, graphicsQueue };
 }
 
-void Renderer::InitRayTracing()
-{
-	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{};
-	rayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
-
-	VkPhysicalDeviceProperties2 properties2{};
-	properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
-	properties2.pNext = &rayTracingProperties;
-
-	vkGetPhysicalDeviceProperties2(physicalDevice.Device(), &properties2);
-}
-
 void Renderer::CreateImGUI()
 {
 	VkDescriptorPoolSize poolSizes[] =
@@ -197,7 +184,6 @@ void Renderer::InitVulkan()
 	CreateModelBuffers();
 	CreateDescriptorPool();
 	CreateDescriptorSets();
-	InitRayTracing();
 	CreateCommandBuffer();
 	CreateSyncObjects();
 	CreateImGUI();
@@ -335,8 +321,6 @@ void Renderer::CreateRenderPass()
 	VkResult result = vkCreateRenderPass(logicalDevice, &renderPassInfo, nullptr, &renderPass);
 	if (result != VK_SUCCESS)
 		throw VulkanAPIError("Failed to create a render pass", result, nameof(vkCreateRenderPass), __FILENAME__, std::to_string(__LINE__));
-
-	std::cout << "creating render pass: SUCCESS" << std::endl;
 }
 
 void Renderer::CreateDescriptorSets()
@@ -605,8 +589,6 @@ void Renderer::CreateGraphicsPipeline()
 
 	vkDestroyShaderModule(logicalDevice, vertexShaderModule, nullptr);
 	vkDestroyShaderModule(logicalDevice, fragmentShaderModule, nullptr);
-
-	std::cout << "creating graphics pipeline: SUCCESS" << std::endl;
 }
 
 std::vector<char> Renderer::ReadFile(const std::string& filePath)
@@ -632,8 +614,6 @@ void Renderer::SetLogicalDevice()
 
 	vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
 	vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
-
-	std::cout << "creating logical device: SUCCESS" << std::endl;
 }
 
 void Renderer::CreateCommandPool()
@@ -856,19 +836,19 @@ void Renderer::RenderGraph(const std::vector<float>& buffer, const char* label)
 	ImGui::End();
 }
 bool initRT = false;
+RayTracing rayTracing;
 void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
 {
-	if (!initRT)
+	/*if (!initRT)
 	{
-		RayTracing rayTracing;
-		rayTracing.Init(logicalDevice, physicalDevice, surface, objects[0], camera);
-		rayTracing.DrawFrame(testWindow, camera);
+		rayTracing.Init(logicalDevice, physicalDevice, surface, objects[0], camera, testWindow, swapchain);
 		initRT = true;
-	} // not a good place to do this
+	}*/ // not a good place to do this
 
-	//add culling here too
-	
 	ImGui::Render();
+
+	/*rayTracing.DrawFrame(testWindow, camera, swapchain, surface);
+	return;*/
 
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
 	Vulkan::globalThreadingMutex->lock();

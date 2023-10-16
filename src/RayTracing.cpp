@@ -11,9 +11,7 @@
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
-
-#define nameof(s) #s
-#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
+#include "renderer/renderer.h"
 
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
 
@@ -32,16 +30,6 @@ VkQueue queue;
 VkPipelineLayout pipelineLayout;
 VkPipeline pipeline;
 
-VkBuffer BLASBuffer; // todo: seperate BLAS into indepedent class
-VkDeviceMemory BLASDeviceMemory;
-VkAccelerationStructureKHR BLAS;
-
-VkBuffer BLASScratchBuffer;
-VkDeviceMemory BLASSscratchDeviceMemory;
-
-VkBuffer BLGeometryInstanceBuffer;
-VkDeviceMemory BLGeometryInstanceBufferMemory;
-
 VkBuffer TLASBuffer;
 VkDeviceMemory TLASBufferMemory;
 VkAccelerationStructureKHR TLAS;
@@ -52,6 +40,7 @@ VkDeviceMemory TLASScratchMemory;
 VkBuffer uniformBufferBuffer;
 VkDeviceMemory uniformBufferMemory;
 
+uint32_t facesCount;
 uint32_t verticesSize;
 uint32_t indicesSize;
 VulkanBuffer testObjectVertexBuffer;
@@ -59,13 +48,21 @@ IndexBuffer testObjectIndexBuffer;
 
 struct UniformBuffer
 {
-	glm::vec3 position;
+	/*glm::vec3 position;
 	glm::vec3 right;
 	glm::vec3 up;
 	glm::vec3 forward;
 
-	uint32_t frameCount;
+	uint32_t frameCount;*/
+	float cameraPosition[4] = { -1.433908, 3.579997, 5.812919, 1 };
+	float cameraRight[4] = { 0.928479, 0, 0.371385, 1 };
+	float cameraUp[4] = { 0, 1, 0, 1 };
+	float cameraForward[4] = { 0.371385, 0, -0.928479, 1 };
+
+	uint32_t frameCount = 0;
 };
+void* uniformBufferMemPtr;
+UniformBuffer uniformBuffer{};
 
 std::vector<char> ReadShaderFile(const std::string& filePath)
 {
@@ -85,7 +82,7 @@ std::vector<char> ReadShaderFile(const std::string& filePath)
 
 void CreateTestObject(BufferCreationObject creationObject)
 {
-	const aiScene* scene = aiImportFile("stdObj/monkey.obj", aiProcessPreset_TargetRealtime_Fast);
+	const aiScene* scene = aiImportFile("stdObj/monkey2.obj", aiProcessPreset_TargetRealtime_Fast);
 	if (scene == nullptr)
 		throw std::runtime_error("Failed to read the test model");
 
@@ -94,7 +91,7 @@ void CreateTestObject(BufferCreationObject creationObject)
 
 	for (int i = 0; i < scene->mMeshes[0]->mNumVertices; i++)
 		vertices.push_back({ scene->mMeshes[0]->mVertices[i].x, scene->mMeshes[0]->mVertices[i].y, scene->mMeshes[0]->mVertices[i].z });
-
+		
 	for (int i = 0; i < scene->mMeshes[0]->mNumFaces; i++)
 		for (int j = 0; j < scene->mMeshes[0]->mFaces[i].mNumIndices; j++)
 			indices.push_back(scene->mMeshes[0]->mFaces[i].mIndices[j]);
@@ -103,17 +100,8 @@ void CreateTestObject(BufferCreationObject creationObject)
 	testObjectIndexBuffer = IndexBuffer(creationObject, indices);
 	verticesSize = vertices.size();
 	indicesSize = indices.size();
+	facesCount = scene->mMeshes[0]->mNumFaces;
 }
-
-PFN_vkGetBufferDeviceAddressKHR pvkGetBufferDeviceAddressKHR;
-PFN_vkCreateRayTracingPipelinesKHR pvkCreateRayTracingPipelinesKHR;
-PFN_vkGetAccelerationStructureBuildSizesKHR pvkGetAccelerationStructureBuildSizesKHR;
-PFN_vkCreateAccelerationStructureKHR pvkCreateAccelerationStructureKHR;
-PFN_vkDestroyAccelerationStructureKHR pvkDestroyAccelerationStructureKHR;
-PFN_vkGetAccelerationStructureDeviceAddressKHR pvkGetAccelerationStructureDeviceAddressKHR;
-PFN_vkCmdBuildAccelerationStructuresKHR pvkCmdBuildAccelerationStructuresKHR;
-PFN_vkGetRayTracingShaderGroupHandlesKHR pvkGetRayTracingShaderGroupHandlesKHR;
-PFN_vkCmdTraceRaysKHR pvkCmdTraceRaysKHR;
 
 void RayTracing::Destroy(VkDevice logicalDevice)
 {
@@ -126,21 +114,21 @@ void RayTracing::Destroy(VkDevice logicalDevice)
 	vkFreeMemory(logicalDevice, TLASScratchMemory, nullptr);
 	vkDestroyBuffer(logicalDevice, TLASScratchBuffer, nullptr);
 
-	pvkDestroyAccelerationStructureKHR(logicalDevice, TLAS, nullptr);
+	vkDestroyAccelerationStructureKHR(logicalDevice, TLAS, nullptr);
 
 	vkFreeMemory(logicalDevice, TLASBufferMemory, nullptr);
 	vkDestroyBuffer(logicalDevice, TLASBuffer, nullptr);
 
-	vkFreeMemory(logicalDevice, BLGeometryInstanceBufferMemory, nullptr);
-	vkDestroyBuffer(logicalDevice, BLGeometryInstanceBuffer, nullptr);
+	vkFreeMemory(logicalDevice, BLAS.geometryInstanceBufferMemory, nullptr);
+	vkDestroyBuffer(logicalDevice, BLAS.geometryInstanceBuffer, nullptr);
 
-	pvkDestroyAccelerationStructureKHR(logicalDevice, BLAS, nullptr);
+	vkDestroyAccelerationStructureKHR(logicalDevice, BLAS.accelerationStructure, nullptr);
 
-	vkDestroyBuffer(logicalDevice, BLASScratchBuffer, nullptr);
-	vkFreeMemory(logicalDevice, BLASSscratchDeviceMemory, nullptr);
+	vkDestroyBuffer(logicalDevice, BLAS.scratchBuffer, nullptr);
+	vkFreeMemory(logicalDevice, BLAS.scratchDeviceMemory, nullptr);
 
-	vkDestroyBuffer(logicalDevice, BLASBuffer, nullptr);
-	vkFreeMemory(logicalDevice, BLASDeviceMemory, nullptr);
+	vkDestroyBuffer(logicalDevice, BLAS.buffer, nullptr);
+	vkFreeMemory(logicalDevice, BLAS.deviceMemory, nullptr);
 
 	vkDestroyPipeline(logicalDevice, pipeline, nullptr);
 	vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
@@ -152,27 +140,102 @@ void RayTracing::Destroy(VkDevice logicalDevice)
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
 
-void FetchRayTracingFunctions(VkDevice logicalDevice)
+void RayTracing::CreateBLAS(BottomLevelAccelerationStructure& BLAS, VulkanBuffer vertexBuffer, IndexBuffer indexBuffer, uint32_t vertexSize, uint32_t faceCount)
 {
-	pvkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetBufferDeviceAddressKHR");
-	pvkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)vkGetDeviceProcAddr(logicalDevice, "vkCreateRayTracingPipelinesKHR");
-	pvkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetAccelerationStructureBuildSizesKHR");
-	pvkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)vkGetDeviceProcAddr(logicalDevice, "vkCreateAccelerationStructureKHR");
-	pvkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetAccelerationStructureDeviceAddressKHR");
-	pvkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetDeviceProcAddr(logicalDevice, "vkCmdBuildAccelerationStructuresKHR");
-	pvkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)vkGetDeviceProcAddr(logicalDevice, "vkDestroyAccelerationStructureKHR");
-	pvkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetRayTracingShaderGroupHandlesKHR");
-	pvkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vkGetDeviceProcAddr(logicalDevice, "vkCmdTraceRaysKHR");
+	VkBufferDeviceAddressInfo bufferAddressInfo{};
+	bufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+	bufferAddressInfo.buffer = vertexBuffer.GetVkBuffer();
+
+	VkDeviceAddress vertexBufferAddress = vkGetBufferDeviceAddressKHR(logicalDevice, &bufferAddressInfo);
+
+	bufferAddressInfo.buffer = indexBuffer.GetVkBuffer();
+
+	VkDeviceAddress indexBufferAddress = vkGetBufferDeviceAddressKHR(logicalDevice, &bufferAddressInfo);
+
+	VkAccelerationStructureGeometryTrianglesDataKHR triangles{};
+	triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+	triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+	triangles.vertexData = { vertexBufferAddress };
+	triangles.vertexStride = sizeof(glm::vec3);
+	triangles.maxVertex = vertexSize;
+	triangles.indexType = VK_INDEX_TYPE_UINT16;
+	triangles.indexData = { indexBufferAddress };
+	triangles.transformData = { 0 };
+
+	VkAccelerationStructureGeometryDataKHR BLASGeometryData{};
+	BLASGeometryData.triangles = triangles;
+
+	VkAccelerationStructureGeometryKHR BLASGeometry{};
+	BLASGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+	BLASGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
+	BLASGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+	BLASGeometry.geometry = BLASGeometryData;
+
+	VkAccelerationStructureBuildGeometryInfoKHR BLASBuildGeometryInfo{};
+	BLASBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+	BLASBuildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+	BLASBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+	BLASBuildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+	BLASBuildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
+	BLASBuildGeometryInfo.geometryCount = 1;
+	BLASBuildGeometryInfo.pGeometries = &BLASGeometry;
+	BLASBuildGeometryInfo.scratchData = { 0 };
+
+	VkAccelerationStructureBuildSizesInfoKHR BLASBuildSizesInfo{};
+	BLASBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+
+	std::vector<uint32_t> BLMaxPrimitiveCounts = { faceCount };
+	vkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &BLASBuildGeometryInfo, BLMaxPrimitiveCounts.data(), &BLASBuildSizesInfo);
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, BLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, BLAS.buffer, BLAS.deviceMemory);
+
+	VkAccelerationStructureCreateInfoKHR BLASCreateInfo{};
+	BLASCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+	BLASCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+	BLASCreateInfo.size = BLASBuildSizesInfo.accelerationStructureSize;
+	BLASCreateInfo.buffer = BLAS.buffer;
+	BLASCreateInfo.offset = 0;
+
+	VkResult result = vkCreateAccelerationStructureKHR(logicalDevice, &BLASCreateInfo, nullptr, &BLAS.accelerationStructure);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the BLAS", result, nameof(vkCreateAccelerationStructureKHR), __FILENAME__, __STRLINE__);
+
+	// build BLAS
+
+	VkAccelerationStructureDeviceAddressInfoKHR BLASAddressInfo{};
+	BLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+	BLASAddressInfo.accelerationStructure = BLAS.accelerationStructure;
+
+	BLAS.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &BLASAddressInfo);
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, BLASBuildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, BLAS.scratchBuffer, BLAS.scratchDeviceMemory);
+
+	VkBufferDeviceAddressInfo scratchDeviceAddressInfo{};
+	scratchDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+	scratchDeviceAddressInfo.buffer = BLAS.scratchBuffer;
+
+	VkDeviceAddress scratchDeviceAddress = vkGetBufferDeviceAddress(logicalDevice, &scratchDeviceAddressInfo);
+
+	BLASBuildGeometryInfo.scratchData = { scratchDeviceAddress };
+	BLASBuildGeometryInfo.dstAccelerationStructure = BLAS.accelerationStructure;
+
+	VkAccelerationStructureBuildRangeInfoKHR BLASBuildRangeInfo{};
+	BLASBuildRangeInfo.primitiveCount = faceCount;
+	const VkAccelerationStructureBuildRangeInfoKHR* pBLASBuildRangeInfo = &BLASBuildRangeInfo;
+
+	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
+	vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &BLASBuildGeometryInfo, &pBLASBuildRangeInfo);
+	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
 }
 
-void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera)
+void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera, Win32Window* window, Swapchain* swapchain)
 {
 	VkResult result = VK_SUCCESS;
 
 	this->logicalDevice = logicalDevice;
 	this->physicalDevice = physicalDevice;
-
-	FetchRayTracingFunctions(logicalDevice);
+	this->swapchain = swapchain;
+	this->window = window;
 
 	rayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
 
@@ -381,9 +444,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	RTPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
 	RTPipelineCreateInfo.basePipelineIndex = 0;
 
-	result = pvkCreateRayTracingPipelinesKHR(logicalDevice, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &RTPipelineCreateInfo, nullptr, &pipeline);
+	result = vkCreateRayTracingPipelinesKHR(logicalDevice, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &RTPipelineCreateInfo, nullptr, &pipeline);
 	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create the pipeline for ray tracing", result, nameof(pvkCreateRayTracingPipelinesKHR), __FILENAME__, std::to_string(__LINE__));
+		throw VulkanAPIError("Failed to create the pipeline for ray tracing", result, nameof(vkCreateRayTracingPipelinesKHR), __FILENAME__, std::to_string(__LINE__));
 
 	vkDestroyShaderModule(logicalDevice, shadowShader, nullptr);
 	vkDestroyShaderModule(logicalDevice, missShader, nullptr);
@@ -392,90 +455,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// bottom level acceleration structure
 
-	VkBufferDeviceAddressInfo bufferAddressInfo{};
-	bufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-	bufferAddressInfo.buffer = testObjectVertexBuffer.GetVkBuffer();
-
-	VkDeviceAddress vertexBufferAddress = pvkGetBufferDeviceAddressKHR(logicalDevice, &bufferAddressInfo);
-
-	bufferAddressInfo.buffer = testObjectIndexBuffer.GetVkBuffer();
-	
-	VkDeviceAddress indexBufferAddress = pvkGetBufferDeviceAddressKHR(logicalDevice, &bufferAddressInfo);
-
-	VkAccelerationStructureGeometryTrianglesDataKHR triangles{};
-	triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-	triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-	triangles.vertexData = { vertexBufferAddress };
-	triangles.vertexStride = sizeof(Vertex);
-	triangles.maxVertex = verticesSize;//static_cast<uint32_t>(object->meshes[0].vertices.size());
-	triangles.indexType = VK_INDEX_TYPE_UINT16;
-	triangles.indexData = { indexBufferAddress };
-	triangles.transformData = { 0 };
-
-	VkAccelerationStructureGeometryDataKHR BLASGeometryData{};
-	BLASGeometryData.triangles = triangles;
-
-	VkAccelerationStructureGeometryKHR BLASGeometry{};
-	BLASGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-	BLASGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-	BLASGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-	BLASGeometry.geometry = BLASGeometryData;
-
-	VkAccelerationStructureBuildGeometryInfoKHR BLASBuildGeometryInfo{};
-	BLASBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-	BLASBuildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-	BLASBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-	BLASBuildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
-	BLASBuildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
-	BLASBuildGeometryInfo.geometryCount = 1;
-	BLASBuildGeometryInfo.pGeometries = &BLASGeometry;
-	BLASBuildGeometryInfo.scratchData = { 0 };
-
-	VkAccelerationStructureBuildSizesInfoKHR BLASBuildSizesInfo{};
-	BLASBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-
-	std::vector<uint32_t> BLMaxPrimitiveCounts = { verticesSize/*static_cast<uint32_t>(object->meshes[0].vertices.size())*/ };
-	pvkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &BLASBuildGeometryInfo, BLMaxPrimitiveCounts.data(), &BLASBuildSizesInfo);
-
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, BLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, BLASBuffer, BLASDeviceMemory);
-
-	VkAccelerationStructureCreateInfoKHR BLASCreateInfo{};
-	BLASCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-	BLASCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-	BLASCreateInfo.size = BLASBuildSizesInfo.accelerationStructureSize;
-	BLASCreateInfo.buffer = BLASBuffer;
-	BLASCreateInfo.offset = 0;
-
-	result = pvkCreateAccelerationStructureKHR(logicalDevice, &BLASCreateInfo, nullptr, &BLAS);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create the BLAS", result, nameof(pvkCreateAccelerationStructureKHR), __FILENAME__, std::to_string(__LINE__));
-
-	// build BLAS
-
-	VkAccelerationStructureDeviceAddressInfoKHR BLASAddressInfo{};
-	BLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-	BLASAddressInfo.accelerationStructure = BLAS;
-
-	VkDeviceAddress BLASDeviceAddress = pvkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &BLASAddressInfo);
-
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, BLASBuildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, BLASScratchBuffer, BLASSscratchDeviceMemory);
-
-	VkBufferDeviceAddressInfo scratchDeviceAddressInfo{};
-	scratchDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-	scratchDeviceAddressInfo.buffer = BLASScratchBuffer;
-
-	VkDeviceAddress scratchDeviceAddress = vkGetBufferDeviceAddress(logicalDevice, &scratchDeviceAddressInfo);
-
-	BLASBuildGeometryInfo.scratchData = { scratchDeviceAddress };
-	BLASBuildGeometryInfo.dstAccelerationStructure = BLAS;
-
-	VkAccelerationStructureBuildRangeInfoKHR BLASBuildRangeInfo{};
-	BLASBuildRangeInfo.primitiveCount = verticesSize / 3;// object->meshes[0].vertices.size();
-	const VkAccelerationStructureBuildRangeInfoKHR* pBLASBuildRangeInfo = &BLASBuildRangeInfo;
-
-	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
-	pvkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &BLASBuildGeometryInfo, &pBLASBuildRangeInfo);
-	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
+	CreateBLAS(BLAS, testObjectVertexBuffer, testObjectIndexBuffer, verticesSize, facesCount);
 	
 	// TLAS
 
@@ -484,24 +464,24 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	BLASInstance.instanceCustomIndex = 0;
 	BLASInstance.mask = 0xFF;
 	BLASInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-	BLASInstance.accelerationStructureReference = BLASDeviceAddress;
+	BLASInstance.accelerationStructureReference = BLAS.deviceAddress;
 
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(VkAccelerationStructureInstanceKHR), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, BLGeometryInstanceBuffer, BLGeometryInstanceBufferMemory);
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(VkAccelerationStructureInstanceKHR), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, BLAS.geometryInstanceBuffer, BLAS.geometryInstanceBufferMemory);
 	
 	void* BLGeometryInstanceBufferMemPtr;
 
-	result = vkMapMemory(logicalDevice, BLGeometryInstanceBufferMemory, 0, sizeof(VkAccelerationStructureInstanceKHR), 0, &BLGeometryInstanceBufferMemPtr);
+	result = vkMapMemory(logicalDevice, BLAS.geometryInstanceBufferMemory, 0, sizeof(VkAccelerationStructureInstanceKHR), 0, &BLGeometryInstanceBufferMemPtr);
 	if (result != VK_SUCCESS)
 		throw VulkanAPIError("Failed to map the memory of the bottom level geometry instance buffer", result, nameof(vkMapMemory), __FILENAME__, std::to_string(__LINE__));
 
 	memcpy(BLGeometryInstanceBufferMemPtr, &BLASInstance, sizeof(VkAccelerationStructureInstanceKHR));
-	vkUnmapMemory(logicalDevice, BLGeometryInstanceBufferMemory);
+	vkUnmapMemory(logicalDevice, BLAS.geometryInstanceBufferMemory);
 
 	VkBufferDeviceAddressInfo BLGeometryInstanceAddressInfo{};
 	BLGeometryInstanceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-	BLGeometryInstanceAddressInfo.buffer = BLGeometryInstanceBuffer;
+	BLGeometryInstanceAddressInfo.buffer = BLAS.geometryInstanceBuffer;
 
-	VkDeviceAddress BLGeometryInstanceAddress = pvkGetBufferDeviceAddressKHR(logicalDevice, &BLGeometryInstanceAddressInfo);
+	VkDeviceAddress BLGeometryInstanceAddress = vkGetBufferDeviceAddressKHR(logicalDevice, &BLGeometryInstanceAddressInfo);
 
 	VkAccelerationStructureGeometryInstancesDataKHR instances{};
 	instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
@@ -533,9 +513,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	TLASBuildSizesInfo.updateScratchSize = 0;
 	TLASBuildSizesInfo.buildScratchSize = 0;
 
-	std::vector<uint32_t> TLASMaxPrimitiveCounts = { 1 };
+	std::vector<uint32_t> TLASMaxPrimitiveCounts{ 1 };
 
-	pvkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &TLASBuildGeometryInfo, TLASMaxPrimitiveCounts.data(), &TLASBuildSizesInfo);
+	vkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &TLASBuildGeometryInfo, TLASMaxPrimitiveCounts.data(), &TLASBuildSizesInfo);
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, TLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLASBuffer, TLASBufferMemory);
 
@@ -546,9 +526,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	TLASCreateInfo.buffer = TLASBuffer;
 	TLASCreateInfo.deviceAddress = 0;
 
-	result = pvkCreateAccelerationStructureKHR(logicalDevice, &TLASCreateInfo, nullptr, &TLAS);
+	result = vkCreateAccelerationStructureKHR(logicalDevice, &TLASCreateInfo, nullptr, &TLAS);
 	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create the TLAS", result, nameof(pvkCreateAccelerationStructureKHR), __FILENAME__, std::to_string(__LINE__));
+		throw VulkanAPIError("Failed to create the TLAS", result, nameof(vkCreateAccelerationStructureKHR), __FILENAME__, std::to_string(__LINE__));
 
 	// build TLAS
 
@@ -556,7 +536,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	TLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
 	TLASAddressInfo.accelerationStructure = TLAS;
 
-	VkDeviceAddress TLASDeviceAddress = pvkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &TLASAddressInfo);
+	VkDeviceAddress TLASDeviceAddress = vkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &TLASAddressInfo);
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, TLASBuildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLASScratchBuffer, TLASScratchMemory);
 
@@ -564,7 +544,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	TLASSratchBufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
 	TLASSratchBufferAddressInfo.buffer = TLASScratchBuffer;
 
-	VkDeviceAddress TLASScratchBufferAddress = pvkGetBufferDeviceAddressKHR(logicalDevice, &TLASSratchBufferAddressInfo);
+	VkDeviceAddress TLASScratchBufferAddress = vkGetBufferDeviceAddressKHR(logicalDevice, &TLASSratchBufferAddressInfo);
 
 	TLASBuildGeometryInfo.dstAccelerationStructure = TLAS;
 	TLASBuildGeometryInfo.scratchData = { TLASScratchBufferAddress };
@@ -573,59 +553,42 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	TLASBuildRangeInfo.primitiveCount = 1;
 	const VkAccelerationStructureBuildRangeInfoKHR* pTLASBuildRangeInfos = &TLASBuildRangeInfo;
 	
-	commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
-	pvkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &TLASBuildGeometryInfo, &pTLASBuildRangeInfos);
+	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
+	vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &TLASBuildGeometryInfo, &pTLASBuildRangeInfos);
 	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
 
 	// uniform buffer
 
-	UniformBuffer uniformBuffer{ camera->position, camera->right, camera->up, camera->front, 0 };
-
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(UniformBuffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, uniformBufferBuffer, uniformBufferMemory);
 
-	void* uniformBufferMemPtr;
 	vkMapMemory(logicalDevice, uniformBufferMemory, 0, sizeof(UniformBuffer), 0, &uniformBufferMemPtr);
 	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
 
+	// fence
+
+	VkFenceCreateInfo fenceCreateInfo{};
+	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	result = vkCreateFence(logicalDevice, &fenceCreateInfo, nullptr, &fence);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create a ray tracing fence", result, nameof(vkCreateFence), __FILENAME__, __STRLINE__);
+
 	Vulkan::globalThreadingMutex->unlock();
 	
-	//Destroy(logicalDevice);
-}
+	// semaphore
 
+	VkSemaphoreCreateInfo semaphoreCreateInfo{};
+	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-void RayTracing::DrawFrame(Win32Window* window, Camera* camera)
-{
-	/*image = new Image();
-	image->GenerateEmptyImages(creationObject, window->GetWidth(), window->GetHeight(), 1);*/
+	result = vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &imageSemaphore);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the ray tracing semaphore", result, nameof(vkCreateSemaphore), __FILENAME__, __STRLINE__);
+	result = vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &renderSemaphore);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to create the ray tracing semaphore", result, nameof(vkCreateSemaphore), __FILENAME__, __STRLINE__);
 
-	// image
-	
-	VkImage RTImage;
-	VkDeviceMemory RTImageMemory;
-
-	Vulkan::CreateImage(logicalDevice, physicalDevice, window->GetWidth(), window->GetHeight(), 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, RTImage, RTImageMemory);
-	VkImageView RTImageView = Vulkan::CreateImageView(logicalDevice, RTImage, VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
-
-	VkImageMemoryBarrier RTImageMemoryBarrier{};
-	RTImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	RTImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	RTImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-	RTImageMemoryBarrier.srcAccessMask = 0;
-	RTImageMemoryBarrier.dstAccessMask = 0;
-	RTImageMemoryBarrier.srcQueueFamilyIndex = queueFamilyIndex;
-	RTImageMemoryBarrier.dstQueueFamilyIndex = queueFamilyIndex;
-	RTImageMemoryBarrier.image = RTImage;
-	RTImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	RTImageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-	RTImageMemoryBarrier.subresourceRange.levelCount = 1;
-	RTImageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-	RTImageMemoryBarrier.subresourceRange.layerCount = 1;
-
-	VkCommandBuffer imageBarrierCommandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
-	vkCmdPipelineBarrier(imageBarrierCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &RTImageMemoryBarrier);
-	Vulkan::EndSingleTimeCommands(logicalDevice, queue, imageBarrierCommandBuffer, commandPool);
-
-	// descriptor infos
+	CreateShaderBindingTable();
 
 	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
 	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
@@ -646,13 +609,8 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera)
 	vertexDescriptorInfo.buffer = testObjectVertexBuffer.GetVkBuffer();
 	vertexDescriptorInfo.offset = 0;
 	vertexDescriptorInfo.range = VK_WHOLE_SIZE;
-	
-	VkDescriptorImageInfo RTImageDescriptorImageInfo{};
-	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
-	RTImageDescriptorImageInfo.imageView = RTImageView;//image->imageView;
-	RTImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-	std::vector<VkWriteDescriptorSet> writeDescriptorSets(5);
+	std::vector<VkWriteDescriptorSet> writeDescriptorSets(4);
 
 	writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
@@ -660,7 +618,7 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera)
 	writeDescriptorSets[0].dstSet = descriptorSets[0];
 	writeDescriptorSets[0].descriptorCount = 1;
 	writeDescriptorSets[0].dstBinding = 0;
-	
+
 	writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	writeDescriptorSets[1].pNext = &ASDescriptorInfo;
@@ -685,23 +643,24 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera)
 	writeDescriptorSets[3].dstBinding = 3;
 	writeDescriptorSets[3].pBufferInfo = &vertexDescriptorInfo;
 
-	writeDescriptorSets[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSets[4].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	writeDescriptorSets[4].pNext = &ASDescriptorInfo;
-	writeDescriptorSets[4].dstSet = descriptorSets[0];
-	writeDescriptorSets[4].descriptorCount = 1;
-	writeDescriptorSets[4].dstBinding = 4;
-	writeDescriptorSets[4].pImageInfo = &RTImageDescriptorImageInfo;
-	
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
 
-	// material index list
+	CreateMaterialBuffers();
 
+	UpdateMaterialDescriptorSets();
+
+	CreateImage(swapchain->extent.width, swapchain->extent.height);
+}
+
+void RayTracing::CreateMaterialBuffers()
+{
 	std::vector<uint32_t> materialIndices;
 	materialIndices.push_back(0);
+	materialIndices.push_back(0);
 
-	VkBuffer materialIndexBuffer;
-	VkDeviceMemory materialIndexBufferMemory;
+	for (int i = 0; i < facesCount; i++)
+		materialIndices.push_back(1);
+
 	VkDeviceSize materialIndexBufferSize = sizeof(uint32_t) * materialIndices.size();
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, materialIndexBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, materialIndexBuffer, materialIndexBufferMemory);
@@ -714,20 +673,22 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera)
 	memcpy(materialIndexBufferMemPtr, materialIndices.data(), materialIndexBufferSize);
 	vkUnmapMemory(logicalDevice, materialIndexBufferMemory);
 
-	// material buffer
-
-	struct Material 
+	struct Material
 	{
-		float ambient[4] = { 0.2f, 0.2f, 0.2f, 0.2f };
-		float diffuse[4] = { 0.5f, 0.3f, 0.7f, 1.0f };
-		float specular[4] = { 0.3f, 0.3f, 0.3f, 0.3f };
-		float emission[4] = { 0, 0, 0, 0 };
+		float ambient[3] = { 0.2f, 0.2f, 0.2f };
+		float diffuse[3] = { 0.5f, 0.0f, 0.7f };
+		float specular[3] = { 0.3f, 0.3f, 0.3f };
+		float emission[3] = { 1, 1, 1 };
 	};
 
-	std::vector<Material> materials(1);
+	std::vector<Material> materials;
+	materials.push_back(Material{ { 0.2f, 0.2f, 0.2f }, { 0.4f, 0.8f, 0.0f }, { 0.3f, 0.3f, 0.3f }, { 1, 1, 1 } });
+	materials.push_back(Material{ { 0.2f, 0.2f, 0.2f }, { 0.8f, 0.8f, 0.8f }, { 0.3f, 0.3f, 0.3f }, { 0.0f, 0.0f, 0.0f } });
+	materials.push_back(Material{ { 0.2f, 0.2f, 0.2f }, { 0.5f, 0.0f, 0.7f }, { 0.3f, 0.3f, 0.3f }, { 0.0f, 0.0f, 0.0f } });
+	
+	
+	
 
-	VkBuffer materialBuffer;
-	VkDeviceMemory materialBufferMemory;
 	VkDeviceSize materialBufferSize = sizeof(Material) * materials.size();
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, materialBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, materialBuffer, materialBufferMemory);
@@ -739,9 +700,10 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera)
 
 	memcpy(materialsBufferMemPtr, materials.data(), materialBufferSize);
 	vkUnmapMemory(logicalDevice, materialBufferMemory);
+}
 
-	// update material descriptor set
-
+void RayTracing::UpdateMaterialDescriptorSets()
+{
 	VkDescriptorBufferInfo materialIndexDescriptorInfo{};
 	materialIndexDescriptorInfo.buffer = materialIndexBuffer;
 	materialIndexDescriptorInfo.offset = 0;
@@ -769,9 +731,43 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera)
 	materialWriteDescriptorSets[1].pBufferInfo = &materialBufferDescriptorInfo;
 
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)materialWriteDescriptorSets.size(), materialWriteDescriptorSets.data(), 0, nullptr);
+}
 
-	// shader binding table
+void RayTracing::CreateImage(uint32_t width, uint32_t height)
+{
+	if (RTImage != VK_NULL_HANDLE && RTImageMemory != VK_NULL_HANDLE && RTImageView != VK_NULL_HANDLE)
+	{
+		vkDestroyImageView(logicalDevice, RTImageView, nullptr);
+		vkDestroyImage(logicalDevice, RTImage, nullptr);
+		vkFreeMemory(logicalDevice, RTImageMemory, nullptr);
+	}
 
+	Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, RTImage, RTImageMemory);
+	RTImageView = Vulkan::CreateImageView(logicalDevice, RTImage, VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	VkImageMemoryBarrier RTImageMemoryBarrier{};
+	RTImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	RTImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	RTImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	RTImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	RTImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	RTImageMemoryBarrier.image = RTImage;
+	RTImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	RTImageMemoryBarrier.subresourceRange.levelCount = 1;
+	RTImageMemoryBarrier.subresourceRange.layerCount = 1;
+
+	VkCommandBuffer imageBarrierCommandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
+	vkCmdPipelineBarrier(imageBarrierCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &RTImageMemoryBarrier);
+	Vulkan::EndSingleTimeCommands(logicalDevice, queue, imageBarrierCommandBuffer, commandPool);
+}
+
+VkStridedDeviceAddressRegionKHR rchitShaderBindingTable{};
+VkStridedDeviceAddressRegionKHR rgenShaderBindingTable{};
+VkStridedDeviceAddressRegionKHR rmissShaderBindingTable{};
+VkStridedDeviceAddressRegionKHR callableShaderBindingTable{};
+
+void RayTracing::CreateShaderBindingTable()
+{
 	VkDeviceSize progSize = rayTracingProperties.shaderGroupBaseAlignment;
 	VkDeviceSize shaderBindingTableSize = progSize * 4;
 
@@ -781,14 +777,14 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera)
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, shaderBindingTableSize, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, shaderBindingTableBuffer, shaderBindingTableMemory);
 
 	std::vector<char> shaderBuffer(shaderBindingTableSize);
-	result = pvkGetRayTracingShaderGroupHandlesKHR(logicalDevice, pipeline, 0, 4, shaderBindingTableSize, shaderBuffer.data());
+	VkResult result = vkGetRayTracingShaderGroupHandlesKHR(logicalDevice, pipeline, 0, 4, shaderBindingTableSize, shaderBuffer.data());
 	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to get the ray tracing shader group handles", result, nameof(pvkGetRayTracingShaderGroupHandlesKHR), __FILENAME__, std::to_string(__LINE__));
+		throw VulkanAPIError("Failed to get the ray tracing shader group handles", result, nameof(vkGetRayTracingShaderGroupHandlesKHR), __FILENAME__, __STRLINE__);
 
 	void* shaderBindingTableMemPtr;
 	result = vkMapMemory(logicalDevice, shaderBindingTableMemory, 0, shaderBindingTableSize, 0, &shaderBindingTableMemPtr);
 	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to map the shader binding table memory", result, nameof(vkMapMemory), __FILENAME__, std::to_string(__LINE__));
+		throw VulkanAPIError("Failed to map the shader binding table memory", result, nameof(vkMapMemory), __FILENAME__, __STRLINE__);
 
 	for (uint32_t i = 0; i < 4; i++) // 4 = amount of shaders
 	{
@@ -801,127 +797,190 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera)
 	shaderBindingTableBufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
 	shaderBindingTableBufferAddressInfo.buffer = shaderBindingTableBuffer;
 
-	VkDeviceAddress shaderBindingTableBufferAddress = pvkGetBufferDeviceAddressKHR(logicalDevice, &shaderBindingTableBufferAddressInfo);
+	VkDeviceAddress shaderBindingTableBufferAddress = vkGetBufferDeviceAddressKHR(logicalDevice, &shaderBindingTableBufferAddressInfo);
 
 	VkDeviceSize hitGroupOffset = 0;
 	VkDeviceSize rayGenOffset = progSize;
-	VkDeviceSize missOffset = 2 * progSize;
+	VkDeviceSize missOffset = progSize * 2;
 
-	VkStridedDeviceAddressRegionKHR rchitShaderBindingTable{};
 	rchitShaderBindingTable.deviceAddress = shaderBindingTableBufferAddress + hitGroupOffset;
 	rchitShaderBindingTable.size = progSize;
 	rchitShaderBindingTable.stride = progSize;
 
-	VkStridedDeviceAddressRegionKHR rgenShaderBindingTable{};
 	rgenShaderBindingTable.deviceAddress = shaderBindingTableBufferAddress + rayGenOffset;
 	rgenShaderBindingTable.size = progSize;
 	rgenShaderBindingTable.stride = progSize;
 
-	VkStridedDeviceAddressRegionKHR rmissShaderBindingTable{};
 	rmissShaderBindingTable.deviceAddress = shaderBindingTableBufferAddress + missOffset;
 	rmissShaderBindingTable.size = progSize;
 	rmissShaderBindingTable.stride = progSize;
+}
 
-	VkStridedDeviceAddressRegionKHR callableShaderBindingTable{};
+uint32_t frameCount = 0;
+void RayTracing::DrawFrame(Win32Window* window, Camera* camera, Swapchain* swapchain, Surface surface)
+{
+	vkWaitForFences(logicalDevice, 1, &fence, VK_TRUE, UINT64_MAX);
 
-	// end buffer for the image
+	Vulkan::globalThreadingMutex->lock();
 
-	VkBuffer resultBuffer;
-	VkDeviceMemory resultBufferMemory;
+	uint32_t imageIndex;
+	VkResult result = vkAcquireNextImageKHR(logicalDevice, swapchain->vkSwapchain, UINT64_MAX, imageSemaphore, VK_NULL_HANDLE, &imageIndex);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		swapchain->Recreate();
+		CreateImage(swapchain->extent.width, swapchain->extent.height);
+		window->resized = false;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		throw VulkanAPIError("The swapchain changed with the proper resources to recreate it", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __STRLINE__);
 
-	VkMemoryRequirements RTMemRequirements;
-	vkGetImageMemoryRequirements(logicalDevice, RTImage/*image->image*/, &RTMemRequirements);
+	vkResetFences(logicalDevice, 1, &fence);
+	vkResetCommandBuffer(commandBuffers[0], 0);
 
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, RTMemRequirements.size/*window->GetWidth() * window->GetHeight() * 4*/, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, resultBuffer, resultBufferMemory); // not sure about the size
-	
-	// record the render pass command buffer
+	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
+	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+	ASDescriptorInfo.accelerationStructureCount = 1;
+	ASDescriptorInfo.pAccelerationStructures = &TLAS;
+
+	VkDescriptorImageInfo RTImageDescriptorImageInfo{};
+	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
+	RTImageDescriptorImageInfo.imageView = RTImageView;
+	RTImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+	VkWriteDescriptorSet writeDescriptorSet{};
+	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	writeDescriptorSet.pNext = &ASDescriptorInfo;
+	writeDescriptorSet.dstSet = descriptorSets[0];
+	writeDescriptorSet.descriptorCount = 1;
+	writeDescriptorSet.dstBinding = 4;
+	writeDescriptorSet.pImageInfo = &RTImageDescriptorImageInfo;
+
+	vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
+
+	VkImageMemoryBarrier swapchainMemoryBarrier{};
+	swapchainMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	swapchainMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	swapchainMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	swapchainMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	swapchainMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	swapchainMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	swapchainMemoryBarrier.image = swapchain->images[imageIndex];
+	swapchainMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	swapchainMemoryBarrier.subresourceRange.levelCount = 1;
+	swapchainMemoryBarrier.subresourceRange.layerCount = 1;
+
+	VkImageMemoryBarrier swapchainPresentBarrier{};
+	swapchainPresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	swapchainPresentBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	swapchainPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	swapchainPresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	swapchainPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	swapchainPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	swapchainPresentBarrier.image = swapchain->images[imageIndex];
+	swapchainPresentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	swapchainPresentBarrier.subresourceRange.levelCount = 1;
+	swapchainPresentBarrier.subresourceRange.layerCount = 1;
 
 	VkImageMemoryBarrier RTCopyMemoryBarrier{};
 	RTCopyMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	//RTCopyMemoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 	RTCopyMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 	RTCopyMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
 	RTCopyMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-	RTCopyMemoryBarrier.srcQueueFamilyIndex = queueFamilyIndex;
-	RTCopyMemoryBarrier.dstQueueFamilyIndex = queueFamilyIndex;
-	RTCopyMemoryBarrier.image = RTImage;/*image->image*/
+	RTCopyMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	RTCopyMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	RTCopyMemoryBarrier.image = RTImage;
 	RTCopyMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	RTCopyMemoryBarrier.subresourceRange.baseMipLevel = 0;
 	RTCopyMemoryBarrier.subresourceRange.levelCount = 1;
-	RTCopyMemoryBarrier.subresourceRange.baseArrayLayer = 0;
 	RTCopyMemoryBarrier.subresourceRange.layerCount = 1;
 
-	VkBufferImageCopy imageCopy{};
-	imageCopy.bufferOffset = 0;
-	imageCopy.bufferRowLength = 0;
-	imageCopy.bufferImageHeight = 0;
-	imageCopy.imageOffset = { 0, 0, 0 };
-	imageCopy.imageExtent.width = window->GetWidth();
-	imageCopy.imageExtent.height = window->GetHeight();
-	imageCopy.imageExtent.depth = 1;
-	imageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	imageCopy.imageSubresource.baseArrayLayer = 0;
-	imageCopy.imageSubresource.mipLevel = 0;
-	imageCopy.imageSubresource.layerCount = 1;
+	VkImageMemoryBarrier RTWriteBarrier{};
+	RTWriteBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	RTWriteBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+	RTWriteBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	RTWriteBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	RTWriteBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	RTWriteBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	RTWriteBarrier.image = RTImage;
+	RTWriteBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	RTWriteBarrier.subresourceRange.levelCount = 1;
+	RTWriteBarrier.subresourceRange.layerCount = 1;
 
-	VkCommandBufferBeginInfo commandBufferBeginInfo{};
-	commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
+	VkImageCopy RTImageCopy{};
+	RTImageCopy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	RTImageCopy.srcSubresource.layerCount = 1;
+	RTImageCopy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	RTImageCopy.dstSubresource.layerCount = 1;
+	RTImageCopy.srcOffset = { 0, 0, 0 };
+	RTImageCopy.dstOffset = { 0, 0, 0 };
+	RTImageCopy.extent = { swapchain->extent.width, swapchain->extent.height, 1 };
 
-	result = vkBeginCommandBuffer(commandBuffers[0], &commandBufferBeginInfo);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to begin the ray tracing render pass command buffer", result, nameof(vkBeginCommandBuffer), __FILENAME__, std::to_string(__LINE__));
+	uniformBuffer = UniformBuffer{ { camera->position.x, camera->position.y, camera->position.z, 1 }, { camera->right.x, camera->right.y, camera->right.z, 1 }, { camera->up.x, camera->up.y, camera->up.z, 1 }, { camera->front.x, camera->front.y, camera->front.z, 1 }, 0 };
+	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
+
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT;
 	
+	result = vkBeginCommandBuffer(commandBuffers[0], &beginInfo);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer), __FILENAME__, __STRLINE__);
+
 	vkCmdBindPipeline(commandBuffers[0], VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 	vkCmdBindDescriptorSets(commandBuffers[0], VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
-	pvkCmdTraceRaysKHR(commandBuffers[0], &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, window->GetWidth(), window->GetHeight(), 1);
+	vkCmdTraceRaysKHR(commandBuffers[0], &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, swapchain->extent.width, swapchain->extent.height, 1);
+
+	vkCmdPipelineBarrier(commandBuffers[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &swapchainMemoryBarrier);
 	vkCmdPipelineBarrier(commandBuffers[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &RTCopyMemoryBarrier);
-	vkCmdCopyImageToBuffer(commandBuffers[0], RTImage/*image->image*/, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, resultBuffer, 1, &imageCopy);
-	
+
+	vkCmdCopyImage(commandBuffers[0], RTImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, swapchain->images[imageIndex], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &RTImageCopy);
+
+	vkCmdPipelineBarrier(commandBuffers[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &swapchainPresentBarrier);
+	vkCmdPipelineBarrier(commandBuffers[0], VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &RTWriteBarrier);
+
 	result = vkEndCommandBuffer(commandBuffers[0]);
 	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to end the ray tracing render pass command buffer", result, nameof(vkBeginCommandBuffer), __FILENAME__, std::to_string(__LINE__));
+		throw VulkanAPIError("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer), __FILENAME__, __STRLINE__);
 
-	// fence
-
-	VkFence imageFence;
-
-	VkFenceCreateInfo imageFenceCreateInfo{};
-	imageFenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	imageFenceCreateInfo.flags = 0;
-
-	result = vkCreateFence(logicalDevice, &imageFenceCreateInfo, nullptr, &imageFence);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create a ray tracing fence", result, nameof(vkCreateFence), __FILENAME__, std::to_string(__LINE__));
-
-	// submit
-
-	VkPipelineStageFlags pipelineStageFlags = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.waitSemaphoreCount = 0;
-	submitInfo.pWaitDstStageMask = &pipelineStageFlags;
+
+	VkSemaphore waitSemaphores[] = { imageSemaphore };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffers[0];
-	submitInfo.signalSemaphoreCount = 0;
 
-	result = vkQueueSubmit(queue, 1, &submitInfo, imageFence);
+	VkSemaphore signalSemaphores[] = { renderSemaphore };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	result = vkQueueSubmit(queue, 1, &submitInfo, fence);
 	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to submit the ray tracing queue", result, nameof(vkQueueSubmit), __FILENAME__, std::to_string(__LINE__));
-	
-	// read the image
-	
-	void* resultMemPtr;
-	result = vkMapMemory(logicalDevice, resultBufferMemory, 0, RTMemRequirements.size, 0, &resultMemPtr);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to map the image memory", result, nameof(vkMapMemory), __FILENAME__, std::to_string(__LINE__));
+		throw VulkanAPIError("Failed to submit the ray tracing queue", result, nameof(vkQueueSubmit), __FILENAME__, __STRLINE__);
 
-	stbi_write_png("result.png", window->GetWidth(), window->GetHeight(), 4, resultMemPtr, 4 * window->GetHeight());
-	/*vkUnmapMemory(logicalDevice, resultBufferMemory);
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = signalSemaphores;
 
-	vkFreeMemory(logicalDevice, resultBufferMemory, nullptr);
-	vkDestroyBuffer(logicalDevice, resultBuffer, nullptr);
-	vkDestroyFence(logicalDevice, imageFence, nullptr);*/
+	VkSwapchainKHR swapchains[] = { swapchain->vkSwapchain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapchains;
+	presentInfo.pImageIndices = &imageIndex;
 
-	std::cout << "end" << std::endl;
+	result = vkQueuePresentKHR(queue, &presentInfo);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		swapchain->Recreate();
+		window->resized = false;
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		throw VulkanAPIError("The swapchain changed with the proper resources to recreate it", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __STRLINE__);
+
+	Vulkan::globalThreadingMutex->unlock();
+
+	frameCount++;
 }
