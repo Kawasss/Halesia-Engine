@@ -60,6 +60,7 @@ private:
 	Swapchain* swapchain;
 
 	uint32_t currentFrame = 0;
+	uint32_t queueIndex = 0;
 
 	static std::vector<char> ReadFile(const std::string& filePath);
 

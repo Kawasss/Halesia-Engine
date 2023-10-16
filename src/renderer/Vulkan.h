@@ -10,7 +10,10 @@
 #include <optional>
 #include <iostream>
 #include <mutex>
+#include <unordered_map>
+#include <stdint.h>
 
+#include "CreationObjects.h"
 #include "PhysicalDevice.h"
 
 #define nameof(s) #s
@@ -63,6 +66,24 @@ private:
     std::string message;
 };
 
+class QueueCommandPoolStorage
+{
+public:
+    QueueCommandPoolStorage() = default;
+    QueueCommandPoolStorage(VkDevice logicalDevice, uint32_t queueIndex);
+    ~QueueCommandPoolStorage();
+    VkCommandPool GetNewCommandPool();
+    void ReturnCommandPool(VkCommandPool commandPool);
+
+    QueueCommandPoolStorage& operator=(const QueueCommandPoolStorage& oldStorage);
+
+private:
+    uint32_t queueIndex;
+    VkDevice logicalDevice;
+    std::vector<VkCommandPool> unusedCommandPools;
+    std::mutex commandPoolStorageMutex;
+};
+
 class Vulkan
 {
     public:
@@ -74,7 +95,10 @@ class Vulkan
         };
 
         static VkMemoryAllocateFlagsInfo* optionalMemoryAllocationFlags;
-        static std::mutex* globalThreadingMutex;
+        static std::mutex* graphicsQueueMutex;
+        
+        static VkCommandPool                FetchNewCommandPool(const VulkanCreationObject& creationObject);
+        static void                         YieldCommandPool(uint32_t queueFamilyIndex, VkCommandPool commandPool);
 
         static SwapChainSupportDetails      QuerySwapChainSupport(PhysicalDevice device, Surface surface);
         static std::vector<PhysicalDevice>  GetPhysicalDevices(VkInstance instance);
@@ -102,13 +126,24 @@ class Vulkan
             return properties;
         }
 
-        static std::vector<VkExtensionProperties> GetAvaibleExtensions()
+        static std::vector<VkExtensionProperties> GetInstanceExtensions()
         {
             uint32_t extensionCount = 0;
             vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
             std::vector<VkExtensionProperties> extensions(extensionCount);
             vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+            return extensions;
+        }
+
+        static std::vector <VkExtensionProperties> GetLogicalDeviceExtensions(PhysicalDevice physicalDevice)
+        {
+            uint32_t extensionCount = 0;
+            vkEnumerateDeviceExtensionProperties(physicalDevice.Device(), nullptr, &extensionCount, nullptr);
+            
+            std::vector<VkExtensionProperties> extensions(extensionCount);
+            vkEnumerateDeviceExtensionProperties(physicalDevice.Device(), nullptr, &extensionCount, extensions.data());
 
             return extensions;
         }
@@ -125,13 +160,14 @@ class Vulkan
         }
 
     private:
+        static std::unordered_map<uint32_t, QueueCommandPoolStorage> queueCommandPoolStorages;
+        //static std::unordered_map<uint32_t, std::vector<VkCommandPool>> unusedCommandPools;
         static std::mutex graphicsQueueThreadingMutex;
 
         static bool IsDeviceCompatible(PhysicalDevice device, Surface surface)
         {
-            //VkPhysicalDeviceProperties properties = GetPhyiscalDeviceProperties(device);
             QueueFamilyIndices indices = device.QueueFamilies(surface);
-            bool extensionsSupported = CheckExtensionSupport(device);
+            bool extensionsSupported = CheckLogicalDeviceExtensionSupport(device, requiredLogicalDeviceExtensions);
 
             bool swapChainIsCompatible = false;
             if (extensionsSupported)
@@ -142,30 +178,24 @@ class Vulkan
 
             return indices.HasValue() && extensionsSupported && swapChainIsCompatible && device.Features().samplerAnisotropy && device.Features().shaderUniformBufferArrayDynamicIndexing;
         }
-        
-        static bool CheckExtensionSupport(PhysicalDevice device)
+
+        static bool CheckInstanceExtensionSupport(std::vector<const char*> extensions)
         {
-            std::vector<const char*> rExtensions{ VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-
-            uint32_t extensionCount;
-            vkEnumerateDeviceExtensionProperties(device.Device(), nullptr, &extensionCount, nullptr);
-            std::vector<VkExtensionProperties> extensionProperties(extensionCount);
-            vkEnumerateDeviceExtensionProperties(device.Device(), nullptr, &extensionCount, extensionProperties.data());
-
-            std::set<std::string> extensions(rExtensions.begin(), rExtensions.end());
-            for (const VkExtensionProperties& property : extensionProperties)
-                extensions.erase(property.extensionName);
-
-            return extensions.empty();
-        }
-
-        static bool CheckGivenExtensionSupport(std::vector<const char*> extensions)
-        {
-            std::vector<VkExtensionProperties> allExtensions = GetAvaibleExtensions();
+            std::vector<VkExtensionProperties> allExtensions = GetInstanceExtensions();
             std::set<std::string> stringExtensions(extensions.begin(), extensions.end());
             for (const VkExtensionProperties& property : allExtensions)
                 stringExtensions.erase(property.extensionName);
             
+            return stringExtensions.empty();
+        }
+
+        static bool CheckLogicalDeviceExtensionSupport(PhysicalDevice physicalDevice, const std::vector<const char*> extensions)
+        {
+            std::vector<VkExtensionProperties> allExtensions = GetLogicalDeviceExtensions(physicalDevice);
+            std::set<std::string> stringExtensions(extensions.begin(), extensions.end());
+            for (const VkExtensionProperties& property : allExtensions)
+                stringExtensions.erase(property.extensionName);
+
             return stringExtensions.empty();
         }
 

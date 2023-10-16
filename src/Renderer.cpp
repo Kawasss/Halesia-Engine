@@ -110,7 +110,7 @@ void Renderer::Destroy()
 
 MeshCreationObject Renderer::GetVulkanCreationObjects()
 {
-	return MeshCreationObject{ logicalDevice, physicalDevice, commandPool, graphicsQueue };
+	return MeshCreationObject{ logicalDevice, physicalDevice, commandPool, graphicsQueue, queueIndex };
 }
 
 void Renderer::CreateImGUI()
@@ -611,6 +611,7 @@ void Renderer::SetLogicalDevice()
 {
 	logicalDevice = physicalDevice.GetLogicalDevice(surface);
 	QueueFamilyIndices indices = physicalDevice.QueueFamilies(surface);
+	queueIndex = indices.graphicsFamily.value();
 
 	vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
 	vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
@@ -618,7 +619,7 @@ void Renderer::SetLogicalDevice()
 
 void Renderer::CreateCommandPool()
 {
-	QueueFamilyIndices indices = physicalDevice.QueueFamilies(surface);
+	/*QueueFamilyIndices indices = physicalDevice.QueueFamilies(surface);
 
 	VkCommandPoolCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -627,7 +628,8 @@ void Renderer::CreateCommandPool()
 
 	VkResult result = vkCreateCommandPool(logicalDevice, &createInfo, nullptr, &commandPool);
 	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create a command pool", result, nameof(vkCreateCommandPool), __FILENAME__, std::to_string(__LINE__));
+		throw VulkanAPIError("Failed to create a command pool", result, nameof(vkCreateCommandPool), __FILENAME__, std::to_string(__LINE__));*/
+	commandPool = Vulkan::FetchNewCommandPool(GetVulkanCreationObjects());
 }
 
 void Renderer::CreateCommandBuffer()
@@ -851,7 +853,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	return;*/
 
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
-	Vulkan::globalThreadingMutex->lock();
+	Vulkan::graphicsQueueMutex->lock();
 
 	uint32_t imageIndex;
 	VkResult result = vkAcquireNextImageKHR(logicalDevice, swapchain->vkSwapchain, UINT64_MAX, imageAvaibleSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
@@ -904,7 +906,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	presentInfo.pImageIndices = &imageIndex;
 
 	result = vkQueuePresentKHR(presentQueue, &presentInfo);
-	Vulkan::globalThreadingMutex->unlock();
+	Vulkan::graphicsQueueMutex->unlock();
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || testWindow->resized)
 	{
 		swapchain->Recreate(renderPass);

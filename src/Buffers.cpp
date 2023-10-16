@@ -9,10 +9,8 @@
 void VulkanBuffer::Destroy()
 {
 	vkDeviceWaitIdle(logicalDevice);
-	Vulkan::globalThreadingMutex->lock();
 	vkDestroyBuffer(logicalDevice, buffer, nullptr);
 	vkFreeMemory(logicalDevice, bufferMemory, nullptr);
-	Vulkan::globalThreadingMutex->unlock();
 	//delete this;
 }
 

@@ -21,6 +21,7 @@ const bool enableValidationLayers = true;
 #define nameof(s) #s
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define __STRLINE__ std::to_string(__LINE__)
+#define CheckVulkanResult(message, result, function) if (result != VK_SUCCESS) throw VulkanAPIError(message, result, nameof(function), __FILENAME__, __STRLINE__)
 
 #pragma region VulkanPointerFunctions
 PFN_vkGetBufferDeviceAddressKHR pvkGetBufferDeviceAddressKHR = nullptr;
@@ -34,9 +35,83 @@ PFN_vkGetRayTracingShaderGroupHandlesKHR pvkGetRayTracingShaderGroupHandlesKHR =
 PFN_vkCmdTraceRaysKHR pvkCmdTraceRaysKHR = nullptr;
 #pragma endregion VulkanPointerFunctions
 
+std::unordered_map<uint32_t, QueueCommandPoolStorage> Vulkan::queueCommandPoolStorages;
+
 std::mutex Vulkan::graphicsQueueThreadingMutex;
-std::mutex* Vulkan::globalThreadingMutex = &graphicsQueueThreadingMutex;
+std::mutex* Vulkan::graphicsQueueMutex = &graphicsQueueThreadingMutex;
 VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
+
+QueueCommandPoolStorage::QueueCommandPoolStorage(VkDevice logicalDevice, uint32_t queueIndex) 
+{ 
+    this->queueIndex = queueIndex; 
+    this->logicalDevice = logicalDevice; 
+}
+
+
+VkCommandPool QueueCommandPoolStorage::GetNewCommandPool()
+{
+    VkCommandPool commandPool;
+
+    if (unusedCommandPools.size() == 0)
+    {
+        VkCommandPoolCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        createInfo.queueFamilyIndex = queueIndex;
+
+        VkResult result = vkCreateCommandPool(logicalDevice, &createInfo, nullptr, &commandPool);
+        CheckVulkanResult("Failed to create a command pool for the storage buffer", result, vkCreateCommandPool);
+    }
+    else
+    {
+        commandPoolStorageMutex.lock();
+        commandPool = unusedCommandPools[unusedCommandPools.size() - 1];
+        unusedCommandPools.erase(unusedCommandPools.end() - 1);
+        commandPoolStorageMutex.unlock();
+    }
+    return commandPool;
+}
+
+void QueueCommandPoolStorage::ReturnCommandPool(VkCommandPool commandPool)
+{
+    commandPoolStorageMutex.lock();
+    unusedCommandPools.push_back(commandPool);
+    commandPoolStorageMutex.unlock();
+}
+
+VkCommandPool Vulkan::FetchNewCommandPool(const VulkanCreationObject& creationObject)
+{
+    if (queueCommandPoolStorages.count(creationObject.queueIndex) <= 0)
+    {
+        QueueCommandPoolStorage newStorage{ creationObject.logicalDevice, creationObject.queueIndex };
+        queueCommandPoolStorages[creationObject.queueIndex] = newStorage;
+#ifdef _DEBUG
+        Console::WriteLine("Created a new command pool storage for queue family index " + std::to_string(creationObject.queueIndex), MESSAGE_SEVERITY_DEBUG);
+#endif
+    }
+    return queueCommandPoolStorages[creationObject.queueIndex].GetNewCommandPool();
+}
+
+void Vulkan::YieldCommandPool(uint32_t index, VkCommandPool commandPool)
+{
+    if (queueCommandPoolStorages.count(index) <= 0)
+        throw VulkanAPIError("Failed to yield a command pool, no matching queue family index could be found", VK_SUCCESS, __FUNCTION__, __FILENAME__, __STRLINE__);
+    queueCommandPoolStorages[index].ReturnCommandPool(commandPool);
+}
+
+QueueCommandPoolStorage::~QueueCommandPoolStorage()
+{
+    for (VkCommandPool& commandPool : unusedCommandPools)
+        vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+}
+
+QueueCommandPoolStorage& QueueCommandPoolStorage::operator=(const QueueCommandPoolStorage& oldStorage)
+{
+    this->logicalDevice = oldStorage.logicalDevice;
+    this->queueIndex = oldStorage.queueIndex;
+    this->unusedCommandPools = oldStorage.unusedCommandPools;
+    return *this;
+}
 
 VkShaderModule Vulkan::CreateShaderModule(VkDevice logicalDevice, const std::vector<char>& code)
 {
@@ -71,20 +146,23 @@ void Vulkan::CopyBuffer(VkDevice logicalDevice, VkCommandPool commandPool, VkQue
     Vulkan::EndSingleTimeCommands(logicalDevice, queue, localCommandBuffer, commandPool);
 }
 
+std::mutex endCommandMutex;
 void Vulkan::EndSingleTimeCommands(VkDevice logicalDevice, VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool)
 {
     vkEndCommandBuffer(commandBuffer);
-    
+
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
+    endCommandMutex.lock();
     VkResult result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-    if (result != VK_SUCCESS)
-        throw VulkanAPIError("Failed to submit the single time commands queue", result, nameof(vkQueueSubmit), __FILENAME__, __STRLINE__);
-
+    
+    CheckVulkanResult("Failed to submit the single time commands queue", result, vkQueueSubmit);
+    
     vkQueueWaitIdle(queue);
+    endCommandMutex.unlock();
     vkFreeCommandBuffers(logicalDevice, commandPool, 1, &commandBuffer);
 }
 

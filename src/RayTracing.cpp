@@ -266,7 +266,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	creationObject = { logicalDevice, physicalDevice, commandPool, queue };
 	CreateTestObject(creationObject);
-	Vulkan::globalThreadingMutex->lock();
+	Vulkan::graphicsQueueMutex->lock();
 
 	// command buffer
 
@@ -574,7 +574,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	if (result != VK_SUCCESS)
 		throw VulkanAPIError("Failed to create a ray tracing fence", result, nameof(vkCreateFence), __FILENAME__, __STRLINE__);
 
-	Vulkan::globalThreadingMutex->unlock();
+	Vulkan::graphicsQueueMutex->unlock();
 	
 	// semaphore
 
@@ -821,7 +821,7 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera, Swapchain* swapc
 {
 	vkWaitForFences(logicalDevice, 1, &fence, VK_TRUE, UINT64_MAX);
 
-	Vulkan::globalThreadingMutex->lock();
+	Vulkan::graphicsQueueMutex->lock();
 
 	uint32_t imageIndex;
 	VkResult result = vkAcquireNextImageKHR(logicalDevice, swapchain->vkSwapchain, UINT64_MAX, imageSemaphore, VK_NULL_HANDLE, &imageIndex);
@@ -980,7 +980,7 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera, Swapchain* swapc
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 		throw VulkanAPIError("The swapchain changed with the proper resources to recreate it", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __STRLINE__);
 
-	Vulkan::globalThreadingMutex->unlock();
+	Vulkan::graphicsQueueMutex->unlock();
 
 	frameCount++;
 }

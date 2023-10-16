@@ -20,8 +20,6 @@ public:
 protected:
 	template<typename T> void GenerateBuffer(BufferCreationObject creationObject, VkBufferUsageFlags usage, const std::vector<T> bufferData)
 	{
-		Vulkan::globalThreadingMutex->lock();
-
 		VkDeviceSize size = sizeof(bufferData[0]) * bufferData.size();
 		
 		VkBuffer stagingBuffer;
@@ -39,8 +37,6 @@ protected:
 		
 		vkDestroyBuffer(creationObject.logicalDevice, stagingBuffer, nullptr);
 		vkFreeMemory(creationObject.logicalDevice, stagingBufferMemory, nullptr);
-
-		Vulkan::globalThreadingMutex->unlock();
 	}
 
 	VkDevice logicalDevice;

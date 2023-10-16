@@ -8,6 +8,7 @@ struct VulkanCreationObject
 	PhysicalDevice physicalDevice;
 	VkCommandPool commandPool;
 	VkQueue queue;
+	uint32_t queueIndex;
 };
 typedef VulkanCreationObject TextureCreationObject;
 typedef VulkanCreationObject MeshCreationObject;

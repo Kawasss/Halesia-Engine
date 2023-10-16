@@ -24,7 +24,7 @@ bool Image::TexturesHaveChanged()
 void Image::GenerateImages(const TextureCreationObject& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps)
 {
 	this->logicalDevice = creationObjects.logicalDevice;
-	this->commandPool = creationObjects.commandPool;
+	this->commandPool = Vulkan::FetchNewCommandPool(creationObjects);
 	this->queue = creationObjects.queue;
 	this->physicalDevice = creationObjects.physicalDevice;
 
@@ -47,8 +47,6 @@ void Image::GenerateImages(const TextureCreationObject& creationObjects, std::ve
 
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
-
-	Vulkan::globalThreadingMutex->lock();
 	
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
@@ -75,8 +73,8 @@ void Image::GenerateImages(const TextureCreationObject& creationObjects, std::ve
 	imageView = Vulkan::CreateImageView(logicalDevice, image, viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	if (useMipMaps) GenerateMipMaps(VK_FORMAT_R8G8B8A8_SRGB);
 
-	Vulkan::globalThreadingMutex->unlock();
-	
+	Vulkan::YieldCommandPool(creationObjects.queueIndex, commandPool);
+
 	this->texturesHaveChanged = true;
 }
 
@@ -96,8 +94,6 @@ void Image::GenerateEmptyImages(const TextureCreationObject& creationObjects, in
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 
-	Vulkan::globalThreadingMutex->lock();
-
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
@@ -111,8 +107,6 @@ void Image::GenerateEmptyImages(const TextureCreationObject& creationObjects, in
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 	imageView = Vulkan::CreateImageView(logicalDevice, image, viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-
-	Vulkan::globalThreadingMutex->unlock();
 
 	this->texturesHaveChanged = true;
 }
@@ -189,15 +183,10 @@ Texture::Texture(const TextureCreationObject& creationObjects, std::vector<char>
 void Texture::GeneratePlaceholderTextures(const TextureCreationObject& creationObjects)
 {
 	placeholderAlbedo = new Texture(creationObjects, "textures/placeholderAlbedo.png", false);
-	placeholderAlbedo->AwaitGeneration();
 	placeholderNormal = new Texture(creationObjects, "textures/placeholderNormal.png", false);
-	placeholderNormal->AwaitGeneration();
 	placeholderMetallic = new Texture(creationObjects, "textures/placeholderMetallic.png", false);
-	placeholderMetallic->AwaitGeneration();
 	placeholderRoughness = new Texture(creationObjects, "textures/placeholderRoughness.png", false);
-	placeholderRoughness->AwaitGeneration();
 	placeholderAmbientOcclusion = new Texture(creationObjects, "textures/placeholderAO.png", false);
-	placeholderAmbientOcclusion->AwaitGeneration();
 }
 
 void Texture::DestroyPlaceholderTextures()
