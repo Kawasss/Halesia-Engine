@@ -198,7 +198,6 @@
     <None Include="shaders\gen.rgen" />
     <None Include="shaders\hit.rchit" />
     <None Include="shaders\miss.rmiss" />
-    <None Include="shaders\rayTracingCommon.glsl" />
     <None Include="shaders\shadow.rmiss" />
     <None Include="shaders\triangle.frag" />
     <None Include="shaders\triangle.vert" />

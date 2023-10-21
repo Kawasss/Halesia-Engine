@@ -135,9 +135,14 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface surface)
     indexingFeatures.runtimeDescriptorArray = VK_TRUE;
     indexingFeatures.pNext = &imageFeatures;
 
+    VkPhysicalDeviceVulkan11Features vulkan11Features{};
+    vulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+    vulkan11Features.pNext = &indexingFeatures;
+    vulkan11Features.storageBuffer16BitAccess = VK_TRUE;
+
     VkPhysicalDeviceFeatures2 deviceFeatures2{};
     deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    deviceFeatures2.pNext = &indexingFeatures;
+    deviceFeatures2.pNext = &vulkan11Features;
     deviceFeatures2.features.samplerAnisotropy = VK_TRUE;
 
     vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);

@@ -205,10 +205,15 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 			break;
 
 		case WM_SIZE: // when the window is resized
+		{
+			RECT resizedWindowDimensions;
+			GetWindowRect(hwnd, &resizedWindowDimensions);
+
 			windowBinding[hwnd]->resized = true;
-			windowBinding[hwnd]->width = LOWORD(lParam);
-			windowBinding[hwnd]->height = HIWORD(lParam);
+			windowBinding[hwnd]->width = resizedWindowDimensions.right - resizedWindowDimensions.left;
+			windowBinding[hwnd]->height = resizedWindowDimensions.bottom - resizedWindowDimensions.top;
 			break;
+		}
 
 		case WM_MOUSEMOVE: // when the cursor has moved
 			if (windowBinding[hwnd]->lockCursor) // if the cursor is locked it has to stay inside the window, so this locks resets it to the center of the screen

@@ -60,9 +60,6 @@
     <ClCompile Include="src\Transform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Vulkan.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -82,6 +79,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\RayTracing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Vulkan.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -192,9 +192,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\miss.rmiss">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\rayTracingCommon.glsl">
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\shadow.rmiss">

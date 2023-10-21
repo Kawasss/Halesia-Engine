@@ -35,6 +35,8 @@ PFN_vkGetRayTracingShaderGroupHandlesKHR pvkGetRayTracingShaderGroupHandlesKHR =
 PFN_vkCmdTraceRaysKHR pvkCmdTraceRaysKHR = nullptr;
 #pragma endregion VulkanPointerFunctions
 
+VkDebugUtilsMessengerEXT Vulkan::debugMessenger;
+
 std::unordered_map<uint32_t, QueueCommandPoolStorage> Vulkan::queueCommandPoolStorages;
 
 std::mutex Vulkan::graphicsQueueThreadingMutex;
@@ -340,7 +342,7 @@ VkExtent2D Vulkan::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabitilies
     };
     extent.width = std::clamp(extent.width, capabitilies.minImageExtent.width, capabitilies.maxImageExtent.width);
     extent.height = std::clamp(extent.height, capabitilies.minImageExtent.height, capabitilies.maxImageExtent.width);
-
+    
     return extent;
 }
 
@@ -350,7 +352,10 @@ PhysicalDevice Vulkan::GetBestPhysicalDevice(std::vector<PhysicalDevice> devices
         if (IsDeviceCompatible(devices[i], surface)) //delete all of the unnecessary physical devices from ram
             return devices[i];
 
-    throw VulkanAPIError("There is no compatible vulkan GPU for this engine present", VK_SUCCESS, nameof(GetBestPhysicalDevice), __FILENAME__, __STRLINE__);
+    std::string message = "There is no compatible vulkan GPU for this engine present: iterated through " + std::to_string(devices.size()) + " physical devices: \n";
+    for (PhysicalDevice physicalDevice : devices)
+        message += (std::string)physicalDevice.Properties().deviceName + "\n";
+    throw VulkanAPIError(message, VK_SUCCESS, nameof(GetBestPhysicalDevice), __FILENAME__, __STRLINE__);
 }
 
 Vulkan::SwapChainSupportDetails Vulkan::QuerySwapChainSupport(PhysicalDevice device, Surface surface)
@@ -397,16 +402,26 @@ VkInstance Vulkan::GenerateInstance()
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     createInfo.pApplicationInfo = &appInfo;   
 
-    createInfo.enabledExtensionCount = (uint32_t)requiredInstanceExtensions.size();
-    createInfo.ppEnabledExtensionNames = requiredInstanceExtensions.data();
-
+    VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     if (enableValidationLayers)
     {
+        requiredInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
+
+        debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        debugCreateInfo.pfnUserCallback = DebugCallback;
+
+        createInfo.pNext = &debugCreateInfo;
     }
     else
         createInfo.enabledLayerCount = 0;
+
+    createInfo.enabledExtensionCount = (uint32_t)requiredInstanceExtensions.size();
+    createInfo.ppEnabledExtensionNames = requiredInstanceExtensions.data();
 
 #ifdef _DEBUG
     std::cout << "Enabled instance extensions:" << std::endl;
@@ -418,7 +433,37 @@ VkInstance Vulkan::GenerateInstance()
     if (result != VK_SUCCESS)
         throw VulkanAPIError("Couldn't create a Vulkan instance", result, nameof(vkCreateInstance), __FILENAME__, __STRLINE__);
 
+    if (enableValidationLayers)
+        CreateDebugMessenger(instance);
+
     return instance;
+}
+
+void Vulkan::CreateDebugMessenger(VkInstance instance)
+{
+    if (!enableValidationLayers)
+        return;
+
+    VkDebugUtilsMessengerCreateInfoEXT createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo.pfnUserCallback = DebugCallback;
+
+    PFN_vkCreateDebugUtilsMessengerEXT pvkCreateDebugUtilsMessengerEXT = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    VkResult result = pvkCreateDebugUtilsMessengerEXT(instance, &createInfo, nullptr, &debugMessenger);
+    CheckVulkanResult("Failed to create the debug messenger", result, nameof(vkCreateDebugUtilsMessengerEXT));
+
+}
+
+void Vulkan::DestroyDebugMessenger(VkInstance instance)
+{
+    if (!enableValidationLayers)
+        return;
+
+    PFN_vkDestroyDebugUtilsMessengerEXT pvkDestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (pvkDestroyDebugUtilsMessengerEXT != nullptr)
+        pvkDestroyDebugUtilsMessengerEXT(instance, debugMessenger, nullptr);
 }
 
 std::vector<PhysicalDevice> Vulkan::GetPhysicalDevices(VkInstance instance)
@@ -441,63 +486,46 @@ std::vector<PhysicalDevice> Vulkan::GetPhysicalDevices(VkInstance instance)
     return devices;
 }
 
-enum LogicalDeviceExtensions
+VkBool32 Vulkan::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
 {
-    VK_KHR_SWAPCHAIN_EXTENSION,
-    VK_KHR_ACCELERATION_STRUCTURE_EXTENSION,
-    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION,
-    VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION,
-    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION,
-    VK_EXT_DESCRIPTOR_INDEXING_EXTENSION
-};
+    if (messageSeverity <= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        return VK_FALSE;
+    else if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT)
+        throw VulkanAPIError("Validation error found, showing raw error data.\n" + (std::string)pCallbackData->pMessage);
+
+    std::cout << "Validation layer message:\n" << pCallbackData->pMessage << "\nseverity: " << string_VkDebugUtilsMessageSeverityFlagBitsEXT(messageSeverity) << '\n' << "type: " << string_VkDebugUtilsMessageTypeFlagsEXT(messageType)  << '\n' << std::endl;
+    return VK_TRUE;
+}
 
 void Vulkan::ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, const std::vector<const char*>& logicalDeviceExtensions)
 {
-    static std::unordered_map<std::string, LogicalDeviceExtensions> extensionStringToCode =
+    for (const std::string logicalDeviceExtension : logicalDeviceExtensions) // no switch case because c++ cant handle strings in switch cases
     {
-        { VK_KHR_SWAPCHAIN_EXTENSION_NAME, VK_KHR_SWAPCHAIN_EXTENSION },
-        { VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION },
-        { VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION },
-        { VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME, VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION },
-        { VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION },
-        { VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME, VK_EXT_DESCRIPTOR_INDEXING_EXTENSION }
-    };
+        if (logicalDeviceExtension == VK_KHR_SWAPCHAIN_EXTENSION_NAME) continue;
+        else if (logicalDeviceExtension == VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) continue;
+        else if (logicalDeviceExtension == VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) continue;
 
-    for (const std::string logicalDeviceExtension : logicalDeviceExtensions)
-    {
-        if (extensionStringToCode.count(logicalDeviceExtension) == 0)
+        else if (logicalDeviceExtension == VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)
         {
-            Console::WriteLine("Given logical device extension " + logicalDeviceExtension + " has no activatable functions", MESSAGE_SEVERITY_WARNING);
-            return;
-        }
-        switch (extensionStringToCode[logicalDeviceExtension])
-        {
-        case VK_KHR_SWAPCHAIN_EXTENSION: break;
-        case VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION: break;
-        case VK_EXT_DESCRIPTOR_INDEXING_EXTENSION: break;
-
-        case VK_KHR_ACCELERATION_STRUCTURE_EXTENSION:
             pvkCmdBuildAccelerationStructuresKHR = (PFN_vkCmdBuildAccelerationStructuresKHR)vkGetDeviceProcAddr(logicalDevice, "vkCmdBuildAccelerationStructuresKHR");
             pvkCreateAccelerationStructureKHR = (PFN_vkCreateAccelerationStructureKHR)vkGetDeviceProcAddr(logicalDevice, "vkCreateAccelerationStructureKHR");
             pvkDestroyAccelerationStructureKHR = (PFN_vkDestroyAccelerationStructureKHR)vkGetDeviceProcAddr(logicalDevice, "vkDestroyAccelerationStructureKHR");
             pvkGetAccelerationStructureBuildSizesKHR = (PFN_vkGetAccelerationStructureBuildSizesKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetAccelerationStructureBuildSizesKHR");
             pvkGetAccelerationStructureDeviceAddressKHR = (PFN_vkGetAccelerationStructureDeviceAddressKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetAccelerationStructureDeviceAddressKHR");
-            break;
+        }
 
-        case VK_KHR_RAY_TRACING_PIPELINE_EXTENSION:
+        else if (logicalDeviceExtension == VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)
+        {
             pvkCmdTraceRaysKHR = (PFN_vkCmdTraceRaysKHR)vkGetDeviceProcAddr(logicalDevice, "vkCmdTraceRaysKHR");
             pvkCreateRayTracingPipelinesKHR = (PFN_vkCreateRayTracingPipelinesKHR)vkGetDeviceProcAddr(logicalDevice, "vkCreateRayTracingPipelinesKHR");
             pvkGetRayTracingShaderGroupHandlesKHR = (PFN_vkGetRayTracingShaderGroupHandlesKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetRayTracingShaderGroupHandlesKHR");
-            break;
-
-        case VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION:
-            pvkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetBufferDeviceAddressKHR");
-            break;
-
-        default:
-            Console::WriteLine("Failed to recognize the logical device extension \"" + logicalDeviceExtension + ", any related functions won't be activated", MESSAGE_SEVERITY_WARNING);
-            break;
         }
+
+        else if (logicalDeviceExtension == VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
+            pvkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetBufferDeviceAddressKHR");
+
+        else
+            Console::WriteLine("Given logical device extension " + logicalDeviceExtension + " has no activatable functions", MESSAGE_SEVERITY_WARNING);
     }
 }
 
@@ -506,7 +534,7 @@ VkDeviceAddress vkGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDevic
 { 
 #ifdef _DEBUG // gives warning C4297 (doesnt expect a throw), but can (presumably) be ignored because it's only for debug
     if (pvkGetBufferDeviceAddressKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_SUCCESS, __FUNCTION__, __FILENAME__, __STRLINE__);
+        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
 #endif
     return pvkGetBufferDeviceAddressKHR(device, pInfo); 
 }
@@ -515,7 +543,7 @@ VkDeviceAddress vkGetAccelerationStructureDeviceAddressKHR(VkDevice device, cons
 {
 #ifdef _DEBUG
     if (pvkGetAccelerationStructureDeviceAddressKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_SUCCESS, __FUNCTION__, __FILENAME__, __STRLINE__);
+        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
 #endif
     return pvkGetAccelerationStructureDeviceAddressKHR(device, pInfo);
 }
@@ -524,7 +552,7 @@ VkResult vkCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR 
 { 
 #ifdef _DEBUG
     if (pvkCreateRayTracingPipelinesKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_SUCCESS, __FUNCTION__, __FILENAME__, __STRLINE__);
+        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
 #endif
     return pvkCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines); 
 }
@@ -533,7 +561,7 @@ VkResult vkCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationS
 {
 #ifdef _DEBUG
     if (pvkCreateAccelerationStructureKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_SUCCESS, __FUNCTION__, __FILENAME__, __STRLINE__);
+        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
 #endif
     return pvkCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
 }
@@ -542,7 +570,7 @@ VkResult vkGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeli
 {
 #ifdef _DEBUG
     if (pvkGetRayTracingShaderGroupHandlesKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_SUCCESS, __FUNCTION__, __FILENAME__, __STRLINE__);
+        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
 #endif
     return pvkGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
 }
@@ -551,7 +579,7 @@ void vkGetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerationStru
 {
 #ifdef _DEBUG
     if (pvkGetAccelerationStructureBuildSizesKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_SUCCESS, __FUNCTION__, __FILENAME__, __STRLINE__);
+        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
 #endif
     pvkGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
 }
@@ -560,7 +588,7 @@ void vkDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureK
 {
 #ifdef _DEBUG
     if (pvkDestroyAccelerationStructureKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_SUCCESS, __FUNCTION__, __FILENAME__, __STRLINE__);
+        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
 #endif
     pvkDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
 }
@@ -569,7 +597,7 @@ void vkCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t
 {
 #ifdef _DEBUG
     if (pvkCmdBuildAccelerationStructuresKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_SUCCESS, __FUNCTION__, __FILENAME__, __STRLINE__);
+        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
 #endif
     pvkCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
 }
@@ -578,7 +606,7 @@ void vkCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddre
 {
 #ifdef _DEBUG
     if (pvkCmdTraceRaysKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_SUCCESS, __FUNCTION__, __FILENAME__, __STRLINE__);
+        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
 #endif
     pvkCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
 }

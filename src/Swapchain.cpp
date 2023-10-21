@@ -91,7 +91,7 @@ void Swapchain::Destroy()
 void Swapchain::Recreate() // hopefully a temporary fix, used for ray tracing
 {
     int width = window->GetWidth(), height = window->GetHeight();
-
+    
 #ifndef NDEBUG
     if (width == 0 || height == 0)
         std::cout << "Window is minimized, waiting until it is maximized" << std::endl;

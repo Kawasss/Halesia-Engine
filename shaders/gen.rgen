@@ -41,23 +41,31 @@ void main() {
   uv /= vec2(gl_LaunchSizeEXT.xy);
   uv = (uv * 2.0f - 1.0f) * vec2(1.0f, -1.0f);
 
-  payload.rayOrigin = camera.position.xyz;
-  payload.rayDirection =
-      normalize(uv.x * camera.right + uv.y * camera.up + camera.forward).xyz;
-  payload.previousNormal = vec3(0.0, 0.0, 0.0);
-
-  payload.directColor = vec3(0.0, 0.0, 0.0);
-  payload.indirectColor = vec3(0.0, 0.0, 0.0);
-  payload.rayDepth = 0;
-
   payload.rayActive = 1;
 
-  for (int x = 0; x < 32; x++) {
-    traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0,
-                payload.rayOrigin, 0.001, payload.rayDirection, 10000.0, 0);
-  }
+  vec4 color = vec4(0);
 
-  vec4 color = vec4(payload.directColor + payload.indirectColor, 1.0);
+  int amountNotBlack = 0;
+  for (int j = 0; j < 15; j++)
+  {
+      payload.rayOrigin = camera.position.xyz;
+      payload.rayDirection =
+          normalize(uv.x * camera.right + uv.y * camera.up + camera.forward).xyz;
+      payload.previousNormal = vec3(0.0, 0.0, 0.0);
+
+      payload.directColor = vec3(0.0, 0.0, 0.0);
+      payload.indirectColor = vec3(0.0, 0.0, 0.0);
+      payload.rayDepth = 0;
+
+      for (int x = 0; x < 16; x++) {
+        traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0,
+                    payload.rayOrigin, 0.001, payload.rayDirection, 10000.0, 0);
+      }
+      color += vec4(payload.directColor + payload.indirectColor, 1.0);
+      if (payload.directColor + payload.indirectColor != vec3(0))
+        amountNotBlack++;
+  }
+  color /= amountNotBlack;
 
   if (camera.frameCount > 0) {
     vec4 previousColor = imageLoad(image, ivec2(gl_LaunchIDEXT.xy));

@@ -841,16 +841,16 @@ bool initRT = false;
 RayTracing rayTracing;
 void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
 {
-	/*if (!initRT)
+	if (!initRT)
 	{
 		rayTracing.Init(logicalDevice, physicalDevice, surface, objects[0], camera, testWindow, swapchain);
 		initRT = true;
-	}*/ // not a good place to do this
+	} // not a good place to do this
 
 	ImGui::Render();
 
-	/*rayTracing.DrawFrame(testWindow, camera, swapchain, surface);
-	return;*/
+	rayTracing.DrawFrame(testWindow, camera, swapchain, surface);
+	return;
 
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
 	Vulkan::graphicsQueueMutex->lock();

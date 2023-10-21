@@ -1,6 +1,7 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_shader_16bit_storage : enable
 
 #define M_PI 3.1415926535897932384626433832795
 
@@ -39,7 +40,7 @@ layout(binding = 1, set = 0) uniform Camera {
 }
 camera;
 
-layout(binding = 2, set = 0) buffer IndexBuffer { uint data[]; }
+layout(binding = 2, set = 0) buffer IndexBuffer { uint16_t data[]; }
 indexBuffer;
 layout(binding = 3, set = 0) buffer VertexBuffer { float data[]; }
 vertexBuffer;
@@ -96,26 +97,20 @@ void main() {
                   vertexC * barycentric.z;
   vec3 geometricNormal = normalize(cross(vertexB - vertexA, vertexC - vertexA));
 
-  vec3 surfaceColor =
-      materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]].diffuse;
+  vec3 surfaceColor = materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]].diffuse;
 
   // 40 & 41 == light
   if (gl_PrimitiveID == 0 || gl_PrimitiveID == 1) {
     if (payload.rayDepth == 0) {
-      payload.directColor =
-          materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]]
-              .emission;
+      payload.directColor = materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]].emission;
     } else {
       payload.indirectColor +=
-          (1.0 / payload.rayDepth) *
-          materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]]
-              .emission *
-          dot(payload.previousNormal, payload.rayDirection);
+          (1.0 / payload.rayDepth) * materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]].emission * dot(payload.previousNormal, payload.rayDirection);
     }
   } else {
     int randomIndex =
         int(random(gl_LaunchIDEXT.xy, camera.frameCount) * 2 + 40);
-    vec3 lightColor = vec3(0.6, 0.6, 0.6);
+    vec3 lightColor = vec3(1, 1, 1);
 
     ivec3 lightIndices = ivec3(indexBuffer.data[3 * randomIndex + 0],
                                indexBuffer.data[3 * randomIndex + 1],
@@ -183,7 +178,7 @@ void main() {
       alignHemisphereWithCoordinateSystem(hemisphere, geometricNormal);
 
   payload.rayOrigin = position;
-  payload.rayDirection = reflect(payload.rayDirection, geometricNormal);//alignedHemisphere;//
+  payload.rayDirection = alignedHemisphere;
   payload.previousNormal = geometricNormal;
 
   payload.rayDepth += 1;
@@ -192,6 +187,8 @@ void main() {
 /*#version 460
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_EXT_debug_printf : enable
+#extension GL_EXT_shader_16bit_storage : enable
 
 #define M_PI 3.1415926535897932384626433832795
 
@@ -230,7 +227,7 @@ layout(binding = 1, set = 0) uniform Camera {
 }
 camera;
 
-layout(binding = 2, set = 0) buffer IndexBuffer { uint data[]; }
+layout(binding = 2, set = 0) buffer IndexBuffer { uint16_t data[]; }
 indexBuffer;
 layout(binding = 3, set = 0) buffer VertexBuffer { float data[]; }
 vertexBuffer;
@@ -239,27 +236,6 @@ layout(binding = 0, set = 1) buffer MaterialIndexBuffer { uint data[]; }
 materialIndexBuffer;
 layout(binding = 1, set = 1) buffer MaterialBuffer { Material data[]; }
 materialBuffer;
-
-float random(vec2 uv, float seed) {
-  return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) *
-               43758.5453);
-  ;
-}
-
-vec3 uniformSampleHemisphere(vec2 uv) {
-  float z = uv.x;
-  float r = sqrt(max(0, 1.0 - z * z));
-  float phi = 2.0 * M_PI * uv.y;
-
-  return vec3(r * cos(phi), z, r * sin(phi));
-}
-
-vec3 alignHemisphereWithCoordinateSystem(vec3 hemisphere, vec3 up) {
-  vec3 right = normalize(cross(up, vec3(0.0072f, 1.0f, 0.0034f)));
-  vec3 forward = cross(right, up);
-
-  return hemisphere.x * right + hemisphere.y * up + hemisphere.z * forward;
-}
 
 void main() {
   if (payload.rayActive == 0) {
@@ -270,153 +246,43 @@ void main() {
                         indexBuffer.data[3 * gl_PrimitiveID + 1],
                         indexBuffer.data[3 * gl_PrimitiveID + 2]);
 
-  vec3 barycentric = vec3(1.0 - hitCoordinate.x - hitCoordinate.y, hitCoordinate.x, hitCoordinate.y);
+  vec3 barycentric = vec3(1.0 - hitCoordinate.x - hitCoordinate.y,
+                          hitCoordinate.x, hitCoordinate.y);
 
-  vec3 vertexA = vec3(vertexBuffer.data[3 * indices.x + 0], vertexBuffer.data[3 * indices.x + 1], vertexBuffer.data[3 * indices.x + 2]);
-  vec3 vertexB = vec3(vertexBuffer.data[3 * indices.y + 0], vertexBuffer.data[3 * indices.y + 1], vertexBuffer.data[3 * indices.y + 2]);
-  vec3 vertexC = vec3(vertexBuffer.data[3 * indices.z + 0], vertexBuffer.data[3 * indices.z + 1], vertexBuffer.data[3 * indices.z + 2]);
+  vec3 vert1 = vec3(vertexBuffer.data[3 * indices.x + 0], vertexBuffer.data[3 * indices.x + 1], vertexBuffer.data[3 * indices.x + 2]);
+  vec3 vert2 = vec3(vertexBuffer.data[3 * indices.y + 0], vertexBuffer.data[3 * indices.y + 1], vertexBuffer.data[3 * indices.y + 2]);
+  vec3 vert3 = vec3(vertexBuffer.data[3 * indices.z + 0], vertexBuffer.data[3 * indices.z + 1], vertexBuffer.data[3 * indices.z + 2]);
+  vec3 position = vert1 * barycentric.x + vert2 * barycentric.y + vert3 * barycentric.z;
 
-  vec3 position = vertexA * barycentric.x + vertexB * barycentric.y + vertexC * barycentric.z;
-  vec3 geometricNormal = normalize(cross(vertexB - vertexA, vertexC - vertexA));
-  vec3 worldPos = vec3(gl_ObjectToWorldEXT * vec4(position, 1));
+  vec3 normal = normalize(cross(vert2 - vert1, vert3 - vert2));
+  if (length(normal) <= 0)
+    normal *= -1;
+  payload.directColor = normal;
+  payload.rayActive = 0;
+  return;
 
-  vec3 surfaceColor =
-      materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]].diffuse;
-
-  
-  if (gl_PrimitiveID < 2)
+  if (gl_PrimitiveID == 0 || gl_PrimitiveID == 1)
   {
     if (payload.rayDepth == 0)
     {
-        payload.directColor = vec3(1);
+        payload.directColor = vec3(1);//vec3(gl_PrimitiveID / 980.0f);//vec3(1);
         payload.rayActive = 0;
-        payload.rayDepth = 1;
         return;
     }
     else
     {
-        payload.indirectColor += vec3(1) / payload.rayDepth;
+        payload.directColor = vec3(1);//vec3(gl_PrimitiveID / 980.0f);//payload.directColor = vec3(1) / payload.rayDepth;
     }
   }
   else
   {
-    vec3 lightColor = vec3(1);
-
-    int randomIndex = int(random(gl_LaunchIDEXT.xy, camera.frameCount) * 2 + 40);
-
-    ivec3 lightIndices = ivec3(indexBuffer.data[3 * randomIndex], indexBuffer.data[3 * randomIndex + 1], indexBuffer.data[3 * randomIndex + 2]);
-
-    vec3 lightVertexA = vec3(vertexBuffer.data[3 * lightIndices.x + 0], vertexBuffer.data[3 * lightIndices.x + 1], vertexBuffer.data[3 * lightIndices.x + 2]);
-    vec3 lightVertexB = vec3(vertexBuffer.data[3 * lightIndices.y + 0], vertexBuffer.data[3 * lightIndices.y + 1], vertexBuffer.data[3 * lightIndices.y + 2]);
-    vec3 lightVertexC = vec3(vertexBuffer.data[3 * lightIndices.z + 0], vertexBuffer.data[3 * lightIndices.z + 1], vertexBuffer.data[3 * lightIndices.z + 2]);
-
-    vec2 uv = vec2(random(gl_LaunchIDEXT.xy, camera.frameCount), random(gl_LaunchIDEXT.xy, camera.frameCount + 1));
-    if (uv.x + uv.y > 1.0f) {
-      uv.x = 1.0f - uv.x;
-      uv.y = 1.0f - uv.y;
-    }
-
-    vec3 lightBarycentric = vec3(1.0 - uv.x - uv.y, uv.x, uv.y);
-    vec3 lightPosition = lightVertexA * lightBarycentric.x + lightVertexB * lightBarycentric.y + lightVertexC * lightBarycentric.z;
-
-    vec3 posToLight = normalize(lightPosition - position);
-
-    vec3 shadowRayOrigin = position;
-    vec3 shadowRayDirection = posToLight;
-    float shadowRayDistance = length(lightPosition - position) + 1.0f;
-
-    uint shadowRayFlags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
-
-    isShadow = true;
-    traceRayEXT(topLevelAS, shadowRayFlags, 0xFF, 0, 0, 1, shadowRayOrigin, 0.001, shadowRayDirection, shadowRayDistance, 1);
-
-    if (!isShadow)
-    {
-        if (payload.rayDepth == 0)
-        {
-            payload.directColor = vec3(0);// * (1 / payload.rayDepth);
-        }
-        else
-        {
-            payload.directColor  += surfaceColor / payload.rayDepth;
-        }
-    }
-    else
-    {
-//        if (payload.rayDepth == 0)
-//        {
-//            payload.directColor = vec3(0);
-//        }
-//        else
-//        {
-//            payload.rayActive = 0;
-//            return;
-//        }
-payload.directColor = surfaceColor;
-    }
+    payload.rayOrigin = position;
+    payload.rayDirection = reflect(payload.rayDirection, normal);
+    
   }
-
-
-  vec3 hemisphere = uniformSampleHemisphere(vec2(random(gl_LaunchIDEXT.xy, camera.frameCount), random(gl_LaunchIDEXT.xy, camera.frameCount + 1)));
-  vec3 alignedHemisphere = alignHemisphereWithCoordinateSystem(hemisphere, geometricNormal);
-
-  payload.rayOrigin = worldPos;
-  payload.rayDirection = reflect(payload.rayDirection, geometricNormal);
-  payload.previousNormal = geometricNormal;
-  
+  payload.directColor = vec3(1);//-payload.rayDirection + 2 * normal * dot(payload.rayDirection, normal);//vec3(gl_PrimitiveID / 980.0f);
+  payload.previousNormal = normal;
   payload.rayDepth += 1;
-}
+}*/
 
-
-// 0 & 1 == light
-  if (gl_PrimitiveID < 100) {
-    if (payload.rayDepth == 0) {
-      payload.directColor = materialBuffer.data[1].emission;
-    } else {
-      payload.indirectColor += (1.0 / payload.rayDepth) * materialBuffer.data[1].emission;// * dot(payload.previousNormal, payload.rayDirection);
-    }
-  } else {
-    int randomIndex = int(random(gl_LaunchIDEXT.xy, camera.frameCount) * 2 + 40);
-    vec3 lightColor = vec3(1);
-
-    ivec3 lightIndices = ivec3(indexBuffer.data[3 * 0 + 0], indexBuffer.data[3 * 0 + 1], indexBuffer.data[3 * 0 + 2]);
-
-    vec3 lightVertexA = vec3(vertexBuffer.data[3 * 0 + 0], vertexBuffer.data[3 * 0 + 1], vertexBuffer.data[3 * 0 + 2]);
-    vec3 lightVertexB = vec3(vertexBuffer.data[3 * 1 + 0], vertexBuffer.data[3 * 1 + 1], vertexBuffer.data[3 * 1 + 2]);
-    vec3 lightVertexC = vec3(vertexBuffer.data[3 * 2 + 0], vertexBuffer.data[3 * 2 + 1], vertexBuffer.data[3 * 2 + 2]);
-
-    vec2 uv = vec2(random(gl_LaunchIDEXT.xy, camera.frameCount), random(gl_LaunchIDEXT.xy, camera.frameCount + 1));
-    if (uv.x + uv.y > 1.0f) {
-      uv.x = 1.0f - uv.x;
-      uv.y = 1.0f - uv.y;
-    }
-
-    vec3 lightBarycentric = vec3(1.0 - uv.x - uv.y, uv.x, uv.y);
-    vec3 lightPosition = lightVertexA * lightBarycentric.x + lightVertexB * lightBarycentric.y + lightVertexC * lightBarycentric.z;
-    vec3 lightWorldPos = vec3(gl_ObjectToWorldEXT * vec4(lightPosition, 1));
-                         
-    vec3 positionToLightDirection = normalize(lightWorldPos - worldPos);
-
-    vec3 shadowRayOrigin = worldPos;
-    vec3 shadowRayDirection = positionToLightDirection;
-    float shadowRayDistance = length(lightWorldPos - worldPos) - 0.001f;
-
-    uint shadowRayFlags = gl_RayFlagsTerminateOnFirstHitEXT | gl_RayFlagsOpaqueEXT | gl_RayFlagsSkipClosestHitShaderEXT;
-
-    isShadow = true;
-    traceRayEXT(topLevelAS, shadowRayFlags, 0xFF, 0, 0, 1, shadowRayOrigin, 0.001, shadowRayDirection, shadowRayDistance, 1);
-
-    if (!isShadow) {
-      if (payload.rayDepth == 0) {
-        payload.directColor = surfaceColor * lightColor * dot(geometricNormal, positionToLightDirection);
-      } else {
-        payload.indirectColor += (1.0 / payload.rayDepth) * surfaceColor * lightColor;// * dot(payload.previousNormal, payload.rayDirection) * dot(geometricNormal, positionToLightDirection);
-      }
-    } else {
-      if (payload.rayDepth == 0) {
-        payload.directColor = vec3(0.0, 0.0, 0.0);
-      } else {
-       payload.rayActive = 0;
-      }
-    }
-  }*/
+/**/

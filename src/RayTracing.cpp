@@ -86,11 +86,15 @@ void CreateTestObject(BufferCreationObject creationObject)
 	if (scene == nullptr)
 		throw std::runtime_error("Failed to read the test model");
 
-	std::vector<glm::vec3> vertices;
+	std::vector</*glm::vec3*/float> vertices;
 	std::vector<uint16_t> indices;
 
 	for (int i = 0; i < scene->mMeshes[0]->mNumVertices; i++)
-		vertices.push_back({ scene->mMeshes[0]->mVertices[i].x, scene->mMeshes[0]->mVertices[i].y, scene->mMeshes[0]->mVertices[i].z });
+	{
+		vertices.push_back(scene->mMeshes[0]->mVertices[i].x);
+		vertices.push_back(scene->mMeshes[0]->mVertices[i].y);
+		vertices.push_back(scene->mMeshes[0]->mVertices[i].z);
+	}
 		
 	for (int i = 0; i < scene->mMeshes[0]->mNumFaces; i++)
 		for (int j = 0; j < scene->mMeshes[0]->mFaces[i].mNumIndices; j++)
@@ -156,7 +160,7 @@ void RayTracing::CreateBLAS(BottomLevelAccelerationStructure& BLAS, VulkanBuffer
 	triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
 	triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
 	triangles.vertexData = { vertexBufferAddress };
-	triangles.vertexStride = sizeof(glm::vec3);
+	triangles.vertexStride = sizeof(float) * 3;
 	triangles.maxVertex = vertexSize;
 	triangles.indexType = VK_INDEX_TYPE_UINT16;
 	triangles.indexData = { indexBufferAddress };
@@ -251,21 +255,11 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	queueFamilyIndex = physicalDevice.QueueFamilies(surface).graphicsFamily.value();
 	vkGetDeviceQueue(logicalDevice, queueFamilyIndex, 0, &queue);
 
-	// command pool
-
-	VkCommandPoolCreateInfo commandPoolCreateInfo{};
-	commandPoolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	commandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	commandPoolCreateInfo.queueFamilyIndex = queueFamilyIndex;
-
-	result = vkCreateCommandPool(logicalDevice, &commandPoolCreateInfo, nullptr, &commandPool);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create a command pool for ray tracing", result, nameof(vkCreateCommandPool), __FILENAME__, std::to_string(__LINE__));
-
 	// creation object
 
 	creationObject = { logicalDevice, physicalDevice, /*commandPool,*/ queue, queueFamilyIndex };
 	CreateTestObject(creationObject);
+	commandPool = Vulkan::FetchNewCommandPool(creationObject);
 	Vulkan::graphicsQueueMutex->lock();
 
 	// command buffer
@@ -661,7 +655,7 @@ void RayTracing::CreateMaterialBuffers()
 	for (int i = 0; i < facesCount; i++)
 		materialIndices.push_back(1);
 
-	VkDeviceSize materialIndexBufferSize = sizeof(uint32_t) * materialIndices.size();
+	VkDeviceSize materialIndexBufferSize = sizeof(uint16_t) * materialIndices.size();
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, materialIndexBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, materialIndexBuffer, materialIndexBufferMemory);
 
@@ -675,15 +669,15 @@ void RayTracing::CreateMaterialBuffers()
 
 	struct Material
 	{
-		float ambient[3] = { 0.2f, 0.2f, 0.2f };
-		float diffuse[3] = { 0.5f, 0.0f, 0.7f };
-		float specular[3] = { 0.3f, 0.3f, 0.3f };
-		float emission[3] = { 1, 1, 1 };
+		float ambient[4] = { 0.2f, 0.2f, 0.2f };
+		float diffuse[4] = { 0.5f, 0.0f, 0.7f };
+		float specular[4] = { 0.3f, 0.3f, 0.3f };
+		float emission[4] = { 1, 1, 1 };
 	};
 
 	std::vector<Material> materials;
-	materials.push_back(Material{ { 0.2f, 0.2f, 0.2f }, { 0.4f, 0.8f, 0.0f }, { 0.3f, 0.3f, 0.3f }, { 1, 1, 1 } });
-	materials.push_back(Material{ { 0.2f, 0.2f, 0.2f }, { 0.8f, 0.8f, 0.8f }, { 0.3f, 0.3f, 0.3f }, { 0.0f, 0.0f, 0.0f } });
+	materials.push_back(Material{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } });
+	materials.push_back(Material{ { 0.2f, 0.2f, 0.2f }, { 0.8f, 0.8f, 0.8f }, { 0.3f, 0.3f, 0.3f }, { 0.5f, 0.5f, 0.5f } });
 	materials.push_back(Material{ { 0.2f, 0.2f, 0.2f }, { 0.5f, 0.0f, 0.7f }, { 0.3f, 0.3f, 0.3f }, { 0.0f, 0.0f, 0.0f } });
 	
 	
@@ -832,7 +826,7 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera, Swapchain* swapc
 		window->resized = false;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-		throw VulkanAPIError("The swapchain changed with the proper resources to recreate it", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __STRLINE__);
+		throw VulkanAPIError("The swapchain changed without the proper resources to recreate it", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __STRLINE__);
 
 	vkResetFences(logicalDevice, 1, &fence);
 	vkResetCommandBuffer(commandBuffers[0], 0);
@@ -975,6 +969,7 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera, Swapchain* swapc
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		swapchain->Recreate();
+		CreateImage(swapchain->extent.width, swapchain->extent.height);
 		window->resized = false;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
