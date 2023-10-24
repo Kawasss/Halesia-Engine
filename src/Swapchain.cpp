@@ -73,6 +73,74 @@ void Swapchain::Generate(VkDevice logicalDevice, PhysicalDevice physicalDevice, 
     format = surfaceFormat.format;
 }
 
+void Swapchain::CopyImageToSwapchain(VkImage image, VkCommandBuffer commandBuffer, uint32_t currentImage)
+{
+    VkImageMemoryBarrier swapchainMemoryBarrier{};
+    swapchainMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    swapchainMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    swapchainMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    swapchainMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    swapchainMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    swapchainMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    swapchainMemoryBarrier.image = images[currentImage];
+    swapchainMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    swapchainMemoryBarrier.subresourceRange.levelCount = 1;
+    swapchainMemoryBarrier.subresourceRange.layerCount = 1;
+
+    VkImageMemoryBarrier swapchainPresentBarrier{};
+    swapchainPresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    swapchainPresentBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    swapchainPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    swapchainPresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    swapchainPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    swapchainPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    swapchainPresentBarrier.image = images[currentImage];
+    swapchainPresentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    swapchainPresentBarrier.subresourceRange.levelCount = 1;
+    swapchainPresentBarrier.subresourceRange.layerCount = 1;
+
+    VkImageMemoryBarrier copyMemoryBarrier{};
+    copyMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    copyMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    copyMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    copyMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    copyMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    copyMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    copyMemoryBarrier.image = image;
+    copyMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    copyMemoryBarrier.subresourceRange.levelCount = 1;
+    copyMemoryBarrier.subresourceRange.layerCount = 1;
+
+    VkImageMemoryBarrier writeBarrier{};
+    writeBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    writeBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+    writeBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    writeBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    writeBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    writeBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    writeBarrier.image = image;
+    writeBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    writeBarrier.subresourceRange.levelCount = 1;
+    writeBarrier.subresourceRange.layerCount = 1;
+
+    VkImageCopy RTImageCopy{};
+    RTImageCopy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    RTImageCopy.srcSubresource.layerCount = 1;
+    RTImageCopy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    RTImageCopy.dstSubresource.layerCount = 1;
+    RTImageCopy.srcOffset = { 0, 0, 0 };
+    RTImageCopy.dstOffset = { 0, 0, 0 };
+    RTImageCopy.extent = { extent.width, extent.height, 1 };
+
+    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &swapchainMemoryBarrier);
+    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &copyMemoryBarrier);
+
+    vkCmdCopyImage(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, images[currentImage], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &RTImageCopy);
+
+    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &swapchainPresentBarrier);
+    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &writeBarrier);
+}
+
 void Swapchain::Destroy()
 {
     /*vkDestroyImageView(logicalDevice, depthImageView, nullptr);

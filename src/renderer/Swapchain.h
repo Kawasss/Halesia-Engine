@@ -19,6 +19,8 @@ public:
     void CreateImageViews();
     void CreateFramebuffers(VkRenderPass renderPass);
 
+    void CopyImageToSwapchain(VkImage image, VkCommandBuffer commandBuffer, uint32_t currentImage);
+
     VkSwapchainKHR vkSwapchain{};
     std::vector<VkImage> images{};
     std::vector<VkImageView> imageViews{};

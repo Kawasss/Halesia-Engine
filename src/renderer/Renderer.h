@@ -80,7 +80,9 @@ private:
 	void CreateImGUI();
 	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);
 	void SetModelMatrices(uint32_t currentImage, std::vector<Object*> models); //parameter is used for potential culling, this allows for 500 meshes in view rather than in scene
+	void SetViewport(VkCommandBuffer commandBuffer);
+	void SetScissors(VkCommandBuffer commandBuffer);
 
 	void UpdateUniformBuffers(uint32_t currentImage, Camera* camera);
-	void RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> object);
+	void RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
 };

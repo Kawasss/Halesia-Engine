@@ -37,6 +37,8 @@ layout(binding = 1, set = 0) uniform Camera {
   vec4 forward;
 
   uint frameCount;
+  int showPrimitveID;
+  uint primitiveCount;
 }
 camera;
 
@@ -97,10 +99,16 @@ void main() {
                   vertexC * barycentric.z;
   vec3 geometricNormal = normalize(cross(vertexB - vertexA, vertexC - vertexA));
 
-  vec3 surfaceColor = materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]].diffuse;
+  if (camera.showPrimitveID == 1)
+    {
+        payload.directColor = geometricNormal;
+        payload.rayActive = 0;
+        return;
+    }
 
-  // 40 & 41 == light
-  if (gl_PrimitiveID == 0 || gl_PrimitiveID == 1) {
+  vec3 surfaceColor = vec3(1);//materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]].diffuse;
+
+  if (gl_PrimitiveID  == 12 || gl_PrimitiveID  == 13) {
     if (payload.rayDepth == 0) {
       payload.directColor = materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]].emission;
     } else {

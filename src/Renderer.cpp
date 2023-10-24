@@ -271,7 +271,7 @@ void Renderer::CreateRenderPass()
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = swapchain->format;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -619,16 +619,6 @@ void Renderer::SetLogicalDevice()
 
 void Renderer::CreateCommandPool()
 {
-	/*QueueFamilyIndices indices = physicalDevice.QueueFamilies(surface);
-
-	VkCommandPoolCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	createInfo.queueFamilyIndex = indices.graphicsFamily.value();
-
-	VkResult result = vkCreateCommandPool(logicalDevice, &createInfo, nullptr, &commandPool);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create a command pool", result, nameof(vkCreateCommandPool), __FILENAME__, std::to_string(__LINE__));*/
 	commandPool = Vulkan::FetchNewCommandPool(GetVulkanCreationObjects());
 }
 
@@ -647,32 +637,8 @@ void Renderer::CreateCommandBuffer()
 		throw VulkanAPIError("Failed to allocate the command buffer", result, nameof(vkAllocateCommandBuffers), __FILENAME__, std::to_string(__LINE__));
 }
 
-void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> objects)
+void Renderer::SetViewport(VkCommandBuffer commandBuffer)
 {
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-	VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer), __FILENAME__, std::to_string(__LINE__));
-
-	VkRenderPassBeginInfo renderPassBeginInfo{};
-	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassBeginInfo.renderPass = renderPass;
-	renderPassBeginInfo.framebuffer = swapchain->framebuffers[imageIndex];
-	renderPassBeginInfo.renderArea.offset = { 0, 0 };
-	renderPassBeginInfo.renderArea.extent = swapchain->extent;
-
-	std::array<VkClearValue, 2> clearColors{};
-	clearColors[0].color = { 0.085f, 0.085f, 0.085f, 1 };
-	clearColors[1].depthStencil = { 1, 0 };
-
-	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
-	renderPassBeginInfo.pClearValues = clearColors.data();
-	vkCmdBeginRenderPass(lCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-	vkCmdBindPipeline(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
 	VkViewport viewport{};
 	viewport.x = 0;
 	viewport.y = 0;
@@ -680,12 +646,38 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	viewport.height = static_cast<uint32_t>(swapchain->extent.height);
 	viewport.minDepth = 0;
 	viewport.maxDepth = 1;
-	vkCmdSetViewport(lCommandBuffer, 0, 1, &viewport);
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+}
 
+void Renderer::SetScissors(VkCommandBuffer commandBuffer)
+{
 	VkRect2D scissor{};
 	scissor.offset = { 0, 0 };
 	scissor.extent = swapchain->extent;
-	vkCmdSetScissor(lCommandBuffer, 0, 1, &scissor);
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+}
+
+bool initRT = false;
+RayTracing rayTracing;
+void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> objects, Camera* camera)
+{
+	if (!initRT)
+	{
+		rayTracing.Init(logicalDevice, physicalDevice, surface, objects[0], camera, testWindow, swapchain);
+		initRT = true;
+	} // not a good place to do this
+
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+	VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
+	if (result != VK_SUCCESS)
+		throw VulkanAPIError("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer), __FILENAME__, std::to_string(__LINE__));
+
+	/*vkCmdBindPipeline(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+	SetViewport(lCommandBuffer);
+	SetScissors(lCommandBuffer);
 
 	vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
@@ -700,7 +692,28 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 
 				vkCmdDrawIndexed(lCommandBuffer, static_cast<uint32_t>(mesh.indices.size()), 1, 0, 0, 0);
 			}
-	
+
+	vkCmdEndRenderPass(lCommandBuffer);*/
+
+	rayTracing.DrawFrame(testWindow, camera, swapchain, surface, lCommandBuffer, imageIndex);
+	swapchain->CopyImageToSwapchain(rayTracing.RTImage, lCommandBuffer, imageIndex);
+
+	VkRenderPassBeginInfo renderPassBeginInfo{};
+	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassBeginInfo.renderPass = renderPass;
+	renderPassBeginInfo.framebuffer = swapchain->framebuffers[imageIndex];
+	renderPassBeginInfo.renderArea.offset = { 0, 0 };
+	renderPassBeginInfo.renderArea.extent = swapchain->extent;
+
+	std::array<VkClearValue, 2> clearColors{};
+	clearColors[0].color = { 0, 0, 0, 1 };
+	clearColors[1].depthStencil = { 1, 0 };
+
+	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+	renderPassBeginInfo.pClearValues = clearColors.data();
+
+	vkCmdBeginRenderPass(lCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), lCommandBuffer);
 
 	vkCmdEndRenderPass(lCommandBuffer);
@@ -837,20 +850,10 @@ void Renderer::RenderGraph(const std::vector<float>& buffer, const char* label)
 	ImPlot::EndPlot();
 	ImGui::End();
 }
-bool initRT = false;
-RayTracing rayTracing;
+
 void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
 {
-	if (!initRT)
-	{
-		rayTracing.Init(logicalDevice, physicalDevice, surface, objects[0], camera, testWindow, swapchain);
-		initRT = true;
-	} // not a good place to do this
-
 	ImGui::Render();
-
-	rayTracing.DrawFrame(testWindow, camera, swapchain, surface);
-	return;
 
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
 	Vulkan::graphicsQueueMutex->lock();
@@ -861,6 +864,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		swapchain->Recreate(renderPass);
+		rayTracing.RecreateImage(swapchain);
 		testWindow->resized = false;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -868,13 +872,13 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 
 	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
 
-	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
-	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, objects);
-
 	UpdateUniformBuffers(currentFrame, camera);
 	SetModelMatrices(currentFrame, objects);
 
 	UpdateBindlessTextures(currentFrame, objects);
+
+	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, objects, camera);
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -910,6 +914,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || testWindow->resized)
 	{
 		swapchain->Recreate(renderPass);
+		rayTracing.RecreateImage(swapchain);
 		testWindow->resized = false;
 		Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
 	}

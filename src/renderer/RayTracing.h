@@ -25,7 +25,10 @@ class RayTracing
 public:
 	void Destroy(VkDevice logicalDevice);
 	void Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera, Win32Window* window, Swapchain* swapchain);
-	void DrawFrame(Win32Window* window, Camera* camera, Swapchain* swapchain, Surface surface);
+	void DrawFrame(Win32Window* window, Camera* camera, Swapchain* swapchain, Surface surface, VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void RecreateImage(Swapchain* swapchain) { CreateImage(swapchain->extent.width, swapchain->extent.height); }
+
+	VkImage RTImage = VK_NULL_HANDLE;
 
 private:
 	void UpdateMaterialDescriptorSets();
@@ -45,7 +48,6 @@ private:
 	VkSemaphore renderSemaphore;
 	VkFence fence;
 
-	VkImage RTImage = VK_NULL_HANDLE;
 	VkDeviceMemory RTImageMemory = VK_NULL_HANDLE;
 	VkImageView RTImageView = VK_NULL_HANDLE;
 
