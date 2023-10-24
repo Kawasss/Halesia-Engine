@@ -8,7 +8,6 @@
 
 void VulkanBuffer::Destroy()
 {
-	vkDeviceWaitIdle(logicalDevice);
 	vkDestroyBuffer(logicalDevice, buffer, nullptr);
 	vkFreeMemory(logicalDevice, bufferMemory, nullptr);
 	//delete this;

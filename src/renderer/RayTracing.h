@@ -40,6 +40,9 @@ public:
 
 	VkImage RTImage = VK_NULL_HANDLE;
 
+	static int raySampleCount;
+	static int rayDepth;
+
 private:
 	void UpdateMaterialDescriptorSets();
 	void CreateMaterialBuffers();

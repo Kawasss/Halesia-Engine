@@ -26,15 +26,15 @@ layout(binding = 1, set = 0) uniform Camera {
   uint frameCount;
   int showPrimitveID;
   uint primitiveCount;
+  int raySamples;
+  int rayDepth;
 }
 camera;
 
 layout(binding = 4, set = 0, rgba32f) uniform image2D image;
 
 float random(vec2 uv, float seed) {
-  return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) *
-               43758.5453);
-  ;
+  return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) * 43758.5453);
 }
 
 void main() {
@@ -44,7 +44,7 @@ void main() {
 
   vec3 color = vec3(0);
 
-  for (int j = 0; j < 2; j++)
+  for (int j = 0; j < camera.raySamples; j++)
   {
        vec2 uv = gl_LaunchIDEXT.xy + vec2(random(gl_LaunchIDEXT.xy, camera.frameCount * 754 * j), random(gl_LaunchIDEXT.xy, camera.frameCount * 5436 * (j / 1.5)));
        uv /= vec2(gl_LaunchSizeEXT.xy);
@@ -59,7 +59,7 @@ void main() {
       payload.indirectColor = vec3(0.0, 0.0, 0.0);
       payload.rayDepth = 0;
 
-      for (int x = 0; x < 16; x++) {
+      for (int x = 0; x < camera.rayDepth; x++) {
         traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0,
                     payload.rayOrigin, 0.001, payload.rayDirection, 10000.0, 0);
       }

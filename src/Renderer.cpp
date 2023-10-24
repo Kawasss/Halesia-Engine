@@ -167,6 +167,9 @@ void Renderer::CreateImGUI()
 
 void Renderer::InitVulkan()
 {
+	Console::commandVariables["raySamples"] = &RayTracing::raySampleCount;
+	Console::commandVariables["rayDepth"] = &RayTracing::rayDepth;
+
 	instance = Vulkan::GenerateInstance();
 	surface = Surface::GenerateSurface(instance, testWindow);
 	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);

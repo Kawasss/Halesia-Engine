@@ -16,6 +16,9 @@
 
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
 
+int RayTracing::raySampleCount = 2;
+int RayTracing::rayDepth = 8;
+
 std::vector<VkCommandBuffer> commandBuffers(MAX_FRAMES_IN_FLIGHT);
 VkDescriptorPool descriptorPool;
 VkDescriptorSetLayout descriptorSetLayout;
@@ -56,6 +59,8 @@ struct UniformBuffer
 	uint32_t frameCount = 0;
 	int32_t showPrimitiveID = 0;
 	uint32_t faceCount = 0;
+	int raySamples = 2;
+	int rayDepth = 8;
 };
 void* uniformBufferMemPtr;
 UniformBuffer uniformBuffer{};
@@ -309,6 +314,7 @@ void RayTracing::CreateTLAS(TopLevelAccelerationStructure& TLAS)
 
 void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera, Win32Window* window, Swapchain* swapchain)
 {
+
 	VkResult result = VK_SUCCESS;
 
 	this->logicalDevice = logicalDevice;
@@ -809,7 +815,7 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera, Swapchain* swapc
 
 	vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
 
-	uniformBuffer = UniformBuffer{ { camera->position.x, camera->position.y, camera->position.z, 1 }, { camera->right.x, camera->right.y, camera->right.z, 1 }, { camera->up.x, camera->up.y, camera->up.z, 1 }, { camera->front.x, camera->front.y, camera->front.z, 1 }, frameCount, 0, facesCount };
+	uniformBuffer = UniformBuffer{ { camera->position.x, camera->position.y, camera->position.z, 1 }, { camera->right.x, camera->right.y, camera->right.z, 1 }, { camera->up.x, camera->up.y, camera->up.z, 1 }, { camera->front.x, camera->front.y, camera->front.z, 1 }, frameCount, 0, facesCount, raySampleCount, rayDepth };
 	//uniformBuffer = UniformBuffer{ { 7.24205f, -4.13095f, 7.67253f, 1 }, { 0.70373f, 0.00000f, -0.71047f, 1 }, { -0.28477f, 0.91616f, -0.28206f, 1 }, { -0.65091f, -0.40081f, -0.64473f, 1 }, frameCount };
 	//printf("pos: %.5f, %.5f, %.5f, right: %.5f, %.5f, %.5f, up: %.5f, %.5f, %.5f, front: %.5f, %.5f, %.5f\n", camera->position.x, camera->position.y, camera->position.z, camera->right.x, camera->right.y, camera->right.z, camera->up.x, camera->up.y, camera->up.z, camera->front.x, camera->front.y, camera->front.z);
 	//std::cout << facesCount << std::endl;
