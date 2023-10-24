@@ -31,13 +31,6 @@ VkQueue queue;
 VkPipelineLayout pipelineLayout;
 VkPipeline pipeline;
 
-VkBuffer TLASBuffer;
-VkDeviceMemory TLASBufferMemory;
-VkAccelerationStructureKHR TLAS;
-
-VkBuffer TLASScratchBuffer;
-VkDeviceMemory TLASScratchMemory;
-
 VkBuffer uniformBufferBuffer;
 VkDeviceMemory uniformBufferMemory;
 
@@ -118,13 +111,13 @@ void RayTracing::Destroy(VkDevice logicalDevice)
 	vkFreeMemory(logicalDevice, uniformBufferMemory, nullptr);
 	vkDestroyBuffer(logicalDevice, uniformBufferBuffer, nullptr);
 
-	vkFreeMemory(logicalDevice, TLASScratchMemory, nullptr);
-	vkDestroyBuffer(logicalDevice, TLASScratchBuffer, nullptr);
+	vkFreeMemory(logicalDevice, TLAS.scratchMemory, nullptr);
+	vkDestroyBuffer(logicalDevice, TLAS.scratchBuffer, nullptr);
 
-	vkDestroyAccelerationStructureKHR(logicalDevice, TLAS, nullptr);
+	vkDestroyAccelerationStructureKHR(logicalDevice, TLAS.accelerationStructure, nullptr);
 
-	vkFreeMemory(logicalDevice, TLASBufferMemory, nullptr);
-	vkDestroyBuffer(logicalDevice, TLASBuffer, nullptr);
+	vkFreeMemory(logicalDevice, TLAS.deviceMemory, nullptr);
+	vkDestroyBuffer(logicalDevice, TLAS.buffer, nullptr);
 
 	vkFreeMemory(logicalDevice, BLAS.geometryInstanceBufferMemory, nullptr);
 	vkDestroyBuffer(logicalDevice, BLAS.geometryInstanceBuffer, nullptr);
@@ -149,15 +142,8 @@ void RayTracing::Destroy(VkDevice logicalDevice)
 
 void RayTracing::CreateBLAS(BottomLevelAccelerationStructure& BLAS, VulkanBuffer vertexBuffer, IndexBuffer indexBuffer, uint32_t vertexSize, uint32_t faceCount)
 {
-	VkBufferDeviceAddressInfo bufferAddressInfo{};
-	bufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-	bufferAddressInfo.buffer = vertexBuffer.GetVkBuffer();
-
-	VkDeviceAddress vertexBufferAddress = vkGetBufferDeviceAddressKHR(logicalDevice, &bufferAddressInfo);
-
-	bufferAddressInfo.buffer = indexBuffer.GetVkBuffer();
-
-	VkDeviceAddress indexBufferAddress = vkGetBufferDeviceAddressKHR(logicalDevice, &bufferAddressInfo);
+	VkDeviceAddress vertexBufferAddress = Vulkan::GetDeviceAddress(logicalDevice, vertexBuffer.GetVkBuffer());
+	VkDeviceAddress indexBufferAddress = Vulkan::GetDeviceAddress(logicalDevice, indexBuffer.GetVkBuffer());
 
 	VkAccelerationStructureGeometryTrianglesDataKHR triangles{};
 	triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
@@ -204,8 +190,7 @@ void RayTracing::CreateBLAS(BottomLevelAccelerationStructure& BLAS, VulkanBuffer
 	BLASCreateInfo.offset = 0;
 
 	VkResult result = vkCreateAccelerationStructureKHR(logicalDevice, &BLASCreateInfo, nullptr, &BLAS.accelerationStructure);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create the BLAS", result, nameof(vkCreateAccelerationStructureKHR), __FILENAME__, __STRLINE__);
+	CheckVulkanResult("Failed to create the BLAS", result, nameof(vkCreateAccelerationStructureKHR));
 
 	// build BLAS
 
@@ -217,11 +202,7 @@ void RayTracing::CreateBLAS(BottomLevelAccelerationStructure& BLAS, VulkanBuffer
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, BLASBuildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, BLAS.scratchBuffer, BLAS.scratchDeviceMemory);
 
-	VkBufferDeviceAddressInfo scratchDeviceAddressInfo{};
-	scratchDeviceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-	scratchDeviceAddressInfo.buffer = BLAS.scratchBuffer;
-
-	VkDeviceAddress scratchDeviceAddress = vkGetBufferDeviceAddress(logicalDevice, &scratchDeviceAddressInfo);
+	VkDeviceAddress scratchDeviceAddress = Vulkan::GetDeviceAddress(logicalDevice, BLAS.scratchBuffer);
 
 	BLASBuildGeometryInfo.scratchData = { scratchDeviceAddress };
 	BLASBuildGeometryInfo.dstAccelerationStructure = BLAS.accelerationStructure;
@@ -232,6 +213,97 @@ void RayTracing::CreateBLAS(BottomLevelAccelerationStructure& BLAS, VulkanBuffer
 
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 	vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &BLASBuildGeometryInfo, &pBLASBuildRangeInfo);
+	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
+}
+
+void RayTracing::CreateTLAS(TopLevelAccelerationStructure& TLAS)
+{
+	VkAccelerationStructureInstanceKHR BLASInstance{};
+	BLASInstance.transform = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0 };
+	BLASInstance.instanceCustomIndex = 0;
+	BLASInstance.mask = 0xFF;
+	BLASInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+	BLASInstance.accelerationStructureReference = BLAS.deviceAddress;
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(VkAccelerationStructureInstanceKHR), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, BLAS.geometryInstanceBuffer, BLAS.geometryInstanceBufferMemory);
+
+	void* BLGeometryInstanceBufferMemPtr;
+
+	VkResult result = vkMapMemory(logicalDevice, BLAS.geometryInstanceBufferMemory, 0, sizeof(VkAccelerationStructureInstanceKHR), 0, &BLGeometryInstanceBufferMemPtr);
+	CheckVulkanResult("Failed to map the memory of the bottom level geometry instance buffer", result, nameof(vkMapMemory));
+
+	memcpy(BLGeometryInstanceBufferMemPtr, &BLASInstance, sizeof(VkAccelerationStructureInstanceKHR));
+	vkUnmapMemory(logicalDevice, BLAS.geometryInstanceBufferMemory);
+
+	VkDeviceAddress BLGeometryInstanceAddress = Vulkan::GetDeviceAddress(logicalDevice, BLAS.geometryInstanceBuffer);
+
+	VkAccelerationStructureGeometryInstancesDataKHR instances{};
+	instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
+	instances.arrayOfPointers = VK_FALSE;
+	instances.data = { BLGeometryInstanceAddress };
+
+	VkAccelerationStructureGeometryDataKHR TLASGeometryData{};
+	TLASGeometryData.instances = instances;
+
+	VkAccelerationStructureGeometryKHR TLASGeometry{};
+	TLASGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
+	TLASGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
+	TLASGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
+	TLASGeometry.geometry = TLASGeometryData;
+
+	VkAccelerationStructureBuildGeometryInfoKHR TLASBuildGeometryInfo{};
+	TLASBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+	TLASBuildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+	TLASBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+	TLASBuildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+	TLASBuildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
+	TLASBuildGeometryInfo.geometryCount = 1;
+	TLASBuildGeometryInfo.pGeometries = &TLASGeometry;
+	TLASBuildGeometryInfo.scratchData = { 0 };
+
+	VkAccelerationStructureBuildSizesInfoKHR TLASBuildSizesInfo{};
+	TLASBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+	TLASBuildSizesInfo.accelerationStructureSize = 0;
+	TLASBuildSizesInfo.updateScratchSize = 0;
+	TLASBuildSizesInfo.buildScratchSize = 0;
+
+	std::vector<uint32_t> TLASMaxPrimitiveCounts{ 1 };
+
+	vkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &TLASBuildGeometryInfo, TLASMaxPrimitiveCounts.data(), &TLASBuildSizesInfo);
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, TLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLAS.buffer, TLAS.deviceMemory);
+
+	VkAccelerationStructureCreateInfoKHR TLASCreateInfo{};
+	TLASCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+	TLASCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+	TLASCreateInfo.size = TLASBuildSizesInfo.accelerationStructureSize;
+	TLASCreateInfo.buffer = TLAS.buffer;
+	TLASCreateInfo.deviceAddress = 0;
+
+	result = vkCreateAccelerationStructureKHR(logicalDevice, &TLASCreateInfo, nullptr, &TLAS.accelerationStructure);
+	CheckVulkanResult("Failed to create the TLAS", result, nameof(vkCreateAccelerationStructureKHR));
+
+	// build TLAS
+
+	VkAccelerationStructureDeviceAddressInfoKHR TLASAddressInfo{};
+	TLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+	TLASAddressInfo.accelerationStructure = TLAS.accelerationStructure;
+
+	VkDeviceAddress TLASDeviceAddress = vkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &TLASAddressInfo);
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, TLASBuildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLAS.scratchBuffer, TLAS.scratchMemory);
+
+	VkDeviceAddress TLASScratchBufferAddress = Vulkan::GetDeviceAddress(logicalDevice, TLAS.scratchBuffer);
+
+	TLASBuildGeometryInfo.dstAccelerationStructure = TLAS.accelerationStructure;
+	TLASBuildGeometryInfo.scratchData = { TLASScratchBufferAddress };
+
+	VkAccelerationStructureBuildRangeInfoKHR TLASBuildRangeInfo{};
+	TLASBuildRangeInfo.primitiveCount = 1;
+	const VkAccelerationStructureBuildRangeInfoKHR* pTLASBuildRangeInfos = &TLASBuildRangeInfo;
+
+	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
+	vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &TLASBuildGeometryInfo, &pTLASBuildRangeInfos);
 	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
 }
 
@@ -260,10 +332,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// creation object
 
-	creationObject = { logicalDevice, physicalDevice, /*commandPool,*/ queue, queueFamilyIndex };
+	creationObject = { logicalDevice, physicalDevice, queue, queueFamilyIndex };
 	CreateTestObject(creationObject);
 	commandPool = Vulkan::FetchNewCommandPool(creationObject);
-	//Vulkan::graphicsQueueMutex->lock();
 
 	// command buffer
 
@@ -475,109 +546,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	vkDestroyShaderModule(logicalDevice, hitShader, nullptr);
 	vkDestroyShaderModule(logicalDevice, genShader, nullptr);
 
-	// bottom level acceleration structure
-
 	CreateBLAS(BLAS, testObjectVertexBuffer, testObjectIndexBuffer, verticesSize, facesCount);
-	
-	// TLAS
 
-	VkAccelerationStructureInstanceKHR BLASInstance{};
-	BLASInstance.transform = {  1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0 };
-	BLASInstance.instanceCustomIndex = 0;
-	BLASInstance.mask = 0xFF;
-	BLASInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-	BLASInstance.accelerationStructureReference = BLAS.deviceAddress;
-
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(VkAccelerationStructureInstanceKHR), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, BLAS.geometryInstanceBuffer, BLAS.geometryInstanceBufferMemory);
-	
-	void* BLGeometryInstanceBufferMemPtr;
-
-	result = vkMapMemory(logicalDevice, BLAS.geometryInstanceBufferMemory, 0, sizeof(VkAccelerationStructureInstanceKHR), 0, &BLGeometryInstanceBufferMemPtr);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to map the memory of the bottom level geometry instance buffer", result, nameof(vkMapMemory), __FILENAME__, std::to_string(__LINE__));
-
-	memcpy(BLGeometryInstanceBufferMemPtr, &BLASInstance, sizeof(VkAccelerationStructureInstanceKHR));
-	vkUnmapMemory(logicalDevice, BLAS.geometryInstanceBufferMemory);
-
-	VkBufferDeviceAddressInfo BLGeometryInstanceAddressInfo{};
-	BLGeometryInstanceAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-	BLGeometryInstanceAddressInfo.buffer = BLAS.geometryInstanceBuffer;
-
-	VkDeviceAddress BLGeometryInstanceAddress = vkGetBufferDeviceAddressKHR(logicalDevice, &BLGeometryInstanceAddressInfo);
-
-	VkAccelerationStructureGeometryInstancesDataKHR instances{};
-	instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-	instances.arrayOfPointers = VK_FALSE;
-	instances.data = { BLGeometryInstanceAddress };
-
-	VkAccelerationStructureGeometryDataKHR TLASGeometryData{};
-	TLASGeometryData.instances = instances;
-
-	VkAccelerationStructureGeometryKHR TLASGeometry{};
-	TLASGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-	TLASGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-	TLASGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-	TLASGeometry.geometry = TLASGeometryData;
-
-	VkAccelerationStructureBuildGeometryInfoKHR TLASBuildGeometryInfo{};
-	TLASBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-	TLASBuildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-	TLASBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-	TLASBuildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
-	TLASBuildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
-	TLASBuildGeometryInfo.geometryCount = 1;
-	TLASBuildGeometryInfo.pGeometries = &TLASGeometry;
-	TLASBuildGeometryInfo.scratchData = { 0 };
-
-	VkAccelerationStructureBuildSizesInfoKHR TLASBuildSizesInfo{};
-	TLASBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-	TLASBuildSizesInfo.accelerationStructureSize = 0;
-	TLASBuildSizesInfo.updateScratchSize = 0;
-	TLASBuildSizesInfo.buildScratchSize = 0;
-
-	std::vector<uint32_t> TLASMaxPrimitiveCounts{ 1 };
-
-	vkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &TLASBuildGeometryInfo, TLASMaxPrimitiveCounts.data(), &TLASBuildSizesInfo);
-
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, TLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLASBuffer, TLASBufferMemory);
-
-	VkAccelerationStructureCreateInfoKHR TLASCreateInfo{};
-	TLASCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-	TLASCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-	TLASCreateInfo.size = TLASBuildSizesInfo.accelerationStructureSize;
-	TLASCreateInfo.buffer = TLASBuffer;
-	TLASCreateInfo.deviceAddress = 0;
-
-	result = vkCreateAccelerationStructureKHR(logicalDevice, &TLASCreateInfo, nullptr, &TLAS);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create the TLAS", result, nameof(vkCreateAccelerationStructureKHR), __FILENAME__, std::to_string(__LINE__));
-
-	// build TLAS
-
-	VkAccelerationStructureDeviceAddressInfoKHR TLASAddressInfo{};
-	TLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-	TLASAddressInfo.accelerationStructure = TLAS;
-
-	VkDeviceAddress TLASDeviceAddress = vkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &TLASAddressInfo);
-
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, TLASBuildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLASScratchBuffer, TLASScratchMemory);
-
-	VkBufferDeviceAddressInfo TLASSratchBufferAddressInfo{};
-	TLASSratchBufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-	TLASSratchBufferAddressInfo.buffer = TLASScratchBuffer;
-
-	VkDeviceAddress TLASScratchBufferAddress = vkGetBufferDeviceAddressKHR(logicalDevice, &TLASSratchBufferAddressInfo);
-
-	TLASBuildGeometryInfo.dstAccelerationStructure = TLAS;
-	TLASBuildGeometryInfo.scratchData = { TLASScratchBufferAddress };
-
-	VkAccelerationStructureBuildRangeInfoKHR TLASBuildRangeInfo{};
-	TLASBuildRangeInfo.primitiveCount = 1;
-	const VkAccelerationStructureBuildRangeInfoKHR* pTLASBuildRangeInfos = &TLASBuildRangeInfo;
-	
-	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
-	vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &TLASBuildGeometryInfo, &pTLASBuildRangeInfos);
-	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
+	CreateTLAS(TLAS);
 
 	// uniform buffer
 
@@ -586,36 +557,12 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	vkMapMemory(logicalDevice, uniformBufferMemory, 0, sizeof(UniformBuffer), 0, &uniformBufferMemPtr);
 	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
 
-	// fence
-
-	VkFenceCreateInfo fenceCreateInfo{};
-	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-	result = vkCreateFence(logicalDevice, &fenceCreateInfo, nullptr, &fence);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create a ray tracing fence", result, nameof(vkCreateFence), __FILENAME__, __STRLINE__);
-
-	//Vulkan::graphicsQueueMutex->unlock();
-	
-	// semaphore
-
-	VkSemaphoreCreateInfo semaphoreCreateInfo{};
-	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-	result = vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &imageSemaphore);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create the ray tracing semaphore", result, nameof(vkCreateSemaphore), __FILENAME__, __STRLINE__);
-	result = vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &renderSemaphore);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create the ray tracing semaphore", result, nameof(vkCreateSemaphore), __FILENAME__, __STRLINE__);
-
 	CreateShaderBindingTable();
 
 	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
 	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 	ASDescriptorInfo.accelerationStructureCount = 1;
-	ASDescriptorInfo.pAccelerationStructures = &TLAS;
+	ASDescriptorInfo.pAccelerationStructures = &TLAS.accelerationStructure;
 
 	VkDescriptorBufferInfo uniformDescriptorInfo{};
 	uniformDescriptorInfo.buffer = uniformBufferBuffer;
@@ -689,7 +636,6 @@ void RayTracing::CreateMaterialBuffers()
 		else
 			materialIndices.push_back(2);
 	}
-		
 
 	VkDeviceSize materialIndexBufferSize = sizeof(uint16_t) * materialIndices.size();
 
@@ -715,9 +661,6 @@ void RayTracing::CreateMaterialBuffers()
 	materials.push_back(Material{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } });
 	materials.push_back(Material{ { 0.2f, 0.2f, 0.2f }, { 0.8f, 0.8f, 0.8f }, { 0.3f, 0.3f, 0.3f }, { 0.2f, 0.2f, 0.2f } });
 	materials.push_back(Material{ { 0.2f, 0.2f, 0.2f }, { 0.5f, 0.0f, 0.7f }, { 0.3f, 0.3f, 0.3f }, { 0.5f, 0.5f, 0.5f } });
-	
-	
-	
 
 	VkDeviceSize materialBufferSize = sizeof(Material) * materials.size();
 
@@ -823,11 +766,7 @@ void RayTracing::CreateShaderBindingTable()
 	}
 	vkUnmapMemory(logicalDevice, shaderBindingTableMemory);
 
-	VkBufferDeviceAddressInfo shaderBindingTableBufferAddressInfo{};
-	shaderBindingTableBufferAddressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
-	shaderBindingTableBufferAddressInfo.buffer = shaderBindingTableBuffer;
-
-	VkDeviceAddress shaderBindingTableBufferAddress = vkGetBufferDeviceAddressKHR(logicalDevice, &shaderBindingTableBufferAddressInfo);
+	VkDeviceAddress shaderBindingTableBufferAddress = Vulkan::GetDeviceAddress(logicalDevice, shaderBindingTableBuffer);
 
 	VkDeviceSize hitGroupOffset = 0;
 	VkDeviceSize rayGenOffset = progSize;
@@ -852,7 +791,7 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera, Swapchain* swapc
 	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
 	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 	ASDescriptorInfo.accelerationStructureCount = 1;
-	ASDescriptorInfo.pAccelerationStructures = &TLAS;
+	ASDescriptorInfo.pAccelerationStructures = &TLAS.accelerationStructure;
 
 	VkDescriptorImageInfo RTImageDescriptorImageInfo{};
 	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;

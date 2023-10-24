@@ -20,6 +20,16 @@ struct BottomLevelAccelerationStructure
 	VkDeviceAddress deviceAddress;
 };
 
+struct TopLevelAccelerationStructure
+{
+	VkBuffer buffer;
+	VkDeviceMemory deviceMemory;
+	VkAccelerationStructureKHR accelerationStructure;
+
+	VkBuffer scratchBuffer;
+	VkDeviceMemory scratchMemory;
+};
+
 class RayTracing
 {
 public:
@@ -36,17 +46,15 @@ private:
 	void CreateShaderBindingTable();
 	void CreateImage(uint32_t width, uint32_t height);
 	void CreateBLAS(BottomLevelAccelerationStructure& BLAS, VulkanBuffer vertexBuffer, IndexBuffer indexBuffer, uint32_t vertexSize, uint32_t faceCount);
+	void CreateTLAS(TopLevelAccelerationStructure& TLAS);
 
 	BottomLevelAccelerationStructure BLAS;
+	TopLevelAccelerationStructure TLAS;
 
 	Win32Window* window;
 	Swapchain* swapchain;
 
 	VkDevice logicalDevice;
-
-	VkSemaphore imageSemaphore;
-	VkSemaphore renderSemaphore;
-	VkFence fence;
 
 	VkDeviceMemory RTImageMemory = VK_NULL_HANDLE;
 	VkImageView RTImageView = VK_NULL_HANDLE;

@@ -19,6 +19,7 @@
 #define nameof(s) #s
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define __STRLINE__ std::to_string(__LINE__)
+#define CheckVulkanResult(message, result, function) if (result != VK_SUCCESS) throw VulkanAPIError(message, result, nameof(function), __FILENAME__, __STRLINE__)
 
 const std::vector<const char*> validationLayers =
 {
@@ -113,6 +114,7 @@ class Vulkan
         static VkImageView                  CreateImageView(VkDevice logicalDevice, VkImage image, VkImageViewType viewType, uint32_t mipLevels, uint32_t layerCount, VkFormat format, VkImageAspectFlags aspectFlags);
         static VkShaderModule               CreateShaderModule(VkDevice logicalDevice, const std::vector<char>& code);
         static VkCommandBuffer              BeginSingleTimeCommands(VkDevice logicalDevice, VkCommandPool commandPool);
+        static VkDeviceAddress              GetDeviceAddress(VkDevice logicalDevice, VkBuffer buffer);
         static uint32_t                     GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice);
         static bool                         HasStencilComponent(VkFormat format);
         static void                         CreateDebugMessenger(VkInstance instance);

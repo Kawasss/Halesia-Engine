@@ -671,8 +671,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
 	VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer), __FILENAME__, std::to_string(__LINE__));
+	CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
 
 	/*vkCmdBindPipeline(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
@@ -719,8 +718,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	vkCmdEndRenderPass(lCommandBuffer);
 
 	result = vkEndCommandBuffer(lCommandBuffer);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer), __FILENAME__, std::to_string(__LINE__));
+	CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
 }
 
 void Renderer::CreateSyncObjects()
@@ -896,8 +894,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
 	result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to submit the queue", result, nameof(vkQueueSubmit), __FILENAME__, std::to_string(__LINE__));
+	CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
 
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -918,8 +915,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 		testWindow->resized = false;
 		Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
 	}
-	else if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to present the swap chain image", result, nameof(vkQueuePresentKHR), __FILENAME__, std::to_string(__LINE__));
+	else CheckVulkanResult("Failed to present the swap chain image", result, nameof(vkQueuePresentKHR));
 	
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }

@@ -21,7 +21,6 @@ const bool enableValidationLayers = true;
 #define nameof(s) #s
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define __STRLINE__ std::to_string(__LINE__)
-#define CheckVulkanResult(message, result, function) if (result != VK_SUCCESS) throw VulkanAPIError(message, result, nameof(function), __FILENAME__, __STRLINE__)
 
 #pragma region VulkanPointerFunctions
 PFN_vkGetBufferDeviceAddressKHR pvkGetBufferDeviceAddressKHR = nullptr;
@@ -102,6 +101,15 @@ VkCommandPool Vulkan::FetchNewCommandPool(const VulkanCreationObject& creationOb
 #endif
     }
     return queueCommandPoolStorages[creationObject.queueIndex].GetNewCommandPool();
+}
+
+VkDeviceAddress Vulkan::GetDeviceAddress(VkDevice logicalDevice, VkBuffer buffer)
+{
+    VkBufferDeviceAddressInfo addressInfo{};
+    addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
+    addressInfo.buffer = buffer;
+
+    return  vkGetBufferDeviceAddress(logicalDevice, &addressInfo);
 }
 
 void Vulkan::YieldCommandPool(uint32_t index, VkCommandPool commandPool)

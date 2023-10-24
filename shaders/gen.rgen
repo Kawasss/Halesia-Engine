@@ -66,18 +66,10 @@ void main() {
       color += payload.directColor + payload.indirectColor;
   }
 
-  //if (camera.frameCount > 0) {
-//    vec4 previousColor = imageLoad(image, ivec2(gl_LaunchIDEXT.xy));
-//    previousColor *= camera.frameCount;
-//
-//    color += previousColor.xyz;
-//    if (previousColor.xyz != vec3(0))
-//        color /= (camera.frameCount);
-    //vec3 oldColor = imageLoad(image, ivec2(gl_LaunchIDEXT.xy)).xyz;
-    //float weight = 1.0f / (camera.frameCount + 1);
-    //vec3 average = oldColor * (1.0f - weight) + color * weight;
-    //color = average;
-  //}
+    vec3 oldColor = imageLoad(image, ivec2(gl_LaunchIDEXT.xy)).xyz;
+    float weight = 1.0f / (camera.frameCount + 1);
+    vec3 average = oldColor * (1.0f - weight) + color * weight;
+    color = average;
 
   imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1));
 }

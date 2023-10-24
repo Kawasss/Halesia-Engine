@@ -123,19 +123,19 @@ void Swapchain::CopyImageToSwapchain(VkImage image, VkCommandBuffer commandBuffe
     writeBarrier.subresourceRange.levelCount = 1;
     writeBarrier.subresourceRange.layerCount = 1;
 
-    VkImageCopy RTImageCopy{};
-    RTImageCopy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    RTImageCopy.srcSubresource.layerCount = 1;
-    RTImageCopy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    RTImageCopy.dstSubresource.layerCount = 1;
-    RTImageCopy.srcOffset = { 0, 0, 0 };
-    RTImageCopy.dstOffset = { 0, 0, 0 };
-    RTImageCopy.extent = { extent.width, extent.height, 1 };
+    VkImageCopy imageCopy{};
+    imageCopy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageCopy.srcSubresource.layerCount = 1;
+    imageCopy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageCopy.dstSubresource.layerCount = 1;
+    imageCopy.srcOffset = { 0, 0, 0 };
+    imageCopy.dstOffset = { 0, 0, 0 };
+    imageCopy.extent = { extent.width, extent.height, 1 };
 
     vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &swapchainMemoryBarrier);
     vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &copyMemoryBarrier);
 
-    vkCmdCopyImage(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, images[currentImage], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &RTImageCopy);
+    vkCmdCopyImage(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, images[currentImage], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
 
     vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &swapchainPresentBarrier);
     vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &writeBarrier);
