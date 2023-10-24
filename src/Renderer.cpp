@@ -744,7 +744,7 @@ void Renderer::CreateSyncObjects()
 	}
 }
 
-std::optional<std::string> Renderer::RenderDevConsole(bool render)
+std::optional<std::string> Renderer::RenderDevConsole()
 {
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplWin32_NewFrame();
@@ -752,7 +752,7 @@ std::optional<std::string> Renderer::RenderDevConsole(bool render)
 
 	std::optional<std::string> inputText;
 
-	if (render)
+	if (Console::isOpen)
 	{
 		ImGui::Begin("Dev Console", nullptr, ImGuiWindowFlags_NoCollapse);
 		ImGuiStyle& style = ImGui::GetStyle();

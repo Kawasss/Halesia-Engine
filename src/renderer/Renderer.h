@@ -23,7 +23,7 @@ public:
 	void RenderGraph(const std::vector<float>& buffer, const char* label);
 	void RenderPieGraph(float* data, const char* label = nullptr);
 	VulkanCreationObject GetVulkanCreationObjects();
-	std::optional<std::string> RenderDevConsole(bool render);
+	std::optional<std::string> RenderDevConsole();
 
 private:
 	VkInstance instance{};

@@ -21,6 +21,8 @@ public:
 	static void InterpretCommand(std::string command = "");
 	static glm::vec3 GetColorFromMessage(std::string message);
 
+	static bool isOpen;
+
 private:
 	static std::map<std::string, MessageSeverity> messageColorBinding;
 };

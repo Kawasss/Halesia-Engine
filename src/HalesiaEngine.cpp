@@ -200,7 +200,6 @@ struct UpdateRendererData
 	float delta;
 	float* timeToComplete;
 	float* pieChartValues;
-	bool renderDevConsole;
 	bool showFPS;
 	bool showRAM;
 	bool showCPU;
@@ -213,7 +212,7 @@ std::optional<std::string> UpdateRenderer(UpdateRendererData& rendererData)
 	SetThreadDescription(GetCurrentThread(), L"VulkanRenderingThread");
 
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
-	std::optional<std::string> command = rendererData.renderer->RenderDevConsole(rendererData.renderDevConsole);
+	std::optional<std::string> command = rendererData.renderer->RenderDevConsole();
 	if (rendererData.showFPS)
 		rendererData.renderer->RenderFPS(1 / rendererData.delta * 1000);
 
@@ -279,14 +278,14 @@ HalesiaExitCode HalesiaInstance::Run()
 			UpdateSceneData sceneData{ scene, window, frameDelta, &asyncScriptsCompletionTime, pauseGame, &playOneFrame };
 			std::future<void> asyncScripts = std::async(UpdateScene, std::ref(sceneData));
 
-			UpdateRendererData rendererData{ renderer, scene->camera, scene->allObjects, frameDelta, &asyncRendererCompletionTime, pieChartValuesPtr, renderDevConsole, showFPS, showRAM, showCPU, showGPU, showAsyncTimes };
+			UpdateRendererData rendererData{ renderer, scene->camera, scene->allObjects, frameDelta, &asyncRendererCompletionTime, pieChartValuesPtr, showFPS, showRAM, showCPU, showGPU, showAsyncTimes };
 			std::future<std::optional<std::string>> asyncRenderer = std::async(UpdateRenderer, std::ref(rendererData));
 
 			if (window->ContainsDroppedFile())
 				scene->SubmitStaticObject(GenericLoader::LoadObjectFile(window->GetDroppedFile(), scene->allObjects.size()), renderer->GetVulkanCreationObjects());
 
 			if (!Input::IsKeyPressed(devConsoleKey) && devKeyIsPressedLastFrame)
-				renderDevConsole = !renderDevConsole;
+				Console::isOpen = !Console::isOpen;
 
 			if (Input::IsKeyPressed(VirtualKey::Q))
 				window->LockCursor();

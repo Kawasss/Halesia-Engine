@@ -3,10 +3,15 @@
 #include <iostream>
 #include <vector>
 #include <mutex>
+#include "system/Input.h"
+
+
 
 std::vector<std::string> Console::messages{};
 std::map<std::string, void*> Console::commandVariables{};
 std::map<std::string, MessageSeverity> Console::messageColorBinding{};
+
+bool Console::isOpen = false;
 
 std::mutex writingLinesMutex;
 void Console::WriteLine(std::string message, MessageSeverity severity)

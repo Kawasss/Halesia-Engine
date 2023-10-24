@@ -3,6 +3,7 @@
 #include <iostream>
 #include <algorithm>
 #include "system/Window.h"
+#include "Console.h"
 
 void Camera::Update(Win32Window* window, float delta)
 {
@@ -11,6 +12,9 @@ void Camera::Update(Win32Window* window, float delta)
 
 void Camera::DefaultUpdate(Win32Window* window, float delta)
 {
+	if (Console::isOpen)
+		return;
+
 	if (Input::IsKeyPressed(VirtualKey::W))
 		position += front * (cameraSpeed * delta * 0.001f);
 	if (Input::IsKeyPressed(VirtualKey::S))
@@ -111,6 +115,9 @@ void Camera::UpdateUpAndRightVectors()
 
 void OrbitCamera::Update(Win32Window* window, float delta)
 {
+	if (Console::isOpen)
+		return;
+
 	if (Input::IsKeyPressed(VirtualKey::W))
 		pivot += front * (cameraSpeed * delta * 0.001f);
 	if (Input::IsKeyPressed(VirtualKey::S))
