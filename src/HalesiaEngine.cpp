@@ -7,30 +7,6 @@
 #include "CreationObjects.h"
 #include "tools/CameraInjector.h"
 
-template<typename T> struct ScrollingBuffer //dont know where to put this struct
-{
-	ScrollingBuffer(int size, int offset = 0)
-	{
-		this->size = size;
-		this->offset = offset;
-	}
-
-	std::vector<T> buffer;
-	int size = 0;
-	int offset = 1;
-
-	void Add(T value)
-	{
-		if (buffer.size() < size)
-			buffer.push_back(value);
-		else
-		{
-			buffer[offset] = value;
-			offset = (offset + 1) % size;
-		}
-	}
-};
-
 int ParseAndValidateDimensionArgument(std::string string)
 {
 	int i = std::stoi(string.substr(string.find(' '), string.size() - 1));
@@ -86,7 +62,7 @@ void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, Halesia
 
 		if (createInfo.startingScene == nullptr)
 		{
-			Console::WriteLine("The given HalesiaInstanceCreateInfo doesn't contain a valid starting scene", MESSAGE_SEVERITY_ERROR);
+			Console::WriteLine("The given HalesiaInstanceCreateInfo doesn't contain a valid starting scene", MESSAGE_SEVERITY_WARNING);
 			instance.scene = new Scene();
 		}
 		else
@@ -122,20 +98,11 @@ void HalesiaInstance::LoadScene(Scene* newScene)
 	scene = newScene;
 }
 
-struct UpdateSceneData
-{
-	Scene* scene;
-	Win32Window* window;
-	float delta;
-	float* timeToComplete;
-	bool pauseGame;
-	bool* playOneFrame;
-};
-
-CameraInjector cameraInjector;
-Camera* orbitCamera = new OrbitCamera();
 void ManageCameraInjector(Scene* scene, bool pauseGame)
 {
+	static CameraInjector cameraInjector;
+	static Camera* orbitCamera = new OrbitCamera();
+
 	if (pauseGame && !cameraInjector.IsInjected())
 	{
 		cameraInjector = CameraInjector{ scene };
@@ -143,24 +110,6 @@ void ManageCameraInjector(Scene* scene, bool pauseGame)
 	}
 	else if (!pauseGame && cameraInjector.IsInjected())
 		cameraInjector.Eject();
-}
-
-void UpdateScene(UpdateSceneData& sceneData)
-{
-	SetThreadDescription(GetCurrentThread(), L"SceneUpdatingThread");
-
-	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
-	
-	ManageCameraInjector(sceneData.scene, sceneData.pauseGame);
-
-	sceneData.scene->UpdateCamera(sceneData.window, sceneData.delta);
-	if (!sceneData.pauseGame || *sceneData.playOneFrame)
-	{
-		sceneData.scene->UpdateScripts(sceneData.delta);
-		sceneData.scene->Update(sceneData.delta);
-		*sceneData.playOneFrame = false;
-	}
-	*sceneData.timeToComplete = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 }
 
 void WriteAllCommandsToConsole()
@@ -188,58 +137,95 @@ void HandleConsoleCommand(std::string command)
 		WriteAllCommandsToConsole();
 }
 
-ScrollingBuffer<float> CPUUsage(100);
-ScrollingBuffer<float> GPUUsage(100);
-ScrollingBuffer<uint64_t> ramUsed(500);
-
-struct UpdateRendererData
+void HalesiaInstance::UpdateScene(const UpdateSceneData& sceneData)
 {
-	Renderer* renderer;
-	Camera* camera;
-	std::vector<Object*> objects;
-	float delta;
-	float* timeToComplete;
-	float* pieChartValues;
-	bool showFPS;
-	bool showRAM;
-	bool showCPU;
-	bool showGPU;
-	bool showAsyncTimes;
-};
+	SetThreadDescription(GetCurrentThread(), L"SceneUpdatingThread");
 
-std::optional<std::string> UpdateRenderer(UpdateRendererData& rendererData)
+	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
+
+	ManageCameraInjector(scene, sceneData.pauseGame);
+
+	scene->UpdateCamera(window, sceneData.delta);
+	if (!sceneData.pauseGame || sceneData.playOneFrame)
+	{
+		scene->UpdateScripts(sceneData.delta);
+		scene->Update(sceneData.delta);
+		sceneData.playOneFrame = false;
+	}
+	asyncScriptsCompletionTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
+}
+
+std::optional<std::string> HalesiaInstance::UpdateRenderer(const UpdateRendererData& rendererData)
 {
 	SetThreadDescription(GetCurrentThread(), L"VulkanRenderingThread");
 
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
-	std::optional<std::string> command = rendererData.renderer->RenderDevConsole();
-	if (rendererData.showFPS)
-		rendererData.renderer->RenderFPS(1 / rendererData.delta * 1000);
+	std::optional<std::string> command = renderer->RenderDevConsole();
+	if (showFPS)
+		renderer->RenderFPS(1 / rendererData.delta * 1000);
 
 	ramUsed.Add(GetPhysicalMemoryUsedByApp() / (1024 * 1024));
-	if (rendererData.showRAM)
-		rendererData.renderer->RenderGraph(ramUsed.buffer, "RAM in MB");
-	if (rendererData.showCPU)
-		rendererData.renderer->RenderGraph(CPUUsage.buffer, "CPU %");
-	if (rendererData.showGPU)
-		rendererData.renderer->RenderGraph(GPUUsage.buffer, "GPU %");
-	if (rendererData.showAsyncTimes)
-		rendererData.renderer->RenderPieGraph(rendererData.pieChartValues, "Async Times (µs)");
+	if (showRAM)
+		renderer->RenderGraph(ramUsed.buffer, "RAM in MB");
+	if (showCPU)
+		renderer->RenderGraph(CPUUsage.buffer, "CPU %");
+	if (showGPU)
+		renderer->RenderGraph(GPUUsage.buffer, "GPU %");
+	if (showAsyncTimes)
+		renderer->RenderPieGraph(asyncTimes, "Async Times (µs)");
 
-	rendererData.renderer->DrawFrame(rendererData.objects, rendererData.camera, rendererData.delta);
+	renderer->DrawFrame(scene->allObjects, scene->camera, rendererData.delta);
 
-	*rendererData.timeToComplete = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
+	asyncRendererCompletionTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 	return command;
+}
+
+void HalesiaInstance::CheckInput()
+{
+	if (Input::IsKeyPressed(VirtualKey::C))
+		pauseGame = false;
+	showFPS = !showFPS ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F1) : showFPS;
+	pauseGame = !pauseGame ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F2) : true;
+	showRAM = !showRAM ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F3) : true;
+	showCPU = !showCPU ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F4) : true;
+	showGPU = !showGPU ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F5) : true;
+	showAsyncTimes = !showAsyncTimes ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F6) : true;
+
+	playOneFrame = Input::IsKeyPressed(VirtualKey::RightArrow);
+
+	if (Input::IsKeyPressed(VirtualKey::Q))
+		window->LockCursor();
+	if (Input::IsKeyPressed(VirtualKey::E))
+		window->UnlockCursor();
+
+	if (!Input::IsKeyPressed(devConsoleKey) && devKeyIsPressedLastFrame)
+		Console::isOpen = !Console::isOpen;
+}
+
+void HalesiaInstance::UpdateAsyncCompletionTimes(float frameDelta)
+{
+	float timeSpentInMainThread = frameDelta - asyncScriptsCompletionTime - asyncRendererCompletionTime;
+
+	asyncTimes.push_back(timeSpentInMainThread * 1000);
+	asyncTimes.push_back(asyncScriptsCompletionTime * 1000);
+	asyncTimes.push_back(asyncRendererCompletionTime * 1000);
+}
+
+void HalesiaInstance::UpdateCGPUUsage()
+{
+	float cpu = GetCPUPercentageUsedByApp();
+	if (cpu != -1 && cpu != 0) //dont know if 0 is junk data
+		CPUUsage.Add(cpu);
+
+	float gpu = GetGPUUsage() * 100; //doesnt look incredibly accurate but it works good enough
+	GPUUsage.Add(gpu);
 }
 
 HalesiaExitCode HalesiaInstance::Run()
 {
-	bool devKeyIsPressedLastFrame = false;
 	std::string lastCommand;
-	float timeSinceLastCPUUpdate = 0;
-	float timeSinceLastGraphUpdate = 0;
+	float timeSinceLastDataUpdate = 0;
 	float dummy[] = {0, 0, 0};
-	float* pieChartValuesPtr = dummy;
 
 	Console::commandVariables["pauseGame"] = &pauseGame;
 	Console::commandVariables["showFPS"] = &showFPS;
@@ -255,8 +241,6 @@ HalesiaExitCode HalesiaInstance::Run()
 	try
 	{
 		float frameDelta = 0;
-		float asyncRendererCompletionTime = 0;
-		float asyncScriptsCompletionTime = 0;
 		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
 		scene->Start();
@@ -264,53 +248,18 @@ HalesiaExitCode HalesiaInstance::Run()
 
 		while (!window->ShouldClose())
 		{
-			//if (!scene->HasFinishedLoading())
-			//	continue; // quick patch to prevent read access violation
-			if (Input::IsKeyPressed(VirtualKey::C))
-				pauseGame = false;
-			showFPS = !showFPS ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F1) : true;
-			pauseGame = !pauseGame ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F2) : true;
-			showRAM = !showRAM ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F3) : true;
-			showCPU = !showCPU ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F4) : true;
-			showGPU = !showGPU ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F5) : true;
-			showAsyncTimes = !showAsyncTimes ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F6) : true;
+			CheckInput();
 
-			UpdateSceneData sceneData{ scene, window, frameDelta, &asyncScriptsCompletionTime, pauseGame, &playOneFrame };
-			std::future<void> asyncScripts = std::async(UpdateScene, std::ref(sceneData));
+			UpdateSceneData sceneData{ frameDelta, pauseGame, playOneFrame };
+			asyncScripts = std::async(&HalesiaInstance::UpdateScene, this, std::cref(sceneData));
 
-			UpdateRendererData rendererData{ renderer, scene->camera, scene->allObjects, frameDelta, &asyncRendererCompletionTime, pieChartValuesPtr, showFPS, showRAM, showCPU, showGPU, showAsyncTimes };
-			std::future<std::optional<std::string>> asyncRenderer = std::async(UpdateRenderer, std::ref(rendererData));
+			UpdateRendererData rendererData{ frameDelta };
+			asyncRenderer = std::async(&HalesiaInstance::UpdateRenderer, this, std::cref(rendererData));
 
 			if (window->ContainsDroppedFile())
 				scene->SubmitStaticObject(GenericLoader::LoadObjectFile(window->GetDroppedFile(), scene->allObjects.size()));
 
-			if (!Input::IsKeyPressed(devConsoleKey) && devKeyIsPressedLastFrame)
-				Console::isOpen = !Console::isOpen;
-
-			if (Input::IsKeyPressed(VirtualKey::Q))
-				window->LockCursor();
-			if (Input::IsKeyPressed(VirtualKey::E))
-				window->UnlockCursor();
-			
-
-			if (timeSinceLastCPUUpdate > 300)
-			{
-				float cpu = GetCPUPercentageUsedByApp();
-				if (cpu != -1 && cpu != 0) //dont know if 0 is junk data
-					CPUUsage.Add(cpu);
-
-				float gpu = GetGPUUsage() * 100; //doesnt look incredibly accurate but it works good enough
-				GPUUsage.Add(gpu);
-
-				timeSinceLastCPUUpdate = 0;
-			}
-			timeSinceLastCPUUpdate += frameDelta;
-
-			playOneFrame = Input::IsKeyPressed(VirtualKey::RightArrow);
-
 			devKeyIsPressedLastFrame = Input::IsKeyPressed(devConsoleKey);
-
-			Win32Window::PollMessages(); // moved for swapchain / surface interference
 
 			std::optional<std::string> command = asyncRenderer.get();
 			if (command.has_value() && lastCommand != command.value())
@@ -319,21 +268,19 @@ HalesiaExitCode HalesiaInstance::Run()
 				lastCommand = command.value();
 			}
 
+			Win32Window::PollMessages(); // moved for swapchain / surface interference
+
 			asyncScripts.get();
 
 			frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();
-			/*while (frameDelta < 1.0f / 165 * 1000)
-				frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();*/
 			timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
-			timeSinceLastGraphUpdate += frameDelta;
-			if (timeSinceLastGraphUpdate > 500)
+			timeSinceLastDataUpdate += frameDelta;
+			if (timeSinceLastDataUpdate > 500)
 			{
-				float timeSpentInMainThread = frameDelta - asyncScriptsCompletionTime - asyncRendererCompletionTime;
-				
-				float timeValues[] = { timeSpentInMainThread * 1000, asyncScriptsCompletionTime * 1000, asyncRendererCompletionTime * 1000 };
-				pieChartValuesPtr = timeValues;
-				timeSinceLastGraphUpdate = 0;
+				UpdateCGPUUsage();
+				UpdateAsyncCompletionTimes(frameDelta);
+				timeSinceLastDataUpdate = 0;
 			}
 		}
 		return HALESIA_EXIT_CODE_SUCESS;

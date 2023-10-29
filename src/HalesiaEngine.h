@@ -6,6 +6,30 @@
 #include "SceneLoader.h"
 #include "system/Input.h"
 
+template<typename T> struct ScrollingBuffer //dont know where to put this struct, maybe make it private
+{
+	ScrollingBuffer(int size, int offset = 0)
+	{
+		this->size = size;
+		this->offset = offset;
+	}
+
+	std::vector<T> buffer;
+	int size = 0;
+	int offset = 1;
+
+	void Add(T value)
+	{
+		if (buffer.size() < size)
+			buffer.push_back(value);
+		else
+		{
+			buffer[offset] = value;
+			offset = (offset + 1) % size;
+		}
+	}
+};
+
 enum HalesiaExitCode
 {
 	HALESIA_EXIT_CODE_SUCESS,            // succes means that the engine was told to exit or reached the end of its loop, i.e. the game window closes
@@ -57,10 +81,41 @@ public:
 	Scene* scene;
 
 private:
+	struct UpdateRendererData
+	{
+		float delta;
+	};
+
+	struct UpdateSceneData
+	{
+		float delta;
+		bool pauseGame;
+		bool& playOneFrame;
+	};
+
+	void CheckInput();
+	void UpdateAsyncCompletionTimes(float frameDelta);
+	void UpdateCGPUUsage();
+
+	std::optional<std::string> UpdateRenderer(const UpdateRendererData& rendererData);
+	void UpdateScene(const UpdateSceneData& sceneData);
+
+	bool devKeyIsPressedLastFrame = false;
 	bool renderDevConsole = false;
 	VirtualKey devConsoleKey;
 
 	Renderer* renderer;
 	Physics* physics;
 	Win32Window* window;
+
+	float asyncRendererCompletionTime = 0;
+	float asyncScriptsCompletionTime = 0;
+	std::vector<float> asyncTimes;
+
+	std::future<void> asyncScripts;
+	std::future<std::optional<std::string>> asyncRenderer;
+
+	ScrollingBuffer<float> CPUUsage{ 100 };
+	ScrollingBuffer<float> GPUUsage{ 100 };
+	ScrollingBuffer<uint64_t> ramUsed{ 500 };
 };

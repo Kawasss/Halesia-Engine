@@ -834,7 +834,7 @@ void SetImGuiColors()
 	colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
 }
 
-void Renderer::RenderPieGraph(float* data, const char* label)
+void Renderer::RenderPieGraph(std::vector<float>& data, const char* label)
 {
 	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
 	SetImGuiColors();
@@ -843,7 +843,7 @@ void Renderer::RenderPieGraph(float* data, const char* label)
 	ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoDecorations, ImPlotAxisFlags_NoDecorations);
 	ImPlot::SetupAxesLimits(0, 1, 0, 1);
 	const char* labels[] = { "Main Thread", "Script Thread", "Renderer Thread" };
-	ImPlot::PlotPieChart(labels, data, 3, 0.5, 0.5, 0.5, "%.1f", 180);
+	ImPlot::PlotPieChart(labels, data.data(), 3, 0.5, 0.5, 0.5, "%.1f", 180);
 	ImPlot::EndPlot();
 	ImGui::End();
 }
