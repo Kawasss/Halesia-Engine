@@ -177,7 +177,8 @@ void Vulkan::CopyBuffer(VkDevice logicalDevice, VkCommandPool commandPool, VkQue
 std::mutex endCommandMutex;
 void Vulkan::EndSingleTimeCommands(VkDevice logicalDevice, VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool)
 {
-    vkEndCommandBuffer(commandBuffer);
+    VkResult result = vkEndCommandBuffer(commandBuffer);
+    CheckVulkanResult("Failed to end the single time command buffer", result, vkQueueSubmit);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -185,11 +186,12 @@ void Vulkan::EndSingleTimeCommands(VkDevice logicalDevice, VkQueue queue, VkComm
     submitInfo.pCommandBuffers = &commandBuffer;
 
     endCommandMutex.lock();
-    VkResult result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-    
+    result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
     CheckVulkanResult("Failed to submit the single time commands queue", result, vkQueueSubmit);
     
-    vkQueueWaitIdle(queue);
+    result = vkQueueWaitIdle(queue);
+    CheckVulkanResult("Failed to wait for the queue idle", result, vkQueueWaitIdle);
+
     endCommandMutex.unlock();
     vkFreeCommandBuffers(logicalDevice, commandPool, 1, &commandBuffer);
 }
@@ -209,7 +211,8 @@ VkCommandBuffer Vulkan::BeginSingleTimeCommands(VkDevice logicalDevice, VkComman
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-    vkBeginCommandBuffer(localCommandBuffer, &beginInfo);
+    VkResult result = vkBeginCommandBuffer(localCommandBuffer, &beginInfo);
+    CheckVulkanResult("Failed to begin single time commands", result, vkBeginCommandBuffer);
 
     return localCommandBuffer;
 }
@@ -224,7 +227,7 @@ void Vulkan::CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice,
 
     VkResult result = vkCreateBuffer(logicalDevice, &createInfo, nullptr, &buffer);
     if (result != VK_SUCCESS)
-        throw VulkanAPIError("Failed to create the vertex buffer", result, nameof(vkCreateBuffer), __FILENAME__, __STRLINE__);
+        throw VulkanAPIError("Failed to create a new buffer", result, nameof(vkCreateBuffer), __FILENAME__, __STRLINE__);
 
     VkMemoryRequirements memoryRequirements;
     vkGetBufferMemoryRequirements(logicalDevice, buffer, &memoryRequirements);

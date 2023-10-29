@@ -20,6 +20,7 @@ public:
 	void Reserve(const VulkanCreationObject& creationObject, size_t maxAmountToBeStored, VkBufferUsageFlags usage)
 	{
 		this->logicalDevice = creationObject.logicalDevice;
+		this->usage = usage;
 
 		reservedBufferSize = maxAmountToBeStored * sizeof(T);
 
@@ -59,6 +60,27 @@ public:
 		lastWriteOffset += writeSize;
 		hasChanged = true;
 		return memoryHandle;
+	}
+
+	void Clear(const VulkanCreationObject& creationObject)
+	{
+		Destroy();
+		lastWriteOffset = 0;
+
+		VkBuffer stagingBuffer;
+		VkDeviceMemory stagingBufferMemory;
+
+		Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, reservedBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(creationObject);
+
+		Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, reservedBufferSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, buffer, deviceMemory);
+		Vulkan::CopyBuffer(creationObject.logicalDevice, commandPool, creationObject.queue, stagingBuffer, buffer, reservedBufferSize);
+
+		vkDestroyBuffer(creationObject.logicalDevice, stagingBuffer, nullptr);
+		vkFreeMemory(creationObject.logicalDevice, stagingBufferMemory, nullptr);
+
+		Vulkan::YieldCommandPool(creationObject.queueIndex, commandPool);
 	}
 
 	/// <summary>
@@ -113,6 +135,7 @@ private:
 
 	VkDeviceSize reservedBufferSize = 0;
 	uint32_t lastWriteOffset =        0;
+	VkBufferUsageFlags usage =        0;
 
 	bool hasChanged = false;
 };

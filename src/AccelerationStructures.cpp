@@ -1,5 +1,8 @@
 #include "renderer/AccelerationStructures.h"
 
+bool TopLevelAccelerationStructure::TLASInstancesIsInit = false;
+ApeironBuffer<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::instanceBuffer;
+
 BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::CreateBottomLevelAccelerationStructure(const VulkanCreationObject& creationObject, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, uint32_t vertexSize, uint32_t faceCount)
 {
 	BottomLevelAccelerationStructure* BLAS = new BottomLevelAccelerationStructure();
@@ -87,9 +90,6 @@ BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::CreateBottom
 
 void BottomLevelAccelerationStructure::Destroy()
 {
-	vkFreeMemory(logicalDevice, geometryInstanceBufferMemory, nullptr);
-	vkDestroyBuffer(logicalDevice, geometryInstanceBuffer, nullptr);
-
 	vkDestroyAccelerationStructureKHR(logicalDevice, accelerationStructure, nullptr);
 
 	vkDestroyBuffer(logicalDevice, scratchBuffer, nullptr);
@@ -99,45 +99,48 @@ void BottomLevelAccelerationStructure::Destroy()
 	vkFreeMemory(logicalDevice, deviceMemory, nullptr);
 }
 
-TopLevelAccelerationStructure* TopLevelAccelerationStructure::CreateTopLevelAccelerationStructure(const VulkanCreationObject& creationObject, BottomLevelAccelerationStructure* BLAS)
+TopLevelAccelerationStructure* TopLevelAccelerationStructure::CreateTopLevelAccelerationStructure(const VulkanCreationObject& creationObject, std::vector<BottomLevelAccelerationStructure*> BLAS)
 {
+	if (!TLASInstancesIsInit)
+	{
+		instanceBuffer.Reserve(creationObject, 500, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+		TLASInstancesIsInit = true;
+	}
+	instanceBuffer.Clear(creationObject);
+
 	TopLevelAccelerationStructure* TLAS = new TopLevelAccelerationStructure();
 	TLAS->logicalDevice = creationObject.logicalDevice;
 
 	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(creationObject);
 
-	VkAccelerationStructureInstanceKHR BLASInstance{};
-	BLASInstance.transform = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0 };
-	BLASInstance.instanceCustomIndex = 0;
-	BLASInstance.mask = 0xFF;
-	BLASInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-	BLASInstance.accelerationStructureReference = BLAS->deviceAddress;
+	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances(BLAS.size());
+	for (int i = 0; i < BLAS.size(); i++)
+	{
+		VkAccelerationStructureInstanceKHR BLASInstance{};
+		BLASInstance.transform = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0 }; // instead of this use std::memcpy to copy the glm::mat4 transform data to this transform
+		BLASInstance.instanceCustomIndex = i;
+		BLASInstance.mask = 0xFF;
+		BLASInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+		BLASInstance.accelerationStructureReference = BLAS[i]->deviceAddress;
 
-	Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, sizeof(VkAccelerationStructureInstanceKHR), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, BLAS->geometryInstanceBuffer, BLAS->geometryInstanceBufferMemory);
-
-	void* BLGeometryInstanceBufferMemPtr;
-
-	VkResult result = vkMapMemory(creationObject.logicalDevice, BLAS->geometryInstanceBufferMemory, 0, sizeof(VkAccelerationStructureInstanceKHR), 0, &BLGeometryInstanceBufferMemPtr);
-	CheckVulkanResult("Failed to map the memory of the bottom level geometry instance buffer", result, nameof(vkMapMemory));
-
-	memcpy(BLGeometryInstanceBufferMemPtr, &BLASInstance, sizeof(VkAccelerationStructureInstanceKHR));
-	vkUnmapMemory(creationObject.logicalDevice, BLAS->geometryInstanceBufferMemory);
-
-	VkDeviceAddress BLGeometryInstanceAddress = Vulkan::GetDeviceAddress(creationObject.logicalDevice, BLAS->geometryInstanceBuffer);
+		BLASInstances.push_back(BLASInstance);
+	}
+	instanceBuffer.SubmitNewData(BLASInstances); // make it so that only the new BLASs get submitted instead of all of the BLASs (even the old ones). the code right now is a REALLY bad implementation
 
 	VkAccelerationStructureGeometryInstancesDataKHR instances{};
 	instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
 	instances.arrayOfPointers = VK_FALSE;
-	instances.data = { BLGeometryInstanceAddress };
+	instances.data = { Vulkan::GetDeviceAddress(creationObject.logicalDevice, instanceBuffer.GetBufferHandle()) };
 
 	VkAccelerationStructureGeometryDataKHR TLASGeometryData{};
 	TLASGeometryData.instances = instances;
-
+	
 	VkAccelerationStructureGeometryKHR TLASGeometry{};
 	TLASGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 	TLASGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
 	TLASGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
 	TLASGeometry.geometry = TLASGeometryData;
+	const VkAccelerationStructureGeometryKHR* pGeometry = &TLASGeometry;
 
 	VkAccelerationStructureBuildGeometryInfoKHR TLASBuildGeometryInfo{};
 	TLASBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
@@ -145,8 +148,8 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::CreateTopLevelAcce
 	TLASBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
 	TLASBuildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
 	TLASBuildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
-	TLASBuildGeometryInfo.geometryCount = 1;
-	TLASBuildGeometryInfo.pGeometries = &TLASGeometry;
+	TLASBuildGeometryInfo.geometryCount = 1; // must be 1 according to the spec
+	TLASBuildGeometryInfo.pGeometries = pGeometry;
 	TLASBuildGeometryInfo.scratchData = { 0 };
 
 	VkAccelerationStructureBuildSizesInfoKHR TLASBuildSizesInfo{};
@@ -155,9 +158,9 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::CreateTopLevelAcce
 	TLASBuildSizesInfo.updateScratchSize = 0;
 	TLASBuildSizesInfo.buildScratchSize = 0;
 
-	std::vector<uint32_t> TLASMaxPrimitiveCounts{ 1 };
+	uint32_t maxPrimitiveCount = 1000; // should be MAX_MESHES from renderer.cpp
 
-	vkGetAccelerationStructureBuildSizesKHR(creationObject.logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &TLASBuildGeometryInfo, TLASMaxPrimitiveCounts.data(), &TLASBuildSizesInfo);
+	vkGetAccelerationStructureBuildSizesKHR(creationObject.logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &TLASBuildGeometryInfo, &maxPrimitiveCount, &TLASBuildSizesInfo);
 
 	Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, TLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLAS->buffer, TLAS->deviceMemory);
 
@@ -168,7 +171,7 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::CreateTopLevelAcce
 	TLASCreateInfo.buffer = TLAS->buffer;
 	TLASCreateInfo.deviceAddress = 0;
 
-	result = vkCreateAccelerationStructureKHR(creationObject.logicalDevice, &TLASCreateInfo, nullptr, &TLAS->accelerationStructure);
+	VkResult result = vkCreateAccelerationStructureKHR(creationObject.logicalDevice, &TLASCreateInfo, nullptr, &TLAS->accelerationStructure);
 	CheckVulkanResult("Failed to create the TLAS", result, nameof(vkCreateAccelerationStructureKHR));
 
 	// build TLAS
@@ -187,13 +190,13 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::CreateTopLevelAcce
 	TLASBuildGeometryInfo.scratchData = { TLASScratchBufferAddress };
 
 	VkAccelerationStructureBuildRangeInfoKHR TLASBuildRangeInfo{};
-	TLASBuildRangeInfo.primitiveCount = 1;
+	TLASBuildRangeInfo.primitiveCount = maxPrimitiveCount;
 	const VkAccelerationStructureBuildRangeInfoKHR* pTLASBuildRangeInfos = &TLASBuildRangeInfo;
-
+	
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(creationObject.logicalDevice, commandPool);
 	vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &TLASBuildGeometryInfo, &pTLASBuildRangeInfos);
 	Vulkan::EndSingleTimeCommands(creationObject.logicalDevice, creationObject.queue, commandBuffer, commandPool);
-
+	
 	Vulkan::YieldCommandPool(creationObject.queueIndex, commandPool);
 
 	return TLAS;

@@ -15,6 +15,7 @@
 #include "system/Input.h"
 
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
+constexpr uint32_t MAX_TLAS_INSTANCES = 500;
 
 int RayTracing::raySampleCount = 2;
 int RayTracing::rayDepth = 8;
@@ -124,11 +125,15 @@ void RayTracing::Destroy()
 void RayTracing::SubmitObject(const VulkanCreationObject& creationObject, Object* object)
 {
 	BottomLevelAccelerationStructure* pBLAS = BottomLevelAccelerationStructure::CreateBottomLevelAccelerationStructure(creationObject, object->meshes[0].vertexBuffer, object->meshes[0].indexBuffer, object->meshes[0].vertexBuffer.size, object->meshes[0].faceCount);
-	TopLevelAccelerationStructure* pTLAS = TopLevelAccelerationStructure::CreateTopLevelAccelerationStructure(creationObject, pBLAS);
+	BLASs.push_back(pBLAS);
+	if (TLASs.size() > 0)
+		TLASs[0]->Destroy();
+	else
+		TLASs.push_back(nullptr);
+	TLASs[0] = TopLevelAccelerationStructure::CreateTopLevelAccelerationStructure(creationObject, BLASs);
+
 	vertexBuffer.SubmitNewData(object->meshes[0].vertices);
 	indexBuffer.SubmitNewData(object->meshes[0].indices);
-	BLASs.push_back(pBLAS);
-	TLASs.push_back(pTLAS);
 }
 
 void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera, Win32Window* window, Swapchain* swapchain)

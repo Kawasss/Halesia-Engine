@@ -1,6 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include "Buffers.h"
+#include "../ResourceManager.h"
 
 class BottomLevelAccelerationStructure
 {
@@ -15,9 +16,6 @@ public:
 	VkBuffer scratchBuffer;
 	VkDeviceMemory scratchDeviceMemory;
 
-	VkBuffer geometryInstanceBuffer;
-	VkDeviceMemory geometryInstanceBufferMemory;
-
 	VkDeviceAddress deviceAddress;
 
 private:
@@ -27,7 +25,7 @@ private:
 class TopLevelAccelerationStructure
 {
 public:
-	static TopLevelAccelerationStructure* CreateTopLevelAccelerationStructure(const VulkanCreationObject& creationObject, BottomLevelAccelerationStructure* BLAS);
+	static TopLevelAccelerationStructure* CreateTopLevelAccelerationStructure(const VulkanCreationObject& creationObject, std::vector<BottomLevelAccelerationStructure*> BLAS);
 	void Destroy();
 
 	VkBuffer buffer;
@@ -38,5 +36,8 @@ public:
 	VkDeviceMemory scratchMemory;
 
 private:
+	static ApeironBuffer<VkAccelerationStructureInstanceKHR> instanceBuffer;
+	static bool TLASInstancesIsInit;
+
 	VkDevice logicalDevice;
 };
