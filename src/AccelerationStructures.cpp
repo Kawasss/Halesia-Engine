@@ -1,5 +1,7 @@
 #include "renderer/AccelerationStructures.h"
 
+constexpr uint32_t MAX_PRIMITIVES = 1000U; // better to use the renderer.cpp variables
+
 bool TopLevelAccelerationStructure::TLASInstancesIsInit = false;
 ApeironBuffer<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::instanceBuffer;
 
@@ -60,20 +62,39 @@ BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::CreateBottom
 	VkResult result = vkCreateAccelerationStructureKHR(creationObject.logicalDevice, &BLASCreateInfo, nullptr, &BLAS->accelerationStructure);
 	CheckVulkanResult("Failed to create the BLAS", result, nameof(vkCreateAccelerationStructureKHR));
 
-	// build BLAS
+	Vulkan::YieldCommandPool(creationObject.queueIndex, commandPool);
+
+	BLAS->Build(creationObject, &BLASGeometry, BLASBuildSizesInfo, faceCount);
+
+	return BLAS;
+}
+
+void BottomLevelAccelerationStructure::Build(const VulkanCreationObject& creationObject, const VkAccelerationStructureGeometryKHR* pGeometries, const VkAccelerationStructureBuildSizesInfoKHR& buildSizesInfo, uint32_t faceCount)
+{
+	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(creationObject);
+
+	VkAccelerationStructureBuildGeometryInfoKHR BLASBuildGeometryInfo{};
+	BLASBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+	BLASBuildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+	BLASBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+	BLASBuildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+	BLASBuildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
+	BLASBuildGeometryInfo.geometryCount = 1;
+	BLASBuildGeometryInfo.pGeometries = pGeometries;
+	BLASBuildGeometryInfo.scratchData = { 0 };
 
 	VkAccelerationStructureDeviceAddressInfoKHR BLASAddressInfo{};
 	BLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-	BLASAddressInfo.accelerationStructure = BLAS->accelerationStructure;
+	BLASAddressInfo.accelerationStructure = accelerationStructure;
 
-	BLAS->deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(creationObject.logicalDevice, &BLASAddressInfo);
+	deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(creationObject.logicalDevice, &BLASAddressInfo);
 
-	Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, BLASBuildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, BLAS->scratchBuffer, BLAS->scratchDeviceMemory);
+	Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, buildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, scratchBuffer, scratchDeviceMemory);
 
-	VkDeviceAddress scratchDeviceAddress = Vulkan::GetDeviceAddress(creationObject.logicalDevice, BLAS->scratchBuffer);
+	VkDeviceAddress scratchDeviceAddress = Vulkan::GetDeviceAddress(creationObject.logicalDevice, scratchBuffer);
 
 	BLASBuildGeometryInfo.scratchData = { scratchDeviceAddress };
-	BLASBuildGeometryInfo.dstAccelerationStructure = BLAS->accelerationStructure;
+	BLASBuildGeometryInfo.dstAccelerationStructure = accelerationStructure;
 
 	VkAccelerationStructureBuildRangeInfoKHR BLASBuildRangeInfo{};
 	BLASBuildRangeInfo.primitiveCount = faceCount;
@@ -84,8 +105,6 @@ BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::CreateBottom
 	Vulkan::EndSingleTimeCommands(creationObject.logicalDevice, creationObject.queue, commandBuffer, commandPool);
 
 	Vulkan::YieldCommandPool(creationObject.queueIndex, commandPool);
-
-	return BLAS;
 }
 
 void BottomLevelAccelerationStructure::Destroy()
@@ -142,6 +161,9 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::CreateTopLevelAcce
 	TLASGeometry.geometry = TLASGeometryData;
 	const VkAccelerationStructureGeometryKHR* pGeometry = &TLASGeometry;
 
+	VkAccelerationStructureBuildSizesInfoKHR TLASBuildSizesInfo{};
+	TLASBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+
 	VkAccelerationStructureBuildGeometryInfoKHR TLASBuildGeometryInfo{};
 	TLASBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 	TLASBuildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
@@ -152,15 +174,7 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::CreateTopLevelAcce
 	TLASBuildGeometryInfo.pGeometries = pGeometry;
 	TLASBuildGeometryInfo.scratchData = { 0 };
 
-	VkAccelerationStructureBuildSizesInfoKHR TLASBuildSizesInfo{};
-	TLASBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-	TLASBuildSizesInfo.accelerationStructureSize = 0;
-	TLASBuildSizesInfo.updateScratchSize = 0;
-	TLASBuildSizesInfo.buildScratchSize = 0;
-
-	uint32_t maxPrimitiveCount = 1000; // should be MAX_MESHES from renderer.cpp
-
-	vkGetAccelerationStructureBuildSizesKHR(creationObject.logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &TLASBuildGeometryInfo, &maxPrimitiveCount, &TLASBuildSizesInfo);
+	vkGetAccelerationStructureBuildSizesKHR(creationObject.logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &TLASBuildGeometryInfo, &MAX_PRIMITIVES, &TLASBuildSizesInfo);
 
 	Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, TLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLAS->buffer, TLAS->deviceMemory);
 
@@ -173,33 +187,50 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::CreateTopLevelAcce
 
 	VkResult result = vkCreateAccelerationStructureKHR(creationObject.logicalDevice, &TLASCreateInfo, nullptr, &TLAS->accelerationStructure);
 	CheckVulkanResult("Failed to create the TLAS", result, nameof(vkCreateAccelerationStructureKHR));
-
-	// build TLAS
-
-	VkAccelerationStructureDeviceAddressInfoKHR TLASAddressInfo{};
-	TLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-	TLASAddressInfo.accelerationStructure = TLAS->accelerationStructure;
-
-	VkDeviceAddress TLASDeviceAddress = vkGetAccelerationStructureDeviceAddressKHR(creationObject.logicalDevice, &TLASAddressInfo);
-
-	Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, TLASBuildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLAS->scratchBuffer, TLAS->scratchMemory);
-
-	VkDeviceAddress TLASScratchBufferAddress = Vulkan::GetDeviceAddress(creationObject.logicalDevice, TLAS->scratchBuffer);
-
-	TLASBuildGeometryInfo.dstAccelerationStructure = TLAS->accelerationStructure;
-	TLASBuildGeometryInfo.scratchData = { TLASScratchBufferAddress };
-
-	VkAccelerationStructureBuildRangeInfoKHR TLASBuildRangeInfo{};
-	TLASBuildRangeInfo.primitiveCount = maxPrimitiveCount;
-	const VkAccelerationStructureBuildRangeInfoKHR* pTLASBuildRangeInfos = &TLASBuildRangeInfo;
-	
-	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(creationObject.logicalDevice, commandPool);
-	vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &TLASBuildGeometryInfo, &pTLASBuildRangeInfos);
-	Vulkan::EndSingleTimeCommands(creationObject.logicalDevice, creationObject.queue, commandBuffer, commandPool);
 	
 	Vulkan::YieldCommandPool(creationObject.queueIndex, commandPool);
 
+	TLAS->Build(creationObject, pGeometry, TLASBuildSizesInfo, BLASInstances.size());
+
 	return TLAS;
+}
+
+void TopLevelAccelerationStructure::Build(const VulkanCreationObject& creationObject, const VkAccelerationStructureGeometryKHR* pGeometry, const VkAccelerationStructureBuildSizesInfoKHR& buildSizesInfo, uint32_t instanceCount)
+{
+	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(creationObject);
+
+	VkAccelerationStructureBuildGeometryInfoKHR TLASBuildGeometryInfo{};
+	TLASBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+	TLASBuildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
+	TLASBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+	TLASBuildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+	TLASBuildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
+	TLASBuildGeometryInfo.geometryCount = 1; // must be 1 according to the spec
+	TLASBuildGeometryInfo.pGeometries = pGeometry;
+	TLASBuildGeometryInfo.scratchData = { 0 };
+
+	VkAccelerationStructureDeviceAddressInfoKHR TLASAddressInfo{};
+	TLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+	TLASAddressInfo.accelerationStructure = accelerationStructure;
+
+	VkDeviceAddress TLASDeviceAddress = vkGetAccelerationStructureDeviceAddressKHR(creationObject.logicalDevice, &TLASAddressInfo);
+
+	Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, buildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, scratchBuffer, scratchMemory);
+
+	VkDeviceAddress TLASScratchBufferAddress = Vulkan::GetDeviceAddress(creationObject.logicalDevice, scratchBuffer);
+
+	TLASBuildGeometryInfo.dstAccelerationStructure = accelerationStructure;
+	TLASBuildGeometryInfo.scratchData = { TLASScratchBufferAddress };
+
+	VkAccelerationStructureBuildRangeInfoKHR TLASBuildRangeInfo{};
+	TLASBuildRangeInfo.primitiveCount = instanceCount;
+	const VkAccelerationStructureBuildRangeInfoKHR* pTLASBuildRangeInfos = &TLASBuildRangeInfo;
+
+	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(creationObject.logicalDevice, commandPool);
+	vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &TLASBuildGeometryInfo, &pTLASBuildRangeInfos);
+	Vulkan::EndSingleTimeCommands(creationObject.logicalDevice, creationObject.queue, commandBuffer, commandPool);
+
+	Vulkan::YieldCommandPool(creationObject.queueIndex, commandPool);
 }
 
 void TopLevelAccelerationStructure::Destroy()

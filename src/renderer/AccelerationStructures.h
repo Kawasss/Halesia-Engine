@@ -3,10 +3,11 @@
 #include "Buffers.h"
 #include "../ResourceManager.h"
 
-class BottomLevelAccelerationStructure
+class BottomLevelAccelerationStructure // could be maybe be merged with TopLevelAccelerationStructure for a base class?
 {
 public:
 	static BottomLevelAccelerationStructure* CreateBottomLevelAccelerationStructure(const VulkanCreationObject& creationObject, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, uint32_t vertexSize, uint32_t faceCount);
+	void Build(const VulkanCreationObject& creationObject, const VkAccelerationStructureGeometryKHR* pGeometries, const VkAccelerationStructureBuildSizesInfoKHR& buildSizesInfo, uint32_t faceCount);
 	void Destroy();
 
 	VkBuffer buffer;
@@ -26,6 +27,7 @@ class TopLevelAccelerationStructure
 {
 public:
 	static TopLevelAccelerationStructure* CreateTopLevelAccelerationStructure(const VulkanCreationObject& creationObject, std::vector<BottomLevelAccelerationStructure*> BLAS);
+	void Build(const VulkanCreationObject& creationObject, const VkAccelerationStructureGeometryKHR* pGeometry, const VkAccelerationStructureBuildSizesInfoKHR& buildSizesInfo, uint32_t instanceCount);
 	void Destroy();
 
 	VkBuffer buffer;
