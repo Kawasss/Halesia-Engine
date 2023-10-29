@@ -38,8 +38,6 @@ float random(vec2 uv, float seed) {
 }
 
 void main() {
-  
-
   payload.rayActive = 1;
 
   vec3 color = vec3(0);
@@ -60,8 +58,7 @@ void main() {
       payload.rayDepth = 0;
 
       for (int x = 0; x < camera.rayDepth; x++) {
-        traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0,
-                    payload.rayOrigin, 0.001, payload.rayDirection, 10000.0, 0);
+        traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.rayOrigin, 0.001, payload.rayDirection, 10000.0, 0);
       }
       color += payload.directColor + payload.indirectColor;
   }

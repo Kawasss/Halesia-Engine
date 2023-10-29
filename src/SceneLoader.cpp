@@ -239,6 +239,7 @@ MeshCreationData RetrieveMeshData(aiMesh* pMesh, int index)
 
 	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
 	ret.amountOfVertices = pMesh->mNumVertices;
+	ret.faceCount = pMesh->mNumFaces;
 	ret.vertices = RetrieveVertices(pMesh, min, max, index);
 	ret.indices = RetrieveIndices(pMesh);
 

@@ -18,6 +18,7 @@ constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
 
 int RayTracing::raySampleCount = 2;
 int RayTracing::rayDepth = 8;
+bool RayTracing::showNormals = false;
 
 std::vector<VkCommandBuffer> commandBuffers(MAX_FRAMES_IN_FLIGHT);
 VkDescriptorPool descriptorPool;
@@ -40,8 +41,9 @@ VkDeviceMemory uniformBufferMemory;
 uint32_t facesCount;
 uint32_t verticesSize;
 uint32_t indicesSize;
-VulkanBuffer testObjectVertexBuffer;
-IndexBuffer testObjectIndexBuffer;
+
+//VertexBuffer testVertexBuffer;
+//IndexBuffer testIndexBuffer;
 
 struct UniformBuffer
 {
@@ -83,57 +85,31 @@ std::vector<char> ReadShaderFile(const std::string& filePath)
 
 void CreateTestObject(BufferCreationObject creationObject)
 {
-	const aiScene* scene = aiImportFile("stdObj/monkey3.obj", aiProcessPreset_TargetRealtime_Fast);
-	if (scene == nullptr)
-		throw std::runtime_error("Failed to read the test model");
+	/*ObjectCreationData creationData = GenericLoader::LoadObjectFile("stdObj/monkey3.obj", 0);
 
-	std::vector</*glm::vec3*/float> vertices;
-	std::vector<uint16_t> indices;
-
-	for (int i = 0; i < scene->mMeshes[0]->mNumVertices; i++)
-	{
-		vertices.push_back(scene->mMeshes[0]->mVertices[i].x);
-		vertices.push_back(scene->mMeshes[0]->mVertices[i].y);
-		vertices.push_back(scene->mMeshes[0]->mVertices[i].z);
-	}
-		
-	for (int i = 0; i < scene->mMeshes[0]->mNumFaces; i++)
-		for (int j = 0; j < scene->mMeshes[0]->mFaces[i].mNumIndices; j++)
-			indices.push_back(scene->mMeshes[0]->mFaces[i].mIndices[j]);
-
-	testObjectVertexBuffer = VulkanBuffer(creationObject, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, vertices);
-	testObjectIndexBuffer = IndexBuffer(creationObject, indices);
-	verticesSize = vertices.size();
-	indicesSize = indices.size();
-	facesCount = scene->mMeshes[0]->mNumFaces;
+	testVertexBuffer = VertexBuffer{ creationObject, creationData.meshes[0].vertices };
+	testIndexBuffer = IndexBuffer{ creationObject, creationData.meshes[0].indices };
+	
+	verticesSize = creationData.meshes[0].vertices.size();
+	indicesSize = creationData.meshes[0].indices.size();
+	facesCount = creationData.meshes[0].faceCount;*/
 }
 
-void RayTracing::Destroy(VkDevice logicalDevice)
+void RayTracing::Destroy()
 {
-	testObjectIndexBuffer.Destroy();
-	testObjectVertexBuffer.Destroy();
+	//testVertexBuffer.Destroy();
+	//testIndexBuffer.Destroy();
 
 	vkFreeMemory(logicalDevice, uniformBufferMemory, nullptr);
 	vkDestroyBuffer(logicalDevice, uniformBufferBuffer, nullptr);
 
-	vkFreeMemory(logicalDevice, TLAS.scratchMemory, nullptr);
-	vkDestroyBuffer(logicalDevice, TLAS.scratchBuffer, nullptr);
+	TLAS->Destroy();
+	BLAS->Destroy();
 
-	vkDestroyAccelerationStructureKHR(logicalDevice, TLAS.accelerationStructure, nullptr);
-
-	vkFreeMemory(logicalDevice, TLAS.deviceMemory, nullptr);
-	vkDestroyBuffer(logicalDevice, TLAS.buffer, nullptr);
-
-	vkFreeMemory(logicalDevice, BLAS.geometryInstanceBufferMemory, nullptr);
-	vkDestroyBuffer(logicalDevice, BLAS.geometryInstanceBuffer, nullptr);
-
-	vkDestroyAccelerationStructureKHR(logicalDevice, BLAS.accelerationStructure, nullptr);
-
-	vkDestroyBuffer(logicalDevice, BLAS.scratchBuffer, nullptr);
-	vkFreeMemory(logicalDevice, BLAS.scratchDeviceMemory, nullptr);
-
-	vkDestroyBuffer(logicalDevice, BLAS.buffer, nullptr);
-	vkFreeMemory(logicalDevice, BLAS.deviceMemory, nullptr);
+	for (TopLevelAccelerationStructure* pTLAS : TLASs)
+		pTLAS->Destroy();
+	for (BottomLevelAccelerationStructure* pBLAS : BLASs)
+		pBLAS->Destroy();
 
 	vkDestroyPipeline(logicalDevice, pipeline, nullptr);
 	vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
@@ -145,171 +121,14 @@ void RayTracing::Destroy(VkDevice logicalDevice)
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
 
-void RayTracing::CreateBLAS(BottomLevelAccelerationStructure& BLAS, VulkanBuffer vertexBuffer, IndexBuffer indexBuffer, uint32_t vertexSize, uint32_t faceCount)
+void RayTracing::SubmitObject(const VulkanCreationObject& creationObject, Object* object)
 {
-	VkDeviceAddress vertexBufferAddress = Vulkan::GetDeviceAddress(logicalDevice, vertexBuffer.GetVkBuffer());
-	VkDeviceAddress indexBufferAddress = Vulkan::GetDeviceAddress(logicalDevice, indexBuffer.GetVkBuffer());
-
-	VkAccelerationStructureGeometryTrianglesDataKHR triangles{};
-	triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-	triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-	triangles.vertexData = { vertexBufferAddress };
-	triangles.vertexStride = sizeof(float) * 3;
-	triangles.maxVertex = vertexSize;
-	triangles.indexType = VK_INDEX_TYPE_UINT16;
-	triangles.indexData = { indexBufferAddress };
-	triangles.transformData = { 0 };
-
-	VkAccelerationStructureGeometryDataKHR BLASGeometryData{};
-	BLASGeometryData.triangles = triangles;
-
-	VkAccelerationStructureGeometryKHR BLASGeometry{};
-	BLASGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-	BLASGeometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
-	BLASGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-	BLASGeometry.geometry = BLASGeometryData;
-
-	VkAccelerationStructureBuildGeometryInfoKHR BLASBuildGeometryInfo{};
-	BLASBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-	BLASBuildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-	BLASBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-	BLASBuildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
-	BLASBuildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
-	BLASBuildGeometryInfo.geometryCount = 1;
-	BLASBuildGeometryInfo.pGeometries = &BLASGeometry;
-	BLASBuildGeometryInfo.scratchData = { 0 };
-
-	VkAccelerationStructureBuildSizesInfoKHR BLASBuildSizesInfo{};
-	BLASBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-
-	std::vector<uint32_t> BLMaxPrimitiveCounts = { faceCount };
-	vkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &BLASBuildGeometryInfo, BLMaxPrimitiveCounts.data(), &BLASBuildSizesInfo);
-
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, BLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, BLAS.buffer, BLAS.deviceMemory);
-
-	VkAccelerationStructureCreateInfoKHR BLASCreateInfo{};
-	BLASCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-	BLASCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-	BLASCreateInfo.size = BLASBuildSizesInfo.accelerationStructureSize;
-	BLASCreateInfo.buffer = BLAS.buffer;
-	BLASCreateInfo.offset = 0;
-
-	VkResult result = vkCreateAccelerationStructureKHR(logicalDevice, &BLASCreateInfo, nullptr, &BLAS.accelerationStructure);
-	CheckVulkanResult("Failed to create the BLAS", result, nameof(vkCreateAccelerationStructureKHR));
-
-	// build BLAS
-
-	VkAccelerationStructureDeviceAddressInfoKHR BLASAddressInfo{};
-	BLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-	BLASAddressInfo.accelerationStructure = BLAS.accelerationStructure;
-
-	BLAS.deviceAddress = vkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &BLASAddressInfo);
-
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, BLASBuildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, BLAS.scratchBuffer, BLAS.scratchDeviceMemory);
-
-	VkDeviceAddress scratchDeviceAddress = Vulkan::GetDeviceAddress(logicalDevice, BLAS.scratchBuffer);
-
-	BLASBuildGeometryInfo.scratchData = { scratchDeviceAddress };
-	BLASBuildGeometryInfo.dstAccelerationStructure = BLAS.accelerationStructure;
-
-	VkAccelerationStructureBuildRangeInfoKHR BLASBuildRangeInfo{};
-	BLASBuildRangeInfo.primitiveCount = faceCount;
-	const VkAccelerationStructureBuildRangeInfoKHR* pBLASBuildRangeInfo = &BLASBuildRangeInfo;
-
-	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
-	vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &BLASBuildGeometryInfo, &pBLASBuildRangeInfo);
-	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
-}
-
-void RayTracing::CreateTLAS(TopLevelAccelerationStructure& TLAS)
-{
-	VkAccelerationStructureInstanceKHR BLASInstance{};
-	BLASInstance.transform = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0 };
-	BLASInstance.instanceCustomIndex = 0;
-	BLASInstance.mask = 0xFF;
-	BLASInstance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-	BLASInstance.accelerationStructureReference = BLAS.deviceAddress;
-
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(VkAccelerationStructureInstanceKHR), VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, BLAS.geometryInstanceBuffer, BLAS.geometryInstanceBufferMemory);
-
-	void* BLGeometryInstanceBufferMemPtr;
-
-	VkResult result = vkMapMemory(logicalDevice, BLAS.geometryInstanceBufferMemory, 0, sizeof(VkAccelerationStructureInstanceKHR), 0, &BLGeometryInstanceBufferMemPtr);
-	CheckVulkanResult("Failed to map the memory of the bottom level geometry instance buffer", result, nameof(vkMapMemory));
-
-	memcpy(BLGeometryInstanceBufferMemPtr, &BLASInstance, sizeof(VkAccelerationStructureInstanceKHR));
-	vkUnmapMemory(logicalDevice, BLAS.geometryInstanceBufferMemory);
-
-	VkDeviceAddress BLGeometryInstanceAddress = Vulkan::GetDeviceAddress(logicalDevice, BLAS.geometryInstanceBuffer);
-
-	VkAccelerationStructureGeometryInstancesDataKHR instances{};
-	instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
-	instances.arrayOfPointers = VK_FALSE;
-	instances.data = { BLGeometryInstanceAddress };
-
-	VkAccelerationStructureGeometryDataKHR TLASGeometryData{};
-	TLASGeometryData.instances = instances;
-
-	VkAccelerationStructureGeometryKHR TLASGeometry{};
-	TLASGeometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
-	TLASGeometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
-	TLASGeometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-	TLASGeometry.geometry = TLASGeometryData;
-
-	VkAccelerationStructureBuildGeometryInfoKHR TLASBuildGeometryInfo{};
-	TLASBuildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-	TLASBuildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-	TLASBuildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-	TLASBuildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
-	TLASBuildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
-	TLASBuildGeometryInfo.geometryCount = 1;
-	TLASBuildGeometryInfo.pGeometries = &TLASGeometry;
-	TLASBuildGeometryInfo.scratchData = { 0 };
-
-	VkAccelerationStructureBuildSizesInfoKHR TLASBuildSizesInfo{};
-	TLASBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
-	TLASBuildSizesInfo.accelerationStructureSize = 0;
-	TLASBuildSizesInfo.updateScratchSize = 0;
-	TLASBuildSizesInfo.buildScratchSize = 0;
-
-	std::vector<uint32_t> TLASMaxPrimitiveCounts{ 1 };
-
-	vkGetAccelerationStructureBuildSizesKHR(logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &TLASBuildGeometryInfo, TLASMaxPrimitiveCounts.data(), &TLASBuildSizesInfo);
-
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, TLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLAS.buffer, TLAS.deviceMemory);
-
-	VkAccelerationStructureCreateInfoKHR TLASCreateInfo{};
-	TLASCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-	TLASCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR;
-	TLASCreateInfo.size = TLASBuildSizesInfo.accelerationStructureSize;
-	TLASCreateInfo.buffer = TLAS.buffer;
-	TLASCreateInfo.deviceAddress = 0;
-
-	result = vkCreateAccelerationStructureKHR(logicalDevice, &TLASCreateInfo, nullptr, &TLAS.accelerationStructure);
-	CheckVulkanResult("Failed to create the TLAS", result, nameof(vkCreateAccelerationStructureKHR));
-
-	// build TLAS
-
-	VkAccelerationStructureDeviceAddressInfoKHR TLASAddressInfo{};
-	TLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-	TLASAddressInfo.accelerationStructure = TLAS.accelerationStructure;
-
-	VkDeviceAddress TLASDeviceAddress = vkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &TLASAddressInfo);
-
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, TLASBuildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, TLAS.scratchBuffer, TLAS.scratchMemory);
-
-	VkDeviceAddress TLASScratchBufferAddress = Vulkan::GetDeviceAddress(logicalDevice, TLAS.scratchBuffer);
-
-	TLASBuildGeometryInfo.dstAccelerationStructure = TLAS.accelerationStructure;
-	TLASBuildGeometryInfo.scratchData = { TLASScratchBufferAddress };
-
-	VkAccelerationStructureBuildRangeInfoKHR TLASBuildRangeInfo{};
-	TLASBuildRangeInfo.primitiveCount = 1;
-	const VkAccelerationStructureBuildRangeInfoKHR* pTLASBuildRangeInfos = &TLASBuildRangeInfo;
-
-	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
-	vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &TLASBuildGeometryInfo, &pTLASBuildRangeInfos);
-	Vulkan::EndSingleTimeCommands(logicalDevice, queue, commandBuffer, commandPool);
+	BottomLevelAccelerationStructure* pBLAS = BottomLevelAccelerationStructure::CreateBottomLevelAccelerationStructure(creationObject, object->meshes[0].vertexBuffer, object->meshes[0].indexBuffer, object->meshes[0].vertexBuffer.size, object->meshes[0].faceCount);
+	TopLevelAccelerationStructure* pTLAS = TopLevelAccelerationStructure::CreateTopLevelAccelerationStructure(creationObject, pBLAS);
+	vertexBuffer.SubmitNewData(object->meshes[0].vertices);
+	indexBuffer.SubmitNewData(object->meshes[0].indices);
+	BLASs.push_back(pBLAS);
+	TLASs.push_back(pTLAS);
 }
 
 void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera, Win32Window* window, Swapchain* swapchain)
@@ -340,6 +159,8 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	creationObject = { logicalDevice, physicalDevice, queue, queueFamilyIndex };
 	CreateTestObject(creationObject);
+	vertexBuffer.Reserve(creationObject, 7000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+	indexBuffer.Reserve(creationObject, 7000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 	commandPool = Vulkan::FetchNewCommandPool(creationObject);
 
 	// command buffer
@@ -552,9 +373,8 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	vkDestroyShaderModule(logicalDevice, hitShader, nullptr);
 	vkDestroyShaderModule(logicalDevice, genShader, nullptr);
 
-	CreateBLAS(BLAS, testObjectVertexBuffer, testObjectIndexBuffer, verticesSize, facesCount);
-
-	CreateTLAS(TLAS);
+	//BLAS = BottomLevelAccelerationStructure::CreateBottomLevelAccelerationStructure(creationObject, testVertexBuffer, testIndexBuffer, verticesSize, facesCount);
+	//TLAS = TopLevelAccelerationStructure::CreateTopLevelAccelerationStructure(creationObject, BLAS);
 
 	// uniform buffer
 
@@ -565,10 +385,12 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	CreateShaderBindingTable();
 
+	VkAccelerationStructureKHR decoyAS = VK_NULL_HANDLE;
+
 	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
 	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 	ASDescriptorInfo.accelerationStructureCount = 1;
-	ASDescriptorInfo.pAccelerationStructures = &TLAS.accelerationStructure;
+	ASDescriptorInfo.pAccelerationStructures = &decoyAS;
 
 	VkDescriptorBufferInfo uniformDescriptorInfo{};
 	uniformDescriptorInfo.buffer = uniformBufferBuffer;
@@ -576,12 +398,12 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	uniformDescriptorInfo.range = VK_WHOLE_SIZE;
 
 	VkDescriptorBufferInfo indexDescriptorInfo{};
-	indexDescriptorInfo.buffer = testObjectIndexBuffer.GetVkBuffer();
+	indexDescriptorInfo.buffer = indexBuffer.GetBufferHandle();
 	indexDescriptorInfo.offset = 0;
 	indexDescriptorInfo.range = VK_WHOLE_SIZE;
 
 	VkDescriptorBufferInfo vertexDescriptorInfo{};
-	vertexDescriptorInfo.buffer = testObjectVertexBuffer.GetVkBuffer();
+	vertexDescriptorInfo.buffer = vertexBuffer.GetBufferHandle();
 	vertexDescriptorInfo.offset = 0;
 	vertexDescriptorInfo.range = VK_WHOLE_SIZE;
 
@@ -617,7 +439,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	writeDescriptorSets[3].descriptorCount = 1;
 	writeDescriptorSets[3].dstBinding = 3;
 	writeDescriptorSets[3].pBufferInfo = &vertexDescriptorInfo;
-
+	
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
 
 	CreateMaterialBuffers();
@@ -791,40 +613,108 @@ void RayTracing::CreateShaderBindingTable()
 	rmissShaderBindingTable.stride = progSize;
 }
 
-uint32_t frameCount = 0;
-void RayTracing::DrawFrame(Win32Window* window, Camera* camera, Swapchain* swapchain, Surface surface, VkCommandBuffer commandBuffer, uint32_t imageIndex)
+void RayTracing::UpdateDescriptorSets(std::vector<VkAccelerationStructureKHR>& ASs) // i dont really know if its necessary to update the buffers for each resize, because it already gets set to VK_WHOLE_SIZE at creation
 {
 	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
 	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-	ASDescriptorInfo.accelerationStructureCount = 1;
-	ASDescriptorInfo.pAccelerationStructures = &TLAS.accelerationStructure;
+	ASDescriptorInfo.accelerationStructureCount = 1;// static_cast<uint32_t>(ASs.size());
+	ASDescriptorInfo.pAccelerationStructures = ASs.data();
+
+	VkWriteDescriptorSet writeSet{};
+	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+
+	VkDescriptorBufferInfo uniformDescriptorInfo{};
+	uniformDescriptorInfo.buffer = uniformBufferBuffer;
+	uniformDescriptorInfo.offset = 0;
+	uniformDescriptorInfo.range = VK_WHOLE_SIZE;
+
+	VkDescriptorBufferInfo indexDescriptorInfo{};
+	indexDescriptorInfo.buffer = indexBuffer.GetBufferHandle();
+	indexDescriptorInfo.offset = 0;
+	indexDescriptorInfo.range = VK_WHOLE_SIZE;
+
+	VkDescriptorBufferInfo vertexDescriptorInfo{};
+	vertexDescriptorInfo.buffer = vertexBuffer.GetBufferHandle();
+	vertexDescriptorInfo.offset = 0;
+	vertexDescriptorInfo.range = VK_WHOLE_SIZE;
 
 	VkDescriptorImageInfo RTImageDescriptorImageInfo{};
 	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
 	RTImageDescriptorImageInfo.imageView = RTImageView;
 	RTImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-	VkWriteDescriptorSet writeDescriptorSet{};
-	writeDescriptorSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	writeDescriptorSet.pNext = &ASDescriptorInfo;
-	writeDescriptorSet.dstSet = descriptorSets[0];
-	writeDescriptorSet.descriptorCount = 1;
-	writeDescriptorSet.dstBinding = 4;
-	writeDescriptorSet.pImageInfo = &RTImageDescriptorImageInfo;
+	std::vector<VkWriteDescriptorSet> writeDescriptorSets;
 
-	vkUpdateDescriptorSets(logicalDevice, 1, &writeDescriptorSet, 0, nullptr);
+	if (vertexBuffer.HasChanged() || indexBuffer.HasChanged()) // only update the descriptor sets if new data has been added to the buffers to save time
+	{
+		writeDescriptorSets.resize(4);
 
-	uniformBuffer = UniformBuffer{ { camera->position.x, camera->position.y, camera->position.z, 1 }, { camera->right.x, camera->right.y, camera->right.z, 1 }, { camera->up.x, camera->up.y, camera->up.z, 1 }, { camera->front.x, camera->front.y, camera->front.z, 1 }, frameCount, 0, facesCount, raySampleCount, rayDepth };
+		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+		writeDescriptorSets[0].pNext = &ASDescriptorInfo;
+		writeDescriptorSets[0].dstSet = descriptorSets[0];
+		writeDescriptorSets[0].descriptorCount = 1;
+		writeDescriptorSets[0].dstBinding = 0;
+
+		writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		writeDescriptorSets[1].pNext = &ASDescriptorInfo;
+		writeDescriptorSets[1].pBufferInfo = &uniformDescriptorInfo;
+		writeDescriptorSets[1].dstSet = descriptorSets[0];
+		writeDescriptorSets[1].descriptorCount = 1;
+		writeDescriptorSets[1].dstBinding = 1;
+
+		writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		writeDescriptorSets[2].pNext = &ASDescriptorInfo;
+		writeDescriptorSets[2].pBufferInfo = &indexDescriptorInfo;
+		writeDescriptorSets[2].dstSet = descriptorSets[0];
+		writeDescriptorSets[2].descriptorCount = 1;
+		writeDescriptorSets[2].dstBinding = 2;
+
+		writeDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		writeDescriptorSets[3].pNext = &ASDescriptorInfo;
+		writeDescriptorSets[3].pBufferInfo = &vertexDescriptorInfo;
+		writeDescriptorSets[3].dstSet = descriptorSets[0];
+		writeDescriptorSets[3].descriptorCount = 1;
+		writeDescriptorSets[3].dstBinding = 3;
+	}
+
+	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	writeSet.pNext = &ASDescriptorInfo;
+	writeSet.pImageInfo = &RTImageDescriptorImageInfo;
+	writeSet.dstSet = descriptorSets[0];
+	writeSet.descriptorCount = 1;
+	writeSet.dstBinding = 4;
+	writeDescriptorSets.push_back(writeSet);
+	
+	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
+}
+
+uint32_t frameCount = 0;
+void RayTracing::DrawFrame(Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex)
+{
+	std::vector<VkAccelerationStructureKHR> ASs; // this isnt handled well
+	for (TopLevelAccelerationStructure* pTLAS : TLASs)
+		ASs.push_back(pTLAS->accelerationStructure);
+
+	if (ASs.size() <= 0)
+		return;
+
+	UpdateDescriptorSets(ASs);
+
+	uniformBuffer = UniformBuffer{ { camera->position.x, camera->position.y, camera->position.z, 1 }, { camera->right.x, camera->right.y, camera->right.z, 1 }, { camera->up.x, camera->up.y, camera->up.z, 1 }, { camera->front.x, camera->front.y, camera->front.z, 1 }, frameCount, showNormals, facesCount, raySampleCount, rayDepth };
 	//uniformBuffer = UniformBuffer{ { 7.24205f, -4.13095f, 7.67253f, 1 }, { 0.70373f, 0.00000f, -0.71047f, 1 }, { -0.28477f, 0.91616f, -0.28206f, 1 }, { -0.65091f, -0.40081f, -0.64473f, 1 }, frameCount };
 	//printf("pos: %.5f, %.5f, %.5f, right: %.5f, %.5f, %.5f, up: %.5f, %.5f, %.5f, front: %.5f, %.5f, %.5f\n", camera->position.x, camera->position.y, camera->position.z, camera->right.x, camera->right.y, camera->right.z, camera->up.x, camera->up.y, camera->up.z, camera->front.x, camera->front.y, camera->front.z);
 	//std::cout << facesCount << std::endl;
 
 	int x, y;
 	window->GetRelativeCursorPosition(x, y);
-	if (x != 0 && y != 0 || Input::IsKeyPressed(VirtualKey::W) || Input::IsKeyPressed(VirtualKey::A) || Input::IsKeyPressed(VirtualKey::S) || Input::IsKeyPressed(VirtualKey::D))
+	if (x != 0 || y != 0 || Input::IsKeyPressed(VirtualKey::W) || Input::IsKeyPressed(VirtualKey::A) || Input::IsKeyPressed(VirtualKey::S) || Input::IsKeyPressed(VirtualKey::D) || showNormals)
 		frameCount = 0;
-
+	
 	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
 
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);

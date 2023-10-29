@@ -41,6 +41,7 @@ struct Mesh
 	std::vector<Vertex> vertices;
 	std::vector<uint16_t> indices;
 
+	int faceCount;
 	glm::vec3 min, max, center, extents;
 
 	void ProcessMaterial(const TextureCreationObject& creationObjects, const MaterialCreationData& creationData);
@@ -52,7 +53,6 @@ class Object
 public:
 	Object() = default;
 	Object(const ObjectCreationData& creationData, const ObjectCreationObject& creationObjects);
-	Object(std::string path, const ObjectCreationObject& creationObject);
 
 	virtual ~Object() {};
 	virtual void Destroy();

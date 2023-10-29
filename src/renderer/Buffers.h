@@ -51,6 +51,8 @@ protected:
 class VertexBuffer : public VulkanBuffer
 {
 public:
+	size_t size;
+
 	VertexBuffer() = default;
 	VertexBuffer(const BufferCreationObject& creationObject, const std::vector<Vertex> vertices); // maybe its better to get the vertices / indices via reference, since they can contain a lot of data and it all needs to be copied
 };

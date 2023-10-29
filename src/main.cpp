@@ -38,7 +38,10 @@ class TestScene : public Scene
 	Object* objPtr = nullptr;
 	void Start() override
 	{
-		objPtr = AddCustomObject<RotatingObject>("stdObj/monkey.obj", OBJECT_IMPORT_EXTERNAL);
+		//objPtr = AddCustomObject<RotatingObject>("stdObj/monkey.obj", OBJECT_IMPORT_EXTERNAL);
+
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/monkey3.obj", 0));
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/monkey.obj", 1));
 
 		this->camera = new TestCamera();
 		camera->GetScript<TestCamera*>()->objectToLookAt = nullptr;//objPtr;

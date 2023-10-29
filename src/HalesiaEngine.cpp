@@ -65,7 +65,7 @@ void DetermineArgs(int argsCount, char** args, Win32WindowCreateInfo& createInfo
 Renderer* localRenderer; // really bad behavior
 MeshCreationObject GetMeshCreationObjects()
 {
-	return localRenderer->GetVulkanCreationObjects();
+	return localRenderer->GetVulkanCreationObject();
 }
 
 void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, HalesiaInstanceCreateInfo& createInfo)
@@ -282,7 +282,7 @@ HalesiaExitCode HalesiaInstance::Run()
 			std::future<std::optional<std::string>> asyncRenderer = std::async(UpdateRenderer, std::ref(rendererData));
 
 			if (window->ContainsDroppedFile())
-				scene->SubmitStaticObject(GenericLoader::LoadObjectFile(window->GetDroppedFile(), scene->allObjects.size()), renderer->GetVulkanCreationObjects());
+				scene->SubmitStaticObject(GenericLoader::LoadObjectFile(window->GetDroppedFile(), scene->allObjects.size()));
 
 			if (!Input::IsKeyPressed(devConsoleKey) && devKeyIsPressedLastFrame)
 				Console::isOpen = !Console::isOpen;

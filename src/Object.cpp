@@ -21,6 +21,7 @@ Mesh::Mesh(const MeshCreationObject& creationObject, const MeshCreationData& cre
 {
 	vertices = creationData.vertices;
 	indices = creationData.indices;
+	faceCount = creationData.faceCount;
 	if (creationData.hasMaterial)
 		ProcessMaterial(creationObject, creationData.material);
 	Recreate(creationObject);

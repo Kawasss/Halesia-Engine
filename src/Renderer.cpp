@@ -25,7 +25,6 @@
 #include "imgui-1.89.8/imgui-1.89.8/backends/imgui_impl_win32.cpp"
 
 #include "renderer/Renderer.h"
-#include "renderer/RayTracing.h"
 
 #define nameof(s) #s
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
@@ -60,6 +59,8 @@ Renderer::Renderer(Win32Window* window)
 void Renderer::Destroy()
 {
 	vkDeviceWaitIdle(logicalDevice);
+
+	rayTracer->Destroy();
 
 	vkDestroyDescriptorPool(logicalDevice, imGUIDescriptorPool, nullptr);
 	ImGui_ImplVulkan_Shutdown();
@@ -108,7 +109,7 @@ void Renderer::Destroy()
 	delete this;
 }
 
-MeshCreationObject Renderer::GetVulkanCreationObjects()
+VulkanCreationObject Renderer::GetVulkanCreationObject()
 {
 	return MeshCreationObject{ logicalDevice, physicalDevice, /*commandPool,*/ graphicsQueue, queueIndex };
 }
@@ -169,6 +170,8 @@ void Renderer::InitVulkan()
 {
 	Console::commandVariables["raySamples"] = &RayTracing::raySampleCount;
 	Console::commandVariables["rayDepth"] = &RayTracing::rayDepth;
+	Console::commandVariables["rasterize"] = &shouldRasterize;
+	Console::commandVariables["showNormals"] = &RayTracing::showNormals;
 
 	instance = Vulkan::GenerateInstance();
 	surface = Surface::GenerateSurface(instance, testWindow);
@@ -181,7 +184,7 @@ void Renderer::InitVulkan()
 	CreateCommandPool();
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(renderPass);
-	Texture::GeneratePlaceholderTextures(GetVulkanCreationObjects());
+	Texture::GeneratePlaceholderTextures(GetVulkanCreationObject());
 	CreateTextureSampler();
 	CreateUniformBuffers();
 	CreateModelBuffers();
@@ -190,6 +193,9 @@ void Renderer::InitVulkan()
 	CreateCommandBuffer();
 	CreateSyncObjects();
 	CreateImGUI();
+
+	rayTracer = new RayTracing();
+	rayTracer = new RayTracing();
 }
 
 std::vector<VkDynamicState> dynamicStates =
@@ -622,7 +628,7 @@ void Renderer::SetLogicalDevice()
 
 void Renderer::CreateCommandPool()
 {
-	commandPool = Vulkan::FetchNewCommandPool(GetVulkanCreationObjects());
+	commandPool = Vulkan::FetchNewCommandPool(GetVulkanCreationObject());
 }
 
 void Renderer::CreateCommandBuffer()
@@ -660,15 +666,29 @@ void Renderer::SetScissors(VkCommandBuffer commandBuffer)
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
+std::vector<Object*> submittedObjects; // this is ABSOLUTELY not the way to do this, this is only temporary and should be handled in object.cpp, not here
+
 bool initRT = false;
-RayTracing rayTracing;
 void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> objects, Camera* camera)
 {
 	if (!initRT)
 	{
-		rayTracing.Init(logicalDevice, physicalDevice, surface, objects[0], camera, testWindow, swapchain);
+		rayTracer->Init(logicalDevice, physicalDevice, surface, objects[0], camera, testWindow, swapchain);
 		initRT = true;
 	} // not a good place to do this
+
+	for (Object* pObj : objects)
+		if (std::find(submittedObjects.begin(), submittedObjects.end(), pObj) == submittedObjects.end())
+		{
+			submittedObjects.push_back(pObj);
+			rayTracer->SubmitObject(GetVulkanCreationObject(), pObj);
+		}
+
+	/*if (submittedObjects.size() == 0 && objects.size() > 0)
+	{
+		submittedObjects.push_back(objects[0]);
+		rayTracer->SumbitObject(GetVulkanCreationObject(), objects[0]);
+	}*/
 
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -676,29 +696,11 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
 	CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
 
-	/*vkCmdBindPipeline(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
-	SetViewport(lCommandBuffer);
-	SetScissors(lCommandBuffer);
-
-	vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
-
-	for (Object* object : objects)
-		if (object->state == STATUS_VISIBLE && object->HasFinishedLoading())
-			for (Mesh mesh : object->meshes)
-			{
-				VkBuffer vertexBuffers[] = { mesh.vertexBuffer.GetVkBuffer() };
-				VkDeviceSize offsets[] = { 0 };
-				vkCmdBindVertexBuffers(lCommandBuffer, 0, 1, vertexBuffers, offsets);
-				vkCmdBindIndexBuffer(lCommandBuffer, mesh.indexBuffer.GetVkBuffer(), 0, VK_INDEX_TYPE_UINT16);
-
-				vkCmdDrawIndexed(lCommandBuffer, static_cast<uint32_t>(mesh.indices.size()), 1, 0, 0, 0);
-			}
-
-	vkCmdEndRenderPass(lCommandBuffer);*/
-
-	rayTracing.DrawFrame(testWindow, camera, swapchain, surface, lCommandBuffer, imageIndex);
-	swapchain->CopyImageToSwapchain(rayTracing.RTImage, lCommandBuffer, imageIndex);
+	if (!shouldRasterize)
+	{
+		rayTracer->DrawFrame(testWindow, camera, lCommandBuffer, imageIndex);
+		swapchain->CopyImageToSwapchain(rayTracer->RTImage, lCommandBuffer, imageIndex);
+	}
 
 	VkRenderPassBeginInfo renderPassBeginInfo{};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -715,6 +717,28 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
 	vkCmdBeginRenderPass(lCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	if (shouldRasterize)
+	{
+		vkCmdBindPipeline(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+		SetViewport(lCommandBuffer);
+		SetScissors(lCommandBuffer);
+
+		vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+
+		for (Object* object : objects)
+			if (object->state == STATUS_VISIBLE && object->HasFinishedLoading())
+				for (Mesh mesh : object->meshes)
+				{
+					VkBuffer vertexBuffers[] = { mesh.vertexBuffer.GetVkBuffer() };
+					VkDeviceSize offsets[] = { 0 };
+					vkCmdBindVertexBuffers(lCommandBuffer, 0, 1, vertexBuffers, offsets);
+					vkCmdBindIndexBuffer(lCommandBuffer, mesh.indexBuffer.GetVkBuffer(), 0, VK_INDEX_TYPE_UINT16);
+
+					vkCmdDrawIndexed(lCommandBuffer, static_cast<uint32_t>(mesh.indices.size()), 1, 0, 0, 0);
+				}
+	}
 
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), lCommandBuffer);
 
@@ -865,7 +889,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		swapchain->Recreate(renderPass);
-		rayTracing.RecreateImage(swapchain);
+		rayTracer->RecreateImage(swapchain);
 		testWindow->resized = false;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -876,7 +900,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	UpdateUniformBuffers(currentFrame, camera);
 	SetModelMatrices(currentFrame, objects);
 
-	UpdateBindlessTextures(currentFrame, objects);
+	//UpdateBindlessTextures(currentFrame, objects);
 
 	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, objects, camera);
@@ -914,7 +938,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || testWindow->resized)
 	{
 		swapchain->Recreate(renderPass);
-		rayTracing.RecreateImage(swapchain);
+		rayTracer->RecreateImage(swapchain);
 		testWindow->resized = false;
 		Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
 	}

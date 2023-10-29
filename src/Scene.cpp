@@ -54,9 +54,9 @@ std::string GetNameFromPath(std::string path)
 	return fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 }
 
-void Scene::SubmitStaticObject(const ObjectCreationData& creationData, const MeshCreationObject& creationObjects)
+void Scene::SubmitStaticObject(const ObjectCreationData& creationData)
 {
-	Object* objPtr = new Object(creationData, creationObjects);
+	Object* objPtr = new Object(creationData, GetMeshCreationObjects());
 
 	allObjects.push_back(objPtr);
 	staticObjects.push_back(objPtr);

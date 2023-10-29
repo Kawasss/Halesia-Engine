@@ -39,9 +39,9 @@ struct MeshCreationData
 	
 	glm::vec3 center = glm::vec3(0), extents = glm::vec3(0);
 
+	int faceCount;
 	int amountOfVertices;
 	std::vector<Vertex> vertices;
-	//int amountOfIndices;
 	std::vector<uint16_t> indices;
 };
 

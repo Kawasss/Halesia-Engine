@@ -4,55 +4,41 @@
 #include "../Camera.h"
 #include "Texture.h"
 #include "Swapchain.h"
-
-struct BottomLevelAccelerationStructure
-{
-	VkBuffer buffer;
-	VkDeviceMemory deviceMemory;
-	VkAccelerationStructureKHR accelerationStructure;
-
-	VkBuffer scratchBuffer;
-	VkDeviceMemory scratchDeviceMemory;
-
-	VkBuffer geometryInstanceBuffer;
-	VkDeviceMemory geometryInstanceBufferMemory;
-
-	VkDeviceAddress deviceAddress;
-};
-
-struct TopLevelAccelerationStructure
-{
-	VkBuffer buffer;
-	VkDeviceMemory deviceMemory;
-	VkAccelerationStructureKHR accelerationStructure;
-
-	VkBuffer scratchBuffer;
-	VkDeviceMemory scratchMemory;
-};
+#include "AccelerationStructures.h"
+#include "../ResourceManager.h"
 
 class RayTracing
 {
 public:
-	void Destroy(VkDevice logicalDevice);
+	RayTracing() {}
+	void Destroy();
 	void Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera, Win32Window* window, Swapchain* swapchain);
-	void DrawFrame(Win32Window* window, Camera* camera, Swapchain* swapchain, Surface surface, VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void DrawFrame(Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void RecreateImage(Swapchain* swapchain) { CreateImage(swapchain->extent.width, swapchain->extent.height); }
+	void SubmitObject(const VulkanCreationObject& creationObject, Object* object);
 
 	VkImage RTImage = VK_NULL_HANDLE;
 
 	static int raySampleCount;
 	static int rayDepth;
+	static bool showNormals;
 
 private:
+
 	void UpdateMaterialDescriptorSets();
 	void CreateMaterialBuffers();
 	void CreateShaderBindingTable();
 	void CreateImage(uint32_t width, uint32_t height);
-	void CreateBLAS(BottomLevelAccelerationStructure& BLAS, VulkanBuffer vertexBuffer, IndexBuffer indexBuffer, uint32_t vertexSize, uint32_t faceCount);
-	void CreateTLAS(TopLevelAccelerationStructure& TLAS);
+	void UpdateDescriptorSets(std::vector<VkAccelerationStructureKHR>& ASs);
 
-	BottomLevelAccelerationStructure BLAS;
-	TopLevelAccelerationStructure TLAS;
+	std::vector<BottomLevelAccelerationStructure*> BLASs;
+	std::vector<TopLevelAccelerationStructure*> TLASs;
+
+	ApeironBuffer<Vertex> vertexBuffer;
+	ApeironBuffer<uint16_t> indexBuffer;
+
+	BottomLevelAccelerationStructure* BLAS;
+	TopLevelAccelerationStructure* TLAS;
 
 	Win32Window* window;
 	Swapchain* swapchain;

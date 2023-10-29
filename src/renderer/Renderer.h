@@ -11,6 +11,7 @@
 #include "Object.h"
 #include "Camera.h"
 #include "CreationObjects.h"
+#include "RayTracing.h"
 
 class Renderer
 {
@@ -22,8 +23,10 @@ public:
     void RenderGraph(const std::vector<uint64_t>& buffer, const char* label);
 	void RenderGraph(const std::vector<float>& buffer, const char* label);
 	void RenderPieGraph(float* data, const char* label = nullptr);
-	VulkanCreationObject GetVulkanCreationObjects();
+	VulkanCreationObject GetVulkanCreationObject();
 	std::optional<std::string> RenderDevConsole();
+
+	bool shouldRasterize = false;
 
 private:
 	VkInstance instance{};
@@ -61,6 +64,8 @@ private:
 
 	uint32_t currentFrame = 0;
 	uint32_t queueIndex = 0;
+
+	RayTracing* rayTracer;
 
 	static std::vector<char> ReadFile(const std::string& filePath);
 
