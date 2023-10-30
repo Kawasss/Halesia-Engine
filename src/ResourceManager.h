@@ -109,6 +109,7 @@ public:
 		}
 	}
 
+	VkDeviceSize GetMemoryOffset(ApeironMemory memory) { return memoryData[memory].offset; }
 	VkDeviceSize GetBufferEnd() { return (VkDeviceSize)lastWriteOffset + 1; } // not sure about the + 1
 	VkBuffer GetBufferHandle() { return buffer; }
 	bool HasChanged() { bool ret = hasChanged; hasChanged = false; return ret; }

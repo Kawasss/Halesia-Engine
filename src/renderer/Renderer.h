@@ -16,6 +16,9 @@
 class Renderer
 {
 public:
+	static ApeironBuffer<Vertex> globalVertexBuffer;
+	static ApeironBuffer<uint16_t> globalIndicesBuffer;
+
 	Renderer(Win32Window* window);
 	void Destroy();
 	void DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta);
@@ -29,6 +32,8 @@ public:
 	bool shouldRasterize = false;
 
 private:
+	VulkanCreationObject creationObject;
+
 	VkInstance instance{};
 	VkDevice logicalDevice{};
 	VkRenderPass renderPass{};
@@ -66,6 +71,8 @@ private:
 	uint32_t queueIndex = 0;
 
 	RayTracing* rayTracer;
+
+	static bool initGlobalBuffers;
 
 	static std::vector<char> ReadFile(const std::string& filePath);
 

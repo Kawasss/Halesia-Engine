@@ -1,28 +1,29 @@
 #include "renderer/AccelerationStructures.h"
+#include "renderer/Renderer.h"
 
 constexpr uint32_t MAX_PRIMITIVES = 1000U; // better to use the renderer.cpp variables
 
 bool TopLevelAccelerationStructure::TLASInstancesIsInit = false;
 ApeironBuffer<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::instanceBuffer;
 
-BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::CreateBottomLevelAccelerationStructure(const VulkanCreationObject& creationObject, VertexBuffer& vertexBuffer, IndexBuffer& indexBuffer, uint32_t vertexSize, uint32_t faceCount)
+BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::CreateBottomLevelAccelerationStructure(const VulkanCreationObject& creationObject, Mesh& mesh)
 {
 	BottomLevelAccelerationStructure* BLAS = new BottomLevelAccelerationStructure();
 	BLAS->logicalDevice = creationObject.logicalDevice;
 
 	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(creationObject);
 
-	VkDeviceAddress vertexBufferAddress = Vulkan::GetDeviceAddress(creationObject.logicalDevice, vertexBuffer.GetVkBuffer());
-	VkDeviceAddress indexBufferAddress = Vulkan::GetDeviceAddress(creationObject.logicalDevice, indexBuffer.GetVkBuffer());
+	VkDeviceAddress vertexBufferAddress = Vulkan::GetDeviceAddress(creationObject.logicalDevice, Renderer::globalVertexBuffer.GetBufferHandle());
+	VkDeviceAddress indexBufferAddress = Vulkan::GetDeviceAddress(creationObject.logicalDevice, Renderer::globalIndicesBuffer.GetBufferHandle());
 
 	VkAccelerationStructureGeometryTrianglesDataKHR triangles{};
 	triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
 	triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-	triangles.vertexData = { vertexBufferAddress };
-	triangles.vertexStride = sizeof(Vertex);//sizeof(float) * 3;
-	triangles.maxVertex = vertexSize;
+	triangles.vertexData = { vertexBufferAddress + Renderer::globalVertexBuffer.GetMemoryOffset(mesh.vertexMemory) };
+	triangles.vertexStride = sizeof(Vertex);
+	triangles.maxVertex = mesh.vertices.size();
 	triangles.indexType = VK_INDEX_TYPE_UINT16;
-	triangles.indexData = { indexBufferAddress };
+	triangles.indexData = { indexBufferAddress + Renderer::globalIndicesBuffer.GetMemoryOffset(mesh.indexMemory) };
 	triangles.transformData = { 0 };
 
 	VkAccelerationStructureGeometryDataKHR BLASGeometryData{};
@@ -47,7 +48,7 @@ BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::CreateBottom
 	VkAccelerationStructureBuildSizesInfoKHR BLASBuildSizesInfo{};
 	BLASBuildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
 
-	std::vector<uint32_t> BLMaxPrimitiveCounts = { faceCount };
+	std::vector<uint32_t> BLMaxPrimitiveCounts = { (uint32_t)mesh.faceCount };
 	vkGetAccelerationStructureBuildSizesKHR(creationObject.logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &BLASBuildGeometryInfo, BLMaxPrimitiveCounts.data(), &BLASBuildSizesInfo);
 
 	Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, BLASBuildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, BLAS->buffer, BLAS->deviceMemory);
@@ -64,7 +65,7 @@ BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::CreateBottom
 
 	Vulkan::YieldCommandPool(creationObject.queueIndex, commandPool);
 
-	BLAS->Build(creationObject, &BLASGeometry, BLASBuildSizesInfo, faceCount);
+	BLAS->Build(creationObject, &BLASGeometry, BLASBuildSizesInfo, mesh.faceCount);
 
 	return BLAS;
 }

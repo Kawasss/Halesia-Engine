@@ -35,8 +35,8 @@ struct Mesh
 	void Destroy();
 
 	Material material{};
-	VertexBuffer vertexBuffer;
-	IndexBuffer indexBuffer;
+	ApeironMemory vertexMemory;
+	ApeironMemory indexMemory;
 
 	std::vector<Vertex> vertices;
 	std::vector<uint16_t> indices;

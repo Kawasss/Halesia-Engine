@@ -43,17 +43,8 @@ uint32_t facesCount;
 uint32_t verticesSize;
 uint32_t indicesSize;
 
-//VertexBuffer testVertexBuffer;
-//IndexBuffer testIndexBuffer;
-
 struct UniformBuffer
 {
-	/*glm::vec3 position;
-	glm::vec3 right;
-	glm::vec3 up;
-	glm::vec3 forward;
-
-	uint32_t frameCount;*/
 	float cameraPosition[4] = { -1.433908, 3.579997, 5.812919, 1 };
 	float cameraRight[4] = { 0.928479, 0, 0.371385, 1 };
 	float cameraUp[4] = { 0, 1, 0, 1 };
@@ -84,31 +75,12 @@ std::vector<char> ReadShaderFile(const std::string& filePath)
 	return buffer;
 }
 
-void CreateTestObject(BufferCreationObject creationObject)
-{
-	/*ObjectCreationData creationData = GenericLoader::LoadObjectFile("stdObj/monkey3.obj", 0);
-
-	testVertexBuffer = VertexBuffer{ creationObject, creationData.meshes[0].vertices };
-	testIndexBuffer = IndexBuffer{ creationObject, creationData.meshes[0].indices };
-	
-	verticesSize = creationData.meshes[0].vertices.size();
-	indicesSize = creationData.meshes[0].indices.size();
-	facesCount = creationData.meshes[0].faceCount;*/
-}
-
 void RayTracing::Destroy()
 {
-	//testVertexBuffer.Destroy();
-	//testIndexBuffer.Destroy();
-
 	vkFreeMemory(logicalDevice, uniformBufferMemory, nullptr);
 	vkDestroyBuffer(logicalDevice, uniformBufferBuffer, nullptr);
 
 	TLAS->Destroy();
-	BLAS->Destroy();
-
-	for (TopLevelAccelerationStructure* pTLAS : TLASs)
-		pTLAS->Destroy();
 	for (BottomLevelAccelerationStructure* pBLAS : BLASs)
 		pBLAS->Destroy();
 
@@ -124,21 +96,15 @@ void RayTracing::Destroy()
 
 void RayTracing::SubmitObject(const VulkanCreationObject& creationObject, Object* object)
 {
-	BottomLevelAccelerationStructure* pBLAS = BottomLevelAccelerationStructure::CreateBottomLevelAccelerationStructure(creationObject, object->meshes[0].vertexBuffer, object->meshes[0].indexBuffer, object->meshes[0].vertexBuffer.size, object->meshes[0].faceCount);
+	BottomLevelAccelerationStructure* pBLAS = BottomLevelAccelerationStructure::CreateBottomLevelAccelerationStructure(creationObject, object->meshes[0]/*object->meshes[0].vertexBuffer, object->meshes[0].indexBuffer, /*, object->meshes[0].faceCount*/);
 	BLASs.push_back(pBLAS);
-	if (TLASs.size() > 0)
-		TLASs[0]->Destroy();
-	else
-		TLASs.push_back(nullptr);
-	TLASs[0] = TopLevelAccelerationStructure::CreateTopLevelAccelerationStructure(creationObject, BLASs);
-
-	vertexBuffer.SubmitNewData(object->meshes[0].vertices);
-	indexBuffer.SubmitNewData(object->meshes[0].indices);
+	if (TLAS != nullptr)
+		TLAS->Destroy();
+	TLAS = TopLevelAccelerationStructure::CreateTopLevelAccelerationStructure(creationObject, BLASs);
 }
 
 void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera, Win32Window* window, Swapchain* swapchain)
 {
-
 	VkResult result = VK_SUCCESS;
 
 	this->logicalDevice = logicalDevice;
@@ -163,9 +129,6 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	// creation object
 
 	creationObject = { logicalDevice, physicalDevice, queue, queueFamilyIndex };
-	CreateTestObject(creationObject);
-	vertexBuffer.Reserve(creationObject, 7000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-	indexBuffer.Reserve(creationObject, 7000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 	commandPool = Vulkan::FetchNewCommandPool(creationObject);
 
 	// command buffer
@@ -378,9 +341,6 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	vkDestroyShaderModule(logicalDevice, hitShader, nullptr);
 	vkDestroyShaderModule(logicalDevice, genShader, nullptr);
 
-	//BLAS = BottomLevelAccelerationStructure::CreateBottomLevelAccelerationStructure(creationObject, testVertexBuffer, testIndexBuffer, verticesSize, facesCount);
-	//TLAS = TopLevelAccelerationStructure::CreateTopLevelAccelerationStructure(creationObject, BLAS);
-
 	// uniform buffer
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(UniformBuffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, uniformBufferBuffer, uniformBufferMemory);
@@ -403,12 +363,12 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	uniformDescriptorInfo.range = VK_WHOLE_SIZE;
 
 	VkDescriptorBufferInfo indexDescriptorInfo{};
-	indexDescriptorInfo.buffer = indexBuffer.GetBufferHandle();
+	indexDescriptorInfo.buffer = Renderer::globalIndicesBuffer.GetBufferHandle();
 	indexDescriptorInfo.offset = 0;
 	indexDescriptorInfo.range = VK_WHOLE_SIZE;
 
 	VkDescriptorBufferInfo vertexDescriptorInfo{};
-	vertexDescriptorInfo.buffer = vertexBuffer.GetBufferHandle();
+	vertexDescriptorInfo.buffer = Renderer::globalVertexBuffer.GetBufferHandle();
 	vertexDescriptorInfo.offset = 0;
 	vertexDescriptorInfo.range = VK_WHOLE_SIZE;
 
@@ -618,12 +578,12 @@ void RayTracing::CreateShaderBindingTable()
 	rmissShaderBindingTable.stride = progSize;
 }
 
-void RayTracing::UpdateDescriptorSets(std::vector<VkAccelerationStructureKHR>& ASs) // i dont really know if its necessary to update the buffers for each resize, because it already gets set to VK_WHOLE_SIZE at creation
+void RayTracing::UpdateDescriptorSets() // i dont really know if its necessary to update the buffers for each resize, because it already gets set to VK_WHOLE_SIZE at creation
 {
 	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
 	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 	ASDescriptorInfo.accelerationStructureCount = 1;// static_cast<uint32_t>(ASs.size());
-	ASDescriptorInfo.pAccelerationStructures = ASs.data();
+	ASDescriptorInfo.pAccelerationStructures = &TLAS->accelerationStructure;
 
 	VkWriteDescriptorSet writeSet{};
 	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -634,12 +594,12 @@ void RayTracing::UpdateDescriptorSets(std::vector<VkAccelerationStructureKHR>& A
 	uniformDescriptorInfo.range = VK_WHOLE_SIZE;
 
 	VkDescriptorBufferInfo indexDescriptorInfo{};
-	indexDescriptorInfo.buffer = indexBuffer.GetBufferHandle();
+	indexDescriptorInfo.buffer = Renderer::globalIndicesBuffer.GetBufferHandle();
 	indexDescriptorInfo.offset = 0;
-	indexDescriptorInfo.range = VK_WHOLE_SIZE;
+	indexDescriptorInfo.range = VK_WHOLE_SIZE; // maybe better to change VK_WHOLE_SIZE to the last write offset or what the comment above suggests
 
 	VkDescriptorBufferInfo vertexDescriptorInfo{};
-	vertexDescriptorInfo.buffer = vertexBuffer.GetBufferHandle();
+	vertexDescriptorInfo.buffer = Renderer::globalVertexBuffer.GetBufferHandle();
 	vertexDescriptorInfo.offset = 0;
 	vertexDescriptorInfo.range = VK_WHOLE_SIZE;
 
@@ -650,7 +610,7 @@ void RayTracing::UpdateDescriptorSets(std::vector<VkAccelerationStructureKHR>& A
 
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets;
 
-	if (vertexBuffer.HasChanged() || indexBuffer.HasChanged()) // only update the descriptor sets if new data has been added to the buffers to save time
+	if (Renderer::globalVertexBuffer.HasChanged() || Renderer::globalIndicesBuffer.HasChanged()) // only update the descriptor sets if new data has been added to the buffers to save time
 	{
 		writeDescriptorSets.resize(4);
 
@@ -701,14 +661,7 @@ void RayTracing::UpdateDescriptorSets(std::vector<VkAccelerationStructureKHR>& A
 uint32_t frameCount = 0;
 void RayTracing::DrawFrame(Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
-	std::vector<VkAccelerationStructureKHR> ASs; // this isnt handled well
-	for (TopLevelAccelerationStructure* pTLAS : TLASs)
-		ASs.push_back(pTLAS->accelerationStructure);
-
-	if (ASs.size() <= 0)
-		return;
-
-	UpdateDescriptorSets(ASs);
+	UpdateDescriptorSets();
 
 	uniformBuffer = UniformBuffer{ { camera->position.x, camera->position.y, camera->position.z, 1 }, { camera->right.x, camera->right.y, camera->right.z, 1 }, { camera->up.x, camera->up.y, camera->up.z, 1 }, { camera->front.x, camera->front.y, camera->front.z, 1 }, frameCount, showNormals, facesCount, raySampleCount, rayDepth };
 	//uniformBuffer = UniformBuffer{ { 7.24205f, -4.13095f, 7.67253f, 1 }, { 0.70373f, 0.00000f, -0.71047f, 1 }, { -0.28477f, 0.91616f, -0.28206f, 1 }, { -0.65091f, -0.40081f, -0.64473f, 1 }, frameCount };

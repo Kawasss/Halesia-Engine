@@ -34,6 +34,10 @@ std::string variableToString(const char* name)
 	return name; //gimmicky? yes
 }
 
+ApeironBuffer<Vertex> Renderer::globalVertexBuffer;
+ApeironBuffer<uint16_t> Renderer::globalIndicesBuffer;
+bool Renderer::initGlobalBuffers = false;
+
 struct UniformBufferObject
 {
 	glm::vec3 cameraPos;
@@ -111,7 +115,7 @@ void Renderer::Destroy()
 
 VulkanCreationObject Renderer::GetVulkanCreationObject()
 {
-	return MeshCreationObject{ logicalDevice, physicalDevice, /*commandPool,*/ graphicsQueue, queueIndex };
+	return creationObject;
 }
 
 void Renderer::CreateImGUI()
@@ -177,6 +181,7 @@ void Renderer::InitVulkan()
 	surface = Surface::GenerateSurface(instance, testWindow);
 	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
 	SetLogicalDevice();
+	creationObject = { logicalDevice, physicalDevice, graphicsQueue, queueIndex };
 	swapchain = new Swapchain(logicalDevice, physicalDevice, surface, testWindow);
 	swapchain->CreateImageViews();
 	CreateDescriptorSetLayout();
@@ -194,7 +199,13 @@ void Renderer::InitVulkan()
 	CreateSyncObjects();
 	CreateImGUI();
 
-	rayTracer = new RayTracing();
+	if (!initGlobalBuffers)
+	{
+		globalVertexBuffer.Reserve(creationObject, 10000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+		globalIndicesBuffer.Reserve(creationObject, 10000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+		initGlobalBuffers = true;
+	}
+
 	rayTracer = new RayTracing();
 }
 
@@ -731,10 +742,10 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 			if (object->state == STATUS_VISIBLE && object->HasFinishedLoading())
 				for (Mesh mesh : object->meshes)
 				{
-					VkBuffer vertexBuffers[] = { mesh.vertexBuffer.GetVkBuffer() };
-					VkDeviceSize offsets[] = { 0 };
+					VkBuffer vertexBuffers[] = { globalVertexBuffer.GetBufferHandle()/*mesh.vertexBuffer.GetVkBuffer()*/};
+					VkDeviceSize offsets[] = { globalVertexBuffer.GetMemoryOffset(mesh.vertexMemory)/*0*/ };
 					vkCmdBindVertexBuffers(lCommandBuffer, 0, 1, vertexBuffers, offsets);
-					vkCmdBindIndexBuffer(lCommandBuffer, mesh.indexBuffer.GetVkBuffer(), 0, VK_INDEX_TYPE_UINT16);
+					vkCmdBindIndexBuffer(lCommandBuffer, globalIndicesBuffer.GetBufferHandle(), globalIndicesBuffer.GetMemoryOffset(mesh.indexMemory),/*mesh.indexBuffer.GetVkBuffer(), 0,*/ VK_INDEX_TYPE_UINT16);
 
 					vkCmdDrawIndexed(lCommandBuffer, static_cast<uint32_t>(mesh.indices.size()), 1, 0, 0, 0);
 				}

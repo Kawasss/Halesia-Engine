@@ -29,31 +29,25 @@ private:
 	void CreateMaterialBuffers();
 	void CreateShaderBindingTable();
 	void CreateImage(uint32_t width, uint32_t height);
-	void UpdateDescriptorSets(std::vector<VkAccelerationStructureKHR>& ASs);
+	void UpdateDescriptorSets();
 
 	std::vector<BottomLevelAccelerationStructure*> BLASs;
-	std::vector<TopLevelAccelerationStructure*> TLASs;
+	TopLevelAccelerationStructure* TLAS = nullptr;
 
-	ApeironBuffer<Vertex> vertexBuffer;
-	ApeironBuffer<uint16_t> indexBuffer;
-
-	BottomLevelAccelerationStructure* BLAS;
-	TopLevelAccelerationStructure* TLAS;
-
-	Win32Window* window;
-	Swapchain* swapchain;
+	Win32Window* window = nullptr;
+	Swapchain* swapchain = nullptr;
 
 	VkDevice logicalDevice;
 
 	VkDeviceMemory RTImageMemory = VK_NULL_HANDLE;
 	VkImageView RTImageView = VK_NULL_HANDLE;
 
-	VkCommandPool commandPool;
-	PhysicalDevice physicalDevice;
+	VkCommandPool commandPool = VK_NULL_HANDLE;
+	PhysicalDevice physicalDevice = VK_NULL_HANDLE;
 
-	VkBuffer materialBuffer;
-	VkDeviceMemory materialBufferMemory;
+	VkBuffer materialBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory materialBufferMemory = VK_NULL_HANDLE;
 
-	VkBuffer materialIndexBuffer;
-	VkDeviceMemory materialIndexBufferMemory;
+	VkBuffer materialIndexBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory materialIndexBufferMemory = VK_NULL_HANDLE;
 };

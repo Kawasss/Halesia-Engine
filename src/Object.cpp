@@ -6,6 +6,7 @@
 #include <iostream>
 #include <future>
 #include "Console.h"
+#include "renderer/Renderer.h"
 
 void Mesh::ProcessMaterial(const TextureCreationObject& creationObjects, const MaterialCreationData& creationData)
 {
@@ -29,15 +30,15 @@ Mesh::Mesh(const MeshCreationObject& creationObject, const MeshCreationData& cre
 
 void Mesh::Recreate(const MeshCreationObject& creationObject)
 {
-	vertexBuffer = VertexBuffer(creationObject, vertices);
-	indexBuffer = IndexBuffer(creationObject, indices);
+	vertexMemory = Renderer::globalVertexBuffer.SubmitNewData(vertices);
+	indexMemory = Renderer::globalIndicesBuffer.SubmitNewData(indices);
 }
 
 void Mesh::Destroy()
 {
 	material.Destroy();
-	vertexBuffer.Destroy();
-	indexBuffer.Destroy();
+	Renderer::globalVertexBuffer.DestroyData(vertexMemory);
+	Renderer::globalIndicesBuffer.DestroyData(indexMemory);
 	indices.clear();
 	vertices.clear();
 	//delete this;
