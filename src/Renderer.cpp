@@ -46,10 +46,6 @@ struct UniformBufferObject
 	alignas(16) glm::mat4 projection;
 };
 
-constexpr uint32_t MAX_MESHES = 1000; //mooore than enough
-constexpr uint32_t MAX_BINDLESS_TEXTURES = MAX_MESHES * 5; //amount of pbr textures per mesh
-constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
-
 VkMemoryAllocateFlagsInfo allocateFlagsInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO, nullptr, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT, 0 };
 
 Renderer::Renderer(Win32Window* window)
@@ -677,7 +673,7 @@ void Renderer::SetScissors(VkCommandBuffer commandBuffer)
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
-std::vector<Object*> submittedObjects; // this is ABSOLUTELY not the way to do this, this is only temporary and should be handled in object.cpp, not here
+bool submittedObjects = false; // this is ABSOLUTELY not the way to do this, this is only temporary and should be handled in object.cpp, not here
 
 bool initRT = false;
 void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> objects, Camera* camera)
@@ -688,12 +684,11 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		initRT = true;
 	} // not a good place to do this
 
-	for (Object* pObj : objects)
-		if (std::find(submittedObjects.begin(), submittedObjects.end(), pObj) == submittedObjects.end())
-		{
-			submittedObjects.push_back(pObj);
-			rayTracer->SubmitObject(GetVulkanCreationObject(), pObj);
-		}
+	if (!submittedObjects && objects.size() == 2)
+	{
+		rayTracer->SubmitObjects(GetVulkanCreationObject(), objects);
+		submittedObjects = true;
+	}
 
 	/*if (submittedObjects.size() == 0 && objects.size() > 0)
 	{
@@ -709,7 +704,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 
 	if (!shouldRasterize)
 	{
-		rayTracer->DrawFrame(testWindow, camera, lCommandBuffer, imageIndex);
+		rayTracer->DrawFrame(objects, testWindow, camera, lCommandBuffer, imageIndex);
 		swapchain->CopyImageToSwapchain(rayTracer->RTImage, lCommandBuffer, imageIndex);
 	}
 

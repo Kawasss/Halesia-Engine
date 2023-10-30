@@ -15,7 +15,6 @@
 #include "system/Input.h"
 
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
-constexpr uint32_t MAX_TLAS_INSTANCES = 500;
 
 int RayTracing::raySampleCount = 2;
 int RayTracing::rayDepth = 8;
@@ -94,13 +93,9 @@ void RayTracing::Destroy()
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
 
-void RayTracing::SubmitObject(const VulkanCreationObject& creationObject, Object* object)
+void RayTracing::SubmitObjects(const VulkanCreationObject& creationObject, std::vector<Object*> objects)
 {
-	BottomLevelAccelerationStructure* pBLAS = BottomLevelAccelerationStructure::CreateBottomLevelAccelerationStructure(creationObject, object->meshes[0]/*object->meshes[0].vertexBuffer, object->meshes[0].indexBuffer, /*, object->meshes[0].faceCount*/);
-	BLASs.push_back(pBLAS);
-	if (TLAS != nullptr)
-		TLAS->Destroy();
-	TLAS = TopLevelAccelerationStructure::CreateTopLevelAccelerationStructure(creationObject, BLASs);
+
 }
 
 void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera, Win32Window* window, Swapchain* swapchain)
@@ -142,6 +137,8 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	result = vkAllocateCommandBuffers(logicalDevice, &commandBufferAllocateInfo, commandBuffers.data());
 	if (result != VK_SUCCESS)
 		throw VulkanAPIError("Failed to allocate the command buffers for ray tracing", result, nameof(vkAllocateCommandBuffers), __FILENAME__, std::to_string(__LINE__));
+
+	TLAS = TopLevelAccelerationStructure::CreateTopLevelAccelerationStructure(creationObject, { object });
 
 	// descriptor pool (frames in flight not implemented)
 
@@ -582,7 +579,7 @@ void RayTracing::UpdateDescriptorSets() // i dont really know if its necessary t
 {
 	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
 	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-	ASDescriptorInfo.accelerationStructureCount = 1;// static_cast<uint32_t>(ASs.size());
+	ASDescriptorInfo.accelerationStructureCount = 1;
 	ASDescriptorInfo.pAccelerationStructures = &TLAS->accelerationStructure;
 
 	VkWriteDescriptorSet writeSet{};
@@ -659,7 +656,7 @@ void RayTracing::UpdateDescriptorSets() // i dont really know if its necessary t
 }
 
 uint32_t frameCount = 0;
-void RayTracing::DrawFrame(Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex)
+void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
 	UpdateDescriptorSets();
 
@@ -675,6 +672,7 @@ void RayTracing::DrawFrame(Win32Window* window, Camera* camera, VkCommandBuffer 
 	
 	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
 
+	TLAS->Build(creationObject, objects, false, commandBuffer);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 	vkCmdTraceRaysKHR(commandBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, swapchain->extent.width, swapchain->extent.height, 1);

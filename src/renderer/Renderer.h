@@ -16,6 +16,11 @@
 class Renderer
 {
 public:
+	static constexpr uint32_t MAX_MESHES = 1000U; //mooore than enough
+	static constexpr uint32_t MAX_BINDLESS_TEXTURES = MAX_MESHES * 5; //amount of pbr textures per mesh
+	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
+	static constexpr uint32_t MAX_TLAS_INSTANCES = MAX_MESHES;
+
 	static ApeironBuffer<Vertex> globalVertexBuffer;
 	static ApeironBuffer<uint16_t> globalIndicesBuffer;
 

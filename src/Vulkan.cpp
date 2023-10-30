@@ -42,12 +42,20 @@ std::mutex Vulkan::graphicsQueueThreadingMutex;
 std::mutex* Vulkan::graphicsQueueMutex = &graphicsQueueThreadingMutex;
 VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 
+VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string functionName, std::string file, std::string line)
+{
+    std::string vulkanError = result == VK_SUCCESS ? "\n\n" : ":\n\n " + (std::string)string_VkResult(result) + " "; // result can be VK_SUCCESS for functions that dont use a vulkan functions, i.e. looking for a physical device but there are none that fit the bill
+    std::string location = functionName == "" ? "" : "from " + functionName;
+    location += line == "" ? "" : " at line " + line;
+    location += file == "" ? "" : " in " + file;
+    this->message = message + vulkanError + location;
+}
+
 QueueCommandPoolStorage::QueueCommandPoolStorage(VkDevice logicalDevice, uint32_t queueIndex) 
 { 
     this->queueIndex = queueIndex; 
     this->logicalDevice = logicalDevice; 
 }
-
 
 VkCommandPool QueueCommandPoolStorage::GetNewCommandPool()
 {
@@ -74,9 +82,9 @@ VkCommandPool QueueCommandPoolStorage::GetNewCommandPool()
         unusedCommandPools.erase(unusedCommandPools.end() - 1);
         commandPoolStorageMutex.unlock();
 
-#ifdef _DEBUG
-        Console::WriteLine("Reused an existing command pool for queue index " + std::to_string(queueIndex) + ", amount left idle: " + std::to_string(unusedCommandPools.size()), MESSAGE_SEVERITY_DEBUG);
-#endif
+//#ifdef _DEBUG
+//        Console::WriteLine("Reused an existing command pool for queue index " + std::to_string(queueIndex) + ", amount left idle: " + std::to_string(unusedCommandPools.size()), MESSAGE_SEVERITY_DEBUG);
+//#endif
         if (unusedCommandPools.size() > 16)
             DestroyIdleCommandPools();
     }
@@ -109,7 +117,16 @@ VkDeviceAddress Vulkan::GetDeviceAddress(VkDevice logicalDevice, VkBuffer buffer
     addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     addressInfo.buffer = buffer;
 
-    return  vkGetBufferDeviceAddress(logicalDevice, &addressInfo);
+    return vkGetBufferDeviceAddress(logicalDevice, &addressInfo);
+}
+
+VkDeviceAddress Vulkan::GetDeviceAddress(VkDevice logicalDevice, VkAccelerationStructureKHR accelerationStructure)
+{
+    VkAccelerationStructureDeviceAddressInfoKHR BLASAddressInfo{};
+    BLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+    BLASAddressInfo.accelerationStructure = accelerationStructure;
+
+    return vkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &BLASAddressInfo);
 }
 
 void Vulkan::YieldCommandPool(uint32_t index, VkCommandPool commandPool)
@@ -242,9 +259,9 @@ void Vulkan::CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice,
     if (result != VK_SUCCESS)
         throw VulkanAPIError("Failed to allocate " + std::to_string(memoryRequirements.size) + " bytes of memory", result, nameof(vkAllocateMemory), __FILENAME__, __STRLINE__);
 
-    #ifndef NDEBUG
+    /*#ifndef NDEBUG
         Console::WriteLine("Created a buffer with " + std::to_string(size) + " bytes");
-    #endif
+    #endif*/
 
     vkBindBufferMemory(logicalDevice, buffer, bufferMemory, 0);
 }

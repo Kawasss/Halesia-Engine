@@ -12,6 +12,7 @@
 #include "CreationObjects.h"
 #include "SceneLoader.h"
 #include "ResourceManager.h"
+#include "renderer/AccelerationStructures.h"
 
 enum ObjectState
 {
@@ -37,6 +38,8 @@ struct Mesh
 	Material material{};
 	ApeironMemory vertexMemory;
 	ApeironMemory indexMemory;
+
+	BottomLevelAccelerationStructure* BLAS;
 
 	std::vector<Vertex> vertices;
 	std::vector<uint16_t> indices;

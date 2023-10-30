@@ -40,7 +40,7 @@ public:
 		Vulkan::YieldCommandPool(creationObject.queueIndex, commandPool);
 	}
 
-	template<typename T> ApeironMemory SubmitNewData(std::vector<T> data)
+	ApeironMemory SubmitNewData(std::vector<T> data)
 	{
 		VkDeviceSize writeSize = sizeof(T) * data.size();
 		if (lastWriteOffset + writeSize > reservedBufferSize)
@@ -113,6 +113,11 @@ public:
 	VkDeviceSize GetBufferEnd() { return (VkDeviceSize)lastWriteOffset + 1; } // not sure about the + 1
 	VkBuffer GetBufferHandle() { return buffer; }
 	bool HasChanged() { bool ret = hasChanged; hasChanged = false; return ret; }
+
+	/// <summary>
+	/// This resets the internal memory pointer to 0. Any existing data won't be erased, but will be overwritten
+	/// </summary>
+	void ResetAddressPointer() { lastWriteOffset = 0; }
 
 	void Destroy()
 	{

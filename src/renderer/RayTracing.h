@@ -13,9 +13,9 @@ public:
 	RayTracing() {}
 	void Destroy();
 	void Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera, Win32Window* window, Swapchain* swapchain);
-	void DrawFrame(Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void RecreateImage(Swapchain* swapchain) { CreateImage(swapchain->extent.width, swapchain->extent.height); }
-	void SubmitObject(const VulkanCreationObject& creationObject, Object* object);
+	void SubmitObjects(const VulkanCreationObject& creationObject, std::vector<Object*> objects);
 
 	VkImage RTImage = VK_NULL_HANDLE;
 

@@ -50,19 +50,8 @@ inline std::vector<const char*> requiredLogicalDeviceExtensions =
 class VulkanAPIError : public std::exception
 {
 public:
-    VulkanAPIError(std::string message, VkResult result = VK_SUCCESS, std::string functionName = "", std::string file = "", std::string line = "")
-    {
-        std::string vulkanError = result == VK_SUCCESS ? "\n\n" : ":\n\n " + (std::string)string_VkResult(result) + " "; // result can be VK_SUCCESS for functions that dont use a vulkan functions, i.e. looking for a physical device but there are none that fit the bill
-        std::string location = functionName == "" ? "" : "from " + functionName;
-        location += line == "" ? "" : " at line " + line;
-        location += file == "" ? "" : " in " + file;
-        this->message = message + vulkanError + location;
-    }
-
-    const char* what() const override
-    {
-        return message.c_str();
-    }
+    VulkanAPIError(std::string message, VkResult result = VK_SUCCESS, std::string functionName = "", std::string file = "", std::string line = "");
+    const char* what() const override{ return message.c_str(); }
 
 private:
     std::string message;
@@ -115,6 +104,7 @@ class Vulkan
         static VkShaderModule               CreateShaderModule(VkDevice logicalDevice, const std::vector<char>& code);
         static VkCommandBuffer              BeginSingleTimeCommands(VkDevice logicalDevice, VkCommandPool commandPool);
         static VkDeviceAddress              GetDeviceAddress(VkDevice logicalDevice, VkBuffer buffer);
+        static VkDeviceAddress              GetDeviceAddress(VkDevice logicalDevice, VkAccelerationStructureKHR accelerationStructure);
         static uint32_t                     GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice);
         static bool                         HasStencilComponent(VkFormat format);
         static void                         CreateDebugMessenger(VkInstance instance);

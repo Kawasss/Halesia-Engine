@@ -32,11 +32,13 @@ void Mesh::Recreate(const MeshCreationObject& creationObject)
 {
 	vertexMemory = Renderer::globalVertexBuffer.SubmitNewData(vertices);
 	indexMemory = Renderer::globalIndicesBuffer.SubmitNewData(indices);
+	BLAS = BottomLevelAccelerationStructure::CreateBottomLevelAccelerationStructure(creationObject, *this);
 }
 
 void Mesh::Destroy()
 {
 	material.Destroy();
+	BLAS->Destroy();
 	Renderer::globalVertexBuffer.DestroyData(vertexMemory);
 	Renderer::globalIndicesBuffer.DestroyData(indexMemory);
 	indices.clear();
