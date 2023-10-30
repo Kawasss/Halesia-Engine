@@ -19,6 +19,7 @@ constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
 int RayTracing::raySampleCount = 2;
 int RayTracing::rayDepth = 8;
 bool RayTracing::showNormals = false;
+bool RayTracing::renderProgressive = true;
 
 std::vector<VkCommandBuffer> commandBuffers(MAX_FRAMES_IN_FLIGHT);
 VkDescriptorPool descriptorPool;
@@ -677,5 +678,5 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 	vkCmdTraceRaysKHR(commandBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, swapchain->extent.width, swapchain->extent.height, 1);
 
-	frameCount++;
+	frameCount += renderProgressive ? 1 : 0;
 }
