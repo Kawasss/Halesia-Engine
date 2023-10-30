@@ -238,6 +238,13 @@ HalesiaExitCode HalesiaInstance::Run()
 	if (renderer == nullptr || window == nullptr || physics == nullptr)
 		return HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION;
 
+	Console::commandVariables["raySamples"] = &RayTracing::raySampleCount;
+	Console::commandVariables["rayDepth"] = &RayTracing::rayDepth;
+	Console::commandVariables["showNormals"] = &RayTracing::showNormals;
+	Console::commandVariables["renderProgressive"] = &RayTracing::renderProgressive;
+	Console::commandVariables["showUnique"] = &RayTracing::showUniquePrimitives;
+	Console::commandVariables["rasterize"] = &renderer->shouldRasterize;
+
 	try
 	{
 		float frameDelta = 0;

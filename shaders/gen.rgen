@@ -24,8 +24,8 @@ layout(binding = 1, set = 0) uniform Camera {
   vec4 forward;
 
   uint frameCount;
-  int showPrimitveID;
-  uint primitiveCount;
+  int showNormals;
+  int showUnique;
   int raySamples;
   int rayDepth;
 }

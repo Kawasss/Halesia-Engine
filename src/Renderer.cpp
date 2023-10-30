@@ -168,12 +168,6 @@ void Renderer::CreateImGUI()
 
 void Renderer::InitVulkan()
 {
-	Console::commandVariables["raySamples"] = &RayTracing::raySampleCount;
-	Console::commandVariables["rayDepth"] = &RayTracing::rayDepth;
-	Console::commandVariables["rasterize"] = &shouldRasterize;
-	Console::commandVariables["showNormals"] = &RayTracing::showNormals;
-	Console::commandVariables["renderProgressive"] = &RayTracing::renderProgressive;
-
 	instance = Vulkan::GenerateInstance();
 	surface = Surface::GenerateSurface(instance, testWindow);
 	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);

@@ -45,8 +45,10 @@ layout(binding = 1, set = 0) uniform Camera {
   vec4 forward;
 
   uint frameCount;
-  int showNormal;
-  uint primitiveCount;
+  int showNormals;
+  int showUnique;
+  int raySamples;
+  int rayDepth;
 }
 camera;
 
@@ -61,8 +63,7 @@ layout(binding = 1, set = 1) buffer MaterialBuffer { Material data[]; }
 materialBuffer;
 
 float random(vec2 uv, float seed) {
-  return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) *
-               43758.5453);
+  return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) * 43758.5453);
 }
 
 vec3 uniformSampleHemisphere(vec2 uv) {
@@ -100,12 +101,21 @@ vec3 vertexC = vertexBuffer.data[indices.z].position;
                   vertexC * barycentric.z;
   vec3 geometricNormal = vertexBuffer.data[indices.x].normal;
 
-  if (camera.showNormal == 1)
-    {
-        payload.directColor = geometricNormal;
-        payload.rayActive = 0;
-        return;
-    }
+  if (camera.showUnique == 1)
+  {
+      float x = random(vec2(1), 8045389.1568479 * gl_PrimitiveID);
+      float y = random(vec2(1), 2754650.7645183 * gl_PrimitiveID);
+      float z = random(vec2(1), 1436885.4987659 * gl_PrimitiveID);
+      payload.directColor = vec3(x, y, z);
+      payload.rayActive = 0;
+      return;
+  }
+  if (camera.showNormals == 1)
+  {
+      payload.directColor = geometricNormal;
+      payload.rayActive = 0;
+      return;
+  }
 
   vec3 surfaceColor = vec3(1);//materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]].diffuse;
 

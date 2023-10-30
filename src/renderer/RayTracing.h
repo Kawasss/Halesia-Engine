@@ -22,6 +22,7 @@ public:
 	static int raySampleCount;
 	static int rayDepth;
 	static bool showNormals;
+	static bool showUniquePrimitives;
 	static bool renderProgressive;
 
 private:
