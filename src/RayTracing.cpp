@@ -14,6 +14,12 @@
 #include "renderer/renderer.h"
 #include "system/Input.h"
 
+struct InstanceMeshData
+{
+	uint32_t indexBufferOffset;
+	uint32_t vertexBufferOffset;
+};
+
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
 
 int RayTracing::raySampleCount = 2;
@@ -150,7 +156,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	descriptorPoolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorPoolSizes[1].descriptorCount = 1;
 	descriptorPoolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	descriptorPoolSizes[2].descriptorCount = 4;
+	descriptorPoolSizes[2].descriptorCount = 6;
 	descriptorPoolSizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 	descriptorPoolSizes[3].descriptorCount = 1;
 
@@ -224,37 +230,51 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// material set layouts (placeholder material, not Material.h materials) (frames in flight not implemented)
 
-	std::vector<VkDescriptorSetLayoutBinding> materialLayoutBindings(2);
+	std::vector<VkDescriptorSetLayoutBinding> meshDataLayoutBindings(4);
 
-	materialLayoutBindings[0].binding = 0;
-	materialLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	materialLayoutBindings[0].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-	materialLayoutBindings[0].descriptorCount = 1;
-	materialLayoutBindings[0].pImmutableSamplers = nullptr;
+	meshDataLayoutBindings[0].binding = 0;
+	meshDataLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	meshDataLayoutBindings[0].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+	meshDataLayoutBindings[0].descriptorCount = 1;
+	meshDataLayoutBindings[0].pImmutableSamplers = nullptr;
 
-	materialLayoutBindings[1].binding = 1;
-	materialLayoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	materialLayoutBindings[1].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-	materialLayoutBindings[1].descriptorCount = 1;
-	materialLayoutBindings[1].pImmutableSamplers = nullptr;
+	meshDataLayoutBindings[1].binding = 1;
+	meshDataLayoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	meshDataLayoutBindings[1].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+	meshDataLayoutBindings[1].descriptorCount = 1;
+	meshDataLayoutBindings[1].pImmutableSamplers = nullptr;
+
+	meshDataLayoutBindings[2].binding = 2;
+	meshDataLayoutBindings[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	meshDataLayoutBindings[2].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+	meshDataLayoutBindings[2].descriptorCount = 1;
+	meshDataLayoutBindings[2].pImmutableSamplers = nullptr;
+
+	meshDataLayoutBindings[3].binding = 3;
+	meshDataLayoutBindings[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	meshDataLayoutBindings[3].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+	meshDataLayoutBindings[3].descriptorCount = 1;
+	meshDataLayoutBindings[3].pImmutableSamplers = nullptr;
 
 	std::vector<VkDescriptorBindingFlags> bindingFlags;
+	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo{};
 	bindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-	bindingFlagsCreateInfo.bindingCount = static_cast<uint32_t>(materialLayoutBindings.size());
+	bindingFlagsCreateInfo.bindingCount = static_cast<uint32_t>(meshDataLayoutBindings.size());
 	bindingFlagsCreateInfo.pBindingFlags = bindingFlags.data();
 
-	VkDescriptorSetLayoutCreateInfo materialLayoutCreateInfo{};
-	materialLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	materialLayoutCreateInfo.bindingCount = static_cast<uint32_t>(materialLayoutBindings.size());
-	materialLayoutCreateInfo.pBindings = materialLayoutBindings.data();
-	materialLayoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-	materialLayoutCreateInfo.pNext = &bindingFlagsCreateInfo;
+	VkDescriptorSetLayoutCreateInfo meshDataLayoutCreateInfo{};
+	meshDataLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	meshDataLayoutCreateInfo.bindingCount = static_cast<uint32_t>(meshDataLayoutBindings.size());
+	meshDataLayoutCreateInfo.pBindings = meshDataLayoutBindings.data();
+	meshDataLayoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+	meshDataLayoutCreateInfo.pNext = &bindingFlagsCreateInfo;
 
-	result = vkCreateDescriptorSetLayout(logicalDevice, &materialLayoutCreateInfo, nullptr, &materialSetLayout);
+	result = vkCreateDescriptorSetLayout(logicalDevice, &meshDataLayoutCreateInfo, nullptr, &materialSetLayout);
 	if (result != VK_SUCCESS)
 		throw VulkanAPIError("Failed to create the material descriptor set layout for ray tracing", result, nameof(vkCreateDescriptorSetLayout), __FILENAME__, std::to_string(__LINE__));
 
@@ -349,12 +369,10 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	CreateShaderBindingTable();
 
-	VkAccelerationStructureKHR decoyAS = VK_NULL_HANDLE;
-
 	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
 	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
 	ASDescriptorInfo.accelerationStructureCount = 1;
-	ASDescriptorInfo.pAccelerationStructures = &decoyAS;
+	ASDescriptorInfo.pAccelerationStructures = &TLAS->accelerationStructure;
 
 	VkDescriptorBufferInfo uniformDescriptorInfo{};
 	uniformDescriptorInfo.buffer = uniformBufferBuffer;
@@ -406,21 +424,23 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
 
-	CreateMaterialBuffers();
+	CreateMeshDataBuffers();
 
-	UpdateMaterialDescriptorSets();
+	UpdateMeshDataDescriptorSets();
 
 	CreateImage(swapchain->extent.width, swapchain->extent.height);
 }
 
-void RayTracing::CreateMaterialBuffers()
+void RayTracing::CreateMeshDataBuffers()
 {
 	std::vector<uint32_t> materialIndices;
 	materialIndices.push_back(0);
-	materialIndices.push_back(0);
+	materialIndices.push_back(1);
 
 	for (int i = 0; i < facesCount; i++)
 	{
+		if (i == 1)
+			materialIndices.push_back(1);
 		if (i == 12 || i == 13)
 			materialIndices.push_back(0);
 		else if (i < 14)
@@ -429,7 +449,7 @@ void RayTracing::CreateMaterialBuffers()
 			materialIndices.push_back(2);
 	}
 
-	VkDeviceSize materialIndexBufferSize = sizeof(uint16_t) * materialIndices.size();
+	VkDeviceSize materialIndexBufferSize = sizeof(uint32_t) * materialIndices.size();
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, materialIndexBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, materialIndexBuffer, materialIndexBufferMemory);
 
@@ -465,9 +485,19 @@ void RayTracing::CreateMaterialBuffers()
 
 	memcpy(materialsBufferMemPtr, materials.data(), materialBufferSize);
 	vkUnmapMemory(logicalDevice, materialBufferMemory);
+
+	VkDeviceSize modelSize = sizeof(glm::mat4) * 2;// Renderer::MAX_MESHES;
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, modelSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, modelMatrixBuffer, modelMatrixBufferMemory);
+	vkMapMemory(logicalDevice, modelMatrixBufferMemory, 0, modelSize, 0, &modelMatrixMemoryPointer);
+
+	VkDeviceSize instanceDataSize = sizeof(InstanceMeshData) * 2;// Renderer::MAX_MESHES
+
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, instanceDataSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, instanceMeshDataBuffer, instanceMeshDataMemory);
+	vkMapMemory(logicalDevice, instanceMeshDataMemory, 0, instanceDataSize, 0, &instanceMeshDataPointer);
 }
 
-void RayTracing::UpdateMaterialDescriptorSets()
+void RayTracing::UpdateMeshDataDescriptorSets()
 {
 	VkDescriptorBufferInfo materialIndexDescriptorInfo{};
 	materialIndexDescriptorInfo.buffer = materialIndexBuffer;
@@ -479,23 +509,47 @@ void RayTracing::UpdateMaterialDescriptorSets()
 	materialBufferDescriptorInfo.offset = 0;
 	materialBufferDescriptorInfo.range = VK_WHOLE_SIZE;
 
-	std::vector<VkWriteDescriptorSet> materialWriteDescriptorSets(2);
+	VkDescriptorBufferInfo modelMatrixBufferDescriptorInfo{};
+	modelMatrixBufferDescriptorInfo.buffer = modelMatrixBuffer;
+	modelMatrixBufferDescriptorInfo.offset = 0;
+	modelMatrixBufferDescriptorInfo.range = VK_WHOLE_SIZE;
 
-	materialWriteDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	materialWriteDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	materialWriteDescriptorSets[0].dstSet = descriptorSets[1];
-	materialWriteDescriptorSets[0].dstBinding = 0;
-	materialWriteDescriptorSets[0].descriptorCount = 1;
-	materialWriteDescriptorSets[0].pBufferInfo = &materialIndexDescriptorInfo;
+	VkDescriptorBufferInfo instanceDataBufferDescriptorInfo{};
+	instanceDataBufferDescriptorInfo.buffer = instanceMeshDataBuffer;
+	instanceDataBufferDescriptorInfo.offset = 0;
+	instanceDataBufferDescriptorInfo.range = VK_WHOLE_SIZE;
 
-	materialWriteDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	materialWriteDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	materialWriteDescriptorSets[1].dstSet = descriptorSets[1];
-	materialWriteDescriptorSets[1].dstBinding = 1;
-	materialWriteDescriptorSets[1].descriptorCount = 1;
-	materialWriteDescriptorSets[1].pBufferInfo = &materialBufferDescriptorInfo;
+	std::vector<VkWriteDescriptorSet> meshDataWriteDescriptorSets(4);
 
-	vkUpdateDescriptorSets(logicalDevice, (uint32_t)materialWriteDescriptorSets.size(), materialWriteDescriptorSets.data(), 0, nullptr);
+	meshDataWriteDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	meshDataWriteDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	meshDataWriteDescriptorSets[0].dstSet = descriptorSets[1];
+	meshDataWriteDescriptorSets[0].dstBinding = 0;
+	meshDataWriteDescriptorSets[0].descriptorCount = 1;
+	meshDataWriteDescriptorSets[0].pBufferInfo = &materialIndexDescriptorInfo;
+
+	meshDataWriteDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	meshDataWriteDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	meshDataWriteDescriptorSets[1].dstSet = descriptorSets[1];
+	meshDataWriteDescriptorSets[1].dstBinding = 1;
+	meshDataWriteDescriptorSets[1].descriptorCount = 1;
+	meshDataWriteDescriptorSets[1].pBufferInfo = &materialBufferDescriptorInfo;
+
+	meshDataWriteDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	meshDataWriteDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	meshDataWriteDescriptorSets[2].dstSet = descriptorSets[1];
+	meshDataWriteDescriptorSets[2].dstBinding = 2;
+	meshDataWriteDescriptorSets[2].descriptorCount = 1;
+	meshDataWriteDescriptorSets[2].pBufferInfo = &modelMatrixBufferDescriptorInfo;
+
+	meshDataWriteDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	meshDataWriteDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	meshDataWriteDescriptorSets[3].dstSet = descriptorSets[1];
+	meshDataWriteDescriptorSets[3].dstBinding = 3;
+	meshDataWriteDescriptorSets[3].descriptorCount = 1;
+	meshDataWriteDescriptorSets[3].pBufferInfo = &instanceDataBufferDescriptorInfo;
+
+	vkUpdateDescriptorSets(logicalDevice, (uint32_t)meshDataWriteDescriptorSets.size(), meshDataWriteDescriptorSets.data(), 0, nullptr);
 }
 
 void RayTracing::CreateImage(uint32_t width, uint32_t height)
@@ -524,6 +578,8 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 	VkCommandBuffer imageBarrierCommandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 	vkCmdPipelineBarrier(imageBarrierCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &RTImageMemoryBarrier);
 	Vulkan::EndSingleTimeCommands(logicalDevice, queue, imageBarrierCommandBuffer, commandPool);
+
+	imageHasChanged = true;
 }
 
 VkStridedDeviceAddressRegionKHR rchitShaderBindingTable{};
@@ -579,29 +635,6 @@ void RayTracing::CreateShaderBindingTable()
 
 void RayTracing::UpdateDescriptorSets() // i dont really know if its necessary to update the buffers for each resize, because it already gets set to VK_WHOLE_SIZE at creation
 {
-	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
-	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-	ASDescriptorInfo.accelerationStructureCount = 1;
-	ASDescriptorInfo.pAccelerationStructures = &TLAS->accelerationStructure;
-
-	VkWriteDescriptorSet writeSet{};
-	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-
-	VkDescriptorBufferInfo uniformDescriptorInfo{};
-	uniformDescriptorInfo.buffer = uniformBufferBuffer;
-	uniformDescriptorInfo.offset = 0;
-	uniformDescriptorInfo.range = VK_WHOLE_SIZE;
-
-	VkDescriptorBufferInfo indexDescriptorInfo{};
-	indexDescriptorInfo.buffer = Renderer::globalIndicesBuffer.GetBufferHandle();
-	indexDescriptorInfo.offset = 0;
-	indexDescriptorInfo.range = VK_WHOLE_SIZE; // maybe better to change VK_WHOLE_SIZE to the last write offset or what the comment above suggests
-
-	VkDescriptorBufferInfo vertexDescriptorInfo{};
-	vertexDescriptorInfo.buffer = Renderer::globalVertexBuffer.GetBufferHandle();
-	vertexDescriptorInfo.offset = 0;
-	vertexDescriptorInfo.range = VK_WHOLE_SIZE;
-
 	VkDescriptorImageInfo RTImageDescriptorImageInfo{};
 	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
 	RTImageDescriptorImageInfo.imageView = RTImageView;
@@ -609,45 +642,9 @@ void RayTracing::UpdateDescriptorSets() // i dont really know if its necessary t
 
 	std::vector<VkWriteDescriptorSet> writeDescriptorSets;
 
-	if (Renderer::globalVertexBuffer.HasChanged() || Renderer::globalIndicesBuffer.HasChanged()) // only update the descriptor sets if new data has been added to the buffers to save time
-	{
-		writeDescriptorSets.resize(4);
-
-		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-		writeDescriptorSets[0].pNext = &ASDescriptorInfo;
-		writeDescriptorSets[0].dstSet = descriptorSets[0];
-		writeDescriptorSets[0].descriptorCount = 1;
-		writeDescriptorSets[0].dstBinding = 0;
-
-		writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSets[1].pNext = &ASDescriptorInfo;
-		writeDescriptorSets[1].pBufferInfo = &uniformDescriptorInfo;
-		writeDescriptorSets[1].dstSet = descriptorSets[0];
-		writeDescriptorSets[1].descriptorCount = 1;
-		writeDescriptorSets[1].dstBinding = 1;
-
-		writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		writeDescriptorSets[2].pNext = &ASDescriptorInfo;
-		writeDescriptorSets[2].pBufferInfo = &indexDescriptorInfo;
-		writeDescriptorSets[2].dstSet = descriptorSets[0];
-		writeDescriptorSets[2].descriptorCount = 1;
-		writeDescriptorSets[2].dstBinding = 2;
-
-		writeDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		writeDescriptorSets[3].pNext = &ASDescriptorInfo;
-		writeDescriptorSets[3].pBufferInfo = &vertexDescriptorInfo;
-		writeDescriptorSets[3].dstSet = descriptorSets[0];
-		writeDescriptorSets[3].descriptorCount = 1;
-		writeDescriptorSets[3].dstBinding = 3;
-	}
-
+	VkWriteDescriptorSet writeSet{};
 	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	writeSet.pNext = &ASDescriptorInfo;
 	writeSet.pImageInfo = &RTImageDescriptorImageInfo;
 	writeSet.dstSet = descriptorSets[0];
 	writeSet.descriptorCount = 1;
@@ -657,10 +654,54 @@ void RayTracing::UpdateDescriptorSets() // i dont really know if its necessary t
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
 }
 
+void RayTracing::UpdateModelMatrices(const std::vector<Object*>& objects)
+{
+	std::vector<glm::mat4> modelMatrices;
+	for (Object* object : objects)
+	{
+		if (object->state != STATUS_VISIBLE || !object->HasFinishedLoading())
+			continue;
+
+		glm::mat4 modelMatrix = object->transform.GetModelMatrix();
+		for (Mesh& mesh : object->meshes)
+			modelMatrices.push_back(modelMatrix);
+	}
+	memcpy(modelMatrixMemoryPointer, modelMatrices.data(), modelMatrices.size() * sizeof(glm::mat4));
+}
+
+void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
+{
+	std::vector<InstanceMeshData> instanceDatas;
+
+	uint32_t indexOffset = 0;
+	uint32_t vertexOffset = 0;
+	for (Object* object : objects)
+	{
+		if (object->state != STATUS_VISIBLE || !object->HasFinishedLoading())
+			continue;
+
+		for (Mesh& mesh : object->meshes)
+		{
+			instanceDatas.push_back({ indexOffset, vertexOffset });
+
+			indexOffset += mesh.indices.size();
+			vertexOffset += mesh.vertices.size();
+		}
+	}
+	memcpy(instanceMeshDataPointer, instanceDatas.data(), instanceDatas.size() * sizeof(InstanceMeshData));
+}
+
 uint32_t frameCount = 0;
 void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
-	UpdateDescriptorSets();
+	if (imageHasChanged)
+	{
+		UpdateDescriptorSets();
+		imageHasChanged = false;
+	}
+
+	UpdateModelMatrices(objects);
+	UpdateInstanceDataBuffer(objects);
 
 	if (showNormals && showUniquePrimitives) showNormals = false; // can't 2 variables changing colors at once
 	uniformBuffer = UniformBuffer{ { camera->position.x, camera->position.y, camera->position.z, 1 }, { camera->right.x, camera->right.y, camera->right.z, 1 }, { camera->up.x, camera->up.y, camera->up.z, 1 }, { camera->front.x, camera->front.y, camera->front.z, 1 }, frameCount, showNormals, showUniquePrimitives, raySampleCount, rayDepth };

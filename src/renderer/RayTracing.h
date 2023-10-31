@@ -26,9 +26,10 @@ public:
 	static bool renderProgressive;
 
 private:
-
-	void UpdateMaterialDescriptorSets();
-	void CreateMaterialBuffers();
+	void UpdateModelMatrices(const std::vector<Object*>& objects);
+	void UpdateInstanceDataBuffer(const std::vector<Object*>& objects);
+	void UpdateMeshDataDescriptorSets();
+	void CreateMeshDataBuffers();
 	void CreateShaderBindingTable();
 	void CreateImage(uint32_t width, uint32_t height);
 	void UpdateDescriptorSets();
@@ -41,6 +42,8 @@ private:
 
 	VkDevice logicalDevice;
 
+	bool imageHasChanged = false;
+
 	VkDeviceMemory RTImageMemory = VK_NULL_HANDLE;
 	VkImageView RTImageView = VK_NULL_HANDLE;
 
@@ -52,4 +55,12 @@ private:
 
 	VkBuffer materialIndexBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory materialIndexBufferMemory = VK_NULL_HANDLE;
+
+	void* modelMatrixMemoryPointer = nullptr;
+	VkBuffer modelMatrixBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory modelMatrixBufferMemory = VK_NULL_HANDLE;
+
+	void* instanceMeshDataPointer = nullptr;
+	VkBuffer instanceMeshDataBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory instanceMeshDataMemory = VK_NULL_HANDLE;
 };

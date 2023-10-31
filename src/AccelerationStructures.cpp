@@ -171,7 +171,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 		for (int j = 0; j < objects[i]->meshes.size(); j++)								   // converts every mesh from every object into an acceleration structure instance
 		{
 			VkAccelerationStructureInstanceKHR instance{};
-			instance.instanceCustomIndex = i * j;
+			instance.instanceCustomIndex = (i + 1) * (j + 1) - 1;
 			instance.mask = 0xFF;
 			instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 			instance.accelerationStructureReference = objects[i]->meshes[j].BLAS->GetAccelerationStructureAddress();

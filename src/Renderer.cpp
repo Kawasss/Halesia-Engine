@@ -880,7 +880,7 @@ void Renderer::RenderGraph(const std::vector<float>& buffer, const char* label)
 void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
 {
 	ImGui::Render();
-
+	
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
 	Vulkan::graphicsQueueMutex->lock();
 

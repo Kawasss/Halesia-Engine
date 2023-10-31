@@ -8,11 +8,11 @@
 
 std::unordered_map<SpvReflectFormat, uint32_t> sizeOfFormat{ { SPV_REFLECT_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3) }, { SPV_REFLECT_FORMAT_R32G32_SFLOAT, sizeof(glm::vec2) }, { SPV_REFLECT_FORMAT_R32_SINT, sizeof(int) } };
 
-SpvReflectShaderModule module;
+SpvReflectShaderModule shaderModule;
 
 void PipelineBuilder::CreateReflectShaderModule(const std::vector<char>& shaderSource)
 {
-	if (spvReflectCreateShaderModule(shaderSource.size(), static_cast<const void*>(shaderSource.data()), &module) != SPV_REFLECT_RESULT_SUCCESS)
+	if (spvReflectCreateShaderModule(shaderSource.size(), static_cast<const void*>(shaderSource.data()), &shaderModule) != SPV_REFLECT_RESULT_SUCCESS)
 		throw std::runtime_error("Failed to reflect on the given shader source code");
 }
 
@@ -33,7 +33,7 @@ std::vector<const SpvReflectInterfaceVariable*> GetInputVariables(SpvReflectShad
 {
 	std::vector<const SpvReflectInterfaceVariable*> ret;
 	std::vector<SpvReflectInterfaceVariable*> unsorted;
-
+	
 	uint32_t inputVariableCount = 0;
 	if (spvReflectEnumerateInputVariables(&module, &inputVariableCount, nullptr) != SPV_REFLECT_RESULT_SUCCESS)
 		throw std::runtime_error("Failed to gather the amount of input variables from the given shader");
@@ -97,7 +97,7 @@ VkPipeline PipelineBuilder::BuildGraphicsPipeline(VkDevice logicalDevice, VkDesc
 	VkPipeline pipeline;
 
 	CreateReflectShaderModule(vertexShaderSource);
-
+	
 	// todo: shader stages
 	VkShaderModule vertexShaderModule = CreateShaderModule(logicalDevice, vertexShaderSource);
 	VkShaderModule fragmentShaderModule = CreateShaderModule(logicalDevice, fragmentShaderSource);
@@ -105,7 +105,7 @@ VkPipeline PipelineBuilder::BuildGraphicsPipeline(VkDevice logicalDevice, VkDesc
 	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(vertexShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
 	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(fragmentShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	std::vector<const SpvReflectInterfaceVariable*> inputVariables = GetInputVariables(module);
+	std::vector<const SpvReflectInterfaceVariable*> inputVariables = GetInputVariables(shaderModule);
 
 	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexCreateInfo, fragmentCreateInfo };
 
@@ -199,7 +199,7 @@ VkPipeline PipelineBuilder::BuildGraphicsPipeline(VkDevice logicalDevice, VkDesc
 	vkDestroyShaderModule(logicalDevice, vertexShaderModule, nullptr);
 	vkDestroyShaderModule(logicalDevice, fragmentShaderModule, nullptr);
 
-	spvReflectDestroyShaderModule(&module);
+	spvReflectDestroyShaderModule(&shaderModule);
 
 	return pipeline;
 }

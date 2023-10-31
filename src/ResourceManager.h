@@ -81,7 +81,7 @@ public:
 
 	void Clear(const VulkanCreationObject& creationObject)
 	{
-		Destroy(); // destroy the buffer and reset the pointer to the end, then recreate the buffer
+		Destroy(); // destroy the buffer and reset the pointer to the end, then recreates the buffer
 		endOfBufferPointer = 0;
 
 		VkBuffer stagingBuffer;

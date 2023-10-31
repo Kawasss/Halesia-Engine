@@ -6,10 +6,10 @@
 
 struct Vertex
 {
-	glm::vec3 position{};
-	glm::vec3 normal{};
+	alignas(16) glm::vec3 position{};
+	alignas(16) glm::vec3 normal{};
 	glm::vec2 textureCoordinates{};
-	int drawID;
+	alignas (8) int32_t drawID;
 
 	static VkVertexInputBindingDescription GetBindingDescription()
 	{

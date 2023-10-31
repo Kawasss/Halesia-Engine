@@ -32,13 +32,20 @@ struct Vertex
     vec3 position;
 	vec3 normal;
 	vec2 textureCoordinates;
-	int drawID;
+	ivec2 drawID;
+};
+
+struct InstanceMeshData
+{
+    uint indexBufferOffset;
+    uint vertexBufferOffset;
 };
 
 layout(location = 1) rayPayloadEXT bool isShadow;
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
-layout(binding = 1, set = 0) uniform Camera {
+layout(binding = 1, set = 0) uniform Camera 
+{
   vec4 position;
   vec4 right;
   vec4 up;
@@ -49,18 +56,15 @@ layout(binding = 1, set = 0) uniform Camera {
   int showUnique;
   int raySamples;
   int rayDepth;
-}
-camera;
+} camera;
 
-layout(binding = 2, set = 0) buffer IndexBuffer { uint16_t data[]; }
-indexBuffer;
-layout(binding = 3, set = 0) buffer VertexBuffer { Vertex data[]; }
-vertexBuffer;
+layout (binding = 2, set = 0) buffer IndexBuffer { uint16_t data[]; } indexBuffer;
+layout (binding = 3, set = 0) buffer VertexBuffer { Vertex data[]; } vertexBuffer;
 
-layout(binding = 0, set = 1) buffer MaterialIndexBuffer { uint data[]; }
-materialIndexBuffer;
-layout(binding = 1, set = 1) buffer MaterialBuffer { Material data[]; }
-materialBuffer;
+layout (binding = 0, set = 1) buffer MaterialIndexBuffer { uint data[]; } materialIndexBuffer;
+layout (binding = 1, set = 1) buffer MaterialBuffer { Material data[]; } materialBuffer;
+layout (binding = 2, set = 1) buffer ModelBuffer { mat4 data[]; } modelBuffer;
+layout (binding = 3, set = 1) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
 
 float random(vec2 uv, float seed) {
   return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) * 43758.5453);
@@ -86,26 +90,29 @@ void main() {
     return;
   }
 
-  ivec3 indices = ivec3(indexBuffer.data[3 * gl_PrimitiveID + 0],
-                        indexBuffer.data[3 * gl_PrimitiveID + 1],
-                        indexBuffer.data[3 * gl_PrimitiveID + 2]);
+  uint indexOffset = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].indexBufferOffset;
+  uint vertexOffset = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].vertexBufferOffset;
+
+  ivec3 indices = ivec3(indexBuffer.data[indexOffset + 3 * gl_PrimitiveID + 0],
+                        indexBuffer.data[indexOffset + 3 * gl_PrimitiveID + 1],
+                        indexBuffer.data[indexOffset + 3 * gl_PrimitiveID + 2]);
 
   vec3 barycentric = vec3(1.0 - hitCoordinate.x - hitCoordinate.y,
                           hitCoordinate.x, hitCoordinate.y);
 
-vec3 vertexA = vertexBuffer.data[indices.x].position;
-vec3 vertexB = vertexBuffer.data[indices.y].position;
-vec3 vertexC = vertexBuffer.data[indices.z].position;
+vec3 vertexA = vertexBuffer.data[vertexOffset + indices.x].position;
+vec3 vertexB = vertexBuffer.data[vertexOffset + indices.y].position;
+vec3 vertexC = vertexBuffer.data[vertexOffset + indices.z].position;
 
   vec3 position = vertexA * barycentric.x + vertexB * barycentric.y +
                   vertexC * barycentric.z;
-  vec3 geometricNormal = vertexBuffer.data[indices.x].normal;
+  vec3 geometricNormal = normalize(mat3(transpose(inverse(modelBuffer.data[vertexBuffer.data[vertexOffset + indices.x].drawID.x]))) * vertexBuffer.data[vertexOffset + indices.x].normal);
 
   if (camera.showUnique == 1)
   {
-      float x = random(vec2(1), 8045389.1568479 * gl_PrimitiveID);
-      float y = random(vec2(1), 2754650.7645183 * gl_PrimitiveID);
-      float z = random(vec2(1), 1436885.4987659 * gl_PrimitiveID);
+      float x = random(vec2(1), 8045389.1568479 * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
+      float y = random(vec2(1), 2754650.7645183 * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
+      float z = random(vec2(1), 1436885.4987659 * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
       payload.directColor = vec3(x, y, z);
       payload.rayActive = 0;
       return;

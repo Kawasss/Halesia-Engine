@@ -43,7 +43,7 @@ public:
 
 		if (objectType == OBJECT_IMPORT_EXTERNAL)
 		{
-			creationData = GenericLoader::LoadObjectFile(name, allObjects.size());
+			creationData = GenericLoader::LoadObjectFile(name, 1);
 		}
 		else // if (objectType == OBJECT_IMPORT_INTERNAL)
 		{
