@@ -140,7 +140,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	if (result != VK_SUCCESS)
 		throw VulkanAPIError("Failed to allocate the command buffers for ray tracing", result, nameof(vkAllocateCommandBuffers), __FILENAME__, std::to_string(__LINE__));
 
-	TLAS = TopLevelAccelerationStructure::CreateTopLevelAccelerationStructure(creationObject, { object });
+	TLAS = TopLevelAccelerationStructure::Create(creationObject, { object });
 
 	// descriptor pool (frames in flight not implemented)
 
