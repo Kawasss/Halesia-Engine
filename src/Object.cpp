@@ -45,35 +45,31 @@ void Mesh::Destroy()
 	vertices.clear();
 	//delete this;
 }
-void GenerateHandle(Handle& handle)
-{
-	handle = ResourceManager::GenerateHandle();
-}
 
 void Object::AwaitGeneration()
 {
 	generationProcess.get();
 }
 
-void GenerateObjectWithData(Object* object, ObjectCreationObject creationObject, ObjectCreationData creationData)
+void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, const ObjectCreationData& creationData)
 {
-	object->name = creationData.name;
+	name = creationData.name;
 
-#ifdef _DEBUG
-	Console::WriteLine("Attempting to create new model \"" + object->name + '\"', MESSAGE_SEVERITY_DEBUG);
-#endif
+	#ifdef _DEBUG
+	Console::WriteLine("Attempting to create new model \"" + name + '\"', MESSAGE_SEVERITY_DEBUG);
+	#endif
 
 	for (MeshCreationData meshData : creationData.meshes)
-		object->meshes.push_back(Mesh{ creationObject, meshData });
+		meshes.push_back(Mesh{ creationObject, meshData });
 
-	object->transform = Transform(creationData.position, creationData.rotation, creationData.scale, object->meshes[0].extents, object->meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
-	GenerateHandle(object->hObject);
+	transform = Transform(creationData.position, creationData.rotation, creationData.scale, meshes[0].extents, meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
+	hObject = ResourceManager::GenerateHandle();
 
-	object->finishedLoading = true; //maybe use mutex here or just find better solution
+	finishedLoading = true; //maybe use mutex here or just find better solution
 
-#ifdef _DEBUG
-	Console::WriteLine("Created new object \"" + object->name + "\" with unique id \"" + std::to_string(object->hObject) + '\"', MESSAGE_SEVERITY_DEBUG);
-#endif
+	#ifdef _DEBUG
+	Console::WriteLine("Created new object \"" + name + "\" with unique id \"" + std::to_string(hObject) + '\"', MESSAGE_SEVERITY_DEBUG);
+	#endif
 }
 
 void Object::RecreateMeshes(const MeshCreationObject& creationObject)
@@ -84,12 +80,12 @@ void Object::RecreateMeshes(const MeshCreationObject& creationObject)
 void Object::CreateObject(void* customClassPointer, const ObjectCreationData& creationData, const MeshCreationObject& creationObject)
 {
 	scriptClass = customClassPointer;
-	GenerateObjectWithData(this, creationObject, creationData);
+	GenerateObjectWithData(creationObject, creationData);
 }
 
 Object::Object(const ObjectCreationData& creationData, const ObjectCreationObject& creationObject)
 {
-	generationProcess = std::async(GenerateObjectWithData, this, creationObject, creationData);
+	generationProcess = std::async(&Object::GenerateObjectWithData, this, creationObject, creationData);
 }
 
 bool Object::HasFinishedLoading()

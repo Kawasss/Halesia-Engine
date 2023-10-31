@@ -134,10 +134,11 @@ void OrbitCamera::Update(Win32Window* window, float delta)
 	int x, y;
 	window->GetRelativeCursorPosition(x, y);
 
-	sumX += x;
-	sumY += y;
+	sumX += x * delta;
+	sumY += y * delta;
 
-	radius += window->GetWheelRotation() * 0.001f;
+	radius += window->GetWheelRotation() * delta * 0.001f;
+	if (radius < 0.1f) radius = 0.1f;
 
 	float phi = sumX * 2 * glm::pi<float>() / window->GetWidth();
 	float theta = sumY * glm::pi<float>() / window->GetHeight();

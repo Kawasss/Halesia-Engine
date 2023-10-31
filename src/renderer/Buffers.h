@@ -1,7 +1,6 @@
 #pragma once
 #include "renderer/Vulkan.h"
 #include "Vertex.h"
-#include "PhysicalDevice.h"
 #include "../CreationObjects.h"
 
 class VulkanBuffer // maybe struct because its fairly small and used for the entire lifetime of the mesh?

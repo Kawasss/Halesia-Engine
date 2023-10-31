@@ -1,6 +1,41 @@
 #include "renderer/AccelerationStructures.h"
 #include "renderer/Renderer.h"
 
+void AccelerationStructure::Create(const VulkanCreationObject& creationObject, const VkAccelerationStructureGeometryKHR* pGeometry, uint32_t maxPrimitiveCount)
+{
+	VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
+	buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
+	buildGeometryInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+	buildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+	buildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+	buildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
+	buildGeometryInfo.geometryCount = 1;
+	buildGeometryInfo.pGeometries = pGeometry;
+	buildGeometryInfo.scratchData = { 0 };
+
+	VkAccelerationStructureBuildSizesInfoKHR buildSizesInfo{};
+	buildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+
+	std::vector<uint32_t> maxPrimitiveCounts = { maxPrimitiveCount };
+	vkGetAccelerationStructureBuildSizesKHR(creationObject.logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildGeometryInfo, maxPrimitiveCounts.data(), &buildSizesInfo);
+
+	Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, buildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, ASBuffer, ASBufferMemory);
+
+	VkAccelerationStructureCreateInfoKHR BLASCreateInfo{};
+	BLASCreateInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+	BLASCreateInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+	BLASCreateInfo.size = buildSizesInfo.accelerationStructureSize;
+	BLASCreateInfo.buffer = ASBuffer;
+	BLASCreateInfo.offset = 0;
+
+	VkResult result = vkCreateAccelerationStructureKHR(creationObject.logicalDevice, &BLASCreateInfo, nullptr, &accelerationStructure);
+	CheckVulkanResult("Failed to create the BLAS", result, nameof(vkCreateAccelerationStructureKHR));
+
+	ASAddress = Vulkan::GetDeviceAddress(creationObject.logicalDevice, accelerationStructure);
+
+	Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, buildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, scratchBuffer, scratchDeviceMemory);
+}
+
 BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::CreateBottomLevelAccelerationStructure(const VulkanCreationObject& creationObject, Mesh& mesh)
 {
 	BottomLevelAccelerationStructure* BLAS = new BottomLevelAccelerationStructure();
@@ -109,7 +144,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 			instance.accelerationStructureReference = objects[i]->meshes[j].BLAS->deviceAddress;
 
 			glm::mat4 transform = objects[i]->transform.GetModelMatrix();
-			memcpy(&instance.transform, &transform, sizeof(VkTransformMatrixKHR));
+			memcpy(&instance.transform, &transform, sizeof(VkTransformMatrixKHR));	// simply copy the contents of the glm matrix to the vulkan matrix since the contents align
 
 			instances.push_back(instance);
 		}
@@ -167,13 +202,13 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::CreateTopLevelAcce
 
 void TopLevelAccelerationStructure::Build(const VulkanCreationObject& creationObject, std::vector<Object*> objects, bool useSingleTimeCommands, VkCommandBuffer externalCommandBuffer)
 {
-	if (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE)
+	if (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE)				   // check if the external command buffer is valid, if specified that an external will be used
 		throw VulkanAPIError("Can't build the top level acceleration structure, because no valid command buffer was given (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE)", VK_SUCCESS, nameof(Build), __FILENAME__, __STRLINE__);
 
 	instanceBuffer.ResetAddressPointer();
 
-	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects);
-	instanceBuffer.SubmitNewData(BLASInstances); // make it so that only the new BLASs get submitted instead of all of the BLASs (even the old ones). the code right now is a REALLY bad implementation
+	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects); // write all of the BLAS instances to a single buffer so that vulkan can easily read all of the instances in one go
+	instanceBuffer.SubmitNewData(BLASInstances);										   // make it so that only the new BLASs get submitted instead of all of the BLASs (even the old ones). the code right now is a REALLY bad implementation
 
 	VkAccelerationStructureGeometryKHR geometry{};
 	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
@@ -207,7 +242,7 @@ void TopLevelAccelerationStructure::Build(const VulkanCreationObject& creationOb
 
 		Vulkan::YieldCommandPool(creationObject.queueIndex, commandPool);
 	}
-	else
+	else // this option is faster for runtime building since it doesn't wait for the queue to go idle (which can be a long time)
 	{
 		VkMemoryBarrier memoryBarrier{};
 		memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
