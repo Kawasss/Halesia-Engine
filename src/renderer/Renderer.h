@@ -21,8 +21,8 @@ public:
 	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
 	static constexpr uint32_t MAX_TLAS_INSTANCES = MAX_MESHES;
 
-	static ApeironBuffer<Vertex> globalVertexBuffer;
-	static ApeironBuffer<uint16_t> globalIndicesBuffer;
+	static StorageBuffer<Vertex> globalVertexBuffer;
+	static StorageBuffer<uint16_t> globalIndicesBuffer;
 
 	Renderer(Win32Window* window);
 	void Destroy();

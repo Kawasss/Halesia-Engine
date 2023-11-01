@@ -34,8 +34,8 @@ std::string variableToString(const char* name)
 	return name; //gimmicky? yes
 }
 
-ApeironBuffer<Vertex> Renderer::globalVertexBuffer;
-ApeironBuffer<uint16_t> Renderer::globalIndicesBuffer;
+StorageBuffer<Vertex> Renderer::globalVertexBuffer;
+StorageBuffer<uint16_t> Renderer::globalIndicesBuffer;
 bool Renderer::initGlobalBuffers = false;
 
 struct UniformBufferObject

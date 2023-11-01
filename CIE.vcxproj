@@ -141,6 +141,7 @@
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Console.cpp" />
     <ClCompile Include="src\HalesiaEngine.cpp" />
+    <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\pipelineBuilder.cpp" />
     <ClCompile Include="src\RayTracing.cpp" />
     <ClCompile Include="src\Input.cpp" />
@@ -168,6 +169,7 @@
     <ClInclude Include="src\HalesiaEngine.h" />
     <ClInclude Include="src\Material.h" />
     <ClInclude Include="src\renderer\AccelerationStructures.h" />
+    <ClInclude Include="src\renderer\Mesh.h" />
     <ClInclude Include="src\renderer\PipelineBuilder.h" />
     <ClInclude Include="src\renderer\RayTracing.h" />
     <ClInclude Include="src\Object.h" />
@@ -175,6 +177,7 @@
     <ClInclude Include="src\renderer\Buffers.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
     <ClInclude Include="src\renderer\Renderer.h" />
+    <ClInclude Include="src\renderer\StorageBuffer.h" />
     <ClInclude Include="src\renderer\Surface.h" />
     <ClInclude Include="src\renderer\Swapchain.h" />
     <ClInclude Include="src\renderer\Texture.h" />

@@ -13,6 +13,7 @@
 #include "SceneLoader.h"
 #include "ResourceManager.h"
 #include "renderer/AccelerationStructures.h"
+#include "renderer/Mesh.h"
 
 enum ObjectState
 {
@@ -28,27 +29,6 @@ enum ObjectState
 	/// The attached script isn't run and the object isn't rendered
 	/// </summary>
 	STATUS_DISABLED
-};
-
-struct Mesh
-{
-	Mesh(const MeshCreationObject& creationObject, const MeshCreationData& creationData);
-	void Destroy();
-
-	Material material{};
-	ApeironMemory vertexMemory;
-	ApeironMemory indexMemory;
-
-	BottomLevelAccelerationStructure* BLAS;
-
-	std::vector<Vertex> vertices;
-	std::vector<uint16_t> indices;
-
-	int faceCount;
-	glm::vec3 min, max, center, extents;
-
-	void ProcessMaterial(const TextureCreationObject& creationObjects, const MaterialCreationData& creationData);
-	void Recreate(const MeshCreationObject& creationObject);
 };
 
 class Object

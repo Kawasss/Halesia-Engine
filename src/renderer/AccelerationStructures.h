@@ -1,6 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include "../ResourceManager.h"
+#include "StorageBuffer.h"
 
 struct Mesh;
 struct VulkanCreationObject;
@@ -50,5 +51,5 @@ public:
 private:
 	static std::vector<VkAccelerationStructureInstanceKHR> GetInstances(std::vector<Object*> objects);
 
-	ApeironBuffer<VkAccelerationStructureInstanceKHR> instanceBuffer;
+	StorageBuffer<VkAccelerationStructureInstanceKHR> instanceBuffer;
 };
