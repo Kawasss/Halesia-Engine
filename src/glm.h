@@ -7,3 +7,14 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/easing.hpp>
+
+#include <string>
+#include <sstream>
+#include <iomanip>
+
+template<typename T> inline std::string ToHexadecimalString(T number) // no better place to put this
+{
+	std::stringstream stream;
+	stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << number;
+	return stream.str();
+}

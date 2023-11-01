@@ -7,10 +7,12 @@
 
 struct Mesh
 {
+	static std::vector<Material> materials;
+
 	Mesh(const MeshCreationObject& creationObject, const MeshCreationData& creationData);
 	void Destroy();
 
-	Material material{};
+	uint32_t materialIndex;
 	StorageMemory vertexMemory;
 	StorageMemory indexMemory;
 

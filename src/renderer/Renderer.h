@@ -23,6 +23,7 @@ public:
 
 	static StorageBuffer<Vertex> globalVertexBuffer;
 	static StorageBuffer<uint16_t> globalIndicesBuffer;
+	static VkSampler defaultSampler;
 
 	Renderer(Win32Window* window);
 	void Destroy();
@@ -64,8 +65,6 @@ private:
 	std::vector<VkBuffer> modelBuffers;
 	std::vector<VkDeviceMemory> modelBuffersMemory;
 	std::vector<void*> modelBuffersMapped;
-
-	VkSampler textureSampler;
 
 	PhysicalDevice physicalDevice;
 	Surface surface;

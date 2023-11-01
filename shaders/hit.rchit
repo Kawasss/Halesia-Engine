@@ -65,6 +65,7 @@ layout (binding = 3, set = 0) buffer VertexBuffer { Vertex data[]; } vertexBuffe
 layout (binding = 0, set = 1) buffer MaterialBuffer { Material data[]; } materialBuffer;
 layout (binding = 1, set = 1) buffer ModelBuffer { mat4 data[]; } modelBuffer;
 layout (binding = 2, set = 1) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
+layout (binding = 3, set = 1) uniform sampler2D[] textures;
 
 float random(vec2 uv, float seed) {
   return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) * 43758.5453);

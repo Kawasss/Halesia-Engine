@@ -64,8 +64,10 @@ public:
 		WriteToBuffer(data, memoryHandle);
 
 		if (!canReuseMemory) // the end of the buffer is only moved forward if data is appended
+		{
 			endOfBufferPointer += writeSize;
-		allCreatedMemory.insert(memoryHandle);
+			allCreatedMemory.insert(memoryHandle);
+		}
 
 		hasChanged = true;
 		return memoryHandle;
@@ -92,7 +94,7 @@ public:
 	{
 		if (!CheckIfHandleIsValid(memory))
 		{
-			Console::WriteLine("An invalid memory handle (" + std::to_string(memory) + ") has been found, returning", MESSAGE_SEVERITY_ERROR);
+			Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found, returning", MESSAGE_SEVERITY_ERROR);
 			return;
 		}
 
@@ -107,7 +109,7 @@ public:
 	{
 		if (!CheckIfHandleIsValid(memory))
 		{
-			Console::WriteLine("An invalid memory handle (" + std::to_string(memory) + ") has been found, returning", MESSAGE_SEVERITY_ERROR);
+			Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found, returning", MESSAGE_SEVERITY_ERROR);
 			return;
 		}
 
@@ -120,7 +122,7 @@ public:
 	{ 
 		if (!CheckIfHandleIsValid(memory))
 		{
-			Console::WriteLine("An invalid memory handle (" + std::to_string(memory) + ") has been found, returning", MESSAGE_SEVERITY_ERROR);
+			Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found, returning", MESSAGE_SEVERITY_ERROR);
 			return 0;
 		}
 
@@ -204,9 +206,7 @@ private:
 
 	bool CheckIfHandleIsValid(StorageMemory memory)
 	{
-		if (allCreatedMemory.count(memory) == 0)
-			return false;
-		return true;
+		return allCreatedMemory.count(memory) > 0;
 	}
 
 	VkDevice logicalDevice = VK_NULL_HANDLE;

@@ -37,6 +37,7 @@ std::string variableToString(const char* name)
 StorageBuffer<Vertex> Renderer::globalVertexBuffer;
 StorageBuffer<uint16_t> Renderer::globalIndicesBuffer;
 bool Renderer::initGlobalBuffers = false;
+VkSampler Renderer::defaultSampler = VK_NULL_HANDLE;
 
 struct UniformBufferObject
 {
@@ -67,7 +68,7 @@ void Renderer::Destroy()
 
 	swapchain->Destroy();
 
-	vkDestroySampler(logicalDevice, textureSampler, nullptr);
+	vkDestroySampler(logicalDevice, defaultSampler, nullptr);
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
@@ -181,7 +182,8 @@ void Renderer::InitVulkan()
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(renderPass);
 	Texture::GeneratePlaceholderTextures(GetVulkanCreationObject());
-	CreateTextureSampler();
+	if (defaultSampler == VK_NULL_HANDLE)
+		CreateTextureSampler();
 	CreateUniformBuffers();
 	CreateModelBuffers();
 	CreateDescriptorPool();
@@ -227,7 +229,7 @@ void Renderer::CreateTextureSampler()
 	createInfo.minLod = 0;
 	createInfo.maxLod = VK_LOD_CLAMP_NONE;//static_cast<uint32_t>(textureImage->GetMipLevels());
 
-	VkResult result = vkCreateSampler(logicalDevice, &createInfo, nullptr, &textureSampler);
+	VkResult result = vkCreateSampler(logicalDevice, &createInfo, nullptr, &defaultSampler);
 	if (result != VK_SUCCESS)
 		throw VulkanAPIError("Failed to create the texture sampler", result, nameof(vkCreateSampler), __FILENAME__, std::to_string(__LINE__));
 }
@@ -375,7 +377,7 @@ void Renderer::CreateDescriptorSets()
 		VkDescriptorImageInfo imageInfo{};
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		imageInfo.imageView = VK_NULL_HANDLE;
-		imageInfo.sampler = textureSampler;
+		imageInfo.sampler = defaultSampler;
 
 		std::array<VkWriteDescriptorSet, 3> writeDescriptorSets{};
 		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -963,8 +965,8 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 			{
 				VkDescriptorImageInfo imageInfo{};
 				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				imageInfo.imageView = mesh.material[i]->imageView;
-				imageInfo.sampler = textureSampler;
+				imageInfo.imageView = Mesh::materials[mesh.materialIndex][i]->imageView;//mesh.material[i]->imageView;
+				imageInfo.sampler = defaultSampler;
 
 				imageInfos.push_back(imageInfo);
 	}

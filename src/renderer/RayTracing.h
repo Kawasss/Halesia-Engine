@@ -28,6 +28,7 @@ public:
 private:
 	void UpdateModelMatrices(const std::vector<Object*>& objects);
 	void UpdateInstanceDataBuffer(const std::vector<Object*>& objects);
+	void UpdateTextureBuffer();
 	void UpdateMeshDataDescriptorSets();
 	void CreateMeshDataBuffers();
 	void CreateShaderBindingTable();
@@ -40,7 +41,7 @@ private:
 	Win32Window* window = nullptr;
 	Swapchain* swapchain = nullptr;
 
-	VkDevice logicalDevice;
+	VkDevice logicalDevice = VK_NULL_HANDLE;
 
 	bool imageHasChanged = false;
 

@@ -151,15 +151,17 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// descriptor pool (frames in flight not implemented)
 
-	std::vector<VkDescriptorPoolSize> descriptorPoolSizes(4);
+	std::vector<VkDescriptorPoolSize> descriptorPoolSizes(5);
 	descriptorPoolSizes[0].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 	descriptorPoolSizes[0].descriptorCount = 1;
 	descriptorPoolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorPoolSizes[1].descriptorCount = 1;
 	descriptorPoolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	descriptorPoolSizes[2].descriptorCount = 5;
+	descriptorPoolSizes[2].descriptorCount = 6;
 	descriptorPoolSizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 	descriptorPoolSizes[3].descriptorCount = 1;
+	descriptorPoolSizes[4].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	descriptorPoolSizes[4].descriptorCount = Renderer::MAX_TLAS_INSTANCES;
 
 	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
 	descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -231,7 +233,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// material set layouts (placeholder material, not Material.h materials) (frames in flight not implemented)
 
-	std::vector<VkDescriptorSetLayoutBinding> meshDataLayoutBindings(3);
+	std::vector<VkDescriptorSetLayoutBinding> meshDataLayoutBindings(4);
 
 	meshDataLayoutBindings[0].binding = 0;
 	meshDataLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -251,7 +253,14 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	meshDataLayoutBindings[2].descriptorCount = 1;
 	meshDataLayoutBindings[2].pImmutableSamplers = nullptr;
 
+	meshDataLayoutBindings[3].binding = 3;
+	meshDataLayoutBindings[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	meshDataLayoutBindings[3].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+	meshDataLayoutBindings[3].descriptorCount = Renderer::MAX_BINDLESS_TEXTURES;
+	meshDataLayoutBindings[3].pImmutableSamplers = nullptr;
+
 	std::vector<VkDescriptorBindingFlags> bindingFlags;
+	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
@@ -587,7 +596,7 @@ void RayTracing::CreateShaderBindingTable()
 	rmissShaderBindingTable.stride = progSize;
 }
 
-void RayTracing::UpdateDescriptorSets() // i dont really know if its necessary to update the buffers for each resize, because it already gets set to VK_WHOLE_SIZE at creation
+void RayTracing::UpdateDescriptorSets()
 {
 	VkDescriptorImageInfo RTImageDescriptorImageInfo{};
 	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
@@ -606,6 +615,35 @@ void RayTracing::UpdateDescriptorSets() // i dont really know if its necessary t
 	writeDescriptorSets.push_back(writeSet);
 	
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
+}
+
+void RayTracing::UpdateTextureBuffer()
+{
+	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * 5);
+	std::vector<VkWriteDescriptorSet> writeSets(Mesh::materials.size() * 5);
+	for (int i = 0; i < Mesh::materials.size(); i++)
+	{
+		for (int j = 0; j < 5; j++)
+		{
+			uint32_t index = 5 * i + j;
+			
+			VkDescriptorImageInfo& imageInfo = imageInfos[index];
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo.imageView = Mesh::materials[i][j]->imageView;
+			imageInfo.sampler = Renderer::defaultSampler;
+
+			VkWriteDescriptorSet& writeSet = writeSets[index];
+			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			writeSet.pImageInfo = &imageInfos[index];
+			writeSet.dstSet = descriptorSets[1];
+			writeSet.descriptorCount = 1;
+			writeSet.dstBinding = 3;
+			writeSet.dstArrayElement = index;
+		}
+	}
+
+	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
 void RayTracing::UpdateModelMatrices(const std::vector<Object*>& objects)
@@ -636,7 +674,7 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 
 		for (Mesh& mesh : object->meshes)
 		{
-			instanceDatas.push_back({ indexOffset, vertexOffset, 0 /* temp, should the objects material index, once that has been implemented */ });
+			instanceDatas.push_back({ indexOffset, vertexOffset, mesh.materialIndex });
 
 			indexOffset += mesh.indices.size();
 			vertexOffset += mesh.vertices.size();
@@ -657,6 +695,9 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	UpdateModelMatrices(objects);
 	UpdateInstanceDataBuffer(objects);
 
+	if (Mesh::materials.size() > 0)
+		UpdateTextureBuffer();
+	
 	if (showNormals && showUniquePrimitives) showNormals = false; // can't 2 variables changing colors at once
 	uniformBuffer = UniformBuffer{ { camera->position.x, camera->position.y, camera->position.z, 1 }, { camera->right.x, camera->right.y, camera->right.z, 1 }, { camera->up.x, camera->up.y, camera->up.z, 1 }, { camera->front.x, camera->front.y, camera->front.z, 1 }, frameCount, showNormals, showUniquePrimitives, raySampleCount, rayDepth };
 	//uniformBuffer = UniformBuffer{ { 7.24205f, -4.13095f, 7.67253f, 1 }, { 0.70373f, 0.00000f, -0.71047f, 1 }, { -0.28477f, 0.91616f, -0.28206f, 1 }, { -0.65091f, -0.40081f, -0.64473f, 1 }, frameCount };

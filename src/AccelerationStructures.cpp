@@ -171,11 +171,11 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 		for (int j = 0; j < objects[i]->meshes.size(); j++)								   // converts every mesh from every object into an acceleration structure instance
 		{
 			VkAccelerationStructureInstanceKHR instance{};
-			instance.instanceCustomIndex = (i + 1) * (j + 1) - 1;
+			instance.instanceCustomIndex = objects[i]->meshes.size() * i + j;
 			instance.mask = 0xFF;
 			instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 			instance.accelerationStructureReference = objects[i]->meshes[j].BLAS->GetAccelerationStructureAddress();
-
+			
 			glm::mat4 transform = objects[i]->transform.GetModelMatrix();
 			memcpy(&instance.transform, &transform, sizeof(VkTransformMatrixKHR));		   // simply copy the contents of the glm matrix to the vulkan matrix since the contents align
 
