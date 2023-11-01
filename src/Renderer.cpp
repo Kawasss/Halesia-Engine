@@ -884,7 +884,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	ImGui::Render();
 	
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
-	Vulkan::graphicsQueueMutex->lock();
+	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
 
 	uint32_t imageIndex;
 	VkResult result = vkAcquireNextImageKHR(logicalDevice, swapchain->vkSwapchain, UINT64_MAX, imageAvaibleSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
@@ -937,7 +937,6 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	presentInfo.pImageIndices = &imageIndex;
 
 	result = vkQueuePresentKHR(presentQueue, &presentInfo);
-	Vulkan::graphicsQueueMutex->unlock();
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || testWindow->resized)
 	{
 		swapchain->Recreate(renderPass);

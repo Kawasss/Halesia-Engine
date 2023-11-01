@@ -23,8 +23,9 @@ public:
 	static int rayDepth;
 	static bool showNormals;
 	static bool showUniquePrimitives;
+	static bool showAlbedo;
 	static bool renderProgressive;
-
+	
 private:
 	void UpdateModelMatrices(const std::vector<Object*>& objects);
 	void UpdateInstanceDataBuffer(const std::vector<Object*>& objects);

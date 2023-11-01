@@ -243,8 +243,9 @@ HalesiaExitCode HalesiaInstance::Run()
 	Console::commandVariables["showNormals"] = &RayTracing::showNormals;
 	Console::commandVariables["renderProgressive"] = &RayTracing::renderProgressive;
 	Console::commandVariables["showUnique"] = &RayTracing::showUniquePrimitives;
+	Console::commandVariables["showAlbedo"] = &RayTracing::showAlbedo;
 	Console::commandVariables["rasterize"] = &renderer->shouldRasterize;
-
+	
 	try
 	{
 		float frameDelta = 0;

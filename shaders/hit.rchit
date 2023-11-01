@@ -55,6 +55,7 @@ layout(binding = 1, set = 0) uniform Camera
   uint frameCount;
   int showNormals;
   int showUnique;
+  int showAlbedo;
   int raySamples;
   int rayDepth;
 } camera;
@@ -65,7 +66,7 @@ layout (binding = 3, set = 0) buffer VertexBuffer { Vertex data[]; } vertexBuffe
 layout (binding = 0, set = 1) buffer MaterialBuffer { Material data[]; } materialBuffer;
 layout (binding = 1, set = 1) buffer ModelBuffer { mat4 data[]; } modelBuffer;
 layout (binding = 2, set = 1) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
-layout (binding = 3, set = 1) uniform sampler2D[] textures;
+layout (binding = 3, set = 1) uniform sampler2D[5] textures;
 
 float random(vec2 uv, float seed) {
   return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) * 43758.5453);
@@ -101,13 +102,23 @@ void main() {
   vec3 barycentric = vec3(1.0 - hitCoordinate.x - hitCoordinate.y, hitCoordinate.x, hitCoordinate.y);
 
   vec3 vertexA = vertexBuffer.data[indices.x].position;
-  vec3 vertexB = vertexBuffer.data[indices.y].position;
+  vec3 vertexB = vertexBuffer.data[indices.y].position;a
   vec3 vertexC = vertexBuffer.data[indices.z].position;
 
   vec3 position = vertexA * barycentric.x + vertexB * barycentric.y + vertexC * barycentric.z;
   position = (modelBuffer.data[vertexBuffer.data[indices.x].drawID.x] * vec4(position, 1)).xyz;
-  vec3 geometricNormal = normalize(mat3(transpose(inverse(modelBuffer.data[vertexBuffer.data[indices.x].drawID.x]))) * vertexBuffer.data[indices.x].normal);
 
+  vec3 givenNormal = vertexBuffer.data[indices.x].normal * barycentric.x + vertexBuffer.data[indices.y].normal * barycentric.y + vertexBuffer.data[indices.z].normal * barycentric.z;
+  vec3 geometricNormal = normalize(mat3(transpose(inverse(modelBuffer.data[vertexBuffer.data[indices.x].drawID.x]))) * givenNormal);
+
+  vec2 uvCoordinates = vertexBuffer.data[indices.x].textureCoordinates * barycentric.x + vertexBuffer.data[indices.y].textureCoordinates * barycentric.y + vertexBuffer.data[indices.z].textureCoordinates * barycentric.z;
+
+  if (camera.showAlbedo == 1)
+  {
+    payload.directColor = texture(textures[5 * materialIndex], uvCoordinates).xyz;
+    payload.rayActive = 0;
+    return;
+  }
   if (camera.showUnique == 1)
   {
       float x = random(vec2(1), 8045389.1568479 * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));

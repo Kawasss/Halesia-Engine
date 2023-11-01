@@ -26,6 +26,7 @@ layout(binding = 1, set = 0) uniform Camera {
   uint frameCount;
   int showNormals;
   int showUnique;
+  int showAlbedo;
   int raySamples;
   int rayDepth;
 }

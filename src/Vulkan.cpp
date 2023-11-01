@@ -38,8 +38,7 @@ VkDebugUtilsMessengerEXT Vulkan::debugMessenger;
 
 std::unordered_map<uint32_t, QueueCommandPoolStorage> Vulkan::queueCommandPoolStorages;
 
-std::mutex Vulkan::graphicsQueueThreadingMutex;
-std::mutex* Vulkan::graphicsQueueMutex = &graphicsQueueThreadingMutex;
+std::mutex Vulkan::graphicsQueueMutex;
 VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 
 VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string functionName, std::string file, std::string line)

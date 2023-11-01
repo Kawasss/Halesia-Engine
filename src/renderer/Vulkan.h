@@ -87,7 +87,7 @@ class Vulkan
         };
 
         static VkMemoryAllocateFlagsInfo* optionalMemoryAllocationFlags;
-        static std::mutex* graphicsQueueMutex;
+        static std::mutex graphicsQueueMutex;
         
         static VkCommandPool                FetchNewCommandPool(const VulkanCreationObject& creationObject);
         static void                         YieldCommandPool(uint32_t queueFamilyIndex, VkCommandPool commandPool);
@@ -160,8 +160,6 @@ class Vulkan
 
         static VkDebugUtilsMessengerEXT debugMessenger;
         static std::unordered_map<uint32_t, QueueCommandPoolStorage> queueCommandPoolStorages;
-        //static std::unordered_map<uint32_t, std::vector<VkCommandPool>> unusedCommandPools;
-        static std::mutex graphicsQueueThreadingMutex;
 
         static void CheckDeviceRequirements(bool indicesHasValue, bool extensionsSupported, bool swapChainIsCompatible, bool samplerAnisotropy, bool shaderUniformBufferArrayDynamicIndexing, std::set<std::string> unsupportedExtensions)
         {

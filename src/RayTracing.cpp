@@ -27,6 +27,7 @@ int RayTracing::raySampleCount = 2;
 int RayTracing::rayDepth = 8;
 bool RayTracing::showNormals = false;
 bool RayTracing::showUniquePrimitives = false;
+bool RayTracing::showAlbedo = false;
 bool RayTracing::renderProgressive = true;
 
 std::vector<VkCommandBuffer> commandBuffers(MAX_FRAMES_IN_FLIGHT);
@@ -61,6 +62,7 @@ struct UniformBuffer
 	uint32_t frameCount = 0;
 	int32_t showNormals = 0;
 	int32_t showUnique = 0;
+	int32_t showAlbedo = 0;
 	int raySamples = 2;
 	int rayDepth = 8;
 };
@@ -489,7 +491,14 @@ void RayTracing::UpdateMeshDataDescriptorSets()
 	instanceDataBufferDescriptorInfo.offset = 0;
 	instanceDataBufferDescriptorInfo.range = VK_WHOLE_SIZE;
 
-	std::vector<VkWriteDescriptorSet> meshDataWriteDescriptorSets(3);
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = VK_NULL_HANDLE;
+	imageInfo.sampler = Renderer::defaultSampler;
+
+	std::vector<VkDescriptorImageInfo> imageInfos(Renderer::MAX_BINDLESS_TEXTURES, imageInfo);
+
+	std::vector<VkWriteDescriptorSet> meshDataWriteDescriptorSets(4);
 
 	meshDataWriteDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	meshDataWriteDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -511,6 +520,13 @@ void RayTracing::UpdateMeshDataDescriptorSets()
 	meshDataWriteDescriptorSets[2].dstBinding = 2;
 	meshDataWriteDescriptorSets[2].descriptorCount = 1;
 	meshDataWriteDescriptorSets[2].pBufferInfo = &instanceDataBufferDescriptorInfo;
+
+	meshDataWriteDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	meshDataWriteDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	meshDataWriteDescriptorSets[3].dstSet = descriptorSets[1];
+	meshDataWriteDescriptorSets[3].dstBinding = 3;
+	meshDataWriteDescriptorSets[3].descriptorCount = Renderer::MAX_BINDLESS_TEXTURES;
+	meshDataWriteDescriptorSets[3].pImageInfo = imageInfos.data();
 
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)meshDataWriteDescriptorSets.size(), meshDataWriteDescriptorSets.data(), 0, nullptr);
 }
@@ -699,7 +715,7 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 		UpdateTextureBuffer();
 	
 	if (showNormals && showUniquePrimitives) showNormals = false; // can't 2 variables changing colors at once
-	uniformBuffer = UniformBuffer{ { camera->position.x, camera->position.y, camera->position.z, 1 }, { camera->right.x, camera->right.y, camera->right.z, 1 }, { camera->up.x, camera->up.y, camera->up.z, 1 }, { camera->front.x, camera->front.y, camera->front.z, 1 }, frameCount, showNormals, showUniquePrimitives, raySampleCount, rayDepth };
+	uniformBuffer = UniformBuffer{ { camera->position.x, camera->position.y, camera->position.z, 1 }, { camera->right.x, camera->right.y, camera->right.z, 1 }, { camera->up.x, camera->up.y, camera->up.z, 1 }, { camera->front.x, camera->front.y, camera->front.z, 1 }, frameCount, showNormals, showUniquePrimitives, showAlbedo, raySampleCount, rayDepth };
 	//uniformBuffer = UniformBuffer{ { 7.24205f, -4.13095f, 7.67253f, 1 }, { 0.70373f, 0.00000f, -0.71047f, 1 }, { -0.28477f, 0.91616f, -0.28206f, 1 }, { -0.65091f, -0.40081f, -0.64473f, 1 }, frameCount };
 	//printf("pos: %.5f, %.5f, %.5f, right: %.5f, %.5f, %.5f, up: %.5f, %.5f, %.5f, front: %.5f, %.5f, %.5f\n", camera->position.x, camera->position.y, camera->position.z, camera->right.x, camera->right.y, camera->right.z, camera->up.x, camera->up.y, camera->up.z, camera->front.x, camera->front.y, camera->front.z);
 	//std::cout << facesCount << std::endl;
