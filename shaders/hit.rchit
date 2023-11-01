@@ -39,6 +39,7 @@ struct InstanceMeshData
 {
     uint indexBufferOffset;
     uint vertexBufferOffset;
+    uint materialIndex;
 };
 
 layout(location = 1) rayPayloadEXT bool isShadow;
@@ -61,10 +62,9 @@ layout(binding = 1, set = 0) uniform Camera
 layout (binding = 2, set = 0) buffer IndexBuffer { uint16_t data[]; } indexBuffer;
 layout (binding = 3, set = 0) buffer VertexBuffer { Vertex data[]; } vertexBuffer;
 
-layout (binding = 0, set = 1) buffer MaterialIndexBuffer { uint data[]; } materialIndexBuffer;
-layout (binding = 1, set = 1) buffer MaterialBuffer { Material data[]; } materialBuffer;
-layout (binding = 2, set = 1) buffer ModelBuffer { mat4 data[]; } modelBuffer;
-layout (binding = 3, set = 1) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
+layout (binding = 0, set = 1) buffer MaterialBuffer { Material data[]; } materialBuffer;
+layout (binding = 1, set = 1) buffer ModelBuffer { mat4 data[]; } modelBuffer;
+layout (binding = 2, set = 1) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
 
 float random(vec2 uv, float seed) {
   return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) * 43758.5453);
@@ -92,21 +92,20 @@ void main() {
 
   uint indexOffset = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].indexBufferOffset;
   uint vertexOffset = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].vertexBufferOffset;
+  uint materialIndex = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].materialIndex;
 
-  ivec3 indices = ivec3(indexBuffer.data[indexOffset + 3 * gl_PrimitiveID + 0],
-                        indexBuffer.data[indexOffset + 3 * gl_PrimitiveID + 1],
-                        indexBuffer.data[indexOffset + 3 * gl_PrimitiveID + 2]);
+  ivec3 indices = ivec3(indexBuffer.data[indexOffset + 3 * gl_PrimitiveID + 0], indexBuffer.data[indexOffset + 3 * gl_PrimitiveID + 1], indexBuffer.data[indexOffset + 3 * gl_PrimitiveID + 2]);
+  indices += ivec3(vertexOffset);
 
-  vec3 barycentric = vec3(1.0 - hitCoordinate.x - hitCoordinate.y,
-                          hitCoordinate.x, hitCoordinate.y);
+  vec3 barycentric = vec3(1.0 - hitCoordinate.x - hitCoordinate.y, hitCoordinate.x, hitCoordinate.y);
 
-vec3 vertexA = vertexBuffer.data[vertexOffset + indices.x].position;
-vec3 vertexB = vertexBuffer.data[vertexOffset + indices.y].position;
-vec3 vertexC = vertexBuffer.data[vertexOffset + indices.z].position;
+  vec3 vertexA = vertexBuffer.data[indices.x].position;
+  vec3 vertexB = vertexBuffer.data[indices.y].position;
+  vec3 vertexC = vertexBuffer.data[indices.z].position;
 
-  vec3 position = vertexA * barycentric.x + vertexB * barycentric.y +
-                  vertexC * barycentric.z;
-  vec3 geometricNormal = normalize(mat3(transpose(inverse(modelBuffer.data[vertexBuffer.data[vertexOffset + indices.x].drawID.x]))) * vertexBuffer.data[vertexOffset + indices.x].normal);
+  vec3 position = vertexA * barycentric.x + vertexB * barycentric.y + vertexC * barycentric.z;
+  position = (modelBuffer.data[vertexBuffer.data[indices.x].drawID.x] * vec4(position, 1)).xyz;
+  vec3 geometricNormal = normalize(mat3(transpose(inverse(modelBuffer.data[vertexBuffer.data[indices.x].drawID.x]))) * vertexBuffer.data[indices.x].normal);
 
   if (camera.showUnique == 1)
   {
@@ -139,13 +138,12 @@ vec3 vertexC = vertexBuffer.data[vertexOffset + indices.z].position;
     int randomIndex = int(random(gl_LaunchIDEXT.xy, camera.frameCount) * 2 + 40);
     vec3 lightColor = vec3(1);
 
-    ivec3 lightIndices = ivec3(indexBuffer.data[3 * randomIndex + 0],
-                               indexBuffer.data[3 * randomIndex + 1],
-                               indexBuffer.data[3 * randomIndex + 2]);
+    ivec3 lightIndices = ivec3(indexBuffer.data[indexOffset + 3 * randomIndex + 0], indexBuffer.data[indexOffset + 3 * randomIndex + 1], indexBuffer.data[indexOffset + 3 * randomIndex + 2]);
+    lightIndices += ivec3(vertexOffset);
 
-vec3 lightVertexA = vertexBuffer.data[lightIndices.x].position;
-vec3 lightVertexB = vertexBuffer.data[lightIndices.y].position;
-vec3 lightVertexC = vertexBuffer.data[lightIndices.z].position;
+    vec3 lightVertexA = vertexBuffer.data[lightIndices.x].position;
+    vec3 lightVertexB = vertexBuffer.data[lightIndices.y].position;
+    vec3 lightVertexC = vertexBuffer.data[lightIndices.z].position;
 
     vec2 uv = vec2(random(gl_LaunchIDEXT.xy, camera.frameCount),
                    random(gl_LaunchIDEXT.xy, camera.frameCount + 1));

@@ -53,9 +53,6 @@ private:
 	VkBuffer materialBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory materialBufferMemory = VK_NULL_HANDLE;
 
-	VkBuffer materialIndexBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory materialIndexBufferMemory = VK_NULL_HANDLE;
-
 	void* modelMatrixMemoryPointer = nullptr;
 	VkBuffer modelMatrixBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory modelMatrixBufferMemory = VK_NULL_HANDLE;
