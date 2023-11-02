@@ -3,6 +3,21 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
+template<typename T> inline T GetType(char* bytes)
+{
+	T f = 0;
+	memcpy(&f, bytes, sizeof(T));
+	return f;
+}
+
+template<typename T> inline T GetTypeFromStream(std::ifstream& stream)
+{
+	char bytes[sizeof(T)] = { 0 };
+	T f;
+	memcpy(&f, bytes, sizeof(T));
+	return f;
+}
+
 SceneLoader::SceneLoader(std::string sceneLocation)
 {
 	this->location = sceneLocation;
@@ -224,7 +239,7 @@ std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& m
 	return ret;
 }
 
-std::vector<uint16_t> RetrieveIndices(aiMesh* pMesh)
+inline std::vector<uint16_t> RetrieveIndices(aiMesh* pMesh)
 {
 	std::vector<uint16_t> ret;
 	for (int i = 0; i < pMesh->mNumFaces; i++)
@@ -233,7 +248,7 @@ std::vector<uint16_t> RetrieveIndices(aiMesh* pMesh)
 	return ret;
 }
 
-MeshCreationData RetrieveMeshData(aiMesh* pMesh, int index)
+inline MeshCreationData RetrieveMeshData(aiMesh* pMesh, int index)
 {
 	MeshCreationData ret{};
 
@@ -270,4 +285,30 @@ ObjectCreationData GenericLoader::LoadObjectFile(std::string path, int index)
 		ret.meshes.push_back(RetrieveMeshData(pMesh, index));
 	}
 	return ret;
+}
+
+inline void RetrieveTexture(std::vector<char>& vectorToWriteTo, std::ifstream& stream)
+{
+	int size = GetTypeFromStream<int>(stream);
+	vectorToWriteTo.resize(size);
+	stream.read(vectorToWriteTo.data(), size);
+}
+
+MaterialCreationData GenericLoader::LoadCPBRMaterial(std::string path)
+{
+	std::ifstream stream;
+	stream.open(path, std::ios::in | std::ios::binary);
+	if (!stream)
+		throw std::runtime_error("failed to open file \"" + path + "\" since it can't be found");
+
+	MaterialCreationData creationData{};
+
+	RetrieveTexture(creationData.albedoData, stream);
+	RetrieveTexture(creationData.normalData, stream);
+	RetrieveTexture(creationData.metallicData, stream);
+	RetrieveTexture(creationData.roughnessData, stream);
+	RetrieveTexture(creationData.ambientOcclusionData, stream);
+	RetrieveTexture(creationData.heightData, stream);
+
+	return creationData;
 }

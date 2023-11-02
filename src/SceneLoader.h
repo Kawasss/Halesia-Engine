@@ -15,17 +15,19 @@ constexpr int normalOffset = 20;
 struct MaterialCreationData // dont know how smart it is to copy around possible megabytes of data, maybe make the stream read to the vector.data()
 {
 	std::string name;
+
 	bool albedoIsDefault;
-	std::vector<char> albedoData;
 	bool normalIsDefault;
-	std::vector<char> normalData;
 	bool metallicIsDefault;
-	std::vector<char> metallicData;
 	bool roughnessIsDefault;
-	std::vector<char> roughnessData;
 	bool ambientOcclusionIsDefault;
-	std::vector<char> ambientOcclusionData;
 	bool heightIsDefault;
+
+	std::vector<char> albedoData;
+	std::vector<char> normalData;
+	std::vector<char> metallicData;
+	std::vector<char> roughnessData;
+	std::vector<char> ambientOcclusionData;
 	std::vector<char> heightData;
 };
 
@@ -81,13 +83,6 @@ private:
 	std::string header;
 	std::ifstream stream;
 
-	template<typename T> T GetType(char* bytes)
-	{
-		T f = 0;
-		memcpy(&f, bytes, sizeof(T));
-		return f;
-	}
-
 	glm::vec3 GetVec3(char* bytes);
 	glm::vec2 GetVec2(char* bytes);
 
@@ -107,7 +102,8 @@ private:
 	void OpenInputFile(std::string path);
 };
 
-namespace GenericLoader
+inline namespace GenericLoader
 {
 	ObjectCreationData LoadObjectFile(std::string path, int index);
+	MaterialCreationData LoadCPBRMaterial(std::string path);
 }

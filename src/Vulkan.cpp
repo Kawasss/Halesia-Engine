@@ -201,14 +201,13 @@ void Vulkan::EndSingleTimeCommands(VkDevice logicalDevice, VkQueue queue, VkComm
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    endCommandMutex.lock();
+    std::lock_guard<std::mutex> lockGuard(endCommandMutex);
     result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
     CheckVulkanResult("Failed to submit the single time commands queue", result, vkQueueSubmit);
     
     result = vkQueueWaitIdle(queue);
     CheckVulkanResult("Failed to wait for the queue idle", result, vkQueueWaitIdle);
 
-    endCommandMutex.unlock();
     vkFreeCommandBuffers(logicalDevice, commandPool, 1, &commandBuffer);
 }
 

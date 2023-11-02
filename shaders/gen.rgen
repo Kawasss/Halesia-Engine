@@ -38,6 +38,12 @@ float random(vec2 uv, float seed) {
   return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) * 43758.5453);
 }
 
+vec3 LinearToSRGB(vec3 rgb)
+{
+  // See https://gamedev.stackexchange.com/questions/92015/optimized-linear-to-srgb-glsl
+  return mix(1.055 * pow(rgb, vec3(1.0 / 2.4)) - 0.055, rgb * 12.92, lessThanEqual(rgb, vec3(0.0031308)));
+}
+
 void main() {
   payload.rayActive = 1;
 
@@ -50,8 +56,7 @@ void main() {
        uv = (uv * 2.0f - 1.0f) * vec2(1.0f, -1.0f);
 
       payload.rayOrigin = camera.position.xyz;
-      payload.rayDirection =
-          normalize(uv.x * camera.right + uv.y * camera.up + camera.forward).xyz;
+      payload.rayDirection = normalize(uv.x * camera.right + uv.y * camera.up + camera.forward).xyz;
       payload.previousNormal = vec3(0.0, 0.0, 0.0);
 
       payload.directColor = vec3(0.0, 0.0, 0.0);
@@ -63,11 +68,12 @@ void main() {
       }
       color += payload.directColor + payload.indirectColor;
   }
+  color /= camera.raySamples;
 
     vec3 oldColor = imageLoad(image, ivec2(gl_LaunchIDEXT.xy)).xyz;
     float weight = 1.0f / (camera.frameCount + 1);
     vec3 average = oldColor * (1.0f - weight) + color * weight;
-    color = average;
+    color = LinearToSRGB(average);
 
   imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1));
 }

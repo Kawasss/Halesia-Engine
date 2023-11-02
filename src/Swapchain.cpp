@@ -38,7 +38,7 @@ void Swapchain::Generate(VkDevice logicalDevice, PhysicalDevice physicalDevice, 
     createInfo.imageExtent = extent2D;
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-
+    
     QueueFamilyIndices indices = physicalDevice.QueueFamilies(surface);
     uint32_t queueFamilyIndices[] = { indices.graphicsFamily.value(), indices.presentFamily.value() };
 

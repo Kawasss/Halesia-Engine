@@ -68,6 +68,24 @@ layout (binding = 1, set = 1) buffer ModelBuffer { mat4 data[]; } modelBuffer;
 layout (binding = 2, set = 1) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
 layout (binding = 3, set = 1) uniform sampler2D[5] textures;
 
+vec3 getNormalFromMap(uint normalMapIndex, vec3 barycentric, vec2 fragTexCoord, Vertex vertex1, Vertex vertex2, Vertex vertex3)
+{
+    vec3 tangentNormal = texture(textures[normalMapIndex], fragTexCoord).xyz * 2.0 - 1.0;
+
+    vec3 Q1  = vertex2.position - vertex1.position;//dFdx(camera.position.xyz);
+    vec3 Q2  = vertex3.position - vertex1.position;//dFdy(camera.position.xyz);
+    vec2 st1 = vertex2.textureCoordinates - vertex1.textureCoordinates;//dFdx(fragTexCoord);
+    vec2 st2 = vertex3.textureCoordinates - vertex1.textureCoordinates;//dFdy(fragTexCoord);
+
+    vec3 N   = vertex1.normal * barycentric.x + vertex2.normal * barycentric.y + vertex3.normal * barycentric.z;//normalize(normal);
+    N = normalize(mat3(transpose(inverse(modelBuffer.data[vertex1.drawID.x]))) * N);
+    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+    vec3 B  = -normalize(cross(N, T));
+    mat3 TBN = mat3(T, B, N);
+
+    return normalize(TBN * tangentNormal);
+}
+
 float random(vec2 uv, float seed) {
   return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) * 43758.5453);
 }
@@ -102,16 +120,16 @@ void main() {
   vec3 barycentric = vec3(1.0 - hitCoordinate.x - hitCoordinate.y, hitCoordinate.x, hitCoordinate.y);
 
   vec3 vertexA = vertexBuffer.data[indices.x].position;
-  vec3 vertexB = vertexBuffer.data[indices.y].position;a
+  vec3 vertexB = vertexBuffer.data[indices.y].position;
   vec3 vertexC = vertexBuffer.data[indices.z].position;
 
   vec3 position = vertexA * barycentric.x + vertexB * barycentric.y + vertexC * barycentric.z;
   position = (modelBuffer.data[vertexBuffer.data[indices.x].drawID.x] * vec4(position, 1)).xyz;
 
-  vec3 givenNormal = vertexBuffer.data[indices.x].normal * barycentric.x + vertexBuffer.data[indices.y].normal * barycentric.y + vertexBuffer.data[indices.z].normal * barycentric.z;
-  vec3 geometricNormal = normalize(mat3(transpose(inverse(modelBuffer.data[vertexBuffer.data[indices.x].drawID.x]))) * givenNormal);
-
   vec2 uvCoordinates = vertexBuffer.data[indices.x].textureCoordinates * barycentric.x + vertexBuffer.data[indices.y].textureCoordinates * barycentric.y + vertexBuffer.data[indices.z].textureCoordinates * barycentric.z;
+
+  //vec3 givenNormal = vertexBuffer.data[indices.x].normal * barycentric.x + vertexBuffer.data[indices.y].normal * barycentric.y + vertexBuffer.data[indices.z].normal * barycentric.z;
+  vec3 geometricNormal = getNormalFromMap(materialIndex * 5 + 1, barycentric, uvCoordinates, vertexBuffer.data[indices.x], vertexBuffer.data[indices.y], vertexBuffer.data[indices.z]);//normalize(mat3(transpose(inverse(modelBuffer.data[vertexBuffer.data[indices.x].drawID.x]))) * givenNormal);
 
   if (camera.showAlbedo == 1)
   {
