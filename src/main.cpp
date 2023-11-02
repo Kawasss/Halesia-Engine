@@ -29,7 +29,11 @@ class RotatingObject : public Object
 public:
 	void Update(float delta) override
 	{
-		transform.rotation.y += delta * 0.1f;
+		transform.scale.x = 1;
+		transform.scale.y = 0.5f;
+		transform.scale.z = 1;
+		//transform.rotation.y += delta * 0.05f;
+		//transform.rotation.y += delta * 0.1f;
 	}
 };
 
@@ -38,8 +42,19 @@ class TestScene : public Scene
 	Object* objPtr = nullptr;
 	void Start() override
 	{
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/monkey3.obj", 0));
-		AddCustomObject<RotatingObject>("stdObj/cube.obj", OBJECT_IMPORT_EXTERNAL);
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/monkey.obj", 0));
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel.obj", 1));
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel2.obj", 2));
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel3.obj", 3));
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel4.obj", 4));
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panelBottom.obj", 5));
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panelTop.obj", 6));
+		AddCustomObject<RotatingObject>("stdObj/light.obj", OBJECT_IMPORT_EXTERNAL);
+
+		Mesh::materials.push_back({ new Texture(GetMeshCreationObjects(), "textures/blue.png") });
+		Mesh::materials.push_back({ new Texture(GetMeshCreationObjects(), "textures/red.png") });
+		Mesh::materials.push_back({ new Texture(GetMeshCreationObjects(), "textures/floor.png") });
+		Mesh::materials.push_back({ new Texture(GetMeshCreationObjects(), "textures/placeholderAlbedo1.png") });
 
 		this->camera = new TestCamera();
 		camera->GetScript<TestCamera*>()->objectToLookAt = nullptr;//objPtr;

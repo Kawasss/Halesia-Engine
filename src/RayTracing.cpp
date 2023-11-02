@@ -19,11 +19,12 @@ struct InstanceMeshData
 	uint32_t indexBufferOffset;
 	uint32_t vertexBufferOffset;
 	uint32_t materialIndex;
+	int32_t meshIsLight;
 };
 
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
 
-int RayTracing::raySampleCount = 2;
+int RayTracing::raySampleCount = 1;
 int RayTracing::rayDepth = 8;
 bool RayTracing::showNormals = false;
 bool RayTracing::showUniquePrimitives = false;
@@ -63,8 +64,9 @@ struct UniformBuffer
 	int32_t showNormals = 0;
 	int32_t showUnique = 0;
 	int32_t showAlbedo = 0;
-	int raySamples = 2;
-	int rayDepth = 8;
+	int32_t raySamples = 2;
+	int32_t rayDepth = 8;
+	int32_t renderProgressive = 0;
 };
 void* uniformBufferMemPtr;
 UniformBuffer uniformBuffer{};
@@ -463,12 +465,12 @@ void RayTracing::CreateMeshDataBuffers()
 	memcpy(materialsBufferMemPtr, materials.data(), materialBufferSize);
 	vkUnmapMemory(logicalDevice, materialBufferMemory);
 
-	VkDeviceSize modelSize = sizeof(glm::mat4) * 2;// Renderer::MAX_MESHES;
+	VkDeviceSize modelSize = sizeof(glm::mat4) * 8;// Renderer::MAX_MESHES;
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, modelSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, modelMatrixBuffer, modelMatrixBufferMemory);
 	vkMapMemory(logicalDevice, modelMatrixBufferMemory, 0, modelSize, 0, &modelMatrixMemoryPointer);
 
-	VkDeviceSize instanceDataSize = sizeof(InstanceMeshData) * 2;// Renderer::MAX_MESHES
+	VkDeviceSize instanceDataSize = sizeof(InstanceMeshData) * 8;// Renderer::MAX_MESHES
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, instanceDataSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, instanceMeshDataBuffer, instanceMeshDataMemory);
 	vkMapMemory(logicalDevice, instanceMeshDataMemory, 0, instanceDataSize, 0, &instanceMeshDataPointer);
@@ -680,9 +682,18 @@ void RayTracing::UpdateModelMatrices(const std::vector<Object*>& objects)
 void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 {
 	std::vector<InstanceMeshData> instanceDatas;
-
+	
 	uint32_t indexOffset = 0;
 	uint32_t vertexOffset = 0;
+
+	//testing
+	objects[1]->meshes[0].materialIndex = 1;
+	objects[2]->meshes[0].materialIndex = 2;
+	objects[3]->meshes[0].materialIndex = 4;
+	objects[4]->meshes[0].materialIndex = 4;
+	objects[5]->meshes[0].materialIndex = 3;
+	objects[6]->meshes[0].materialIndex = 3;
+
 	for (Object* object : objects)
 	{
 		if (object->state != STATUS_VISIBLE || !object->HasFinishedLoading())
@@ -690,12 +701,13 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 
 		for (Mesh& mesh : object->meshes)
 		{
-			instanceDatas.push_back({ indexOffset, vertexOffset, mesh.materialIndex });
+			instanceDatas.push_back({ indexOffset, vertexOffset, mesh.materialIndex, 0}); 
 
 			indexOffset += mesh.indices.size();
 			vertexOffset += mesh.vertices.size();
 		}
 	}
+	instanceDatas[instanceDatas.size() - 1].meshIsLight = 1; // only last mesh is a light for testing
 	memcpy(instanceMeshDataPointer, instanceDatas.data(), instanceDatas.size() * sizeof(InstanceMeshData));
 }
 
@@ -714,17 +726,17 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	if (Mesh::materials.size() > 0)
 		UpdateTextureBuffer();
 	
-	if (showNormals && showUniquePrimitives) showNormals = false; // can't 2 variables changing colors at once
-	uniformBuffer = UniformBuffer{ { camera->position.x, camera->position.y, camera->position.z, 1 }, { camera->right.x, camera->right.y, camera->right.z, 1 }, { camera->up.x, camera->up.y, camera->up.z, 1 }, { camera->front.x, camera->front.y, camera->front.z, 1 }, frameCount, showNormals, showUniquePrimitives, showAlbedo, raySampleCount, rayDepth };
-	//uniformBuffer = UniformBuffer{ { 7.24205f, -4.13095f, 7.67253f, 1 }, { 0.70373f, 0.00000f, -0.71047f, 1 }, { -0.28477f, 0.91616f, -0.28206f, 1 }, { -0.65091f, -0.40081f, -0.64473f, 1 }, frameCount };
-	//printf("pos: %.5f, %.5f, %.5f, right: %.5f, %.5f, %.5f, up: %.5f, %.5f, %.5f, front: %.5f, %.5f, %.5f\n", camera->position.x, camera->position.y, camera->position.z, camera->right.x, camera->right.y, camera->right.z, camera->up.x, camera->up.y, camera->up.z, camera->front.x, camera->front.y, camera->front.z);
-	//std::cout << facesCount << std::endl;
-
 	int x, y;
 	window->GetRelativeCursorPosition(x, y);
 	if (x != 0 || y != 0 || Input::IsKeyPressed(VirtualKey::W) || Input::IsKeyPressed(VirtualKey::A) || Input::IsKeyPressed(VirtualKey::S) || Input::IsKeyPressed(VirtualKey::D) || showNormals)
 		frameCount = 0;
-	
+
+	if (showNormals && showUniquePrimitives) showNormals = false; // can't 2 variables changing colors at once
+	uniformBuffer = UniformBuffer{ { camera->position.x, camera->position.y, camera->position.z, 1 }, { camera->right.x, camera->right.y, camera->right.z, 1 }, { camera->up.x, camera->up.y, camera->up.z, 1 }, { camera->front.x, camera->front.y, camera->front.z, 1 }, frameCount, showNormals, showUniquePrimitives, showAlbedo, raySampleCount, rayDepth, renderProgressive };
+	//uniformBuffer = UniformBuffer{ { 7.24205f, -4.13095f, 7.67253f, 1 }, { 0.70373f, 0.00000f, -0.71047f, 1 }, { -0.28477f, 0.91616f, -0.28206f, 1 }, { -0.65091f, -0.40081f, -0.64473f, 1 }, frameCount };
+	//printf("pos: %.5f, %.5f, %.5f, right: %.5f, %.5f, %.5f, up: %.5f, %.5f, %.5f, front: %.5f, %.5f, %.5f\n", camera->position.x, camera->position.y, camera->position.z, camera->right.x, camera->right.y, camera->right.z, camera->up.x, camera->up.y, camera->up.z, camera->front.x, camera->front.y, camera->front.z);
+	//std::cout << facesCount << std::endl;
+
 	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
 
 	TLAS->Build(creationObject, objects, false, commandBuffer);
@@ -732,5 +744,5 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 	vkCmdTraceRaysKHR(commandBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, swapchain->extent.width, swapchain->extent.height, 1);
 
-	frameCount = renderProgressive ? frameCount + 1 : 0;
+	frameCount++;
 }

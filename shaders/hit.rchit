@@ -40,6 +40,7 @@ struct InstanceMeshData
     uint indexBufferOffset;
     uint vertexBufferOffset;
     uint materialIndex;
+    int meshIsLight;
 };
 
 layout(location = 1) rayPayloadEXT bool isShadow;
@@ -58,6 +59,7 @@ layout(binding = 1, set = 0) uniform Camera
   int showAlbedo;
   int raySamples;
   int rayDepth;
+  int renderProgressive;
 } camera;
 
 layout (binding = 2, set = 0) buffer IndexBuffer { uint16_t data[]; } indexBuffer;
@@ -66,24 +68,29 @@ layout (binding = 3, set = 0) buffer VertexBuffer { Vertex data[]; } vertexBuffe
 layout (binding = 0, set = 1) buffer MaterialBuffer { Material data[]; } materialBuffer;
 layout (binding = 1, set = 1) buffer ModelBuffer { mat4 data[]; } modelBuffer;
 layout (binding = 2, set = 1) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
-layout (binding = 3, set = 1) uniform sampler2D[5] textures;
+layout (binding = 3, set = 1) uniform sampler2D[] textures;
+
+vec3 MultiplyPositionWithModelMatrix(Vertex vertex)
+{
+    return (modelBuffer.data[vertex.drawID.x] * vec4(vertex.position, 1)).xyz;
+}
 
 vec3 getNormalFromMap(uint normalMapIndex, vec3 barycentric, vec2 fragTexCoord, Vertex vertex1, Vertex vertex2, Vertex vertex3)
 {
     vec3 tangentNormal = texture(textures[normalMapIndex], fragTexCoord).xyz * 2.0 - 1.0;
 
-    vec3 Q1  = vertex2.position - vertex1.position;//dFdx(camera.position.xyz);
-    vec3 Q2  = vertex3.position - vertex1.position;//dFdy(camera.position.xyz);
-    vec2 st1 = vertex2.textureCoordinates - vertex1.textureCoordinates;//dFdx(fragTexCoord);
-    vec2 st2 = vertex3.textureCoordinates - vertex1.textureCoordinates;//dFdy(fragTexCoord);
+    vec3 Q1  = MultiplyPositionWithModelMatrix(vertex2) - MultiplyPositionWithModelMatrix(vertex1);
+    vec3 Q2  = MultiplyPositionWithModelMatrix(vertex3) - MultiplyPositionWithModelMatrix(vertex1);
+    vec2 st1 = vertex2.textureCoordinates - vertex1.textureCoordinates;
+    vec2 st2 = vertex3.textureCoordinates - vertex1.textureCoordinates;
 
-    vec3 N   = vertex1.normal * barycentric.x + vertex2.normal * barycentric.y + vertex3.normal * barycentric.z;//normalize(normal);
+    vec3 N   = vertex1.normal * barycentric.x + vertex2.normal * barycentric.y + vertex3.normal * barycentric.z;
     N = normalize(mat3(transpose(inverse(modelBuffer.data[vertex1.drawID.x]))) * N);
     vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
     vec3 B  = -normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
 
-    return normalize(TBN * tangentNormal);
+    return N;//normalize(TBN * tangentNormal);
 }
 
 float random(vec2 uv, float seed) {
@@ -91,11 +98,13 @@ float random(vec2 uv, float seed) {
 }
 
 vec3 uniformSampleHemisphere(vec2 uv) {
-  float z = uv.x;
-  float r = sqrt(max(0, 1.0 - z * z));
-  float phi = 2.0 * M_PI * uv.y;
+  float radial = sqrt(uv.x);
+  float theta = 2.0 * M_PI * uv.y;
 
-  return vec3(r * cos(phi), z, r * sin(phi));
+  float x = radial * cos(theta);
+  float y = radial * sin(theta);
+
+  return vec3(x, y, sqrt(1 - uv.x));
 }
 
 vec3 alignHemisphereWithCoordinateSystem(vec3 hemisphere, vec3 up) {
@@ -109,6 +118,8 @@ void main() {
   if (payload.rayActive == 0) {
     return;
   }
+
+  vec3 oldColor = payload.directColor;
 
   uint indexOffset = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].indexBufferOffset;
   uint vertexOffset = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].vertexBufferOffset;
@@ -127,13 +138,12 @@ void main() {
   position = (modelBuffer.data[vertexBuffer.data[indices.x].drawID.x] * vec4(position, 1)).xyz;
 
   vec2 uvCoordinates = vertexBuffer.data[indices.x].textureCoordinates * barycentric.x + vertexBuffer.data[indices.y].textureCoordinates * barycentric.y + vertexBuffer.data[indices.z].textureCoordinates * barycentric.z;
-
-  //vec3 givenNormal = vertexBuffer.data[indices.x].normal * barycentric.x + vertexBuffer.data[indices.y].normal * barycentric.y + vertexBuffer.data[indices.z].normal * barycentric.z;
-  vec3 geometricNormal = getNormalFromMap(materialIndex * 5 + 1, barycentric, uvCoordinates, vertexBuffer.data[indices.x], vertexBuffer.data[indices.y], vertexBuffer.data[indices.z]);//normalize(mat3(transpose(inverse(modelBuffer.data[vertexBuffer.data[indices.x].drawID.x]))) * givenNormal);
+  vec3 geometricNormal = getNormalFromMap(materialIndex * 5 + 1, barycentric, uvCoordinates, vertexBuffer.data[indices.x], vertexBuffer.data[indices.y], vertexBuffer.data[indices.z]);
 
   if (camera.showAlbedo == 1)
   {
-    payload.directColor = texture(textures[5 * materialIndex], uvCoordinates).xyz;
+    payload.indirectColor = texture(textures[5 * materialIndex], uvCoordinates).xyz;
+    payload.rayDepth = 1;
     payload.rayActive = 0;
     return;
   }
@@ -142,196 +152,50 @@ void main() {
       float x = random(vec2(1), 8045389.1568479 * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
       float y = random(vec2(1), 2754650.7645183 * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
       float z = random(vec2(1), 1436885.4987659 * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
-      payload.directColor = vec3(x, y, z);
+      payload.indirectColor = vec3(x, y, z);
+      payload.rayDepth = 1;
       payload.rayActive = 0;
       return;
   }
   if (camera.showNormals == 1)
   {
-      payload.directColor = geometricNormal;
+      payload.indirectColor = geometricNormal;
+      payload.rayDepth = 1;
       payload.rayActive = 0;
       return;
   }
 
-  vec3 surfaceColor = vec3(1);//materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]].diffuse;
+  vec3 surfaceColor = texture(textures[5 * materialIndex], uvCoordinates).xyz;
+  if (gl_InstanceCustomIndexEXT == 0)
+    surfaceColor = vec3(1);
+  float smoothness = gl_InstanceCustomIndexEXT == 0 ? 0.6 : 0.993;//1 - texture(textures[5 * materialIndex + 3], uvCoordinates).b;
+  if (gl_InstanceCustomIndexEXT > 7)
+    smoothness = 0;
 
-  if (gl_PrimitiveID  == 12 || gl_PrimitiveID  == 13) {
-    if (payload.rayDepth == 0) {
-      payload.directColor = vec3(1);//materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]].emission;
-      payload.rayActive = 0;
-      return;
-    } else {
-      payload.indirectColor +=
-          (1.0 / payload.rayDepth) * vec3(1) * dot(payload.previousNormal, payload.rayDirection);// materialBuffer.data[materialIndexBuffer.data[gl_PrimitiveID]].emission
-    }
-  } else {
-    int randomIndex = int(random(gl_LaunchIDEXT.xy, camera.frameCount) * 2 + 40);
+  if (instanceDataBuffer.data[gl_InstanceCustomIndexEXT].meshIsLight == 1)
+  {
     vec3 lightColor = vec3(1);
-
-    ivec3 lightIndices = ivec3(indexBuffer.data[indexOffset + 3 * randomIndex + 0], indexBuffer.data[indexOffset + 3 * randomIndex + 1], indexBuffer.data[indexOffset + 3 * randomIndex + 2]);
-    lightIndices += ivec3(vertexOffset);
-
-    vec3 lightVertexA = vertexBuffer.data[lightIndices.x].position;
-    vec3 lightVertexB = vertexBuffer.data[lightIndices.y].position;
-    vec3 lightVertexC = vertexBuffer.data[lightIndices.z].position;
-
-    vec2 uv = vec2(random(gl_LaunchIDEXT.xy, camera.frameCount),
-                   random(gl_LaunchIDEXT.xy, camera.frameCount + 1));
-    if (uv.x + uv.y > 1.0f) {
-      uv.x = 1.0f - uv.x;
-      uv.y = 1.0f - uv.y;
-    }
-
-    vec3 lightBarycentric = vec3(1.0 - uv.x - uv.y, uv.x, uv.y);
-    vec3 lightPosition = lightVertexA * lightBarycentric.x +
-                         lightVertexB * lightBarycentric.y +
-                         lightVertexC * lightBarycentric.z;
-
-    vec3 positionToLightDirection = normalize(lightPosition - position);
-
-    vec3 shadowRayOrigin = position;
-    vec3 shadowRayDirection = positionToLightDirection;
-    float shadowRayDistance = length(lightPosition - position) - 0.001f;
-
-    uint shadowRayFlags = gl_RayFlagsTerminateOnFirstHitEXT |
-                          gl_RayFlagsOpaqueEXT |
-                          gl_RayFlagsSkipClosestHitShaderEXT;
-
-    isShadow = true;
-    traceRayEXT(topLevelAS, shadowRayFlags, 0xFF, 0, 0, 1, shadowRayOrigin,
-                0.001, shadowRayDirection, shadowRayDistance, 1);
-
-    if (!isShadow) {
-      if (payload.rayDepth == 0) {
-        payload.directColor = surfaceColor * lightColor *
-                              dot(geometricNormal, positionToLightDirection);
-      } else {
-        payload.indirectColor +=
-            (1.0 / payload.rayDepth) * surfaceColor * lightColor *
-            dot(payload.previousNormal, payload.rayDirection) *
-            dot(geometricNormal, positionToLightDirection);
-      }
-    } else {
-      if (payload.rayDepth == 0) {
-        payload.directColor = vec3(0.0, 0.0, 0.0);
-      } else {
-        payload.rayActive = 0;
-      }
-    }
+    payload.indirectColor += lightColor * payload.directColor;
+    surfaceColor = vec3(0);
+    payload.rayDepth = 1;
+    payload.rayActive = 0;
+    return;
   }
+  else if (gl_InstanceCustomIndexEXT == 2)
+  {
+    //payload.indirectColor += vec3(0.05) * payload.directColor;
+  }
+  payload.directColor *= surfaceColor;
 
-  vec3 hemisphere = uniformSampleHemisphere(
-      vec2(random(gl_LaunchIDEXT.xy, camera.frameCount),
-           random(gl_LaunchIDEXT.xy, camera.frameCount + 1)));
-  vec3 alignedHemisphere =
-      alignHemisphereWithCoordinateSystem(hemisphere, geometricNormal);
+
+
+  vec3 hemisphere = uniformSampleHemisphere(vec2(random(gl_LaunchIDEXT.xy, camera.frameCount), random(gl_LaunchIDEXT.xy, camera.frameCount + 1)));
+  vec3 alignedHemisphere = alignHemisphereWithCoordinateSystem(hemisphere, geometricNormal);
+  vec3 specularDirection = reflect(payload.rayDirection, geometricNormal);
 
   payload.rayOrigin = position;
-  payload.rayDirection = alignedHemisphere;
+  payload.rayDirection = normalize(mix(alignedHemisphere, specularDirection, smoothness));
   payload.previousNormal = geometricNormal;
 
   payload.rayDepth += 1;
 }
-
-/*#version 460
-#extension GL_EXT_ray_tracing : require
-#extension GL_EXT_nonuniform_qualifier : enable
-#extension GL_EXT_debug_printf : enable
-#extension GL_EXT_shader_16bit_storage : enable
-
-#define M_PI 3.1415926535897932384626433832795
-
-struct Material {
-  vec3 ambient;
-  vec3 diffuse;
-  vec3 specular;
-  vec3 emission;
-};
-
-hitAttributeEXT vec2 hitCoordinate;
-
-layout(location = 0) rayPayloadInEXT Payload {
-  vec3 rayOrigin;
-  vec3 rayDirection;
-  vec3 previousNormal;
-
-  vec3 directColor;
-  vec3 indirectColor;
-  int rayDepth;
-
-  int rayActive;
-}
-payload;
-
-layout(location = 1) rayPayloadEXT bool isShadow;
-
-layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
-layout(binding = 1, set = 0) uniform Camera {
-  vec4 position;
-  vec4 right;
-  vec4 up;
-  vec4 forward;
-
-  uint frameCount;
-}
-camera;
-
-layout(binding = 2, set = 0) buffer IndexBuffer { uint16_t data[]; }
-indexBuffer;
-layout(binding = 3, set = 0) buffer VertexBuffer { float data[]; }
-vertexBuffer;
-
-layout(binding = 0, set = 1) buffer MaterialIndexBuffer { uint data[]; }
-materialIndexBuffer;
-layout(binding = 1, set = 1) buffer MaterialBuffer { Material data[]; }
-materialBuffer;
-
-void main() {
-  if (payload.rayActive == 0) {
-    return;
-  }
-
-  ivec3 indices = ivec3(indexBuffer.data[3 * gl_PrimitiveID + 0],
-                        indexBuffer.data[3 * gl_PrimitiveID + 1],
-                        indexBuffer.data[3 * gl_PrimitiveID + 2]);
-
-  vec3 barycentric = vec3(1.0 - hitCoordinate.x - hitCoordinate.y,
-                          hitCoordinate.x, hitCoordinate.y);
-
-  vec3 vert1 = vec3(vertexBuffer.data[3 * indices.x + 0], vertexBuffer.data[3 * indices.x + 1], vertexBuffer.data[3 * indices.x + 2]);
-  vec3 vert2 = vec3(vertexBuffer.data[3 * indices.y + 0], vertexBuffer.data[3 * indices.y + 1], vertexBuffer.data[3 * indices.y + 2]);
-  vec3 vert3 = vec3(vertexBuffer.data[3 * indices.z + 0], vertexBuffer.data[3 * indices.z + 1], vertexBuffer.data[3 * indices.z + 2]);
-  vec3 position = vert1 * barycentric.x + vert2 * barycentric.y + vert3 * barycentric.z;
-
-  vec3 normal = normalize(cross(vert2 - vert1, vert3 - vert2));
-  if (length(normal) <= 0)
-    normal *= -1;
-  payload.directColor = normal;
-  payload.rayActive = 0;
-  return;
-
-  if (gl_PrimitiveID == 0 || gl_PrimitiveID == 1)
-  {
-    if (payload.rayDepth == 0)
-    {
-        payload.directColor = vec3(1);//vec3(gl_PrimitiveID / 980.0f);//vec3(1);
-        payload.rayActive = 0;
-        return;
-    }
-    else
-    {
-        payload.directColor = vec3(1);//vec3(gl_PrimitiveID / 980.0f);//payload.directColor = vec3(1) / payload.rayDepth;
-    }
-  }
-  else
-  {
-    payload.rayOrigin = position;
-    payload.rayDirection = reflect(payload.rayDirection, normal);
-    
-  }
-  payload.directColor = vec3(1);//-payload.rayDirection + 2 * normal * dot(payload.rayDirection, normal);//vec3(gl_PrimitiveID / 980.0f);
-  payload.previousNormal = normal;
-  payload.rayDepth += 1;
-}*/
-
-/**/
