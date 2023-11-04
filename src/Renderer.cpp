@@ -182,6 +182,7 @@ void Renderer::InitVulkan()
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(renderPass);
 	Texture::GeneratePlaceholderTextures(GetVulkanCreationObject());
+	Mesh::materials.push_back({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
 	if (defaultSampler == VK_NULL_HANDLE)
 		CreateTextureSampler();
 	CreateUniformBuffers();
@@ -258,7 +259,7 @@ void Renderer::SetModelMatrices(uint32_t currentImage, std::vector<Object*> mode
 			continue;
 
 		glm::mat4 modelMatrix = model->transform.GetModelMatrix();
-		for (Mesh mesh : model->meshes)
+		for (Mesh& mesh : model->meshes)
 			modelMatrices.push_back(modelMatrix);
 	}
 	memcpy(modelBuffersMapped[currentImage], modelMatrices.data(), modelMatrices.size() * sizeof(glm::mat4));
@@ -732,7 +733,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 
 		for (Object* object : objects)
 			if (object->state == STATUS_VISIBLE && object->HasFinishedLoading())
-				for (Mesh mesh : object->meshes)
+				for (Mesh& mesh : object->meshes)
 				{
 					VkBuffer vertexBuffers[] = { globalVertexBuffer.GetBufferHandle()/*mesh.vertexBuffer.GetVkBuffer()*/};
 					VkDeviceSize offsets[] = { globalVertexBuffer.GetMemoryOffset(mesh.vertexMemory)/*0*/ };
@@ -959,7 +960,7 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 	std::vector<VkDescriptorImageInfo> imageInfos;
 
 	for (Object* object : objects) // its wasteful to update the textures of all the meshes if those arent changed, its wasting resources. its better to have a look up table or smth like that to look up if a material has already been updated, dstArrayElement also needs to be made dynamic for that
-		for (Mesh mesh : object->meshes)
+		for (Mesh& mesh : object->meshes)
 			for (int i = 0; i < 5; i++) // 5 textures per material (using 2 now because the rest aren't implemented yet)
 			{
 				VkDescriptorImageInfo imageInfo{};

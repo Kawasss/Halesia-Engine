@@ -54,12 +54,14 @@ std::string GetNameFromPath(std::string path)
 	return fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 }
 
-void Scene::SubmitStaticObject(const ObjectCreationData& creationData)
+Object* Scene::SubmitStaticObject(const ObjectCreationData& creationData)
 {
 	Object* objPtr = new Object(creationData, GetMeshCreationObjects());
 
 	allObjects.push_back(objPtr);
 	staticObjects.push_back(objPtr);
+
+	return objPtr;
 }
 
  void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberToErase)

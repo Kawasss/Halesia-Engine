@@ -166,11 +166,14 @@ void main() {
   }
 
   vec3 surfaceColor = texture(textures[5 * materialIndex], uvCoordinates).xyz;
-  if (gl_InstanceCustomIndexEXT == 0)
-    surfaceColor = vec3(1);
-  float smoothness = gl_InstanceCustomIndexEXT == 0 ? 0.6 : 0.993;//1 - texture(textures[5 * materialIndex + 3], uvCoordinates).b;
-  if (gl_InstanceCustomIndexEXT > 7)
-    smoothness = 0;
+  float smoothness = 1 - texture(textures[5 * materialIndex + 3], uvCoordinates).g;
+  if (smoothness == 1)
+     smoothness = 0.995;
+  else if (smoothness == 0.5)
+    smoothness = 0.6;
+  float metallic = texture(textures[5 * materialIndex + 2], uvCoordinates).b;
+    
+  bool isSpecular = metallic >= random(gl_LaunchIDEXT.xy, camera.frameCount * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
 
   if (instanceDataBuffer.data[gl_InstanceCustomIndexEXT].meshIsLight == 1)
   {

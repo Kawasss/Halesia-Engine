@@ -89,7 +89,7 @@ public:
 	/// </summary>
 	/// <param name="creationData"></param>
 	/// <param name="creationObjects"></param>
-	void SubmitStaticObject(const ObjectCreationData& creationData);
+	Object* SubmitStaticObject(const ObjectCreationData& creationData);
 
 	/// <summary>
 	/// Loads a new scene from a given scene file async

@@ -4,15 +4,16 @@
 #include "../Material.h"
 #include "../ResourceManager.h"
 #include "AccelerationStructures.h"
+#include <mutex>
 
 struct Mesh
 {
 	static std::vector<Material> materials;
 
-	Mesh(const MeshCreationObject& creationObject, const MeshCreationData& creationData);
+	void Create(const MeshCreationObject& creationObject, const MeshCreationData& creationData);
 	void Destroy();
 
-	uint32_t materialIndex;
+	uint32_t materialIndex = 0;
 	StorageMemory vertexMemory;
 	StorageMemory indexMemory;
 
@@ -26,4 +27,10 @@ struct Mesh
 
 	void ProcessMaterial(const TextureCreationObject& creationObjects, const MaterialCreationData& creationData);
 	void Recreate(const MeshCreationObject& creationObject);
+
+	/// <summary>
+	/// Sets the material for this mesh, any old mesh will be overridden.
+	/// </summary>
+	/// <param name="material"></param>
+	void SetMaterial(Material material);
 };

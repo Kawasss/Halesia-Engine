@@ -686,14 +686,6 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 	uint32_t indexOffset = 0;
 	uint32_t vertexOffset = 0;
 
-	//testing
-	objects[1]->meshes[0].materialIndex = 1;
-	objects[2]->meshes[0].materialIndex = 2;
-	objects[3]->meshes[0].materialIndex = 4;
-	objects[4]->meshes[0].materialIndex = 4;
-	objects[5]->meshes[0].materialIndex = 3;
-	objects[6]->meshes[0].materialIndex = 3;
-
 	for (Object* object : objects)
 	{
 		if (object->state != STATUS_VISIBLE || !object->HasFinishedLoading())
