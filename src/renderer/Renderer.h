@@ -13,6 +13,8 @@
 #include "CreationObjects.h"
 #include "RayTracing.h"
 
+class Intro;
+
 class Renderer
 {
 public:
@@ -25,6 +27,8 @@ public:
 	static StorageBuffer<uint16_t> globalIndicesBuffer;
 	static VkSampler defaultSampler;
 
+	static std::vector<VkDynamicState> dynamicStates;
+
 	Renderer(Win32Window* window);
 	void Destroy();
 	void DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta);
@@ -32,8 +36,11 @@ public:
     void RenderGraph(const std::vector<uint64_t>& buffer, const char* label);
 	void RenderGraph(const std::vector<float>& buffer, const char* label);
 	void RenderPieGraph(std::vector<float>& data, const char* label = nullptr);
-	VulkanCreationObject GetVulkanCreationObject();
+	void RenderIntro(Intro* intro);
+	VulkanCreationObject& GetVulkanCreationObject();
 	std::optional<std::string> RenderDevConsole();
+
+	Swapchain* swapchain; // better to keep it private
 
 	bool shouldRasterize = false;
 
@@ -69,7 +76,6 @@ private:
 	PhysicalDevice physicalDevice;
 	Surface surface;
 	Win32Window* testWindow;
-	Swapchain* swapchain;
 
 	uint32_t currentFrame = 0;
 	uint32_t queueIndex = 0;
@@ -101,4 +107,8 @@ private:
 
 	void UpdateUniformBuffers(uint32_t currentImage, Camera* camera);
 	void RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
+
+	uint32_t GetNextSwapchainImage(uint32_t frameIndex);
+	void PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex, bool recreateRayTracingImage = true);
+	void SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
 };

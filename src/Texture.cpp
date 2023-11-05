@@ -202,7 +202,6 @@ void Texture::DestroyPlaceholderTextures()
 
 void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
 {
-
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 
 	VkImageMemoryBarrier memoryBarrier{};

@@ -9,6 +9,7 @@
 #include "renderer/Surface.h"
 #include "renderer/PipelineBuilder.h"
 #include "renderer/Texture.h"
+#include "renderer/Intro.h"
 #include "vulkan/vk_enum_string_helper.h"
 #include "system/SystemMetrics.h"
 #include "system/Window.h"
@@ -38,6 +39,12 @@ StorageBuffer<Vertex> Renderer::globalVertexBuffer;
 StorageBuffer<uint16_t> Renderer::globalIndicesBuffer;
 bool Renderer::initGlobalBuffers = false;
 VkSampler Renderer::defaultSampler = VK_NULL_HANDLE;
+
+std::vector<VkDynamicState> Renderer::dynamicStates =
+{
+	VK_DYNAMIC_STATE_VIEWPORT,
+	VK_DYNAMIC_STATE_SCISSOR
+};
 
 struct UniformBufferObject
 {
@@ -110,7 +117,7 @@ void Renderer::Destroy()
 	delete this;
 }
 
-VulkanCreationObject Renderer::GetVulkanCreationObject()
+VulkanCreationObject& Renderer::GetVulkanCreationObject()
 {
 	return creationObject;
 }
@@ -202,12 +209,6 @@ void Renderer::InitVulkan()
 
 	rayTracer = new RayTracing();
 }
-
-std::vector<VkDynamicState> dynamicStates =
-{
-	VK_DYNAMIC_STATE_VIEWPORT,
-	VK_DYNAMIC_STATE_SCISSOR
-};
 
 void Renderer::CreateTextureSampler()
 {
@@ -880,15 +881,47 @@ void Renderer::RenderGraph(const std::vector<float>& buffer, const char* label)
 	ImGui::End();
 }
 
-void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
+void Renderer::RenderIntro(Intro* intro)
 {
-	ImGui::Render();
-	
-	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
-	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+	std::chrono::steady_clock::time_point beginTime = std::chrono::high_resolution_clock::now();
+	float currentTime = 0;
 
+	while (currentTime < Intro::maxSeconds)
+	{
+		vkWaitForFences(logicalDevice, 1, &inFlightFences[0], true, UINT64_MAX);
+		std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+
+		uint32_t imageIndex = GetNextSwapchainImage(0);
+
+		vkResetFences(logicalDevice, 1, &inFlightFences[0]);
+
+		vkResetCommandBuffer(commandBuffers[0], 0);
+
+		VkCommandBufferBeginInfo beginInfo{};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+		VkResult result = vkBeginCommandBuffer(commandBuffers[0], &beginInfo);
+		CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
+
+		intro->WriteDataToBuffer(currentTime);
+		intro->RecordCommandBuffer(commandBuffers[0], imageIndex);
+
+		result = vkEndCommandBuffer(commandBuffers[0]);
+		CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
+
+		SubmitRenderingCommandBuffer(0, imageIndex);
+		PresentSwapchainImage(0, imageIndex, false);
+
+		Win32Window::PollMessages();
+
+		currentTime = std::chrono::duration<float, std::chrono::seconds::period>(std::chrono::high_resolution_clock::now() - beginTime).count(); // get the time that elapsed from the beginning till now
+	}
+}
+
+uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
+{
 	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(logicalDevice, swapchain->vkSwapchain, UINT64_MAX, imageAvaibleSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = vkAcquireNextImageKHR(logicalDevice, swapchain->vkSwapchain, UINT64_MAX, imageAvaibleSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
@@ -897,7 +930,63 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 		testWindow->resized = false;
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-		throw VulkanAPIError("Failed to acquire the next swap chain image", result, nameof(vkAcquireNextImageKHR), __FILENAME__, std::to_string(__LINE__));
+		throw VulkanAPIError("Failed to acquire the next swap chain image", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __STRLINE__);
+	return imageIndex;
+}
+
+void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex, bool recreateRayTracingImage)
+{
+	VkPresentInfoKHR presentInfo{};
+	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	presentInfo.waitSemaphoreCount = 1;
+	presentInfo.pWaitSemaphores = &renderFinishedSemaphores[frameIndex];
+
+	VkSwapchainKHR swapchains[] = { swapchain->vkSwapchain };
+	presentInfo.swapchainCount = 1;
+	presentInfo.pSwapchains = swapchains;
+	presentInfo.pImageIndices = &imageIndex;
+
+	VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || testWindow->resized)
+	{
+		swapchain->Recreate(renderPass);
+		if (recreateRayTracingImage)
+			rayTracer->RecreateImage(swapchain);
+		testWindow->resized = false;
+		Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
+	}
+	else CheckVulkanResult("Failed to present the swap chain image", result, nameof(vkQueuePresentKHR));
+}
+
+void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
+{
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+	VkSemaphore waitSemaphores[] = { imageAvaibleSemaphores[frameIndex] };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffers[frameIndex];
+
+	VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[frameIndex] };
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+
+	VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]);
+	CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
+}
+
+void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
+{
+	ImGui::Render();
+	
+	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
+	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+
+	uint32_t imageIndex = GetNextSwapchainImage(currentFrame);
 
 	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
 
@@ -909,43 +998,9 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, objects, camera);
 
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
 
-	VkSemaphore waitSemaphores[] = { imageAvaibleSemaphores[currentFrame] };
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
-
-	VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
-
-	result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
-	CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
-
-	VkPresentInfoKHR presentInfo{};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalSemaphores;
-
-	VkSwapchainKHR swapchains[] = { swapchain->vkSwapchain };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapchains;
-	presentInfo.pImageIndices = &imageIndex;
-
-	result = vkQueuePresentKHR(presentQueue, &presentInfo);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || testWindow->resized)
-	{
-		swapchain->Recreate(renderPass);
-		rayTracer->RecreateImage(swapchain);
-		testWindow->resized = false;
-		Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
-	}
-	else CheckVulkanResult("Failed to present the swap chain image", result, nameof(vkQueuePresentKHR));
+	PresentSwapchainImage(currentFrame, imageIndex);
 	
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }

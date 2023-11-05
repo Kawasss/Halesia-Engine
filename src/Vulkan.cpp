@@ -16,6 +16,7 @@ const bool enableValidationLayers = true;
 #include <unordered_map>
 
 #include "renderer/Vulkan.h"
+#include "renderer/Swapchain.h"
 #include "Console.h"
 
 #define nameof(s) #s
@@ -95,6 +96,22 @@ void QueueCommandPoolStorage::ReturnCommandPool(VkCommandPool commandPool)
     commandPoolStorageMutex.lock();
     unusedCommandPools.push_back(commandPool);
     commandPoolStorageMutex.unlock();
+}
+
+void Vulkan::PopulateDefaultViewport(VkViewport& viewport, Swapchain* swapchain)
+{
+    viewport.x = 0;
+    viewport.y = 0;
+    viewport.width = (float)swapchain->extent.width;
+    viewport.height = (float)swapchain->extent.height;
+    viewport.minDepth = 0;
+    viewport.maxDepth = 1;
+}
+
+void Vulkan::PopulateDefaultScissors(VkRect2D& scissors, Swapchain* swapchain)
+{
+    scissors.offset = { 0, 0 };
+    scissors.extent = swapchain->extent;
 }
 
 VkCommandPool Vulkan::FetchNewCommandPool(const VulkanCreationObject& creationObject)
@@ -292,7 +309,7 @@ void Vulkan::CreateImage(VkDevice logicalDevice, PhysicalDevice physicalDevice, 
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     createInfo.flags = flags;
-
+    
     VkResult result = vkCreateImage(logicalDevice, &createInfo, nullptr, &image);
     if (result != VK_SUCCESS)
         throw VulkanAPIError("Failed to create an image", result, nameof(vkCreateImage), __FILENAME__, __STRLINE__);

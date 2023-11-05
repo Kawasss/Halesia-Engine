@@ -58,6 +58,7 @@ struct HalesiaInstanceCreateInfo
 	VirtualKey devConsoleKey = VirtualKey::Tilde;
 	bool enableDevConsole = true;
 	bool useEditor = false;
+	bool playIntro = true;
 
 	int argsCount = 0;
 	char** args;
@@ -100,6 +101,7 @@ private:
 	std::optional<std::string> UpdateRenderer(const UpdateRendererData& rendererData);
 	void UpdateScene(const UpdateSceneData& sceneData);
 
+	bool playIntro = true;
 	bool devKeyIsPressedLastFrame = false;
 	bool renderDevConsole = false;
 	VirtualKey devConsoleKey;

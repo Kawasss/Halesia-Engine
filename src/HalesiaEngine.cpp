@@ -2,10 +2,11 @@
 #include <future>
 #include "HalesiaEngine.h"
 #include "system/Input.h"
-#include "Console.h"
 #include "system/SystemMetrics.h"
-#include "CreationObjects.h"
+#include "renderer/Intro.h"
 #include "tools/CameraInjector.h"
+#include "CreationObjects.h"
+#include "Console.h"
 
 int ParseAndValidateDimensionArgument(std::string string)
 {
@@ -51,6 +52,7 @@ void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, Halesia
 		Console::WriteLine("Write \"help\" for all commands");
 		instance.physics = new Physics();
 		instance.devConsoleKey = createInfo.devConsoleKey;
+		instance.playIntro = createInfo.playIntro;
 
 		if (createInfo.argsCount > 1)
 			DetermineArgs(createInfo.argsCount, createInfo.args, createInfo.windowCreateInfo);
@@ -251,8 +253,17 @@ HalesiaExitCode HalesiaInstance::Run()
 		float frameDelta = 0;
 		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
-		scene->Start();
 		window->maximized = true;
+		if (playIntro)
+		{
+			Intro intro{};
+			intro.Create(renderer->GetVulkanCreationObject(), renderer->swapchain, "textures/floor.png");
+
+			renderer->RenderIntro(&intro);
+			intro.Destroy();
+		}
+		
+		scene->Start();
 
 		while (!window->ShouldClose())
 		{

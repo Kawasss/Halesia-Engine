@@ -90,6 +90,9 @@
     <ClCompile Include="src\Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Intro.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Camera.h">
@@ -182,6 +185,9 @@
     <ClInclude Include="src\renderer\StorageBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\renderer\Intro.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">
@@ -210,6 +216,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\shadow.rmiss">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\intro.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\intro.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

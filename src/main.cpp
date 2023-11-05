@@ -79,6 +79,9 @@ int main(int argsCount, char** args)
 	createInfo.windowCreateInfo.icon = (HICON)LoadImageW(NULL, L"logo4.ico", IMAGE_ICON, 128, 128, LR_LOADFROMFILE);
 	createInfo.windowCreateInfo.extendedWindowStyle = ExtendedWindowStyle::DragAndDropFiles;
 	createInfo.windowCreateInfo.startMaximized = false;
+#ifdef _DEBUG
+	createInfo.playIntro = false;
+#endif
 
 	HalesiaInstance::GenerateHalesiaInstance(instance, createInfo);
 

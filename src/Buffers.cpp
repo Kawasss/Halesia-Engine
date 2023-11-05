@@ -6,18 +6,6 @@
 #include "Vertex.h"
 #include <iostream>
 
-void VulkanBuffer::Destroy()
-{
-	vkDestroyBuffer(logicalDevice, buffer, nullptr);
-	vkFreeMemory(logicalDevice, bufferMemory, nullptr);
-	//delete this;
-}
-
-VkBuffer VulkanBuffer::GetVkBuffer()
-{
-	return buffer;
-}
-
 VertexBuffer::VertexBuffer(const BufferCreationObject& creationObject, const std::vector<Vertex> vertices)
 {
 	this->logicalDevice = creationObject.logicalDevice;

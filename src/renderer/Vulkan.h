@@ -21,6 +21,8 @@
 #define __STRLINE__ std::to_string(__LINE__)
 #define CheckVulkanResult(message, result, function) if (result != VK_SUCCESS) throw VulkanAPIError(message, result, nameof(function), __FILENAME__, __STRLINE__)
 
+class Swapchain;
+
 const std::vector<const char*> validationLayers =
 {
     "VK_LAYER_KHRONOS_validation"
@@ -114,6 +116,8 @@ class Vulkan
         static void                         CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
         static void                         CopyBuffer(VkDevice logicalDevice, VkCommandPool commandPool, VkQueue queue, VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size);
         static void                         ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, const std::vector<const char*>& logicalDeviceExtensions);
+        static void                         PopulateDefaultViewport(VkViewport& viewport, Swapchain* swapchain);
+        static void                         PopulateDefaultScissors(VkRect2D& scissors, Swapchain* swapchain);
 
         static VkPhysicalDeviceMemoryProperties GetPhysicalDeviceMemoryProperties(VkPhysicalDevice device)
         {

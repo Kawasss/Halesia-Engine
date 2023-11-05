@@ -3,18 +3,24 @@
 #include "Vertex.h"
 #include "../CreationObjects.h"
 
-class VulkanBuffer // maybe struct because its fairly small and used for the entire lifetime of the mesh?
+template<typename T> class VulkanBuffer
 {
 public:
 	VulkanBuffer() = default;
-	template<typename T> VulkanBuffer(const BufferCreationObject& creationObject, VkBufferUsageFlags usage, const std::vector<T>& bufferData)
+	VulkanBuffer(const BufferCreationObject& creationObject, VkBufferUsageFlags usage, const std::vector<T>& bufferData)
 	{
 		this->logicalDevice = creationObject.logicalDevice;
 		GenerateBuffer<T>(creationObject, usage, bufferData);
 	}
 
-	void Destroy();
-	VkBuffer GetVkBuffer();
+	void Destroy()
+	{
+		vkDestroyBuffer(logicalDevice, buffer, nullptr);
+		vkFreeMemory(logicalDevice, bufferMemory, nullptr);
+		//delete this;
+	}
+
+	VkBuffer GetVkBuffer() { return buffer; }
 
 protected:
 	template<typename T> void GenerateBuffer(const BufferCreationObject& creationObject, VkBufferUsageFlags usage, const std::vector<T> bufferData)
@@ -47,7 +53,7 @@ protected:
 	VkDeviceMemory bufferMemory;
 };
 
-class VertexBuffer : public VulkanBuffer
+class VertexBuffer : public VulkanBuffer<Vertex>
 {
 public:
 	size_t size;
@@ -56,7 +62,7 @@ public:
 	VertexBuffer(const BufferCreationObject& creationObject, const std::vector<Vertex> vertices); // maybe its better to get the vertices / indices via reference, since they can contain a lot of data and it all needs to be copied
 };
 
-class IndexBuffer : public VulkanBuffer
+class IndexBuffer : public VulkanBuffer<uint16_t>
 {
 public:
 	IndexBuffer() = default;
