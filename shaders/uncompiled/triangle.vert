@@ -25,7 +25,7 @@ layout (location = 4) out vec3 camPos;
 layout (push_constant) uniform PushConstant
 {
     mat4 model;
-    vec3 IDColor;
+    vec4 IDColor;
     int materialOffset;
 } pushConstant;
 

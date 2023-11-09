@@ -56,8 +56,8 @@ struct UniformBufferObject
 
 struct PushConstants
 {
-	glm::mat4 model;
-	glm::vec3 IDColor;
+	alignas (64) glm::mat4 model;
+	alignas (16) glm::vec4 IDColor;
 	int32_t materialOffset;
 };
 
@@ -364,7 +364,7 @@ void Renderer::CreateDescriptorSets()
 	allocateInfo.descriptorPool = descriptorPool;
 	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
 	allocateInfo.pSetLayouts = layouts.data();
-	allocateInfo.pNext = &countAllocateInfo;
+	allocateInfo.pNext = nullptr;// &countAllocateInfo;
 
 	descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -389,6 +389,8 @@ void Renderer::CreateDescriptorSets()
 		imageInfo.imageView = VK_NULL_HANDLE;
 		imageInfo.sampler = defaultSampler;
 
+		std::vector<VkDescriptorImageInfo> imageInfos(Renderer::MAX_BINDLESS_TEXTURES, imageInfo);
+
 		std::array<VkWriteDescriptorSet, 3> writeDescriptorSets{};
 		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writeDescriptorSets[0].dstSet = descriptorSets[i];
@@ -411,8 +413,8 @@ void Renderer::CreateDescriptorSets()
 		writeDescriptorSets[2].dstBinding = 2;
 		writeDescriptorSets[2].dstArrayElement = 0;
 		writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writeDescriptorSets[2].descriptorCount = 1;
-		writeDescriptorSets[2].pImageInfo = &imageInfo;
+		writeDescriptorSets[2].descriptorCount = MAX_BINDLESS_TEXTURES;
+		writeDescriptorSets[2].pImageInfo = imageInfos.data();
 		
 		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
 	}
@@ -468,7 +470,7 @@ void Renderer::CreateDescriptorSetLayout()
 	std::vector<VkDescriptorBindingFlags> bindingFlags;
 	bindingFlags.push_back(0);
 	bindingFlags.push_back(0);
-	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo{};
 	bindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
@@ -727,7 +729,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		SetScissors(lCommandBuffer);
 
 		vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
-
+		
 		for (int i = 0; i < objects.size(); i++)
 			if (objects[i]->state == STATUS_VISIBLE && objects[i]->HasFinishedLoading())
 				for (int j = 0; j < objects[i]->meshes.size(); j++)
@@ -736,7 +738,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 					VkBuffer vertexBuffers[] = { globalVertexBuffer.GetBufferHandle() };
 					VkDeviceSize offsets[] = { globalVertexBuffer.GetMemoryOffset(mesh.vertexMemory) };
 
-					PushConstants pushConstants = { objects[i]->transform.GetModelMatrix(), glm::vec3(1), i * objects[i]->meshes.size() + j };
+					PushConstants pushConstants = { objects[i]->transform.GetModelMatrix(), glm::vec4(1), i * objects[i]->meshes.size() + j };
 					vkCmdPushConstants(lCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &pushConstants);
 
 					vkCmdBindVertexBuffers(lCommandBuffer, 0, 1, vertexBuffers, offsets);
@@ -992,7 +994,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	UpdateUniformBuffers(currentFrame, camera);
 	SetModelMatrices(currentFrame, objects);
 
-	//UpdateBindlessTextures(currentFrame, objects);
+	UpdateBindlessTextures(currentFrame, objects);
 
 	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, objects, camera);
@@ -1010,37 +1012,63 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 	if (!Image::TexturesHaveChanged()) // disabled since there is a racing condition for the meshes. If the meshes are done loading after the textures, the textures get written off as being updated, whilst the meshes material isnt
 		return;
 		
-	// !! this for loop currently updates the textures for all descriptor sets at once which is not that good. itd be better to update the currently used descriptor set
-	std::vector<VkDescriptorImageInfo> imageInfos;
-
-	for (Object* object : objects) // its wasteful to update the textures of all the meshes if those arent changed, its wasting resources. its better to have a look up table or smth like that to look up if a material has already been updated, dstArrayElement also needs to be made dynamic for that
-		for (Mesh& mesh : object->meshes)
-			for (int i = 0; i < 5; i++) // 5 textures per material (using 2 now because the rest aren't implemented yet)
-			{
-				VkDescriptorImageInfo imageInfo{};
-				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				imageInfo.imageView = Mesh::materials[mesh.materialIndex][i]->imageView;//mesh.material[i]->imageView;
-				imageInfo.sampler = defaultSampler;
-
-				imageInfos.push_back(imageInfo);
-	}
-	if (imageInfos.size() == 0)
-		return;
-
-	// this for loop updates every descriptor set with the textures that are only really relevant for the current frame, this can be wasteful if there are textures that stop being used after this frame. this cant be changed easily because of Image::TexturesHaveChanged
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * 5);
+	std::vector<VkWriteDescriptorSet> writeSets(Mesh::materials.size() * 5);
+	for (int i = 0; i < Mesh::materials.size(); i++)
 	{
-		VkWriteDescriptorSet writeSet{};
-		writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writeSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
-		writeSet.dstBinding = 2;
-		writeSet.dstSet = descriptorSets[i];
-		writeSet.pImageInfo = imageInfos.data();
-		writeSet.dstArrayElement = 0; // should be made dynamic if this function no longer updates from the beginning of the array
-		
-		vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
+		for (int j = 0; j < 5; j++)
+		{
+			uint32_t index = 5 * i + j;
+
+			VkDescriptorImageInfo& imageInfo = imageInfos[index];
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo.imageView = Mesh::materials[i][j]->imageView;
+			imageInfo.sampler = Renderer::defaultSampler;
+
+			VkWriteDescriptorSet& writeSet = writeSets[index];
+			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			writeSet.pImageInfo = &imageInfos[index];
+			writeSet.dstSet = descriptorSets[currentFrame];
+			writeSet.descriptorCount = 1;
+			writeSet.dstBinding = 2;
+			writeSet.dstArrayElement = index;
+		}
 	}
+
+	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
+
+	// !! this for loop currently updates the textures for all descriptor sets at once which is not that good. itd be better to update the currently used descriptor set
+	//std::vector<VkDescriptorImageInfo> imageInfos;
+
+	//for (Object* object : objects) // its wasteful to update the textures of all the meshes if those arent changed, its wasting resources. its better to have a look up table or smth like that to look up if a material has already been updated, dstArrayElement also needs to be made dynamic for that
+	//	for (Mesh& mesh : object->meshes)
+	//		for (int i = 0; i < 5; i++) // 5 textures per material (using 2 now because the rest aren't implemented yet)
+	//		{
+	//			VkDescriptorImageInfo imageInfo{};
+	//			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	//			imageInfo.imageView = Mesh::materials[mesh.materialIndex][i]->imageView;//mesh.material[i]->imageView;
+	//			imageInfo.sampler = defaultSampler;
+
+	//			imageInfos.push_back(imageInfo);
+	//}
+	//if (imageInfos.size() == 0)
+	//	return;
+
+	//// this for loop updates every descriptor set with the textures that are only really relevant for the current frame, this can be wasteful if there are textures that stop being used after this frame. this cant be changed easily because of Image::TexturesHaveChanged
+	//for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	//{
+	//	VkWriteDescriptorSet writeSet{};
+	//	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	//	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	//	writeSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
+	//	writeSet.dstBinding = 2;
+	//	writeSet.dstSet = descriptorSets[i];
+	//	writeSet.pImageInfo = imageInfos.data();
+	//	writeSet.dstArrayElement = 0; // should be made dynamic if this function no longer updates from the beginning of the array
+	//	
+	//	vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
+	//}
 }
 
 void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
