@@ -218,6 +218,7 @@ void Vulkan::EndSingleTimeCommands(VkDevice logicalDevice, VkQueue queue, VkComm
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
+    std::lock_guard<std::mutex> lockGuard1(Vulkan::graphicsQueueMutex); // dont question it, it works
     std::lock_guard<std::mutex> lockGuard(endCommandMutex);
     result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
     CheckVulkanResult("Failed to submit the single time commands queue", result, vkQueueSubmit);

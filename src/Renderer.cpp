@@ -215,6 +215,7 @@ void Renderer::InitVulkan()
 	}
 
 	rayTracer = new RayTracing();
+	rayTracer->Init(logicalDevice, physicalDevice, surface, testWindow, swapchain);
 }
 
 void Renderer::CreateTextureSampler()
@@ -688,27 +689,8 @@ void Renderer::SetScissors(VkCommandBuffer commandBuffer)
 
 bool submittedObjects = false; // this is ABSOLUTELY not the way to do this, this is only temporary and should be handled in object.cpp, not here
 
-bool initRT = false;
 void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> objects, Camera* camera)
 {
-	if (!initRT)
-	{
-		rayTracer->Init(logicalDevice, physicalDevice, surface, objects[0], camera, testWindow, swapchain);
-		initRT = true;
-	} // not a good place to do this
-
-	if (!submittedObjects && objects.size() == 2)
-	{
-		rayTracer->SubmitObjects(GetVulkanCreationObject(), objects);
-		submittedObjects = true;
-	}
-
-	/*if (submittedObjects.size() == 0 && objects.size() > 0)
-	{
-		submittedObjects.push_back(objects[0]);
-		rayTracer->SumbitObject(GetVulkanCreationObject(), objects[0]);
-	}*/
-
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
@@ -908,12 +890,10 @@ void Renderer::RenderIntro(Intro* intro)
 	while (currentTime < Intro::maxSeconds)
 	{
 		vkWaitForFences(logicalDevice, 1, &inFlightFences[0], true, UINT64_MAX);
-		std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
 
 		uint32_t imageIndex = GetNextSwapchainImage(0);
 
 		vkResetFences(logicalDevice, 1, &inFlightFences[0]);
-
 		vkResetCommandBuffer(commandBuffers[0], 0);
 
 		VkCommandBufferBeginInfo beginInfo{};
@@ -994,6 +974,7 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
 
+	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
 	VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]);
 	CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
 }
@@ -1003,7 +984,6 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	ImGui::Render();
 	
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
-	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
 
 	uint32_t imageIndex = GetNextSwapchainImage(currentFrame);
 

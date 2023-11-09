@@ -107,12 +107,7 @@ void RayTracing::Destroy()
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
 
-void RayTracing::SubmitObjects(const VulkanCreationObject& creationObject, std::vector<Object*> objects)
-{
-
-}
-
-void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Object* object, Camera* camera, Win32Window* window, Swapchain* swapchain)
+void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window, Swapchain* swapchain)
 {
 	VkResult result = VK_SUCCESS;
 
@@ -152,7 +147,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	if (result != VK_SUCCESS)
 		throw VulkanAPIError("Failed to allocate the command buffers for ray tracing", result, nameof(vkAllocateCommandBuffers), __FILENAME__, std::to_string(__LINE__));
 
-	TLAS = TopLevelAccelerationStructure::Create(creationObject, { object });
+	TLAS = TopLevelAccelerationStructure::Create(creationObject, {}); // second parameter is empty since there are no models to build, not the best way to solve this
 
 	// descriptor pool (frames in flight not implemented)
 
