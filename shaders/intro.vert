@@ -9,6 +9,6 @@ layout (location = 0) out vec2 uvCoord;
 
 void main()
 {
-	uvCoord = coordinates[gl_VertexIndex].xy;
+	uvCoord = (coordinates[gl_VertexIndex].xy + 1) * 0.5;
 	gl_Position = vec4(coordinates[gl_VertexIndex], 1);
 }

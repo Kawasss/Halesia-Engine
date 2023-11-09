@@ -285,7 +285,14 @@ void Intro::Create(VulkanCreationObject& creationObject, Swapchain* swapchain, s
 void Intro::WriteDataToBuffer(float timeElapsed)
 {
 	static Timer timer{ 0 };
-	timer.completionPercentage = timeElapsed / timeForMaxTransparency;
+
+	if (timeElapsed < fadeInOutTime) // fade in
+		timer.completionPercentage = timeElapsed / fadeInOutTime;
+	else if (timeElapsed > maxSeconds - fadeInOutTime) // fade out
+		timer.completionPercentage = 1 - (timeElapsed - (maxSeconds - fadeInOutTime)) / fadeInOutTime;
+	
+	if (timer.completionPercentage > 1) timer.completionPercentage = 1;
+
 	memcpy(uniformBufferPointer, &timer, sizeof(Timer)); // write the update percentage to the buffer
 }
 

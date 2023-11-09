@@ -8,8 +8,8 @@ class Texture;
 class Intro
 {
 public:
-	static constexpr float maxSeconds = 5.0f;
-	static constexpr float timeForMaxTransparency = 2.5f;
+	static constexpr float maxSeconds = 3.0f;
+	static constexpr float fadeInOutTime = 1.0f;
 
 	void Create(VulkanCreationObject& creationObject, Swapchain* swapchain, std::string imagePath);
 

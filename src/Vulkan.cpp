@@ -61,7 +61,7 @@ VkCommandPool QueueCommandPoolStorage::GetNewCommandPool()
 {
     VkCommandPool commandPool;
 
-    if (unusedCommandPools.size() == 0)
+    if (unusedCommandPools.empty())
     {
         VkCommandPoolCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -78,7 +78,7 @@ VkCommandPool QueueCommandPoolStorage::GetNewCommandPool()
     else
     {
         commandPoolStorageMutex.lock();
-        commandPool = unusedCommandPools[unusedCommandPools.size() - 1];
+        commandPool = unusedCommandPools.back();
         unusedCommandPools.erase(unusedCommandPools.end() - 1);
         commandPoolStorageMutex.unlock();
 
