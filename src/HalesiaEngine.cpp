@@ -276,7 +276,7 @@ HalesiaExitCode HalesiaInstance::Run()
 			asyncRenderer = std::async(&HalesiaInstance::UpdateRenderer, this, std::cref(rendererData));
 
 			if (window->ContainsDroppedFile())
-				scene->SubmitStaticObject(GenericLoader::LoadObjectFile(window->GetDroppedFile(), scene->allObjects.size()));
+				scene->SubmitStaticObject(GenericLoader::LoadObjectFile(window->GetDroppedFile()));
 
 			devKeyIsPressedLastFrame = Input::IsKeyPressed(devConsoleKey);
 

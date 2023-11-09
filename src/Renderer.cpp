@@ -54,6 +54,13 @@ struct UniformBufferObject
 	alignas(16) glm::mat4 projection;
 };
 
+struct PushConstants
+{
+	glm::mat4 model;
+	glm::vec3 IDColor;
+	int32_t materialOffset;
+};
+
 VkMemoryAllocateFlagsInfo allocateFlagsInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO, nullptr, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT, 0 };
 
 Renderer::Renderer(Win32Window* window)
@@ -481,8 +488,8 @@ void Renderer::CreateDescriptorSetLayout()
 
 void Renderer::CreateGraphicsPipeline()
 {
-	std::vector<char> vertexShaderSource = ReadFile("shaders/vert.spv");
-	std::vector<char> fragmentShaderSource = ReadFile("shaders/frag.spv");
+	std::vector<char> vertexShaderSource = ReadFile("shaders/spirv/vert.spv");
+	std::vector<char> fragmentShaderSource = ReadFile("shaders/spirv/frag.spv");
 
 	VkShaderModule vertexShaderModule = Vulkan::CreateShaderModule(logicalDevice, vertexShaderSource);
 	VkShaderModule fragmentShaderModule = Vulkan::CreateShaderModule(logicalDevice, fragmentShaderSource);
@@ -501,7 +508,7 @@ void Renderer::CreateGraphicsPipeline()
 	dynamicState.flags = 0;
 
 	VkVertexInputBindingDescription bindingDescription = Vertex::GetBindingDescription();
-	std::array<VkVertexInputAttributeDescription, 4> attributeDescriptions = Vertex::GetAttributeDescriptions();
+	std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = Vertex::GetAttributeDescriptions();
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -517,6 +524,11 @@ void Renderer::CreateGraphicsPipeline()
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssembly.primitiveRestartEnable = false;
+
+	VkPushConstantRange pushConstantRange{};
+	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+	pushConstantRange.size = sizeof(PushConstants);
+	pushConstantRange.offset = 0;
 
 	VkViewport viewport{};
 	viewport.x = 0;
@@ -573,6 +585,8 @@ void Renderer::CreateGraphicsPipeline()
 	layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	layoutInfo.setLayoutCount = 1;
 	layoutInfo.pSetLayouts = &descriptorSetLayout;
+	layoutInfo.pushConstantRangeCount = 1;
+	layoutInfo.pPushConstantRanges = &pushConstantRange;
 
 	VkResult result = vkCreatePipelineLayout(logicalDevice, &layoutInfo, nullptr, &pipelineLayout);
 	if (result != VK_SUCCESS)
@@ -732,14 +746,19 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 
 		vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 
-		for (Object* object : objects)
-			if (object->state == STATUS_VISIBLE && object->HasFinishedLoading())
-				for (Mesh& mesh : object->meshes)
+		for (int i = 0; i < objects.size(); i++)
+			if (objects[i]->state == STATUS_VISIBLE && objects[i]->HasFinishedLoading())
+				for (int j = 0; j < objects[i]->meshes.size(); j++)
 				{
-					VkBuffer vertexBuffers[] = { globalVertexBuffer.GetBufferHandle()/*mesh.vertexBuffer.GetVkBuffer()*/};
-					VkDeviceSize offsets[] = { globalVertexBuffer.GetMemoryOffset(mesh.vertexMemory)/*0*/ };
+					Mesh& mesh = objects[i]->meshes[j];
+					VkBuffer vertexBuffers[] = { globalVertexBuffer.GetBufferHandle() };
+					VkDeviceSize offsets[] = { globalVertexBuffer.GetMemoryOffset(mesh.vertexMemory) };
+
+					PushConstants pushConstants = { objects[i]->transform.GetModelMatrix(), glm::vec3(1), i * objects[i]->meshes.size() + j };
+					vkCmdPushConstants(lCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &pushConstants);
+
 					vkCmdBindVertexBuffers(lCommandBuffer, 0, 1, vertexBuffers, offsets);
-					vkCmdBindIndexBuffer(lCommandBuffer, globalIndicesBuffer.GetBufferHandle(), globalIndicesBuffer.GetMemoryOffset(mesh.indexMemory),/*mesh.indexBuffer.GetVkBuffer(), 0,*/ VK_INDEX_TYPE_UINT16);
+					vkCmdBindIndexBuffer(lCommandBuffer, globalIndicesBuffer.GetBufferHandle(), globalIndicesBuffer.GetMemoryOffset(mesh.indexMemory), VK_INDEX_TYPE_UINT16);
 
 					vkCmdDrawIndexed(lCommandBuffer, static_cast<uint32_t>(mesh.indices.size()), 1, 0, 0, 0);
 				}

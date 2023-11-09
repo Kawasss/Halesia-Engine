@@ -71,9 +71,9 @@ VkCommandPool QueueCommandPoolStorage::GetNewCommandPool()
         VkResult result = vkCreateCommandPool(logicalDevice, &createInfo, nullptr, &commandPool);
         CheckVulkanResult("Failed to create a command pool for the storage buffer", result, vkCreateCommandPool);
 
-#ifdef _DEBUG
-        Console::WriteLine("Created a new command pool for queue index " + std::to_string(queueIndex), MESSAGE_SEVERITY_DEBUG);
-#endif
+//#ifdef _DEBUG
+//        Console::WriteLine("Created a new command pool for queue index " + std::to_string(queueIndex), MESSAGE_SEVERITY_DEBUG);
+//#endif
     }
     else
     {

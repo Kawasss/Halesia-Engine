@@ -20,6 +20,7 @@ struct InstanceMeshData
 	uint32_t vertexBufferOffset;
 	uint32_t materialIndex;
 	int32_t meshIsLight;
+	int32_t modelID;
 };
 
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
@@ -237,7 +238,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// material set layouts (placeholder material, not Material.h materials) (frames in flight not implemented)
 
-	std::vector<VkDescriptorSetLayoutBinding> meshDataLayoutBindings(4);
+	std::vector<VkDescriptorSetLayoutBinding> meshDataLayoutBindings(3);
 
 	meshDataLayoutBindings[0].binding = 0;
 	meshDataLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -252,19 +253,12 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	meshDataLayoutBindings[1].pImmutableSamplers = nullptr;
 
 	meshDataLayoutBindings[2].binding = 2;
-	meshDataLayoutBindings[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	meshDataLayoutBindings[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	meshDataLayoutBindings[2].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-	meshDataLayoutBindings[2].descriptorCount = 1;
+	meshDataLayoutBindings[2].descriptorCount = Renderer::MAX_BINDLESS_TEXTURES;
 	meshDataLayoutBindings[2].pImmutableSamplers = nullptr;
 
-	meshDataLayoutBindings[3].binding = 3;
-	meshDataLayoutBindings[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	meshDataLayoutBindings[3].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-	meshDataLayoutBindings[3].descriptorCount = Renderer::MAX_BINDLESS_TEXTURES;
-	meshDataLayoutBindings[3].pImmutableSamplers = nullptr;
-
 	std::vector<VkDescriptorBindingFlags> bindingFlags;
-	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
@@ -316,10 +310,10 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// shaders
 
-	VkShaderModule genShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/gen.rgen.spv"));
-	VkShaderModule hitShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/hit.rchit.spv"));
-	VkShaderModule missShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/miss.rmiss.spv"));
-	VkShaderModule shadowShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/shadow.rmiss.spv"));
+	VkShaderModule genShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/spirv/gen.rgen.spv"));
+	VkShaderModule hitShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/spirv/hit.rchit.spv"));
+	VkShaderModule missShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/spirv/miss.rmiss.spv"));
+	VkShaderModule shadowShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/spirv/shadow.rmiss.spv"));
 
 	// pipeline
 
@@ -440,31 +434,6 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 void RayTracing::CreateMeshDataBuffers()
 {
-	struct Material
-	{
-		float ambient[3] = { 0.2f, 0.2f, 0.2f };
-		float diffuse[3] = { 0.5f, 0.0f, 0.7f };
-		float specular[3] = { 0.3f, 0.3f, 0.3f };
-		float emission[3] = { 1, 1, 1 };
-	};
-
-	std::vector<Material> materials;
-	materials.push_back(Material{ { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 }, { 1, 1, 1 } });
-	materials.push_back(Material{ { 0.2f, 0.2f, 0.2f }, { 0.8f, 0.8f, 0.8f }, { 0.3f, 0.3f, 0.3f }, { 0.2f, 0.2f, 0.2f } });
-	materials.push_back(Material{ { 0.2f, 0.2f, 0.2f }, { 0.5f, 0.0f, 0.7f }, { 0.3f, 0.3f, 0.3f }, { 0.5f, 0.5f, 0.5f } });
-
-	VkDeviceSize materialBufferSize = sizeof(Material) * materials.size();
-
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, materialBufferSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, materialBuffer, materialBufferMemory);
-
-	void* materialsBufferMemPtr;
-	VkResult result = vkMapMemory(logicalDevice, materialBufferMemory, 0, materialBufferSize, 0, &materialsBufferMemPtr);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to map the ray tracing material buffer memory", result, nameof(vkMapMemory), __FILENAME__, std::to_string(__LINE__));
-
-	memcpy(materialsBufferMemPtr, materials.data(), materialBufferSize);
-	vkUnmapMemory(logicalDevice, materialBufferMemory);
-
 	VkDeviceSize modelSize = sizeof(glm::mat4) * 8;// Renderer::MAX_MESHES;
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, modelSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, modelMatrixBuffer, modelMatrixBufferMemory);
@@ -500,35 +469,28 @@ void RayTracing::UpdateMeshDataDescriptorSets()
 
 	std::vector<VkDescriptorImageInfo> imageInfos(Renderer::MAX_BINDLESS_TEXTURES, imageInfo);
 
-	std::vector<VkWriteDescriptorSet> meshDataWriteDescriptorSets(4);
+	std::vector<VkWriteDescriptorSet> meshDataWriteDescriptorSets(3);
 
 	meshDataWriteDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	meshDataWriteDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	meshDataWriteDescriptorSets[0].dstSet = descriptorSets[1];
 	meshDataWriteDescriptorSets[0].dstBinding = 0;
 	meshDataWriteDescriptorSets[0].descriptorCount = 1;
-	meshDataWriteDescriptorSets[0].pBufferInfo = &materialBufferDescriptorInfo;
+	meshDataWriteDescriptorSets[0].pBufferInfo = &modelMatrixBufferDescriptorInfo;
 
 	meshDataWriteDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	meshDataWriteDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	meshDataWriteDescriptorSets[1].dstSet = descriptorSets[1];
 	meshDataWriteDescriptorSets[1].dstBinding = 1;
 	meshDataWriteDescriptorSets[1].descriptorCount = 1;
-	meshDataWriteDescriptorSets[1].pBufferInfo = &modelMatrixBufferDescriptorInfo;
+	meshDataWriteDescriptorSets[1].pBufferInfo = &instanceDataBufferDescriptorInfo;
 
 	meshDataWriteDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	meshDataWriteDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	meshDataWriteDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	meshDataWriteDescriptorSets[2].dstSet = descriptorSets[1];
 	meshDataWriteDescriptorSets[2].dstBinding = 2;
-	meshDataWriteDescriptorSets[2].descriptorCount = 1;
-	meshDataWriteDescriptorSets[2].pBufferInfo = &instanceDataBufferDescriptorInfo;
-
-	meshDataWriteDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	meshDataWriteDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	meshDataWriteDescriptorSets[3].dstSet = descriptorSets[1];
-	meshDataWriteDescriptorSets[3].dstBinding = 3;
-	meshDataWriteDescriptorSets[3].descriptorCount = Renderer::MAX_BINDLESS_TEXTURES;
-	meshDataWriteDescriptorSets[3].pImageInfo = imageInfos.data();
+	meshDataWriteDescriptorSets[2].descriptorCount = Renderer::MAX_BINDLESS_TEXTURES;
+	meshDataWriteDescriptorSets[2].pImageInfo = imageInfos.data();
 
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)meshDataWriteDescriptorSets.size(), meshDataWriteDescriptorSets.data(), 0, nullptr);
 }
@@ -656,7 +618,7 @@ void RayTracing::UpdateTextureBuffer()
 			writeSet.pImageInfo = &imageInfos[index];
 			writeSet.dstSet = descriptorSets[1];
 			writeSet.descriptorCount = 1;
-			writeSet.dstBinding = 3;
+			writeSet.dstBinding = 2;
 			writeSet.dstArrayElement = index;
 		}
 	}
@@ -686,17 +648,17 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 	uint32_t indexOffset = 0;
 	uint32_t vertexOffset = 0;
 
-	for (Object* object : objects)
+	for (int32_t i = 0; i < objects.size(); i++)
 	{
-		if (object->state != STATUS_VISIBLE || !object->HasFinishedLoading())
+		if (objects[i]->state != STATUS_VISIBLE || !objects[i]->HasFinishedLoading())
 			continue;
 
-		for (Mesh& mesh : object->meshes)
+		for (int32_t j = 0; j < objects[i]->meshes.size(); j++)
 		{
-			instanceDatas.push_back({ indexOffset, vertexOffset, mesh.materialIndex, 0}); 
-
-			indexOffset += mesh.indices.size();
-			vertexOffset += mesh.vertices.size();
+			instanceDatas.push_back({ indexOffset, vertexOffset, objects[i]->meshes[j].materialIndex, 0, i * (int32_t)objects[i]->meshes.size() + j });
+			
+			indexOffset += objects[i]->meshes[j].indices.size();
+			vertexOffset += objects[i]->meshes[j].vertices.size();
 		}
 	}
 	instanceDatas[instanceDatas.size() - 1].meshIsLight = 1; // only last mesh is a light for testing

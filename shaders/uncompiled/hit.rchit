@@ -5,13 +5,6 @@
 
 #define M_PI 3.1415926535897932384626433832795
 
-struct Material {
-  vec3 ambient;
-  vec3 diffuse;
-  vec3 specular;
-  vec3 emission;
-};
-
 hitAttributeEXT vec2 hitCoordinate;
 
 layout(location = 0) rayPayloadInEXT Payload {
@@ -32,7 +25,6 @@ struct Vertex
     vec3 position;
 	vec3 normal;
 	vec2 textureCoordinates;
-	ivec2 drawID;
 };
 
 struct InstanceMeshData
@@ -41,6 +33,7 @@ struct InstanceMeshData
     uint vertexBufferOffset;
     uint materialIndex;
     int meshIsLight;
+    int modelID;
 };
 
 layout(location = 1) rayPayloadEXT bool isShadow;
@@ -65,14 +58,18 @@ layout(binding = 1, set = 0) uniform Camera
 layout (binding = 2, set = 0) buffer IndexBuffer { uint16_t data[]; } indexBuffer;
 layout (binding = 3, set = 0) buffer VertexBuffer { Vertex data[]; } vertexBuffer;
 
-layout (binding = 0, set = 1) buffer MaterialBuffer { Material data[]; } materialBuffer;
-layout (binding = 1, set = 1) buffer ModelBuffer { mat4 data[]; } modelBuffer;
-layout (binding = 2, set = 1) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
-layout (binding = 3, set = 1) uniform sampler2D[] textures;
+layout (binding = 0, set = 1) buffer ModelBuffer { mat4 data[]; } modelBuffer;
+layout (binding = 1, set = 1) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
+layout (binding = 2, set = 1) uniform sampler2D[] textures;
+
+mat4 GetModelMatrix()
+{
+    return modelBuffer.data[instanceDataBuffer.data[gl_InstanceCustomIndexEXT].modelID];
+}
 
 vec3 MultiplyPositionWithModelMatrix(Vertex vertex)
 {
-    return (modelBuffer.data[vertex.drawID.x] * vec4(vertex.position, 1)).xyz;
+    return (GetModelMatrix() * vec4(vertex.position, 1)).xyz;
 }
 
 vec3 getNormalFromMap(uint normalMapIndex, vec3 barycentric, vec2 fragTexCoord, Vertex vertex1, Vertex vertex2, Vertex vertex3)
@@ -85,7 +82,7 @@ vec3 getNormalFromMap(uint normalMapIndex, vec3 barycentric, vec2 fragTexCoord, 
     vec2 st2 = vertex3.textureCoordinates - vertex1.textureCoordinates;
 
     vec3 N   = vertex1.normal * barycentric.x + vertex2.normal * barycentric.y + vertex3.normal * barycentric.z;
-    N = normalize(mat3(transpose(inverse(modelBuffer.data[vertex1.drawID.x]))) * N);
+    N = normalize(mat3(transpose(inverse(GetModelMatrix()))) * N);
     vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
     vec3 B  = -normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
@@ -135,7 +132,7 @@ void main() {
   vec3 vertexC = vertexBuffer.data[indices.z].position;
 
   vec3 position = vertexA * barycentric.x + vertexB * barycentric.y + vertexC * barycentric.z;
-  position = (modelBuffer.data[vertexBuffer.data[indices.x].drawID.x] * vec4(position, 1)).xyz;
+  position = (GetModelMatrix() * vec4(position, 1)).xyz;
 
   vec2 uvCoordinates = vertexBuffer.data[indices.x].textureCoordinates * barycentric.x + vertexBuffer.data[indices.y].textureCoordinates * barycentric.y + vertexBuffer.data[indices.z].textureCoordinates * barycentric.z;
   vec3 geometricNormal = getNormalFromMap(materialIndex * 5 + 1, barycentric, uvCoordinates, vertexBuffer.data[indices.x], vertexBuffer.data[indices.y], vertexBuffer.data[indices.z]);

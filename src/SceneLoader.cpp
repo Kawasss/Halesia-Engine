@@ -104,7 +104,6 @@ Vertex SceneLoader::RetrieveOneVertex()
 	ret.position = GetVec3(vecBytes);
 	ret.textureCoordinates = GetVec2(vecBytes + 12);
 	ret.normal = GetVec3(vecBytes + 20);
-	ret.drawID = 0;
 	return ret;
 }
 
@@ -212,7 +211,7 @@ void SceneLoader::OpenInputFile(std::string path)
 		throw std::runtime_error("Failed to open the scene file at " + path + ", the path is either invalid or outdated / corrupt");
 }
 
-std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& max, int index)
+std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& max)
 {
 	std::vector<Vertex> ret;
 	for (int i = 0; i < pMesh->mNumVertices; i++)
@@ -233,7 +232,6 @@ std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& m
 			vertex.normal = glm::vec3(pMesh->mNormals[i].x, pMesh->mNormals[i].y, pMesh->mNormals[i].z);
 		if (pMesh->mTextureCoords[0])
 			vertex.textureCoordinates = glm::vec2(pMesh->mTextureCoords[0][i].x, pMesh->mTextureCoords[0][i].y);
-		vertex.drawID = index;
 		ret.push_back(vertex);
 	}
 	return ret;
@@ -248,14 +246,14 @@ inline std::vector<uint16_t> RetrieveIndices(aiMesh* pMesh)
 	return ret;
 }
 
-inline MeshCreationData RetrieveMeshData(aiMesh* pMesh, int index)
+inline MeshCreationData RetrieveMeshData(aiMesh* pMesh)
 {
 	MeshCreationData ret{};
 
 	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
 	ret.amountOfVertices = pMesh->mNumVertices;
 	ret.faceCount = pMesh->mNumFaces;
-	ret.vertices = RetrieveVertices(pMesh, min, max, index);
+	ret.vertices = RetrieveVertices(pMesh, min, max);
 	ret.indices = RetrieveIndices(pMesh);
 
 	ret.center = (min + max) * 0.5f;
@@ -264,7 +262,7 @@ inline MeshCreationData RetrieveMeshData(aiMesh* pMesh, int index)
 	return ret;
 }
 
-ObjectCreationData GenericLoader::LoadObjectFile(std::string path, int index)
+ObjectCreationData GenericLoader::LoadObjectFile(std::string path)
 {
 	ObjectCreationData ret{};
 
@@ -282,7 +280,7 @@ ObjectCreationData GenericLoader::LoadObjectFile(std::string path, int index)
 	{
 		aiMesh* pMesh = scene->mMeshes[i];
 		aiMaterial* pMaterial = scene->mMaterials[pMesh->mMaterialIndex];
-		ret.meshes.push_back(RetrieveMeshData(pMesh, index));
+		ret.meshes.push_back(RetrieveMeshData(pMesh));
 	}
 	return ret;
 }

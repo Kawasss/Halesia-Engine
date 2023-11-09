@@ -42,13 +42,13 @@ class TestScene : public Scene
 	Object* objPtr = nullptr;
 	void Start() override
 	{
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/monkey.obj", 0))->meshes[0].SetMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/grey.png") });
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel.obj", 1))->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/blue.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/black.png") });
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel2.obj", 2))->meshes[0].SetMaterial({new Texture(GetMeshCreationObjects(), "textures/red.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/black.png") });
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel3.obj", 3))->meshes[0].SetMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/black.png") });
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel4.obj", 4))->meshes[0].SetMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/black.png") });
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panelBottom.obj", 5))->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/floor.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/black.png") });
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panelTop.obj", 6))->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/white.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/black.png") });
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/monkey.obj"))->meshes[0].SetMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/grey.png") });
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel.obj"))->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/blue.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/black.png") });
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel2.obj"))->meshes[0].SetMaterial({new Texture(GetMeshCreationObjects(), "textures/red.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/black.png") });
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel3.obj"))->meshes[0].SetMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/black.png") });
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel4.obj"))->meshes[0].SetMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/black.png") });
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panelBottom.obj"))->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/floor.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/black.png") });
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panelTop.obj"))->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/white.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/black.png") });
 		AddCustomObject<RotatingObject>("stdObj/light.obj", OBJECT_IMPORT_EXTERNAL);
 		
 		this->camera = new TestCamera();

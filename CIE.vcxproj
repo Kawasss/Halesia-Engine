@@ -202,14 +202,14 @@
     <ResourceCompile Include="src\Halesia.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\gen.rgen" />
-    <None Include="shaders\hit.rchit" />
-    <None Include="shaders\intro.frag" />
-    <None Include="shaders\intro.vert" />
-    <None Include="shaders\miss.rmiss" />
-    <None Include="shaders\shadow.rmiss" />
-    <None Include="shaders\triangle.frag" />
-    <None Include="shaders\triangle.vert" />
+    <None Include="shaders\uncompiled\gen.rgen" />
+    <None Include="shaders\uncompiled\hit.rchit" />
+    <None Include="shaders\uncompiled\intro.frag" />
+    <None Include="shaders\uncompiled\intro.vert" />
+    <None Include="shaders\uncompiled\miss.rmiss" />
+    <None Include="shaders\uncompiled\shadow.rmiss" />
+    <None Include="shaders\uncompiled\triangle.frag" />
+    <None Include="shaders\uncompiled\triangle.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

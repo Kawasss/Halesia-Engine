@@ -6,10 +6,9 @@
 
 struct Vertex
 {
-	alignas(16) glm::vec3 position{};
-	alignas(16) glm::vec3 normal{};
+	glm::vec3 position{};
+	glm::vec3 normal{};
 	glm::vec2 textureCoordinates{};
-	alignas (8) int32_t drawID;
 
 	static VkVertexInputBindingDescription GetBindingDescription()
 	{
@@ -22,9 +21,9 @@ struct Vertex
 		return bindingDescription;
 	}
 
-	static std::array<VkVertexInputAttributeDescription, 4> GetAttributeDescriptions()
+	static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions()
 	{
-		std::array<VkVertexInputAttributeDescription, 4> descriptions{};
+		std::array<VkVertexInputAttributeDescription, 3> descriptions{};
 
 		descriptions[0].binding = 0;
 		descriptions[0].location = 0;
@@ -40,11 +39,6 @@ struct Vertex
 		descriptions[2].location = 2;
 		descriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
 		descriptions[2].offset = offsetof(Vertex, textureCoordinates);
-
-		descriptions[3].binding = 0;
-		descriptions[3].location = 3;
-		descriptions[3].format = VK_FORMAT_R32_SINT;
-		descriptions[3].offset = offsetof(Vertex, drawID);
 
 		return descriptions;
 	}

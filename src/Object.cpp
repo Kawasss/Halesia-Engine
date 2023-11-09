@@ -12,9 +12,9 @@ void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, 
 {
 	name = creationData.name;
 
-	#ifdef _DEBUG
+	/*#ifdef _DEBUG
 	Console::WriteLine("Attempting to create new model \"" + name + '\"', MESSAGE_SEVERITY_DEBUG);
-	#endif
+	#endif*/
 
 	for (int i = 0; i < creationData.meshes.size(); i++)
 		meshes[i].Create(creationObject, creationData.meshes[i]);

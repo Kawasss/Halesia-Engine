@@ -104,6 +104,6 @@ private:
 
 inline namespace GenericLoader
 {
-	ObjectCreationData LoadObjectFile(std::string path, int index);
+	ObjectCreationData LoadObjectFile(std::string path);
 	MaterialCreationData LoadCPBRMaterial(std::string path);
 }

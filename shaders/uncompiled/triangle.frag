@@ -4,15 +4,22 @@
 #define PI 3.14159265359
 #define TEXTURES_PER_MATERIAL 5
 
-layout(location = 0) in vec3 fragNormal;
-layout(location = 1) in vec2 fragTexCoord;
-flat layout (location = 2) in int drawID;
+layout (location = 0) in vec3 fragNormal;
+layout (location = 1) in vec2 fragTexCoord;
 layout (location = 3) in vec3 worldPos;
 layout (location = 4) in vec3 camPos;
 
-layout(location = 0) out vec4 outColor;
+layout (location = 0) out vec4 outColor;
 
-layout(binding = 2) uniform sampler2D texSampler[];
+layout (binding = 2) uniform sampler2D texSampler[];
+
+layout (push_constant) uniform PushConstant
+{
+    mat4 model;
+    vec3 IDColor;
+    int materialOffset;
+} pushConstant;
+
 
 vec3 getNormalFromMap(int normalMapIndex)
 {
@@ -72,11 +79,12 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 }
 
 void main() {
-    int baseIndex = TEXTURES_PER_MATERIAL * drawID;
-    vec3 albedo = pow(texture(texSampler[baseIndex], fragTexCoord).rgb, vec3(2.2));
-    float metallic = texture(texSampler[baseIndex + 2], fragTexCoord).b;
-    float roughness = texture(texSampler[baseIndex + 3], fragTexCoord).g;
-    float ao = texture(texSampler[baseIndex + 4], fragTexCoord).r;
+    int baseIndex = TEXTURES_PER_MATERIAL * pushConstant.materialOffset;
+
+    vec3 albedo = vec3(1);//pow(texture(texSampler[baseIndex], fragTexCoord).rgb, vec3(2.2));
+    float metallic = 1;//texture(texSampler[baseIndex + 2], fragTexCoord).b;
+    float roughness = 1;//texture(texSampler[baseIndex + 3], fragTexCoord).g;
+    float ao = 1;//texture(texSampler[baseIndex + 4], fragTexCoord).r;
 
     if (albedo == vec3(0))
         albedo = vec3(1);
@@ -87,7 +95,7 @@ void main() {
     if (ao == 0)
         ao = 0.5;
 
-    vec3 N = getNormalFromMap(baseIndex + 1);
+    vec3 N = fragNormal;//getNormalFromMap(baseIndex + 1);
     vec3 V = normalize(camPos - worldPos);
 
     vec3 F0 = vec3(0.04); 

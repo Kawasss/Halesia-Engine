@@ -15,7 +15,6 @@ layout (binding = 1) uniform ModelMatrices
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
-layout(location = 3) in int DrawID;
 
 layout(location = 0) out vec3 fragNormal;
 layout(location = 1) out vec2 fragTexCoord;
@@ -23,12 +22,18 @@ flat layout (location = 2) out int drawID;
 layout (location = 3) out vec3 worldPos;
 layout (location = 4) out vec3 camPos;
 
+layout (push_constant) uniform PushConstant
+{
+    mat4 model;
+    vec3 IDColor;
+    int materialOffset;
+} pushConstant;
+
 void main() {
     camPos = ubo.camPos;
-    worldPos = (model.models[DrawID] * vec4(inPosition, 1)).xyz;
-    gl_Position = ubo.proj * ubo.view * model.models[DrawID] * vec4(inPosition, 1.0);
+    worldPos = (pushConstant.model * vec4(inPosition, 1)).xyz;
+    gl_Position = ubo.proj * ubo.view * pushConstant.model * vec4(inPosition, 1.0);
 
-    fragNormal = normalize(mat3(transpose(inverse(model.models[DrawID]))) * inNormal);
+    fragNormal = normalize(mat3(transpose(inverse(pushConstant.model))) * inNormal);
     fragTexCoord = inTexCoord;
-    drawID = DrawID;
 }
