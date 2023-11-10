@@ -52,6 +52,11 @@ void Mesh::SetMaterial(Material material)
 			materialIndex = i;
 }
 
+bool Mesh::HasFinishedLoading()
+{
+	return materials[materialIndex].HasFinishedLoading();
+}
+
 void Mesh::Destroy()
 {
 	// should also delete the material in materials here (if no other meshes are referencing that material)

@@ -109,6 +109,6 @@ private:
 	void RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
 
 	uint32_t GetNextSwapchainImage(uint32_t frameIndex);
-	void PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex, bool recreateRayTracingImage = true);
+	void PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex);
 	void SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
 };

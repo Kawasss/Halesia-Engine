@@ -135,11 +135,11 @@ void main() {
   position = (GetModelMatrix() * vec4(position, 1)).xyz;
 
   vec2 uvCoordinates = vertexBuffer.data[indices.x].textureCoordinates * barycentric.x + vertexBuffer.data[indices.y].textureCoordinates * barycentric.y + vertexBuffer.data[indices.z].textureCoordinates * barycentric.z;
-  vec3 geometricNormal = getNormalFromMap(materialIndex * 5 + 1, barycentric, uvCoordinates, vertexBuffer.data[indices.x], vertexBuffer.data[indices.y], vertexBuffer.data[indices.z]);
+  vec3 geometricNormal = getNormalFromMap(materialIndex * 3 + 1, barycentric, uvCoordinates, vertexBuffer.data[indices.x], vertexBuffer.data[indices.y], vertexBuffer.data[indices.z]);
 
   if (camera.showAlbedo == 1)
   {
-    payload.indirectColor = texture(textures[5 * materialIndex], uvCoordinates).xyz;
+    payload.indirectColor = texture(textures[3 * materialIndex], uvCoordinates).xyz;
     payload.rayDepth = 1;
     payload.rayActive = 0;
     return;
@@ -162,15 +162,15 @@ void main() {
       return;
   }
 
-  vec3 surfaceColor = texture(textures[5 * materialIndex], uvCoordinates).xyz;
-  float smoothness = 1 - texture(textures[5 * materialIndex + 3], uvCoordinates).g;
+  vec3 surfaceColor = texture(textures[3 * materialIndex], uvCoordinates).xyz;
+  float smoothness = 1 - texture(textures[3 * materialIndex + 2], uvCoordinates).g;
   if (smoothness == 1)
      smoothness = 0.995;
   else if (smoothness == 0.5)
     smoothness = 0.6;
-  float metallic = texture(textures[5 * materialIndex + 2], uvCoordinates).b;
+  //float metallic = texture(textures[5 * materialIndex + 2], uvCoordinates).b;
     
-  bool isSpecular = metallic >= random(gl_LaunchIDEXT.xy, camera.frameCount * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
+  //bool isSpecular = metallic >= random(gl_LaunchIDEXT.xy, camera.frameCount * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
 
   if (instanceDataBuffer.data[gl_InstanceCustomIndexEXT].meshIsLight == 1)
   {

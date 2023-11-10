@@ -87,8 +87,8 @@ void Intro::Create(VulkanCreationObject& creationObject, Swapchain* swapchain, s
 
 	// shaders
 
-	std::vector<char> vertCode = ReadFile("shaders/intro.vert.spv");
-	std::vector<char> fragCode = ReadFile("shaders/intro.frag.spv");
+	std::vector<char> vertCode = ReadFile("shaders/spirv/intro.vert.spv");
+	std::vector<char> fragCode = ReadFile("shaders/spirv/intro.frag.spv");
 
 	VkShaderModule vertexShader = Vulkan::CreateShaderModule(logicalDevice, vertCode);
 	VkShaderModule fragShader = Vulkan::CreateShaderModule(logicalDevice, fragCode);

@@ -171,8 +171,9 @@ void Swapchain::Recreate() // hopefully a temporary fix, used for ray tracing
         height = window->GetHeight();
         window->PollMessages();
     }
-
+    std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
     vkDeviceWaitIdle(logicalDevice);
+    lockGuard.~lock_guard();
 
     Destroy();
 

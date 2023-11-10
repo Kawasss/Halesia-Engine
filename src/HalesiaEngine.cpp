@@ -254,14 +254,14 @@ HalesiaExitCode HalesiaInstance::Run()
 		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
 		window->maximized = true;
-		/*if (playIntro)
+		if (playIntro)
 		{
 			Intro intro{};
-			intro.Create(renderer->GetVulkanCreationObject(), renderer->swapchain, "textures/testSplashscreen.png");
+			intro.Create(renderer->GetVulkanCreationObject(), renderer->swapchain, "textures/floor.png");
 
 			renderer->RenderIntro(&intro);
 			intro.Destroy();
-		}*/
+		}
 		
 		scene->Start();
 

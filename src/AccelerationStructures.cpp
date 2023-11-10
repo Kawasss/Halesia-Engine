@@ -166,10 +166,10 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 	std::vector<VkAccelerationStructureInstanceKHR> instances;
 	for (int i = 0; i < objects.size(); i++)
 	{
-		if (objects[i]->state == STATUS_INVISIBLE || objects[i]->state == STATUS_DISABLED) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
+		if (!objects[i]->HasFinishedLoading() || objects[i]->state == STATUS_INVISIBLE || objects[i]->state == STATUS_DISABLED) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
 			continue;
 
-		for (int j = 0; j < objects[i]->meshes.size(); j++)								   // converts every mesh from every object into an acceleration structure instance
+		for (int j = 0; j < objects[i]->meshes.size(); j++)																	   // converts every mesh from every object into an acceleration structure instance
 		{
 			VkAccelerationStructureInstanceKHR instance{};
 			instance.instanceCustomIndex = objects[i]->meshes.size() * i + j;
@@ -178,7 +178,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 			instance.accelerationStructureReference = objects[i]->meshes[j].BLAS->GetAccelerationStructureAddress();
 			
 			glm::mat4 transform = objects[i]->transform.GetModelMatrix();
-			memcpy(&instance.transform, &transform, sizeof(VkTransformMatrixKHR));		   // simply copy the contents of the glm matrix to the vulkan matrix since the contents align
+			memcpy(&instance.transform, &transform, sizeof(VkTransformMatrixKHR));											   // simply copy the contents of the glm matrix to the vulkan matrix since the contents align
 
 			instances.push_back(instance);
 		}

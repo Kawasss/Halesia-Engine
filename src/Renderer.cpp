@@ -911,7 +911,7 @@ void Renderer::RenderIntro(Intro* intro)
 		CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
 
 		SubmitRenderingCommandBuffer(0, imageIndex);
-		PresentSwapchainImage(0, imageIndex, false);
+		PresentSwapchainImage(0, imageIndex);
 
 		Win32Window::PollMessages();
 
@@ -935,7 +935,7 @@ uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
 	return imageIndex;
 }
 
-void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex, bool recreateRayTracingImage)
+void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
 {
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -951,8 +951,7 @@ void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex, b
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || testWindow->resized)
 	{
 		swapchain->Recreate(renderPass);
-		if (recreateRayTracingImage)
-			rayTracer->RecreateImage(swapchain);
+		rayTracer->RecreateImage(swapchain);
 		testWindow->resized = false;
 		Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
 	}
@@ -1037,38 +1036,6 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 	}
 
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
-
-	// !! this for loop currently updates the textures for all descriptor sets at once which is not that good. itd be better to update the currently used descriptor set
-	//std::vector<VkDescriptorImageInfo> imageInfos;
-
-	//for (Object* object : objects) // its wasteful to update the textures of all the meshes if those arent changed, its wasting resources. its better to have a look up table or smth like that to look up if a material has already been updated, dstArrayElement also needs to be made dynamic for that
-	//	for (Mesh& mesh : object->meshes)
-	//		for (int i = 0; i < 5; i++) // 5 textures per material (using 2 now because the rest aren't implemented yet)
-	//		{
-	//			VkDescriptorImageInfo imageInfo{};
-	//			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	//			imageInfo.imageView = Mesh::materials[mesh.materialIndex][i]->imageView;//mesh.material[i]->imageView;
-	//			imageInfo.sampler = defaultSampler;
-
-	//			imageInfos.push_back(imageInfo);
-	//}
-	//if (imageInfos.size() == 0)
-	//	return;
-
-	//// this for loop updates every descriptor set with the textures that are only really relevant for the current frame, this can be wasteful if there are textures that stop being used after this frame. this cant be changed easily because of Image::TexturesHaveChanged
-	//for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	//{
-	//	VkWriteDescriptorSet writeSet{};
-	//	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	//	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	//	writeSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
-	//	writeSet.dstBinding = 2;
-	//	writeSet.dstSet = descriptorSets[i];
-	//	writeSet.pImageInfo = imageInfos.data();
-	//	writeSet.dstArrayElement = 0; // should be made dynamic if this function no longer updates from the beginning of the array
-	//	
-	//	vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
-	//}
 }
 
 void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)

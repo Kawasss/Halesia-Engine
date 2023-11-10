@@ -594,17 +594,18 @@ void RayTracing::UpdateDescriptorSets()
 
 void RayTracing::UpdateTextureBuffer()
 {
-	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * 5);
-	std::vector<VkWriteDescriptorSet> writeSets(Mesh::materials.size() * 5);
+	uint32_t amountOfTexturesPerMaterial = rayTracingMaterialTextures.size();
+	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * amountOfTexturesPerMaterial);
+	std::vector<VkWriteDescriptorSet> writeSets(Mesh::materials.size() * amountOfTexturesPerMaterial);
 	for (int i = 0; i < Mesh::materials.size(); i++)
 	{
-		for (int j = 0; j < 5; j++)
+		for (int j = 0; j < amountOfTexturesPerMaterial; j++)
 		{
-			uint32_t index = 5 * i + j;
+			uint32_t index = amountOfTexturesPerMaterial * i + j;
 			
 			VkDescriptorImageInfo& imageInfo = imageInfos[index];
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = Mesh::materials[i][j]->imageView;
+			imageInfo.imageView = Mesh::materials[i][rayTracingMaterialTextures[j]]->imageView;
 			imageInfo.sampler = Renderer::defaultSampler;
 
 			VkWriteDescriptorSet& writeSet = writeSets[index];

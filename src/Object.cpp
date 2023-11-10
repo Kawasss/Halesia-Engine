@@ -49,6 +49,9 @@ Object::Object(const ObjectCreationData& creationData, const ObjectCreationObjec
 
 bool Object::HasFinishedLoading()
 {
+	for (Mesh& mesh : meshes)
+		if (!mesh.HasFinishedLoading())
+			return false;
 	return finishedLoading || generationProcess._Is_ready();
 }
 
