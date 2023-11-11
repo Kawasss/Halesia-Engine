@@ -1,6 +1,7 @@
 #pragma once
 #include "../ResourceManager.h"
 #include "../Console.h"
+#include "../CreationObjects.h"
 
 struct StorageMemory_t // not a fan of this being visible
 {
@@ -8,7 +9,6 @@ struct StorageMemory_t // not a fan of this being visible
 	VkDeviceSize offset;
 	bool shouldBeTerminated;
 };
-
 
 typedef Handle StorageMemory;
 

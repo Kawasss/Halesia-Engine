@@ -7,6 +7,7 @@
 #include "tools/CameraInjector.h"
 #include "CreationObjects.h"
 #include "Console.h"
+#include "renderer/RayTracing.h"
 
 int ParseAndValidateDimensionArgument(std::string string)
 {

@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "CreationObjects.h"
 #include "Console.h"
+#include "SceneLoader.h"
 
 enum ObjectImportType
 {

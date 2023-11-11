@@ -5,15 +5,15 @@
 
 #include "PhysicalDevice.h"
 #include "Surface.h"
-#include "Swapchain.h"
-#include "Texture.h"
 #include "Vertex.h"
-#include "Object.h"
-#include "Camera.h"
 #include "CreationObjects.h"
-#include "RayTracing.h"
+#include "StorageBuffer.h"
 
 class Intro;
+class Camera;
+class Object;
+class Swapchain;
+class RayTracing;
 
 class Renderer
 {

@@ -1,19 +1,14 @@
 #pragma once
 #include <string>
-#include <assimp/scene.h>
 #include <vector>
 #include <future>
-#include "renderer/Buffers.h"
-#include "renderer/PhysicalDevice.h"
-#include "Vertex.h"
-#include "renderer/PhysicalDevice.h"
-#include "Transform.h"
-#include "Material.h"
-#include "CreationObjects.h"
-#include "SceneLoader.h"
-#include "ResourceManager.h"
-#include "renderer/AccelerationStructures.h"
+
 #include "renderer/Mesh.h"
+#include "Transform.h"
+#include "CreationObjects.h"
+
+struct ObjectCreationData;
+typedef uint64_t Handle;
 
 enum ObjectState
 {

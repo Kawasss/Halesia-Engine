@@ -1,13 +1,15 @@
 #include <string>
 #include <set>
+#include <iostream>
 #include "renderer/Vulkan.h"
+#include "renderer/Surface.h"
 
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice physicalDevice)
 {
     this->physicalDevice = physicalDevice;
 }
 
-QueueFamilyIndices PhysicalDevice::QueueFamilies(Surface surface)
+QueueFamilyIndices PhysicalDevice::QueueFamilies(Surface& surface)
 {
     QueueFamilyIndices queueFamily;
 
@@ -69,17 +71,24 @@ VkPhysicalDeviceFeatures PhysicalDevice::Features()
     return features;
 }
 
-uint64_t PhysicalDevice::AdditionalRAM()
+VkPhysicalDeviceMemoryProperties PhysicalDevice::MemoryProperties()
 {
-    return Vulkan::GetPhysicalDeviceMemoryProperties(physicalDevice).memoryHeaps[1].size;
+    VkPhysicalDeviceMemoryProperties properties{};
+    vkGetPhysicalDeviceMemoryProperties(physicalDevice, &properties);
+    return properties;
 }
 
 uint64_t PhysicalDevice::VRAM()
 {
-	return Vulkan::GetPhysicalDeviceMemoryProperties(physicalDevice).memoryHeaps[0].size;
+    return MemoryProperties().memoryHeaps[0].size;
 }
 
-VkDevice PhysicalDevice::GetLogicalDevice(Surface surface)
+uint64_t PhysicalDevice::AdditionalRAM()
+{
+    return MemoryProperties().memoryHeaps[1].size;
+}
+
+VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
 {
     VkDevice device;
     QueueFamilyIndices indices = QueueFamilies(surface);

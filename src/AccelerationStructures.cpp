@@ -1,5 +1,7 @@
 #include "renderer/AccelerationStructures.h"
 #include "renderer/Renderer.h"
+#include "renderer/Mesh.h"
+#include "Object.h"
 
 void AccelerationStructure::CreateAS(const VulkanCreationObject& creationObject, const VkAccelerationStructureGeometryKHR* pGeometry, VkAccelerationStructureTypeKHR type, uint32_t maxPrimitiveCount)
 {

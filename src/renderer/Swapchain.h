@@ -3,8 +3,9 @@
 #include <vector>
 #include "system/Window.h"
 #include "PhysicalDevice.h"
+#include "surface.h"
 
-class Swapchain //better to move the depth buffer inside the class
+class Swapchain
 {
 public:
     Swapchain() = default;

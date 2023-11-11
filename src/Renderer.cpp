@@ -4,17 +4,23 @@
 #include <vector>
 #include <array>
 #include <chrono>
+
 #include "renderer/Vulkan.h"
 #include "renderer/Swapchain.h"
 #include "renderer/Surface.h"
 #include "renderer/PipelineBuilder.h"
 #include "renderer/Texture.h"
 #include "renderer/Intro.h"
-#include "vulkan/vk_enum_string_helper.h"
+#include "renderer/Mesh.h"
+#include "renderer/RayTracing.h"
+
 #include "system/SystemMetrics.h"
 #include "system/Window.h"
 #include "system/Input.h"
+
 #include "Console.h"
+#include "Object.h"
+#include "Camera.h"
 
 #define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS

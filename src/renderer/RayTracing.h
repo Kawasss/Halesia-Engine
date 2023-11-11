@@ -1,11 +1,12 @@
 #pragma once
 #include "renderer/PhysicalDevice.h"
-#include "../Object.h"
-#include "../Camera.h"
-#include "Texture.h"
-#include "Swapchain.h"
-#include "AccelerationStructures.h"
 #include "../ResourceManager.h"
+
+class Swapchain;
+class BottomLevelAccelerationStructure;
+class TopLevelAccelerationStructure;
+class Object;
+class Camera;
 
 class RayTracing
 {
@@ -14,7 +15,7 @@ public:
 	void Destroy();
 	void Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface,  Win32Window* window, Swapchain* swapchain);
 	void DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex);
-	void RecreateImage(Swapchain* swapchain) { CreateImage(swapchain->extent.width, swapchain->extent.height); }
+	void RecreateImage(Swapchain* swapchain);
 
 	VkImage RTImage = VK_NULL_HANDLE;
 

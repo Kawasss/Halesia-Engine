@@ -1,6 +1,7 @@
 #pragma once
+#include "vulkan/vulkan.h"
 
-#include "system/Window.h"
+class Win32Window;
 
 class Surface
 {

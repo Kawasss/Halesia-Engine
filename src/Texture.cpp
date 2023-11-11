@@ -1,8 +1,8 @@
-#define NOMINMAX
 #include <fstream>
 #include "renderer/Vulkan.h"
 #include "renderer/physicalDevice.h"
 #include "renderer/Texture.h"
+#include "CreationObjects.h"
 #include "Console.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"

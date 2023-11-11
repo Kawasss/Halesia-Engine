@@ -2,7 +2,8 @@
 #include <vulkan/vulkan.h>
 #include <optional>
 #include <vector>
-#include "Surface.h"
+
+class Surface;
 
 struct QueueFamilyIndices
 {
@@ -22,10 +23,11 @@ class PhysicalDevice
 		PhysicalDevice(VkPhysicalDevice physicalDevice);
 		uint64_t VRAM();
 		uint64_t AdditionalRAM();
-		VkDevice GetLogicalDevice(Surface surface);
-		QueueFamilyIndices QueueFamilies(Surface surface);
+		VkDevice GetLogicalDevice(Surface& surface);
+		QueueFamilyIndices QueueFamilies(Surface& surface);
 		VkFormat GetDepthFormat();
 		VkPhysicalDeviceProperties Properties();
+		VkPhysicalDeviceMemoryProperties MemoryProperties();
 		VkPhysicalDeviceFeatures Features();
 		VkPhysicalDevice Device();
 		VkQueue presentQueue{}; //temp

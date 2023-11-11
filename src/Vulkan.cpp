@@ -5,41 +5,17 @@ const bool enableValidationLayers = true;
 #endif
 #define NOMINMAX
 #include <iostream>
-#include <stdexcept>
-#include <cstdlib>
-#include <vector>
-#include <optional>
-#include <cstdint>
-#include <limits>
 #include <algorithm>
-#include <fstream>
-#include <unordered_map>
 
 #include "renderer/Vulkan.h"
 #include "renderer/Swapchain.h"
 #include "Console.h"
-
-#define nameof(s) #s
-#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
-#define __STRLINE__ std::to_string(__LINE__)
-
-#pragma region VulkanPointerFunctions
-PFN_vkGetBufferDeviceAddressKHR pvkGetBufferDeviceAddressKHR = nullptr;
-PFN_vkCreateRayTracingPipelinesKHR pvkCreateRayTracingPipelinesKHR = nullptr;
-PFN_vkGetAccelerationStructureBuildSizesKHR pvkGetAccelerationStructureBuildSizesKHR = nullptr;
-PFN_vkCreateAccelerationStructureKHR pvkCreateAccelerationStructureKHR = nullptr;
-PFN_vkDestroyAccelerationStructureKHR pvkDestroyAccelerationStructureKHR = nullptr;
-PFN_vkGetAccelerationStructureDeviceAddressKHR pvkGetAccelerationStructureDeviceAddressKHR = nullptr;
-PFN_vkCmdBuildAccelerationStructuresKHR pvkCmdBuildAccelerationStructuresKHR = nullptr;
-PFN_vkGetRayTracingShaderGroupHandlesKHR pvkGetRayTracingShaderGroupHandlesKHR = nullptr;
-PFN_vkCmdTraceRaysKHR pvkCmdTraceRaysKHR = nullptr;
-#pragma endregion VulkanPointerFunctions
+#include "CreationObjects.h"
 
 VkDebugUtilsMessengerEXT Vulkan::debugMessenger;
-
-std::unordered_map<uint32_t, QueueCommandPoolStorage> Vulkan::queueCommandPoolStorages;
-
+std::unordered_map<uint32_t, std::vector<VkCommandPool>> Vulkan::queueCommandPools;
 std::mutex Vulkan::graphicsQueueMutex;
+std::mutex Vulkan::commandPoolMutex;
 VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 
 VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string functionName, std::string file, std::string line)
@@ -49,53 +25,6 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     location += line == "" ? "" : " at line " + line;
     location += file == "" ? "" : " in " + file;
     this->message = message + vulkanError + location;
-}
-
-QueueCommandPoolStorage::QueueCommandPoolStorage(VkDevice logicalDevice, uint32_t queueIndex) 
-{ 
-    this->queueIndex = queueIndex; 
-    this->logicalDevice = logicalDevice; 
-}
-
-VkCommandPool QueueCommandPoolStorage::GetNewCommandPool()
-{
-    VkCommandPool commandPool;
-
-    if (unusedCommandPools.empty())
-    {
-        VkCommandPoolCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        createInfo.queueFamilyIndex = queueIndex;
-
-        VkResult result = vkCreateCommandPool(logicalDevice, &createInfo, nullptr, &commandPool);
-        CheckVulkanResult("Failed to create a command pool for the storage buffer", result, vkCreateCommandPool);
-
-//#ifdef _DEBUG
-//        Console::WriteLine("Created a new command pool for queue index " + std::to_string(queueIndex), MESSAGE_SEVERITY_DEBUG);
-//#endif
-    }
-    else
-    {
-        commandPoolStorageMutex.lock();
-        commandPool = unusedCommandPools.back();
-        unusedCommandPools.erase(unusedCommandPools.end() - 1);
-        commandPoolStorageMutex.unlock();
-
-//#ifdef _DEBUG
-//        Console::WriteLine("Reused an existing command pool for queue index " + std::to_string(queueIndex) + ", amount left idle: " + std::to_string(unusedCommandPools.size()), MESSAGE_SEVERITY_DEBUG);
-//#endif
-        if (unusedCommandPools.size() > 16)
-            DestroyIdleCommandPools();
-    }
-    return commandPool;
-}
-
-void QueueCommandPoolStorage::ReturnCommandPool(VkCommandPool commandPool)
-{
-    commandPoolStorageMutex.lock();
-    unusedCommandPools.push_back(commandPool);
-    commandPoolStorageMutex.unlock();
 }
 
 void Vulkan::PopulateDefaultViewport(VkViewport& viewport, Swapchain* swapchain)
@@ -116,15 +45,43 @@ void Vulkan::PopulateDefaultScissors(VkRect2D& scissors, Swapchain* swapchain)
 
 VkCommandPool Vulkan::FetchNewCommandPool(const VulkanCreationObject& creationObject)
 {
-    if (queueCommandPoolStorages.count(creationObject.queueIndex) <= 0)
+    std::lock_guard<std::mutex> lockGuard(commandPoolMutex);
+    VkCommandPool commandPool;
+    if (queueCommandPools.count(creationObject.queueIndex) == 0)    // create a new vector if the queue index isn't registered yet
+        queueCommandPools[creationObject.queueIndex] = {};
+
+    if (queueCommandPools[creationObject.queueIndex].empty())       // if there are no idle command pools, create a new one
     {
-        QueueCommandPoolStorage newStorage{ creationObject.logicalDevice, creationObject.queueIndex };
-        queueCommandPoolStorages[creationObject.queueIndex] = newStorage;
-#ifdef _DEBUG
-        Console::WriteLine("Created a new command pool storage for queue family index " + std::to_string(creationObject.queueIndex), MESSAGE_SEVERITY_DEBUG);
-#endif
+        VkCommandPoolCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        createInfo.queueFamilyIndex = creationObject.queueIndex;
+
+        VkResult result = vkCreateCommandPool(creationObject.logicalDevice, &createInfo, nullptr, &commandPool);
+        CheckVulkanResult("Failed to create a command pool for the storage buffer", result, vkCreateCommandPool);
     }
-    return queueCommandPoolStorages[creationObject.queueIndex].GetNewCommandPool();
+    else                                                            // if there are idle command pools, get the last one and remove that from the vector
+    {
+        commandPool = queueCommandPools[creationObject.queueIndex].back();
+        queueCommandPools[creationObject.queueIndex].pop_back();
+    }
+    return commandPool;
+}
+
+void Vulkan::YieldCommandPool(uint32_t index, VkCommandPool commandPool)
+{
+    std::lock_guard<std::mutex> lockGuard(commandPoolMutex);
+    if (queueCommandPools.count(index) == 0)
+        throw VulkanAPIError("Failed to yield a command pool, no matching queue family index could be found", VK_SUCCESS, __FUNCTION__, __FILENAME__, __STRLINE__);
+    queueCommandPools[index].push_back(commandPool);
+}
+
+void Vulkan::DestroyAllCommandPools(VkDevice logicalDevice)
+{
+    for (std::pair<uint32_t, std::vector<VkCommandPool>> commandPools : queueCommandPools)
+        for (VkCommandPool commandPool : commandPools.second)
+            vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+    queueCommandPools.clear();
 }
 
 VkDeviceAddress Vulkan::GetDeviceAddress(VkDevice logicalDevice, VkBuffer buffer)
@@ -145,35 +102,6 @@ VkDeviceAddress Vulkan::GetDeviceAddress(VkDevice logicalDevice, VkAccelerationS
     return vkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &BLASAddressInfo);
 }
 
-void Vulkan::YieldCommandPool(uint32_t index, VkCommandPool commandPool)
-{
-    if (queueCommandPoolStorages.count(index) <= 0)
-        throw VulkanAPIError("Failed to yield a command pool, no matching queue family index could be found", VK_SUCCESS, __FUNCTION__, __FILENAME__, __STRLINE__);
-    queueCommandPoolStorages[index].ReturnCommandPool(commandPool);
-}
-
-QueueCommandPoolStorage::~QueueCommandPoolStorage()
-{
-    DestroyIdleCommandPools();
-}
-
-void QueueCommandPoolStorage::DestroyIdleCommandPools()
-{
-    commandPoolStorageMutex.lock();
-    for (const VkCommandPool& commandPool : unusedCommandPools)
-        vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
-    unusedCommandPools.clear();
-    commandPoolStorageMutex.unlock();
-}
-
-QueueCommandPoolStorage& QueueCommandPoolStorage::operator=(const QueueCommandPoolStorage& oldStorage)
-{
-    this->logicalDevice = oldStorage.logicalDevice;
-    this->queueIndex = oldStorage.queueIndex;
-    this->unusedCommandPools = oldStorage.unusedCommandPools;
-    return *this;
-}
-
 VkShaderModule Vulkan::CreateShaderModule(VkDevice logicalDevice, const std::vector<char>& code)
 {
     VkShaderModuleCreateInfo createInfo{};
@@ -182,11 +110,21 @@ VkShaderModule Vulkan::CreateShaderModule(VkDevice logicalDevice, const std::vec
     createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
     VkShaderModule module;
-
     VkResult result = vkCreateShaderModule(logicalDevice, &createInfo, nullptr, &module);
-    if (result != VK_SUCCESS)
-        throw VulkanAPIError("Failed to create a shader module", result, nameof(vkCreateShaderModule), __FILENAME__, __STRLINE__);
+    CheckVulkanResult("Failed to create a shader module", result, vkCreateShaderModule);
+
     return module;
+}
+
+VkPipelineShaderStageCreateInfo Vulkan::GetGenericShaderStageCreateInfo(VkShaderModule module, VkShaderStageFlagBits shaderStageBit, const char* name)
+{
+    VkPipelineShaderStageCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    createInfo.stage = shaderStageBit;
+    createInfo.module = module;
+    createInfo.pName = name;
+
+    return createInfo;
 }
 
 PhysicalDevice Vulkan::GetBestPhysicalDevice(VkInstance instance, Surface surface)
@@ -254,13 +192,12 @@ void Vulkan::CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice,
 {
     VkBufferCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.size = size;
     createInfo.usage = usage;
-    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     VkResult result = vkCreateBuffer(logicalDevice, &createInfo, nullptr, &buffer);
-    if (result != VK_SUCCESS)
-        throw VulkanAPIError("Failed to create a new buffer", result, nameof(vkCreateBuffer), __FILENAME__, __STRLINE__);
+    CheckVulkanResult("Failed to create a new buffer", result, vkCreateBuffer);
 
     VkMemoryRequirements memoryRequirements;
     vkGetBufferMemoryRequirements(logicalDevice, buffer, &memoryRequirements);
@@ -272,8 +209,7 @@ void Vulkan::CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice,
     allocateInfo.memoryTypeIndex = Vulkan::GetMemoryType(memoryRequirements.memoryTypeBits, properties, physicalDevice);
     
     result = vkAllocateMemory(logicalDevice, &allocateInfo, nullptr, &bufferMemory);
-    if (result != VK_SUCCESS)
-        throw VulkanAPIError("Failed to allocate " + std::to_string(memoryRequirements.size) + " bytes of memory", result, nameof(vkAllocateMemory), __FILENAME__, __STRLINE__);
+    CheckVulkanResult("Failed to allocate " + std::to_string(memoryRequirements.size) + " bytes of memory", result, vkAllocateMemory);
 
     /*#ifndef NDEBUG
         Console::WriteLine("Created a buffer with " + std::to_string(size) + " bytes");
@@ -284,13 +220,13 @@ void Vulkan::CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice,
 
 uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice)
 {
-    VkPhysicalDeviceMemoryProperties physicalMemoryProperties = GetPhysicalDeviceMemoryProperties(physicalDevice.Device());
+    VkPhysicalDeviceMemoryProperties physicalMemoryProperties = physicalDevice.MemoryProperties();
 
     for (uint32_t i = 0; i < physicalMemoryProperties.memoryTypeCount; i++)
         if ((typeFilter & (1 << i)) && (physicalMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
             return i;
 
-    throw VulkanAPIError("Failed to get the memory type " + (std::string)string_VkMemoryPropertyFlags(properties) + " for the physical device", VK_SUCCESS, nameof(GetMemoryType), __FILENAME__, __STRLINE__);
+    throw VulkanAPIError("Failed to get the memory type " + (std::string)string_VkMemoryPropertyFlags(properties) + " for the physical device " + (std::string)physicalDevice.Properties().deviceName, VK_SUCCESS, nameof(GetMemoryType), __FILENAME__, __STRLINE__);
 }
 
 void Vulkan::CreateImage(VkDevice logicalDevice, PhysicalDevice physicalDevice, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags, VkImage& image, VkDeviceMemory& memory)
@@ -298,6 +234,9 @@ void Vulkan::CreateImage(VkDevice logicalDevice, PhysicalDevice physicalDevice, 
     VkImageCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     createInfo.imageType = VK_IMAGE_TYPE_2D;
+    createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     createInfo.extent.width = width;
     createInfo.extent.height = height;
     createInfo.extent.depth = 1;
@@ -305,15 +244,11 @@ void Vulkan::CreateImage(VkDevice logicalDevice, PhysicalDevice physicalDevice, 
     createInfo.arrayLayers = arrayLayers;
     createInfo.format = format;
     createInfo.tiling = tiling;
-    createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     createInfo.usage = usage;
-    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     createInfo.flags = flags;
     
     VkResult result = vkCreateImage(logicalDevice, &createInfo, nullptr, &image);
-    if (result != VK_SUCCESS)
-        throw VulkanAPIError("Failed to create an image", result, nameof(vkCreateImage), __FILENAME__, __STRLINE__);
+    CheckVulkanResult("Failed to create an image", result, vkCreateImage);
 
     VkMemoryRequirements memoryRequirements;
     vkGetImageMemoryRequirements(logicalDevice, image, &memoryRequirements);
@@ -324,8 +259,7 @@ void Vulkan::CreateImage(VkDevice logicalDevice, PhysicalDevice physicalDevice, 
     allocateInfo.memoryTypeIndex = GetMemoryType(memoryRequirements.memoryTypeBits, properties, physicalDevice);
 
     result = vkAllocateMemory(logicalDevice, &allocateInfo, nullptr, &memory);
-    if (result != VK_SUCCESS)
-        throw VulkanAPIError("Failed to allocate memory for the image", result, nameof(vkAllocateMemory), __FILENAME__, __STRLINE__);
+    CheckVulkanResult("Failed to allocate memory for the image", result, vkAllocateMemory);
 
     vkBindImageMemory(logicalDevice, image, memory, 0);
 }
@@ -343,16 +277,15 @@ VkImageView Vulkan::CreateImageView(VkDevice logicalDevice, VkImage image, VkIma
     createInfo.viewType = viewType;
     createInfo.format = format;
     createInfo.subresourceRange.aspectMask = aspectFlags;
-    createInfo.subresourceRange.baseMipLevel = 0;
     createInfo.subresourceRange.levelCount = mipLevels;
-    createInfo.subresourceRange.baseArrayLayer = 0;
     createInfo.subresourceRange.layerCount = layerCount;
+    createInfo.subresourceRange.baseArrayLayer = 0;
+    createInfo.subresourceRange.baseMipLevel = 0;
 
     VkImageView imageView;
 
     VkResult result = vkCreateImageView(logicalDevice, &createInfo, nullptr, &imageView);
-    if (result != VK_SUCCESS)
-        throw VulkanAPIError("Failed to create an image view", result, nameof(vkCreateImageView), __FILENAME__, __STRLINE__);
+    CheckVulkanResult("Failed to create an image view", result, vkCreateImageView);
     return imageView;
 }
 
@@ -377,15 +310,11 @@ VkExtent2D Vulkan::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabitilies
     if (capabitilies.currentExtent.width != std::numeric_limits<uint32_t>::max())
         return capabitilies.currentExtent;
 
-    int width = window->GetWidth(), height = window->GetHeight();
+    uint32_t width = window->GetWidth(), height = window->GetHeight();
     
-    VkExtent2D extent =
-    {
-        static_cast<uint32_t>(width),
-        static_cast<uint32_t>(height)
-    };
-    extent.width = std::clamp(extent.width, capabitilies.minImageExtent.width, capabitilies.maxImageExtent.width);
-    extent.height = std::clamp(extent.height, capabitilies.minImageExtent.height, capabitilies.maxImageExtent.width);
+    VkExtent2D extent{};
+    extent.width = std::clamp(width, capabitilies.minImageExtent.width, capabitilies.maxImageExtent.width);
+    extent.height = std::clamp(height, capabitilies.minImageExtent.height, capabitilies.maxImageExtent.width);
     
     return extent;
 }
@@ -393,7 +322,7 @@ VkExtent2D Vulkan::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabitilies
 PhysicalDevice Vulkan::GetBestPhysicalDevice(std::vector<PhysicalDevice> devices, Surface surface)
 {
     for (size_t i = 0; i < devices.size(); i++)
-        if (IsDeviceCompatible(devices[i], surface)) //delete all of the unnecessary physical devices from ram
+        if (IsDeviceCompatible(devices[i], surface))
         {
             
 #ifdef _DEBUG
@@ -446,9 +375,9 @@ VkInstance Vulkan::GenerateInstance()
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "Halesia";
     appInfo.applicationVersion = VK_VERSION_1_3;
-    appInfo.pEngineName = "Halesia";
     appInfo.engineVersion = VK_VERSION_1_3;
     appInfo.apiVersion = VK_API_VERSION_1_3;
+    appInfo.pEngineName = "Halesia";  
 
     VkInstanceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -482,8 +411,7 @@ VkInstance Vulkan::GenerateInstance()
 #endif
 
     VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
-    if (result != VK_SUCCESS)
-        throw VulkanAPIError("Couldn't create a Vulkan instance", result, nameof(vkCreateInstance), __FILENAME__, __STRLINE__);
+    CheckVulkanResult("Couldn't create a Vulkan instance", result, vkCreateInstance);
 
     if (enableValidationLayers)
         CreateDebugMessenger(instance);
@@ -549,6 +477,124 @@ VkBool32 Vulkan::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSev
     return VK_TRUE;
 }
 
+void Vulkan::CheckDeviceRequirements(bool indicesHasValue, bool extensionsSupported, bool swapChainIsCompatible, bool samplerAnisotropy, bool shaderUniformBufferArrayDynamicIndexing, std::set<std::string> unsupportedExtensions)
+{
+    if (!indicesHasValue)
+        throw VulkanAPIError("No compatible queue family could be found", VK_SUCCESS, nameof(!indices.HasValue()), __FILENAME__, __STRLINE__);
+
+    else if (!extensionsSupported)
+    {
+        std::string message = "Failed to find support for one or more logical device extensions:\n";
+        for (std::string extension : unsupportedExtensions)
+            message += '\n' + extension;
+        throw VulkanAPIError(message, VK_SUCCESS, nameof(Vulkan::CheckLogicalDeviceExtensionSupport(device, requiredLogicalDeviceExtensions)), __FILENAME__, __STRLINE__);
+    }
+
+    else if (!swapChainIsCompatible)
+        throw VulkanAPIError("No support for a swapchain could be found", VK_SUCCESS, nameof(Vulkan::QuerySwapChainSupport(device, surface)), __FILENAME__, __STRLINE__);
+
+    else if (!samplerAnisotropy)
+        throw VulkanAPIError("Critical feature is missing: VkPhysicalDeviceFeatures::samplerAnisotropy", VK_SUCCESS, nameof(device.Features().samplerAnisotropy), __FILENAME__, __STRLINE__);
+
+    else if (!shaderUniformBufferArrayDynamicIndexing)
+        throw VulkanAPIError("Critical feature is missing: VkPhysicalDeviceFeatures::shaderUniformBufferArrayDynamicIndexing", VK_SUCCESS, nameof(device.Features().shaderUniformBufferArrayDynamicIndexing), __FILENAME__, __STRLINE__);
+}
+
+bool Vulkan::IsDeviceCompatible(PhysicalDevice device, Surface surface)
+{
+    QueueFamilyIndices indices = device.QueueFamilies(surface);
+    std::set<std::string> unsupportedExtensions;
+    bool extensionsSupported = CheckLogicalDeviceExtensionSupport(device, requiredLogicalDeviceExtensions, unsupportedExtensions);
+
+    bool swapChainIsCompatible = false;
+    if (extensionsSupported)
+    {
+        SwapChainSupportDetails support = QuerySwapChainSupport(device, surface);
+        swapChainIsCompatible = !support.formats.empty() && !support.presentModes.empty();
+    }
+
+    CheckDeviceRequirements(indices.HasValue(), extensionsSupported, swapChainIsCompatible, device.Features().samplerAnisotropy, device.Features().shaderUniformBufferArrayDynamicIndexing, unsupportedExtensions);
+
+    return indices.HasValue() && extensionsSupported && swapChainIsCompatible && device.Features().samplerAnisotropy && device.Features().shaderUniformBufferArrayDynamicIndexing;
+}
+
+bool Vulkan::CheckInstanceExtensionSupport(std::vector<const char*> extensions)
+{
+    std::vector<VkExtensionProperties> allExtensions = GetInstanceExtensions();
+    std::set<std::string> stringExtensions(extensions.begin(), extensions.end());
+    for (const VkExtensionProperties& property : allExtensions)
+        stringExtensions.erase(property.extensionName);
+
+    return stringExtensions.empty();
+}
+
+bool Vulkan::CheckLogicalDeviceExtensionSupport(PhysicalDevice physicalDevice, const std::vector<const char*> extensions, std::set<std::string>& unsupportedExtensions)
+{
+    std::vector<VkExtensionProperties> allExtensions = GetLogicalDeviceExtensions(physicalDevice);
+    unsupportedExtensions = std::set<std::string>(extensions.begin(), extensions.end());
+    for (const VkExtensionProperties& property : allExtensions)
+        unsupportedExtensions.erase(property.extensionName);
+
+    return unsupportedExtensions.empty();
+}
+
+bool Vulkan::CheckValidationSupport()
+{
+    uint32_t layerCount;
+    vkEnumerateInstanceLayerProperties(&layerCount, nullptr);
+    std::vector<VkLayerProperties> layerProperties(layerCount);
+    vkEnumerateInstanceLayerProperties(&layerCount, layerProperties.data());
+
+    for (const char* layerName : validationLayers)
+    {
+        bool foundLayer = false;
+
+        for (const VkLayerProperties& layerProperty : layerProperties)
+            if (strcmp(layerName, layerProperty.layerName) == 0)
+            {
+                foundLayer = true;
+                break;
+            }
+        if (!foundLayer)
+            return false;
+    }
+    return true;
+}
+
+std::vector<VkExtensionProperties> Vulkan::GetInstanceExtensions()
+{
+    uint32_t extensionCount = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> extensions(extensionCount);
+    vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, extensions.data());
+
+    return extensions;
+}
+
+std::vector<VkExtensionProperties> Vulkan::GetLogicalDeviceExtensions(PhysicalDevice physicalDevice)
+{
+    uint32_t extensionCount = 0;
+    vkEnumerateDeviceExtensionProperties(physicalDevice.Device(), nullptr, &extensionCount, nullptr);
+
+    std::vector<VkExtensionProperties> extensions(extensionCount);
+    vkEnumerateDeviceExtensionProperties(physicalDevice.Device(), nullptr, &extensionCount, extensions.data());
+
+    return extensions;
+}
+
+#pragma region VulkanPointerFunctions
+PFN_vkGetBufferDeviceAddressKHR pvkGetBufferDeviceAddressKHR = nullptr;
+PFN_vkCreateRayTracingPipelinesKHR pvkCreateRayTracingPipelinesKHR = nullptr;
+PFN_vkGetAccelerationStructureBuildSizesKHR pvkGetAccelerationStructureBuildSizesKHR = nullptr;
+PFN_vkCreateAccelerationStructureKHR pvkCreateAccelerationStructureKHR = nullptr;
+PFN_vkDestroyAccelerationStructureKHR pvkDestroyAccelerationStructureKHR = nullptr;
+PFN_vkGetAccelerationStructureDeviceAddressKHR pvkGetAccelerationStructureDeviceAddressKHR = nullptr;
+PFN_vkCmdBuildAccelerationStructuresKHR pvkCmdBuildAccelerationStructuresKHR = nullptr;
+PFN_vkGetRayTracingShaderGroupHandlesKHR pvkGetRayTracingShaderGroupHandlesKHR = nullptr;
+PFN_vkCmdTraceRaysKHR pvkCmdTraceRaysKHR = nullptr;
+#pragma endregion VulkanPointerFunctions
+
 void Vulkan::ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, const std::vector<const char*>& logicalDeviceExtensions)
 {
     for (const std::string logicalDeviceExtension : logicalDeviceExtensions) // no switch case because c++ cant handle strings in switch cases
@@ -581,85 +627,90 @@ void Vulkan::ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, con
     }
 }
 
+std::string CreateFunctionNotActivatedError(std::string functionName, std::string extensionName)
+{
+    return "Function \"" + functionName + "\" was called, but is invalid.\nIts extension \"" + extensionName + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"";
+}
+
 #pragma region VulkanExtensionFunctionDefinitions
 VkDeviceAddress vkGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) 
 { 
-#ifdef _DEBUG // gives warning C4297 (doesnt expect a throw), but can (presumably) be ignored because it's only for debug
+    #ifdef _DEBUG // gives warning C4297 (doesnt expect a throw), but can (presumably) be ignored because it's only for debug
     if (pvkGetBufferDeviceAddressKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
-#endif
+        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
+    #endif
     return pvkGetBufferDeviceAddressKHR(device, pInfo); 
 }
 
 VkDeviceAddress vkGetAccelerationStructureDeviceAddressKHR(VkDevice device, const VkAccelerationStructureDeviceAddressInfoKHR* pInfo)
 {
-#ifdef _DEBUG
+    #ifdef _DEBUG
     if (pvkGetAccelerationStructureDeviceAddressKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
-#endif
+        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
+    #endif
     return pvkGetAccelerationStructureDeviceAddressKHR(device, pInfo);
 }
 
 VkResult vkCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoKHR* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) 
 { 
-#ifdef _DEBUG
+    #ifdef _DEBUG
     if (pvkCreateRayTracingPipelinesKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
-#endif
+        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
+    #endif
     return pvkCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines); 
 }
 
 VkResult vkCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkAccelerationStructureKHR* pAccelerationStructure)
 {
-#ifdef _DEBUG
+    #ifdef _DEBUG
     if (pvkCreateAccelerationStructureKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
-#endif
+        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
+    #endif
     return pvkCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
 }
 
 VkResult vkGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount, size_t dataSize, void* pData)
 {
-#ifdef _DEBUG
+    #ifdef _DEBUG
     if (pvkGetRayTracingShaderGroupHandlesKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
-#endif
+        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
+    #endif
     return pvkGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
 }
 
 void vkGetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType, const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo, const uint32_t* pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo)
 {
-#ifdef _DEBUG
+    #ifdef _DEBUG
     if (pvkGetAccelerationStructureBuildSizesKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
-#endif
+        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
+    #endif
     pvkGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
 }
 
 void vkDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure, const VkAllocationCallbacks* pAllocator)
 {
-#ifdef _DEBUG
+    #ifdef _DEBUG
     if (pvkDestroyAccelerationStructureKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
-#endif
+        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
+    #endif
     pvkDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
 }
 
 void vkCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
 {
-#ifdef _DEBUG
+    #ifdef _DEBUG
     if (pvkCmdBuildAccelerationStructuresKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
-#endif
+        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
+    #endif
     pvkCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
 }
 
 void vkCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height, uint32_t depth)
 {
-#ifdef _DEBUG
+    #ifdef _DEBUG
     if (pvkCmdTraceRaysKHR == nullptr)
-        throw VulkanAPIError("Function \"" + (std::string)__FUNCTION__ + "\" was called, but is invalid.\nIts extension \"" + VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"", VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
-#endif
+        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
+    #endif
     pvkCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
 }
 #pragma endregion VulkanExtensionFunctionDefinitions

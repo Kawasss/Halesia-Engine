@@ -1,6 +1,8 @@
+#include <algorithm>
 #include "renderer/Mesh.h"
 #include "renderer/Renderer.h"
-#include <algorithm>
+#include "renderer/AccelerationStructures.h"
+#include "SceneLoader.h"
 
 std::vector<Material> Mesh::materials;
 

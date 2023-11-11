@@ -1,8 +1,11 @@
 #pragma once
-#include <string>
 #include <vulkan/vulkan.h>
+#include <string>
 #include <future>
-#include "../CreationObjects.h"
+#include "PhysicalDevice.h"
+
+struct VulkanCreationObject;
+typedef VulkanCreationObject TextureCreationObject;
 
 class Image
 {

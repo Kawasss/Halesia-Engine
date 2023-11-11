@@ -168,9 +168,9 @@
     <ClInclude Include="src\CreationObjects.h" />
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\HalesiaEngine.h" />
-    <ClInclude Include="src\Material.h" />
     <ClInclude Include="src\renderer\AccelerationStructures.h" />
     <ClInclude Include="src\renderer\Intro.h" />
+    <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
     <ClInclude Include="src\renderer\PipelineBuilder.h" />
     <ClInclude Include="src\renderer\RayTracing.h" />

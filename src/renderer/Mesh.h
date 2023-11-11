@@ -1,10 +1,15 @@
 #pragma once
-#include "../SceneLoader.h"
-#include "../CreationObjects.h"
-#include "../Material.h"
-#include "../ResourceManager.h"
-#include "AccelerationStructures.h"
-#include <mutex>
+#include "Material.h"
+#include "StorageBuffer.h"
+#include "../Vertex.h"
+
+class BottomLevelAccelerationStructure;
+struct MeshCreationData;
+struct MaterialCreationData;
+struct VulkanCreationObject;
+
+typedef VulkanCreationObject MeshCreationObject;
+typedef VulkanCreationObject TextureCreationObject;
 
 struct Mesh
 {

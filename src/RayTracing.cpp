@@ -1,7 +1,7 @@
 #include <fstream>
-#include <thread>
 #include "renderer/RayTracing.h"
 #include "renderer/Vulkan.h"
+#include "renderer/Swapchain.h"
 #include "SceneLoader.h"
 #include "Vertex.h"
 
@@ -12,7 +12,10 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
 #include "renderer/renderer.h"
+#include "renderer/AccelerationStructures.h"
 #include "system/Input.h"
+#include "Camera.h"
+#include "Object.h"
 
 struct InstanceMeshData
 {
@@ -518,6 +521,12 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 	Vulkan::EndSingleTimeCommands(logicalDevice, queue, imageBarrierCommandBuffer, commandPool);
 
 	imageHasChanged = true;
+}
+
+
+void RayTracing::RecreateImage(Swapchain* swapchain)
+{
+	CreateImage(swapchain->extent.width, swapchain->extent.height);
 }
 
 VkStridedDeviceAddressRegionKHR rchitShaderBindingTable{};

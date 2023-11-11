@@ -2,6 +2,7 @@
 #include <iostream>
 #include <future>
 #include "Console.h"
+#include "SceneLoader.h"
 
 void Object::AwaitGeneration()
 {
