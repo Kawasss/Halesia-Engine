@@ -39,4 +39,7 @@ struct Mesh
 	/// </summary>
 	/// <param name="material"></param>
 	void SetMaterial(Material material);
+
+private:
+	bool finished = false;
 };

@@ -215,8 +215,8 @@ void Renderer::InitVulkan()
 
 	if (!initGlobalBuffers)
 	{
-		globalVertexBuffer.Reserve(creationObject, 10000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-		globalIndicesBuffer.Reserve(creationObject, 10000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+		globalVertexBuffer.Reserve(creationObject, 1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+		globalIndicesBuffer.Reserve(creationObject, 1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 		initGlobalBuffers = true;
 	}
 
@@ -297,6 +297,8 @@ void Renderer::CreateUniformBuffers()
 
 void Renderer::CreateRenderPass()
 {
+	// swapchain renderpass
+
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = swapchain->format;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -350,6 +352,8 @@ void Renderer::CreateRenderPass()
 	VkResult result = vkCreateRenderPass(logicalDevice, &renderPassInfo, nullptr, &renderPass);
 	if (result != VK_SUCCESS)
 		throw VulkanAPIError("Failed to create a render pass", result, nameof(vkCreateRenderPass), __FILENAME__, std::to_string(__LINE__));
+
+	// deferred renderpass
 }
 
 void Renderer::CreateDescriptorSets()

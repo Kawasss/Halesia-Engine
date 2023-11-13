@@ -27,6 +27,9 @@ void main()
 		payload.rayDepth = 1;
 		vec3 skyColor = payload.rayDirection.y > 0 ? mix(vec3(0.6, 0.9, 1), vec3(0, 0.75, 1), payload.rayDirection.y) : mix(vec3(0.1, 0.1, 0.1), vec3(0.05, 0.05, 0.05), -payload.rayDirection.y);
 		payload.indirectColor = skyColor;
+		payload.rayActive = 0;
+		return;
 	}
+	
 	payload.rayActive = 0; 
 }

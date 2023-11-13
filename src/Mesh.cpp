@@ -30,6 +30,7 @@ void Mesh::Create(const MeshCreationObject& creationObject, const MeshCreationDa
 	if (creationData.hasMaterial)
 		ProcessMaterial(creationObject, creationData.material);
 	Recreate(creationObject);
+	finished = true;
 }
 
 void Mesh::Recreate(const MeshCreationObject& creationObject)
@@ -56,7 +57,7 @@ void Mesh::SetMaterial(Material material)
 
 bool Mesh::HasFinishedLoading()
 {
-	return materials[materialIndex].HasFinishedLoading();
+	return materials[materialIndex].HasFinishedLoading() && finished;
 }
 
 void Mesh::Destroy()

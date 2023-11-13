@@ -19,10 +19,6 @@ void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, 
 
 	for (int i = 0; i < creationData.meshes.size(); i++)
 		meshes[i].Create(creationObject, creationData.meshes[i]);
-
-	transform = Transform(creationData.position, creationData.rotation, creationData.scale, meshes[0].extents, meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
-	hObject = ResourceManager::GenerateHandle();
-
 	finishedLoading = true; //maybe use mutex here or just find better solution
 
 	#ifdef _DEBUG
@@ -39,12 +35,20 @@ void Object::CreateObject(void* customClassPointer, const ObjectCreationData& cr
 {
 	scriptClass = customClassPointer;
 	meshes.resize(creationData.meshes.size());
+
+	transform = Transform(creationData.position, creationData.rotation, creationData.scale, meshes[0].extents, meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
+	hObject = ResourceManager::GenerateHandle();
+
 	GenerateObjectWithData(creationObject, creationData); // maybe async??
 }
 
 Object::Object(const ObjectCreationData& creationData, const ObjectCreationObject& creationObject)
 {
 	meshes.resize(creationData.meshes.size());
+
+	transform = Transform(creationData.position, creationData.rotation, creationData.scale, creationData.meshes[0].extents, creationData.meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
+	hObject = ResourceManager::GenerateHandle();
+
 	generationProcess = std::async(&Object::GenerateObjectWithData, this, creationObject, creationData);
 }
 
