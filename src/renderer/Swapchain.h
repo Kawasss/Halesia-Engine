@@ -33,7 +33,10 @@ public:
     VkDeviceMemory depthImageMemory;
 
 private:
+    void CreateFence();
+
     VkDevice logicalDevice;
+    VkFence fence;
     PhysicalDevice physicalDevice;
     Surface surface;
     Win32Window* window;

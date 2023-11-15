@@ -19,6 +19,7 @@
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define __STRLINE__ std::to_string(__LINE__)
 #define CheckVulkanResult(message, result, function) if (result != VK_SUCCESS) throw VulkanAPIError(message, result, nameof(function), __FILENAME__, __STRLINE__)
+#define LockLogicalDevice(logicalDevice) std::lock_guard<std::mutex> logicalDeviceLockGuard(Vulkan::FetchLogicalDeviceMutex(logicalDevice)) // can't create a function for this beacuse a lock guard gets destroyed when it goes out of scope
 
 class Swapchain;
 class Win32Window;
@@ -68,6 +69,7 @@ public:
     static VkMemoryAllocateFlagsInfo*         optionalMemoryAllocationFlags;
     static std::mutex                         graphicsQueueMutex;
         
+    static std::mutex&                        FetchLogicalDeviceMutex(VkDevice logicalDevice);
     static VkCommandPool                      FetchNewCommandPool(const VulkanCreationObject& creationObject);
     static void                               YieldCommandPool(uint32_t queueFamilyIndex, VkCommandPool commandPool);
     static void                               DestroyAllCommandPools(VkDevice logicalDevice);
@@ -109,8 +111,9 @@ public:
 
 private:
     static VkDebugUtilsMessengerEXT                                 debugMessenger;
-    static std::unordered_map<uint32_t, std::vector<VkCommandPool>> queueCommandPools;
     static std::mutex                                               commandPoolMutex;
+    static std::unordered_map<uint32_t, std::vector<VkCommandPool>> queueCommandPools;
+    static std::unordered_map<VkDevice, std::mutex>                 logicalDeviceMutexes;
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL     DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 

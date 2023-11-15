@@ -25,6 +25,7 @@ struct Vertex
     vec3 position;
 	vec3 normal;
 	vec2 textureCoordinates;
+    vec2 padding;
 };
 
 struct InstanceMeshData

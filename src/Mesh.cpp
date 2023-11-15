@@ -5,6 +5,7 @@
 #include "SceneLoader.h"
 
 std::vector<Material> Mesh::materials;
+std::mutex Mesh::materialMutex;
 
 void Mesh::ProcessMaterial(const TextureCreationObject& creationObjects, const MaterialCreationData& creationData)
 {
@@ -42,6 +43,7 @@ void Mesh::Recreate(const MeshCreationObject& creationObject)
 
 void Mesh::SetMaterial(Material material)
 {
+	std::lock_guard<std::mutex> lockGuard(materialMutex);
 	std::vector<Material>::iterator materialLocationInGlobalVector = std::find(materials.begin(), materials.end(), material); // make sure that a material is only submitted once
 	if (materialLocationInGlobalVector < materials.end())
 	{

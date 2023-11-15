@@ -11,6 +11,7 @@
 Swapchain::Swapchain(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window)
 {
     Generate(logicalDevice, physicalDevice, surface, window);
+    CreateFence();
 }
 
 void Swapchain::Generate(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window)
@@ -152,9 +153,19 @@ void Swapchain::Destroy()
         vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);*/
 
     for (const VkImageView& imageView : imageViews)
-        vkDestroyImageView(logicalDevice, imageView, nullptr);
+        vkDestroyImageView(logicalDevice, imageView, nullptr);   
 
     vkDestroySwapchainKHR(logicalDevice, vkSwapchain, nullptr);
+}
+
+void Swapchain::CreateFence()
+{
+    VkFenceCreateInfo fenceCreateInfo{};
+    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    VkResult result = vkCreateFence(logicalDevice, &fenceCreateInfo, nullptr, &fence);
+    CheckVulkanResult("Failed to create the fence for the swapchain", result, vkCreateFence);
 }
 
 void Swapchain::Recreate() // hopefully a temporary fix, used for ray tracing
@@ -172,9 +183,12 @@ void Swapchain::Recreate() // hopefully a temporary fix, used for ray tracing
         height = window->GetHeight();
         window->PollMessages();
     }
-    std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+    //std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+    LockLogicalDevice(logicalDevice);
     vkDeviceWaitIdle(logicalDevice);
-    lockGuard.~lock_guard();
+    //lockGuard.~lock_guard();
+    /*vkWaitForFences(logicalDevice, 1, &fence, VK_TRUE, UINT64_MAX);
+    vkResetFences(logicalDevice, 1, &fence);*/
 
     Destroy();
 
@@ -197,8 +211,11 @@ void Swapchain::Recreate(VkRenderPass renderPass)
         height = window->GetHeight();
         window->PollMessages();
     }
-
+    //std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+    LockLogicalDevice(logicalDevice);
     vkDeviceWaitIdle(logicalDevice);
+   /* vkWaitForFences(logicalDevice, 1, &fence, VK_TRUE, UINT64_MAX);
+    vkResetFences(logicalDevice, 1, &fence);*/
 
     Destroy();
 

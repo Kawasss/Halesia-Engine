@@ -2,6 +2,7 @@
 #include "Material.h"
 #include "StorageBuffer.h"
 #include "../Vertex.h"
+#include <mutex>
 
 class BottomLevelAccelerationStructure;
 struct MeshCreationData;
@@ -41,5 +42,6 @@ struct Mesh
 	void SetMaterial(Material material);
 
 private:
+	static std::mutex materialMutex;
 	bool finished = false;
 };

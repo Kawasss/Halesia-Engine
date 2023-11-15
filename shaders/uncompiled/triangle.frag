@@ -9,7 +9,10 @@ layout (location = 1) in vec2 fragTexCoord;
 layout (location = 3) in vec3 worldPos;
 layout (location = 4) in vec3 camPos;
 
-layout (location = 0) out vec4 outColor;
+layout (location = 0) out vec4 albedoColor;
+layout (location = 1) out vec4 normalColor;
+layout (location = 2) out vec4 IDColor;
+layout (location = 3) out vec4 outColor;
 
 layout (binding = 2) uniform sampler2D texSampler[];
 
@@ -82,6 +85,14 @@ void main() {
     int baseIndex = TEXTURES_PER_MATERIAL * pushConstant.materialOffset;
 
     vec3 albedo = pow(texture(texSampler[baseIndex], fragTexCoord).rgb, vec3(2.2));
+    vec3 N = getNormalFromMap(baseIndex + 1);
+
+    albedoColor = vec4(albedo, 1);
+    normalColor = vec4(N, 1);
+    IDColor = vec4(1);
+    outColor = vec4(1);
+    return;
+
     float metallic = texture(texSampler[baseIndex + 2], fragTexCoord).b;
     float roughness = texture(texSampler[baseIndex + 3], fragTexCoord).g;
     float ao = texture(texSampler[baseIndex + 4], fragTexCoord).r;
@@ -95,7 +106,7 @@ void main() {
     if (ao == 0)
         ao = 0.5;
 
-    vec3 N = getNormalFromMap(baseIndex + 1);
+    //vec3 N = getNormalFromMap(baseIndex + 1);
     vec3 V = normalize(camPos - worldPos);
 
     vec3 F0 = vec3(0.04); 

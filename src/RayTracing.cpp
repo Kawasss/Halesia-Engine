@@ -652,8 +652,9 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 	
 	uint32_t indexOffset = 0;
 	uint32_t vertexOffset = 0;
-
-	for (int32_t i = 0; i < objects.size(); i++)
+	
+	amountOfActiveObjects = 0;
+	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
 		if (objects[i]->state != STATUS_VISIBLE || !objects[i]->HasFinishedLoading())
 			continue;
@@ -678,9 +679,12 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 		UpdateDescriptorSets();
 		imageHasChanged = false;
 	}
-
+	
 	UpdateModelMatrices(objects);
 	UpdateInstanceDataBuffer(objects);
+
+	if (amountOfActiveObjects <= 0)
+		return;
 
 	if (Mesh::materials.size() > 0)
 		UpdateTextureBuffer();

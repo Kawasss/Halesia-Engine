@@ -6,9 +6,9 @@
 
 struct Vertex
 {
-	glm::vec3 position{};
-	glm::vec3 normal{};
-	glm::vec2 textureCoordinates{};
+	alignas(16) glm::vec3 position{};
+	alignas(16) glm::vec3 normal{};
+	alignas(16) glm::vec2 textureCoordinates{}; // alignas(8) doesnt get respected
 
 	static VkVertexInputBindingDescription GetBindingDescription()
 	{

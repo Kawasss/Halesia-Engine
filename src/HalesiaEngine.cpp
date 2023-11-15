@@ -265,7 +265,7 @@ HalesiaExitCode HalesiaInstance::Run()
 		}
 		
 		scene->Start();
-
+		//Sleep(1000);
 		while (!window->ShouldClose())
 		{
 			CheckInput();

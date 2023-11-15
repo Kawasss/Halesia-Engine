@@ -14,6 +14,7 @@ const bool enableValidationLayers = true;
 
 VkDebugUtilsMessengerEXT Vulkan::debugMessenger;
 std::unordered_map<uint32_t, std::vector<VkCommandPool>> Vulkan::queueCommandPools;
+std::unordered_map<VkDevice, std::mutex> Vulkan::logicalDeviceMutexes;
 std::mutex Vulkan::graphicsQueueMutex;
 std::mutex Vulkan::commandPoolMutex;
 VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
@@ -41,6 +42,13 @@ void Vulkan::PopulateDefaultScissors(VkRect2D& scissors, Swapchain* swapchain)
 {
     scissors.offset = { 0, 0 };
     scissors.extent = swapchain->extent;
+}
+
+std::mutex& Vulkan::FetchLogicalDeviceMutex(VkDevice logicalDevice)
+{
+    if (logicalDeviceMutexes.count(logicalDevice) == 0)
+        logicalDeviceMutexes[logicalDevice]; // should create a new mutex (?)
+    return logicalDeviceMutexes[logicalDevice];
 }
 
 VkCommandPool Vulkan::FetchNewCommandPool(const VulkanCreationObject& creationObject)

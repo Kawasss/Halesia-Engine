@@ -36,6 +36,8 @@ private:
 	void CreateImage(uint32_t width, uint32_t height);
 	void UpdateDescriptorSets();
 
+	uint32_t amountOfActiveObjects = 0;
+
 	std::vector<BottomLevelAccelerationStructure*> BLASs;
 	TopLevelAccelerationStructure* TLAS = nullptr;
 

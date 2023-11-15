@@ -37,12 +37,26 @@ public:
 	}
 };
 
+class FollowCamera : public Object
+{
+public:
+	Camera* cameraToLookAt = nullptr;
+
+	void Update(float delta) override
+	{
+		if (cameraToLookAt == nullptr)
+			return;
+
+		transform.position = cameraToLookAt->position + glm::vec3(0, 0, 1) * cameraToLookAt->front;
+	}
+};
+
 class TestScene : public Scene
 {
 	Object* objPtr = nullptr;
 	void Start() override
 	{
-		Object* ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/sniper.obj"));
+		Object* ptr = AddCustomObject<FollowCamera>("stdObj/sniper.obj", OBJECT_IMPORT_EXTERNAL);
 		ptr->transform.scale = glm::vec3(0.1f, 0.1f, 0.1f);
 		ptr->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/albedo.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
 		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel.obj"))->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/blue.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
@@ -55,6 +69,7 @@ class TestScene : public Scene
 		
 		this->camera = new TestCamera();
 		camera->GetScript<TestCamera*>()->objectToLookAt = nullptr;//objPtr;
+		ptr->GetScript<FollowCamera*>()->cameraToLookAt = this->camera;
 	}
 
 	void Update(float delta) override

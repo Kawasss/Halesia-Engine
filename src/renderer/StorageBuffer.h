@@ -2,6 +2,7 @@
 #include "../ResourceManager.h"
 #include "../Console.h"
 #include "../CreationObjects.h"
+#include <iostream>
 
 struct StorageMemory_t // not a fan of this being visible
 {
@@ -18,6 +19,8 @@ public:
 	StorageBuffer() {}
 	void Reserve(const VulkanCreationObject& creationObject, size_t maxAmountToBeStored, VkBufferUsageFlags usage)
 	{
+		std::cout << sizeof(T) << ", " << typeid(T).name() << std::endl;
+		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 		this->logicalDevice = creationObject.logicalDevice;
 		this->usage = usage;
 
@@ -41,6 +44,7 @@ public:
 
 	StorageMemory SubmitNewData(std::vector<T> data)
 	{
+		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 		VkDeviceSize writeSize = sizeof(T) * data.size();
 
 		StorageMemory memoryHandle = 0;
@@ -79,6 +83,7 @@ public:
 	/// <param name="creationObject"></param>
 	void Erase(const VulkanCreationObject& creationObject)
 	{
+		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 		ClearBuffer(creationObject);
 		allCreatedMemory.clear();
 		terminatedMemories.clear();
@@ -92,6 +97,7 @@ public:
 	/// <param name="memory"></param>
 	void EraseData(const VulkanCreationObject& creationObject, StorageMemory memory)
 	{
+		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 		if (!CheckIfHandleIsValid(memory))
 		{
 			Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found, returning", MESSAGE_SEVERITY_ERROR);
@@ -107,6 +113,7 @@ public:
 	/// <param name="memory"></param>
 	void DestroyData(StorageMemory memory)
 	{
+		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 		if (!CheckIfHandleIsValid(memory))
 		{
 			Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found, returning", MESSAGE_SEVERITY_ERROR);
@@ -120,6 +127,7 @@ public:
 
 	VkDeviceSize GetMemoryOffset(StorageMemory memory) 
 	{ 
+		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 		if (!CheckIfHandleIsValid(memory))
 		{
 			Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found, returning", MESSAGE_SEVERITY_ERROR);
@@ -140,6 +148,7 @@ public:
 
 	void Destroy()
 	{
+		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 		vkDestroyBuffer(logicalDevice, buffer, nullptr);
 		vkFreeMemory(logicalDevice, deviceMemory, nullptr);
 	}
@@ -148,6 +157,7 @@ private:
 	std::unordered_map<StorageMemory, StorageMemory_t> memoryData;
 	std::unordered_set<StorageMemory> terminatedMemories;
 	std::unordered_set<StorageMemory> allCreatedMemory;
+	std::mutex readWriteMutex;
 
 	/// <summary>
 	/// This looks for for any free space within used memories, reducing the need to create a bigger buffer since terminated spots can be reused

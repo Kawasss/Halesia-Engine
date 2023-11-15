@@ -108,7 +108,7 @@ BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(const
 	geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
 	geometry.geometry.triangles.vertexData = { vertexBufferAddress + Renderer::globalVertexBuffer.GetMemoryOffset(mesh.vertexMemory) };
 	geometry.geometry.triangles.vertexStride = sizeof(Vertex);
-	geometry.geometry.triangles.maxVertex = mesh.vertices.size();
+	geometry.geometry.triangles.maxVertex = static_cast<uint32_t>(mesh.vertices.size());
 	geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT16;
 	geometry.geometry.triangles.indexData = { indexBufferAddress + Renderer::globalIndicesBuffer.GetMemoryOffset(mesh.indexMemory) };
 	geometry.geometry.triangles.transformData = { 0 };
@@ -160,7 +160,7 @@ void TopLevelAccelerationStructure::Build(const VulkanCreationObject& creationOb
 	geometry.geometry.instances.arrayOfPointers = VK_FALSE;
 	geometry.geometry.instances.data = { Vulkan::GetDeviceAddress(creationObject.logicalDevice, instanceBuffer.GetBufferHandle()) };
 
-	BuildAS(creationObject, &geometry, BLASInstances.size(), useSingleTimeCommands, externalCommandBuffer);
+	BuildAS(creationObject, &geometry, (uint32_t)BLASInstances.size(), useSingleTimeCommands, externalCommandBuffer);
 }
 
 std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(std::vector<Object*> objects)
@@ -179,7 +179,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 			instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 			instance.accelerationStructureReference = objects[i]->meshes[j].BLAS->GetAccelerationStructureAddress();
 			
-			glm::mat4 transform = objects[i]->transform.GetModelMatrix();
+			glm::mat4 transform = glm::transpose(objects[i]->transform.GetModelMatrix());
 			memcpy(&instance.transform, &transform, sizeof(VkTransformMatrixKHR));											   // simply copy the contents of the glm matrix to the vulkan matrix since the contents align
 
 			instances.push_back(instance);
