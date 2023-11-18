@@ -1,8 +1,10 @@
 #pragma once
+#include "Vulkan.h"
 #include "../ResourceManager.h"
 #include "../Console.h"
 #include "../CreationObjects.h"
 #include <iostream>
+#include <mutex>
 
 struct StorageMemory_t // not a fan of this being visible
 {
@@ -19,7 +21,6 @@ public:
 	StorageBuffer() {}
 	void Reserve(const VulkanCreationObject& creationObject, size_t maxAmountToBeStored, VkBufferUsageFlags usage)
 	{
-		std::cout << sizeof(T) << ", " << typeid(T).name() << std::endl;
 		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 		this->logicalDevice = creationObject.logicalDevice;
 		this->usage = usage;
@@ -46,7 +47,7 @@ public:
 	{
 		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 		VkDeviceSize writeSize = sizeof(T) * data.size();
-
+		
 		StorageMemory memoryHandle = 0;
 		bool canReuseMemory = FindReusableMemory(memoryHandle, writeSize);						// first check if there any spaces within the buffer that can be filled
 		if (canReuseMemory)																		// if a space can be filled then overwrite that space
@@ -62,7 +63,7 @@ public:
 		if (endOfBufferPointer + writeSize > reservedBufferSize && !canReuseMemory)				// throw an error if there is an attempt write over the buffers capacity
 		{
 			VkDeviceSize overflow = endOfBufferPointer + writeSize - reservedBufferSize;
-			throw VulkanAPIError("Failed to submit new Apeiron buffer data, not enough space has been reserved: " + std::to_string(overflow / sizeof(T)) + " items (" + std::to_string(overflow) + " bytes) of overflow", VK_ERROR_OUT_OF_POOL_MEMORY, nameof(SubmitNewData), __FILENAME__, __STRLINE__);
+			throw VulkanAPIError("Failed to submit new storage buffer data, not enough space has been reserved: " + std::to_string(overflow / sizeof(T)) + " items (" + std::to_string(overflow) + " bytes) of overflow", VK_ERROR_OUT_OF_POOL_MEMORY, nameof(SubmitNewData), __FILENAME__, __STRLINE__);
 		}
 
 		WriteToBuffer(data, memoryHandle);
@@ -73,6 +74,7 @@ public:
 			allCreatedMemory.insert(memoryHandle);
 		}
 
+		size += data.size();
 		hasChanged = true;
 		return memoryHandle;
 	}
@@ -88,6 +90,8 @@ public:
 		allCreatedMemory.clear();
 		terminatedMemories.clear();
 		memoryData.clear();
+		ResetAddressPointer();
+		size = 0;
 	}
 
 	/// <summary>
@@ -123,8 +127,14 @@ public:
 		StorageMemory_t& memoryInfo = memoryData[memory];
 		memoryInfo.shouldBeTerminated = true;
 		terminatedMemories.insert(memory);
+		size--;
 	}
-
+	
+	/// <summary>
+	/// Gives the distance between the beginning of the buffer and the location of the memory in bytes
+	/// </summary>
+	/// <param name="memory"></param>
+	/// <returns></returns>
 	VkDeviceSize GetMemoryOffset(StorageMemory memory) 
 	{ 
 		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
@@ -136,15 +146,26 @@ public:
 
 		return memoryData[memory].offset; 
 	}
+	
+	/// <summary>
+	/// Gives the distance between the beginning of the buffer and the location of the memory in the size of the item (offset in bytes / sizeof(item))
+	/// </summary>
+	/// <param name="memory"></param>
+	/// <returns></returns>
+	VkDeviceSize GetItemOffset(StorageMemory memory)
+	{
+		return GetMemoryOffset(memory) / sizeof(T);
+	}
 
 	VkDeviceSize GetBufferEnd() { return (VkDeviceSize)endOfBufferPointer + 1; } // not sure about the + 1
 	VkBuffer GetBufferHandle() { return buffer; }
+	size_t GetSize() { return size; }
 	bool HasChanged() { bool ret = hasChanged; hasChanged = false; return ret; }
 
 	/// <summary>
 	/// This resets the internal memory pointer to 0. Any existing data won't be erased, but will be overwritten
 	/// </summary>
-	void ResetAddressPointer() { endOfBufferPointer = 0; }
+	void ResetAddressPointer() { size = 0; endOfBufferPointer = 0; }
 
 	void Destroy()
 	{
@@ -158,6 +179,7 @@ private:
 	std::unordered_set<StorageMemory> terminatedMemories;
 	std::unordered_set<StorageMemory> allCreatedMemory;
 	std::mutex readWriteMutex;
+	size_t size;
 
 	/// <summary>
 	/// This looks for for any free space within used memories, reducing the need to create a bigger buffer since terminated spots can be reused

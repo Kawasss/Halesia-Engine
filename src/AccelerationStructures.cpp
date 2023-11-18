@@ -1,3 +1,4 @@
+#include "renderer/Vulkan.h"
 #include "renderer/AccelerationStructures.h"
 #include "renderer/Renderer.h"
 #include "renderer/Mesh.h"

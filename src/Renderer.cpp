@@ -202,6 +202,7 @@ void Renderer::InitVulkan()
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(renderPass);
 	CreateDeferredFramebuffer(swapchain->extent.width, swapchain->extent.height);
+	CreateIndirectDrawParametersBuffer();
 	Texture::GeneratePlaceholderTextures(GetVulkanCreationObject());
 	Mesh::materials.push_back({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
 	if (defaultSampler == VK_NULL_HANDLE)
@@ -224,6 +225,11 @@ void Renderer::InitVulkan()
 
 	rayTracer = new RayTracing();
 	rayTracer->Init(logicalDevice, physicalDevice, surface, testWindow, swapchain);
+}
+
+void Renderer::CreateIndirectDrawParametersBuffer()
+{
+	indirectDrawParameters.Reserve(GetVulkanCreationObject(), MAX_MESHES, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
 }
 
 void Renderer::CreateTextureSampler()
@@ -831,28 +837,14 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		SetViewport(lCommandBuffer);
 		SetScissors(lCommandBuffer);
 
+		VkBuffer vertexBuffers[] = { globalVertexBuffer.GetBufferHandle() };
+		VkDeviceSize offsets[] = { 0 };
+
 		vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
-
-		for (int i = 0; i < objects.size(); i++)
-		{
-			if (objects[i]->state != STATUS_VISIBLE || !objects[i]->HasFinishedLoading())
-				return;
-
-			for (int j = 0; j < objects[i]->meshes.size(); j++)
-			{
-				Mesh& mesh = objects[i]->meshes[j];
-				VkBuffer vertexBuffers[] = { globalVertexBuffer.GetBufferHandle() };
-				VkDeviceSize offsets[] = { globalVertexBuffer.GetMemoryOffset(mesh.vertexMemory) };
-
-				PushConstants pushConstants = { objects[i]->transform.GetModelMatrix(), glm::vec4(1), mesh.materialIndex };
-				vkCmdPushConstants(lCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstants), &pushConstants);
-
-				vkCmdBindVertexBuffers(lCommandBuffer, 0, 1, vertexBuffers, offsets);
-				vkCmdBindIndexBuffer(lCommandBuffer, globalIndicesBuffer.GetBufferHandle(), globalIndicesBuffer.GetMemoryOffset(mesh.indexMemory), VK_INDEX_TYPE_UINT16);
-
-				vkCmdDrawIndexed(lCommandBuffer, static_cast<uint32_t>(mesh.indices.size()), 1, 0, 0, 0);
-			}
-		}
+		vkCmdBindVertexBuffers(lCommandBuffer, 0, 1, vertexBuffers, offsets);
+		vkCmdBindIndexBuffer(lCommandBuffer, globalIndicesBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
+ 
+		vkCmdDrawIndexedIndirect(lCommandBuffer, indirectDrawParameters.GetBufferHandle(), 0, (uint32_t)indirectDrawParameters.GetSize(), sizeof(VkDrawIndexedIndirectCommand));
 		vkCmdEndRenderPass(lCommandBuffer);
 	}
 
@@ -1110,15 +1102,19 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 
 void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
 {
+
 	std::vector<Object*> activeObjects;
 	for (Object* object : objects)
 		if (object->HasFinishedLoading() && object->state == STATUS_VISIBLE)
 			activeObjects.push_back(object);
 
+	ImGui::Render();
+
+	if (activeObjects.empty())
+		return;
+
 	std::lock_guard<std::mutex> lockGuard(drawingMutex);
 
-	ImGui::Render();
-	
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
 	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
 
@@ -1126,6 +1122,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 
 	UpdateUniformBuffers(currentFrame, camera);
 	SetModelMatrices(currentFrame, activeObjects);
+	WriteIndirectDrawParameters(activeObjects);
 
 	UpdateBindlessTextures(currentFrame, activeObjects);
 
@@ -1137,6 +1134,26 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	PresentSwapchainImage(currentFrame, imageIndex);
 	
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
+{
+	indirectDrawParameters.ResetAddressPointer();
+	std::vector<VkDrawIndexedIndirectCommand> parameters;
+	for (int i = 0; i < objects.size(); i++)
+	{
+		for (int j = 0; j < objects[i]->meshes.size(); j++)
+		{
+			VkDrawIndexedIndirectCommand parameter{};
+			parameter.indexCount = objects[i]->meshes[j].indices.size();
+			parameter.firstIndex = globalIndicesBuffer.GetItemOffset(objects[i]->meshes[j].indexMemory);
+			parameter.vertexOffset = globalVertexBuffer.GetItemOffset(objects[i]->meshes[j].vertexMemory);
+			parameter.instanceCount = 1;
+
+			parameters.push_back(parameter);
+		}
+	}
+	indirectDrawParameters.SubmitNewData(parameters);
 }
 
 std::vector<Object*> processedObjects;

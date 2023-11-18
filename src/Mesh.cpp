@@ -62,6 +62,11 @@ bool Mesh::HasFinishedLoading()
 	return materials[materialIndex].HasFinishedLoading() && finished;
 }
 
+void Mesh::AwaitGeneration()
+{
+	materials[materialIndex].AwaitGeneration();
+}
+
 void Mesh::Destroy()
 {
 	// should also delete the material in materials here (if no other meshes are referencing that material)

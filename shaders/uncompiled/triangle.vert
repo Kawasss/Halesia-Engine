@@ -31,9 +31,9 @@ layout (push_constant) uniform PushConstant
 
 void main() {
     camPos = ubo.camPos;
-    worldPos = (pushConstant.model * vec4(inPosition, 1)).xyz;
-    gl_Position = ubo.proj * ubo.view * pushConstant.model * vec4(inPosition, 1.0);
+    worldPos = inPosition;//(pushConstant.model * vec4(inPosition, 1)).xyz;
+    gl_Position = ubo.proj * ubo.view /** pushConstant.model*/ * vec4(inPosition, 1.0);
 
-    fragNormal = normalize(mat3(transpose(inverse(pushConstant.model))) * inNormal);
+    fragNormal = inNormal;//normalize(mat3(transpose(inverse(pushConstant.model))) * inNormal);
     fragTexCoord = inTexCoord;
 }

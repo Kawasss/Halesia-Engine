@@ -63,6 +63,15 @@ struct Material
 		return albedo->HasFinishedLoading() && normal->HasFinishedLoading() && metallic->HasFinishedLoading() && roughness->HasFinishedLoading() && ambientOcclusion->HasFinishedLoading();
 	}
 
+	void AwaitGeneration()
+	{
+		albedo->AwaitGeneration();
+		normal->AwaitGeneration();
+		metallic->AwaitGeneration();
+		roughness->AwaitGeneration();
+		ambientOcclusion->AwaitGeneration();
+	}
+
 	void Destroy() // only delete the textures if they arent the placeholders
 	{
 		if (albedo != Texture::placeholderAlbedo) albedo->Destroy();

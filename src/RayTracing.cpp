@@ -2,6 +2,7 @@
 #include "renderer/RayTracing.h"
 #include "renderer/Vulkan.h"
 #include "renderer/Swapchain.h"
+#include "system/Window.h"
 #include "SceneLoader.h"
 #include "Vertex.h"
 
@@ -667,6 +668,9 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 			vertexOffset += objects[i]->meshes[j].vertices.size();
 		}
 	}
+	if (instanceDatas.size() == 0)
+		return;
+
 	instanceDatas[instanceDatas.size() - 1].meshIsLight = 1; // only last mesh is a light for testing
 	memcpy(instanceMeshDataPointer, instanceDatas.data(), instanceDatas.size() * sizeof(InstanceMeshData));
 }

@@ -62,23 +62,25 @@ private:
 	VkQueue presentQueue =						VK_NULL_HANDLE;
 	VkFramebuffer deferredFramebuffer =			VK_NULL_HANDLE;
 
-	std::vector<VkCommandBuffer> commandBuffers;
-	std::vector<VkSemaphore> imageAvaibleSemaphores;
-	std::vector<VkSemaphore> renderFinishedSemaphores;
-	std::vector<VkFence> inFlightFences;
-	std::vector<VkDescriptorSet> descriptorSets;
+	std::vector<VkCommandBuffer>	commandBuffers;
+	std::vector<VkSemaphore>		imageAvaibleSemaphores;
+	std::vector<VkSemaphore>		renderFinishedSemaphores;
+	std::vector<VkFence>			inFlightFences;
+	std::vector<VkDescriptorSet>	descriptorSets;
 
-	std::vector<VkBuffer> uniformBuffers;
-	std::vector<VkDeviceMemory> uniformBuffersMemory;
-	std::vector<void*> uniformBuffersMapped;
+	std::vector<VkBuffer>			uniformBuffers;
+	std::vector<VkDeviceMemory>		uniformBuffersMemory;
+	std::vector<void*>				uniformBuffersMapped;
 
-	std::vector<VkBuffer> modelBuffers;
-	std::vector<VkDeviceMemory> modelBuffersMemory;
-	std::vector<void*> modelBuffersMapped;
+	std::vector<VkBuffer>			modelBuffers;
+	std::vector<VkDeviceMemory>		modelBuffersMemory;
+	std::vector<void*>				modelBuffersMapped;
 
-	std::vector<VkImage> gBufferImages;
-	std::vector<VkImageView> gBufferViews;
-	std::vector<VkDeviceMemory> gBufferMemories;
+	std::vector<VkImage>			gBufferImages;
+	std::vector<VkImageView>		gBufferViews;
+	std::vector<VkDeviceMemory>		gBufferMemories;
+
+	StorageBuffer<VkDrawIndexedIndirectCommand> indirectDrawParameters;
 
 	std::mutex drawingMutex;
 
@@ -113,6 +115,8 @@ private:
 	void CreateRenderPass();
 	void CreateModelBuffers();
 	void CreateImGUI();
+	void CreateIndirectDrawParametersBuffer();
+	void WriteIndirectDrawParameters(std::vector<Object*>& objects);
 	void CreateDeferredFramebuffer(uint32_t width, uint32_t height);
 	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);
 	void SetModelMatrices(uint32_t currentImage, std::vector<Object*> models); //parameter is used for potential culling, this allows for 500 meshes in view rather than in scene

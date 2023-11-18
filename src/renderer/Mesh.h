@@ -34,6 +34,7 @@ struct Mesh
 	void ProcessMaterial(const TextureCreationObject& creationObjects, const MaterialCreationData& creationData);
 	void Recreate(const MeshCreationObject& creationObject);
 	bool HasFinishedLoading();
+	void AwaitGeneration();
 
 	/// <summary>
 	/// Sets the material for this mesh, any old mesh will be overridden.

@@ -51,7 +51,7 @@ public:
 	/// </summary>
 	/// <typeparam name="T">: The name of the script's class as a pointer</typeparam>
 	/// <returns>Pointer to the given class</returns>
-	template<typename T> T GetScript() { return static_cast<T>(scriptClass); };
+	template<typename T> T GetScript() { if (scriptClass == nullptr) throw std::runtime_error("Failed to get a script class: the pointer is a nullptr"); return static_cast<T>(scriptClass); };
 
 	/// <summary>
 	/// This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.

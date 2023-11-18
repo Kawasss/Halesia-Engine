@@ -115,7 +115,8 @@ void Image::GenerateEmptyImages(const TextureCreationObject& creationObjects, in
 
 void Image::AwaitGeneration()
 {
-	generation.get();
+	if (generation.valid())
+		generation.get();
 }
 
 bool Image::HasFinishedLoading()

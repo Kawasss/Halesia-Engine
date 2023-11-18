@@ -5,6 +5,7 @@
 class Swapchain;
 class BottomLevelAccelerationStructure;
 class TopLevelAccelerationStructure;
+class Win32Window;
 class Object;
 class Camera;
 

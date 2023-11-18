@@ -309,7 +309,7 @@ HalesiaExitCode HalesiaInstance::Run()
 	{
 		std::string fullError = e.what();
 		ShowWindow(window->window, 0);
-
+		
 		MessageBoxA(nullptr, fullError.c_str(), ((std::string)"Engine error (" + (std::string)typeid(e).name() + ')').c_str(), MB_OK | MB_ICONERROR);
 		std::cerr << e.what() << std::endl;
 		return HALESIA_EXIT_CODE_EXCEPTION;

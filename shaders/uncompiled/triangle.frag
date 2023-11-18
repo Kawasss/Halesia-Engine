@@ -89,7 +89,7 @@ void main() {
 
     albedoColor = vec4(albedo, 1);
     normalColor = vec4(N, 1);
-    IDColor = vec4(1);
+    IDColor = vec4(1);//pushConstant.IDColor;
     outColor = vec4(1);
     return;
 

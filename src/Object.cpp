@@ -6,7 +6,10 @@
 
 void Object::AwaitGeneration()
 {
-	generationProcess.get();
+	if (generationProcess.valid())
+		generationProcess.get();
+	for (Mesh& mesh : meshes)
+		mesh.AwaitGeneration();
 }
 
 void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, const ObjectCreationData& creationData)
@@ -54,9 +57,9 @@ Object::Object(const ObjectCreationData& creationData, const ObjectCreationObjec
 
 bool Object::HasFinishedLoading()
 {
-	for (Mesh& mesh : meshes)
+	/*for (Mesh& mesh : meshes)
 		if (!mesh.HasFinishedLoading())
-			return false;
+			return false;*/
 	return finishedLoading || generationProcess._Is_ready();
 }
 

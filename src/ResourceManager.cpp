@@ -14,3 +14,8 @@ Handle ResourceManager::GenerateHandle()
 	memcpy(&ret, &uuid, sizeof(ret));
 	return ret;
 }
+
+glm::vec3 ResourceManager::ConvertHandleToVec3(Handle handle)
+{
+	return glm::vec3(((handle & 0x000000FF) >> 0) / 255.0f, ((handle & 0x0000FF00) >> 8) / 255.0f, ((handle & 0x00FF0000) >> 16) / 255.0f);
+}

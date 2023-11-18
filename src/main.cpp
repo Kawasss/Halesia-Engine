@@ -56,20 +56,40 @@ class TestScene : public Scene
 	Object* objPtr = nullptr;
 	void Start() override
 	{
-		Object* ptr = AddCustomObject<FollowCamera>("stdObj/sniper.obj", OBJECT_IMPORT_EXTERNAL);
-		ptr->transform.scale = glm::vec3(0.1f, 0.1f, 0.1f);
-		ptr->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/albedo.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel.obj"))->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/blue.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel2.obj"))->meshes[0].SetMaterial({new Texture(GetMeshCreationObjects(), "textures/red.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel3.obj"))->meshes[0].SetMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel4.obj"))->meshes[0].SetMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panelBottom.obj"))->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/floor.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panelTop.obj"))->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/white.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
+		Object* ptr2 = AddCustomObject<FollowCamera>("stdObj/sniper.obj", OBJECT_IMPORT_EXTERNAL);
+		ptr2->transform.scale = glm::vec3(0.1f, 0.1f, 0.1f);
+		ptr2->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/albedo.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
+		ptr2->AwaitGeneration();
+
+		Object* ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel.obj"));
+		ptr->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/blue.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
+		ptr->AwaitGeneration();
+
+		ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel2.obj"));
+		ptr->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/red.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
+		ptr->AwaitGeneration();
+
+		ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel3.obj"));
+		ptr->meshes[0].SetMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
+		ptr->AwaitGeneration();
+
+		ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel4.obj"));
+		ptr->meshes[0].SetMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
+		ptr->AwaitGeneration();
+
+		ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panelBottom.obj"));
+		ptr->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/floor.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
+		ptr->AwaitGeneration();
+
+		ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panelTop.obj"));
+		ptr->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/white.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
+		ptr->AwaitGeneration();
+
 		AddCustomObject<RotatingObject>("stdObj/light.obj", OBJECT_IMPORT_EXTERNAL);
 		
 		this->camera = new TestCamera();
 		camera->GetScript<TestCamera*>()->objectToLookAt = nullptr;//objPtr;
-		ptr->GetScript<FollowCamera*>()->cameraToLookAt = this->camera;
+		ptr2->GetScript<FollowCamera*>()->cameraToLookAt = this->camera;
 	}
 
 	void Update(float delta) override
