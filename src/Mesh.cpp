@@ -47,7 +47,7 @@ void Mesh::SetMaterial(Material material)
 	std::vector<Material>::iterator materialLocationInGlobalVector = std::find(materials.begin(), materials.end(), material); // make sure that a material is only submitted once
 	if (materialLocationInGlobalVector < materials.end())
 	{
-		materialIndex = materials.begin() - materialLocationInGlobalVector;
+		materialIndex = static_cast<uint32_t>(materials.begin() - materialLocationInGlobalVector);
 		return;
 	}
 

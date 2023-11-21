@@ -50,7 +50,7 @@ public:
 		{
 			for (auto i = objectCreationDatas.begin(); i != objectCreationDatas.end(); i++)
 			{
-				int index = i - objectCreationDatas.begin();
+				int index = static_cast<uint32_t>(i - objectCreationDatas.begin());
 				if (objectCreationDatas[index].name == name)
 				{
 					creationData = objectCreationDatas[index];

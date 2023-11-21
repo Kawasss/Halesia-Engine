@@ -15,6 +15,7 @@ enum MaterialTexture
 
 inline const std::vector<MaterialTexture> rayTracingMaterialTextures = { MATERIAL_TEXTURE_ALBEDO, MATERIAL_TEXTURE_NORMAL, MATERIAL_TEXTURE_ROUGHNESS };
 inline const std::vector<MaterialTexture> deferredMaterialTextures = { MATERIAL_TEXTURE_ALBEDO, MATERIAL_TEXTURE_NORMAL };
+inline const std::vector<MaterialTexture> PBRMaterialTextures = { MATERIAL_TEXTURE_ALBEDO, MATERIAL_TEXTURE_NORMAL, MATERIAL_TEXTURE_METALLIC, MATERIAL_TEXTURE_ROUGHNESS, MATERIAL_TEXTURE_AMBIENT_OCCLUSION };
 
 struct Material
 {
@@ -59,6 +60,8 @@ struct Material
 			return roughness;
 		case MATERIAL_TEXTURE_AMBIENT_OCCLUSION:
 			return ambientOcclusion;
+		default:
+			return albedo; // not returning nullptr because that could crash the program
 		}
 	}
 

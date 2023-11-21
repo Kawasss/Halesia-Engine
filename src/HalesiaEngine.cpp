@@ -165,9 +165,9 @@ std::optional<std::string> HalesiaInstance::UpdateRenderer(const UpdateRendererD
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	std::optional<std::string> command = renderer->RenderDevConsole();
 	if (showFPS)
-		renderer->RenderFPS(1 / rendererData.delta * 1000);
+		renderer->RenderFPS((int)(1 / rendererData.delta * 1000));
 
-	ramUsed.Add(GetPhysicalMemoryUsedByApp() / (1024 * 1024));
+	ramUsed.Add(GetPhysicalMemoryUsedByApp() / (1024ULL * 1024));
 	if (showRAM)
 		renderer->RenderGraph(ramUsed.buffer, "RAM in MB");
 	if (showCPU)
@@ -220,7 +220,7 @@ void HalesiaInstance::UpdateCGPUUsage()
 	if (cpu != -1 && cpu != 0) //dont know if 0 is junk data
 		CPUUsage.Add(cpu);
 
-	float gpu = GetGPUUsage() * 100; //doesnt look incredibly accurate but it works good enough
+	float gpu = (float)GetGPUUsage() * 100.0f; //doesnt look incredibly accurate but it works good enough
 	GPUUsage.Add(gpu);
 }
 

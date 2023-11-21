@@ -2,12 +2,14 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 
 #define PI 3.14159265359
-#define TEXTURES_PER_MATERIAL 5
+#define TEXTURES_PER_MATERIAL 2
 
-layout (location = 0) in vec3 fragNormal;
-layout (location = 1) in vec2 fragTexCoord;
-layout (location = 3) in vec3 worldPos;
-layout (location = 4) in vec3 camPos;
+layout (location = 0) in      vec3 fragNormal;
+layout (location = 1) in      vec2 fragTexCoord;
+layout (location = 2) in      vec3 worldPos;
+layout (location = 3) in      vec3 camPos;
+layout (location = 4) in flat vec4 IDColorIn;
+layout (location = 5) in flat int  materialIndex;
 
 layout (location = 0) out vec4 albedoColor;
 layout (location = 1) out vec4 normalColor;
@@ -15,14 +17,6 @@ layout (location = 2) out vec4 IDColor;
 layout (location = 3) out vec4 outColor;
 
 layout (binding = 2) uniform sampler2D texSampler[];
-
-layout (push_constant) uniform PushConstant
-{
-    mat4 model;
-    vec4 IDColor;
-    int materialOffset;
-} pushConstant;
-
 
 vec3 getNormalFromMap(int normalMapIndex)
 {
@@ -82,14 +76,14 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0)
 }
 
 void main() {
-    int baseIndex = TEXTURES_PER_MATERIAL * pushConstant.materialOffset;
+    int baseIndex = TEXTURES_PER_MATERIAL * materialIndex;
 
     vec3 albedo = pow(texture(texSampler[baseIndex], fragTexCoord).rgb, vec3(2.2));
     vec3 N = getNormalFromMap(baseIndex + 1);
 
     albedoColor = vec4(albedo, 1);
     normalColor = vec4(N, 1);
-    IDColor = vec4(1);//pushConstant.IDColor;
+    IDColor = IDColorIn;
     outColor = vec4(1);
     return;
 

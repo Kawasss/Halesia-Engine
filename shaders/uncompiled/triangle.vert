@@ -7,33 +7,35 @@ layout(set = 0, binding = 0) uniform sceneInfo {
     mat4 proj;
 } ubo;
 
-layout (binding = 1) uniform ModelMatrices
+struct PerModelData
 {
-    mat4 models[MAX_MESHES];
-} model;
-
-layout(location = 0) in vec3 inPosition;
-layout(location = 1) in vec3 inNormal;
-layout(location = 2) in vec2 inTexCoord;
-
-layout(location = 0) out vec3 fragNormal;
-layout(location = 1) out vec2 fragTexCoord;
-flat layout (location = 2) out int drawID;
-layout (location = 3) out vec3 worldPos;
-layout (location = 4) out vec3 camPos;
-
-layout (push_constant) uniform PushConstant
-{
-    mat4 model;
+    mat4 transformation;
     vec4 IDColor;
-    int materialOffset;
-} pushConstant;
+};
+
+layout (binding = 1) buffer ModelData
+{
+    PerModelData[] data;
+} modelData;
+
+layout (location = 0) in vec3 inPosition;
+layout (location = 1) in vec3 inNormal;
+layout (location = 2) in vec2 inTexCoord;
+
+layout (location = 0) out      vec3 fragNormal;
+layout (location = 1) out      vec2 fragTexCoord;
+layout (location = 2) out      vec3 worldPos;
+layout (location = 3) out      vec3 camPos;
+layout (location = 4) out flat vec4 IDColorIn;
+layout (location = 5) out flat int  materialIndex;
 
 void main() {
-    camPos = ubo.camPos;
-    worldPos = inPosition;//(pushConstant.model * vec4(inPosition, 1)).xyz;
-    gl_Position = ubo.proj * ubo.view /** pushConstant.model*/ * vec4(inPosition, 1.0);
+    gl_Position = ubo.proj * ubo.view * modelData.data[gl_DrawID].transformation * vec4(inPosition, 1.0);
 
-    fragNormal = inNormal;//normalize(mat3(transpose(inverse(pushConstant.model))) * inNormal);
+    fragNormal = normalize(mat3(transpose(inverse(modelData.data[gl_DrawID].transformation))) * inNormal);
     fragTexCoord = inTexCoord;
+    worldPos = (modelData.data[gl_DrawID].transformation * vec4(inPosition, 1)).xyz;
+    camPos = ubo.camPos;
+    IDColorIn = modelData.data[gl_DrawID].IDColor;
+    materialIndex = gl_DrawID;
 }

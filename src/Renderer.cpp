@@ -60,11 +60,10 @@ struct UniformBufferObject
 	alignas(16) glm::mat4 projection;
 };
 
-struct PushConstants
+struct ModelData
 {
-	alignas (64) glm::mat4 model;
-	alignas (16) glm::vec4 IDColor;
-	int32_t materialOffset;
+	glm::mat4 transformation;
+	glm::vec4 IDColor;
 };
 
 VkMemoryAllocateFlagsInfo allocateFlagsInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO, nullptr, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT, 0 };
@@ -208,7 +207,7 @@ void Renderer::InitVulkan()
 	if (defaultSampler == VK_NULL_HANDLE)
 		CreateTextureSampler();
 	CreateUniformBuffers();
-	CreateModelBuffers();
+	CreateModelDataBuffers();
 	CreateDescriptorPool();
 	CreateDescriptorSets();
 	CreateCommandBuffer();
@@ -257,7 +256,7 @@ void Renderer::CreateTextureSampler()
 	CheckVulkanResult("Failed to create the texture sampler", result, vkCreateSampler);
 }
 
-void Renderer::CreateModelBuffers()
+void Renderer::CreateModelDataBuffers()
 {
 	VkDeviceSize size = sizeof(glm::mat4) * MAX_MESHES;
 	
@@ -267,22 +266,23 @@ void Renderer::CreateModelBuffers()
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		Vulkan::CreateBuffer(logicalDevice, physicalDevice, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, modelBuffers[i], modelBuffersMemory[i]);
+		Vulkan::CreateBuffer(logicalDevice, physicalDevice, size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, modelBuffers[i], modelBuffersMemory[i]);
 		vkMapMemory(logicalDevice, modelBuffersMemory[i], 0, size, 0, &modelBuffersMapped[i]);
 	}
+	std::cout << sizeof(ModelData) << std::endl;
 }
 
-void Renderer::SetModelMatrices(uint32_t currentImage, std::vector<Object*> models)
+void Renderer::SetModelData(uint32_t currentImage, std::vector<Object*> objects)
 {
-	std::vector<glm::mat4> modelMatrices;
-	for (Object* model : models)
+	std::vector<ModelData> modelMatrices;
+	for (Object* object : objects)
 	{
-		if (model->state != STATUS_VISIBLE || !model->HasFinishedLoading())
+		if (object->state != STATUS_VISIBLE || !object->HasFinishedLoading())
 			continue;
 
-		glm::mat4 modelMatrix = model->transform.GetModelMatrix();
-		for (Mesh& mesh : model->meshes)
-			modelMatrices.push_back(modelMatrix);
+		ModelData data = { object->transform.GetModelMatrix(), glm::vec4(ResourceManager::ConvertHandleToVec3(object->hObject), 1) };
+		for (Mesh& mesh : object->meshes)
+			modelMatrices.push_back(data);
 	}
 	memcpy(modelBuffersMapped[currentImage], modelMatrices.data(), modelMatrices.size() * sizeof(glm::mat4));
 }
@@ -514,28 +514,26 @@ void Renderer::CreateDescriptorSets()
 
 		std::array<VkWriteDescriptorSet, 3> writeDescriptorSets{};
 		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[0].dstSet = descriptorSets[i];
-		writeDescriptorSets[0].dstBinding = 0;
-		writeDescriptorSets[0].dstArrayElement = 0;
 		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSets[0].descriptorCount = 1;
+		writeDescriptorSets[0].dstSet = descriptorSets[i];
 		writeDescriptorSets[0].pBufferInfo = &bufferInfo;
+		writeDescriptorSets[0].dstBinding = 0;
+		writeDescriptorSets[0].descriptorCount = 1;
 
 		writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 		writeDescriptorSets[1].dstSet = descriptorSets[i];
-		writeDescriptorSets[1].dstBinding = 1;
-		writeDescriptorSets[1].dstArrayElement = 0;
-		writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSets[1].descriptorCount = 1;
 		writeDescriptorSets[1].pBufferInfo = &modelBufferInfo;
+		writeDescriptorSets[1].dstBinding = 1;
+		writeDescriptorSets[1].descriptorCount = 1;
 
 		writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[2].dstSet = descriptorSets[i];
-		writeDescriptorSets[2].dstBinding = 2;
-		writeDescriptorSets[2].dstArrayElement = 0;
 		writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		writeDescriptorSets[2].dstSet = descriptorSets[i];
 		writeDescriptorSets[2].descriptorCount = MAX_BINDLESS_TEXTURES;
 		writeDescriptorSets[2].pImageInfo = imageInfos.data();
+		writeDescriptorSets[2].dstBinding = 2;
+		writeDescriptorSets[2].dstArrayElement = 0;
 		
 		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
 	}
@@ -546,7 +544,7 @@ void Renderer::CreateDescriptorPool()
 	std::array<VkDescriptorPoolSize, 3> poolSizes{};
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = MAX_FRAMES_IN_FLIGHT;
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	poolSizes[1].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSizes[2].descriptorCount = MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES;
@@ -573,7 +571,7 @@ void Renderer::CreateDescriptorSetLayout()
 
 	VkDescriptorSetLayoutBinding modelLayoutBinding{};
 	modelLayoutBinding.binding = 1;
-	modelLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	modelLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	modelLayoutBinding.descriptorCount = 1;
 	modelLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 	modelLayoutBinding.pImmutableSamplers = nullptr;
@@ -647,11 +645,6 @@ void Renderer::CreateGraphicsPipeline()
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssembly.primitiveRestartEnable = false;
 
-	VkPushConstantRange pushConstantRange{};
-	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-	pushConstantRange.size = sizeof(PushConstants);
-	pushConstantRange.offset = 0;
-
 	VkViewport viewport{};
 	viewport.x = 0;
 	viewport.y = 0;
@@ -708,8 +701,7 @@ void Renderer::CreateGraphicsPipeline()
 	layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	layoutInfo.setLayoutCount = 1;
 	layoutInfo.pSetLayouts = &descriptorSetLayout;
-	layoutInfo.pushConstantRangeCount = 1;
-	layoutInfo.pPushConstantRanges = &pushConstantRange;
+	layoutInfo.pushConstantRangeCount = 0;
 
 	VkResult result = vkCreatePipelineLayout(logicalDevice, &layoutInfo, nullptr, &pipelineLayout);
 	CheckVulkanResult("Failed to create a pipeline layout", result, vkCreatePipelineLayout);
@@ -1010,7 +1002,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	uint32_t imageIndex = GetNextSwapchainImage(currentFrame);
 
 	UpdateUniformBuffers(currentFrame, camera);
-	SetModelMatrices(currentFrame, activeObjects);
+	SetModelData(currentFrame, activeObjects);
 	WriteIndirectDrawParameters(activeObjects);
 
 	UpdateBindlessTextures(currentFrame, activeObjects);
@@ -1034,9 +1026,9 @@ void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
 		for (int j = 0; j < objects[i]->meshes.size(); j++)
 		{
 			VkDrawIndexedIndirectCommand parameter{};
-			parameter.indexCount = objects[i]->meshes[j].indices.size();
-			parameter.firstIndex = globalIndicesBuffer.GetItemOffset(objects[i]->meshes[j].indexMemory);
-			parameter.vertexOffset = globalVertexBuffer.GetItemOffset(objects[i]->meshes[j].vertexMemory);
+			parameter.indexCount = static_cast<uint32_t>(objects[i]->meshes[j].indices.size());
+			parameter.firstIndex = static_cast<uint32_t>(globalIndicesBuffer.GetItemOffset(objects[i]->meshes[j].indexMemory));
+			parameter.vertexOffset = static_cast<uint32_t>(globalVertexBuffer.GetItemOffset(objects[i]->meshes[j].vertexMemory));
 			parameter.instanceCount = 1;
 
 			parameters.push_back(parameter);
@@ -1052,29 +1044,29 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 	std::vector<VkWriteDescriptorSet> writeSets;
 	for (int i = 0; i < Mesh::materials.size(); i++)
 	{
-		if (processedMaterials.count(i) == 0 || processedMaterials[i] != Mesh::materials[i].handle)
+		if (processedMaterials.count(i) > 0 && processedMaterials[i] == Mesh::materials[i].handle)
+			continue;
+
+		for (int j = 0; j < deferredMaterialTextures.size(); j++)
 		{
-			for (int j = 0; j < deferredMaterialTextures.size(); j++)
-			{
-				uint32_t index = deferredMaterialTextures.size() * i + j;
+			uint32_t index = static_cast<uint32_t>(deferredMaterialTextures.size()) * i + j;
 
-				VkDescriptorImageInfo& imageInfo = imageInfos[index];
-				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				imageInfo.imageView = Mesh::materials[i][deferredMaterialTextures[j]]->imageView;
-				imageInfo.sampler = defaultSampler;
+			VkDescriptorImageInfo& imageInfo = imageInfos[index];
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo.imageView = Mesh::materials[i][deferredMaterialTextures[j]]->imageView;
+			imageInfo.sampler = defaultSampler;
 
-				VkWriteDescriptorSet writeSet{};
-				writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-				writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-				writeSet.pImageInfo = &imageInfos[index];
-				writeSet.dstSet = descriptorSets[currentFrame];
-				writeSet.dstArrayElement = index;
-				writeSet.dstBinding = 2;
-				writeSet.descriptorCount = 1;
-				writeSets.push_back(writeSet);
-			}
-			processedMaterials[i] = Mesh::materials[i].handle;
+			VkWriteDescriptorSet writeSet{};
+			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			writeSet.pImageInfo = &imageInfos[index];
+			writeSet.dstSet = descriptorSets[currentFrame];
+			writeSet.dstArrayElement = index;
+			writeSet.dstBinding = 2;
+			writeSet.descriptorCount = 1;
+			writeSets.push_back(writeSet);
 		}
+		processedMaterials[i] = Mesh::materials[i].handle;
 	}
 	if (!writeSets.empty())
 		vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
@@ -1179,7 +1171,7 @@ void Renderer::RenderGraph(const std::vector<uint64_t>& buffer, const char* labe
 	ImPlot::SetupAxisLimits(ImAxis_X1, 0, 500);
 	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, buffer[buffer.size() - 1] * 1.3);
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
-	ImPlot::PlotLine(label, buffer.data(), buffer.size());
+	ImPlot::PlotLine(label, buffer.data(), (int)buffer.size());
 	ImPlot::EndPlot();
 	ImGui::End();
 }
@@ -1193,7 +1185,7 @@ void Renderer::RenderGraph(const std::vector<float>& buffer, const char* label)
 	ImPlot::SetupAxisLimits(ImAxis_X1, 0, 100);
 	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
-	ImPlot::PlotLine(label, buffer.data(), buffer.size());
+	ImPlot::PlotLine(label, buffer.data(), (int)buffer.size());
 	ImPlot::EndPlot();
 	ImGui::End();
 }
