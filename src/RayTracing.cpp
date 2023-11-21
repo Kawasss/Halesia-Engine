@@ -606,30 +606,35 @@ void RayTracing::UpdateTextureBuffer()
 {
 	uint32_t amountOfTexturesPerMaterial = rayTracingMaterialTextures.size();
 	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * amountOfTexturesPerMaterial);
-	std::vector<VkWriteDescriptorSet> writeSets(Mesh::materials.size() * amountOfTexturesPerMaterial);
+	std::vector<VkWriteDescriptorSet> writeSets;
 	for (int i = 0; i < Mesh::materials.size(); i++)
 	{
-		for (int j = 0; j < amountOfTexturesPerMaterial; j++)
+		if (processedMaterials.count(i) == 0 || processedMaterials[i] != Mesh::materials[i].handle)
 		{
-			uint32_t index = amountOfTexturesPerMaterial * i + j;
-			
-			VkDescriptorImageInfo& imageInfo = imageInfos[index];
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = Mesh::materials[i][rayTracingMaterialTextures[j]]->imageView;
-			imageInfo.sampler = Renderer::defaultSampler;
+			for (int j = 0; j < amountOfTexturesPerMaterial; j++)
+			{
+				uint32_t index = amountOfTexturesPerMaterial * i + j;
 
-			VkWriteDescriptorSet& writeSet = writeSets[index];
-			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			writeSet.pImageInfo = &imageInfos[index];
-			writeSet.dstSet = descriptorSets[1];
-			writeSet.descriptorCount = 1;
-			writeSet.dstBinding = 2;
-			writeSet.dstArrayElement = index;
+				VkDescriptorImageInfo& imageInfo = imageInfos[index];
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo.imageView = Mesh::materials[i][rayTracingMaterialTextures[j]]->imageView;
+				imageInfo.sampler = Renderer::defaultSampler;
+
+				VkWriteDescriptorSet writeSet{};
+				writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				writeSet.pImageInfo = &imageInfos[index];
+				writeSet.dstSet = descriptorSets[1];
+				writeSet.descriptorCount = 1;
+				writeSet.dstBinding = 2;
+				writeSet.dstArrayElement = index;
+				writeSets.push_back(writeSet);
+			}
+			processedMaterials[i] = Mesh::materials[i].handle;
 		}
 	}
-
-	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
+	if (!writeSets.empty())
+		vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
 void RayTracing::UpdateModelMatrices(const std::vector<Object*>& objects)

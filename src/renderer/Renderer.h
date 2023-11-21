@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <unordered_map>
 #include <vulkan/vulkan.h>
 
 #include "PhysicalDevice.h"
@@ -81,6 +82,7 @@ private:
 	std::vector<VkDeviceMemory>		gBufferMemories;
 
 	StorageBuffer<VkDrawIndexedIndirectCommand> indirectDrawParameters;
+	std::unordered_map<int, Handle> processedMaterials;
 
 	std::mutex drawingMutex;
 

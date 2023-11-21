@@ -1,4 +1,5 @@
 #pragma once
+#include <unordered_map>
 #include "renderer/PhysicalDevice.h"
 #include "../ResourceManager.h"
 
@@ -65,4 +66,6 @@ private:
 	void* instanceMeshDataPointer = nullptr;
 	VkBuffer instanceMeshDataBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory instanceMeshDataMemory = VK_NULL_HANDLE;
+
+	std::unordered_map<int, Handle> processedMaterials;
 };

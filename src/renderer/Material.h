@@ -1,5 +1,8 @@
 #pragma once
 #include "renderer/Texture.h"
+#include "../ResourceManager.h"
+
+typedef uint64_t Handle;
 
 enum MaterialTexture
 {
@@ -21,6 +24,7 @@ struct Material
 	Texture* metallic = Texture::placeholderMetallic;
 	Texture* roughness = Texture::placeholderRoughness;
 	Texture* ambientOcclusion = Texture::placeholderAmbientOcclusion;
+	Handle handle = ResourceManager::GenerateHandle();
 
 	Texture* operator[](size_t i)
 	{

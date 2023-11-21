@@ -808,10 +808,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
 	CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
 
-	//if (!shouldRasterize)
-	//{
-		rayTracer->DrawFrame(objects, testWindow, camera, lCommandBuffer, imageIndex);
-	//}
+	rayTracer->DrawFrame(objects, testWindow, camera, lCommandBuffer, imageIndex);
 
 	if (shouldRasterize)
 	{
@@ -891,114 +888,6 @@ void Renderer::CreateSyncObjects()
 		if (vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &imageAvaibleSemaphores[i]) != VK_SUCCESS || vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS || vkCreateFence(logicalDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]))
 			throw VulkanAPIError("Failed to create the required semaphores and fence", VK_SUCCESS, nameof(CreateSyncObjects), __FILENAME__, std::to_string(__LINE__)); // too difficult / annoying to put all of these calls into result = ...
 	}
-}
-
-std::optional<std::string> Renderer::RenderDevConsole()
-{
-	ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-
-	std::optional<std::string> inputText;
-
-	if (Console::isOpen)
-	{
-		ImGui::Begin("Dev Console", nullptr, ImGuiWindowFlags_NoCollapse);
-		ImGuiStyle& style = ImGui::GetStyle();
-		ImVec4* colors = style.Colors;
-
-		colors[ImGuiCol_WindowBg] = ImVec4(0.01f, 0.01f, 0.01f, 0.9f);
-		colors[ImGuiCol_Border] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-		colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-		colors[ImGuiCol_ResizeGrip] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.56f, 0.49f, 0.68f, 1);
-		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.56f, 0.49f, 0.68f, 1);
-
-		style.WindowRounding = 5;
-		style.WindowBorderSize = 2;
-
-		for (std::string message : Console::messages)
-		{
-			glm::vec3 color = Console::GetColorFromMessage(message);
-			ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1), message.c_str());
-		}
-
-		std::string result = "";
-		ImGui::InputTextWithHint("##input", "Console commands...", &result);
-
-		if (Input::IsKeyPressed(VirtualKey::Return)) // if enter is pressed place the input value into the optional variable
-			inputText = result;
-		
-		ImGui::End();
-	}
-	return inputText;
-}
-
-void Renderer::RenderFPS(int FPS)
-{
-	ImGui::Begin("##FPS Counter", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground);
-	
-	ImGui::SetWindowPos(ImVec2(0, 0/*ImGui::GetWindowSize().y * 0.2f*/));
-	ImGui::SetWindowSize(ImVec2(ImGui::GetWindowSize().x * 2, ImGui::GetWindowSize().y));
-	std::string text = std::to_string(FPS) + " FPS";
-	ImGui::Text(text.c_str());
-
-	ImGui::End();
-}
-
-void SetImGuiColors()
-{
-	ImGuiStyle& style = ImGui::GetStyle();
-	style.WindowRounding = 5;
-	style.WindowBorderSize = 2;
-
-	ImVec4* colors = style.Colors;
-
-	colors[ImGuiCol_WindowBg] = ImVec4(0.01f, 0.01f, 0.01f, 0.9f);
-	colors[ImGuiCol_Border] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-	colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-}
-
-void Renderer::RenderPieGraph(std::vector<float>& data, const char* label)
-{
-	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
-	SetImGuiColors();
-	
-	ImPlot::BeginPlot("##Time Per Async Task", ImVec2(-1, 0), ImPlotFlags_Equal | ImPlotFlags_NoMouseText | ImPlotFlags_NoFrame);
-	ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoDecorations, ImPlotAxisFlags_NoDecorations);
-	ImPlot::SetupAxesLimits(0, 1, 0, 1);
-	const char* labels[] = { "Main Thread", "Script Thread", "Renderer Thread" };
-	ImPlot::PlotPieChart(labels, data.data(), 3, 0.5, 0.5, 0.5, "%.1f", 180);
-	ImPlot::EndPlot();
-	ImGui::End();
-}
-
-void Renderer::RenderGraph(const std::vector<uint64_t>& buffer, const char* label)
-{
-	ImGui::Begin("RAM Usage", nullptr, ImGuiWindowFlags_NoScrollbar);
-	SetImGuiColors();
-
-	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
-	ImPlot::SetupAxisLimits(ImAxis_X1, 0, 500);
-	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, buffer[buffer.size() - 1] * 1.3);
-	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
-	ImPlot::PlotLine(label, buffer.data(), buffer.size());
-	ImPlot::EndPlot();
-	ImGui::End();
-}
-
-void Renderer::RenderGraph(const std::vector<float>& buffer, const char* label)
-{
-	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
-	SetImGuiColors();
-
-	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
-	ImPlot::SetupAxisLimits(ImAxis_X1, 0, 100);
-	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
-	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
-	ImPlot::PlotLine(label, buffer.data(), buffer.size());
-	ImPlot::EndPlot();
-	ImGui::End();
 }
 
 void Renderer::RenderIntro(Intro* intro)
@@ -1159,34 +1048,36 @@ void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
 std::vector<Object*> processedObjects;
 void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects)
 {
-	if (!Image::TexturesHaveChanged()) // disabled since there is a racing condition for the meshes. If the meshes are done loading after the textures, the textures get written off as being updated, whilst the meshes material isnt
-		return;
-		
-	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * 5);
-	std::vector<VkWriteDescriptorSet> writeSets(Mesh::materials.size() * 5);
+	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * deferredMaterialTextures.size()); // this needs to prematurely created all the image infos, beacause otherwise the pImageInfo for the write sets won't work
+	std::vector<VkWriteDescriptorSet> writeSets;
 	for (int i = 0; i < Mesh::materials.size(); i++)
 	{
-		for (int j = 0; j < 5; j++)
+		if (processedMaterials.count(i) == 0 || processedMaterials[i] != Mesh::materials[i].handle)
 		{
-			uint32_t index = 5 * i + j;
+			for (int j = 0; j < deferredMaterialTextures.size(); j++)
+			{
+				uint32_t index = deferredMaterialTextures.size() * i + j;
 
-			VkDescriptorImageInfo& imageInfo = imageInfos[index];
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = Mesh::materials[i][j]->imageView;
-			imageInfo.sampler = Renderer::defaultSampler;
+				VkDescriptorImageInfo& imageInfo = imageInfos[index];
+				imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				imageInfo.imageView = Mesh::materials[i][deferredMaterialTextures[j]]->imageView;
+				imageInfo.sampler = defaultSampler;
 
-			VkWriteDescriptorSet& writeSet = writeSets[index];
-			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			writeSet.pImageInfo = &imageInfos[index];
-			writeSet.dstSet = descriptorSets[currentFrame];
-			writeSet.descriptorCount = 1;
-			writeSet.dstBinding = 2;
-			writeSet.dstArrayElement = index;
+				VkWriteDescriptorSet writeSet{};
+				writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+				writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+				writeSet.pImageInfo = &imageInfos[index];
+				writeSet.dstSet = descriptorSets[currentFrame];
+				writeSet.dstArrayElement = index;
+				writeSet.dstBinding = 2;
+				writeSet.descriptorCount = 1;
+				writeSets.push_back(writeSet);
+			}
+			processedMaterials[i] = Mesh::materials[i].handle;
 		}
 	}
-
-	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
+	if (!writeSets.empty())
+		vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
 void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
@@ -1196,4 +1087,113 @@ void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
 	ubo.view = camera->GetViewMatrix();
 	ubo.projection = camera->GetProjectionMatrix();
 	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+}
+
+
+std::optional<std::string> Renderer::RenderDevConsole()
+{
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+
+	std::optional<std::string> inputText;
+
+	if (Console::isOpen)
+	{
+		ImGui::Begin("Dev Console", nullptr, ImGuiWindowFlags_NoCollapse);
+		ImGuiStyle& style = ImGui::GetStyle();
+		ImVec4* colors = style.Colors;
+
+		colors[ImGuiCol_WindowBg] = ImVec4(0.01f, 0.01f, 0.01f, 0.9f);
+		colors[ImGuiCol_Border] = ImVec4(0.05f, 0.05f, 0.05f, 1);
+		colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
+		colors[ImGuiCol_ResizeGrip] = ImVec4(0.05f, 0.05f, 0.05f, 1);
+		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.56f, 0.49f, 0.68f, 1);
+		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.56f, 0.49f, 0.68f, 1);
+
+		style.WindowRounding = 5;
+		style.WindowBorderSize = 2;
+
+		for (std::string message : Console::messages)
+		{
+			glm::vec3 color = Console::GetColorFromMessage(message);
+			ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1), message.c_str());
+		}
+
+		std::string result = "";
+		ImGui::InputTextWithHint("##input", "Console commands...", &result);
+
+		if (Input::IsKeyPressed(VirtualKey::Return)) // if enter is pressed place the input value into the optional variable
+			inputText = result;
+
+		ImGui::End();
+	}
+	return inputText;
+}
+
+void Renderer::RenderFPS(int FPS)
+{
+	ImGui::Begin("##FPS Counter", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground);
+
+	ImGui::SetWindowPos(ImVec2(0, 0/*ImGui::GetWindowSize().y * 0.2f*/));
+	ImGui::SetWindowSize(ImVec2(ImGui::GetWindowSize().x * 2, ImGui::GetWindowSize().y));
+	std::string text = std::to_string(FPS) + " FPS";
+	ImGui::Text(text.c_str());
+
+	ImGui::End();
+}
+
+void SetImGuiColors()
+{
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.WindowRounding = 5;
+	style.WindowBorderSize = 2;
+
+	ImVec4* colors = style.Colors;
+
+	colors[ImGuiCol_WindowBg] = ImVec4(0.01f, 0.01f, 0.01f, 0.9f);
+	colors[ImGuiCol_Border] = ImVec4(0.05f, 0.05f, 0.05f, 1);
+	colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
+}
+
+void Renderer::RenderPieGraph(std::vector<float>& data, const char* label)
+{
+	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
+	SetImGuiColors();
+
+	ImPlot::BeginPlot("##Time Per Async Task", ImVec2(-1, 0), ImPlotFlags_Equal | ImPlotFlags_NoMouseText | ImPlotFlags_NoFrame);
+	ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoDecorations, ImPlotAxisFlags_NoDecorations);
+	ImPlot::SetupAxesLimits(0, 1, 0, 1);
+	const char* labels[] = { "Main Thread", "Script Thread", "Renderer Thread" };
+	ImPlot::PlotPieChart(labels, data.data(), 3, 0.5, 0.5, 0.5, "%.1f", 180);
+	ImPlot::EndPlot();
+	ImGui::End();
+}
+
+void Renderer::RenderGraph(const std::vector<uint64_t>& buffer, const char* label)
+{
+	ImGui::Begin("RAM Usage", nullptr, ImGuiWindowFlags_NoScrollbar);
+	SetImGuiColors();
+
+	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
+	ImPlot::SetupAxisLimits(ImAxis_X1, 0, 500);
+	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, buffer[buffer.size() - 1] * 1.3);
+	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
+	ImPlot::PlotLine(label, buffer.data(), buffer.size());
+	ImPlot::EndPlot();
+	ImGui::End();
+}
+
+void Renderer::RenderGraph(const std::vector<float>& buffer, const char* label)
+{
+	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
+	SetImGuiColors();
+
+	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
+	ImPlot::SetupAxisLimits(ImAxis_X1, 0, 100);
+	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
+	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
+	ImPlot::PlotLine(label, buffer.data(), buffer.size());
+	ImPlot::EndPlot();
+	ImGui::End();
 }
