@@ -103,6 +103,7 @@ class Win32Window
 		int GetWheelRotation();
 
 		void GetRelativeCursorPosition(int& x, int& y);
+		void GetAbsoluteCursorPosition(int& x, int& y);
 		void LockCursor();
 		void UnlockCursor();
 		void ChangeWindowMode(WindowMode windowMode);
@@ -117,7 +118,7 @@ class Win32Window
 		static std::vector<Win32Window*> windows;
 		std::string droppedFile = "";
 		std::wstring className = L"", windowName = L"";
-		int width = 0, height = 0, x = 0, y = 0, cursorX = 0, cursorY = 0, wheelRotation = 0;
+		int width = 0, height = 0, x = 0, y = 0, cursorX = 0, cursorY = 0, absCursorX = 0, absCursorY = 0, wheelRotation = 0;
 		bool shouldClose = false, lockCursor = false, containsDroppedFile = false;
 		WindowMode currentWindowMode;
 		ExtendedWindowStyle extendedWindowStyle;

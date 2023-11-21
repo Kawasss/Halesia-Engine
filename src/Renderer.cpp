@@ -269,7 +269,6 @@ void Renderer::CreateModelDataBuffers()
 		Vulkan::CreateBuffer(logicalDevice, physicalDevice, size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, modelBuffers[i], modelBuffersMemory[i]);
 		vkMapMemory(logicalDevice, modelBuffersMemory[i], 0, size, 0, &modelBuffersMapped[i]);
 	}
-	std::cout << sizeof(ModelData) << std::endl;
 }
 
 void Renderer::SetModelData(uint32_t currentImage, std::vector<Object*> objects)
@@ -364,7 +363,7 @@ void Renderer::CreateRenderPass()
 	std::array<VkAttachmentDescription, 4> deferredAttachments{};
 	for (int i = 0; i < deferredAttachments.size() - 1; i++) // first 3 are color attachments
 	{
-		deferredAttachments[i].format = VK_FORMAT_R8G8B8A8_SRGB;
+		deferredAttachments[i].format = VK_FORMAT_R8G8B8A8_UNORM;
 		deferredAttachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
 		deferredAttachments[i].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		deferredAttachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -807,7 +806,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		std::array<VkClearValue, 4> deferredClearColors{};
 		deferredClearColors[0].color = { 0, 0, 0, 1 };
 		deferredClearColors[1].color = { 0, 0, 0, 1 };
-		deferredClearColors[2].color = { 0, 0, 0, 1 };
+		deferredClearColors[2].color = { 1, 1, 1, 1 };
 		deferredClearColors[3].depthStencil = { 1, 0 };
 
 		VkRenderPassBeginInfo deferredRenderPassBeginInfo{};

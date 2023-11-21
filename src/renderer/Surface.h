@@ -6,9 +6,9 @@ class Win32Window;
 class Surface
 {
 	public:
-		static Surface GenerateSurface(VkInstance instance, Win32Window* window);
-		VkSurfaceKHR VkSurface();
-		void Destroy();
+		static Surface	GenerateSurface(VkInstance instance, Win32Window* window);
+		VkSurfaceKHR	VkSurface();
+		void			Destroy();
 
 	private:
 		VkSurfaceKHR surface;

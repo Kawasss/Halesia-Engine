@@ -20,13 +20,14 @@ class Image;
 class Renderer
 {
 public:
-	static constexpr uint32_t MAX_MESHES = 1000U; //mooore than enough
+	static constexpr uint32_t MAX_MESHES			= 1000U; //should be more than enough
 	static constexpr uint32_t MAX_BINDLESS_TEXTURES = MAX_MESHES * 5; //amount of pbr textures per mesh
-	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
-	static constexpr uint32_t MAX_TLAS_INSTANCES = MAX_MESHES;
+	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT	= 1;
+	static constexpr uint32_t MAX_TLAS_INSTANCES	= MAX_MESHES;
 
-	static StorageBuffer<Vertex> globalVertexBuffer;
-	static StorageBuffer<uint16_t> globalIndicesBuffer;
+	static StorageBuffer<Vertex>	globalVertexBuffer;
+	static StorageBuffer<uint16_t>	globalIndicesBuffer;
+
 	static VkSampler defaultSampler;
 
 	static std::vector<VkDynamicState> dynamicStates;
@@ -44,24 +45,27 @@ public:
 
 	Swapchain* swapchain; // better to keep it private
 
-	bool shouldRasterize = false;
+	bool shouldRasterize = true;
 
 private:
 	VulkanCreationObject creationObject;
 
-	VkInstance instance =						VK_NULL_HANDLE;
-	VkDevice logicalDevice =					VK_NULL_HANDLE;
-	VkRenderPass renderPass =					VK_NULL_HANDLE;
-	VkRenderPass deferredRenderPass =			VK_NULL_HANDLE;
-	VkDescriptorSetLayout descriptorSetLayout = VK_NULL_HANDLE;
-	VkPipelineLayout pipelineLayout =			VK_NULL_HANDLE;
-	VkPipeline graphicsPipeline =				VK_NULL_HANDLE;
-	VkCommandPool commandPool =					VK_NULL_HANDLE;
-	VkDescriptorPool descriptorPool =			VK_NULL_HANDLE;
-	VkDescriptorPool imGUIDescriptorPool =		VK_NULL_HANDLE;
-	VkQueue graphicsQueue =						VK_NULL_HANDLE;
-	VkQueue presentQueue =						VK_NULL_HANDLE;
-	VkFramebuffer deferredFramebuffer =			VK_NULL_HANDLE;
+	VkInstance instance							= VK_NULL_HANDLE;
+	VkDevice logicalDevice						= VK_NULL_HANDLE;
+	VkRenderPass renderPass						= VK_NULL_HANDLE;
+	VkRenderPass deferredRenderPass				= VK_NULL_HANDLE;
+	VkDescriptorSetLayout descriptorSetLayout	= VK_NULL_HANDLE;
+	VkPipelineLayout pipelineLayout				= VK_NULL_HANDLE;
+	VkPipeline graphicsPipeline					= VK_NULL_HANDLE;
+	VkCommandPool commandPool					= VK_NULL_HANDLE;
+	VkDescriptorPool descriptorPool				= VK_NULL_HANDLE;
+	VkDescriptorPool imGUIDescriptorPool		= VK_NULL_HANDLE;
+	VkQueue graphicsQueue						= VK_NULL_HANDLE;
+	VkQueue presentQueue						= VK_NULL_HANDLE;
+	VkFramebuffer deferredFramebuffer			= VK_NULL_HANDLE;
+	VkImageView	deferredDepthView				= VK_NULL_HANDLE;
+	VkImage	deferredDepth						= VK_NULL_HANDLE;
+	VkDeviceMemory deferredDepthMemory			= VK_NULL_HANDLE;
 
 	std::vector<VkCommandBuffer>	commandBuffers;
 	std::vector<VkSemaphore>		imageAvaibleSemaphores;
@@ -89,10 +93,6 @@ private:
 	PhysicalDevice physicalDevice;
 	Surface surface;
 	Win32Window* testWindow;
-	
-	VkImageView deferredDepthView = VK_NULL_HANDLE;
-	VkImage deferredDepth = VK_NULL_HANDLE;
-	VkDeviceMemory deferredDepthMemory = VK_NULL_HANDLE;
 
 	uint32_t currentFrame = 0;
 	uint32_t queueIndex = 0;

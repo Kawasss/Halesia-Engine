@@ -150,6 +150,12 @@ void Win32Window::GetRelativeCursorPosition(int& x, int& y)
 	y = cursorY;
 }
 
+void Win32Window::GetAbsoluteCursorPosition(int& x, int& y)
+{
+	x = absCursorX;
+	y = absCursorY;
+}
+
 int Win32Window::GetWheelRotation()
 {
 	return wheelRotation;
@@ -218,6 +224,8 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 		case WM_MOUSEMOVE: // when the cursor has moved
 			if (windowBinding[hwnd]->lockCursor) // if the cursor is locked it has to stay inside the window, so this locks resets it to the center of the screen
 				SetCursorPos(windowBinding[hwnd]->width / 2, windowBinding[hwnd]->height / 2);
+			windowBinding[hwnd]->absCursorX = GET_X_LPARAM(lParam);
+			windowBinding[hwnd]->absCursorY = GET_Y_LPARAM(lParam);
 			break;
 
 		case WM_MOUSEWHEEL: // when the mouse wheel has moved

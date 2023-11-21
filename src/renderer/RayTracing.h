@@ -21,8 +21,8 @@ public:
 
 	VkImage RTImage = VK_NULL_HANDLE;
 
-	static int raySampleCount;
-	static int rayDepth;
+	static int  raySampleCount;
+	static int  rayDepth;
 	static bool showNormals;
 	static bool showUniquePrimitives;
 	static bool showAlbedo;
@@ -43,29 +43,29 @@ private:
 	std::vector<BottomLevelAccelerationStructure*> BLASs;
 	TopLevelAccelerationStructure* TLAS = nullptr;
 
-	Win32Window* window = nullptr;
+	Win32Window* window  = nullptr;
 	Swapchain* swapchain = nullptr;
-
-	VkDevice logicalDevice = VK_NULL_HANDLE;
 
 	bool imageHasChanged = false;
 
-	VkDeviceMemory RTImageMemory = VK_NULL_HANDLE;
-	VkImageView RTImageView = VK_NULL_HANDLE;
+	VkDevice logicalDevice					= VK_NULL_HANDLE;
 
-	VkCommandPool commandPool = VK_NULL_HANDLE;
-	PhysicalDevice physicalDevice = VK_NULL_HANDLE;
+	VkDeviceMemory RTImageMemory			= VK_NULL_HANDLE;
+	VkImageView RTImageView					= VK_NULL_HANDLE;
 
-	VkBuffer materialBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory materialBufferMemory = VK_NULL_HANDLE;
+	VkCommandPool commandPool				= VK_NULL_HANDLE;
+	PhysicalDevice physicalDevice			= VK_NULL_HANDLE;
 
-	void* modelMatrixMemoryPointer = nullptr;
-	VkBuffer modelMatrixBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory modelMatrixBufferMemory = VK_NULL_HANDLE;
+	VkBuffer materialBuffer					= VK_NULL_HANDLE;
+	VkDeviceMemory materialBufferMemory		= VK_NULL_HANDLE;
 
-	void* instanceMeshDataPointer = nullptr;
-	VkBuffer instanceMeshDataBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory instanceMeshDataMemory = VK_NULL_HANDLE;
+	void* modelMatrixMemoryPointer			= nullptr;
+	VkBuffer modelMatrixBuffer				= VK_NULL_HANDLE;
+	VkDeviceMemory modelMatrixBufferMemory	= VK_NULL_HANDLE;
+
+	void* instanceMeshDataPointer			= nullptr;
+	VkBuffer instanceMeshDataBuffer			= VK_NULL_HANDLE;
+	VkDeviceMemory instanceMeshDataMemory	= VK_NULL_HANDLE;
 
 	std::unordered_map<int, Handle> processedMaterials;
 };

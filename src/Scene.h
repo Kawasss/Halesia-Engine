@@ -97,11 +97,12 @@ public:
 	/// </summary>
 	/// <param name="path"></param>
 	void LoadScene(std::string path);
-
 	void LoadUninitializedObjects();
-	virtual void Start();
+	
 	void UpdateCamera(Win32Window* window, float delta);
 	void UpdateScripts(float delta);
+
+	virtual void Start() {};
 	virtual void Update(float delta) {};
 	//virtual ~Scene() {};
 	void Destroy();

@@ -32,7 +32,7 @@ public:
 	Object() = default;
 	Object(const ObjectCreationData& creationData, const ObjectCreationObject& creationObjects);
 
-	virtual ~Object() {};
+	virtual		~Object() {};
 	virtual void Destroy();
 	virtual void Start() {};
 	virtual void Update(float delta) {};
