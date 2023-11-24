@@ -93,3 +93,8 @@ inline bool operator==(const Material& lMaterial, const Material& rMaterial)
 {
 	return lMaterial.albedo == rMaterial.albedo && lMaterial.normal == rMaterial.normal && lMaterial.metallic == rMaterial.metallic && lMaterial.roughness == rMaterial.roughness && lMaterial.ambientOcclusion == rMaterial.ambientOcclusion;
 }
+
+inline bool operator!=(const Material& lMaterial, const Material& rMaterial)
+{
+	return !(lMaterial == rMaterial);
+}

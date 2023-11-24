@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <future>
+#include <mutex>
 
 #include "renderer/Mesh.h"
 #include "Transform.h"
@@ -62,15 +63,18 @@ public:
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
 	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
 
-	template<typename T> static Object* Duplicate(Object* objPtr)
+	template<typename T> static Object* Duplicate(Object* objPtr, std::string name)
 	{
 		T* customPtr = new T();
 		Object* newObjPtr = customPtr;
 		newObjPtr->meshes = objPtr->meshes;
 		newObjPtr->transform = objPtr->transform;
-		newObjPtr->name = objPtr->name; // better to create new version of the name
+		newObjPtr->name = name;
 		newObjPtr->finishedLoading = true;
 		newObjPtr->scriptClass = customPtr;
+		newObjPtr->handle = ResourceManager::GenerateHandle();
+
+		Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + objPtr->name + "\"", MESSAGE_SEVERITY_DEBUG);
 
 		return newObjPtr;
 	}
@@ -79,7 +83,8 @@ public:
 	std::vector<Mesh> meshes;
 	ObjectState state = STATUS_VISIBLE;
 	std::string name;
-	Handle hObject{};
+	std::mutex mutex;
+	Handle handle;
 	bool finishedLoading = false;
 	bool shouldBeDestroyed = false;
 

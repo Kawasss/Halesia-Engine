@@ -447,7 +447,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 void RayTracing::CreateMeshDataBuffers()
 {
-	VkDeviceSize instanceDataSize = sizeof(InstanceMeshData) * 8;// Renderer::MAX_MESHES
+	VkDeviceSize instanceDataSize = sizeof(InstanceMeshData) * Renderer::MAX_MESHES;
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, instanceDataSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, instanceMeshDataBuffer, instanceMeshDataMemory);
 	vkMapMemory(logicalDevice, instanceMeshDataMemory, 0, instanceDataSize, 0, &instanceMeshDataPointer);
@@ -646,13 +646,11 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 	{
 		if (objects[i]->state != STATUS_VISIBLE || !objects[i]->HasFinishedLoading())
 			continue;
-
+		
+		std::lock_guard<std::mutex> lockGuard(objects[i]->mutex);
 		for (int32_t j = 0; j < objects[i]->meshes.size(); j++)
 		{
-			instanceDatas.push_back({ objects[i]->transform.GetModelMatrix(), indexOffset, vertexOffset, objects[i]->meshes[j].materialIndex, 0, objects[i]->hObject });
-			
-			indexOffset += objects[i]->meshes[j].indices.size();
-			vertexOffset += objects[i]->meshes[j].vertices.size();
+			instanceDatas.push_back({ objects[i]->transform.GetModelMatrix(), (uint32_t)Renderer::globalIndicesBuffer.GetItemOffset(objects[i]->meshes[j].indexMemory), (uint32_t)Renderer::globalVertexBuffer.GetItemOffset(objects[i]->meshes[j].vertexMemory), objects[i]->meshes[j].materialIndex, 0, objects[i]->handle});
 		}
 	}
 	if (instanceDatas.size() == 0)
@@ -678,9 +676,6 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 
 	if (Mesh::materials.size() > 0)
 		UpdateTextureBuffer();
-	
-	memcpy(&Renderer::selectedHandle, handleBufferMemPointer, sizeof(uint64_t));
-	memset(handleBufferMemPointer, 0, sizeof(uint64_t));
 
 	int x, y, absX, absY;
 	window->GetRelativeCursorPosition(x, y);
@@ -693,7 +688,6 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	uniformBuffer = UniformBuffer{ { camera->position, 1 }, { camera->right, 1 }, { camera->up, 1 }, { camera->front, 1 }, glm::uvec2((uint32_t)absX, (uint32_t)absY), frameCount, showNormals, showUniquePrimitives, showAlbedo, raySampleCount, rayDepth, renderProgressive};
 
 	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
-
 	TLAS->Build(creationObject, objects, false, commandBuffer);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);

@@ -1,10 +1,12 @@
 #define NOMINMAX
 #include "HalesiaEngine.h"
 
-class TestCamera : public Camera
+class TestCamera : public OrbitCamera
 {
 public:
-	Object* objectToLookAt = nullptr;
+	glm::vec3 pivot = glm::vec3(0);
+	float radius = 5;
+	float sumX = 0, sumY = 0;
 
 	TestCamera()
 	{
@@ -14,80 +16,109 @@ public:
 
 	void Update(Win32Window* window, float delta) override
 	{
-		if (objectToLookAt != nullptr)
-		{
-			front = glm::normalize(objectToLookAt->transform.position - position);
-			UpdateUpAndRightVectors();
-		}	
-		else
-			DefaultUpdate(window, delta);
-	}
-};
-
-class RotatingObject : public Object
-{
-public:
-	void Update(float delta) override
-	{
-		transform.scale.x = 1;
-		transform.scale.y = 0.5f;
-		transform.scale.z = 1;
-		//transform.rotation.y += delta * 0.05f;
-		//transform.rotation.y += delta * 0.1f;
-	}
-};
-
-class FollowCamera : public Object
-{
-public:
-	Camera* cameraToLookAt = nullptr;
-
-	void Update(float delta) override
-	{
-		if (cameraToLookAt == nullptr)
+		if (Console::isOpen)
 			return;
+
+		radius += window->GetWheelRotation() * delta * 0.001f;
+		if (radius < 0.1f) radius = 0.1f;
+
+		float phi = sumX * 2 * glm::pi<float>() / window->GetWidth();
+		float theta = std::clamp(sumY * glm::pi<float>() / window->GetHeight(), -0.49f * glm::pi<float>(), 0.49f * glm::pi<float>());
+
+		position.x = radius * (cos(phi) * cos(theta));
+		position.y = radius * sin(theta);
+		position.z = radius * (cos(theta) * sin(phi));
+		position += pivot;
+
+		front = glm::normalize(pivot - position);
+
+		right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
+		up = glm::normalize(glm::cross(right, front));
+
+		if (Input::IsKeyPressed(VirtualKey::W))
+			pivot += front * (cameraSpeed * delta * 0.001f);
+		if (Input::IsKeyPressed(VirtualKey::S))
+			pivot -= front * (cameraSpeed * delta * 0.001f);
+		if (Input::IsKeyPressed(VirtualKey::A))
+			pivot -= right * (cameraSpeed * delta * 0.001f);
+		if (Input::IsKeyPressed(VirtualKey::D))
+			pivot += right * (cameraSpeed * delta * 0.001f);
+		if (Input::IsKeyPressed(VirtualKey::Space))
+			pivot += up * (cameraSpeed * delta * 0.001f);
+		if (Input::IsKeyPressed(VirtualKey::LeftShift))
+			pivot -= up * (cameraSpeed * delta * 0.001f);
+
+		if (!Input::IsKeyPressed(VirtualKey::MiddleMouseButton))
+			return;
+
+		int x, y;
+		window->GetRelativeCursorPosition(x, y);
+
+		sumX = sumX + x * delta;//std::clamp(sumX + x * delta, -299.9f, 299.9f);
+		sumY = sumY + y * delta;// std::clamp(sumY + y * delta, -299.9f, 299.9f);
+	}
+};
+
+class ColoringTile : public Object
+{
+public:
+	Material* colorMaterial;
+	std::chrono::steady_clock::time_point timeOfClick = std::chrono::high_resolution_clock::now();
+	int indexX, indexY;
+
+	void Start() override
+	{
+		transform.position = glm::vec3(-indexX * 2, 0, indexY * 2);
+	}
+
+	void Update(float delta) override
+	{
+		if (Renderer::selectedHandle != handle)
+		{
+			transform.position.y = 0;
+			return;
+		}
+		else
+			transform.position.y = 1;
+		if (Renderer::selectedHandle == handle && Input::IsKeyPressed(VirtualKey::LeftMouseButton) && std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeOfClick).count() > 1000)
+		{
+			timeOfClick = std::chrono::high_resolution_clock::now();
+			if (meshes[0].materialIndex == 0)
+				meshes[0].SetMaterial(*colorMaterial);
+			else
+				meshes[0].ResetMaterial();
+		}
 	}
 };
 
 class TestScene : public Scene
 {
+	Material colorMaterial;
+
 	Object* objPtr = nullptr;
 	void Start() override
 	{
-		Object* ptr2 = AddCustomObject<FollowCamera>("stdObj/sniper.obj", OBJECT_IMPORT_EXTERNAL);
-		ptr2->transform.scale = glm::vec3(0.1f, 0.1f, 0.1f);
-		ptr2->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/albedo.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		ptr2->AwaitGeneration();
+		colorMaterial = { new Texture(GetMeshCreationObjects(), "textures/red.png") };
+		Object* baseObject = AddCustomObject<ColoringTile>("stdObj/cube.obj", OBJECT_IMPORT_EXTERNAL);
+		baseObject->AwaitGeneration();
+		baseObject->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
 
-		Object* ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel.obj"));
-		ptr->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/blue.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		ptr->AwaitGeneration();
+		for (int i = 0; i < 4; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				Object* ptr = DuplicateObject<ColoringTile>(baseObject, "tile" + std::to_string(i * 4 + j));
+				ptr->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
+				ptr->GetScript<ColoringTile*>()->indexX = i;
+				ptr->GetScript<ColoringTile*>()->indexY = j;
+				ptr->Start();
+			}
+		}
+		baseObject->state = STATUS_DISABLED;
 
-		ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel2.obj"));
-		ptr->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/red.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		ptr->AwaitGeneration();
-
-		ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel3.obj"));
-		ptr->meshes[0].SetMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		ptr->AwaitGeneration();
-
-		ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panel4.obj"));
-		ptr->meshes[0].SetMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		ptr->AwaitGeneration();
-
-		ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panelBottom.obj"));
-		ptr->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/floor.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		ptr->AwaitGeneration();
-
-		ptr = SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/panelTop.obj"));
-		ptr->meshes[0].SetMaterial({ new Texture(GetMeshCreationObjects(), "textures/white.png"), Texture::placeholderNormal, Texture::placeholderMetallic, new Texture(GetMeshCreationObjects(), "textures/white.png") });
-		ptr->AwaitGeneration();
-
-		AddCustomObject<RotatingObject>("stdObj/light.obj", OBJECT_IMPORT_EXTERNAL);
+		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/light.obj"));
 		
 		this->camera = new TestCamera();
-		camera->GetScript<TestCamera*>()->objectToLookAt = nullptr;//objPtr;
-		ptr2->GetScript<FollowCamera*>()->cameraToLookAt = this->camera;
 	}
 
 	void Update(float delta) override

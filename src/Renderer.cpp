@@ -280,7 +280,7 @@ void Renderer::SetModelData(uint32_t currentImage, std::vector<Object*> objects)
 		if (object->state != STATUS_VISIBLE || !object->HasFinishedLoading())
 			continue;
 
-		ModelData data = { object->transform.GetModelMatrix(), glm::vec4(ResourceManager::ConvertHandleToVec3(object->hObject), 1) };
+		ModelData data = { object->transform.GetModelMatrix(), glm::vec4(ResourceManager::ConvertHandleToVec3(object->handle), 1) };
 		for (Mesh& mesh : object->meshes)
 			modelMatrices.push_back(data);
 	}
@@ -983,7 +983,6 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 
 void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
 {
-
 	std::vector<Object*> activeObjects;
 	for (Object* object : objects)
 		if (object->HasFinishedLoading() && object->state == STATUS_VISIBLE)
@@ -1004,6 +1003,9 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	UpdateUniformBuffers(currentFrame, camera);
 	SetModelData(currentFrame, activeObjects);
 	WriteIndirectDrawParameters(activeObjects);
+
+	memcpy(&Renderer::selectedHandle, rayTracer->handleBufferMemPointer, sizeof(uint64_t));
+	memset(rayTracer->handleBufferMemPointer, 0, sizeof(uint64_t));
 
 	UpdateBindlessTextures(currentFrame, activeObjects);
 

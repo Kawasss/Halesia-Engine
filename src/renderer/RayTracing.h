@@ -20,6 +20,7 @@ public:
 	void RecreateImage(Swapchain* swapchain);
 
 	VkImage RTImage = VK_NULL_HANDLE;
+	void* handleBufferMemPointer = nullptr;
 
 	static int  raySampleCount;
 	static int  rayDepth;
@@ -55,7 +56,6 @@ private:
 	VkCommandPool commandPool				= VK_NULL_HANDLE;
 	PhysicalDevice physicalDevice			= VK_NULL_HANDLE;
 
-	void* handleBufferMemPointer			= VK_NULL_HANDLE;
 	VkBuffer handleBuffer					= VK_NULL_HANDLE;
 	VkDeviceMemory handleBufferMemory		= VK_NULL_HANDLE;
 

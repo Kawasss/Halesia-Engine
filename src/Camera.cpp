@@ -141,13 +141,13 @@ void OrbitCamera::Update(Win32Window* window, float delta)
 	if (radius < 0.1f) radius = 0.1f;
 
 	float phi = sumX * 2 * glm::pi<float>() / window->GetWidth();
-	float theta = sumY * glm::pi<float>() / window->GetHeight();
-	theta = std::clamp(theta, -4.0f / glm::pi<float>(), 4.0f / glm::pi<float>());
+	float theta = std::clamp(sumY * glm::pi<float>() / window->GetHeight(), -0.49f * glm::pi<float>(), 0.49f * glm::pi<float>());
 
 	position.x = radius * (cos(phi) * cos(theta));
 	position.y = radius * sin(theta);
 	position.z = radius * (cos(theta) * sin(phi));
 	position += pivot;
+	std::clamp(position.y, pivot.y, -pivot.y);
 
 	front = glm::normalize(pivot - position);
 

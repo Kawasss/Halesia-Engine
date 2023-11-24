@@ -23,7 +23,7 @@ void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, 
 	finishedLoading = true; //maybe use mutex here or just find better solution
 
 	#ifdef _DEBUG
-	Console::WriteLine("Created new object \"" + name + "\" with unique id \"" + std::to_string(hObject) + '\"', MESSAGE_SEVERITY_DEBUG);
+	Console::WriteLine("Created new object \"" + name + "\" with unique id \"" + std::to_string(handle) + '\"', MESSAGE_SEVERITY_DEBUG);
 	#endif
 }
 
@@ -38,7 +38,7 @@ void Object::CreateObject(void* customClassPointer, const ObjectCreationData& cr
 	meshes.resize(creationData.meshes.size());
 
 	transform = Transform(creationData.position, creationData.rotation, creationData.scale, meshes[0].extents, meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
-	hObject = ResourceManager::GenerateHandle();
+	handle = ResourceManager::GenerateHandle();
 	name = creationData.name;
 
 	GenerateObjectWithData(creationObject, creationData); // maybe async??
@@ -49,7 +49,7 @@ Object::Object(const ObjectCreationData& creationData, const ObjectCreationObjec
 	meshes.resize(creationData.meshes.size());
 
 	transform = Transform(creationData.position, creationData.rotation, creationData.scale, creationData.meshes[0].extents, creationData.meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
-	hObject = ResourceManager::GenerateHandle();
+	handle = ResourceManager::GenerateHandle();
 	name = creationData.name;
 
 	generationProcess = std::async(&Object::GenerateObjectWithData, this, creationObject, creationData);

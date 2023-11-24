@@ -31,6 +31,7 @@ struct Mesh
 	int faceCount;
 	glm::vec3 min, max, center, extents;
 
+	void ResetMaterial(); // should make it so that it also deletes the material if no other mesh references it
 	void ProcessMaterial(const TextureCreationObject& creationObjects, const MaterialCreationData& creationData);
 	void Recreate(const MeshCreationObject& creationObject);
 	bool HasFinishedLoading();

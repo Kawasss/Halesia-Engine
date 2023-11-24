@@ -41,6 +41,11 @@ void Mesh::Recreate(const MeshCreationObject& creationObject)
 	BLAS = BottomLevelAccelerationStructure::Create(creationObject, *this);
 }
 
+void Mesh::ResetMaterial()
+{
+	materialIndex = 0;
+}
+
 void Mesh::SetMaterial(Material material)
 {
 	std::lock_guard<std::mutex> lockGuard(materialMutex);

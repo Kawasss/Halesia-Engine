@@ -74,12 +74,22 @@ public:
 		objPtr = customPointer;
 		objPtr->CreateObject(customPointer, creationData, GetMeshCreationObjects());
 
-		objectHandles[objPtr->hObject] = objPtr;
+		objectHandles[objPtr->handle] = objPtr;
 		allObjects.push_back(objPtr);
 		objectsWithScripts.push_back(objPtr);
 		return objPtr;
 	}
 	
+	template<typename T> Object* DuplicateObject(Object* objPtr, std::string name)
+	{
+		Object* newObjPtr = Object::Duplicate<T>(objPtr, name);
+		allObjects.push_back(newObjPtr);
+		objectsWithScripts.push_back(newObjPtr);
+		objectHandles[newObjPtr->handle] = newObjPtr;
+
+		return newObjPtr;
+	}
+
 	bool HasFinishedLoading()
 	{
 		return loadingProcess._Is_ready() || !sceneIsLoading;
@@ -91,6 +101,8 @@ public:
 			throw std::runtime_error("Failed to get the object related with handle\"" + std::to_string(handle) + "\"");
 		return objectHandles[handle];
 	}
+
+	bool IsObjectHandleValid(Handle handle) { return objectHandles.count(handle) > 0; }
 
 	static MeshCreationObject(*GetMeshCreationObjects)();
 	std::vector<Object*> allObjects;

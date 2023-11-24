@@ -58,7 +58,7 @@ Object* Scene::SubmitStaticObject(const ObjectCreationData& creationData)
 {
 	Object* objPtr = new Object(creationData, GetMeshCreationObjects());
 
-	objectHandles[objPtr->hObject] = objPtr;
+	objectHandles[objPtr->handle] = objPtr;
 	allObjects.push_back(objPtr);
 	staticObjects.push_back(objPtr);
 
@@ -120,6 +120,7 @@ void Scene::UpdateScripts(float delta)
 	
 	std::for_each(std::execution::par, objectsWithScripts.begin(), objectsWithScripts.end(), [&](Object* object) // update all of the scripts in parallel
 		{
+			std::lock_guard<std::mutex> lockGuard(object->mutex);
 			if (object->shouldBeDestroyed)
 				Free(object);
 			else

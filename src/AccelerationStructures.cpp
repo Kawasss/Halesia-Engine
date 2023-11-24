@@ -169,6 +169,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 	std::vector<VkAccelerationStructureInstanceKHR> instances;
 	for (int i = 0; i < objects.size(); i++)
 	{
+		std::lock_guard<std::mutex> lockGuard(objects[i]->mutex);
 		if (!objects[i]->HasFinishedLoading() || objects[i]->state == STATUS_INVISIBLE || objects[i]->state == STATUS_DISABLED) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
 			continue;
 
