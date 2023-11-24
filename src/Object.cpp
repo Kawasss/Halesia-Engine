@@ -14,8 +14,6 @@ void Object::AwaitGeneration()
 
 void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, const ObjectCreationData& creationData)
 {
-	name = creationData.name;
-
 	/*#ifdef _DEBUG
 	Console::WriteLine("Attempting to create new model \"" + name + '\"', MESSAGE_SEVERITY_DEBUG);
 	#endif*/
@@ -41,6 +39,7 @@ void Object::CreateObject(void* customClassPointer, const ObjectCreationData& cr
 
 	transform = Transform(creationData.position, creationData.rotation, creationData.scale, meshes[0].extents, meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
 	hObject = ResourceManager::GenerateHandle();
+	name = creationData.name;
 
 	GenerateObjectWithData(creationObject, creationData); // maybe async??
 }
@@ -51,6 +50,7 @@ Object::Object(const ObjectCreationData& creationData, const ObjectCreationObjec
 
 	transform = Transform(creationData.position, creationData.rotation, creationData.scale, creationData.meshes[0].extents, creationData.meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
 	hObject = ResourceManager::GenerateHandle();
+	name = creationData.name;
 
 	generationProcess = std::async(&Object::GenerateObjectWithData, this, creationObject, creationData);
 }

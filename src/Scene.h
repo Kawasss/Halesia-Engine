@@ -2,11 +2,14 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include "Object.h"
 #include "Camera.h"
 #include "CreationObjects.h"
 #include "Console.h"
 #include "SceneLoader.h"
+
+typedef uint64_t Handle;
 
 enum ObjectImportType
 {
@@ -71,6 +74,7 @@ public:
 		objPtr = customPointer;
 		objPtr->CreateObject(customPointer, creationData, GetMeshCreationObjects());
 
+		objectHandles[objPtr->hObject] = objPtr;
 		allObjects.push_back(objPtr);
 		objectsWithScripts.push_back(objPtr);
 		return objPtr;
@@ -81,10 +85,17 @@ public:
 		return loadingProcess._Is_ready() || !sceneIsLoading;
 	}
 
+	Object* GetObjectByHandle(Handle handle)
+	{
+		if (objectHandles.count(handle) == 0)
+			throw std::runtime_error("Failed to get the object related with handle\"" + std::to_string(handle) + "\"");
+		return objectHandles[handle];
+	}
+
 	static MeshCreationObject(*GetMeshCreationObjects)();
 	std::vector<Object*> allObjects;
 	std::vector<ObjectCreationData> objectCreationDatas;
-
+	
 	/// <summary>
 	/// Submit an object without a script
 	/// </summary>
@@ -113,6 +124,7 @@ private:
 	std::future<void> loadingProcess;
 	std::vector<Object*> objectsWithScripts;
 	std::vector<Object*> staticObjects;
+	std::unordered_map<Handle, Object*> objectHandles;
 
 	bool sceneIsLoading = false;
 

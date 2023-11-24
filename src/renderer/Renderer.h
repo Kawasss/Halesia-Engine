@@ -45,7 +45,8 @@ public:
 
 	Swapchain* swapchain; // better to keep it private
 
-	bool shouldRasterize = true;
+	bool shouldRasterize = false;
+	static Handle selectedHandle;
 
 private:
 	VulkanCreationObject creationObject;

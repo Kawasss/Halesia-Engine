@@ -2,6 +2,7 @@
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
 
 #define M_PI 3.1415926535897932384626433832795
 
@@ -17,6 +18,7 @@ layout(location = 0) rayPayloadInEXT Payload {
   int rayDepth;
 
   int rayActive;
+  uint64_t intersectedObjectHandle;
 }
 payload;
 
@@ -30,11 +32,13 @@ struct Vertex
 
 struct InstanceMeshData
 {
+    mat4 transformation;
     uint indexBufferOffset;
     uint vertexBufferOffset;
     uint materialIndex;
     int meshIsLight;
-    int modelID;
+    uint64_t handle;
+    uint64_t padding;
 };
 
 layout(location = 1) rayPayloadEXT bool isShadow;
@@ -46,6 +50,7 @@ layout(binding = 1, set = 0) uniform Camera
   vec4 right;
   vec4 up;
   vec4 forward;
+  uvec2 mouseXY;
 
   uint frameCount;
   int showNormals;
@@ -59,13 +64,12 @@ layout(binding = 1, set = 0) uniform Camera
 layout (binding = 2, set = 0) buffer IndexBuffer { uint16_t data[]; } indexBuffer;
 layout (binding = 3, set = 0) buffer VertexBuffer { Vertex data[]; } vertexBuffer;
 
-layout (binding = 0, set = 1) buffer ModelBuffer { mat4 data[]; } modelBuffer;
-layout (binding = 1, set = 1) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
-layout (binding = 2, set = 1) uniform sampler2D[] textures;
+layout (binding = 0, set = 1) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
+layout (binding = 1, set = 1) uniform sampler2D[] textures;
 
 mat4 GetModelMatrix()
 {
-    return modelBuffer.data[instanceDataBuffer.data[gl_InstanceCustomIndexEXT].modelID];
+    return instanceDataBuffer.data[gl_InstanceCustomIndexEXT].transformation;
 }
 
 vec3 MultiplyPositionWithModelMatrix(Vertex vertex)
@@ -113,6 +117,7 @@ vec3 alignHemisphereWithCoordinateSystem(vec3 hemisphere, vec3 up) {
 }
 
 void main() {
+  payload.intersectedObjectHandle = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].handle;
   if (payload.rayActive == 0) {
     return;
   }
@@ -187,8 +192,6 @@ void main() {
     //payload.indirectColor += vec3(0.05) * payload.directColor;
   }
   payload.directColor *= surfaceColor;
-
-
 
   vec3 hemisphere = uniformSampleHemisphere(vec2(random(gl_LaunchIDEXT.xy, camera.frameCount), random(gl_LaunchIDEXT.xy, camera.frameCount + 1)));
   vec3 alignedHemisphere = alignHemisphereWithCoordinateSystem(hemisphere, geometricNormal);

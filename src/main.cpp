@@ -46,8 +46,6 @@ public:
 	{
 		if (cameraToLookAt == nullptr)
 			return;
-
-		transform.position = cameraToLookAt->position + glm::vec3(0, 0, 1) * cameraToLookAt->front;
 	}
 };
 

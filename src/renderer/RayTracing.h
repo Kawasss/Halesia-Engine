@@ -29,7 +29,6 @@ public:
 	static bool renderProgressive;
 	
 private:
-	void UpdateModelMatrices(const std::vector<Object*>& objects);
 	void UpdateInstanceDataBuffer(const std::vector<Object*>& objects);
 	void UpdateTextureBuffer();
 	void UpdateMeshDataDescriptorSets();
@@ -56,12 +55,12 @@ private:
 	VkCommandPool commandPool				= VK_NULL_HANDLE;
 	PhysicalDevice physicalDevice			= VK_NULL_HANDLE;
 
+	void* handleBufferMemPointer			= VK_NULL_HANDLE;
+	VkBuffer handleBuffer					= VK_NULL_HANDLE;
+	VkDeviceMemory handleBufferMemory		= VK_NULL_HANDLE;
+
 	VkBuffer materialBuffer					= VK_NULL_HANDLE;
 	VkDeviceMemory materialBufferMemory		= VK_NULL_HANDLE;
-
-	void* modelMatrixMemoryPointer			= nullptr;
-	VkBuffer modelMatrixBuffer				= VK_NULL_HANDLE;
-	VkDeviceMemory modelMatrixBufferMemory	= VK_NULL_HANDLE;
 
 	void* instanceMeshDataPointer			= nullptr;
 	VkBuffer instanceMeshDataBuffer			= VK_NULL_HANDLE;

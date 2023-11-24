@@ -45,6 +45,7 @@ StorageBuffer<Vertex> Renderer::globalVertexBuffer;
 StorageBuffer<uint16_t> Renderer::globalIndicesBuffer;
 bool Renderer::initGlobalBuffers = false;
 VkSampler Renderer::defaultSampler = VK_NULL_HANDLE;
+Handle Renderer::selectedHandle = 0;
 
 std::vector<VkDynamicState> Renderer::dynamicStates =
 {
@@ -363,7 +364,7 @@ void Renderer::CreateRenderPass()
 	std::array<VkAttachmentDescription, 4> deferredAttachments{};
 	for (int i = 0; i < deferredAttachments.size() - 1; i++) // first 3 are color attachments
 	{
-		deferredAttachments[i].format = VK_FORMAT_R8G8B8A8_UNORM;
+		deferredAttachments[i].format = VK_FORMAT_R8G8B8A8_SRGB;
 		deferredAttachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
 		deferredAttachments[i].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		deferredAttachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;

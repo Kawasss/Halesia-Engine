@@ -58,6 +58,7 @@ Object* Scene::SubmitStaticObject(const ObjectCreationData& creationData)
 {
 	Object* objPtr = new Object(creationData, GetMeshCreationObjects());
 
+	objectHandles[objPtr->hObject] = objPtr;
 	allObjects.push_back(objPtr);
 	staticObjects.push_back(objPtr);
 
@@ -105,12 +106,6 @@ void Scene::Free(Object* object)
 	EraseMemberFromVector(objectIsStatic ? staticObjects : objectsWithScripts, object);
 	object->Destroy();
 	Console::WriteLine("Freed " + (std::string)(objectIsStatic ? "static" : "scripted") + " object "/* + object->name*/, MESSAGE_SEVERITY_DEBUG);
-}
-
-void Scene::Start()
-{
-	FindObjectByName("cheese");
-	Free(nullptr);
 }
 
 void Scene::UpdateCamera(Win32Window* window, float delta)
