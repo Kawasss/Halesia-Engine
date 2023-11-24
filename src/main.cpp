@@ -99,7 +99,7 @@ class TestScene : public Scene
 	Object* objPtr = nullptr;
 	void Start() override
 	{
-		colorMaterial = { new Texture(GetMeshCreationObjects(), "textures/red.png") };
+		colorMaterial = { new Texture(GetVulkanCreationObjects(), "textures/red.png") };
 		Object* baseObject = AddCustomObject<ColoringTile>("stdObj/cube.obj", OBJECT_IMPORT_EXTERNAL);
 		baseObject->AwaitGeneration();
 		baseObject->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
@@ -115,9 +115,9 @@ class TestScene : public Scene
 				ptr->Start();
 			}
 		}
-		baseObject->state = STATUS_DISABLED;
+		baseObject->state = OBJECT_STATE_DISABLED;
 
-		SubmitStaticObject(GenericLoader::LoadObjectFile("stdObj/light.obj"));
+		AddStaticObject(GenericLoader::LoadObjectFile("stdObj/light.obj"));
 		
 		this->camera = new TestCamera();
 	}

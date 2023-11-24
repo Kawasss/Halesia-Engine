@@ -72,7 +72,7 @@ public:
 
 		customPointer = new T();
 		objPtr = customPointer;
-		objPtr->CreateObject(customPointer, creationData, GetMeshCreationObjects());
+		objPtr->CreateObject(customPointer, creationData, GetVulkanCreationObjects());
 
 		objectHandles[objPtr->handle] = objPtr;
 		allObjects.push_back(objPtr);
@@ -104,7 +104,7 @@ public:
 
 	bool IsObjectHandleValid(Handle handle) { return objectHandles.count(handle) > 0; }
 
-	static MeshCreationObject(*GetMeshCreationObjects)();
+	static MeshCreationObject(*GetVulkanCreationObjects)();
 	std::vector<Object*> allObjects;
 	std::vector<ObjectCreationData> objectCreationDatas;
 	
@@ -113,7 +113,7 @@ public:
 	/// </summary>
 	/// <param name="creationData"></param>
 	/// <param name="creationObjects"></param>
-	Object* SubmitStaticObject(const ObjectCreationData& creationData);
+	Object* AddStaticObject(const ObjectCreationData& creationData);
 
 	/// <summary>
 	/// Loads a new scene from a given scene file async

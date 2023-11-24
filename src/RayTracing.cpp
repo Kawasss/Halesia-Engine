@@ -641,7 +641,7 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 	amountOfActiveObjects = 0;
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
-		if (objects[i]->state != STATUS_VISIBLE || !objects[i]->HasFinishedLoading())
+		if (objects[i]->state != OBJECT_STATE_VISIBLE || !objects[i]->HasFinishedLoading())
 			continue;
 		
 		std::lock_guard<std::mutex> lockGuard(objects[i]->mutex);

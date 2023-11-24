@@ -5,7 +5,7 @@
 #include "Console.h"
 #include "SceneLoader.h"
 
-MeshCreationObject (*Scene::GetMeshCreationObjects)() = nullptr;
+MeshCreationObject (*Scene::GetVulkanCreationObjects)() = nullptr;
 Camera* Scene::defaultCamera = new Camera();
 
 SceneLoader loader("");
@@ -33,7 +33,7 @@ void Scene::LoadUninitializedObjects()
 	camera->pitch = loader.cameraPitch;
 	for (const ObjectCreationData& creationData : objectCreationDatas)
 	{
-		Object* objPtr = new Object(creationData, GetMeshCreationObjects());
+		Object* objPtr = new Object(creationData, GetVulkanCreationObjects());
 		allObjects.push_back(objPtr);
 		staticObjects.push_back(objPtr);
 	}
@@ -54,9 +54,9 @@ std::string GetNameFromPath(std::string path)
 	return fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 }
 
-Object* Scene::SubmitStaticObject(const ObjectCreationData& creationData)
+Object* Scene::AddStaticObject(const ObjectCreationData& creationData)
 {
-	Object* objPtr = new Object(creationData, GetMeshCreationObjects());
+	Object* objPtr = new Object(creationData, GetVulkanCreationObjects());
 
 	objectHandles[objPtr->handle] = objPtr;
 	allObjects.push_back(objPtr);

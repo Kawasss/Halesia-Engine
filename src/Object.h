@@ -16,15 +16,15 @@ enum ObjectState
 	/// <summary>
 	/// The attached script is run and the object is rendered
 	/// </summary>
-	STATUS_VISIBLE,
+	OBJECT_STATE_VISIBLE,
 	/// <summary>
 	/// The attached script is run, but the object isn't rendered
 	/// </summary>
-	STATUS_INVISIBLE,
+	OBJECT_STATE_INVISIBLE,
 	/// <summary>
 	/// The attached script isn't run and the object isn't rendered
 	/// </summary>
-	STATUS_DISABLED
+	OBJECT_STATE_DISABLED
 };
 
 class Object
@@ -81,7 +81,7 @@ public:
 
 	Transform transform;
 	std::vector<Mesh> meshes;
-	ObjectState state = STATUS_VISIBLE;
+	ObjectState state = OBJECT_STATE_VISIBLE;
 	std::string name;
 	std::mutex mutex;
 	Handle handle;

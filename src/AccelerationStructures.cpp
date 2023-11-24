@@ -170,7 +170,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 	for (int i = 0; i < objects.size(); i++)
 	{
 		std::lock_guard<std::mutex> lockGuard(objects[i]->mutex);
-		if (!objects[i]->HasFinishedLoading() || objects[i]->state == STATUS_INVISIBLE || objects[i]->state == STATUS_DISABLED) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
+		if (!objects[i]->HasFinishedLoading() || objects[i]->state == OBJECT_STATE_INVISIBLE || objects[i]->state == OBJECT_STATE_DISABLED) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
 			continue;
 
 		for (int j = 0; j < objects[i]->meshes.size(); j++)																	   // converts every mesh from every object into an acceleration structure instance

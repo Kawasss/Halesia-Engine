@@ -277,7 +277,7 @@ void Renderer::SetModelData(uint32_t currentImage, std::vector<Object*> objects)
 	std::vector<ModelData> modelMatrices;
 	for (Object* object : objects)
 	{
-		if (object->state != STATUS_VISIBLE || !object->HasFinishedLoading())
+		if (object->state != OBJECT_STATE_VISIBLE || !object->HasFinishedLoading())
 			continue;
 
 		ModelData data = { object->transform.GetModelMatrix(), glm::vec4(ResourceManager::ConvertHandleToVec3(object->handle), 1) };
@@ -985,7 +985,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 {
 	std::vector<Object*> activeObjects;
 	for (Object* object : objects)
-		if (object->HasFinishedLoading() && object->state == STATUS_VISIBLE)
+		if (object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE)
 			activeObjects.push_back(object);
 
 	ImGui::Render();
