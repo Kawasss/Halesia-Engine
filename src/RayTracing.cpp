@@ -637,10 +637,7 @@ void RayTracing::UpdateTextureBuffer()
 void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 {
 	std::vector<InstanceMeshData> instanceDatas;
-	
-	uint32_t indexOffset = 0;
-	uint32_t vertexOffset = 0;
-	
+
 	amountOfActiveObjects = 0;
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{

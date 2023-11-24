@@ -49,12 +49,12 @@ void Mesh::ResetMaterial()
 void Mesh::SetMaterial(Material material)
 {
 	std::lock_guard<std::mutex> lockGuard(materialMutex);
-	std::vector<Material>::iterator materialLocationInGlobalVector = std::find(materials.begin(), materials.end(), material); // make sure that a material is only submitted once
-	if (materialLocationInGlobalVector < materials.end())
-	{
-		materialIndex = static_cast<uint32_t>(materials.begin() - materialLocationInGlobalVector);
-		return;
-	}
+	for (int i = 0; i < materials.size(); i++) // this code is bad and should not stay for long, but it currently prevents a bug related to material uploading
+		if (materials[i] == material)
+		{
+			materialIndex = i;
+			return;
+		}
 
 	materials.push_back(material); // maybe make it so that the previous material is removed and destroyed if no other meshes references it
 	for (int i = 0; i < materials.size(); i++) // poor performance

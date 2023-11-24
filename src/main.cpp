@@ -68,7 +68,8 @@ public:
 
 	void Start() override
 	{
-		transform.position = glm::vec3(-indexX * 2, 0, indexY * 2);
+		transform.position = glm::vec3(-indexX, 0, indexY);
+		transform.scale = glm::vec3(0.5f);
 	}
 
 	void Update(float delta) override
@@ -80,7 +81,7 @@ public:
 		}
 		else
 			transform.position.y = 1;
-		if (Renderer::selectedHandle == handle && Input::IsKeyPressed(VirtualKey::LeftMouseButton) && std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeOfClick).count() > 1000)
+		if (Renderer::selectedHandle == handle && Input::IsKeyPressed(VirtualKey::LeftMouseButton) && std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeOfClick).count() > 100)
 		{
 			timeOfClick = std::chrono::high_resolution_clock::now();
 			if (meshes[0].materialIndex == 0)
@@ -103,14 +104,14 @@ class TestScene : public Scene
 		baseObject->AwaitGeneration();
 		baseObject->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
 
-		for (int i = 0; i < 4; i++)
+		for (int i = 0; i < 5; i++)
 		{
-			for (int j = 0; j < 4; j++)
+			for (int j = 0; j < 5; j++)
 			{
 				Object* ptr = DuplicateObject<ColoringTile>(baseObject, "tile" + std::to_string(i * 4 + j));
 				ptr->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
-				ptr->GetScript<ColoringTile*>()->indexX = i;
-				ptr->GetScript<ColoringTile*>()->indexY = j;
+				ptr->GetScript<ColoringTile*>()->indexX = i - 2;
+				ptr->GetScript<ColoringTile*>()->indexY = j - 2;
 				ptr->Start();
 			}
 		}
