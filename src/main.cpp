@@ -54,8 +54,8 @@ public:
 		int x, y;
 		window->GetRelativeCursorPosition(x, y);
 
-		sumX = sumX + x * delta;//std::clamp(sumX + x * delta, -299.9f, 299.9f);
-		sumY = sumY + y * delta;// std::clamp(sumY + y * delta, -299.9f, 299.9f);
+		sumX = sumX + x * delta;
+		sumY = sumY + y * delta;
 	}
 };
 
@@ -100,6 +100,7 @@ class TestScene : public Scene
 	void Start() override
 	{
 		colorMaterial = { new Texture(GetVulkanCreationObjects(), "textures/red.png") };
+		colorMaterial.roughness = new Texture(GetVulkanCreationObjects(), "textures/black.png");
 		Object* baseObject = AddCustomObject<ColoringTile>("stdObj/cube.obj", OBJECT_IMPORT_EXTERNAL);
 		baseObject->AwaitGeneration();
 		baseObject->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
@@ -108,7 +109,7 @@ class TestScene : public Scene
 		{
 			for (int j = 0; j < 5; j++)
 			{
-				Object* ptr = DuplicateObject<ColoringTile>(baseObject, "tile" + std::to_string(i * 4 + j));
+				Object* ptr = DuplicateCustomObject<ColoringTile>(baseObject, "tile" + std::to_string(i * 4 + j));
 				ptr->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
 				ptr->GetScript<ColoringTile*>()->indexX = i - 2;
 				ptr->GetScript<ColoringTile*>()->indexY = j - 2;
@@ -117,7 +118,9 @@ class TestScene : public Scene
 		}
 		baseObject->state = OBJECT_STATE_DISABLED;
 
-		AddStaticObject(GenericLoader::LoadObjectFile("stdObj/light.obj"));
+		Material lightMaterial{};
+		lightMaterial.isLight = true;
+		AddStaticObject(GenericLoader::LoadObjectFile("stdObj/light.obj"))->meshes[0].SetMaterial(lightMaterial);
 		
 		this->camera = new TestCamera();
 	}

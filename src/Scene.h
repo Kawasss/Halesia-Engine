@@ -82,7 +82,7 @@ public:
 	
 	Object* DuplicateStaticObject(Object* objPtr, std::string name);
 
-	template<typename T> Object* DuplicateObject(Object* objPtr, std::string name)
+	template<typename T> Object* DuplicateCustomObject(Object* objPtr, std::string name)
 	{
 		T* tPtr = new T();
 		Object* newObjPtr = tPtr;

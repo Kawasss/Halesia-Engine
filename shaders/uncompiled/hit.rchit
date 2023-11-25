@@ -99,6 +99,40 @@ float random(vec2 uv, float seed) {
   return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) * 43758.5453);
 }
 
+// PCG (permuted congruential generator). Thanks to:
+// www.pcg-random.org and www.shadertoy.com/view/XlGcRh
+uint NextRandom(inout uint state)
+{
+	state = state * 747796405 + 2891336453;
+	uint result = ((state >> ((state >> 28) + 4)) ^ state) * 277803737;
+	result = (result >> 22) ^ result;
+	return result;
+}
+
+float RandomValue(inout uint state)
+{
+	return NextRandom(state) / 4294967295.0; // 2^32 - 1
+}
+
+// Random value in normal distribution (with mean=0 and sd=1)
+float RandomValueNormalDistribution(inout uint state)
+{
+	// Thanks to https://stackoverflow.com/a/6178290
+	float theta = 2 * 3.1415926 * RandomValue(state);
+	float rho = sqrt(-2 * log(RandomValue(state)));
+	return rho * cos(theta);
+}
+
+// Calculate a random direction
+vec3 RandomDirection(inout uint state)
+{
+	// Thanks to https://math.stackexchange.com/a/1585996
+	float x = RandomValueNormalDistribution(state);
+	float y = RandomValueNormalDistribution(state);
+	float z = RandomValueNormalDistribution(state);
+	return normalize(vec3(x, y, z));
+}
+
 vec3 uniformSampleHemisphere(vec2 uv) {
   float radial = sqrt(uv.x);
   float theta = 2.0 * M_PI * uv.y;
@@ -170,10 +204,7 @@ void main() {
 
   vec3 surfaceColor = texture(textures[3 * materialIndex], uvCoordinates).xyz;
   float smoothness = 1 - texture(textures[3 * materialIndex + 2], uvCoordinates).g;
-  if (smoothness == 1)
-     smoothness = 0.995;
-  else if (smoothness == 0.5)
-    smoothness = 0.6;
+
   //float metallic = texture(textures[5 * materialIndex + 2], uvCoordinates).b;
     
   //bool isSpecular = metallic >= random(gl_LaunchIDEXT.xy, camera.frameCount * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
@@ -192,9 +223,9 @@ void main() {
     //payload.indirectColor += vec3(0.05) * payload.directColor;
   }
   payload.directColor *= surfaceColor;
-
+  uint state = gl_LaunchIDEXT.x * gl_LaunchIDEXT.y + uint(camera.frameCount * 854.64756f);
   vec3 hemisphere = uniformSampleHemisphere(vec2(random(gl_LaunchIDEXT.xy, camera.frameCount), random(gl_LaunchIDEXT.xy, camera.frameCount + 1)));
-  vec3 alignedHemisphere = alignHemisphereWithCoordinateSystem(hemisphere, geometricNormal);
+  vec3 alignedHemisphere = geometricNormal + RandomDirection(state);
   vec3 specularDirection = reflect(payload.rayDirection, geometricNormal);
 
   payload.rayOrigin = position;

@@ -44,6 +44,21 @@ float random(vec2 uv, float seed) {
   return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) * 43758.5453);
 }
 
+// PCG (permuted congruential generator). Thanks to:
+// www.pcg-random.org and www.shadertoy.com/view/XlGcRh
+uint NextRandom(inout uint state)
+{
+	state = state * 747796405 + 2891336453;
+	uint result = ((state >> ((state >> 28) + 4)) ^ state) * 277803737;
+	result = (result >> 22) ^ result;
+	return result;
+}
+
+float RandomValue(inout uint state)
+{
+	return NextRandom(state) / 4294967295.0; // 2^32 - 1
+}
+
 void main() {
   payload.rayActive = 1;
   if (camera.mouseXY == gl_LaunchIDEXT.xy)
@@ -53,10 +68,10 @@ void main() {
   }
 
   vec3 color = vec3(0);
-
+  uint rng = gl_LaunchIDEXT.x * gl_LaunchIDEXT.y + camera.frameCount;
   for (int j = 0; j < camera.raySamples; j++)
   {
-      vec2 uv = gl_LaunchIDEXT.xy + vec2(random(gl_LaunchIDEXT.xy, camera.frameCount * 754 * j), random(gl_LaunchIDEXT.xy, camera.frameCount * 5436 * (j / 1.5)));
+      vec2 uv = gl_LaunchIDEXT.xy + vec2(RandomValue(rng), RandomValue(rng));
       uv /= vec2(gl_LaunchSizeEXT.xy);
       uv = (uv * 2.0f - 1.0f) * vec2(1.0f, -1.0f);
 
@@ -75,7 +90,7 @@ void main() {
       }
       color += payload.indirectColor / payload.rayDepth;
   }
-  color /= camera.raySamples;
+  //color /= camera.raySamples;
   color = pow(color, vec3(1 / 2.2));
 
   if (camera.renderProgressive == 1)

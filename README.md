@@ -78,7 +78,7 @@ There are tons of functions with getting data for all kinds of purposes. The loa
 Objects can also be duplicated: this will only copy data, like meshes and materials, from one object to another, meaning that some resources will be shared to reduce memory usage. Components like transformations however aren't copied over.
 
 ```
- template<typename T> Object* DuplicateObject(Object* objPtr, std::string name);
+ template<typename T> Object* DuplicateCustomObject(Object* objPtr, std::string name);
 ```
 
 ## Scenes
