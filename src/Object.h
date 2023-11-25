@@ -63,21 +63,7 @@ public:
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
 	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
 
-	template<typename T> static Object* Duplicate(Object* objPtr, std::string name)
-	{
-		T* customPtr = new T();
-		Object* newObjPtr = customPtr;
-		newObjPtr->meshes = objPtr->meshes;
-		newObjPtr->transform = objPtr->transform;
-		newObjPtr->name = name;
-		newObjPtr->finishedLoading = true;
-		newObjPtr->scriptClass = customPtr;
-		newObjPtr->handle = ResourceManager::GenerateHandle();
-
-		Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + objPtr->name + "\"", MESSAGE_SEVERITY_DEBUG);
-
-		return newObjPtr;
-	}
+	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script);
 
 	Transform transform;
 	std::vector<Mesh> meshes;

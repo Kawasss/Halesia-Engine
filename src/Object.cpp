@@ -55,6 +55,18 @@ Object::Object(const ObjectCreationData& creationData, const ObjectCreationObjec
 	generationProcess = std::async(&Object::GenerateObjectWithData, this, creationObject, creationData);
 }
 
+void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script)
+{
+	newObjPtr->meshes = oldObjPtr->meshes;
+	newObjPtr->transform = oldObjPtr->transform;
+	newObjPtr->name = name;
+	newObjPtr->finishedLoading = true;
+	newObjPtr->scriptClass = script;
+	newObjPtr->handle = ResourceManager::GenerateHandle();
+
+	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + oldObjPtr->name + "\"", MESSAGE_SEVERITY_DEBUG);
+}
+
 bool Object::HasFinishedLoading()
 {
 	/*for (Mesh& mesh : meshes)

@@ -23,7 +23,7 @@ enum HalesiaExitCode
 };
 ```
 
-```HALESIA_EXIT_CODE_SUCESS``` means that the game engine has been told to exit by the game. This could come from many sources, like closing the game window or requesting it to exit via a function. ```HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION```  is returned when an unknown exception has been caught, this is often from an exception that does not inheret from ```std::exception```. ```HALESIA_EXIT_CODE_EXCEPTION``` is given when an exception has been thrown within the game or engine. The message and error type will automatically be displayed in a message box upon catch.
+```HALESIA_EXIT_CODE_SUCESS``` means that the game engine has been told to exit by the game. This could come from many sources, like closing the game window or requesting it to exit via a function. ```HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION```  is returned when an unknown exception has been caught, this is often from an exception that does not inherit from ```std::exception```. ```HALESIA_EXIT_CODE_EXCEPTION``` is given when an exception has been thrown within the game or engine. The message and error type will automatically be displayed in a message box upon catch.
 
 These error codes can be converted to a string with this function:
 ```
@@ -40,10 +40,10 @@ enum ObjectState
 	OBJECT_STATE_VISIBLE,
 	OBJECT_STATE_INVISIBLE,
 	OBJECT_STATE_DISABLED
- }
+}
  ```
 
-The use case for these states is pretty straight-forward: ``` OBJECT_STATE_VISIBLE``` calls the update function and renders it, ```OBJECT_STATE_INVISIBLE``` calls the update function, but does not render it, while ```OBJECT_STATE_DISABLED``` does neither.
+The use case for these states is pretty straight-forward: ```OBJECT_STATE_VISIBLE``` calls the update function and renders it, ```OBJECT_STATE_INVISIBLE``` calls the update function, but does not render it, while ```OBJECT_STATE_DISABLED``` does neither.
 
 ### Overriding base functions
 
@@ -51,7 +51,7 @@ Multiple functions can be overridden by derived object classes, these can be use
 
 ```
 virtual void Start();
-virtual void Update(float delta)
+virtual void Update(float delta);
 virtual void Destroy();
 ```
 

@@ -80,9 +80,13 @@ public:
 		return objPtr;
 	}
 	
+	Object* DuplicateStaticObject(Object* objPtr, std::string name);
+
 	template<typename T> Object* DuplicateObject(Object* objPtr, std::string name)
 	{
-		Object* newObjPtr = Object::Duplicate<T>(objPtr, name);
+		T* tPtr = new T();
+		Object* newObjPtr = tPtr;
+		Object::Duplicate(objPtr, newObjPtr, name, tPtr);
 		allObjects.push_back(newObjPtr);
 		objectsWithScripts.push_back(newObjPtr);
 		objectHandles[newObjPtr->handle] = newObjPtr;

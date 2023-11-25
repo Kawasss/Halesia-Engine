@@ -80,7 +80,7 @@ public:
 			return;
 		}
 		else
-			transform.position.y = 1;
+			transform.position.y = 0.5f;
 		if (Renderer::selectedHandle == handle && Input::IsKeyPressed(VirtualKey::LeftMouseButton) && std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeOfClick).count() > 100)
 		{
 			timeOfClick = std::chrono::high_resolution_clock::now();

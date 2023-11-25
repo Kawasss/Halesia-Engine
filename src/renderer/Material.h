@@ -25,6 +25,7 @@ struct Material
 	Texture* metallic = Texture::placeholderMetallic;
 	Texture* roughness = Texture::placeholderRoughness;
 	Texture* ambientOcclusion = Texture::placeholderAmbientOcclusion;
+	bool isLight = false;
 	Handle handle = ResourceManager::GenerateHandle();
 
 	Texture* operator[](size_t i)

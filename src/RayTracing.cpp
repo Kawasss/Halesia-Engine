@@ -647,13 +647,13 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 		std::lock_guard<std::mutex> lockGuard(objects[i]->mutex);
 		for (int32_t j = 0; j < objects[i]->meshes.size(); j++)
 		{
-			instanceDatas.push_back({ objects[i]->transform.GetModelMatrix(), (uint32_t)Renderer::globalIndicesBuffer.GetItemOffset(objects[i]->meshes[j].indexMemory), (uint32_t)Renderer::globalVertexBuffer.GetItemOffset(objects[i]->meshes[j].vertexMemory), objects[i]->meshes[j].materialIndex, 0, objects[i]->handle});
+			Mesh& mesh = objects[i]->meshes[j];
+			instanceDatas.push_back({ objects[i]->transform.GetModelMatrix(), (uint32_t)Renderer::globalIndicesBuffer.GetItemOffset(mesh.indexMemory), (uint32_t)Renderer::globalVertexBuffer.GetItemOffset(mesh.vertexMemory), mesh.materialIndex, Mesh::materials[mesh.materialIndex].isLight, objects[i]->handle});
 		}
 	}
 	if (instanceDatas.size() == 0)
 		return;
 	
-	instanceDatas[instanceDatas.size() - 1].meshIsLight = 1; // only last mesh is a light for testing
 	memcpy(instanceMeshDataPointer, instanceDatas.data(), instanceDatas.size() * sizeof(InstanceMeshData));
 }
 

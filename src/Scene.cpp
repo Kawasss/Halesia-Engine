@@ -75,6 +75,17 @@ Object* Scene::AddStaticObject(const ObjectCreationData& creationData)
 		}
 }
 
+ Object* Scene::DuplicateStaticObject(Object* objPtr, std::string name)
+ {
+	 Object* newPtr = new Object();
+	 Object::Duplicate(objPtr, newPtr, name, nullptr);
+	 allObjects.push_back(newPtr);
+	 objectsWithScripts.push_back(newPtr);
+	 objectHandles[newPtr->handle] = newPtr;
+
+	 return newPtr;
+}
+
 void Scene::Free(Object* object)
 {
 	if (object == nullptr)
