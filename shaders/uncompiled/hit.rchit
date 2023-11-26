@@ -133,7 +133,7 @@ vec3 RandomDirection(inout uint state)
 	return normalize(vec3(x, y, z));
 }
 
-vec3 uniformSampleHemisphere(vec2 uv) {
+vec3 CosineSampleHemisphere(vec2 uv) {
   float radial = sqrt(uv.x);
   float theta = 2.0 * M_PI * uv.y;
 
@@ -143,11 +143,13 @@ vec3 uniformSampleHemisphere(vec2 uv) {
   return vec3(x, y, sqrt(1 - uv.x));
 }
 
-vec3 alignHemisphereWithCoordinateSystem(vec3 hemisphere, vec3 up) {
-  vec3 right = normalize(cross(up, vec3(0.0072f, 1.0f, 0.0034f)));
-  vec3 forward = cross(right, up);
-
-  return hemisphere.x * right + hemisphere.y * up + hemisphere.z * forward;
+float GetFresnelReflect(vec3 normal, vec3 incident, float reflectivity)
+{
+    float cosX = -dot(normal, incident);
+    float x = 1 - cosX;
+    float ret = x * x * x * x * x;
+    ret = (reflectivity + (1.0 - reflectivity) * ret);
+    return ret;
 }
 
 void main() {
@@ -155,12 +157,14 @@ void main() {
   if (payload.rayActive == 0) {
     return;
   }
-
+  
   vec3 oldColor = payload.directColor;
 
   uint indexOffset = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].indexBufferOffset;
   uint vertexOffset = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].vertexBufferOffset;
   uint materialIndex = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].materialIndex;
+  uint rng = gl_InstanceCustomIndexEXT + gl_PrimitiveID + indexOffset;
+  uint state = gl_LaunchIDEXT.x * gl_LaunchIDEXT.y + uint(camera.frameCount * 854.64756f);
 
   ivec3 indices = ivec3(indexBuffer.data[indexOffset + 3 * gl_PrimitiveID + 0], indexBuffer.data[indexOffset + 3 * gl_PrimitiveID + 1], indexBuffer.data[indexOffset + 3 * gl_PrimitiveID + 2]);
   indices += ivec3(vertexOffset);
@@ -186,9 +190,9 @@ void main() {
   }
   if (camera.showUnique == 1)
   {
-      float x = random(vec2(1), 8045389.1568479 * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
-      float y = random(vec2(1), 2754650.7645183 * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
-      float z = random(vec2(1), 1436885.4987659 * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
+      float x = RandomValue(rng);
+      float y = RandomValue(rng);
+      float z = RandomValue(rng);
       payload.indirectColor = vec3(x, y, z);
       payload.rayDepth = 1;
       payload.rayActive = 0;
@@ -202,34 +206,29 @@ void main() {
       return;
   }
 
-  vec3 surfaceColor = texture(textures[3 * materialIndex], uvCoordinates).xyz;
-  float smoothness = 1 - texture(textures[3 * materialIndex + 2], uvCoordinates).g;
+  vec3 surfaceColor = texture(textures[4 * materialIndex], uvCoordinates).xyz;
+  float smoothness = 1 - texture(textures[4 * materialIndex + 2], uvCoordinates).g;
+  float metallic = texture(textures[4 * materialIndex + 3], uvCoordinates).b;
 
-  //float metallic = texture(textures[5 * materialIndex + 2], uvCoordinates).b;
-    
-  //bool isSpecular = metallic >= random(gl_LaunchIDEXT.xy, camera.frameCount * (gl_InstanceCustomIndexEXT + gl_PrimitiveID));
+  bool isSpecular = metallic >= RandomValue(state);
 
   if (instanceDataBuffer.data[gl_InstanceCustomIndexEXT].meshIsLight == 1)
   {
     vec3 lightColor = vec3(1);
     payload.indirectColor += lightColor * payload.directColor;
     surfaceColor = vec3(0);
-    payload.rayDepth = 1;
+    payload.rayDepth += 1;
     payload.rayActive = 0;
     return;
   }
-  else if (gl_InstanceCustomIndexEXT == 2)
-  {
-    //payload.indirectColor += vec3(0.05) * payload.directColor;
-  }
-  payload.directColor *= surfaceColor;
-  uint state = gl_LaunchIDEXT.x * gl_LaunchIDEXT.y + uint(camera.frameCount * 854.64756f);
-  vec3 hemisphere = uniformSampleHemisphere(vec2(random(gl_LaunchIDEXT.xy, camera.frameCount), random(gl_LaunchIDEXT.xy, camera.frameCount + 1)));
+  payload.directColor *= mix(surfaceColor, vec3(1), smoothness * isSpecular);
+  
+  vec3 hemisphere = CosineSampleHemisphere(vec2(random(gl_LaunchIDEXT.xy, camera.frameCount), random(gl_LaunchIDEXT.xy, camera.frameCount + 1)));
   vec3 alignedHemisphere = geometricNormal + RandomDirection(state);
   vec3 specularDirection = reflect(payload.rayDirection, geometricNormal);
 
   payload.rayOrigin = position;
-  payload.rayDirection = normalize(mix(alignedHemisphere, specularDirection, smoothness));
+  payload.rayDirection = normalize(mix(alignedHemisphere, specularDirection, GetFresnelReflect(geometricNormal, payload.rayDirection, smoothness)));
   payload.previousNormal = geometricNormal;
 
   payload.rayDepth += 1;

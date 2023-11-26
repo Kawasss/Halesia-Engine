@@ -30,6 +30,6 @@ void main()
 		payload.rayActive = 0;
 		return;
 	}
-	
+
 	payload.rayActive = 0; 
 }

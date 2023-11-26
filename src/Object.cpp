@@ -81,3 +81,16 @@ void Object::Destroy()
 		mesh.Destroy();
 	delete this;
 }
+
+std::string Object::ObjectStateToString(ObjectState state)
+{
+	switch (state)
+	{
+	case OBJECT_STATE_DISABLED:
+		return "OBJECT_STATE_DISABLED";
+	case OBJECT_STATE_INVISIBLE:
+		return "OBJECT_STATE_INVISIBLE";
+	case OBJECT_STATE_VISIBLE:
+		return "OBJECT_STATE_VISIBLE";
+	}
+}

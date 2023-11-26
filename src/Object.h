@@ -39,6 +39,7 @@ public:
 	virtual void Update(float delta) {};
 
 	bool HasFinishedLoading();
+	bool HasScript() { return scriptClass == nullptr; }
 
 	/// <summary>
 	/// Awaits the async generation process of the object and meshes
@@ -64,6 +65,7 @@ public:
 	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
 
 	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script);
+	static std::string ObjectStateToString(ObjectState state);
 
 	Transform transform;
 	std::vector<Mesh> meshes;

@@ -39,13 +39,20 @@ void Scene::LoadUninitializedObjects()
 	}
 }
 
-Object* Scene::FindObjectByName(std::string name)
+Object* Scene::GetObjectByName(std::string name)
 {
 	for (Object* object : allObjects)
 		if (object->name == name)
 			return object;
 	Console::WriteLine("Failed to find an object matching the name \"" + name + '"', MESSAGE_SEVERITY_ERROR);
 	return nullptr; //not really that safe
+}
+
+Object* Scene::GetObjectByHandle(Handle handle)
+{
+	if (objectHandles.count(handle) == 0)
+		throw std::runtime_error("Failed to get the object related with handle\"" + std::to_string(handle) + "\"");
+	return objectHandles[handle];
 }
 
 std::string GetNameFromPath(std::string path)
@@ -65,6 +72,38 @@ Object* Scene::AddStaticObject(const ObjectCreationData& creationData)
 	return objPtr;
 }
 
+bool Scene::IsObjectHandleValid(Handle handle) 
+{ 
+	return objectHandles.count(handle) > 0; 
+}
+
+bool Scene::HasFinishedLoading()
+{
+	return loadingProcess._Is_ready() || !sceneIsLoading;
+}
+
+bool Scene::GetInternalObjectCreationData(std::string name, ObjectCreationData& creationData)
+{
+	for (auto i = objectCreationDatas.begin(); i != objectCreationDatas.end(); i++)
+	{
+		if (i->name != name)
+			continue;
+
+		creationData = *i;
+		objectCreationDatas.erase(i);
+		return true;
+	}
+	return false;
+}
+
+void Scene::RegisterObjectPointer(Object* objPtr, bool isCustom)
+{
+	objectHandles[objPtr->handle] = objPtr;
+	allObjects.push_back(objPtr);
+	if (isCustom)
+		objectsWithScripts.push_back(objPtr);
+}
+
  void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberToErase)
 {
 	for (auto i = vector.begin(); i < vector.end(); i++)
@@ -79,9 +118,7 @@ Object* Scene::AddStaticObject(const ObjectCreationData& creationData)
  {
 	 Object* newPtr = new Object();
 	 Object::Duplicate(objPtr, newPtr, name, nullptr);
-	 allObjects.push_back(newPtr);
-	 objectsWithScripts.push_back(newPtr);
-	 objectHandles[newPtr->handle] = newPtr;
+	 RegisterObjectPointer(newPtr, false);
 
 	 return newPtr;
 }
@@ -93,30 +130,22 @@ void Scene::Free(Object* object)
 		Console::WriteLine("Failed to delete the given object since it is a null pointer", MESSAGE_SEVERITY_ERROR);
 		return;
 	}
-	
-	std::optional<std::vector<Object*>::iterator> removeObjectIndex;
-	bool objectIsStatic = true;
 
-	for (auto i = allObjects.begin(); i != allObjects.end(); i++)
-		if (*i == object) // this checks if the object exists
-		{
-			removeObjectIndex = i;
-
-			for (auto i = objectsWithScripts.begin(); i != objectsWithScripts.end(); i++)
-				if (*i == object)
-					objectIsStatic = false;
-			break;
-		}
-	if (!removeObjectIndex.has_value())
+	for (int i = 0; i < allObjects.size(); i++)
 	{
-		Console::WriteLine("Failed to free an object, because it isn't registered in the scene. Maybe the object is already freed?", MESSAGE_SEVERITY_ERROR);
-		return;
+		if (allObjects[i] != object)
+			continue;
+
+		allObjects.erase(allObjects.begin() + i);
+		EraseMemberFromVector(object->HasScript() ? staticObjects : objectsWithScripts, object);
+		object->Destroy();
+
+		Console::WriteLine("Freed " + (std::string)(object->HasScript() ? "static" : "scripted") + " object "/* + object->name*/, MESSAGE_SEVERITY_DEBUG);
+
+
+		break;
 	}
-	
-	allObjects.erase(removeObjectIndex.value());
-	EraseMemberFromVector(objectIsStatic ? staticObjects : objectsWithScripts, object);
-	object->Destroy();
-	Console::WriteLine("Freed " + (std::string)(objectIsStatic ? "static" : "scripted") + " object "/* + object->name*/, MESSAGE_SEVERITY_DEBUG);
+	Console::WriteLine("Failed to free an object, because it isn't registered in the scene. Maybe the object is already freed?", MESSAGE_SEVERITY_ERROR);
 }
 
 void Scene::UpdateCamera(Win32Window* window, float delta)

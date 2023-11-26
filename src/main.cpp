@@ -100,7 +100,7 @@ class TestScene : public Scene
 	void Start() override
 	{
 		colorMaterial = { new Texture(GetVulkanCreationObjects(), "textures/red.png") };
-		colorMaterial.roughness = new Texture(GetVulkanCreationObjects(), "textures/black.png");
+		colorMaterial.roughness = new Texture(GetVulkanCreationObjects(), "textures/white.png");
 		Object* baseObject = AddCustomObject<ColoringTile>("stdObj/cube.obj", OBJECT_IMPORT_EXTERNAL);
 		baseObject->AwaitGeneration();
 		baseObject->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
