@@ -837,7 +837,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		vkCmdEndRenderPass(lCommandBuffer);
 	}
 
-	swapchain->CopyImageToSwapchain(rayTracer->RTImage, lCommandBuffer, imageIndex);
+	swapchain->CopyImageToSwapchain(rayTracer->gBuffers[0], lCommandBuffer, imageIndex);
 
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };

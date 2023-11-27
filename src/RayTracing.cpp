@@ -164,7 +164,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	descriptorPoolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	descriptorPoolSizes[2].descriptorCount = 6;
 	descriptorPoolSizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	descriptorPoolSizes[3].descriptorCount = 1;
+	descriptorPoolSizes[3].descriptorCount = 3;
 	descriptorPoolSizes[4].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	descriptorPoolSizes[4].descriptorCount = Renderer::MAX_TLAS_INSTANCES;
 
@@ -180,7 +180,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// descriptor set layout (frames in flight not implemented)
 
-	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings(6);
+	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings(8);
 
 	setLayoutBindings[0].binding = 0;
 	setLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
@@ -213,18 +213,26 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	setLayoutBindings[4].pImmutableSamplers = nullptr;
 
 	setLayoutBindings[5].binding = 5;
-	setLayoutBindings[5].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	setLayoutBindings[5].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 	setLayoutBindings[5].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
 	setLayoutBindings[5].descriptorCount = 1;
 	setLayoutBindings[5].pImmutableSamplers = nullptr;
 
+	setLayoutBindings[6].binding = 6;
+	setLayoutBindings[6].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	setLayoutBindings[6].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+	setLayoutBindings[6].descriptorCount = 1;
+	setLayoutBindings[6].pImmutableSamplers = nullptr;
+
+	setLayoutBindings[7].binding = 7;
+	setLayoutBindings[7].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	setLayoutBindings[7].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
+	setLayoutBindings[7].descriptorCount = 1;
+	setLayoutBindings[7].pImmutableSamplers = nullptr;
+
 	std::vector<VkDescriptorBindingFlags> setBindingFlags;
-	setBindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-	setBindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-	setBindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-	setBindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-	setBindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-	setBindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+	for (int i = 0; i < 8; i++)
+		setBindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT setBindingFlagsCreateInfo{};
 	setBindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
@@ -433,7 +441,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	writeDescriptorSets[4].pNext = &ASDescriptorInfo;
 	writeDescriptorSets[4].dstSet = descriptorSets[0];
 	writeDescriptorSets[4].descriptorCount = 1;
-	writeDescriptorSets[4].dstBinding = 5;
+	writeDescriptorSets[4].dstBinding = 7;
 	writeDescriptorSets[4].pBufferInfo = &handleBufferInfo;
 	
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
@@ -493,31 +501,36 @@ void RayTracing::UpdateMeshDataDescriptorSets()
 
 void RayTracing::CreateImage(uint32_t width, uint32_t height)
 {
-	if (RTImage != VK_NULL_HANDLE && RTImageMemory != VK_NULL_HANDLE && RTImageView != VK_NULL_HANDLE)
+	if (gBuffers[0] != VK_NULL_HANDLE)
 	{
-		vkDestroyImageView(logicalDevice, RTImageView, nullptr);
-		vkDestroyImage(logicalDevice, RTImage, nullptr);
-		vkFreeMemory(logicalDevice, RTImageMemory, nullptr);
+		for (int i = 0; i < 3; i++)
+		{
+			vkDestroyImageView(logicalDevice, gBufferViews[i], nullptr);
+			vkDestroyImage(logicalDevice, gBuffers[i], nullptr);
+			vkFreeMemory(logicalDevice, gBufferMemories[i], nullptr);
+		}
 	}
 	
-	Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, RTImage, RTImageMemory);
-	RTImageView = Vulkan::CreateImageView(logicalDevice, RTImage, VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
-	
-	VkImageMemoryBarrier RTImageMemoryBarrier{};
-	RTImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	RTImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	RTImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-	RTImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	RTImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	RTImageMemoryBarrier.image = RTImage;
-	RTImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	RTImageMemoryBarrier.subresourceRange.levelCount = 1;
-	RTImageMemoryBarrier.subresourceRange.layerCount = 1;
+	for (int i = 0; i < 3; i++)
+	{
+		Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, gBuffers[i], gBufferMemories[i]);
+		gBufferViews[i] = Vulkan::CreateImageView(logicalDevice, gBuffers[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 
-	VkCommandBuffer imageBarrierCommandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
-	vkCmdPipelineBarrier(imageBarrierCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &RTImageMemoryBarrier);
-	Vulkan::EndSingleTimeCommands(logicalDevice, queue, imageBarrierCommandBuffer, commandPool);
+		VkImageMemoryBarrier RTImageMemoryBarrier{};
+		RTImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		RTImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+		RTImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+		RTImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		RTImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		RTImageMemoryBarrier.image = gBuffers[i];
+		RTImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		RTImageMemoryBarrier.subresourceRange.levelCount = 1;
+		RTImageMemoryBarrier.subresourceRange.layerCount = 1;
 
+		VkCommandBuffer imageBarrierCommandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
+		vkCmdPipelineBarrier(imageBarrierCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &RTImageMemoryBarrier);
+		Vulkan::EndSingleTimeCommands(logicalDevice, queue, imageBarrierCommandBuffer, commandPool);
+	}
 	imageHasChanged = true;
 }
 
@@ -582,21 +595,43 @@ void RayTracing::UpdateDescriptorSets()
 {
 	VkDescriptorImageInfo RTImageDescriptorImageInfo{};
 	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
-	RTImageDescriptorImageInfo.imageView = RTImageView;
+	RTImageDescriptorImageInfo.imageView = gBufferViews[0];
 	RTImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-	std::vector<VkWriteDescriptorSet> writeDescriptorSets;
+	VkDescriptorImageInfo albedoImageDescriptorImageInfo{};
+	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
+	RTImageDescriptorImageInfo.imageView = gBufferViews[1];
+	RTImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-	VkWriteDescriptorSet writeSet{};
-	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	writeSet.pImageInfo = &RTImageDescriptorImageInfo;
-	writeSet.dstSet = descriptorSets[0];
-	writeSet.descriptorCount = 1;
-	writeSet.dstBinding = 4;
-	writeDescriptorSets.push_back(writeSet);
+	VkDescriptorImageInfo normalImageDescriptorImageInfo{};
+	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
+	RTImageDescriptorImageInfo.imageView = gBufferViews[2];
+	RTImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+	std::array<VkWriteDescriptorSet, 3> writeSets{};
+
+	writeSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSets[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	writeSets[0].pImageInfo = &RTImageDescriptorImageInfo;
+	writeSets[0].dstSet = descriptorSets[0];
+	writeSets[0].descriptorCount = 1;
+	writeSets[0].dstBinding = 4;
+
+	writeSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSets[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	writeSets[1].pImageInfo = &albedoImageDescriptorImageInfo;
+	writeSets[1].dstSet = descriptorSets[0];
+	writeSets[1].descriptorCount = 1;
+	writeSets[1].dstBinding = 5;
+
+	writeSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSets[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	writeSets[2].pImageInfo = &normalImageDescriptorImageInfo;
+	writeSets[2].dstSet = descriptorSets[0];
+	writeSets[2].descriptorCount = 1;
+	writeSets[2].dstBinding = 6;
 	
-	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
+	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
 void RayTracing::UpdateTextureBuffer()

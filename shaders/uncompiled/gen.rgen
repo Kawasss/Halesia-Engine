@@ -8,6 +8,8 @@ layout(location = 0) rayPayloadEXT Payload {
   vec3 rayOrigin;
   vec3 rayDirection;
   vec3 previousNormal;
+  vec3 currentNormal;
+  vec3 currentAlbedo;
 
   vec3 directColor;
   vec3 indirectColor;
@@ -35,7 +37,9 @@ layout(binding = 1, set = 0) uniform Camera {
 } camera;
 
 layout (binding = 4, set = 0, rgba32f) uniform image2D image;
-layout (binding = 5, set = 0) writeonly buffer IntersectedObject
+layout (binding = 5, set = 0, rgba32f) uniform image2D albedoImage;
+layout (binding = 6, set = 0, rgba32f) uniform image2D normalImage;
+layout (binding = 7, set = 0) writeonly buffer IntersectedObject
 {
     uint64_t handle;
 } intersectedObject;
@@ -87,6 +91,11 @@ void main() {
         traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.rayOrigin, 0.001, payload.rayDirection, 10000.0, 0);
         if (x == 0 && camera.mouseXY == gl_LaunchIDEXT.xy)
             intersectedObject.handle = payload.intersectedObjectHandle;
+            if (x == 0)
+            {
+                imageStore(albedoImage, ivec2(gl_LaunchIDEXT.xy), vec4(payload.currentAlbedo, 1));
+                imageStore(normalImage, ivec2(gl_LaunchIDEXT.xy), vec4(payload.currentNormal, 1)); 
+            }
       }
       color += payload.indirectColor / payload.rayDepth;
   }

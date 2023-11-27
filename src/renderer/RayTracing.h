@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include "renderer/PhysicalDevice.h"
 #include "../ResourceManager.h"
+#include <array>
 
 class Swapchain;
 class BottomLevelAccelerationStructure;
@@ -19,7 +20,7 @@ public:
 	void DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void RecreateImage(Swapchain* swapchain);
 
-	VkImage RTImage = VK_NULL_HANDLE;
+	std::array<VkImage, 3> gBuffers;
 	void* handleBufferMemPointer = nullptr;
 
 	static int  raySampleCount;
@@ -50,9 +51,6 @@ private:
 
 	VkDevice logicalDevice					= VK_NULL_HANDLE;
 
-	VkDeviceMemory RTImageMemory			= VK_NULL_HANDLE;
-	VkImageView RTImageView					= VK_NULL_HANDLE;
-
 	VkCommandPool commandPool				= VK_NULL_HANDLE;
 	PhysicalDevice physicalDevice			= VK_NULL_HANDLE;
 
@@ -65,6 +63,10 @@ private:
 	void* instanceMeshDataPointer			= nullptr;
 	VkBuffer instanceMeshDataBuffer			= VK_NULL_HANDLE;
 	VkDeviceMemory instanceMeshDataMemory	= VK_NULL_HANDLE;
+
+	std::array<VkDeviceMemory, 3> gBufferMemories;
+	std::array<VkImageView, 3> gBufferViews;
+	
 
 	std::unordered_map<int, Handle> processedMaterials;
 };

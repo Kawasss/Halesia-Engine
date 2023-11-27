@@ -12,6 +12,8 @@ layout(location = 0) rayPayloadInEXT Payload {
   vec3 rayOrigin;
   vec3 rayDirection;
   vec3 previousNormal;
+  vec3 currentNormal;
+  vec3 currentAlbedo;
 
   vec3 directColor;
   vec3 indirectColor;
@@ -221,7 +223,7 @@ void main() {
     payload.rayActive = 0;
     return;
   }
-  payload.directColor *= mix(surfaceColor, vec3(1), smoothness * isSpecular);
+  payload.directColor *= mix(surfaceColor, vec3(1), smoothness * int(isSpecular));
   
   vec3 hemisphere = CosineSampleHemisphere(vec2(random(gl_LaunchIDEXT.xy, camera.frameCount), random(gl_LaunchIDEXT.xy, camera.frameCount + 1)));
   vec3 alignedHemisphere = geometricNormal + RandomDirection(state);
@@ -230,6 +232,8 @@ void main() {
   payload.rayOrigin = position;
   payload.rayDirection = normalize(mix(alignedHemisphere, specularDirection, GetFresnelReflect(geometricNormal, payload.rayDirection, smoothness)));
   payload.previousNormal = geometricNormal;
+  payload.currentNormal = geometricNormal;
+  payload.currentAlbedo = surfaceColor;
 
   payload.rayDepth += 1;
 }
