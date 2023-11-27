@@ -8,15 +8,15 @@ layout(location = 0) rayPayloadEXT Payload {
   vec3 rayOrigin;
   vec3 rayDirection;
   vec3 previousNormal;
-  vec3 currentNormal;
-  vec3 currentAlbedo;
-
+  
   vec3 directColor;
   vec3 indirectColor;
   int rayDepth;
 
   int rayActive;
   uint64_t intersectedObjectHandle;
+  vec3 currentNormal;
+  vec3 currentAlbedo;
 } payload;
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
@@ -28,9 +28,7 @@ layout(binding = 1, set = 0) uniform Camera {
   uvec2 mouseXY;
 
   uint frameCount;
-  int showNormals;
   int showUnique;
-  int showAlbedo;
   int raySamples;
   int rayDepth;
   int renderProgressive;
@@ -72,6 +70,9 @@ void main() {
   }
 
   vec3 color = vec3(0);
+  vec3 firstAlbedo = vec3(0);
+  vec3 firstNormal = vec3(0);
+
   uint rng = gl_LaunchIDEXT.x * gl_LaunchIDEXT.y + camera.frameCount;
   for (int j = 0; j < camera.raySamples; j++)
   {
@@ -93,8 +94,8 @@ void main() {
             intersectedObject.handle = payload.intersectedObjectHandle;
             if (x == 0)
             {
-                imageStore(albedoImage, ivec2(gl_LaunchIDEXT.xy), vec4(payload.currentAlbedo, 1));
-                imageStore(normalImage, ivec2(gl_LaunchIDEXT.xy), vec4(payload.currentNormal, 1)); 
+                firstAlbedo = payload.currentAlbedo;
+                firstNormal = payload.currentNormal;
             }
       }
       color += payload.indirectColor / payload.rayDepth;
@@ -110,5 +111,7 @@ void main() {
     color = clamp(average, 0.0, 1.0);
   }
   
+  imageStore(albedoImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstAlbedo, 1));
+  imageStore(normalImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstNormal, 1)); 
   imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1));
 }

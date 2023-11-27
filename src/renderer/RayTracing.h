@@ -18,9 +18,9 @@ public:
 	void Destroy();
 	void Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface,  Win32Window* window, Swapchain* swapchain);
 	void DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex);
-	void RecreateImage(Swapchain* swapchain);
+	void RecreateImage(Win32Window* window);
 
-	std::array<VkImage, 3> gBuffers;
+	std::array<VkImage, 3> gBuffers{};
 	void* handleBufferMemPointer = nullptr;
 
 	static int  raySampleCount;

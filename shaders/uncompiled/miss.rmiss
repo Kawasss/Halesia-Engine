@@ -1,5 +1,6 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
 
 layout(location = 0) rayPayloadInEXT Payload {
   vec3 rayOrigin;
@@ -11,6 +12,9 @@ layout(location = 0) rayPayloadInEXT Payload {
   int rayDepth;
 
   int rayActive;
+  uint64_t intersectedObjectHandle;
+  vec3 currentNormal;
+  vec3 currentAlbedo;
 } payload;
 
 void main() 
@@ -22,6 +26,8 @@ void main()
 //	vec3 composite = mix(vec3(1, 0, 0), skyGradient, groundToSkyT) * sun * float(groundToSkyT >= 1);
 
 //	payload.indirectColor = composite;
+	payload.currentAlbedo = vec3(0);
+	payload.currentNormal = vec3(0);
 	if (payload.rayDepth == 0)
 	{
 		payload.rayDepth = 1;

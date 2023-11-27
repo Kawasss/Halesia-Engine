@@ -837,8 +837,13 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		vkCmdEndRenderPass(lCommandBuffer);
 	}
 
-	swapchain->CopyImageToSwapchain(rayTracer->gBuffers[0], lCommandBuffer, imageIndex);
-
+	VkImage imageToCopy = rayTracer->gBuffers[0];
+	if (RayTracing::showNormals)
+		imageToCopy = rayTracer->gBuffers[2];
+	else if (RayTracing::showAlbedo)
+		imageToCopy = rayTracer->gBuffers[1];
+	swapchain->CopyImageToSwapchain(imageToCopy, lCommandBuffer, imageIndex);
+	
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
 	clearColors[1].depthStencil = { 1, 0 };
@@ -925,7 +930,7 @@ uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
 		swapchain->Recreate(renderPass);
-		rayTracer->RecreateImage(swapchain);
+		rayTracer->RecreateImage(testWindow);
 		CreateDeferredFramebuffer(swapchain->extent.width, swapchain->extent.height);
 		testWindow->resized = false;
 	}
@@ -950,7 +955,7 @@ void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || testWindow->resized)
 	{
 		swapchain->Recreate(renderPass);
-		rayTracer->RecreateImage(swapchain);
+		rayTracer->RecreateImage(testWindow);
 		CreateDeferredFramebuffer(swapchain->extent.width, swapchain->extent.height);
 		testWindow->resized = false;
 		Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");

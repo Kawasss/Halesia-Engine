@@ -12,15 +12,15 @@ layout(location = 0) rayPayloadInEXT Payload {
   vec3 rayOrigin;
   vec3 rayDirection;
   vec3 previousNormal;
-  vec3 currentNormal;
-  vec3 currentAlbedo;
-
+  
   vec3 directColor;
   vec3 indirectColor;
   int rayDepth;
 
   int rayActive;
   uint64_t intersectedObjectHandle;
+  vec3 currentNormal;
+  vec3 currentAlbedo;
 }
 payload;
 
@@ -55,9 +55,7 @@ layout(binding = 1, set = 0) uniform Camera
   uvec2 mouseXY;
 
   uint frameCount;
-  int showNormals;
   int showUnique;
-  int showAlbedo;
   int raySamples;
   int rayDepth;
   int renderProgressive;
@@ -183,26 +181,12 @@ void main() {
   vec2 uvCoordinates = vertexBuffer.data[indices.x].textureCoordinates * barycentric.x + vertexBuffer.data[indices.y].textureCoordinates * barycentric.y + vertexBuffer.data[indices.z].textureCoordinates * barycentric.z;
   vec3 geometricNormal = getNormalFromMap(materialIndex * 3 + 1, barycentric, uvCoordinates, vertexBuffer.data[indices.x], vertexBuffer.data[indices.y], vertexBuffer.data[indices.z]);
 
-  if (camera.showAlbedo == 1)
-  {
-    payload.indirectColor = texture(textures[3 * materialIndex], uvCoordinates).xyz;
-    payload.rayDepth = 1;
-    payload.rayActive = 0;
-    return;
-  }
   if (camera.showUnique == 1)
   {
       float x = RandomValue(rng);
       float y = RandomValue(rng);
       float z = RandomValue(rng);
       payload.indirectColor = vec3(x, y, z);
-      payload.rayDepth = 1;
-      payload.rayActive = 0;
-      return;
-  }
-  if (camera.showNormals == 1)
-  {
-      payload.indirectColor = geometricNormal;
       payload.rayDepth = 1;
       payload.rayActive = 0;
       return;
@@ -221,6 +205,8 @@ void main() {
     surfaceColor = vec3(0);
     payload.rayDepth += 1;
     payload.rayActive = 0;
+    payload.currentNormal = geometricNormal;
+    payload.currentAlbedo = lightColor;
     return;
   }
   payload.directColor *= mix(surfaceColor, vec3(1), smoothness * int(isSpecular));

@@ -68,9 +68,7 @@ struct UniformBuffer
 	glm::uvec2 mouseXY = glm::uvec2(0);
 
 	uint32_t frameCount = 0;
-	int32_t showNormals = 0;
 	int32_t showUnique = 0;
-	int32_t showAlbedo = 0;
 	int32_t raySamples = 2;
 	int32_t rayDepth = 8;
 	int32_t renderProgressive = 0;
@@ -231,7 +229,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	setLayoutBindings[7].pImmutableSamplers = nullptr;
 
 	std::vector<VkDescriptorBindingFlags> setBindingFlags;
-	for (int i = 0; i < 8; i++)
+	for (int i = 0; i < setLayoutBindings.size(); i++)
 		setBindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT setBindingFlagsCreateInfo{};
@@ -535,9 +533,9 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 }
 
 
-void RayTracing::RecreateImage(Swapchain* swapchain)
+void RayTracing::RecreateImage(Win32Window* window)
 {
-	CreateImage(swapchain->extent.width, swapchain->extent.height);
+	CreateImage(window->GetWidth(), window->GetHeight());
 }
 
 VkStridedDeviceAddressRegionKHR rchitShaderBindingTable{};
@@ -599,14 +597,14 @@ void RayTracing::UpdateDescriptorSets()
 	RTImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 	VkDescriptorImageInfo albedoImageDescriptorImageInfo{};
-	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
-	RTImageDescriptorImageInfo.imageView = gBufferViews[1];
-	RTImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	albedoImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
+	albedoImageDescriptorImageInfo.imageView = gBufferViews[1];
+	albedoImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 	VkDescriptorImageInfo normalImageDescriptorImageInfo{};
-	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
-	RTImageDescriptorImageInfo.imageView = gBufferViews[2];
-	RTImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	normalImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
+	normalImageDescriptorImageInfo.imageView = gBufferViews[2];
+	normalImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 	std::array<VkWriteDescriptorSet, 3> writeSets{};
 
@@ -717,13 +715,13 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 		frameCount = 0;
 	
 	if (showNormals && showUniquePrimitives) showNormals = false; // can't have 2 variables changing colors at once
-	uniformBuffer = UniformBuffer{ { camera->position, 1 }, { camera->right, 1 }, { camera->up, 1 }, { camera->front, 1 }, glm::uvec2((uint32_t)absX, (uint32_t)absY), frameCount, showNormals, showUniquePrimitives, showAlbedo, raySampleCount, rayDepth, renderProgressive};
-
+	uniformBuffer = UniformBuffer{ { camera->position, 1 }, { camera->right, 1 }, { camera->up, 1 }, { camera->front, 1 }, glm::uvec2((uint32_t)absX, (uint32_t)absY), frameCount, showUniquePrimitives, raySampleCount, rayDepth, renderProgressive};
+	
 	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
 	TLAS->Build(creationObject, objects, false, commandBuffer);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
-	vkCmdTraceRaysKHR(commandBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, swapchain->extent.width, swapchain->extent.height, 1);
+	vkCmdTraceRaysKHR(commandBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, window->GetWidth(), window->GetHeight(), 1);
 
 	frameCount++;
 }
