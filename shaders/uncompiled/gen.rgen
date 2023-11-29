@@ -88,19 +88,22 @@ void main() {
       payload.indirectColor = vec3(0.0, 0.0, 0.0);
       payload.rayDepth = 0;
 
-      for (int x = 0; x < camera.rayDepth; x++) {
+      for (int i = 0; i < camera.rayDepth; i++) 
+      {
         traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.rayOrigin, 0.001, payload.rayDirection, 10000.0, 0);
-        if (x == 0 && camera.mouseXY == gl_LaunchIDEXT.xy)
+        if (i == 0 && j == 0 && camera.mouseXY == gl_LaunchIDEXT.xy)
             intersectedObject.handle = payload.intersectedObjectHandle;
-            if (x == 0)
+            if (i == 0 && j == 0)
             {
                 firstAlbedo = payload.currentAlbedo;
                 firstNormal = payload.currentNormal;
             }
       }
+      if (payload.rayDepth == 0) 
+        payload.rayDepth = 1;
       color += payload.indirectColor / payload.rayDepth;
   }
-  //color /= camera.raySamples;
+  color /= camera.raySamples;
   color = pow(color, vec3(1 / 2.2));
 
   if (camera.renderProgressive == 1)

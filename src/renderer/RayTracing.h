@@ -2,6 +2,7 @@
 #include <unordered_map>
 #include "renderer/PhysicalDevice.h"
 #include "../ResourceManager.h"
+#include "optix.h"
 #include <array>
 
 class Swapchain;
@@ -31,6 +32,7 @@ public:
 	static bool renderProgressive;
 	
 private:
+	void InitOptix();
 	void UpdateInstanceDataBuffer(const std::vector<Object*>& objects);
 	void UpdateTextureBuffer();
 	void UpdateMeshDataDescriptorSets();
@@ -38,6 +40,13 @@ private:
 	void CreateShaderBindingTable();
 	void CreateImage(uint32_t width, uint32_t height);
 	void UpdateDescriptorSets();
+
+	CUcontext cudaContext;
+	CUdevice cudaDevice;
+	
+	OptixDeviceContext optixContext;
+	OptixDenoiser denoiser;
+	OptixDenoiserSizes m_denoiserSizes;
 
 	uint32_t amountOfActiveObjects = 0;
 

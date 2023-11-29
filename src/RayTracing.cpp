@@ -1,4 +1,5 @@
 #include <fstream>
+#include <cuda.h>
 #include "renderer/RayTracing.h"
 #include "renderer/Vulkan.h"
 #include "renderer/Swapchain.h"
@@ -17,6 +18,12 @@
 #include "system/Input.h"
 #include "Camera.h"
 #include "Object.h"
+
+#include "optix_stubs.h"
+#include "optix_function_table_definition.h"
+#include "optix_function_table.h"
+
+#define CheckOptixResult(result) if (result != OPTIX_SUCCESS) { std::string message = (std::string)optixGetErrorString(result) + " at " + __STRLINE__; throw std::runtime_error(message); }
 
 struct InstanceMeshData
 {
@@ -111,8 +118,34 @@ void RayTracing::Destroy()
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
 
+void RayTracing::InitOptix()
+{
+	optixInit();
+	cuInit(0);
+	cuCtxGetDevice(&cudaDevice);
+	CUresult cuResult = cuCtxCreate_v2(&cudaContext, 0, cudaDevice);
+	if (cuResult != CUDA_SUCCESS)
+		throw std::runtime_error(std::to_string(cuResult));
+
+	OptixDeviceContextOptions optixDeviceOptions{};
+	optixDeviceOptions.validationMode = OPTIX_DEVICE_CONTEXT_VALIDATION_MODE_OFF;
+	OptixResult optixResult = optixDeviceContextCreate(cudaContext, &optixDeviceOptions, &optixContext);
+	CheckOptixResult(optixResult);
+
+	OptixDenoiserOptions denoiserOptions{};
+	denoiserOptions.guideAlbedo = 1;
+	denoiserOptions.guideNormal = 1;
+	denoiserOptions.denoiseAlpha = OPTIX_DENOISER_ALPHA_MODE_DENOISE;
+
+	optixResult = optixDenoiserCreate(optixContext, OPTIX_DENOISER_MODEL_KIND_AOV, &denoiserOptions, &denoiser); // not sure about the model kind
+	CheckOptixResult(optixResult);
+	
+}
+
 void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window, Swapchain* swapchain)
 {
+	InitOptix();
+
 	VkResult result = VK_SUCCESS;
 	
 	this->logicalDevice = logicalDevice;
@@ -129,7 +162,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	vkGetPhysicalDeviceProperties2(physicalDevice.Device(), &properties2);
 
 	if (!physicalDevice.QueueFamilies(surface).graphicsFamily.has_value())
-		throw VulkanAPIError("No appropriate graphics family could be found for ray tracing", VK_SUCCESS, nameof(physicalDevice.QueueFamilies(surface).graphicsFamily.has_value()), __FILENAME__, std::to_string(__LINE__));
+		throw VulkanAPIError("No appropriate graphics family could be found for ray tracing", VK_SUCCESS, nameof(physicalDevice.QueueFamilies(surface).graphicsFamily.has_value()), __FILENAME__, __STRLINE__);
 
 	queueFamilyIndex = physicalDevice.QueueFamilies(surface).graphicsFamily.value();
 	vkGetDeviceQueue(logicalDevice, queueFamilyIndex, 0, &queue);
