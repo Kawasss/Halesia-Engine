@@ -179,7 +179,7 @@ void main() {
   position = (GetModelMatrix() * vec4(position, 1)).xyz;
 
   vec2 uvCoordinates = vertexBuffer.data[indices.x].textureCoordinates * barycentric.x + vertexBuffer.data[indices.y].textureCoordinates * barycentric.y + vertexBuffer.data[indices.z].textureCoordinates * barycentric.z;
-  vec3 geometricNormal = getNormalFromMap(materialIndex * 3 + 1, barycentric, uvCoordinates, vertexBuffer.data[indices.x], vertexBuffer.data[indices.y], vertexBuffer.data[indices.z]);
+  vec3 geometricNormal = getNormalFromMap(materialIndex * 4 + 1, barycentric, uvCoordinates, vertexBuffer.data[indices.x], vertexBuffer.data[indices.y], vertexBuffer.data[indices.z]);
 
   if (camera.showUnique == 1)
   {

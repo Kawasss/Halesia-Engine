@@ -19,23 +19,23 @@ layout(location = 0) rayPayloadInEXT Payload {
 
 void main() 
 { 
-//	float skyGradientT = pow(smoothstep(0, 0.4, payload.rayDirection.y), 0.35);
-//	float groundToSkyT = smoothstep(-0.01, 0, payload.rayDirection.y);
-//	vec3 skyGradient = mix(vec3(0.537, 0.812, 0.941), vec3(0, 1, 0), skyGradientT);
-//	float sun = pow(max(0, dot(payload.rayDirection, vec3(1, 0, 0))), 1);
-//	vec3 composite = mix(vec3(1, 0, 0), skyGradient, groundToSkyT) * sun * float(groundToSkyT >= 1);
-
-//	payload.indirectColor = composite;
 	payload.currentAlbedo = vec3(0);
 	payload.currentNormal = vec3(0);
+	vec3 color = payload.rayDirection.y > 0 ? mix(vec3(0.6, 0.9, 1), vec3(0, 0.75, 1), payload.rayDirection.y) : mix(vec3(0.1, 0.1, 0.1), vec3(0.05, 0.05, 0.05), -payload.rayDirection.y);
 	if (payload.rayDepth == 0)
 	{
-		payload.rayDepth = 1;
-		vec3 skyColor = payload.rayDirection.y > 0 ? mix(vec3(0.6, 0.9, 1), vec3(0, 0.75, 1), payload.rayDirection.y) : mix(vec3(0.1, 0.1, 0.1), vec3(0.05, 0.05, 0.05), -payload.rayDirection.y);
+		vec3 skyColor = color;
 		payload.indirectColor = skyColor;
 		payload.rayActive = 0;
 		return;
 	}
+
+	color =  color / (color + vec3(1));
+	color = pow(color, vec3(1 / 2.2));
+	float strength = (color.x + color.y + color.z) / 3.0;
+	payload.directColor *= color;
+	payload.indirectColor += payload.directColor * strength;
+	payload.rayDepth++;
 
 	payload.rayActive = 0; 
 }

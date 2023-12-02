@@ -2,14 +2,36 @@
 #include <windowsx.h>
 #include <iostream>
 #include <stdexcept>
-#include "system/SystemMetrics.h"
-#include "Console.h"
-#include "system/Input.h"
 
 std::map<HWND, Win32Window*> Win32Window::windowBinding;
-std::vector<Win32Window*> Win32Window::windows;
+std::unordered_set<Win32Window*> Win32Window::windows;
 
 MSG Win32Window::message;
+
+//Returns the last Win32 error, in string format. Returns an empty string if there is no error.
+std::string WinGetLastErrorAsString()
+{
+	//Get the error message ID, if any.
+	DWORD errorMessageID = ::GetLastError();
+	if (errorMessageID == 0) {
+		return std::string(); //No error message has been recorded
+	}
+
+	LPSTR messageBuffer = nullptr;
+
+	//Ask Win32 to give us the string version of that message ID.
+	//The parameters we pass in, tell Win32 to create the buffer that holds the message for us (because we don't yet know how long the message string will be).
+	size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
+
+	//Copy the error message into a std::string.
+	std::string message(messageBuffer, size);
+
+	//Free the Win32's string's buffer.
+	LocalFree(messageBuffer);
+
+	return message;
+}
 
 Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 {
@@ -41,13 +63,13 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 	wc.hIconSm = icon;
 
 	if (!RegisterClassExW(&wc))
-		throw std::runtime_error("Failed to register a window: " + GetLastErrorAsString());
+		throw std::runtime_error("Failed to register a window: " + WinGetLastErrorAsString());
 	
 	if (createInfo.windowMode == WINDOW_MODE_BORDERLESS_WINDOWED)
 	{
 		width = GetSystemMetrics(SM_CXSCREEN);
 		height = GetSystemMetrics(SM_CYSCREEN);
-		window = CreateWindowExW(/*(DWORD)createInfo.extendedWindowStyle*/WS_EX_APPWINDOW, className.c_str(), windowName.c_str(), /*(DWORD)WindowStyle::PopUp*/WS_POPUPWINDOW, createInfo.x, createInfo.y, monitorWidth, monitorHeight, NULL, NULL, hInstance, NULL);
+		window = CreateWindowExW(WS_EX_APPWINDOW, className.c_str(), windowName.c_str(), WS_POPUPWINDOW, createInfo.x, createInfo.y, monitorWidth, monitorHeight, NULL, NULL, hInstance, NULL);
 	}
 	else if (createInfo.windowMode == WINDOW_MODE_WINDOWED)
 		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)WindowStyle::OverlappedWindow, createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
@@ -56,10 +78,10 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)createInfo.style, createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
 
 	windowBinding[window] = this;
-	windows.push_back(this);
+	windows.insert(this);
 	
 	if (window == NULL)
-		throw std::runtime_error("Failed to create a window: " + GetLastErrorAsString());
+		throw std::runtime_error("Failed to create a window: " + WinGetLastErrorAsString());
 
 	maximized = createInfo.startMaximized;
 	ShowWindow(window, maximized);
@@ -93,7 +115,7 @@ void Win32Window::ChangeWindowMode(WindowMode windowMode)
 		height = monitorHeight / 2;
 		SetWindowLongPtr(window, GWL_STYLE, WS_OVERLAPPEDWINDOW);
 		if (SetWindowPos(window, NULL, width / 2, height / 2, width, height, SWP_FRAMECHANGED) == 0)
-			throw std::runtime_error("Failed to resize the window to windowed mode: " + GetLastErrorAsString());
+			throw std::runtime_error("Failed to resize the window to windowed mode: " + WinGetLastErrorAsString());
 		currentWindowMode = WINDOW_MODE_WINDOWED;
 	}
 	else if (currentWindowMode == WINDOW_MODE_WINDOWED)
@@ -102,7 +124,7 @@ void Win32Window::ChangeWindowMode(WindowMode windowMode)
 		height = monitorHeight;
 		SetWindowLong(window, GWL_STYLE, WS_POPUPWINDOW);
 		if (SetWindowPos(window, NULL, 0, 0, monitorWidth, monitorHeight, SWP_FRAMECHANGED) == 0)
-			throw std::runtime_error("Failed to resize the window to borderless windowed mode: " + GetLastErrorAsString());
+			throw std::runtime_error("Failed to resize the window to borderless windowed mode: " + WinGetLastErrorAsString());
 		currentWindowMode = WINDOW_MODE_BORDERLESS_WINDOWED;
 	}
 }
@@ -234,7 +256,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 
 		case WM_KEYDOWN:
 		{
-			if (wParam != (DWORD)VirtualKey::F11)
+			if (wParam != 0x7A) // 0x7A = F11
 				break;
 
 			WindowMode newWindowMode = windowBinding[hwnd]->currentWindowMode == WINDOW_MODE_BORDERLESS_WINDOWED ? WINDOW_MODE_WINDOWED : WINDOW_MODE_BORDERLESS_WINDOWED; // take the other window mode then the one used right now
@@ -299,5 +321,6 @@ void Win32Window::Destroy()
 Win32Window::~Win32Window()
 {
 	DestroyWindow(window);
+	windows.erase(this);
 	UnregisterClassW(className.c_str(), hInstance);
 }

@@ -2,7 +2,7 @@
 #include <Windows.h>
 #include <string>
 #include <map>
-#include <vector>
+#include <unordered_set>
 
 enum WindowMode // enum for scalability
 {
@@ -18,6 +18,8 @@ inline std::string WindowModeToString(WindowMode windowMode)
 		return "WINDOW_MODE_BORDERLESS_WINDOWED";
 	case WINDOW_MODE_WINDOWED:
 		return "WINDOW_MODE_WINDOWED";
+	default:
+		return "";
 	}
 }
 
@@ -36,7 +38,7 @@ enum class ExtendedWindowStyle : uint32_t // uint32_t as underlying type to comb
 	StaticEdge = WS_EX_STATICEDGE,
 };
 
-enum class WindowStyle : uint32_t
+enum class WindowStyle : uint32_t // redundant
 {
 	Minimized = WS_MINIMIZE,
 	Maximized = WS_MAXIMIZE,
@@ -115,7 +117,7 @@ class Win32Window
 		HICON icon;
 		HCURSOR cursor;
 		static std::map<HWND, Win32Window*> windowBinding;
-		static std::vector<Win32Window*> windows;
+		static std::unordered_set<Win32Window*> windows;
 		std::string droppedFile = "";
 		std::wstring className = L"", windowName = L"";
 		int width = 0, height = 0, x = 0, y = 0, cursorX = 0, cursorY = 0, absCursorX = 0, absCursorY = 0, wheelRotation = 0;

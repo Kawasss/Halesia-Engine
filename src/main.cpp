@@ -99,7 +99,7 @@ class TestScene : public Scene
 	Object* objPtr = nullptr;
 	void Start() override
 	{
-		colorMaterial = { new Texture(GetVulkanCreationObjects(), "textures/red.png") };
+		/*colorMaterial = { new Texture(GetVulkanCreationObjects(), "textures/red.png") };
 		colorMaterial.roughness = new Texture(GetVulkanCreationObjects(), "textures/white.png");
 		Object* baseObject = AddCustomObject<ColoringTile>("stdObj/cube.obj", OBJECT_IMPORT_EXTERNAL);
 		baseObject->AwaitGeneration();
@@ -122,7 +122,19 @@ class TestScene : public Scene
 		lightMaterial.isLight = true;
 		AddStaticObject(GenericLoader::LoadObjectFile("stdObj/light.obj"))->meshes[0].SetMaterial(lightMaterial);
 		
-		this->camera = new TestCamera();
+		this->camera = new TestCamera();*/
+
+
+		Object* glockPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/glock.obj"));
+		Material knifeMaterial = { new Texture(GetVulkanCreationObjects(), "textures/glockAlbedo.png"), new Texture(GetVulkanCreationObjects(), "textures/glockNormal.png") };
+		knifeMaterial.AwaitGeneration();
+		glockPtr->meshes[0].SetMaterial(knifeMaterial);
+		glockPtr->transform.rotation = glm::vec3(0, 45, 45);
+		glockPtr->transform.scale = glm::vec3(0.3f);
+
+		Object* floorPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/plane.obj"));
+		floorPtr->transform.scale = glm::vec3(10, 1, 10);
+		floorPtr->transform.position = glm::vec3(0, -1, 0);
 	}
 
 	void Update(float delta) override

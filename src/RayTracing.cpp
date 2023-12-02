@@ -339,8 +339,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
 
 	result = vkCreatePipelineLayout(logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create the pipeline layout for ray tracing", result, nameof(vkCreatePipelineLayout), __FILENAME__, std::to_string(__LINE__));
+	CheckVulkanResult("Failed to create the pipeline layout for ray tracing", result, vkCreatePipelineLayout);
 
 	// shaders
 
@@ -387,8 +386,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	RTPipelineCreateInfo.basePipelineIndex = 0;
 
 	result = vkCreateRayTracingPipelinesKHR(logicalDevice, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &RTPipelineCreateInfo, nullptr, &pipeline);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to create the pipeline for ray tracing", result, nameof(vkCreateRayTracingPipelinesKHR), __FILENAME__, std::to_string(__LINE__));
+	CheckVulkanResult("Failed to create the pipeline for ray tracing", result, vkCreateRayTracingPipelinesKHR);
 
 	vkDestroyShaderModule(logicalDevice, shadowShader, nullptr);
 	vkDestroyShaderModule(logicalDevice, missShader, nullptr);
