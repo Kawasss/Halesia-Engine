@@ -62,7 +62,7 @@ void Console::InterpretCommand(std::string command)
 			}
 			if (!printNextValue)
 				break;
-			if (commandVariables[content.content].access = CONSOLE_ACCESS_WRITE_ONLY)
+			if (commandVariables[content.content].access == CONSOLE_ACCESS_WRITE_ONLY)
 			{
 				WriteLine("Failed to print variable \"" + content.content + "\": it is write only (" + ConsoleVariableAccessToString(commandVariables[content.content].access) + ")", MESSAGE_SEVERITY_ERROR);
 				return;
@@ -157,7 +157,7 @@ float Console::GetFloatFromLValue(VariableMetadata& metadata)
 	{
 	case VARIABLE_TYPE_BOOL:  return *static_cast<bool*>(metadata.location);
 	case VARIABLE_TYPE_FLOAT: return *static_cast<float*>(metadata.location);
-	case VARIABLE_TYPE_INT:   return *static_cast<int*>(metadata.location);
+	case VARIABLE_TYPE_INT:   return (float)*static_cast<int*>(metadata.location);
 	}
 	return 0;
 }
