@@ -59,21 +59,7 @@ public:
 	static void InterpretCommand(std::string command = "");
 	static glm::vec3 GetColorFromMessage(std::string message);
 
-	template<typename T> static void AddConsoleVariable(std::string variableName, T* variable, ConsoleVariableAccess access = CONSOLE_ACCESS_READ_WRITE)
-	{
-		VariableType type = VARIABLE_TYPE_INT;
-
-		if (std::is_same_v<T, int>)
-			type = VARIABLE_TYPE_INT;
-		else if (std::is_same_v<T, float>)
-			type = VARIABLE_TYPE_FLOAT;
-		else if (std::is_same_v<T, bool>)
-			type = VARIABLE_TYPE_BOOL;
-		else if (std::is_same_v<T, std::string>)
-			type = VARIABLE_TYPE_STRING;
-
-		commandVariables[variableName] = { static_cast<void*>(variable), sizeof(*variable), type, access};
-	}
+	template<typename T> static void AddConsoleVariable(std::string variableName, T* variable, ConsoleVariableAccess access = CONSOLE_ACCESS_READ_WRITE);
 
 private:
 	enum Token
@@ -112,7 +98,24 @@ private:
 	static bool IsSeperatorToken(char item);
 	static VariableMetadata& GetLValue(std::vector<TokenContent> tokens);
 	static void CalculateRValue(void* locationToWriteTo, int expectedWriteSize, std::vector<TokenContent> tokens, VariableType lValueType);
+	static void AddLocationValue(float& value, VariableMetadata& metadata);
 
 	static std::map<std::string, VariableMetadata> commandVariables;
 	static std::map<std::string, MessageSeverity> messageColorBinding;
 };
+
+template<typename T> void Console::AddConsoleVariable(std::string variableName, T* variable, ConsoleVariableAccess access)
+{
+	VariableType type = VARIABLE_TYPE_INT;
+
+	if (std::is_same_v<T, int>)
+		type = VARIABLE_TYPE_INT;
+	else if (std::is_same_v<T, float>)
+		type = VARIABLE_TYPE_FLOAT;
+	else if (std::is_same_v<T, bool>)
+		type = VARIABLE_TYPE_BOOL;
+	else if (std::is_same_v<T, std::string>)
+		type = VARIABLE_TYPE_STRING;
+
+	commandVariables[variableName] = { static_cast<void*>(variable), sizeof(*variable), type, access };
+}

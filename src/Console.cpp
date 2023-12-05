@@ -52,20 +52,32 @@ void Console::InterpretCommand(std::string command)
 	for (int i = 0; i < tokens.size(); i++)
 	{
 		TokenContent& content = tokens[i];
-		std::cout << TokenToString(content.token) << ": " << content.content << "\n";
 		switch (content.token)
 		{
 		case LEXER_TOKEN_KEYWORD:
+			if (tokens.size() == 1)
+			{
+				WriteLine("Failed to validate a keyword, no arguments were given", MESSAGE_SEVERITY_ERROR);
+				return;
+			}
+			if (content.content == "disable" || content.content == "enable")
+			{
+				*static_cast<bool*>(commandVariables[tokens[(size_t)i + 1].content].location) = content.content == "enable";
+				return;
+			}
 			printNextValue = content.content == "get";
 			break;
 		case LEXER_TOKEN_IDENTIFIER:
 			if (commandVariables.count(content.content) == 0)
-				throw std::runtime_error("Unidentified token: the variable \"" + content.content + "\" was queried but it does not exist");
+			{
+				WriteLine("Unidentified token: the variable \"" + content.content + "\" was queried but it does not exist", MESSAGE_SEVERITY_ERROR);
+				return;
+			}
 			if (!printNextValue)
 				break;
 			if (commandVariables[content.content].access = CONSOLE_ACCESS_WRITE_ONLY)
 			{
-				WriteLine("Failed to print variable \"" + content.content + "\": it is write only", MESSAGE_SEVERITY_ERROR);
+				WriteLine("Failed to print variable \"" + content.content + "\": it is write only (" + ConsoleVariableAccessToString(commandVariables[content.content].access) + ")", MESSAGE_SEVERITY_ERROR);
 				return;
 			}
 			switch (commandVariables[content.content].type)
@@ -90,7 +102,6 @@ void Console::InterpretCommand(std::string command)
 			{
 				lValues = { tokens.begin(), tokens.begin() + i };
 				rValues = { tokens.begin() + i + 1, tokens.end() };
-				std::cout << rValues[0].content << std::endl;
 			}
 			break;
 		}
@@ -104,7 +115,7 @@ void Console::InterpretCommand(std::string command)
 	VariableMetadata& metadata = GetLValue(lValues);
 	if (metadata.access == CONSOLE_ACCESS_READ_ONLY)
 	{
-		WriteLine("Failed to assign a value to variable \"" + lValues[0].content + "\", it is read only", MESSAGE_SEVERITY_ERROR);
+		WriteLine("Failed to assign a value to variable \"" + lValues[0].content + "\", it is read only (" + ConsoleVariableAccessToString(metadata.access) + ")", MESSAGE_SEVERITY_ERROR);
 		return;
 	}
 	CalculateRValue(metadata.location, metadata.variableSize, rValues, metadata.type);
@@ -137,11 +148,11 @@ void Console::CalculateRValue(void* locationToWriteTo, int expectedWriteSize, st
 		switch (tokens[i].token)
 		{
 		case LEXER_TOKEN_LITERAL:
-			if (tokens[i].content[0] == '"' && tokens[i].content.back() == '"') // string
+			if (i == 0 && tokens[i].content[0] == '"' && tokens[i].content.back() == '"') // string
 			{
 				if (tokens.size() > 1)
 				{
-					WriteLine("Illegal operation string literal: multiple rvalues detected, which is not allowed for strings", MESSAGE_SEVERITY_ERROR);
+					WriteLine("Illegal operation on string literal: multiple rvalues detected, which is not allowed for strings", MESSAGE_SEVERITY_ERROR);
 					return;
 				}
 				tokens[i].content.back() = '\0'; // set the second to last value to null to remove the " at the end
@@ -151,6 +162,17 @@ void Console::CalculateRValue(void* locationToWriteTo, int expectedWriteSize, st
 			else // if its not a string its an int or float, but because the calculations are done with a float it is automatically converted to a float no matter what
 				calculation = std::stof(tokens[i].content);
 			break;
+
+		case LEXER_TOKEN_IDENTIFIER:
+		{
+			TokenContent& rValueOfIdentifier = tokens[i];
+			if (rValueOfIdentifier.token == LEXER_TOKEN_IDENTIFIER)
+			{
+				VariableMetadata& data = commandVariables[rValueOfIdentifier.content];
+				AddLocationValue(calculation, data);
+			}
+			break;
+		}
 
 		case LEXER_TOKEN_OPERATOR:
 			if (i == 0)
@@ -164,24 +186,36 @@ void Console::CalculateRValue(void* locationToWriteTo, int expectedWriteSize, st
 				return;
 			}
 			TokenContent& rValueOfOperation = tokens[i + 1];
+			float rValueFloat = 0;
+			if (rValueOfOperation.token == LEXER_TOKEN_IDENTIFIER)
+			{
+				VariableMetadata& metadata = commandVariables[rValueOfOperation.content];
+				AddLocationValue(rValueFloat, metadata);
+			}
+			else
+				rValueFloat = std::stof(rValueOfOperation.content);
+
 			switch (tokens[i].content[0])
 			{
 			case '+':
-				calculation += std::stof(rValueOfOperation.content);
+				calculation += rValueFloat;
 				break;
 			case '-':
-				calculation -= std::stof(rValueOfOperation.content);
+				calculation -= rValueFloat;
 				break;
 			case '*':
-				calculation *= std::stof(rValueOfOperation.content);
+				std::cout << calculation << std::endl;
+				calculation *= rValueFloat;
+				std::cout << calculation << std::endl;
 				break;
 			case '/':
-				calculation /= std::stof(rValueOfOperation.content);
+				calculation /= rValueFloat;
 				break;
 			default:
 				WriteLine("Failed to calculate an operation, an invalid operator has been given: " + tokens[i].content, MESSAGE_SEVERITY_ERROR);
 				break;
 			}
+			i++;
 			break;
 		}
 	}
@@ -201,7 +235,10 @@ void Console::CalculateRValue(void* locationToWriteTo, int expectedWriteSize, st
 Console::Token Console::GetToken(std::string string)
 {
 	if (string.empty())
-		throw std::runtime_error("Invalid string passed to the console lexer");
+	{
+		WriteLine("Invalid string passed to the console lexer", MESSAGE_SEVERITY_ERROR);
+		return LEXER_TOKEN_SEPERATOR;
+	}
 
 	if (string == "get" || string == "set" || string == "enable" || string == "disable")
 		return LEXER_TOKEN_KEYWORD;
@@ -217,8 +254,28 @@ Console::Token Console::GetToken(std::string string)
 		if (i == string.size() - 1)
 			return LEXER_TOKEN_LITERAL;
 	}
-
+	if (commandVariables.count(string) == 0)
+	{
+		WriteLine("Failed to find a token for the given string \"" + string + '"', MESSAGE_SEVERITY_ERROR);
+		return LEXER_TOKEN_SEPERATOR;
+	}
 	return LEXER_TOKEN_IDENTIFIER;
+}
+
+void Console::AddLocationValue(float& value, VariableMetadata& metadata)
+{
+	switch (metadata.type)
+	{
+	case VARIABLE_TYPE_BOOL:
+		value = *static_cast<bool*>(metadata.location);
+		break;
+	case VARIABLE_TYPE_FLOAT:
+		value = *static_cast<float*>(metadata.location);
+		break;
+	case VARIABLE_TYPE_INT:
+		value = (float)*static_cast<int*>(metadata.location);
+		break;
+	}
 }
 
 std::string Console::TokenToString(Token token)
