@@ -6,7 +6,7 @@
 #include "system/Input.h"
 
 std::vector<std::string> Console::messages{};
-std::map<std::string, void*> Console::commandVariables{};
+std::map<std::string, Console::VariableMetadata> Console::commandVariables{};
 std::map<std::string, MessageSeverity> Console::messageColorBinding{};
 
 bool Console::isOpen = false;
@@ -31,26 +31,225 @@ void Console::InterpretCommand(std::string command)
 	if (command == "exit")
 		exit(0);
 
-	int value = 0;
-	for (int i = 0; command.c_str()[i] != '\0'; i++)     // dont know if c_str() is necessary
+	std::string lexingString;
+	std::vector<TokenContent> tokens;
+	for (int i = 0; i < command.size(); i++)
 	{
-		if (command.c_str()[i] != ' ')                   // iterate through the string till it finds whitespace
-			variableName += command.c_str()[i];
-		else											 // when the whitespace has been found, it splits the string into two
+		if (IsSeperatorToken(command[i]))
 		{
-			//value = (int)(command.c_str()[i + 1] - '0'); // turn the ascii version of the number into an integer
-			std::string seperatedString = command.substr((size_t)i + 1, command.size() - i);
-			value = std::stoi(seperatedString);
-			if (commandVariables.count(variableName) == 0)
+			tokens.push_back({ GetToken(lexingString), lexingString });
+			lexingString.clear();
+			continue;
+		}
+		lexingString += command[i];
+		if (i == command.size() - 1)
+			tokens.push_back({ GetToken(lexingString), lexingString });
+	}
+
+	std::vector<TokenContent> lValues;
+	std::vector<TokenContent> rValues;
+	bool printNextValue = false;
+	for (int i = 0; i < tokens.size(); i++)
+	{
+		TokenContent& content = tokens[i];
+		std::cout << TokenToString(content.token) << ": " << content.content << "\n";
+		switch (content.token)
+		{
+		case LEXER_TOKEN_KEYWORD:
+			printNextValue = content.content == "get";
+			break;
+		case LEXER_TOKEN_IDENTIFIER:
+			if (commandVariables.count(content.content) == 0)
+				throw std::runtime_error("Unidentified token: the variable \"" + content.content + "\" was queried but it does not exist");
+			if (!printNextValue)
+				break;
+			if (commandVariables[content.content].access = CONSOLE_ACCESS_WRITE_ONLY)
 			{
-				Console::WriteLine("Failed to find the engine variable \"" + variableName + "\"", MESSAGE_SEVERITY_ERROR);
+				WriteLine("Failed to print variable \"" + content.content + "\": it is write only", MESSAGE_SEVERITY_ERROR);
 				return;
 			}
-			*static_cast<int*>(commandVariables[variableName]) = value;
-			WriteLine("Set engine variable \"" + variableName + "\" to " + std::to_string(value));
+			switch (commandVariables[content.content].type)
+			{
+			case VARIABLE_TYPE_BOOL:
+				WriteLine(*static_cast<bool*>(commandVariables[content.content].location) == 1 ? "true" : "false");
+				break;
+			case VARIABLE_TYPE_FLOAT:
+				WriteLine(std::to_string(*static_cast<float*>(commandVariables[content.content].location)));
+				break;
+			case VARIABLE_TYPE_INT:
+				WriteLine(std::to_string(*static_cast<int*>(commandVariables[content.content].location)));
+				break;
+			case VARIABLE_TYPE_STRING:
+				WriteLine(*static_cast<std::string*>(commandVariables[content.content].location));
+				break;
+			}
 			return;
+
+		case LEXER_TOKEN_OPERATOR:
+			if (content.content == "=")
+			{
+				lValues = { tokens.begin(), tokens.begin() + i };
+				rValues = { tokens.begin() + i + 1, tokens.end() };
+				std::cout << rValues[0].content << std::endl;
+			}
+			break;
 		}
 	}
+	if (lValues.empty() || rValues.empty())
+	{
+		WriteLine("Cannot continue interpreting: no lvalues or rvalues were given", MESSAGE_SEVERITY_WARNING);
+		return;
+	}
+
+	VariableMetadata& metadata = GetLValue(lValues);
+	if (metadata.access == CONSOLE_ACCESS_READ_ONLY)
+	{
+		WriteLine("Failed to assign a value to variable \"" + lValues[0].content + "\", it is read only", MESSAGE_SEVERITY_ERROR);
+		return;
+	}
+	CalculateRValue(metadata.location, metadata.variableSize, rValues, metadata.type);
+
+#ifdef _DEBUG
+	std::string result = "";
+	if (metadata.type == VARIABLE_TYPE_INT)
+		result = std::to_string(*static_cast<int*>(metadata.location));
+	else if (metadata.type == VARIABLE_TYPE_FLOAT)
+		result = std::to_string(*static_cast<float*>(metadata.location));
+	else if (metadata.type == VARIABLE_TYPE_BOOL)
+		result = *static_cast<bool*>(metadata.location) == 1 ? "true" : "false";
+	else if (metadata.type == VARIABLE_TYPE_STRING)
+		result = *static_cast<std::string*>(metadata.location);
+	std::cout << "Set variable \"" + lValues[0].content + "\" to " << result << " at 0x" << metadata.location << "\n";
+#endif
+}
+
+Console::VariableMetadata& Console::GetLValue(std::vector<TokenContent> tokens)
+{
+	return commandVariables[tokens[0].content];
+}
+
+void Console::CalculateRValue(void* locationToWriteTo, int expectedWriteSize, std::vector<TokenContent> tokens, VariableType lValueType)
+{
+	float calculation = 0; // always do the calculations with a float, because if the lvalue is an int it can just be rounded into one
+
+	for (size_t i = 0; i < tokens.size(); i++)
+	{
+		switch (tokens[i].token)
+		{
+		case LEXER_TOKEN_LITERAL:
+			if (tokens[i].content[0] == '"' && tokens[i].content.back() == '"') // string
+			{
+				if (tokens.size() > 1)
+				{
+					WriteLine("Illegal operation string literal: multiple rvalues detected, which is not allowed for strings", MESSAGE_SEVERITY_ERROR);
+					return;
+				}
+				tokens[i].content.back() = '\0'; // set the second to last value to null to remove the " at the end
+				*static_cast<std::string*>(locationToWriteTo) = tokens[i].content.c_str() + 1; // move the pointer up by one to bypass the first "
+				return;
+			}
+			else // if its not a string its an int or float, but because the calculations are done with a float it is automatically converted to a float no matter what
+				calculation = std::stof(tokens[i].content);
+			break;
+
+		case LEXER_TOKEN_OPERATOR:
+			if (i == 0)
+			{
+				WriteLine("Failed to calculate an operation: no lvalue was given", MESSAGE_SEVERITY_ERROR);
+				return;
+			}
+			if (i + 1 >= tokens.size()) // prevent an index out of bounds error
+			{
+				WriteLine("Failed to calculate the rvalue: no second argument was given for the operation", MESSAGE_SEVERITY_ERROR);
+				return;
+			}
+			TokenContent& rValueOfOperation = tokens[i + 1];
+			switch (tokens[i].content[0])
+			{
+			case '+':
+				calculation += std::stof(rValueOfOperation.content);
+				break;
+			case '-':
+				calculation -= std::stof(rValueOfOperation.content);
+				break;
+			case '*':
+				calculation *= std::stof(rValueOfOperation.content);
+				break;
+			case '/':
+				calculation /= std::stof(rValueOfOperation.content);
+				break;
+			default:
+				WriteLine("Failed to calculate an operation, an invalid operator has been given: " + tokens[i].content, MESSAGE_SEVERITY_ERROR);
+				break;
+			}
+			break;
+		}
+	}
+	switch (lValueType)
+	{
+	case VARIABLE_TYPE_BOOL:
+		*static_cast<bool*>(locationToWriteTo) = (bool)calculation;
+		break;
+	case VARIABLE_TYPE_FLOAT:
+		*static_cast<float*>(locationToWriteTo) = calculation;
+		break;
+	case VARIABLE_TYPE_INT:
+		*static_cast<int*>(locationToWriteTo) = (int)calculation;
+	}
+}
+
+Console::Token Console::GetToken(std::string string)
+{
+	if (string.empty())
+		throw std::runtime_error("Invalid string passed to the console lexer");
+
+	if (string == "get" || string == "set" || string == "enable" || string == "disable")
+		return LEXER_TOKEN_KEYWORD;
+	if (string == "=" || string == "-" || string == "+" || string == "/" || string == "*")
+		return LEXER_TOKEN_OPERATOR;
+	if (string[0] == '"' && string.back() == '"') // literal strings are encased in "'s
+		return LEXER_TOKEN_LITERAL;
+
+	for (int i = 0; i < string.size(); i++) // check if there are any non-digit chars in the string, if there arent its a number literal
+	{
+		if (!std::isdigit(string[i]))
+			break;
+		if (i == string.size() - 1)
+			return LEXER_TOKEN_LITERAL;
+	}
+
+	return LEXER_TOKEN_IDENTIFIER;
+}
+
+std::string Console::TokenToString(Token token)
+{
+	switch (token)
+	{
+	case LEXER_TOKEN_IDENTIFIER:
+		return "LEXER_TOKEN_IDENTIFIER";
+	case LEXER_TOKEN_KEYWORD:
+		return "LEXER_TOKEN_KEYWORD";
+	case LEXER_TOKEN_LITERAL:
+		return "LEXER_TOKEN_LITERAL";
+	case LEXER_TOKEN_OPERATOR:
+		return "LEXER_TOKEN_OPERATOR";
+	case LEXER_TOKEN_SEPERATOR:
+		return "LEXER_TOKEN_SEPERATOR";
+	}
+	return "";
+}
+
+bool Console::IsSeperatorToken(char item)
+{
+	switch (item)
+	{
+	case ' ':
+	case ';':
+		return true;
+	default: 
+		return false;
+	}
+	return false;
 }
 
 glm::vec3 Console::GetColorFromMessage(std::string message)

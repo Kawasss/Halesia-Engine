@@ -238,24 +238,24 @@ HalesiaExitCode HalesiaInstance::Run()
 	float timeSinceLastDataUpdate = 0;
 	float dummy[] = {0, 0, 0};
 
-	Console::commandVariables["pauseGame"] = &pauseGame;
-	Console::commandVariables["showFPS"] = &showFPS;
-	Console::commandVariables["playOneFrame"] = &playOneFrame;
-	Console::commandVariables["showRAM"] = &showRAM;
-	Console::commandVariables["showCPU"] = &showCPU;
-	Console::commandVariables["showGPU"] = &showGPU;
-	Console::commandVariables["showAsyncTimes"] = &showAsyncTimes;
+	Console::AddConsoleVariable("pauseGame", &pauseGame);
+	Console::AddConsoleVariable("showFPS", &showFPS);
+	Console::AddConsoleVariable("playOneFrame", &playOneFrame);
+	Console::AddConsoleVariable("showRAM", &showRAM);
+	Console::AddConsoleVariable("showCPU", &showCPU);
+	Console::AddConsoleVariable("showGPU", &showGPU);
+	Console::AddConsoleVariable("showAsyncTimes", &showAsyncTimes);
 
 	if (renderer == nullptr || window == nullptr/* || physics == nullptr*/)
 		return HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION;
 
-	Console::commandVariables["raySamples"] = &RayTracing::raySampleCount;
-	Console::commandVariables["rayDepth"] = &RayTracing::rayDepth;
-	Console::commandVariables["showNormals"] = &RayTracing::showNormals;
-	Console::commandVariables["renderProgressive"] = &RayTracing::renderProgressive;
-	Console::commandVariables["showUnique"] = &RayTracing::showUniquePrimitives;
-	Console::commandVariables["showAlbedo"] = &RayTracing::showAlbedo;
-	Console::commandVariables["rasterize"] = &renderer->shouldRasterize;
+	Console::AddConsoleVariable("raySamples", &RayTracing::raySampleCount);
+	Console::AddConsoleVariable("rayDepth", &RayTracing::rayDepth);
+	Console::AddConsoleVariable("showNormals", &RayTracing::showNormals);
+	Console::AddConsoleVariable("renderProgressive", &RayTracing::renderProgressive);
+	Console::AddConsoleVariable("showUnique", &RayTracing::showUniquePrimitives);
+	Console::AddConsoleVariable("showAlbedo", &RayTracing::showAlbedo);
+	Console::AddConsoleVariable("rasterize", &renderer->shouldRasterize);
 	
 	try
 	{
