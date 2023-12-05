@@ -204,9 +204,7 @@ void Console::CalculateRValue(void* locationToWriteTo, int expectedWriteSize, st
 				calculation -= rValueFloat;
 				break;
 			case '*':
-				std::cout << calculation << std::endl;
 				calculation *= rValueFloat;
-				std::cout << calculation << std::endl;
 				break;
 			case '/':
 				calculation /= rValueFloat;
