@@ -1,6 +1,5 @@
 #pragma once
 #include "renderer/Renderer.h"
-#include "Physics.h"
 #include "system/Window.h"
 #include "Scene.h"
 #include "SceneLoader.h"
@@ -107,7 +106,6 @@ private:
 	VirtualKey devConsoleKey;
 
 	Renderer* renderer;
-	Physics* physics;
 	Win32Window* window;
 
 	float asyncRendererCompletionTime = 0;

@@ -22,6 +22,9 @@ public:
 	void SetYaw(float newYaw);
 	void SetFOV(float newFov);
 
+	virtual void Start() {}
+	virtual void Destroy() {}
+
 	virtual void Update(Win32Window* window, float delta);
 	void DefaultUpdate(Win32Window* window, float delta);
 

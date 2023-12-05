@@ -28,6 +28,11 @@ void Mesh::Create(const MeshCreationObject& creationObject, const MeshCreationDa
 	vertices = creationData.vertices;
 	indices = creationData.indices;
 	faceCount = creationData.faceCount;
+	center = creationData.center;
+	extents = creationData.extents;
+	max = extents + center;
+	min = center * 2.f - max;
+	
 	if (creationData.hasMaterial)
 		ProcessMaterial(creationObject, creationData.material);
 	Recreate(creationObject);

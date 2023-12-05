@@ -12,6 +12,22 @@ enum MessageSeverity
 	MESSAGE_SEVERITY_DEBUG    // blue
 };
 
+inline std::string MessageSeverityToString(MessageSeverity severity)
+{
+	switch (severity)
+	{
+	case MESSAGE_SEVERITY_NORMAL:
+		return "MESSAGE_SEVERITY_NORMAL";
+	case MESSAGE_SEVERITY_WARNING:
+		return "MESSAGE_SEVERITY_WARNING";
+	case MESSAGE_SEVERITY_ERROR:
+		return "MESSAGE_SEVERITY_ERROR";
+	case MESSAGE_SEVERITY_DEBUG:
+		return "MESSAGE_SEVERITY_DEBUG";
+	}
+	return "";
+}
+
 class Console
 {
 public:

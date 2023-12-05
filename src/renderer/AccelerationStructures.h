@@ -1,6 +1,5 @@
 #pragma once
 #include <vulkan/vulkan.h>
-#include "../ResourceManager.h"
 #include "StorageBuffer.h"
 
 struct Mesh;

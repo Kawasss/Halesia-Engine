@@ -1,5 +1,6 @@
 #define NOMINMAX
 #include "HalesiaEngine.h"
+#include "Physics.h" // only for test
 
 class TestCamera : public OrbitCamera
 {
@@ -131,6 +132,8 @@ class TestScene : public Scene
 		glockPtr->meshes[0].SetMaterial(knifeMaterial);
 		glockPtr->transform.rotation = glm::vec3(0, 45, 45);
 		glockPtr->transform.scale = glm::vec3(0.3f);
+
+		Physics::physics->CreatePhysicsObject(glockPtr->meshes[0]);
 
 		Object* floorPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/plane.obj"));
 		floorPtr->transform.scale = glm::vec3(10, 1, 10);

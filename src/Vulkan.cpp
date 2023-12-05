@@ -332,11 +332,6 @@ PhysicalDevice Vulkan::GetBestPhysicalDevice(std::vector<PhysicalDevice> devices
     for (size_t i = 0; i < devices.size(); i++)
         if (IsDeviceCompatible(devices[i], surface))
         {
-            
-#ifdef _DEBUG
-            VkPhysicalDeviceProperties properties = devices[i].Properties();
-            std::cout << "\nBest available physical device: " << properties.deviceName << "\n  type: " << string_VkPhysicalDeviceType(properties.deviceType) << "\n  driver version: " << properties.driverVersion << "\n  API version: " << properties.apiVersion << "\n  heap 0 total memory (VRAM): " << devices[i].VRAM() / (1024.0f * 1024.0f) << " MB\n" << std::endl;
-#endif
             return devices[i];
         }
             
@@ -413,9 +408,10 @@ VkInstance Vulkan::GenerateInstance()
     createInfo.ppEnabledExtensionNames = requiredInstanceExtensions.data();
 
 #ifdef _DEBUG
-    std::cout << "Enabled instance extensions:" << std::endl;
+    std::cout << "Enabled instance extensions:" << "\n";
     for (const char* extension : requiredInstanceExtensions)
-        std::cout << "  " + (std::string)extension << std::endl;
+        std::cout << "  " + (std::string)extension << "\n";
+    std::cout << "\n";
 #endif
 
     VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);

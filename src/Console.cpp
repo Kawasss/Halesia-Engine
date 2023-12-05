@@ -5,8 +5,6 @@
 #include <mutex>
 #include "system/Input.h"
 
-
-
 std::vector<std::string> Console::messages{};
 std::map<std::string, void*> Console::commandVariables{};
 std::map<std::string, MessageSeverity> Console::messageColorBinding{};
@@ -19,6 +17,11 @@ void Console::WriteLine(std::string message, MessageSeverity severity)
 	std::lock_guard<std::mutex> guard(writingLinesMutex);
 	messages.push_back(message);
 	messageColorBinding[message] = severity;
+
+	#ifdef _DEBUG
+	std::string severityString = severity == MESSAGE_SEVERITY_NORMAL ? "" : " (" + MessageSeverityToString(severity) + ")";
+	std::cout << message << severityString << "\n";
+	#endif
 }
 
 void Console::InterpretCommand(std::string command)

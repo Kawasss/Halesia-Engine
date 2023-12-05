@@ -158,5 +158,5 @@ class Input
 public:
 	static bool IsKeyPressed(VirtualKey key);
 	static bool IsKeyToggled(VirtualKey key);
-	static bool GetGlobalCursorPosition(int* x, int* y);
+	static bool GetGlobalCursorPosition(int& x, int& y);
 };

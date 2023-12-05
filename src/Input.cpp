@@ -11,11 +11,11 @@ bool Input::IsKeyToggled(VirtualKey key)
 	return GetKeyState((int)key) & 1;
 }
 
-bool Input::GetGlobalCursorPosition(int* x, int* y)
+bool Input::GetGlobalCursorPosition(int& x, int& y)
 {
 	POINT point;
 	bool ret = GetCursorPos(&point);
-	*x = point.x;
-	*y = point.y;
+	x = point.x;
+	y = point.y;
 	return ret;
 }

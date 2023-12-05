@@ -8,6 +8,7 @@
 #include "CreationObjects.h"
 #include "Console.h"
 #include "renderer/RayTracing.h"
+#include "Physics.h"
 
 int ParseAndValidateDimensionArgument(std::string string)
 {
@@ -48,12 +49,14 @@ MeshCreationObject GetVulkanCreationObjects()
 
 void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, HalesiaInstanceCreateInfo& createInfo)
 {
+	std::cout << "Generating Halesia instance:\n" << "  createInfo.startingScene = " << createInfo.startingScene << "\n  createInfo.devConsoleKey = " << ToHexadecimalString((int)createInfo.devConsoleKey) << "\n  createInfo.playIntro = " << createInfo.playIntro << "\n\n";
 	try
 	{
 		Console::WriteLine("Write \"help\" for all commands");
-		instance.physics = new Physics();
+		//instance.physics = new Physics();
 		instance.devConsoleKey = createInfo.devConsoleKey;
 		instance.playIntro = createInfo.playIntro;
+		Physics::Init();
 
 		if (createInfo.argsCount > 1)
 			DetermineArgs(createInfo.argsCount, createInfo.args, createInfo.windowCreateInfo);
@@ -72,6 +75,11 @@ void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, Halesia
 			instance.scene = createInfo.startingScene;
 		if (createInfo.sceneFile != "")
 			instance.scene->LoadScene(createInfo.sceneFile);
+
+		SystemInformation systemInfo = GetCpuInfo();
+		VkPhysicalDeviceProperties properties = instance.renderer->GetVulkanCreationObject().physicalDevice.Properties();
+		uint64_t vram = instance.renderer->GetVulkanCreationObject().physicalDevice.VRAM();
+		std::cout << "\nDetected hardware:\n" << "  CPU: " << systemInfo.CPUName << "\n  logical processor count: " << systemInfo.processorCount << "\n  physical RAM: " << systemInfo.installedRAM / 1024 << " MB\n\n" << "  GPU: " << properties.deviceName << "\n  type: " << string_VkPhysicalDeviceType(properties.deviceType) << "\n  vulkan driver version: " << properties.driverVersion << "\n  API version: " << properties.apiVersion << "\n  heap 0 total memory (VRAM): " << vram / (1024.0f * 1024.0f) << " MB\n" << std::endl;;
 	}
 	catch (const std::exception& e) //catch any normal exception and return
 	{
@@ -91,7 +99,7 @@ void HalesiaInstance::Destroy()
 {
 	renderer->Destroy();
 	scene->Destroy();
-	delete physics;
+	//delete physics;
 	delete window;
 }
 
@@ -238,7 +246,7 @@ HalesiaExitCode HalesiaInstance::Run()
 	Console::commandVariables["showGPU"] = &showGPU;
 	Console::commandVariables["showAsyncTimes"] = &showAsyncTimes;
 
-	if (renderer == nullptr || window == nullptr || physics == nullptr)
+	if (renderer == nullptr || window == nullptr/* || physics == nullptr*/)
 		return HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION;
 
 	Console::commandVariables["raySamples"] = &RayTracing::raySampleCount;

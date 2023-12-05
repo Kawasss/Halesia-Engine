@@ -1,28 +1,38 @@
 #pragma once
-//#include "PxPhysicsAPI.h"
+#include "PxPhysicsAPI.h"
+#include "PxShape.h"
 #include <iostream>
 #include <string>
 
-//class PhysXErrorHandler : public physx::PxErrorCallback
-//{
-//public:
-//	void reportError(physx::PxErrorCode::Enum errorCode, const char* message, const char* file, int line) override
-//	{
-//		std::string error = "PhysX error: " + (std::string)message + " in file " + (std::string)file + " at line " + std::to_string(line);
-//		std::cout << error << std::endl;
-//		throw std::runtime_error(error);
-//	}
-//};
+struct Mesh;
+
+class PhysXErrorHandler : public physx::PxErrorCallback
+{
+public:
+	void reportError(physx::PxErrorCode::Enum errorCode, const char* message, const char* file, int line) override
+	{
+		std::string error = "PhysX error: " + (std::string)message + " in file " + (std::string)file + " at line " + std::to_string(line);
+		std::cout << error << std::endl;
+		throw std::runtime_error(error);
+	}
+};
 
 class Physics
 {
 public:
 	Physics();
 	~Physics();
+	static void Init();
+	static Physics* physics; // really weird way of doing this
+
+	physx::PxShape* CreatePhysicsObject(Mesh& mesh);
+	void Simulate(float delta);
 
 private:
-	//PhysXErrorHandler errorHandler;
-	//physx::PxDefaultAllocator allocator;
-	//physx::PxFoundation* foundation;
-	//physx::PxPhysics* physicsObject;
+	PhysXErrorHandler errorHandler{};
+	physx::PxDefaultAllocator allocator{};
+	physx::PxDefaultCpuDispatcher* dispatcher = nullptr;
+	physx::PxFoundation* foundation = nullptr;
+	physx::PxPhysics* physicsObject = nullptr;
+	physx::PxScene* scene = nullptr;
 };
