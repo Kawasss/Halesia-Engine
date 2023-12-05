@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <optional>
 #include "glm.h"
 
 enum MessageSeverity
@@ -68,7 +69,8 @@ private:
 		LEXER_TOKEN_SEPERATOR,
 		LEXER_TOKEN_LITERAL,
 		LEXER_TOKEN_KEYWORD,
-		LEXER_TOKEN_OPERATOR
+		LEXER_TOKEN_OPERATOR,
+		LEXER_TOKEN_WHITESPACE
 	};
 
 	enum VariableType
@@ -93,12 +95,24 @@ private:
 		ConsoleVariableAccess access;
 	};
 
+	struct Statement
+	{
+		TokenContent lvalue;
+		TokenContent op;
+		TokenContent rvalue;
+	};
+
 	static Token GetToken(std::string string);
+	static float GetFloatFromLValue(VariableMetadata& metadata);
 	static std::string TokenToString(Token token);
 	static bool IsSeperatorToken(char item);
 	static VariableMetadata& GetLValue(std::vector<TokenContent> tokens);
-	static void CalculateRValue(void* locationToWriteTo, int expectedWriteSize, std::vector<TokenContent> tokens, VariableType lValueType);
+	static float CalculateRValue(std::vector<TokenContent> tokens);
 	static void AddLocationValue(float& value, VariableMetadata& metadata);
+	static float CalculateOperator(float lvalue, float rvalue, char op);
+	static void AssignRValueToLValue(VariableMetadata& lvalue, void* rvalue);
+	static std::vector<TokenContent> LexInput(std::string input);
+	static float SolveStatement(Statement& statement);
 
 	static std::map<std::string, VariableMetadata> commandVariables;
 	static std::map<std::string, MessageSeverity> messageColorBinding;
