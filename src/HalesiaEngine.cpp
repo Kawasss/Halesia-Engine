@@ -52,6 +52,7 @@ void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, Halesia
 	std::cout << "Generating Halesia instance:\n" << "  createInfo.startingScene = " << createInfo.startingScene << "\n  createInfo.devConsoleKey = " << ToHexadecimalString((int)createInfo.devConsoleKey) << "\n  createInfo.playIntro = " << createInfo.playIntro << "\n\n";
 	try
 	{
+		Console::Init();
 		Console::WriteLine("Write \"help\" for all commands");
 		//instance.physics = new Physics();
 		instance.devConsoleKey = createInfo.devConsoleKey;
