@@ -24,12 +24,14 @@
 
 #define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "imgui-1.89.8/imgui-1.89.8/implot.cpp"
-#include "imgui-1.89.8/imgui-1.89.8/misc/cpp/imgui_stdlib.cpp"
-#include "imgui-1.89.8/imgui-1.89.8/implot_items.cpp"
-#include "imgui-1.89.8/imgui-1.89.8/misc/single_file/imgui_single_file.h"
-#include "imgui-1.89.8/imgui-1.89.8/backends/imgui_impl_vulkan.cpp"
-#include "imgui-1.89.8/imgui-1.89.8/backends/imgui_impl_win32.cpp"
+#include "implot.h"
+
+#define IMSPINNER_DEMO
+#include "imgui.h"
+#include "backends/imgui_impl_vulkan.h"
+#include "backends/imgui_impl_win32.h"
+#include "misc/cpp/imgui_stdlib.h"
+#include "imgui-1.89.8/imgui-1.89.8/imspinner.h"
 
 #include "renderer/Renderer.h"
 
@@ -994,7 +996,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 			activeObjects.push_back(object);
 	
 	ImGui::Render();
-
+	
 	if (activeObjects.empty())
 		return;
 

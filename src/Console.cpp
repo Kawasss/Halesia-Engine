@@ -203,23 +203,14 @@ void Console::DispatchCommand(std::vector<TokenContent>& lvalues, std::vector<To
 
 std::string Console::GetVariableAsString(VariableMetadata& metadata)
 {
-	std::string string = "INVALID";
 	switch (metadata.type)
 	{
-	case VARIABLE_TYPE_BOOL:
-		string = *static_cast<bool*>(metadata.location) == 1 ? "true" : "false";
-		break;
-	case VARIABLE_TYPE_FLOAT:
-		string = std::to_string(*static_cast<float*>(metadata.location));
-		break;
-	case VARIABLE_TYPE_INT:
-		string = std::to_string(*static_cast<int*>(metadata.location));
-		break;
-	case VARIABLE_TYPE_STRING:
-		string = *static_cast<std::string*>(metadata.location);
-		break;
+	case VARIABLE_TYPE_BOOL:   return *static_cast<bool*>(metadata.location) == 1 ? "true" : "false";
+	case VARIABLE_TYPE_FLOAT:  return std::to_string(*static_cast<float*>(metadata.location));
+	case VARIABLE_TYPE_INT:    return std::to_string(*static_cast<int*>(metadata.location));
+	case VARIABLE_TYPE_STRING: return *static_cast<std::string*>(metadata.location);
 	}
-	return string;
+	return "";
 }
 
 void Console::BindVariableToExternVariable(std::string externalVariable, void* variable)

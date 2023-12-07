@@ -16,6 +16,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{8e5c3a8e-19e1-450a-8fa1-4ffaa7601375}</UniqueIdentifier>
     </Filter>
+    <Filter Include="imgui">
+      <UniqueIdentifier>{983a078f-7c39-44e9-9318-e794860e2725}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Buffers.cpp">
@@ -92,6 +95,39 @@
     </ClCompile>
     <ClCompile Include="src\Intro.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_demo.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_draw.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_tables.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_widgets.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_demo.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_items.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_vulkan.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_win32.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.cpp">
+      <Filter>imgui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -190,6 +226,45 @@
     </ClInclude>
     <ClInclude Include="src\tools\Timer.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imconfig.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_internal.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_single_file.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_internal.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imspinner.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_rectpack.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_textedit.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_truetype.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_vulkan.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_win32.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.h">
+      <Filter>imgui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

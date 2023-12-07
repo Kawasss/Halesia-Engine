@@ -106,7 +106,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies\spirv-reflect;C:\Users\wveen\source\additionalDependencies\Nsight-Aftermath\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 8.0.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\include;C:\Users\wveen\physx\source;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies\spirv-reflect;C:\Users\wveen\source\additionalDependencies\Nsight-Aftermath\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 8.0.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\include;C:\Users\wveen\physx\source;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8\imgui-1.89.8;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -137,6 +137,17 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_demo.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_draw.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_tables.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_widgets.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_demo.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_items.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="src\AccelerationStructures.cpp" />
     <ClCompile Include="src\Buffers.cpp" />
     <ClCompile Include="src\Camera.cpp" />
@@ -164,6 +175,19 @@
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_vulkan.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_win32.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imconfig.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_internal.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_single_file.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_internal.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imspinner.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_rectpack.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_textedit.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_truetype.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\Console.h" />
     <ClInclude Include="src\CreationObjects.h" />
