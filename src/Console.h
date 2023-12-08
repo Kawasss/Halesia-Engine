@@ -4,6 +4,7 @@
 #include <map>
 #include <optional>
 #include <unordered_map>
+#include <iostream>
 #include "glm.h"
 
 typedef std::string* ConsoleGroup;
@@ -151,32 +152,37 @@ private:
 
 	struct Instruction
 	{
-		LexemeToken op;
+		LexemeToken operatorType;
 		TokenContent lvalue;
 		TokenContent rvalue;
 	};
 
-	static Token GetToken(std::string string);
-	static float GetFloatFromLValue(VariableMetadata& metadata);
 	static std::string TokenToString(Token token);
-	static bool IsSeperatorToken(char item);
-	static bool IsDigitLiteral(std::string string);
-	static VariableMetadata& GetLValue(std::vector<TokenContent> tokens);
-	static float CalculateRValue(std::vector<TokenContent> tokens);
-	static void AddLocationValue(float& value, VariableMetadata& metadata);
-	static float CalculateOperator(float lvalue, float rvalue, LexemeToken op);
-	static void AssignRValueToLValue(VariableMetadata& lvalue, void* rvalue);
-	static std::vector<TokenContent> LexInput(std::string input);
-	static float SolveInstruction(Instruction& instruction);
-	static void EvaluateToken(TokenContent& token);
-	static void DispatchCommand(std::vector<TokenContent>& lvalues, std::vector<TokenContent>& rvalues, TokenContent& op);
+	static std::string variableTypeToString(VariableType type);
 	static std::string GetVariableAsString(VariableMetadata& metadata);
+	static std::vector<TokenContent> LexInput(std::string input);
+
+	static Token GetToken(std::string string);
+	static VariableMetadata& GetLValue(std::vector<TokenContent> tokens);
 	template<typename T> static VariableType GetVariableType();
 
-	static std::unordered_map<std::string, VariableMetadata> commandVariables;
-	static std::unordered_map<std::string, MessageSeverity> messageColorBinding;
-	static std::unordered_map<std::string, Group> groups;
-	static std::unordered_map<std::string, VariableType> stringToType;
+	static float GetFloatFromLValue(VariableMetadata& metadata);
+	static float CalculateResult(std::vector<TokenContent>& tokens);
+	static float CalculateOperator(float lvalue, float rvalue, LexemeToken op);
+	static float SolveInstruction(Instruction& instruction);
+	
+	static bool IsSeperatorToken(char item);
+	static bool IsDigitLiteral(std::string string);
+
+	static void AddLocationValue(float& value, VariableMetadata& metadata);
+	static void AssignRValueToLValue(VariableMetadata& lvalue, void* rvalue);
+	static void EvaluateToken(TokenContent& token);
+	static void DispatchCommand(std::vector<TokenContent>& lvalues, std::vector<TokenContent>& rvalues, TokenContent& op);
+
+	static std::unordered_map<std::string, VariableMetadata>          commandVariables;
+	static std::unordered_map<std::string, MessageSeverity>           messageColorBinding;
+	static std::unordered_map<std::string, Group>                     groups;
+	static std::unordered_map<std::string, VariableType>              stringToType;
 	static std::unordered_map<std::string, std::vector<TokenContent>> aliases;
 };
 

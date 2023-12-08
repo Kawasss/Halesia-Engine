@@ -190,7 +190,7 @@ void Console::DispatchCommand(std::vector<TokenContent>& lvalues, std::vector<To
 		AssignRValueToLValue(lvalue, &rvalues[0].content);
 		return;
 	}
-	float resultF = CalculateRValue(rvalues);
+	float resultF = CalculateResult(rvalues);
 	float lvalueF = GetFloatFromLValue(lvalue);
 	resultF = CalculateOperator(lvalueF, resultF, op.lexemeToken);
 	int resultI = (int)resultF;
@@ -281,7 +281,7 @@ float Console::SolveInstruction(Instruction& instruction)
 		lvalue = instruction.lvalue.token == LEXER_TOKEN_LITERAL ? std::stof(instruction.lvalue.content) : GetFloatFromLValue(commandVariables[instruction.lvalue.content]); // if the value is an identifier it should be converted to a float first
 	if (instruction.rvalue.token != LEXER_TOKEN_INVALID)
 		rvalue = instruction.rvalue.token == LEXER_TOKEN_LITERAL ? std::stof(instruction.rvalue.content) : GetFloatFromLValue(commandVariables[instruction.rvalue.content]);
-	LexemeToken op = instruction.op;
+	LexemeToken op = instruction.operatorType;
 	
 	return CalculateOperator(lvalue, rvalue, op);
 }
@@ -353,22 +353,62 @@ float Console::CalculateOperator(float lvalue, float rvalue, LexemeToken op)
 	return 0;
 }
 
-float Console::CalculateRValue(std::vector<TokenContent> tokens)
+float Console::CalculateResult(std::vector<TokenContent>& tokens)
 {
-	if (tokens.size() != 3 && tokens.size() != 1)
+	std::vector<float> values;
+	LexemeToken operatorType = LEXEME_TOKEN_INVALID;
+	for (int i = 0; i < tokens.size(); i++)
 	{
-		WriteLine("Invalid amount of tokens: the rvalue can only have 3 tokens for a statement", MESSAGE_SEVERITY_ERROR);
+		switch (tokens[i].lexemeToken)
+		{
+		case LEXEME_TOKEN_OPEN_PARANTHESIS:
+		{
+			std::vector<TokenContent> contents;
+			int parenCount = 1;
+			i++;
+			while (parenCount > 0 && i < tokens.size()) // i < tokens.size() is used as a failsafe if there arent enough closing parentheses
+			{
+				if (tokens[i].lexemeToken == LEXEME_TOKEN_OPEN_PARANTHESIS)
+					parenCount++;
+				else if (tokens[i].lexemeToken == LEXEME_TOKEN_CLOSE_PARANTHESIS)
+					parenCount--;
+				if (parenCount <= 0)
+					break;
+				contents.push_back(tokens[i]);
+				i++;
+			}
+			values.push_back(CalculateResult(contents)); // recursively go through all of the brackets
+			break;
+		}
+
+		case LEXEME_TOKEN_IDENTIFIER:
+			values.push_back(GetFloatFromLValue(commandVariables[tokens[0].content]));
+			break;
+
+		case LEXEME_TOKEN_INT:
+		case LEXEME_TOKEN_FLOAT:
+			values.push_back(std::stof(tokens[i].content));
+			break;
+
+		case LEXEME_TOKEN_PLUS:
+		case LEXEME_TOKEN_MINUS:
+		case LEXEME_TOKEN_MULTIPLY:
+		case LEXEME_TOKEN_DIVIDE:
+		case LEXEME_TOKEN_IS:
+		case LEXEME_TOKEN_ISNOT:
+		case LEXEME_TOKEN_ISNOT_SINGLE:
+			operatorType = tokens[i].lexemeToken;
+			break;
+		}
+	}
+	if (operatorType == LEXEME_TOKEN_INVALID)
+		return values[0];
+	if (values.size() == 0)
+	{
+		WriteLine("Failed to perform an operation: the lvalue is an invalid value", MESSAGE_SEVERITY_ERROR);
 		return 0;
 	}
-	if (tokens.size() == 1)
-	{
-		return tokens[0].token == LEXER_TOKEN_LITERAL ? std::stof(tokens[0].content) : GetFloatFromLValue(commandVariables[tokens[0].content]);
-	}
-
-	Instruction statement = { tokens[1].lexemeToken, tokens[0], tokens[2] };
-	float result = SolveInstruction(statement); // always do the calculations with a float, because if the lvalue is an int it can just be rounded into one
-
-	return result;
+	return CalculateOperator(values[0], values[1], operatorType);
 }
 
 void Console::EvaluateToken(TokenContent& token)
@@ -418,7 +458,7 @@ bool Console::IsDigitLiteral(std::string string)
 {
 	for (int i = 0; i < string.size(); i++) // check if there are any non-digit chars in the string, if there arent its a number literal
 	{
-		if (i == 0 && string[0] == '-')
+		if (i == 0 && string[0] == '-' && string.size() > 1)
 			continue;
 		if (!std::isdigit((unsigned char)string[i]))
 			return false;
@@ -488,6 +528,22 @@ std::string Console::TokenToString(Token token)
 		return "LEXER_TOKEN_OPERATOR";
 	case LEXER_TOKEN_SEPERATOR:
 		return "LEXER_TOKEN_SEPERATOR";
+	}
+	return "";
+}
+
+std::string Console::variableTypeToString(VariableType type)
+{
+	switch (type)
+	{
+	case VARIABLE_TYPE_BOOL:
+		return "VARIABLE_TYPE_BOOL";
+	case VARIABLE_TYPE_FLOAT:
+		return "VARIABLE_TYPE_FLOAT";
+	case VARIABLE_TYPE_INT:
+		return "VARIABLE_TYPE_INT";
+	case VARIABLE_TYPE_STRING:
+		return "VARIABLE_TYPE_STRING";
 	}
 	return "";
 }
