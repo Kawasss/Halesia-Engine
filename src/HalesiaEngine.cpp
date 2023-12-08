@@ -185,6 +185,8 @@ std::optional<std::string> HalesiaInstance::UpdateRenderer(const UpdateRendererD
 		renderer->RenderGraph(GPUUsage.buffer, "GPU %");
 	if (showAsyncTimes)
 		renderer->RenderPieGraph(asyncTimes, "Async Times (µs)");
+	if (showObjectData)
+		renderer->RenderObjectTable(scene->allObjects);
 
 	renderer->DrawFrame(scene->allObjects, scene->camera, rendererData.delta);
 
@@ -246,6 +248,7 @@ HalesiaExitCode HalesiaInstance::Run()
 	Console::AddConsoleVariable("showCPU", &showCPU);
 	Console::AddConsoleVariable("showGPU", &showGPU);
 	Console::AddConsoleVariable("showAsyncTimes", &showAsyncTimes);
+	Console::AddConsoleVariable("showMetaData", &showObjectData);
 
 	if (renderer == nullptr || window == nullptr/* || physics == nullptr*/)
 		return HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION;

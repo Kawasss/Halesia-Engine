@@ -39,6 +39,7 @@ public:
     void RenderGraph(const std::vector<uint64_t>& buffer, const char* label);
 	void RenderGraph(const std::vector<float>& buffer, const char* label);
 	void RenderPieGraph(std::vector<float>& data, const char* label = nullptr);
+	void RenderObjectTable(const std::vector<Object*>& objects);
 	void RenderIntro(Intro* intro);
 	VulkanCreationObject& GetVulkanCreationObject();
 	std::optional<std::string> RenderDevConsole();

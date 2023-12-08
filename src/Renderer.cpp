@@ -1132,6 +1132,60 @@ std::optional<std::string> Renderer::RenderDevConsole()
 	return inputText;
 }
 
+void Renderer::RenderObjectTable(const std::vector<Object*>& objects)
+{
+	constexpr int columnCount = 9;
+	ImGui::Begin("object metadata");
+	ImGui::BeginTable("Object metadata", columnCount, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit);
+	ImGui::TableHeader("object metadata");
+
+	ImGui::TableNextRow();
+	ImGui::TableNextColumn();
+	ImGui::Text("name");
+	ImGui::TableNextColumn();
+	ImGui::Text("handle");
+	ImGui::TableNextColumn();
+	ImGui::Text("state");
+	ImGui::TableNextColumn();
+	ImGui::Text("mesh count");
+	ImGui::TableNextColumn();
+	ImGui::Text("has script");
+	ImGui::TableNextColumn();
+	ImGui::Text("finished loading");
+	ImGui::TableNextColumn();
+	ImGui::Text("position");
+	ImGui::TableNextColumn();
+	ImGui::Text("rotation");
+	ImGui::TableNextColumn();
+	ImGui::Text("scale");
+	for (int i = 0; i < objects.size(); i++)
+	{
+		Object* currentObj = objects[i];
+		ImGui::TableNextRow();
+		ImGui::TableNextColumn();
+		ImGui::Text(currentObj->name.c_str());
+		ImGui::TableNextColumn();
+		ImGui::Text(std::to_string(currentObj->handle).c_str());
+		ImGui::TableNextColumn();
+		ImGui::Text(Object::ObjectStateToString(currentObj->state).c_str());
+		ImGui::TableNextColumn();
+		ImGui::Text(std::to_string(currentObj->meshes.size()).c_str());
+		ImGui::TableNextColumn();
+		ImGui::Text(currentObj->HasScript() ? "true" : "false");
+		ImGui::TableNextColumn();
+		ImGui::Text(currentObj->HasFinishedLoading() ? "true" : "false");
+		ImGui::TableNextColumn();
+		ImGui::Text(Vec3ToString(currentObj->transform.position).c_str());
+		ImGui::TableNextColumn();
+		ImGui::Text(Vec3ToString(currentObj->transform.rotation).c_str());
+		ImGui::TableNextColumn();
+		ImGui::Text(Vec3ToString(currentObj->transform.scale).c_str());
+	}
+
+	ImGui::EndTable();
+	ImGui::End();
+}
+
 void Renderer::RenderFPS(int FPS)
 {
 	ImGui::Begin("##FPS Counter", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground);

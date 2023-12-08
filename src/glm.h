@@ -19,3 +19,10 @@ template<typename T> inline std::string ToHexadecimalString(T number) // no bett
 	stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << number;
 	return stream.str();
 }
+
+inline std::string Vec3ToString(glm::vec3 vec3)
+{
+	std::stringstream stream;
+	stream << vec3.x << ", " << vec3.y << ", " << vec3.z;
+	return stream.str();
+}
