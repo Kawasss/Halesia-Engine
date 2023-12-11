@@ -152,6 +152,7 @@
     <ClCompile Include="src\Buffers.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Console.cpp" />
+    <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\HalesiaEngine.cpp" />
     <ClCompile Include="src\Intro.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
@@ -192,6 +193,7 @@
     <ClInclude Include="src\Console.h" />
     <ClInclude Include="src\CreationObjects.h" />
     <ClInclude Include="src\glm.h" />
+    <ClInclude Include="src\gui.h" />
     <ClInclude Include="src\HalesiaEngine.h" />
     <ClInclude Include="src\renderer\AccelerationStructures.h" />
     <ClInclude Include="src\renderer\Intro.h" />

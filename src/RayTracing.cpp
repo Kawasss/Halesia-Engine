@@ -43,6 +43,7 @@ bool RayTracing::showNormals = false;
 bool RayTracing::showUniquePrimitives = false;
 bool RayTracing::showAlbedo = false;
 bool RayTracing::renderProgressive = false;
+bool RayTracing::useWhiteAsAlbedo = false;
 
 std::vector<VkCommandBuffer> commandBuffers(MAX_FRAMES_IN_FLIGHT);
 VkDescriptorPool descriptorPool;
@@ -79,6 +80,7 @@ struct UniformBuffer
 	int32_t raySamples = 2;
 	int32_t rayDepth = 8;
 	int32_t renderProgressive = 0;
+	int useWhiteAsAlbedo = 0;
 };
 void* uniformBufferMemPtr;
 UniformBuffer uniformBuffer{};

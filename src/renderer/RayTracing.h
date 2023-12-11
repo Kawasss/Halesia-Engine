@@ -30,6 +30,7 @@ public:
 	static bool showUniquePrimitives;
 	static bool showAlbedo;
 	static bool renderProgressive;
+	static bool useWhiteAsAlbedo;
 	
 private:
 	void InitOptix();

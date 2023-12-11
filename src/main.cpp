@@ -110,7 +110,7 @@ class TestScene : public Scene
 		{
 			for (int j = 0; j < 5; j++)
 			{
-				Object* ptr = DuplicateCustomObject<ColoringTile>(baseObject, "tile" + std::to_string(i * 4 + j));
+				Object* ptr = DuplicateCustomObject<ColoringTile>(baseObject, "tile" + std::to_string(i * 5 + j));
 				ptr->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
 				ptr->GetScript<ColoringTile*>()->indexX = i - 2;
 				ptr->GetScript<ColoringTile*>()->indexY = j - 2;
@@ -165,6 +165,7 @@ int main(int argsCount, char** args)
 	createInfo.windowCreateInfo.extendedWindowStyle = ExtendedWindowStyle::DragAndDropFiles;
 	createInfo.windowCreateInfo.startMaximized = false;
 #ifdef _DEBUG
+	createInfo.useEditor = true;
 	createInfo.playIntro = false;
 #endif
 

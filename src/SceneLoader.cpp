@@ -259,6 +259,9 @@ inline MeshCreationData RetrieveMeshData(aiMesh* pMesh)
 	ret.center = (min + max) * 0.5f;
 	ret.extents = max - ret.center;
 
+	ret.name = pMesh->mName.C_Str();
+	if (ret.name == "") ret.name = "NO_NAME";
+
 	return ret;
 }
 

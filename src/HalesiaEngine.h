@@ -101,6 +101,7 @@ private:
 	std::optional<std::string> UpdateRenderer(const UpdateRendererData& rendererData);
 	void UpdateScene(const UpdateSceneData& sceneData);
 
+	bool useEditor = false;
 	bool playIntro = true;
 	bool devKeyIsPressedLastFrame = false;
 	bool renderDevConsole = false;

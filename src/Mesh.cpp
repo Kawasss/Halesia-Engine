@@ -25,6 +25,7 @@ void Mesh::Create(const MeshCreationObject& creationObject, const MeshCreationDa
 	if (materials.size() == 0)
 		materials.push_back({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
 
+	name = creationData.name;
 	vertices = creationData.vertices;
 	indices = creationData.indices;
 	faceCount = creationData.faceCount;

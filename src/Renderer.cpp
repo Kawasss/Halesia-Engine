@@ -25,13 +25,9 @@
 #define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "implot.h"
-
-#define IMSPINNER_DEMO
 #include "imgui.h"
 #include "backends/imgui_impl_vulkan.h"
 #include "backends/imgui_impl_win32.h"
-#include "misc/cpp/imgui_stdlib.h"
-#include "imgui-1.89.8/imgui-1.89.8/imspinner.h"
 
 #include "renderer/Renderer.h"
 
@@ -217,6 +213,9 @@ void Renderer::InitVulkan()
 	CreateSyncObjects();
 	CreateImGUI();
 	
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
 
 	if (!initGlobalBuffers)
 	{
@@ -996,10 +995,15 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 			activeObjects.push_back(object);
 	
 	ImGui::Render();
-	
-	if (activeObjects.empty())
-		return;
 
+	if (activeObjects.empty())
+	{
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+		return;
+	}
+		
 	std::lock_guard<std::mutex> lockGuard(drawingMutex);
 
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
@@ -1022,8 +1026,12 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
 
 	PresentSwapchainImage(currentFrame, imageIndex);
-	
+
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+	ImGui_ImplVulkan_NewFrame(); // not great that this is mentionned twice in one function
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
 }
 
 void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
@@ -1091,164 +1099,49 @@ void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
 }
 
 
-std::optional<std::string> Renderer::RenderDevConsole()
+
+void Renderer::RenderMeshData(const std::vector<Mesh>& meshes)
 {
-	ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-
-	std::optional<std::string> inputText;
-
-	if (Console::isOpen)
-	{
-		ImGui::Begin("Dev Console", nullptr, ImGuiWindowFlags_NoCollapse);
-		ImGuiStyle& style = ImGui::GetStyle();
-		ImVec4* colors = style.Colors;
-
-		colors[ImGuiCol_WindowBg] = ImVec4(0.01f, 0.01f, 0.01f, 0.9f);
-		colors[ImGuiCol_Border] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-		colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-		colors[ImGuiCol_ResizeGrip] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.56f, 0.49f, 0.68f, 1);
-		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.56f, 0.49f, 0.68f, 1);
-
-		style.WindowRounding = 5;
-		style.WindowBorderSize = 2;
-
-		for (std::string message : Console::messages)
-		{
-			glm::vec3 color = Console::GetColorFromMessage(message);
-			ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1), message.c_str());
-		}
-
-		std::string result = "";
-		ImGui::InputTextWithHint("##input", "Console commands...", &result);
-
-		if (Input::IsKeyPressed(VirtualKey::Return)) // if enter is pressed place the input value into the optional variable
-			inputText = result;
-
-		ImGui::End();
-	}
-	return inputText;
-}
-
-void Renderer::RenderObjectTable(const std::vector<Object*>& objects)
-{
-	constexpr int columnCount = 9;
-	ImGui::Begin("object metadata");
-	ImGui::BeginTable("Object metadata", columnCount, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit);
-	ImGui::TableHeader("object metadata");
+	constexpr int columnCount = 7;
+	ImGui::Begin("mesh data");
+	ImGui::BeginTable("mesh data", columnCount, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit);
 
 	ImGui::TableNextRow();
 	ImGui::TableNextColumn();
 	ImGui::Text("name");
 	ImGui::TableNextColumn();
-	ImGui::Text("handle");
+	ImGui::Text("material index");
 	ImGui::TableNextColumn();
-	ImGui::Text("state");
+	ImGui::Text("vertex memory");
 	ImGui::TableNextColumn();
-	ImGui::Text("mesh count");
+	ImGui::Text("index memory");
 	ImGui::TableNextColumn();
-	ImGui::Text("has script");
+	ImGui::Text("BLAS");
 	ImGui::TableNextColumn();
-	ImGui::Text("finished loading");
+	ImGui::Text("face count");
 	ImGui::TableNextColumn();
-	ImGui::Text("position");
+	ImGui::Text("center");
 	ImGui::TableNextColumn();
-	ImGui::Text("rotation");
-	ImGui::TableNextColumn();
-	ImGui::Text("scale");
-	for (int i = 0; i < objects.size(); i++)
+	ImGui::Text("extents");
+	for (int i = 0; i < meshes.size(); i++)
 	{
-		Object* currentObj = objects[i];
+		const Mesh& mesh = meshes[i];
 		ImGui::TableNextRow();
 		ImGui::TableNextColumn();
-		ImGui::Text(currentObj->name.c_str());
+		ImGui::Text(mesh.name.c_str());
 		ImGui::TableNextColumn();
-		ImGui::Text(std::to_string(currentObj->handle).c_str());
+		ImGui::Text(std::to_string(mesh.materialIndex).c_str());
 		ImGui::TableNextColumn();
-		ImGui::Text(Object::ObjectStateToString(currentObj->state).c_str());
+		ImGui::Text(std::to_string(mesh.vertexMemory).c_str());
 		ImGui::TableNextColumn();
-		ImGui::Text(std::to_string(currentObj->meshes.size()).c_str());
+		ImGui::Text(std::to_string(mesh.indexMemory).c_str());
 		ImGui::TableNextColumn();
-		ImGui::Text(currentObj->HasScript() ? "true" : "false");
+		ImGui::Text(std::to_string((uint64_t)mesh.BLAS).c_str());
 		ImGui::TableNextColumn();
-		ImGui::Text(currentObj->HasFinishedLoading() ? "true" : "false");
+		ImGui::Text(std::to_string(mesh.faceCount).c_str());
 		ImGui::TableNextColumn();
-		ImGui::Text(Vec3ToString(currentObj->transform.position).c_str());
+		ImGui::Text(Vec3ToString(mesh.center).c_str());
 		ImGui::TableNextColumn();
-		ImGui::Text(Vec3ToString(currentObj->transform.rotation).c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(Vec3ToString(currentObj->transform.scale).c_str());
+		ImGui::Text(Vec3ToString(mesh.extents).c_str());
 	}
-
-	ImGui::EndTable();
-	ImGui::End();
-}
-
-void Renderer::RenderFPS(int FPS)
-{
-	ImGui::Begin("##FPS Counter", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground);
-
-	ImGui::SetWindowPos(ImVec2(0, 0/*ImGui::GetWindowSize().y * 0.2f*/));
-	ImGui::SetWindowSize(ImVec2(ImGui::GetWindowSize().x * 2, ImGui::GetWindowSize().y));
-	std::string text = std::to_string(FPS) + " FPS";
-	ImGui::Text(text.c_str());
-
-	ImGui::End();
-}
-
-void SetImGuiColors()
-{
-	ImGuiStyle& style = ImGui::GetStyle();
-	style.WindowRounding = 5;
-	style.WindowBorderSize = 2;
-
-	ImVec4* colors = style.Colors;
-
-	colors[ImGuiCol_WindowBg] = ImVec4(0.01f, 0.01f, 0.01f, 0.9f);
-	colors[ImGuiCol_Border] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-	colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-}
-
-void Renderer::RenderPieGraph(std::vector<float>& data, const char* label)
-{
-	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
-	SetImGuiColors();
-
-	ImPlot::BeginPlot("##Time Per Async Task", ImVec2(-1, 0), ImPlotFlags_Equal | ImPlotFlags_NoMouseText | ImPlotFlags_NoFrame);
-	ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoDecorations, ImPlotAxisFlags_NoDecorations);
-	ImPlot::SetupAxesLimits(0, 1, 0, 1);
-	const char* labels[] = { "Main Thread", "Script Thread", "Renderer Thread" };
-	ImPlot::PlotPieChart(labels, data.data(), 3, 0.5, 0.5, 0.5, "%.1f", 180);
-	ImPlot::EndPlot();
-	ImGui::End();
-}
-
-void Renderer::RenderGraph(const std::vector<uint64_t>& buffer, const char* label)
-{
-	ImGui::Begin("RAM Usage", nullptr, ImGuiWindowFlags_NoScrollbar);
-	SetImGuiColors();
-
-	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
-	ImPlot::SetupAxisLimits(ImAxis_X1, 0, 500);
-	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, buffer[buffer.size() - 1] * 1.3);
-	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
-	ImPlot::PlotLine(label, buffer.data(), (int)buffer.size());
-	ImPlot::EndPlot();
-	ImGui::End();
-}
-
-void Renderer::RenderGraph(const std::vector<float>& buffer, const char* label)
-{
-	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
-	SetImGuiColors();
-
-	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
-	ImPlot::SetupAxisLimits(ImAxis_X1, 0, 100);
-	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
-	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
-	ImPlot::PlotLine(label, buffer.data(), (int)buffer.size());
-	ImPlot::EndPlot();
-	ImGui::End();
 }

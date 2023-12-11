@@ -16,6 +16,7 @@ class Object;
 class Swapchain;
 class RayTracing;
 class Image;
+struct Mesh;
 
 class Renderer
 {
@@ -35,14 +36,9 @@ public:
 	Renderer(Win32Window* window);
 	void Destroy();
 	void DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta);
-	void RenderFPS(int FPS);
-    void RenderGraph(const std::vector<uint64_t>& buffer, const char* label);
-	void RenderGraph(const std::vector<float>& buffer, const char* label);
-	void RenderPieGraph(std::vector<float>& data, const char* label = nullptr);
-	void RenderObjectTable(const std::vector<Object*>& objects);
+	void RenderMeshData(const std::vector<Mesh>& meshes);
 	void RenderIntro(Intro* intro);
 	VulkanCreationObject& GetVulkanCreationObject();
-	std::optional<std::string> RenderDevConsole();
 
 	Swapchain* swapchain; // better to keep it private
 

@@ -9,6 +9,7 @@
 #include "Console.h"
 #include "renderer/RayTracing.h"
 #include "Physics.h"
+#include "gui.h"
 
 int ParseAndValidateDimensionArgument(std::string string)
 {
@@ -55,6 +56,7 @@ void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, Halesia
 		Console::Init();
 		Console::WriteLine("Write \"help\" for all commands");
 		//instance.physics = new Physics();
+		instance.useEditor = createInfo.useEditor;
 		instance.devConsoleKey = createInfo.devConsoleKey;
 		instance.playIntro = createInfo.playIntro;
 		Physics::Init();
@@ -172,21 +174,27 @@ std::optional<std::string> HalesiaInstance::UpdateRenderer(const UpdateRendererD
 	SetThreadDescription(GetCurrentThread(), L"VulkanRenderingThread");
 
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
-	std::optional<std::string> command = renderer->RenderDevConsole();
+	std::optional<std::string> command = GUI::ShowDevConsole();
 	if (showFPS)
-		renderer->RenderFPS((int)(1 / rendererData.delta * 1000));
+		GUI::ShowFPS((int)(1 / rendererData.delta * 1000));
 
 	ramUsed.Add(GetPhysicalMemoryUsedByApp() / (1024ULL * 1024));
 	if (showRAM)
-		renderer->RenderGraph(ramUsed.buffer, "RAM in MB");
+		GUI::ShowGraph(ramUsed.buffer, "RAM in MB");
 	if (showCPU)
-		renderer->RenderGraph(CPUUsage.buffer, "CPU %");
+		GUI::ShowGraph(CPUUsage.buffer, "CPU %");
 	if (showGPU)
-		renderer->RenderGraph(GPUUsage.buffer, "GPU %");
+		GUI::ShowGraph(GPUUsage.buffer, "GPU %");
 	if (showAsyncTimes)
-		renderer->RenderPieGraph(asyncTimes, "Async Times (µs)");
+		GUI::ShowPieGraph(asyncTimes, "Async Times (µs)");
 	if (showObjectData)
-		renderer->RenderObjectTable(scene->allObjects);
+		GUI::ShowObjectTable(scene->allObjects);
+
+	if (useEditor)
+	{
+		GUI::ShowSceneGraph(scene->allObjects, window);
+		GUI::ShowMainMenuBar(showObjectData, showRAM, showCPU, showGPU);
+	}
 
 	renderer->DrawFrame(scene->allObjects, scene->camera, rendererData.delta);
 

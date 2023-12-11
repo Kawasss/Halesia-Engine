@@ -59,6 +59,7 @@ layout(binding = 1, set = 0) uniform Camera
   int raySamples;
   int rayDepth;
   int renderProgressive;
+  int whiteAbledo;
 } camera;
 
 layout (binding = 2, set = 0) buffer IndexBuffer { uint16_t data[]; } indexBuffer;

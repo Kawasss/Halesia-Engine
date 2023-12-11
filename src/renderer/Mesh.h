@@ -19,6 +19,8 @@ struct Mesh
 	void Create(const MeshCreationObject& creationObject, const MeshCreationData& creationData);
 	void Destroy();
 
+	std::string name = "NO_NAME";
+
 	uint32_t materialIndex = 0;
 	StorageMemory vertexMemory;
 	StorageMemory indexMemory;
