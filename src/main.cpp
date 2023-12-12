@@ -144,7 +144,7 @@ class TestScene : public Scene
 		}
 		
 		Object* floorPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/plane.obj"));
-		floorPtr->transform.position = glm::vec3(0, -1, 0);
+		floorPtr->transform.position = glm::vec3(0, -1.1, 0);
 		floorPtr->AwaitGeneration();
 		Box box = Box(floorPtr->meshes[0].extents);
 		floorPtr->AddRigidBody(RIGID_BODY_STATIC, box);
@@ -154,6 +154,10 @@ class TestScene : public Scene
 		ramp->transform.rotation.x = 45;
 		box = Box(ramp->meshes[0].extents);
 		ramp->AddRigidBody(RIGID_BODY_STATIC, box);
+		ramp->rigid.MovePosition(ramp->transform.position, ramp->transform.rotation);
+
+		ramp = DuplicateStaticObject(ramp, "ramp2");
+		ramp->transform.rotation.y += 45;
 		ramp->rigid.MovePosition(ramp->transform.position, ramp->transform.rotation);
 	}
 

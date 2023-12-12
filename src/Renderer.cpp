@@ -44,6 +44,7 @@ StorageBuffer<uint16_t> Renderer::globalIndicesBuffer;
 bool Renderer::initGlobalBuffers = false;
 VkSampler Renderer::defaultSampler = VK_NULL_HANDLE;
 Handle Renderer::selectedHandle = 0;
+bool Renderer::shouldRenderCollisionBoxes = false;
 
 std::vector<VkDynamicState> Renderer::dynamicStates =
 {
@@ -628,18 +629,10 @@ void Renderer::CreateGraphicsPipeline()
 	dynamicState.pNext = nullptr;
 	dynamicState.flags = 0;
 
-	VkVertexInputBindingDescription bindingDescription = Vertex::GetBindingDescription();
-	std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions = Vertex::GetAttributeDescriptions();
-
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 	vertexInputInfo.vertexAttributeDescriptionCount = 0;
 	vertexInputInfo.vertexBindingDescriptionCount = 0;
-
-	vertexInputInfo.vertexBindingDescriptionCount = 1;
-	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-	vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -677,9 +670,10 @@ void Renderer::CreateGraphicsPipeline()
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizer.depthClampEnable = false;
 	rasterizer.rasterizerDiscardEnable = false;
-	rasterizer.lineWidth = 1;
+	rasterizer.lineWidth = 2;
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
 	rasterizer.depthBiasEnable = false;
 
 	VkPipelineMultisampleStateCreateInfo multisampling{};
@@ -689,20 +683,32 @@ void Renderer::CreateGraphicsPipeline()
 
 	VkPipelineColorBlendAttachmentState blendAttachment{};
 	blendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	blendAttachment.blendEnable = false;
-	std::vector<VkPipelineColorBlendAttachmentState> blendAttachments(3, blendAttachment);
+	blendAttachment.blendEnable = true;
+	blendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+	blendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+	blendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+	blendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+	blendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+	blendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 
 	VkPipelineColorBlendStateCreateInfo blendCreateInfo{};
 	blendCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	blendCreateInfo.logicOpEnable = VK_FALSE;
-	blendCreateInfo.attachmentCount = 3;
-	blendCreateInfo.pAttachments = blendAttachments.data();
+	blendCreateInfo.logicOp = VK_LOGIC_OP_COPY;
+	blendCreateInfo.attachmentCount = 1;
+	blendCreateInfo.pAttachments = &blendAttachment;
+
+	VkPushConstantRange pushConstant{};
+	pushConstant.offset = 0;
+	pushConstant.size = sizeof(glm::mat4);
+	pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
 
 	VkPipelineLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	layoutInfo.setLayoutCount = 1;
 	layoutInfo.pSetLayouts = &descriptorSetLayout;
-	layoutInfo.pushConstantRangeCount = 0;
+	layoutInfo.pushConstantRangeCount = 1;
+	layoutInfo.pPushConstantRanges = &pushConstant;
 
 	VkResult result = vkCreatePipelineLayout(logicalDevice, &layoutInfo, nullptr, &pipelineLayout);
 	CheckVulkanResult("Failed to create a pipeline layout", result, vkCreatePipelineLayout);
@@ -724,7 +730,7 @@ void Renderer::CreateGraphicsPipeline()
 	pipelineCreateInfo.pDynamicState = &dynamicState;
 	pipelineCreateInfo.pDepthStencilState = &depthStencil;
 	pipelineCreateInfo.layout = pipelineLayout;
-	pipelineCreateInfo.renderPass = deferredRenderPass;
+	pipelineCreateInfo.renderPass = renderPass;
 	pipelineCreateInfo.subpass = 0;
 
 	result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline);
@@ -859,6 +865,15 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
 	vkCmdBeginRenderPass(lCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+	if (shouldRenderCollisionBoxes)
+	{
+		vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+		vkCmdBindPipeline(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		SetViewport(lCommandBuffer);
+		SetScissors(lCommandBuffer);
+		RenderCollisionBoxes(objects, lCommandBuffer, currentFrame);
+	}
 
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), lCommandBuffer);
 
@@ -1089,6 +1104,23 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 		vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
+void Renderer::RenderCollisionBoxes(std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage)
+{
+	for (Object* object : objects)
+	{
+		if (object->rigid.shape.type != SHAPE_TYPE_BOX)
+			continue;
+
+		glm::mat4 localRotationModel = glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.x), glm::vec3(1, 0, 0)) * glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.y), glm::vec3(0, 1, 0)) * glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.z), glm::vec3(0, 0, 1));
+		glm::mat4 scaleModel = glm::scale(glm::identity<glm::mat4>(), object->meshes[0].extents);
+		glm::mat4 translationModel = glm::translate(glm::identity<glm::mat4>(), object->transform.position);
+		glm::mat4 trans = translationModel * localRotationModel * scaleModel;
+		
+		vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &trans);
+		vkCmdDraw(commandBuffer, 36, 1, 0, 0);
+	}	
+}
+
 void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
 {
 	UniformBufferObject ubo{};
@@ -1097,8 +1129,6 @@ void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
 	ubo.projection = camera->GetProjectionMatrix();
 	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }
-
-
 
 void Renderer::RenderMeshData(const std::vector<Mesh>& meshes)
 {

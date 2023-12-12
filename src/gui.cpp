@@ -5,6 +5,7 @@
 #include "system/Window.h"
 #include "Object.h"
 #include "renderer/Mesh.h"
+#include "renderer/Renderer.h"
 
 #define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -82,6 +83,10 @@ void GUI::ShowMainMenuBar(bool& showObjMeta, bool& ramGraph, bool& cpuGraph, boo
 		RayTracing::showAlbedo = ImGui::Button("show albedo") ? !RayTracing::showAlbedo : RayTracing::showAlbedo;
 		RayTracing::showNormals = ImGui::Button("show normals") ? !RayTracing::showNormals : RayTracing::showNormals;
 		RayTracing::showUniquePrimitives = ImGui::Button("show unique") ? !RayTracing::showUniquePrimitives : RayTracing::showUniquePrimitives;
+		ImGui::Separator();
+		Renderer::shouldRenderCollisionBoxes = ImGui::Button("show collision boxes") ? !Renderer::shouldRenderCollisionBoxes : Renderer::shouldRenderCollisionBoxes;
+		ImGui::Separator();
+		ImGui::Button("view statistics");
 		ImGui::EndMenu();
 	}
 	ImGui::EndMainMenuBar();

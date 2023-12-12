@@ -49,9 +49,8 @@ layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(binding = 1, set = 0) uniform Camera 
 {
   vec4 position;
-  vec4 right;
-  vec4 up;
-  vec4 forward;
+  mat4 viewInv;
+  mat4 projInv;
   uvec2 mouseXY;
 
   uint frameCount;

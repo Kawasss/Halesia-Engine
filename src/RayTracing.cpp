@@ -70,9 +70,8 @@ uint32_t indicesSize;
 struct UniformBuffer
 {
 	glm::vec4 cameraPosition = glm::vec4(0);
-	glm::vec4 cameraRight = glm::vec4(0);
-	glm::vec4 cameraUp = glm::vec4(0);
-	glm::vec4 cameraForward = glm::vec4(0);
+	glm::mat4 viewInverse;
+	glm::mat4 projectionInverse;
 	glm::uvec2 mouseXY = glm::uvec2(0);
 
 	uint32_t frameCount = 0;
@@ -748,7 +747,7 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 		frameCount = 0;
 	
 	if (showNormals && showUniquePrimitives) showNormals = false; // can't have 2 variables changing colors at once
-	uniformBuffer = UniformBuffer{ { camera->position, 1 }, { camera->right, 1 }, { camera->up, 1 }, { camera->front, 1 }, glm::uvec2((uint32_t)absX, (uint32_t)absY), frameCount, showUniquePrimitives, raySampleCount, rayDepth, renderProgressive};
+	uniformBuffer = UniformBuffer{ { camera->position, 1 }, glm::inverse(camera->GetViewMatrix()), glm::inverse(camera->GetProjectionMatrix()), glm::uvec2((uint32_t)absX, (uint32_t)absY), frameCount, showUniquePrimitives, raySampleCount, rayDepth, renderProgressive};
 	
 	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
 	TLAS->Build(creationObject, objects, false, commandBuffer);

@@ -3,9 +3,11 @@
 
 enum ShapeType
 {
+	SHAPE_TYPE_NONE,
 	SHAPE_TYPE_SPHERE,
 	SHAPE_TYPE_BOX,
-	SHAPE_TYPE_CAPSULE
+	SHAPE_TYPE_CAPSULE,
+	SHAPE_TYPE_PLANE
 };
 
 namespace physx
@@ -17,6 +19,7 @@ class Shape
 {
 public:
 	physx::PxShape* GetShape();
+	ShapeType type;
 
 protected:
 	physx::PxShape* shape;

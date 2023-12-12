@@ -43,6 +43,7 @@ public:
 	Swapchain* swapchain; // better to keep it private
 
 	bool shouldRasterize = false;
+	static bool shouldRenderCollisionBoxes;
 	static Handle selectedHandle;
 
 private:
@@ -125,6 +126,7 @@ private:
 
 	void UpdateUniformBuffers(uint32_t currentImage, Camera* camera);
 	void RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
+	void RenderCollisionBoxes(std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage);
 
 	uint32_t GetNextSwapchainImage(uint32_t frameIndex);
 	void PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex);

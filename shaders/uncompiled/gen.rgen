@@ -22,9 +22,8 @@ layout(location = 0) rayPayloadEXT Payload {
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(binding = 1, set = 0) uniform Camera {
   vec4 position;
-  vec4 right;
-  vec4 up;
-  vec4 forward;
+  mat4 viewInv;
+  mat4 projInv;
   uvec2 mouseXY;
 
   uint frameCount;
@@ -77,12 +76,15 @@ void main() {
   uint rng = gl_LaunchIDEXT.x * gl_LaunchIDEXT.y + camera.frameCount;
   for (int j = 0; j < camera.raySamples; j++)
   {
-      vec2 uv = gl_LaunchIDEXT.xy + vec2(RandomValue(rng), RandomValue(rng));
-      uv /= vec2(gl_LaunchSizeEXT.xy);
-      uv = (uv * 2.0f - 1.0f) * vec2(1.0f, -1.0f);
+      vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(0.5);
+      vec2 inUV = center / vec2(gl_LaunchSizeEXT.xy);
+      vec2 uv = inUV * 2.0 - 1.0;//gl_LaunchIDEXT.xy + vec2(RandomValue(rng), RandomValue(rng));
+      //uv /= vec2(gl_LaunchSizeEXT.xy);
+      //uv = (uv * 2.0f - 1.0f) * vec2(1.0f, -1.0f);
 
-      payload.rayOrigin = camera.position.xyz;
-      payload.rayDirection = normalize(uv.x * camera.right + uv.y * camera.up + camera.forward).xyz;
+      vec4 target = camera.projInv * vec4(uv.x, uv.y, 1, 1);
+      payload.rayOrigin = (camera.viewInv * vec4(0, 0, 0, 1)).xyz;//camera.position.xyz;
+      payload.rayDirection = (camera.viewInv * vec4(normalize(target.xyz), 0)).xyz;//normalize(uv.x * camera.right + uv.y * camera.up + camera.forward).xyz;
       payload.previousNormal = vec3(0.0, 0.0, 0.0);
 
       payload.directColor = vec3(1);
