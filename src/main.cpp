@@ -1,6 +1,6 @@
 #define NOMINMAX
 #include "HalesiaEngine.h"
-#include "Physics.h" // only for test
+#include "physics/Physics.h" // only for test
 
 class TestCamera : public OrbitCamera
 {
@@ -97,10 +97,10 @@ class TestScene : public Scene
 {
 	Material colorMaterial;
 
-	Object* objPtr = nullptr;
+	std::vector<Object*> spheres;
 	void Start() override
 	{
-		colorMaterial = { new Texture(GetVulkanCreationObjects(), "textures/red.png") };
+		/*colorMaterial = { new Texture(GetVulkanCreationObjects(), "textures/red.png") };
 		colorMaterial.roughness = new Texture(GetVulkanCreationObjects(), "textures/white.png");
 		Object* baseObject = AddCustomObject<ColoringTile>("stdObj/cube.obj", OBJECT_IMPORT_EXTERNAL);
 		baseObject->AwaitGeneration();
@@ -123,29 +123,49 @@ class TestScene : public Scene
 		lightMaterial.isLight = true;
 		AddStaticObject(GenericLoader::LoadObjectFile("stdObj/light.obj"))->meshes[0].SetMaterial(lightMaterial);
 		
-		this->camera = new TestCamera();
+		this->camera = new TestCamera();*/
 
 
-		/*Object* glockPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/glock.obj"));
+		Object* objPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/sphere.obj"));
 		Material knifeMaterial = { new Texture(GetVulkanCreationObjects(), "textures/glockAlbedo.png"), new Texture(GetVulkanCreationObjects(), "textures/glockNormal.png") };
 		knifeMaterial.AwaitGeneration();
-		glockPtr->meshes[0].SetMaterial(knifeMaterial);
-		glockPtr->transform.rotation = glm::vec3(0, 45, 45);
-		glockPtr->transform.scale = glm::vec3(0.3f);
-
-		Physics::physics->CreatePhysicsObject(glockPtr->meshes[0]);
-
+		objPtr->meshes[0].SetMaterial(knifeMaterial);
+		objPtr->transform.position.y += 20;
+		objPtr->AwaitGeneration();
+		Sphere sphere = Sphere(1);
+		objPtr->AddRigidBody(RIGID_BODY_DYNAMIC, sphere);
+		spheres.push_back(objPtr);
+		for (int i = 0; i < 32; i++)
+		{
+			Object* ptr = DuplicateStaticObject(objPtr, "sphere" + std::to_string(i));
+			ptr->transform.position.y += 10 * (i + 1);
+			ptr->rigid.MovePosition(ptr->transform.position, ptr->transform.rotation);
+			spheres.push_back(ptr);
+		}
+		
 		Object* floorPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/plane.obj"));
-		floorPtr->transform.scale = glm::vec3(10, 1, 10);
-		floorPtr->transform.position = glm::vec3(0, -1, 0);*/
+		floorPtr->transform.position = glm::vec3(0, -1, 0);
+		floorPtr->AwaitGeneration();
+		Box box = Box(floorPtr->meshes[0].extents);
+		floorPtr->AddRigidBody(RIGID_BODY_STATIC, box);
+
+		Object* ramp = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/ramp.obj"));
+		ramp->AwaitGeneration();
+		ramp->transform.rotation.x = 45;
+		box = Box(ramp->meshes[0].extents);
+		ramp->AddRigidBody(RIGID_BODY_STATIC, box);
+		ramp->rigid.MovePosition(ramp->transform.position, ramp->transform.rotation);
 	}
 
 	void Update(float delta) override
 	{
-		if (Input::IsKeyPressed(VirtualKey::R) && objPtr != nullptr)
+		if (!Input::IsKeyPressed(VirtualKey::R) || Input::IsKeyPressed(VirtualKey::P))
+			return;
+
+		for (int i = 0; i < spheres.size(); i++)
 		{
-			Free(objPtr);
-			objPtr = nullptr;
+			spheres[i]->transform.position = glm::vec3(0, 20 + 5 * (i + 1), 0);
+			spheres[i]->rigid.MovePosition(spheres[i]->transform.position, spheres[i]->transform.rotation);
 		}
 	}
 };

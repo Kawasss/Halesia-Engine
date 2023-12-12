@@ -4,6 +4,7 @@
 #include "renderer/RayTracing.h"
 #include "system/Window.h"
 #include "Object.h"
+#include "renderer/Mesh.h"
 
 #define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -90,6 +91,9 @@ void GUI::ShowMainMenuBar(bool& showObjMeta, bool& ramGraph, bool& cpuGraph, boo
 
 void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* window)
 {
+	static int currentListBoxItem = -1;
+	static bool viewMaterial = false;
+
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
@@ -99,8 +103,7 @@ void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* windo
 	ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetFrameHeight() + style.FramePadding.y));
 	ImGui::SetNextWindowSize(ImVec2(window->GetWidth() / 8, window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
 	ImGui::Begin("scene graph", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
-	ImGui::Text("object count: %i", objects.size());
-	ImGui::BeginChild(1);
+	ImGui::BeginChild(1, ImVec2(0, (window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y) / 2));
 	for (int i = 0; i < objects.size(); i++)
 	{
 		if (!ImGui::TreeNode(objects[i]->name.c_str()))
@@ -114,10 +117,6 @@ void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* windo
 	}
 	ImGui::EndChild();
 	ImGui::End();
-
-	ImGui::SetNextWindowPos(ImVec2(0, window->GetHeight() * 3 / 4));
-	ImGui::SetNextWindowSize(ImVec2(window->GetWidth(), window->GetHeight() / 4));
-
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
 }

@@ -8,7 +8,7 @@
 #include "CreationObjects.h"
 #include "Console.h"
 #include "renderer/RayTracing.h"
-#include "Physics.h"
+#include "physics/Physics.h"
 #include "gui.h"
 
 int ParseAndValidateDimensionArgument(std::string string)
@@ -268,7 +268,6 @@ HalesiaExitCode HalesiaInstance::Run()
 	Console::AddConsoleVariable("showUnique", &RayTracing::showUniquePrimitives);
 	Console::AddConsoleVariable("showAlbedo", &RayTracing::showAlbedo);
 	Console::AddConsoleVariable("rasterize", &renderer->shouldRasterize);
-	
 	try
 	{
 		float frameDelta = 0;
@@ -289,12 +288,14 @@ HalesiaExitCode HalesiaInstance::Run()
 		while (!window->ShouldClose())
 		{
 			CheckInput();
-
 			UpdateSceneData sceneData{ frameDelta, pauseGame, playOneFrame };
 			asyncScripts = std::async(&HalesiaInstance::UpdateScene, this, std::cref(sceneData));
 
 			UpdateRendererData rendererData{ frameDelta };
 			asyncRenderer = std::async(&HalesiaInstance::UpdateRenderer, this, std::cref(rendererData));
+
+			if (Input::IsKeyPressed(VirtualKey::P))
+			Physics::physics->Simulate(frameDelta);
 
 			if (window->ContainsDroppedFile())
 				scene->AddStaticObject(GenericLoader::LoadObjectFile(window->GetDroppedFile()));
@@ -312,9 +313,12 @@ HalesiaExitCode HalesiaInstance::Run()
 
 			asyncScripts.get();
 
+			if (frameDelta > 0)
+			Physics::physics->FetchAndUpdateObjects();
+
 			frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();
 			timeSinceLastFrame = std::chrono::high_resolution_clock::now();
-
+			
 			timeSinceLastDataUpdate += frameDelta;
 			if (timeSinceLastDataUpdate > 500)
 			{

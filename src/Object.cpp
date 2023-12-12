@@ -3,6 +3,7 @@
 #include <future>
 #include "Console.h"
 #include "SceneLoader.h"
+#include "physics/Physics.h"
 
 void Object::AwaitGeneration()
 {
@@ -64,7 +65,22 @@ void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, v
 	newObjPtr->scriptClass = script;
 	newObjPtr->handle = ResourceManager::GenerateHandle();
 
+	newObjPtr->AddRigidBody(oldObjPtr->rigid.type, oldObjPtr->rigid.shape);
+
 	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + oldObjPtr->name + "\"", MESSAGE_SEVERITY_DEBUG);
+}
+
+void Object::Update(float delta)
+{
+	
+}
+
+void Object::AddRigidBody(RigidBodyType type, Shape shape)
+{
+	rigid = RigidBody(shape, type, transform.position, transform.rotation);
+	rigid.SetUserData(this);
+
+	std::cout << "Created new rigid body (" << RigidBodyTypeToString(type) << ") for object \"" << name << "\"\n";
 }
 
 bool Object::HasFinishedLoading()
@@ -93,4 +109,5 @@ std::string Object::ObjectStateToString(ObjectState state)
 	case OBJECT_STATE_VISIBLE:
 		return "OBJECT_STATE_VISIBLE";
 	}
+	return "";
 }

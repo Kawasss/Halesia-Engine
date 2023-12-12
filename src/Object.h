@@ -7,7 +7,14 @@
 #include "renderer/Mesh.h"
 #include "Transform.h"
 #include "CreationObjects.h"
+#include "physics/RigidBody.h"
+#include "physics/Shapes.h"
 
+namespace physx
+{
+	class PxRigidDynamic;
+	class PxRigidStatic;
+}
 struct ObjectCreationData;
 typedef uint64_t Handle;
 
@@ -36,10 +43,11 @@ public:
 	virtual		~Object() {};
 	virtual void Destroy();
 	virtual void Start() {};
-	virtual void Update(float delta) {};
+	virtual void Update(float delta);
 
 	bool HasFinishedLoading();
 	bool HasScript() { return scriptClass == nullptr; }
+	bool HasRigidBody() { return rigid.type != RIGID_BODY_NONE; }
 
 	/// <summary>
 	/// Awaits the async generation process of the object and meshes
@@ -64,10 +72,12 @@ public:
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
 	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
 
+	void AddRigidBody(RigidBodyType type, Shape shape);
 	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script);
 	static std::string ObjectStateToString(ObjectState state);
 
 	Transform transform;
+	RigidBody rigid;
 	std::vector<Mesh> meshes;
 	ObjectState state = OBJECT_STATE_VISIBLE;
 	std::string name;

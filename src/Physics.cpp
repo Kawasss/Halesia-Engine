@@ -1,5 +1,5 @@
 #define PX_PHYSX_STATIC_LIB
-#include "Physics.h"
+#include "physics/Physics.h"
 #include <string>
 #include <thread>
 #include <iostream>
@@ -7,12 +7,17 @@
 #include "extensions/PxDefaultCpuDispatcher.h"
 #include "extensions/PxDefaultSimulationFilterShader.h"
 #include "renderer/Mesh.h"
+#include "Object.h"
+
+constexpr float simulationStep = 1 / 60.0f;
 
 Physics* Physics::physics = nullptr;
+physx::PxMaterial* Physics::defaultMaterial = nullptr;
 
 void Physics::Init()
 {
 	physics = new Physics();
+	defaultMaterial = physics->physicsObject->createMaterial(0.4f, 0.4f, 0.2f);
 }
 
 Physics::Physics()
@@ -39,6 +44,7 @@ Physics::Physics()
 	sceneInfo.gravity = physx::PxVec3(0.0f, -9.81f, 0.0f);
 	sceneInfo.cpuDispatcher = dispatcher;
 	sceneInfo.filterShader = physx::PxDefaultSimulationFilterShader;
+	sceneInfo.flags = physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 	
 	scene = physicsObject->createScene(sceneInfo);
 }
@@ -48,23 +54,49 @@ Physics::~Physics()
 	physicsObject->release();
 }
 
-physx::PxShape* Physics::CreatePhysicsObject(Mesh& mesh)
+void Physics::FetchAndUpdateObjects()
 {
-	float x = (mesh.max.x - mesh.min.x) / 2;
-	float y = (mesh.max.y - mesh.min.y) / 2;
-	float z = (mesh.max.z - mesh.min.z) / 2;
+	uint32_t numActors;
+	physx::PxActor** actors = FetchResults(numActors);
+	if (actors == nullptr)
+		return;
 
-	physx::PxMaterial* material = physicsObject->createMaterial(1, 1, 1);
-	physx::PxShape* shape = physicsObject->createShape(physx::PxBoxGeometry(x, y, z), *material, false, physx::PxShapeFlag::eVISUALIZATION | physx::PxShapeFlag::eSCENE_QUERY_SHAPE | physx::PxShapeFlag::eSIMULATION_SHAPE);
-	
-	physx::PxRigidDynamic* rigidDynamic = physx::PxCreateDynamic(*physicsObject, physx::PxTransform(0, 0, 0), *shape, 1);
+	for (int i = 0; i < numActors; i++)
+	{
+		physx::PxActor* actor = actors[i];
+		Object* object = static_cast<Object*>(actor->userData);
+		
+		physx::PxTransform trans = actor->is<physx::PxRigidActor>()->getGlobalPose();
+		glm::quat quat = glm::quat(trans.q.w, trans.q.x, trans.q.y, trans.q.z);
 
-	scene->addActor(*rigidDynamic);
+		object->transform.position = glm::vec3(trans.p.x, trans.p.y, trans.p.z);
+		object->transform.rotation = glm::degrees(glm::eulerAngles(quat));
+	}
+}
 
-	return shape;
+void Physics::AddActor(physx::PxActor& actor)
+{
+	scene->addActor(actor);
 }
 
 void Physics::Simulate(float delta)
 {
-	
+	timeSinceLastStep += delta;
+	if (timeSinceLastStep < simulationStep)
+		return;
+
+	timeSinceLastStep -= simulationStep;
+
+	scene->simulate(simulationStep);
+	canBeFetched = true;
+}
+
+physx::PxActor** Physics::FetchResults(uint32_t& num)
+{
+	if (!canBeFetched)
+		return nullptr;
+
+	scene->fetchResults(true);
+	canBeFetched = false;
+	return scene->getActiveActors(num);
 }

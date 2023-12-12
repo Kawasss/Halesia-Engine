@@ -8,6 +8,7 @@
 #include "CreationObjects.h"
 #include "Console.h"
 #include "SceneLoader.h"
+#include "physics/Physics.h"
 
 typedef uint64_t Handle;
 
@@ -38,7 +39,7 @@ public:
 	/// <param name="name">: The name of the object to find and create. If objectType is OBJECT_IMPORT_EXTERNAL this needs to be the path to the file</param>
 	/// <param name="objectType">: The type of object: either from inside the scene file or an outside file</param>
 	/// <returns>A pointer to the base object of the custom object. A nullptr will be returned if an object matching the name can't be found</returns>
-	template<typename T> Object* AddCustomObject(std::string name, ObjectImportType objectType = OBJECT_IMPORT_INTERNAL);
+	template<typename T> Object* AddCustomObject(std::string name, RigidBodyType rigidType = RIGID_BODY_NONE, ObjectImportType objectType = OBJECT_IMPORT_INTERNAL);
 						 Object* AddStaticObject(const ObjectCreationData& creationData);
 	
 	template<typename T> Object* DuplicateCustomObject(Object* objPtr, std::string name);
@@ -82,7 +83,7 @@ protected:
 	void Free(Object* object);
 };
 
-template<typename T> Object* Scene::AddCustomObject(std::string name, ObjectImportType objectType) // templates must be declared in header
+template<typename T> Object* Scene::AddCustomObject(std::string name, RigidBodyType rigidType, ObjectImportType objectType) // templates must be declared in header
 {
 	ObjectCreationData creationData;
 	if (objectType == OBJECT_IMPORT_EXTERNAL)

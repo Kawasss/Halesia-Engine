@@ -27,7 +27,7 @@ void Image::GenerateImages(const TextureCreationObject& creationObjects, std::ve
 	this->commandPool = Vulkan::FetchNewCommandPool(creationObjects);
 	this->queue = creationObjects.queue;
 	this->physicalDevice = creationObjects.physicalDevice;
-
+	
 	layerCount = static_cast<uint32_t>(textureData.size());
 	int textureChannels = 0;
 
@@ -48,6 +48,7 @@ void Image::GenerateImages(const TextureCreationObject& creationObjects, std::ve
 	VkBuffer stagingBuffer;
 	VkDeviceMemory stagingBufferMemory;
 	
+	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 	// copy all of the different sides of the cubemap into a single buffer
