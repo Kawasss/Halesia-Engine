@@ -41,9 +41,18 @@ private:
 	void CreateShaderBindingTable();
 	void CreateImage(uint32_t width, uint32_t height);
 	void UpdateDescriptorSets();
+	void AllocateOptixBuffers(uint32_t width, uint32_t height);
+	void DestroyOptixBuffers();
 
 	CUcontext cudaContext;
 	CUdevice cudaDevice;
+
+	CUdeviceptr_v2 stateBuffer;
+	CUdeviceptr_v2 scratchBuffer;
+	CUdeviceptr_v2 minRGB;
+
+	CUstream cudaStream;
+
 	
 	OptixDeviceContext optixContext;
 	OptixDenoiser denoiser;

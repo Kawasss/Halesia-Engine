@@ -73,6 +73,7 @@ void GUI::ShowMainMenuBar(bool& showObjMeta, bool& ramGraph, bool& cpuGraph, boo
 	if (ImGui::BeginMenu("debug"))
 	{
 		showObjMeta = ImGui::Button("show object metadata") ? !showObjMeta : showObjMeta;
+		ImGui::Separator();
 		ramGraph = ImGui::Button("show RAM graph") ? !ramGraph : ramGraph;
 		cpuGraph = ImGui::Button("show CPU graph") ? !cpuGraph : cpuGraph;
 		gpuGraph = ImGui::Button("show GPU graph") ? !gpuGraph : gpuGraph;

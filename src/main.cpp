@@ -139,7 +139,7 @@ class TestScene : public Scene
 		{
 			Object* ptr = DuplicateStaticObject(objPtr, "sphere" + std::to_string(i));
 			ptr->transform.position.y += 10 * (i + 1);
-			ptr->rigid.MovePosition(ptr->transform.position, ptr->transform.rotation);
+			ptr->rigid.ForcePosition(ptr->transform);
 			spheres.push_back(ptr);
 		}
 		
@@ -154,11 +154,11 @@ class TestScene : public Scene
 		ramp->transform.rotation.x = 45;
 		box = Box(ramp->meshes[0].extents);
 		ramp->AddRigidBody(RIGID_BODY_STATIC, box);
-		ramp->rigid.MovePosition(ramp->transform.position, ramp->transform.rotation);
+		ramp->rigid.ForcePosition(ramp->transform);
 
 		ramp = DuplicateStaticObject(ramp, "ramp2");
 		ramp->transform.rotation.y += 45;
-		ramp->rigid.MovePosition(ramp->transform.position, ramp->transform.rotation);
+		ramp->rigid.ForcePosition(ramp->transform);
 	}
 
 	void Update(float delta) override
@@ -169,7 +169,8 @@ class TestScene : public Scene
 		for (int i = 0; i < spheres.size(); i++)
 		{
 			spheres[i]->transform.position = glm::vec3(0, 20 + 5 * (i + 1), 0);
-			spheres[i]->rigid.MovePosition(spheres[i]->transform.position, spheres[i]->transform.rotation);
+			spheres[i]->transform.rotation = glm::vec3(0);
+			spheres[i]->rigid.ForcePosition(spheres[i]->transform);
 		}
 	}
 };

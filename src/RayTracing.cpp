@@ -128,6 +128,10 @@ void RayTracing::InitOptix()
 	if (cuResult != CUDA_SUCCESS)
 		throw std::runtime_error(std::to_string(cuResult));
 
+	cuResult = cuStreamCreate(&cudaStream, 0);
+	if (cuResult != CUDA_SUCCESS)
+		throw std::runtime_error(std::to_string(cuResult));
+
 	OptixDeviceContextOptions optixDeviceOptions{};
 	optixDeviceOptions.validationMode = OPTIX_DEVICE_CONTEXT_VALIDATION_MODE_OFF;
 	OptixResult optixResult = optixDeviceContextCreate(cudaContext, &optixDeviceOptions, &optixContext);
@@ -140,7 +144,31 @@ void RayTracing::InitOptix()
 
 	optixResult = optixDenoiserCreate(optixContext, OPTIX_DENOISER_MODEL_KIND_AOV, &denoiserOptions, &denoiser); // not sure about the model kind
 	CheckOptixResult(optixResult);
-	
+
+	AllocateOptixBuffers(2560, 1440);
+}	
+
+void RayTracing::AllocateOptixBuffers(uint32_t width, uint32_t height)
+{
+	DestroyOptixBuffers();
+
+	OptixDenoiserSizes denoiserSizes;
+	OptixResult optixResult = optixDenoiserComputeMemoryResources(denoiser, width, height, &denoiserSizes);
+	CheckOptixResult(optixResult);
+
+	cuMemAlloc_v2(&stateBuffer, denoiserSizes.stateSizeInBytes);
+	cuMemAlloc_v2(&scratchBuffer, denoiserSizes.withoutOverlapScratchSizeInBytes);
+	cuMemAlloc_v2(&minRGB, sizeof(glm::vec4));
+
+	optixResult = optixDenoiserSetup(denoiser, cudaStream, width, height, stateBuffer, denoiserSizes.stateSizeInBytes, scratchBuffer, denoiserSizes.withoutOverlapScratchSizeInBytes);
+	CheckOptixResult(optixResult);
+}
+
+void RayTracing::DestroyOptixBuffers()
+{
+	cuMemFree_v2(stateBuffer);
+	cuMemFree_v2(scratchBuffer);
+	cuMemFree_v2(minRGB);
 }
 
 void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window, Swapchain* swapchain)

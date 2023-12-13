@@ -3,6 +3,8 @@
 #include "Shapes.h"
 #include "../glm.h"
 
+class Transform;
+
 enum RigidBodyType
 {
 	RIGID_BODY_NONE,
@@ -16,7 +18,9 @@ class RigidBody
 public:
 	RigidBody() {}
 	RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos = glm::vec3(0), glm::vec3 rot = glm::vec3(0));
-	void MovePosition(glm::vec3 pos, glm::vec3 rot);
+
+	void MovePosition(Transform& transform);
+	void ForcePosition(Transform& transform);
 	void SetScale(glm::vec3 scale);
 	void SetUserData(void* data);
 
@@ -28,6 +32,7 @@ public:
 
 private:
 	physx::PxTransform GetTransform(); // dont know a better way to deal with the different types of rigids
+	physx::PxTransform GetTransform(Transform& transform);
 
 	physx::PxRigidDynamic* rigidDynamic = nullptr; // a rigidbody can have either of these types
 	physx::PxRigidStatic*  rigidStatic = nullptr;

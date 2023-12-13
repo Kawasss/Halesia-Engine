@@ -1,4 +1,5 @@
 #include "physics/RigidBody.h"
+#include "Transform.h"
 
 RigidBody::RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos, glm::vec3 rot)
 {
@@ -22,19 +23,17 @@ RigidBody::RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos, glm::vec3 r
 	}
 }
 
-void RigidBody::MovePosition(glm::vec3 pos, glm::vec3 rot) // doesnt work the right way
+void RigidBody::MovePosition(Transform& transform) // only works if the rigid is dynamic !!
 {
-	glm::quat quat = glm::quat(rot);
-	physx::PxTransform trans = physx::PxTransform(pos.x, pos.y, pos.z, physx::PxQuat(quat.x, quat.y, quat.z, quat.w));
-	/*
-	if (rigidDynamic == nullptr)
-		throw std::runtime_error("Cannot make a static rigid body kinematic");
+	physx::PxTransform trans = GetTransform(transform);
 	rigidDynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
 	rigidDynamic->setKinematicTarget(trans);
-	*/
-	// THIS IS NOT THE CORRECT SOLUTION, JUST A TEMP FIX
+}
 
-	rigidStatic == nullptr ? rigidDynamic->setGlobalPose(trans) : rigidStatic->setGlobalPose(trans);
+void RigidBody::ForcePosition(Transform& transform)
+{
+	physx::PxTransform trans = GetTransform(transform);
+	rigidDynamic == nullptr ? rigidStatic->setGlobalPose(trans) : rigidDynamic->setGlobalPose(trans);
 }
 
 glm::vec3 RigidBody::GetPosition()
@@ -46,7 +45,7 @@ glm::vec3 RigidBody::GetPosition()
 glm::vec3 RigidBody::GetRotation()
 {
 	physx::PxTransform trans = GetTransform();
-	return glm::vec3(1) * glm::quat(trans.q.w, trans.q.x, trans.q.y, trans.q.z); // not sure
+	return glm::eulerAngles(glm::quat(trans.q.w, trans.q.x, trans.q.y, trans.q.z));
 }
 
 void RigidBody::SetUserData(void* data)
@@ -55,6 +54,12 @@ void RigidBody::SetUserData(void* data)
 		rigidDynamic->userData = data;
 	else
 		rigidStatic->userData = data;
+}
+
+physx::PxTransform RigidBody::GetTransform(Transform& transform)
+{
+	glm::quat quat = glm::quat(transform.rotation);
+	return physx::PxTransform(transform.position.x, transform.position.y, transform.position.z, physx::PxQuat(quat.x, quat.y, quat.z, quat.w));
 }
 
 physx::PxTransform RigidBody::GetTransform()
