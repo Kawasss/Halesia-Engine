@@ -941,7 +941,7 @@ void Renderer::CreateSyncObjects()
 		if (vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &imageAvaibleSemaphores[i]) != VK_SUCCESS || vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS || vkCreateFence(logicalDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]))
 			throw VulkanAPIError("Failed to create the required semaphores and fence", VK_SUCCESS, nameof(CreateSyncObjects), __FILENAME__, std::to_string(__LINE__)); // too difficult / annoying to put all of these calls into result = ...
 	
-		getHandleInfo.semaphore = renderFinishedSemaphores[i];
+		/*getHandleInfo.semaphore = renderFinishedSemaphores[i];
 
 		VkResult result = vkGetSemaphoreWin32HandleKHR(logicalDevice, &getHandleInfo, &externalRenderSemaphoreHandles[i]);
 		CheckVulkanResult("Failed to get the win32 handle of a semaphore", result, vkGetSemaphoreWin32HandleKHR);
@@ -951,7 +951,7 @@ void Renderer::CreateSyncObjects()
 		externSemaphoreDesc.handle.win32.handle = externalRenderSemaphoreHandles[i];
 		externSemaphoreDesc.flags = 0;
 
-		cudaError_t cuResult = cudaImportExternalSemaphore(&externalRenderSemaphores[i], &externSemaphoreDesc);
+		cudaError_t cuResult = cudaImportExternalSemaphore(&externalRenderSemaphores[i], &externSemaphoreDesc);*/
 	}
 }
 

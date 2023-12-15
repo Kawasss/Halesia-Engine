@@ -1046,6 +1046,6 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 	vkCmdTraceRaysKHR(commandBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, window->GetWidth(), window->GetHeight(), 1);
-	CopyImagesToDenoisingBuffers(commandBuffer);
+	//CopyImagesToDenoisingBuffers(commandBuffer);
 	frameCount++;
 }
