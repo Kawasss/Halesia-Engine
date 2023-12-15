@@ -31,6 +31,7 @@
 
 #include "renderer/Renderer.h"
 
+#define CheckCudaResult(result) if (result != cudaSuccess) throw std::runtime_error(std::to_string(result) + " at line " + __STRLINE__ + " in " + (std::string)__FILENAME__);
 #define nameof(s) #s
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define VariableToString(name) variableToString(#name)
@@ -809,6 +810,34 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 
 	rayTracer->DrawFrame(objects, testWindow, camera, lCommandBuffer, imageIndex);
 
+	/*vkEndCommandBuffer(lCommandBuffer);
+	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
+	vkDeviceWaitIdle(logicalDevice);
+
+	cudaExternalSemaphoreWaitParams waitParams{};
+	memset(&waitParams, 0, sizeof(waitParams));
+	waitParams.flags = 0;
+	waitParams.params.fence.value = 0;
+	CheckCudaResult(cudaWaitExternalSemaphoresAsync(&externalRenderSemaphores[imageIndex], &waitParams, 1, rayTracer->GetCudaStream()));
+
+	rayTracer->DenoiseImage(lCommandBuffer);
+	
+	cudaExternalSemaphoreSignalParams signalParams{};
+	memset(&signalParams, 0, sizeof(signalParams));
+	signalParams.flags = 0;
+	signalParams.params.fence.value = 0;
+
+	CheckCudaResult(cudaSignalExternalSemaphoresAsync(&externalRenderSemaphores[imageIndex], &signalParams, 1, rayTracer->GetCudaStream()));
+
+	CheckCudaResult(cudaDeviceSynchronize());
+	cudaError_t cuResult = cudaStreamSynchronize(rayTracer->GetCudaStream());
+	CheckCudaResult(cuResult);
+
+	result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
+	CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
+
+	rayTracer->CopyDenoisedBufferToImage(commandBuffers[currentFrame]);*/
+
 	if (shouldRasterize)
 	{
 		std::array<VkClearValue, 4> deferredClearColors{};
@@ -887,19 +916,42 @@ void Renderer::CreateSyncObjects()
 {
 	imageAvaibleSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	externalRenderSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	externalRenderSemaphoreHandles.resize(MAX_FRAMES_IN_FLIGHT);
 	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+
+	VkExportSemaphoreCreateInfo semaphoreExportInfo{};
+	semaphoreExportInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
+	semaphoreExportInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
 	VkSemaphoreCreateInfo semaphoreCreateInfo{};
 	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	//semaphoreCreateInfo.pNext = &semaphoreExportInfo;
 
 	VkFenceCreateInfo fenceCreateInfo{};
 	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	
+	VkSemaphoreGetWin32HandleInfoKHR getHandleInfo{};
+	getHandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
+	getHandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		if (vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &imageAvaibleSemaphores[i]) != VK_SUCCESS || vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS || vkCreateFence(logicalDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]))
 			throw VulkanAPIError("Failed to create the required semaphores and fence", VK_SUCCESS, nameof(CreateSyncObjects), __FILENAME__, std::to_string(__LINE__)); // too difficult / annoying to put all of these calls into result = ...
+	
+		getHandleInfo.semaphore = renderFinishedSemaphores[i];
+
+		VkResult result = vkGetSemaphoreWin32HandleKHR(logicalDevice, &getHandleInfo, &externalRenderSemaphoreHandles[i]);
+		CheckVulkanResult("Failed to get the win32 handle of a semaphore", result, vkGetSemaphoreWin32HandleKHR);
+
+		cudaExternalSemaphoreHandleDesc externSemaphoreDesc{};
+		externSemaphoreDesc.type = cudaExternalSemaphoreHandleTypeOpaqueWin32;
+		externSemaphoreDesc.handle.win32.handle = externalRenderSemaphoreHandles[i];
+		externSemaphoreDesc.flags = 0;
+
+		cudaError_t cuResult = cudaImportExternalSemaphore(&externalRenderSemaphores[i], &externSemaphoreDesc);
 	}
 }
 
@@ -1020,10 +1072,10 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	}
 		
 	std::lock_guard<std::mutex> lockGuard(drawingMutex);
-
+	
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
 	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
-
+	
 	uint32_t imageIndex = GetNextSwapchainImage(currentFrame);
 
 	UpdateUniformBuffers(currentFrame, camera);
@@ -1039,11 +1091,11 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 
 	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
-
+	
 	PresentSwapchainImage(currentFrame, imageIndex);
 
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-
+	
 	ImGui_ImplVulkan_NewFrame(); // not great that this is mentionned twice in one function
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();

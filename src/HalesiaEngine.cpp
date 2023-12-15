@@ -268,6 +268,7 @@ HalesiaExitCode HalesiaInstance::Run()
 	Console::AddConsoleVariable("showUnique", &RayTracing::showUniquePrimitives);
 	Console::AddConsoleVariable("showAlbedo", &RayTracing::showAlbedo);
 	Console::AddConsoleVariable("rasterize", &renderer->shouldRasterize);
+	Console::AddConsoleVariable("useEditorUI", &useEditor);
 	try
 	{
 		float frameDelta = 0;

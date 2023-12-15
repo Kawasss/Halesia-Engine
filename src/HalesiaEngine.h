@@ -78,6 +78,7 @@ public:
 	bool showGPU = false;
 	bool showAsyncTimes = false;
 	bool showObjectData = false;
+	bool useEditor = false;
 	int minimumFPS = 60;
 	Scene* scene;
 
@@ -101,7 +102,6 @@ private:
 	std::optional<std::string> UpdateRenderer(const UpdateRendererData& rendererData);
 	void UpdateScene(const UpdateSceneData& sceneData);
 
-	bool useEditor = false;
 	bool playIntro = true;
 	bool devKeyIsPressedLastFrame = false;
 	bool renderDevConsole = false;

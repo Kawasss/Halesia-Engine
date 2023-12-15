@@ -13,7 +13,11 @@
 
 // for some reason VK_KHR_WIN32_SURFACE_EXTENSION_NAME throws an "undeclared identifier" error so this just redefines it
 #undef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
+#undef VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME
+#undef VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME
 #define VK_KHR_WIN32_SURFACE_EXTENSION_NAME "VK_KHR_win32_surface"
+#define VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME "VK_KHR_external_memory_win32"
+#define VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME "VK_KHR_external_semaphore_win32"
 
 #define nameof(s) #s
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
@@ -24,6 +28,7 @@
 class Swapchain;
 class Win32Window;
 struct VulkanCreationObject;
+typedef void* HANDLE;
 
 const std::vector<const char*> validationLayers =
 {
@@ -43,6 +48,10 @@ inline std::vector<const char*> requiredLogicalDeviceExtensions =
     VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
     VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
     VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+    VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
+    VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
+    VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+    VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
     VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
 };
 
@@ -99,10 +108,12 @@ public:
 
     static VkDeviceAddress                    GetDeviceAddress(VkDevice logicalDevice, VkBuffer buffer);
     static VkDeviceAddress                    GetDeviceAddress(VkDevice logicalDevice, VkAccelerationStructureKHR accelerationStructure);
+    static HANDLE                             GetWin32MemoryHandle(VkDevice logicalDevice, VkDeviceMemory memory);
 
     static uint32_t                           GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice);
     static bool                               HasStencilComponent(VkFormat format);
 
+    static void                               CreateExternalBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     static void                               CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     static void                               CopyBuffer(VkDevice logicalDevice, VkCommandPool commandPool, VkQueue queue, VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size);
 

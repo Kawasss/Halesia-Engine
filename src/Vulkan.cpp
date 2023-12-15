@@ -7,6 +7,7 @@ const bool enableValidationLayers = true;
 #include <iostream>
 #include <algorithm>
 
+#include <dxgi1_2.h>
 #include "renderer/Vulkan.h"
 #include "renderer/Swapchain.h"
 #include "Console.h"
@@ -110,6 +111,19 @@ VkDeviceAddress Vulkan::GetDeviceAddress(VkDevice logicalDevice, VkAccelerationS
     return vkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &BLASAddressInfo);
 }
 
+HANDLE Vulkan::GetWin32MemoryHandle(VkDevice logicalDevice, VkDeviceMemory memory)
+{
+    HANDLE handle = (void*)0;
+    VkMemoryGetWin32HandleInfoKHR handleInfo{};
+    handleInfo.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
+    handleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    handleInfo.memory = memory;
+
+    VkResult result = vkGetMemoryWin32HandleKHR(logicalDevice, &handleInfo, &handle);
+    CheckVulkanResult("Failed to get the win32 handle of given memory", result, vkGetMemoryWin32HandleKHR);
+    return handle;
+}
+
 VkShaderModule Vulkan::CreateShaderModule(VkDevice logicalDevice, const std::vector<char>& code)
 {
     VkShaderModuleCreateInfo createInfo{};
@@ -196,6 +210,42 @@ VkCommandBuffer Vulkan::BeginSingleTimeCommands(VkDevice logicalDevice, VkComman
     return localCommandBuffer;
 }
 
+void Vulkan::CreateExternalBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+{
+    VkExternalMemoryBufferCreateInfo externBufferInfo{};
+    externBufferInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO;
+    externBufferInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+
+    VkBufferCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    createInfo.size = size;
+    createInfo.usage = usage;
+    createInfo.pNext = &externBufferInfo;
+
+    VkResult result = vkCreateBuffer(logicalDevice, &createInfo, nullptr, &buffer);
+    CheckVulkanResult("Failed to create a new buffer", result, vkCreateBuffer);
+
+    VkMemoryRequirements memoryRequirements;
+    vkGetBufferMemoryRequirements(logicalDevice, buffer, &memoryRequirements);
+
+    VkExportMemoryAllocateInfo allocInfoExport{}; // dont know how to feel about win32 stuff being here
+    allocInfoExport.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+    allocInfoExport.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+    allocInfoExport.pNext = optionalMemoryAllocationFlags;
+
+    VkMemoryAllocateInfo allocateInfo{};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocateInfo.pNext = &allocInfoExport;
+    allocateInfo.allocationSize = memoryRequirements.size;
+    allocateInfo.memoryTypeIndex = Vulkan::GetMemoryType(memoryRequirements.memoryTypeBits, properties, physicalDevice);
+
+    result = vkAllocateMemory(logicalDevice, &allocateInfo, nullptr, &bufferMemory);
+    CheckVulkanResult("Failed to allocate " + std::to_string(memoryRequirements.size) + " bytes of memory", result, vkAllocateMemory);
+
+    vkBindBufferMemory(logicalDevice, buffer, bufferMemory, 0);
+}
+
 void Vulkan::CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
     VkBufferCreateInfo createInfo{};
@@ -203,7 +253,7 @@ void Vulkan::CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice,
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.size = size;
     createInfo.usage = usage;
-
+    
     VkResult result = vkCreateBuffer(logicalDevice, &createInfo, nullptr, &buffer);
     CheckVulkanResult("Failed to create a new buffer", result, vkCreateBuffer);
 
@@ -597,6 +647,8 @@ PFN_vkGetAccelerationStructureDeviceAddressKHR pvkGetAccelerationStructureDevice
 PFN_vkCmdBuildAccelerationStructuresKHR pvkCmdBuildAccelerationStructuresKHR = nullptr;
 PFN_vkGetRayTracingShaderGroupHandlesKHR pvkGetRayTracingShaderGroupHandlesKHR = nullptr;
 PFN_vkCmdTraceRaysKHR pvkCmdTraceRaysKHR = nullptr;
+PFN_vkGetMemoryWin32HandleKHR pvkGetMemoryWin32HandleKHR = nullptr;
+PFN_vkGetSemaphoreWin32HandleKHR pvkGetSemaphoreWin32HandleKHR = nullptr;
 #pragma endregion VulkanPointerFunctions
 
 void Vulkan::ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, const std::vector<const char*>& logicalDeviceExtensions)
@@ -626,6 +678,14 @@ void Vulkan::ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, con
         else if (logicalDeviceExtension == VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
             pvkGetBufferDeviceAddressKHR = (PFN_vkGetBufferDeviceAddressKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetBufferDeviceAddressKHR");
 
+        else if (logicalDeviceExtension == VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME)
+        {
+            pvkGetMemoryWin32HandleKHR = (PFN_vkGetMemoryWin32HandleKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetMemoryWin32HandleKHR");
+        }
+
+        else if (logicalDeviceExtension == VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME)
+            pvkGetSemaphoreWin32HandleKHR = (PFN_vkGetSemaphoreWin32HandleKHR)vkGetDeviceProcAddr(logicalDevice, "vkGetSemaphoreWin32HandleKHR");
+
         else
             Console::WriteLine("Given logical device extension " + logicalDeviceExtension + " has no activatable functions", MESSAGE_SEVERITY_WARNING);
     }
@@ -637,6 +697,24 @@ std::string CreateFunctionNotActivatedError(std::string functionName, std::strin
 }
 
 #pragma region VulkanExtensionFunctionDefinitions
+VkResult vkGetSemaphoreWin32HandleKHR(VkDevice logicalDevice, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle)
+{
+    #ifdef _DEBUG // gives warning C4297 (doesnt expect a throw), but can (presumably) be ignored because it's only for debug
+    if (pvkGetSemaphoreWin32HandleKHR == nullptr)
+        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
+    #endif
+    return pvkGetSemaphoreWin32HandleKHR(logicalDevice, pGetWin32HandleInfo, pHandle);
+}
+
+VkResult vkGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle)
+{
+    #ifdef _DEBUG // gives warning C4297 (doesnt expect a throw), but can (presumably) be ignored because it's only for debug
+    if (pvkGetSemaphoreWin32HandleKHR == nullptr)
+        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __STRLINE__);
+    #endif
+    return pvkGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
+}
+
 VkDeviceAddress vkGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) 
 { 
     #ifdef _DEBUG // gives warning C4297 (doesnt expect a throw), but can (presumably) be ignored because it's only for debug

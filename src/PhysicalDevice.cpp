@@ -107,16 +107,8 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
-    //ray tracing support
-    VkPhysicalDeviceBufferDeviceAddressFeatures addressFeatures{};
-    addressFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES;
-    addressFeatures.bufferDeviceAddress = VK_TRUE;
-    addressFeatures.bufferDeviceAddressCaptureReplay = VK_FALSE;
-    addressFeatures.bufferDeviceAddressMultiDevice = VK_TRUE;
-
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure{};
     accelerationStructure.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
-    accelerationStructure.pNext = &addressFeatures;
     accelerationStructure.accelerationStructure = VK_TRUE;
     accelerationStructure.accelerationStructureCaptureReplay = VK_FALSE;
     accelerationStructure.accelerationStructureIndirectBuild = VK_FALSE;
@@ -137,26 +129,28 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
     imageFeatures.pNext = &rayTracingFeatures;
     imageFeatures.nullDescriptor = VK_TRUE;
 
-    //check for bindless support
-    VkPhysicalDeviceDescriptorIndexingFeatures indexingFeatures{};
-    indexingFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DESCRIPTOR_INDEXING_FEATURES;
-    indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
-    indexingFeatures.runtimeDescriptorArray = VK_TRUE;
-    indexingFeatures.pNext = &imageFeatures;
-
     VkPhysicalDeviceVulkan11Features vulkan11Features{};
     vulkan11Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
-    vulkan11Features.pNext = &indexingFeatures;
+    vulkan11Features.pNext = &imageFeatures;
     vulkan11Features.storageBuffer16BitAccess = VK_TRUE;
+
+    VkPhysicalDeviceVulkan12Features vulkan12Features{};
+    vulkan12Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    vulkan12Features.pNext = &vulkan11Features;
+    vulkan12Features.timelineSemaphore = VK_TRUE;               // denoiser
+    vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE; // bindless textures
+    vulkan12Features.runtimeDescriptorArray = VK_TRUE;          // bindless textures
+    vulkan12Features.bufferDeviceAddress = VK_TRUE;             // buffer addresses for ray tracing
+    vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE;
 
     VkPhysicalDeviceFeatures2 deviceFeatures2{};
     deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    deviceFeatures2.pNext = &vulkan11Features;
+    deviceFeatures2.pNext = &vulkan12Features;
     deviceFeatures2.features.samplerAnisotropy = VK_TRUE;
 
     vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);
 
-    if (!indexingFeatures.descriptorBindingPartiallyBound || !indexingFeatures.runtimeDescriptorArray)
+    if (!vulkan12Features.descriptorBindingPartiallyBound || !vulkan12Features.runtimeDescriptorArray)
         throw std::runtime_error("Bindless textures aren't supported, the engine can't work without them");
 
     VkDeviceCreateInfo createInfo{};
