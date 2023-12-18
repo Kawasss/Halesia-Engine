@@ -6,6 +6,20 @@ physx::PxShape* Shape::GetShape()
 	return shape;
 }
 
+Shape Shape::GetShapeFromType(ShapeType type, glm::vec3 extents)
+{
+	switch (type)
+	{
+	case SHAPE_TYPE_BOX:
+		return Box(extents);
+	case SHAPE_TYPE_CAPSULE:
+		return Capsule(extents);
+	case SHAPE_TYPE_SPHERE:
+		return Sphere(extents.x);
+	}
+	return Box(glm::vec3(1));
+}
+
 Sphere::Sphere(float radius)
 {
 	physx::PxSphereGeometry geometry = physx::PxSphereGeometry(radius);

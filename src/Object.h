@@ -88,7 +88,7 @@ public:
 	bool shouldBeDestroyed = false;
 
 private:
-	void GenerateObjectWithData(const ObjectCreationObject& creationObject, const std::vector<MeshCreationData>& creationData);
+	void GenerateObjectWithData(const ObjectCreationObject& creationObject, const ObjectCreationData& creationData);
 
 	void* scriptClass = nullptr;
 	std::future<void> generationProcess;

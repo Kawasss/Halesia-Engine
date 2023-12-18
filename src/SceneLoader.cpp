@@ -2,6 +2,8 @@
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <unordered_map>
+#include "Console.h"
 
 template<typename T> inline T GetType(char* bytes)
 {
@@ -211,7 +213,39 @@ void SceneLoader::OpenInputFile(std::string path)
 		throw std::runtime_error("Failed to open the scene file at " + path + ", the path is either invalid or outdated / corrupt");
 }
 
-std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& max)
+uint8_t SceneLoader::RetrieveFlagsFromName(std::string string, std::string& name)
+{
+	static std::unordered_map<std::string, ObjectFlags> stringToFlag =
+	{
+		{ "rigid_static", OBJECT_FLAG_RIGID_STATIC }, { "rigid_dynamic", OBJECT_FLAG_RIGID_DYNAMIC }, { "hitbox", OBJECT_FLAG_HITBOX },
+		{ "shape_sphere", OBJECT_FLAG_SHAPE_SPHERE }, { "shape_box", OBJECT_FLAG_SHAPE_BOX }, { "shape_capsule", OBJECT_FLAG_SHAPE_CAPSULE }
+	};
+
+	uint8_t ret = 0;
+	name = "NO_NAME";
+	std::string lexingString = "";
+	for (int i = 0; i < string.size(); i++)
+	{
+		if (string[i] != '@' && i < string.size() - 1)
+		{
+			lexingString += string[i];
+			continue;
+		}
+		if (i == string.size() - 1)
+			lexingString += string[i];
+		
+		if (name == "NO_NAME")
+			name = lexingString == "" ? "NO_NAME" : lexingString;
+		else if (stringToFlag.count(lexingString) > 0)
+			ret |= stringToFlag[lexingString];
+		else
+			Console::WriteLine("Unrecognized object flag found: " + lexingString, MESSAGE_SEVERITY_WARNING);
+		lexingString = "";
+	}
+	return ret;
+}
+
+inline std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& max)
 {
 	std::vector<Vertex> ret;
 	for (int i = 0; i < pMesh->mNumVertices; i++)
@@ -265,6 +299,100 @@ inline MeshCreationData RetrieveMeshData(aiMesh* pMesh)
 	return ret;
 }
 
+inline glm::vec3 GetExtentsFromMesh(aiMesh* pMesh)
+{
+	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
+	for (int i = 0; i < pMesh->mNumVertices; i++)
+	{
+		max.x = pMesh->mVertices[i].x > max.x ? pMesh->mVertices[i].x : max.x;
+		max.y = pMesh->mVertices[i].y > max.y ? pMesh->mVertices[i].y : max.y;
+		max.z = pMesh->mVertices[i].z > max.z ? pMesh->mVertices[i].z : max.z;
+
+		min.x = pMesh->mVertices[i].x < min.x ? pMesh->mVertices[i].x : min.x;
+		min.y = pMesh->mVertices[i].y < min.y ? pMesh->mVertices[i].y : min.y;
+		min.z = pMesh->mVertices[i].z < min.z ? pMesh->mVertices[i].z : min.z;
+	}
+	glm::vec3 center = (min + max) * 0.5f;
+	return max - center;
+}
+
+inline void GetTransform(aiMatrix4x4 mat, glm::vec3& pos, glm::vec3& rot, glm::vec3& scale)
+{
+	glm::mat4 trans;
+	memcpy(&trans, &mat, sizeof(glm::mat4));
+	trans = glm::transpose(trans);
+	glm::quat orientation;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::decompose(trans, scale, orientation, pos, skew, perspective);
+	rot = glm::eulerAngles(orientation);
+}
+
+inline bool FlagHasFlag(uint8_t flag1, ObjectFlags flag2)
+{
+	return (flag1 & (uint8_t)flag2) == (uint8_t)flag2;
+}
+
+inline bool HasStaticRigidFlag(uint8_t flag)
+{
+	return FlagHasFlag(flag, OBJECT_FLAG_RIGID_STATIC);
+}
+
+inline bool HasHitBoxFlag(uint8_t flag)
+{
+	return FlagHasFlag(flag, OBJECT_FLAG_HITBOX);
+}
+
+inline ShapeType GetShapeType(uint8_t flag)
+{
+	if (FlagHasFlag(flag, OBJECT_FLAG_SHAPE_BOX))
+		return SHAPE_TYPE_BOX;
+	if (FlagHasFlag(flag, OBJECT_FLAG_SHAPE_CAPSULE))
+		return SHAPE_TYPE_CAPSULE;
+	if (FlagHasFlag(flag, OBJECT_FLAG_SHAPE_SPHERE))
+		return SHAPE_TYPE_SPHERE;
+	return SHAPE_TYPE_BOX;
+}
+
+void SceneLoader::LoadFBXScene()
+{
+	const aiScene* scene = aiImportFile(location.c_str(), aiProcessPreset_TargetRealtime_Fast);
+	if (scene == nullptr) // check if the file could be read
+		throw std::runtime_error("Failed to find or read file at " + location);
+
+	for (int i = 0; i < scene->mRootNode->mNumChildren; i++)
+	{
+		ObjectCreationData creationData;
+		aiNode* node = scene->mRootNode->mChildren[i];
+		glm::vec3 pos = glm::vec3(0), rot = glm::vec3(0), scale = glm::vec3(1);
+		GetTransform(node->mTransformation, pos, rot, scale);
+		float y = pos.y, z = pos.z;
+		//pos.y = z;
+		//pos.z = -y;
+		pos /= 100;
+		scale /= 100;
+		rot = glm::degrees(rot);
+		
+		aiMesh* mesh = scene->mMeshes[i];
+		uint8_t flags = RetrieveFlagsFromName(mesh->mName.C_Str(), creationData.name);
+
+		if (HasHitBoxFlag(flags))
+		{
+			RigidBodyType rigidType = HasStaticRigidFlag(flags) ? RIGID_BODY_STATIC : RIGID_BODY_DYNAMIC;
+			creationData.hitBox = { pos, rot, GetExtentsFromMesh(scene->mMeshes[node->mMeshes[0]]), GetShapeType(flags), rigidType };
+		}
+		else
+		{
+			creationData.position = pos;
+			creationData.rotation = rot;
+			creationData.scale = scale;
+			for (int j = 0; j < node->mNumMeshes; j++)
+				creationData.meshes.push_back(RetrieveMeshData(scene->mMeshes[node->mMeshes[j]]));
+		}
+		objects.push_back(creationData);
+	}
+}
+
 ObjectCreationData GenericLoader::LoadObjectFile(std::string path)
 {
 	ObjectCreationData ret{};
@@ -312,23 +440,6 @@ MaterialCreationData GenericLoader::LoadCPBRMaterial(std::string path)
 	RetrieveTexture(creationData.heightData, stream);
 
 	return creationData;
-}
-
-inline glm::vec3 GetExtentsFromMesh(aiMesh* pMesh)
-{
-	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
-	for (int i = 0; i < pMesh->mNumVertices; i++)
-	{
-		max.x = pMesh->mVertices[i].x > max.x ? pMesh->mVertices[i].x : max.x;
-		max.y = pMesh->mVertices[i].y > max.y ? pMesh->mVertices[i].y : max.y;
-		max.z = pMesh->mVertices[i].z > max.z ? pMesh->mVertices[i].z : max.z;
-
-		min.x = pMesh->mVertices[i].x < min.x ? pMesh->mVertices[i].x : min.x;
-		min.y = pMesh->mVertices[i].y < min.y ? pMesh->mVertices[i].y : min.y;
-		min.z = pMesh->mVertices[i].z < min.z ? pMesh->mVertices[i].z : min.z;
-	}
-	glm::vec3 center = (min + max) * 0.5f;
-	return max - center;
 }
 
 glm::vec3 GenericLoader::LoadHitBox(std::string path)

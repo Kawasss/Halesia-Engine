@@ -9,9 +9,20 @@
 #include "glm.h"
 #include "Vertex.h"
 #include "physics/Shapes.h"
+#include "physics/RigidBody.h"
 
 constexpr int textureCoordinateOffset = 12;
 constexpr int normalOffset = 20;
+
+enum ObjectFlags
+{
+	OBJECT_FLAG_HITBOX = 1 << 0,
+	OBJECT_FLAG_RIGID_STATIC = 1 << 1,
+	OBJECT_FLAG_RIGID_DYNAMIC = 1 << 2,
+	OBJECT_FLAG_SHAPE_SPHERE = 1 << 3,
+	OBJECT_FLAG_SHAPE_BOX = 1 << 4,
+	OBJECT_FLAG_SHAPE_CAPSULE = 1 << 5
+};
 
 struct MaterialCreationData // dont know how smart it is to copy around possible megabytes of data, maybe make the stream read to the vector.data()
 {
@@ -48,15 +59,23 @@ struct MeshCreationData
 	std::vector<uint16_t> indices;
 };
 
+struct HitboxCreationData
+{
+	glm::vec3 position = glm::vec3(0);
+	glm::vec3 rotation = glm::vec3(0);
+	glm::vec3 extents = glm::vec3(0);
+	ShapeType type = SHAPE_TYPE_NONE;
+	RigidBodyType rigidType = RIGID_BODY_NONE;
+};
+
 struct ObjectCreationData
 {
-	std::string name = "";
+	std::string name = "NO_NAME";
 	glm::vec3 position = glm::vec3(0);
 	glm::vec3 rotation = glm::vec3(0);
 	glm::vec3 scale = glm::vec3(1);
-	glm::vec3 hitboxExtents = glm::vec3(0);
-	ShapeType hitboxType = SHAPE_TYPE_NONE;
-
+	HitboxCreationData hitBox;
+	
 	int amountOfMeshes = 0;
 	std::vector<MeshCreationData> meshes;
 };
@@ -67,6 +86,7 @@ public:
 	SceneLoader(std::string sceneLocation);
 
 	void LoadScene();
+	void LoadFBXScene();
 
 	// camera related info
 	glm::vec3 cameraPos;
@@ -101,6 +121,7 @@ private:
 	void RetrieveCameraVariables();
 	void RetrieveLightVariables();
 	void RetrieveHeader();
+	uint8_t RetrieveFlagsFromName(std::string string, std::string& name);
 
 	void OpenInputFile(std::string path);
 };

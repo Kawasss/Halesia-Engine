@@ -1,6 +1,7 @@
 #define NOMINMAX
 #include "HalesiaEngine.h"
 #include "physics/Physics.h" // only for test
+#include "SceneLoader.h"
 
 class TestCamera : public OrbitCamera
 {
@@ -100,32 +101,6 @@ class TestScene : public Scene
 	std::vector<Object*> spheres;
 	void Start() override
 	{
-		/*colorMaterial = { new Texture(GetVulkanCreationObjects(), "textures/red.png") };
-		colorMaterial.roughness = new Texture(GetVulkanCreationObjects(), "textures/white.png");
-		Object* baseObject = AddCustomObject<ColoringTile>("stdObj/cube.obj", OBJECT_IMPORT_EXTERNAL);
-		baseObject->AwaitGeneration();
-		baseObject->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
-
-		for (int i = 0; i < 5; i++)
-		{
-			for (int j = 0; j < 5; j++)
-			{
-				Object* ptr = DuplicateCustomObject<ColoringTile>(baseObject, "tile" + std::to_string(i * 5 + j));
-				ptr->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
-				ptr->GetScript<ColoringTile*>()->indexX = i - 2;
-				ptr->GetScript<ColoringTile*>()->indexY = j - 2;
-				ptr->Start();
-			}
-		}
-		baseObject->state = OBJECT_STATE_DISABLED;
-
-		Material lightMaterial{};
-		lightMaterial.isLight = true;
-		AddStaticObject(GenericLoader::LoadObjectFile("stdObj/light.obj"))->meshes[0].SetMaterial(lightMaterial);
-		
-		this->camera = new TestCamera();*/
-
-
 		Object* objPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/sphere.fbx"));
 		Material knifeMaterial = { new Texture(GetVulkanCreationObjects(), "textures/glockAlbedo.png"), new Texture(GetVulkanCreationObjects(), "textures/glockNormal.png") };
 		knifeMaterial.AwaitGeneration();
@@ -143,22 +118,22 @@ class TestScene : public Scene
 			spheres.push_back(ptr);
 		}
 		
-		Object* floorPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/plane.obj"));
-		floorPtr->transform.position = glm::vec3(0, -1.1, 0);
-		floorPtr->AwaitGeneration();
-		Box box = Box(floorPtr->meshes[0].extents);
-		floorPtr->AddRigidBody(RIGID_BODY_STATIC, box);
+		/*Object* baseRamp = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/rampFull.obj"));
+		baseRamp->AwaitGeneration();
 
-		Object* ramp = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/ramp.obj"));
-		ramp->AwaitGeneration();
-		ramp->transform.rotation.x = 45;
-		box = Box(GenericLoader::LoadHitBox("stdObj/ramp.obj"));
-		ramp->AddRigidBody(RIGID_BODY_STATIC, box);
-		ramp->rigid.ForcePosition(ramp->transform);
+		ObjectCreationData data = { "hitbox" };
+		Object* rampHitBox = AddStaticObject(data);
+		Box box = Box(GenericLoader::LoadHitBox("stdObj/ramp0.obj"));
+		rampHitBox->AddRigidBody(RIGID_BODY_STATIC, box);*/
 
-		ramp = DuplicateStaticObject(ramp, "ramp2");
-		ramp->transform.rotation.y += 45;
-		ramp->rigid.ForcePosition(ramp->transform);
+		SceneLoader loader("stdObj/ramp.fbx");
+		loader.LoadFBXScene();
+		for (ObjectCreationData& data : loader.objects)
+		{
+			Object* ptr = AddStaticObject(data);
+			if (ptr->rigid.type != RIGID_BODY_NONE)
+				ptr->rigid.ForcePosition(ptr->transform);
+		}
 	}
 
 	void Update(float delta) override
@@ -200,3 +175,45 @@ int main(int argsCount, char** args)
 
 	return EXIT_SUCCESS;
 }
+
+/*Object* floorPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/plane.obj"));
+		floorPtr->transform.position = glm::vec3(0, -1.1, 0);
+		floorPtr->AwaitGeneration();
+		Box box = Box(floorPtr->meshes[0].extents);
+		floorPtr->AddRigidBody(RIGID_BODY_STATIC, box);
+
+		Object* ramp = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/ramp.obj"));
+		ramp->AwaitGeneration();
+		ramp->transform.rotation.x = 45;
+		box = Box(GenericLoader::LoadHitBox("stdObj/ramp.obj"));
+		ramp->AddRigidBody(RIGID_BODY_STATIC, box);
+		ramp->rigid.ForcePosition(ramp->transform);
+
+		ramp = DuplicateStaticObject(ramp, "ramp2");
+		ramp->transform.rotation.y += 45;
+		ramp->rigid.ForcePosition(ramp->transform);*/
+
+		/*colorMaterial = { new Texture(GetVulkanCreationObjects(), "textures/red.png") };
+				colorMaterial.roughness = new Texture(GetVulkanCreationObjects(), "textures/white.png");
+				Object* baseObject = AddCustomObject<ColoringTile>("stdObj/cube.obj", OBJECT_IMPORT_EXTERNAL);
+				baseObject->AwaitGeneration();
+				baseObject->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
+
+				for (int i = 0; i < 5; i++)
+				{
+					for (int j = 0; j < 5; j++)
+					{
+						Object* ptr = DuplicateCustomObject<ColoringTile>(baseObject, "tile" + std::to_string(i * 5 + j));
+						ptr->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
+						ptr->GetScript<ColoringTile*>()->indexX = i - 2;
+						ptr->GetScript<ColoringTile*>()->indexY = j - 2;
+						ptr->Start();
+					}
+				}
+				baseObject->state = OBJECT_STATE_DISABLED;
+
+				Material lightMaterial{};
+				lightMaterial.isLight = true;
+				AddStaticObject(GenericLoader::LoadObjectFile("stdObj/light.obj"))->meshes[0].SetMaterial(lightMaterial);
+
+				this->camera = new TestCamera();*/

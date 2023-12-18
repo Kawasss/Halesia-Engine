@@ -13,14 +13,24 @@ void Object::AwaitGeneration()
 		mesh.AwaitGeneration();
 }
 
-void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, const std::vector<MeshCreationData>& creationData)
+void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, const ObjectCreationData& creationData)
 {
 	/*#ifdef _DEBUG
 	Console::WriteLine("Attempting to create new model \"" + name + '\"', MESSAGE_SEVERITY_DEBUG);
 	#endif*/
 
-	for (int i = 0; i < creationData.size(); i++)
-		meshes[i].Create(creationObject, creationData[i]);
+	for (int i = 0; i < creationData.meshes.size(); i++)
+		meshes[i].Create(creationObject, creationData.meshes[i]);
+
+	if (creationData.hitBox.type != SHAPE_TYPE_NONE)
+	{
+		Shape shape = Shape::GetShapeFromType(creationData.hitBox.type, creationData.hitBox.extents);
+		AddRigidBody(creationData.hitBox.rigidType, shape);
+		transform.position = creationData.hitBox.position;
+		transform.rotation = creationData.hitBox.rotation;
+		rigid.ForcePosition(transform);
+	}
+
 	finishedLoading = true; //maybe use mutex here or just find better solution
 
 	#ifdef _DEBUG
@@ -33,6 +43,7 @@ void Object::RecreateMeshes(const MeshCreationObject& creationObject)
 	for (Mesh& mesh : meshes)
 		mesh.Recreate(creationObject);
 }
+
 void Object::CreateObject(void* customClassPointer, const ObjectCreationData& creationData, const MeshCreationObject& creationObject)
 {
 	scriptClass = customClassPointer;
@@ -42,25 +53,33 @@ void Object::CreateObject(void* customClassPointer, const ObjectCreationData& cr
 		transform = Transform(creationData.position, creationData.rotation, creationData.scale, meshes[0].extents, meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
 	handle = ResourceManager::GenerateHandle();
 	name = creationData.name;
+	transform.position = creationData.position;
+	transform.rotation = creationData.rotation;
+	transform.scale = creationData.scale;
 
-	GenerateObjectWithData(creationObject, creationData.meshes); // maybe async??
+	GenerateObjectWithData(creationObject, creationData); // maybe async??
 }
 
 Object::Object(const ObjectCreationData& creationData, const ObjectCreationObject& creationObject)
 {
-	meshes.resize(creationData.meshes.size());
-	
-	if (!creationData.meshes.empty())
-		transform = Transform(creationData.position, creationData.rotation, creationData.scale, creationData.meshes[0].extents, creationData.meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
-	handle = ResourceManager::GenerateHandle();
-	name = creationData.name;
+	CreateObject(nullptr, creationData, creationObject);
+	//meshes.resize(creationData.meshes.size());
+	//
+	//if (!creationData.meshes.empty())
+	//	transform = Transform(creationData.position, creationData.rotation, creationData.scale, creationData.meshes[0].extents, creationData.meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
+	//handle = ResourceManager::GenerateHandle();
+	//name = creationData.name;
 
-	generationProcess = std::async(&Object::GenerateObjectWithData, this, creationObject, creationData.meshes);
+	//generationProcess = std::async(&Object::GenerateObjectWithData, this, creationObject, creationData);
 }
 
 void Object::AddMesh(const std::vector<MeshCreationData>& creationData, const MeshCreationObject& creationObject)
 {
-	generationProcess = std::async(&Object::GenerateObjectWithData, this, creationObject, creationData);
+	for (int i = 0; i < creationData.size(); i++)
+	{
+		meshes.push_back({});
+		meshes.back().Create(creationObject, creationData[i]);
+	}
 }
 
 void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script)

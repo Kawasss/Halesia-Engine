@@ -18,6 +18,7 @@ namespace physx
 class Shape
 {
 public:
+	static Shape GetShapeFromType(ShapeType type, glm::vec3 extents);
 	physx::PxShape* GetShape();
 	ShapeType type;
 	glm::vec3 data; // optional data that a shape can use as it wants
