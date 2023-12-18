@@ -126,7 +126,7 @@ class TestScene : public Scene
 		this->camera = new TestCamera();*/
 
 
-		Object* objPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/sphere.obj"));
+		Object* objPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/sphere.fbx"));
 		Material knifeMaterial = { new Texture(GetVulkanCreationObjects(), "textures/glockAlbedo.png"), new Texture(GetVulkanCreationObjects(), "textures/glockNormal.png") };
 		knifeMaterial.AwaitGeneration();
 		objPtr->meshes[0].SetMaterial(knifeMaterial);
@@ -152,7 +152,7 @@ class TestScene : public Scene
 		Object* ramp = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/ramp.obj"));
 		ramp->AwaitGeneration();
 		ramp->transform.rotation.x = 45;
-		box = Box(ramp->meshes[0].extents);
+		box = Box(GenericLoader::LoadHitBox("stdObj/ramp.obj"));
 		ramp->AddRigidBody(RIGID_BODY_STATIC, box);
 		ramp->rigid.ForcePosition(ramp->transform);
 

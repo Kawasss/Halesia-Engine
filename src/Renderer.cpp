@@ -1164,7 +1164,7 @@ void Renderer::RenderCollisionBoxes(std::vector<Object*>& objects, VkCommandBuff
 			continue;
 
 		glm::mat4 localRotationModel = glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.x), glm::vec3(1, 0, 0)) * glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.y), glm::vec3(0, 1, 0)) * glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.z), glm::vec3(0, 0, 1));
-		glm::mat4 scaleModel = glm::scale(glm::identity<glm::mat4>(), object->meshes[0].extents);
+		glm::mat4 scaleModel = glm::scale(glm::identity<glm::mat4>(), object->rigid.shape.data);
 		glm::mat4 translationModel = glm::translate(glm::identity<glm::mat4>(), object->transform.position);
 		glm::mat4 trans = translationModel * localRotationModel * scaleModel;
 		

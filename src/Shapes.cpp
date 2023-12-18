@@ -10,6 +10,7 @@ Sphere::Sphere(float radius)
 {
 	physx::PxSphereGeometry geometry = physx::PxSphereGeometry(radius);
 	shape = Physics::GetPhysicsObject()->createShape(geometry, *Physics::defaultMaterial);
+	data = glm::vec3(radius, radius, radius);
 	type = SHAPE_TYPE_SPHERE;
 }
 
@@ -19,6 +20,7 @@ Box::Box(glm::vec3 extents)
 		extents.y = 0.1f;
 	physx::PxBoxGeometry geometry = physx::PxBoxGeometry(extents.x, extents.y, extents.z);
 	shape = Physics::GetPhysicsObject()->createShape(geometry, *Physics::defaultMaterial);
+	data = extents;
 	type = SHAPE_TYPE_BOX;
 }
 
@@ -26,6 +28,16 @@ Capsule::Capsule(float radius, float halfHeight)
 {
 	physx::PxCapsuleGeometry geometry = physx::PxCapsuleGeometry(radius, halfHeight);
 	shape = Physics::GetPhysicsObject()->createShape(geometry, *Physics::defaultMaterial);
+	data = glm::vec3(radius, halfHeight + radius, radius);
+	type = SHAPE_TYPE_CAPSULE;
+}
+
+Capsule::Capsule(glm::vec3 extents)
+{
+	float radius = extents.x, halfHeight = extents.y - extents.x;
+	physx::PxCapsuleGeometry geometry = physx::PxCapsuleGeometry(radius, halfHeight);
+	shape = Physics::GetPhysicsObject()->createShape(geometry, *Physics::defaultMaterial);
+	data = extents;
 	type = SHAPE_TYPE_CAPSULE;
 }
 

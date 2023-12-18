@@ -20,6 +20,7 @@ class Shape
 public:
 	physx::PxShape* GetShape();
 	ShapeType type;
+	glm::vec3 data; // optional data that a shape can use as it wants
 
 protected:
 	physx::PxShape* shape;
@@ -40,6 +41,14 @@ public:
 class Capsule : public Shape
 {
 public:
+	/// <summary>
+	/// Creates a capsule shape from its extents
+	/// </summary>
+	/// <param name="extents">
+	/// The radius of the capsule is taken from the x axis of the extents.
+	/// The half height of the capsule is calculated by subtracting the radius (x axis) from the y axis
+	/// </param>
+	Capsule(glm::vec3 extents);
 	Capsule(float radius, float halfHeight);
 };
 

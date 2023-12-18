@@ -274,7 +274,7 @@ ObjectCreationData GenericLoader::LoadObjectFile(std::string path)
 	ret.name = fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 
 	const aiScene* scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast);
-
+	
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + path);
 
@@ -312,4 +312,32 @@ MaterialCreationData GenericLoader::LoadCPBRMaterial(std::string path)
 	RetrieveTexture(creationData.heightData, stream);
 
 	return creationData;
+}
+
+inline glm::vec3 GetExtentsFromMesh(aiMesh* pMesh)
+{
+	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
+	for (int i = 0; i < pMesh->mNumVertices; i++)
+	{
+		max.x = pMesh->mVertices[i].x > max.x ? pMesh->mVertices[i].x : max.x;
+		max.y = pMesh->mVertices[i].y > max.y ? pMesh->mVertices[i].y : max.y;
+		max.z = pMesh->mVertices[i].z > max.z ? pMesh->mVertices[i].z : max.z;
+
+		min.x = pMesh->mVertices[i].x < min.x ? pMesh->mVertices[i].x : min.x;
+		min.y = pMesh->mVertices[i].y < min.y ? pMesh->mVertices[i].y : min.y;
+		min.z = pMesh->mVertices[i].z < min.z ? pMesh->mVertices[i].z : min.z;
+	}
+	glm::vec3 center = (min + max) * 0.5f;
+	return max - center;
+}
+
+glm::vec3 GenericLoader::LoadHitBox(std::string path)
+{
+	const aiScene* scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast);
+
+	if (scene == nullptr)
+		throw std::runtime_error("Cannot load a file: the file is invalid");
+	if (scene->mNumMeshes <= 0)
+		throw std::runtime_error("Cannot get the hitbox from a file: there are no meshes to get data from");
+	return GetExtentsFromMesh(scene->mMeshes[0]);
 }

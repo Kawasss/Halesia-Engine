@@ -73,6 +73,7 @@ public:
 	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
 
 	void AddRigidBody(RigidBodyType type, Shape shape);
+	void AddMesh(const std::vector<MeshCreationData>& creationData, const MeshCreationObject& creationObject);
 	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script);
 	static std::string ObjectStateToString(ObjectState state);
 
@@ -87,7 +88,7 @@ public:
 	bool shouldBeDestroyed = false;
 
 private:
-	void GenerateObjectWithData(const ObjectCreationObject& creationObject, const ObjectCreationData& creationData);
+	void GenerateObjectWithData(const ObjectCreationObject& creationObject, const std::vector<MeshCreationData>& creationData);
 
 	void* scriptClass = nullptr;
 	std::future<void> generationProcess;

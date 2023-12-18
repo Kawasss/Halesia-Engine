@@ -8,6 +8,7 @@
 #include <execution>
 #include "glm.h"
 #include "Vertex.h"
+#include "physics/Shapes.h"
 
 constexpr int textureCoordinateOffset = 12;
 constexpr int normalOffset = 20;
@@ -53,6 +54,8 @@ struct ObjectCreationData
 	glm::vec3 position = glm::vec3(0);
 	glm::vec3 rotation = glm::vec3(0);
 	glm::vec3 scale = glm::vec3(1);
+	glm::vec3 hitboxExtents = glm::vec3(0);
+	ShapeType hitboxType = SHAPE_TYPE_NONE;
 
 	int amountOfMeshes = 0;
 	std::vector<MeshCreationData> meshes;
@@ -104,6 +107,7 @@ private:
 
 inline namespace GenericLoader
 {
+	glm::vec3 LoadHitBox(std::string path);
 	ObjectCreationData LoadObjectFile(std::string path);
 	MaterialCreationData LoadCPBRMaterial(std::string path);
 }

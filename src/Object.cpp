@@ -13,14 +13,14 @@ void Object::AwaitGeneration()
 		mesh.AwaitGeneration();
 }
 
-void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, const ObjectCreationData& creationData)
+void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, const std::vector<MeshCreationData>& creationData)
 {
 	/*#ifdef _DEBUG
 	Console::WriteLine("Attempting to create new model \"" + name + '\"', MESSAGE_SEVERITY_DEBUG);
 	#endif*/
 
-	for (int i = 0; i < creationData.meshes.size(); i++)
-		meshes[i].Create(creationObject, creationData.meshes[i]);
+	for (int i = 0; i < creationData.size(); i++)
+		meshes[i].Create(creationObject, creationData[i]);
 	finishedLoading = true; //maybe use mutex here or just find better solution
 
 	#ifdef _DEBUG
@@ -38,21 +38,28 @@ void Object::CreateObject(void* customClassPointer, const ObjectCreationData& cr
 	scriptClass = customClassPointer;
 	meshes.resize(creationData.meshes.size());
 
-	transform = Transform(creationData.position, creationData.rotation, creationData.scale, meshes[0].extents, meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
+	if (!creationData.meshes.empty())
+		transform = Transform(creationData.position, creationData.rotation, creationData.scale, meshes[0].extents, meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
 	handle = ResourceManager::GenerateHandle();
 	name = creationData.name;
 
-	GenerateObjectWithData(creationObject, creationData); // maybe async??
+	GenerateObjectWithData(creationObject, creationData.meshes); // maybe async??
 }
 
 Object::Object(const ObjectCreationData& creationData, const ObjectCreationObject& creationObject)
 {
 	meshes.resize(creationData.meshes.size());
-
-	transform = Transform(creationData.position, creationData.rotation, creationData.scale, creationData.meshes[0].extents, creationData.meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
+	
+	if (!creationData.meshes.empty())
+		transform = Transform(creationData.position, creationData.rotation, creationData.scale, creationData.meshes[0].extents, creationData.meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
 	handle = ResourceManager::GenerateHandle();
 	name = creationData.name;
 
+	generationProcess = std::async(&Object::GenerateObjectWithData, this, creationObject, creationData.meshes);
+}
+
+void Object::AddMesh(const std::vector<MeshCreationData>& creationData, const MeshCreationObject& creationObject)
+{
 	generationProcess = std::async(&Object::GenerateObjectWithData, this, creationObject, creationData);
 }
 
