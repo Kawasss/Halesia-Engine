@@ -5,7 +5,7 @@ RigidBody::RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos, glm::vec3 r
 {
 	this->shape = shape;
 	this->type = type;
-	glm::quat rotation = glm::quat(rot);
+	glm::quat rotation = glm::quat(glm::radians(rot));
 	physx::PxTransform transform = physx::PxTransform(pos.x, pos.y, pos.z, physx::PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));
 
 	switch (type)

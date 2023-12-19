@@ -118,14 +118,6 @@ class TestScene : public Scene
 			spheres.push_back(ptr);
 		}
 		
-		/*Object* baseRamp = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/rampFull.obj"));
-		baseRamp->AwaitGeneration();
-
-		ObjectCreationData data = { "hitbox" };
-		Object* rampHitBox = AddStaticObject(data);
-		Box box = Box(GenericLoader::LoadHitBox("stdObj/ramp0.obj"));
-		rampHitBox->AddRigidBody(RIGID_BODY_STATIC, box);*/
-		
 		SceneLoader loader("stdObj/ramp.fbx");
 		loader.LoadFBXScene();
 		for (ObjectCreationData& data : loader.objects)
