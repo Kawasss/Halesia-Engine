@@ -58,7 +58,7 @@ void RigidBody::SetUserData(void* data)
 
 physx::PxTransform RigidBody::GetTransform(Transform& transform)
 {
-	glm::quat quat = glm::quat(transform.rotation);
+	glm::quat quat = glm::quat(glm::radians(transform.rotation));
 	return physx::PxTransform(transform.position.x, transform.position.y, transform.position.z, physx::PxQuat(quat.x, quat.y, quat.z, quat.w));
 }
 

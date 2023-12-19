@@ -264,9 +264,21 @@ inline std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::
 
 		if (pMesh->HasNormals())
 			vertex.normal = glm::vec3(pMesh->mNormals[i].x, pMesh->mNormals[i].y, pMesh->mNormals[i].z);
+
 		if (pMesh->mTextureCoords[0])
 			vertex.textureCoordinates = glm::vec2(pMesh->mTextureCoords[0][i].x, pMesh->mTextureCoords[0][i].y);
 		ret.push_back(vertex);
+
+		if (pMesh->HasNormals() || ret.size() % 3 != 0)
+			continue;
+
+		Vertex& vert1 = ret[ret.size() - 3];
+		Vertex& vert2 = ret[ret.size() - 2];
+		Vertex& vert3 = ret.back();
+		glm::vec3 norm = glm::cross(vert2.position - vert1.position, vert3.position - vert1.position);
+		vert1.normal = norm;
+		vert2.normal = norm;
+		vert3.normal = norm;
 	}
 	return ret;
 }
