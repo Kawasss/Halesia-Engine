@@ -166,17 +166,18 @@ void TopLevelAccelerationStructure::Build(const VulkanCreationObject& creationOb
 
 std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(std::vector<Object*> objects)
 {
+	uint32_t processedAmount = 0; // add a second counter for each processed mesh. if an object is checked, but it doesnt have a mesh it will leave an empty instance custom index, which results in data missalignment
 	std::vector<VkAccelerationStructureInstanceKHR> instances;
 	for (int i = 0; i < objects.size(); i++)
 	{
 		std::lock_guard<std::mutex> lockGuard(objects[i]->mutex);
-		if (!objects[i]->HasFinishedLoading() || objects[i]->state == OBJECT_STATE_INVISIBLE || objects[i]->state == OBJECT_STATE_DISABLED) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
+		if (!objects[i]->HasFinishedLoading() || objects[i]->state != OBJECT_STATE_VISIBLE || objects[i]->meshes.empty()) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
 			continue;
 
 		for (int j = 0; j < objects[i]->meshes.size(); j++)																	   // converts every mesh from every object into an acceleration structure instance
 		{
 			VkAccelerationStructureInstanceKHR instance{};
-			instance.instanceCustomIndex = objects[i]->meshes.size() * i + j;
+			instance.instanceCustomIndex = objects[i]->meshes.size() * processedAmount + j;
 			instance.mask = 0xFF;
 			instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 			instance.accelerationStructureReference = objects[i]->meshes[j].BLAS->GetAccelerationStructureAddress();
@@ -186,6 +187,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 
 			instances.push_back(instance);
 		}
+		processedAmount++;
 	}
 	return instances;
 }

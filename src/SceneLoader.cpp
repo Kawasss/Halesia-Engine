@@ -368,7 +368,7 @@ inline ShapeType GetShapeType(uint8_t flag)
 
 void SceneLoader::LoadFBXScene()
 {
-	const aiScene* scene = aiImportFile(location.c_str(), aiProcessPreset_TargetRealtime_Fast);
+	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate);
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + location);
 

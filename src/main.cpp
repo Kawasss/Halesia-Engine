@@ -125,14 +125,12 @@ class TestScene : public Scene
 		Object* rampHitBox = AddStaticObject(data);
 		Box box = Box(GenericLoader::LoadHitBox("stdObj/ramp0.obj"));
 		rampHitBox->AddRigidBody(RIGID_BODY_STATIC, box);*/
-
+		
 		SceneLoader loader("stdObj/ramp.fbx");
 		loader.LoadFBXScene();
 		for (ObjectCreationData& data : loader.objects)
 		{
 			Object* ptr = AddStaticObject(data);
-			if (ptr->rigid.type != RIGID_BODY_NONE)
-				ptr->rigid.ForcePosition(ptr->transform);
 		}
 	}
 
