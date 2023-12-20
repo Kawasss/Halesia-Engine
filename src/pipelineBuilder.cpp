@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include "glm.h"
+#include "renderer/Vulkan.h"
 
 std::unordered_map<SpvReflectFormat, uint32_t> sizeOfFormat{ { SPV_REFLECT_FORMAT_R32G32B32_SFLOAT, sizeof(glm::vec3) }, { SPV_REFLECT_FORMAT_R32G32_SFLOAT, sizeof(glm::vec2) }, { SPV_REFLECT_FORMAT_R32_SINT, sizeof(int) } };
 

@@ -1,10 +1,8 @@
 #include <vulkan/vulkan.h>
 #include <vector>
-#include "renderer/Vulkan.h"
-#include "renderer/PhysicalDevice.h"
+#include <iostream>
 #include "renderer/Buffers.h"
 #include "Vertex.h"
-#include <iostream>
 
 VertexBuffer::VertexBuffer(const BufferCreationObject& creationObject, const std::vector<Vertex> vertices)
 {

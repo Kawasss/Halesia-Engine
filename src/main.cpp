@@ -2,6 +2,10 @@
 #include "HalesiaEngine.h"
 #include "physics/Physics.h" // only for test
 #include "SceneLoader.h"
+#include "Object.h"
+#include "Camera.h"
+#include "Scene.h"
+#include "renderer/Renderer.h"
 
 class TestCamera : public OrbitCamera
 {

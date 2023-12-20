@@ -1,7 +1,7 @@
-#include "Camera.h"
-#include "system/Input.h"
 #include <iostream>
 #include <algorithm>
+#include "Camera.h"
+#include "system/Input.h"
 #include "system/Window.h"
 #include "Console.h"
 

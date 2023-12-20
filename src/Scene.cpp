@@ -4,6 +4,9 @@
 #include "Scene.h"
 #include "Console.h"
 #include "SceneLoader.h"
+#include "Camera.h"
+#include "Object.h"
+#include "system/Window.h"
 
 MeshCreationObject (*Scene::GetVulkanCreationObjects)() = nullptr;
 Camera* Scene::defaultCamera = new Camera();

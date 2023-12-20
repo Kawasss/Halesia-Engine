@@ -1,14 +1,19 @@
 #include <iostream>
 #include <future>
 #include "HalesiaEngine.h"
+
 #include "system/Input.h"
 #include "system/SystemMetrics.h"
+
+#include "renderer/Renderer.h"
 #include "renderer/Intro.h"
+#include "renderer/RayTracing.h"
+
 #include "tools/CameraInjector.h"
+#include "physics/Physics.h"
+
 #include "CreationObjects.h"
 #include "Console.h"
-#include "renderer/RayTracing.h"
-#include "physics/Physics.h"
 #include "gui.h"
 
 int ParseAndValidateDimensionArgument(std::string string)
@@ -55,7 +60,6 @@ void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, Halesia
 	{
 		Console::Init();
 		Console::WriteLine("Write \"help\" for all commands");
-		//instance.physics = new Physics();
 		instance.useEditor = createInfo.useEditor;
 		instance.devConsoleKey = createInfo.devConsoleKey;
 		instance.playIntro = createInfo.playIntro;
@@ -282,8 +286,7 @@ HalesiaExitCode HalesiaInstance::Run()
 
 			asyncScripts.get();
 
-			if (frameDelta > 0)
-				Physics::physics->FetchAndUpdateObjects();
+			Physics::physics->FetchAndUpdateObjects();
 
 			frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();
 			timeSinceLastFrame = std::chrono::high_resolution_clock::now();

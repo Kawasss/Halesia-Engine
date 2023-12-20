@@ -1,6 +1,7 @@
 #pragma once
 #include "../Scene.h"
 #include "../Console.h"
+#include "../Camera.h"
 
 class CameraInjector
 {

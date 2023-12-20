@@ -1,7 +1,9 @@
 #pragma once
-#include "Vulkan.h"
+#include <vulkan/vulkan.h>
 #include <string>
+#include <vector>
 
+struct VulkanCreationObject;
 class Swapchain;
 class Texture;
 

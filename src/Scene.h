@@ -3,12 +3,14 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include "Object.h"
-#include "Camera.h"
+#include <future>
 #include "CreationObjects.h"
 #include "Console.h"
 #include "SceneLoader.h"
-#include "physics/Physics.h"
+
+class Object;
+class Camera;
+class Win32Window;
 
 typedef uint64_t Handle;
 

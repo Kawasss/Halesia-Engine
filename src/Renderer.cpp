@@ -898,8 +898,8 @@ void Renderer::CreateSyncObjects()
 {
 	imageAvaibleSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	externalRenderSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	externalRenderSemaphoreHandles.resize(MAX_FRAMES_IN_FLIGHT);
+	//externalRenderSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	//externalRenderSemaphoreHandles.resize(MAX_FRAMES_IN_FLIGHT);
 	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkExportSemaphoreCreateInfo semaphoreExportInfo{};

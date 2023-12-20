@@ -1,9 +1,11 @@
 #pragma once
-#include "renderer/Renderer.h"
+#include <optional>
+#include <future>
 #include "system/Window.h"
-#include "Scene.h"
-#include "SceneLoader.h"
 #include "system/Input.h"
+
+class Renderer;
+class Scene;
 
 template<typename T> struct ScrollingBuffer //dont know where to put this struct, maybe make it private
 {
