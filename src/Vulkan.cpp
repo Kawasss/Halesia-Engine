@@ -29,6 +29,21 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     this->message = message + vulkanError + location;
 }
 
+VkPipelineViewportStateCreateInfo  Vulkan::GetDefaultViewportStateCreateInfo(VkViewport& viewport, VkRect2D& scissors, Swapchain* swapchain)
+{
+    PopulateDefaultScissors(scissors, swapchain);
+    PopulateDefaultViewport(viewport, swapchain);
+
+    VkPipelineViewportStateCreateInfo viewportState{};
+    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.viewportCount = 1;
+    viewportState.pViewports = &viewport;
+    viewportState.scissorCount = 1;
+    viewportState.pScissors = &scissors;
+
+    return viewportState;
+}
+
 void Vulkan::PopulateDefaultViewport(VkViewport& viewport, Swapchain* swapchain)
 {
     viewport.x = 0;

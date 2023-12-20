@@ -35,19 +35,7 @@ enum HalesiaExitCode
 	HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION, // an unknown exception occured, since the cause is unknown the engine has to terminate
 	HALESIA_EXIT_CODE_EXCEPTION          // an error was thrown, this can be user defined or engine defined
 };
-
-inline std::string HalesiaExitCodeToString(HalesiaExitCode exitCode)
-{
-	switch (exitCode)
-	{
-	case HALESIA_EXIT_CODE_SUCESS:
-		return "HALESIA_EXIT_CODE_SUCESS";
-	case HALESIA_EXIT_CODE_EXCEPTION:
-		return "HALESIA_EXIT_CODE_EXCEPTION";
-	case HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION:
-		return "HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION";
-	}
-}
+inline extern std::string HalesiaExitCodeToString(HalesiaExitCode exitCode);
 
 struct HalesiaInstanceCreateInfo
 {
@@ -98,9 +86,10 @@ private:
 	void CheckInput();
 	void UpdateAsyncCompletionTimes(float frameDelta);
 	void UpdateCGPUUsage();
+	void RegisterConsoleVars();
 
-	std::optional<std::string> UpdateRenderer(const UpdateRendererData& rendererData);
-	void UpdateScene(const UpdateSceneData& sceneData);
+	std::optional<std::string> UpdateRenderer(float delta);
+	void UpdateScene(float delta);
 
 	bool playIntro = true;
 	bool devKeyIsPressedLastFrame = false;

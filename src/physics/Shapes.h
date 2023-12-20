@@ -9,6 +9,7 @@ enum ShapeType
 	SHAPE_TYPE_CAPSULE,
 	SHAPE_TYPE_PLANE
 };
+extern inline std::string ShapeTypeToString(ShapeType type);
 
 namespace physx
 {

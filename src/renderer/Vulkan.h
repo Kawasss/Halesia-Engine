@@ -120,6 +120,8 @@ public:
     static void                               PopulateDefaultViewport(VkViewport& viewport, Swapchain* swapchain);
     static void                               PopulateDefaultScissors(VkRect2D& scissors, Swapchain* swapchain);
 
+    static VkPipelineViewportStateCreateInfo  GetDefaultViewportStateCreateInfo(VkViewport& viewport, VkRect2D& scissors, Swapchain* swapchain);
+
 private:
     static VkDebugUtilsMessengerEXT                                 debugMessenger;
     static std::mutex                                               commandPoolMutex;

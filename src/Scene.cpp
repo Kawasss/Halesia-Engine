@@ -51,7 +51,7 @@ Object* Scene::GetObjectByName(std::string name)
 Object* Scene::GetObjectByHandle(Handle handle)
 {
 	if (objectHandles.count(handle) == 0)
-		throw std::runtime_error("Failed to get the object related with handle\"" + std::to_string(handle) + "\"");
+		throw std::runtime_error("Failed to get the object related with handle \"" + std::to_string(handle) + "\"");
 	return objectHandles[handle];
 }
 
@@ -163,7 +163,7 @@ void Scene::UpdateScripts(float delta)
 			std::lock_guard<std::mutex> lockGuard(object->mutex);
 			if (object->shouldBeDestroyed)
 				Free(object);
-			else
+			else if (object->state != OBJECT_STATE_DISABLED)
 				object->Update(delta);
 		});
 }

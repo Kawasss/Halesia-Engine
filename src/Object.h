@@ -74,6 +74,7 @@ public:
 
 	void AddRigidBody(RigidBodyType type, Shape shape);
 	void AddMesh(const std::vector<MeshCreationData>& creationData, const MeshCreationObject& creationObject);
+
 	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script);
 	static std::string ObjectStateToString(ObjectState state);
 

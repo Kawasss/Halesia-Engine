@@ -93,7 +93,7 @@ void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, v
 
 	newObjPtr->AddRigidBody(oldObjPtr->rigid.type, oldObjPtr->rigid.shape);
 
-	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + oldObjPtr->name + "\"", MESSAGE_SEVERITY_DEBUG);
+	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + oldObjPtr->name + "\" with" + (script == nullptr ? "out a script" : " a script"), MESSAGE_SEVERITY_DEBUG);
 }
 
 void Object::Update(float delta)
@@ -106,7 +106,7 @@ void Object::AddRigidBody(RigidBodyType type, Shape shape)
 	rigid = RigidBody(shape, type, transform.position, transform.rotation);
 	rigid.SetUserData(this);
 
-	std::cout << "Created new rigid body (" << RigidBodyTypeToString(type) << ") for object \"" << name << "\"\n";
+	std::cout << "Created new rigid body (" << RigidBodyTypeToString(type) << ") with shape " << ShapeTypeToString(shape.type) << " for object \"" << name << "\"\n";
 }
 
 bool Object::HasFinishedLoading()

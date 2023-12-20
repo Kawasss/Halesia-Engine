@@ -151,32 +151,32 @@ void HandleConsoleCommand(std::string command)
 		WriteAllCommandsToConsole();
 }
 
-void HalesiaInstance::UpdateScene(const UpdateSceneData& sceneData)
+void HalesiaInstance::UpdateScene(float delta)
 {
 	SetThreadDescription(GetCurrentThread(), L"SceneUpdatingThread");
 
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
-	ManageCameraInjector(scene, sceneData.pauseGame);
+	ManageCameraInjector(scene, pauseGame);
 
-	scene->UpdateCamera(window, sceneData.delta);
-	if (!sceneData.pauseGame || sceneData.playOneFrame)
+	scene->UpdateCamera(window, delta);
+	if (!pauseGame || playOneFrame)
 	{
-		scene->UpdateScripts(sceneData.delta);
-		scene->Update(sceneData.delta);
-		sceneData.playOneFrame = false;
+		scene->UpdateScripts(delta);
+		scene->Update(delta);
+		playOneFrame = false;
 	}
 	asyncScriptsCompletionTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 }
 
-std::optional<std::string> HalesiaInstance::UpdateRenderer(const UpdateRendererData& rendererData)
+std::optional<std::string> HalesiaInstance::UpdateRenderer(float delta)
 {
 	SetThreadDescription(GetCurrentThread(), L"VulkanRenderingThread");
 
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	std::optional<std::string> command = GUI::ShowDevConsole();
 	if (showFPS)
-		GUI::ShowFPS((int)(1 / rendererData.delta * 1000));
+		GUI::ShowFPS((int)(1 / delta * 1000));
 
 	ramUsed.Add(GetPhysicalMemoryUsedByApp() / (1024ULL * 1024));
 	if (showRAM)
@@ -196,7 +196,7 @@ std::optional<std::string> HalesiaInstance::UpdateRenderer(const UpdateRendererD
 		GUI::ShowMainMenuBar(showObjectData, showRAM, showCPU, showGPU);
 	}
 
-	renderer->DrawFrame(scene->allObjects, scene->camera, rendererData.delta);
+	renderer->DrawFrame(scene->allObjects, scene->camera, delta);
 
 	asyncRendererCompletionTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 	return command;
@@ -204,15 +204,6 @@ std::optional<std::string> HalesiaInstance::UpdateRenderer(const UpdateRendererD
 
 void HalesiaInstance::CheckInput()
 {
-	if (Input::IsKeyPressed(VirtualKey::C))
-		pauseGame = false;
-	showFPS = !showFPS ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F1) : showFPS;
-	pauseGame = !pauseGame ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F2) : true;
-	showRAM = !showRAM ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F3) : true;
-	showCPU = !showCPU ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F4) : true;
-	showGPU = !showGPU ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F5) : true;
-	showAsyncTimes = !showAsyncTimes ? Input::IsKeyPressed(VirtualKey::LeftControl) && Input::IsKeyPressed(VirtualKey::F6) : true;
-
 	playOneFrame = Input::IsKeyPressed(VirtualKey::RightArrow);
 
 	if (Input::IsKeyPressed(VirtualKey::Q))
@@ -247,28 +238,12 @@ HalesiaExitCode HalesiaInstance::Run()
 {
 	std::string lastCommand;
 	float timeSinceLastDataUpdate = 0;
-	float dummy[] = {0, 0, 0};
-
-	Console::AddConsoleVariable("pauseGame", &pauseGame);
-	Console::AddConsoleVariable("showFPS", &showFPS);
-	Console::AddConsoleVariable("playOneFrame", &playOneFrame);
-	Console::AddConsoleVariable("showRAM", &showRAM);
-	Console::AddConsoleVariable("showCPU", &showCPU);
-	Console::AddConsoleVariable("showGPU", &showGPU);
-	Console::AddConsoleVariable("showAsyncTimes", &showAsyncTimes);
-	Console::AddConsoleVariable("showMetaData", &showObjectData);
 
 	if (renderer == nullptr || window == nullptr/* || physics == nullptr*/)
 		return HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION;
 
-	Console::AddConsoleVariable("raySamples", &RayTracing::raySampleCount);
-	Console::AddConsoleVariable("rayDepth", &RayTracing::rayDepth);
-	Console::AddConsoleVariable("showNormals", &RayTracing::showNormals);
-	Console::AddConsoleVariable("renderProgressive", &RayTracing::renderProgressive);
-	Console::AddConsoleVariable("showUnique", &RayTracing::showUniquePrimitives);
-	Console::AddConsoleVariable("showAlbedo", &RayTracing::showAlbedo);
-	Console::AddConsoleVariable("rasterize", &renderer->shouldRasterize);
-	Console::AddConsoleVariable("useEditorUI", &useEditor);
+	RegisterConsoleVars();
+
 	try
 	{
 		float frameDelta = 0;
@@ -285,23 +260,16 @@ HalesiaExitCode HalesiaInstance::Run()
 		}
 		
 		scene->Start();
-		//Sleep(1000);
 		while (!window->ShouldClose())
 		{
 			CheckInput();
-			UpdateSceneData sceneData{ frameDelta, pauseGame, playOneFrame };
-			asyncScripts = std::async(&HalesiaInstance::UpdateScene, this, std::cref(sceneData));
+			devKeyIsPressedLastFrame = Input::IsKeyPressed(devConsoleKey);
 
-			UpdateRendererData rendererData{ frameDelta };
-			asyncRenderer = std::async(&HalesiaInstance::UpdateRenderer, this, std::cref(rendererData));
+			asyncScripts = std::async(&HalesiaInstance::UpdateScene, this, frameDelta);
+			asyncRenderer = std::async(&HalesiaInstance::UpdateRenderer, this, frameDelta);
 
 			if (Input::IsKeyPressed(VirtualKey::P))
-			Physics::physics->Simulate(frameDelta);
-
-			if (window->ContainsDroppedFile())
-				scene->AddStaticObject(GenericLoader::LoadObjectFile(window->GetDroppedFile()));
-
-			devKeyIsPressedLastFrame = Input::IsKeyPressed(devConsoleKey);
+				Physics::physics->Simulate(frameDelta);
 
 			std::optional<std::string> command = asyncRenderer.get();
 			if (command.has_value() && lastCommand != command.value())
@@ -315,7 +283,7 @@ HalesiaExitCode HalesiaInstance::Run()
 			asyncScripts.get();
 
 			if (frameDelta > 0)
-			Physics::physics->FetchAndUpdateObjects();
+				Physics::physics->FetchAndUpdateObjects();
 
 			frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();
 			timeSinceLastFrame = std::chrono::high_resolution_clock::now();
@@ -343,5 +311,38 @@ HalesiaExitCode HalesiaInstance::Run()
 	{
 		MessageBoxA(nullptr, "Caught an unknown error, this build is most likely corrupt and can't be used.", "Unknown engine error", MB_OK | MB_ICONERROR);
 		return HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION;
+	}
+}
+
+void HalesiaInstance::RegisterConsoleVars()
+{
+	Console::AddConsoleVariable("pauseGame", &pauseGame);
+	Console::AddConsoleVariable("showFPS", &showFPS);
+	Console::AddConsoleVariable("playOneFrame", &playOneFrame);
+	Console::AddConsoleVariable("showRAM", &showRAM);
+	Console::AddConsoleVariable("showCPU", &showCPU);
+	Console::AddConsoleVariable("showGPU", &showGPU);
+	Console::AddConsoleVariable("showAsyncTimes", &showAsyncTimes);
+	Console::AddConsoleVariable("showMetaData", &showObjectData);
+	Console::AddConsoleVariable("raySamples", &RayTracing::raySampleCount);
+	Console::AddConsoleVariable("rayDepth", &RayTracing::rayDepth);
+	Console::AddConsoleVariable("showNormals", &RayTracing::showNormals);
+	Console::AddConsoleVariable("renderProgressive", &RayTracing::renderProgressive);
+	Console::AddConsoleVariable("showUnique", &RayTracing::showUniquePrimitives);
+	Console::AddConsoleVariable("showAlbedo", &RayTracing::showAlbedo);
+	Console::AddConsoleVariable("rasterize", &renderer->shouldRasterize);
+	Console::AddConsoleVariable("useEditorUI", &useEditor);
+}
+
+std::string HalesiaExitCodeToString(HalesiaExitCode exitCode)
+{
+	switch (exitCode)
+	{
+	case HALESIA_EXIT_CODE_SUCESS:
+		return "HALESIA_EXIT_CODE_SUCESS";
+	case HALESIA_EXIT_CODE_EXCEPTION:
+		return "HALESIA_EXIT_CODE_EXCEPTION";
+	case HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION:
+		return "HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION";
 	}
 }
