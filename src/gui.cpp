@@ -1,21 +1,110 @@
-#include "gui.h"
-#include "Console.h"
-#include "system/Input.h"
+#define IMGUI_IMPLEMENTATION
+#define IMGUI_DEFINE_MATH_OPERATORS
+#define IMSPINNER_DEMO
+#include "implot.h"
+#include "imgui.h"
+#include "misc/cpp/imgui_stdlib.h"
+#include "imgui-1.89.8/imgui-1.89.8/imspinner.h"
+
 #include "renderer/RayTracing.h"
-#include "system/Window.h"
-#include "Object.h"
 #include "renderer/Mesh.h"
 #include "renderer/Renderer.h"
 
-#define IMGUI_IMPLEMENTATION
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include "implot.h"
+#include "system/Input.h"
+#include "system/Window.h"
 
-#define IMSPINNER_DEMO
-#include "imgui.h"
+#include "physics/RigidBody.h"
+#include "physics/Shapes.h"
 
-#include "misc/cpp/imgui_stdlib.h"
-#include "imgui-1.89.8/imgui-1.89.8/imspinner.h"
+#include "gui.h"
+#include "Console.h"
+#include "Object.h"
+#include "Transform.h"
+
+inline void ShowInputVector(glm::vec3& vector, std::vector<const char*> labels)
+{
+	if (labels.size() < 3) return;
+	float width = ImGui::CalcTextSize("w").x;
+	ImGui::PushItemWidth(width * 8);
+	ImGui::InputFloat(labels[0], &vector.x);
+	ImGui::SameLine();
+	ImGui::InputFloat(labels[1], &vector.y);
+	ImGui::SameLine();
+	ImGui::InputFloat(labels[2], &vector.z);
+	ImGui::PopItemWidth();
+}
+
+void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window)
+{
+	static std::string currentItem = "None";
+	static int objectIndex = -1;
+
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
+	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.03f, 0.03f, 0.03f, 1));
+	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 5);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+	ImGuiStyle& style = ImGui::GetStyle();
+	ImGui::SetNextWindowPos(ImVec2(window->GetWidth() * 7 / 8, ImGui::GetFrameHeight() + style.FramePadding.y));
+	ImGui::SetNextWindowSize(ImVec2(window->GetWidth() / 8, window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
+	ImGui::Begin("components", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+	if (ImGui::BeginCombo("##Components", currentItem.c_str()))
+	{
+		for (int i = 0; i < objects.size(); i++)
+		{
+			bool isSelected = objects[i]->name == currentItem;
+			if (ImGui::Selectable(objects[i]->name.c_str(), &isSelected))
+			{
+				currentItem = objects[i]->name;
+				objectIndex = i;
+			}
+			if (isSelected)
+				ImGui::SetItemDefaultFocus();
+		}
+		ImGui::EndCombo();
+	}
+
+	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
+	if (objectIndex != -1 && ImGui::CollapsingHeader("Transform", flags))
+		ShowObjectTransform(objects[objectIndex]->transform);
+
+	if (objectIndex != -1 && ImGui::CollapsingHeader("Rigid body", flags))
+		ShowObjectRigidBody(objects[objectIndex]->rigid);
+
+	ImGui::PopStyleVar(2);
+	ImGui::PopStyleColor(3);
+	ImGui::End();
+}
+
+void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
+{
+	ImGui::Text("type:");
+	ImGui::SameLine();
+	ImGui::Text(RigidBodyTypeToString(rigidBody.type).c_str());
+
+	ImGui::Text("shape:");
+	ImGui::SameLine();
+	ImGui::Text(ShapeTypeToString(rigidBody.shape.type).c_str()); // should be a menu to change the shape
+
+	ImGui::Text("Extents:");
+	ImGui::SameLine();
+	ImGui::Text(Vec3ToString(rigidBody.shape.data).c_str());
+}
+
+void GUI::ShowObjectTransform(Transform& transform)
+{
+	ImGui::Text("position:");
+	ImGui::SameLine();
+	ShowInputVector(transform.position, { "##posx", "##posy", "##posz" });
+
+	ImGui::Text("rotation:");
+	ImGui::SameLine();
+	ShowInputVector(transform.rotation, { "##rotx", "##roty", "##rotz" });
+
+	ImGui::Text("scale:   ");
+	ImGui::SameLine();
+	ShowInputVector(transform.scale, { "##scalex", "##scaley", "##scalez" });
+}
 
 std::optional<std::string> GUI::ShowDevConsole()
 {
@@ -125,6 +214,8 @@ void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* windo
 	ImGui::End();
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
+
+	ShowObjectComponents(objects, window);
 }
 
 void GUI::ShowObjectTable(const std::vector<Object*>& objects)

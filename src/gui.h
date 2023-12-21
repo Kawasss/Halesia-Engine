@@ -5,6 +5,8 @@
 
 class Object;
 class Win32Window;
+class Transform;
+class RigidBody;
 
 class GUI
 {
@@ -17,4 +19,8 @@ public:
 	static void ShowGraph(const std::vector<uint64_t>& buffer, const char* label);
 	static void ShowGraph(const std::vector<float>& buffer, const char* label);
 	static void ShowPieGraph(std::vector<float>& data, const char* label = nullptr);
+	
+	static void ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window);
+	static void ShowObjectTransform(Transform& transform);
+	static void ShowObjectRigidBody(RigidBody& rigidBody);
 };
