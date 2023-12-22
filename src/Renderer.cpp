@@ -656,7 +656,7 @@ void Renderer::CreateGraphicsPipeline()
 	rasterizer.lineWidth = 2;
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-	rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
+	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.depthBiasEnable = false;
 
 	VkPipelineMultisampleStateCreateInfo multisampling{};

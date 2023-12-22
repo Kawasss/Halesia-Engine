@@ -28,6 +28,7 @@ public:
 
 	static physx::PxPhysics* GetPhysicsObject() { return physics->physicsObject; }
 	void AddActor(physx::PxActor& actor);
+	void RemoveActor(physx::PxActor& actor);
 	void Simulate(float delta);
 	physx::PxActor** FetchResults(uint32_t& num);
 	void FetchAndUpdateObjects();

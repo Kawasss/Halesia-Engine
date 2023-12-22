@@ -36,6 +36,28 @@ void RigidBody::ForcePosition(Transform& transform)
 	rigidDynamic == nullptr ? rigidStatic->setGlobalPose(trans) : rigidDynamic->setGlobalPose(trans);
 }
 
+void RigidBody::ChangeShape(Shape& shape)
+{
+	if (rigidStatic == nullptr)
+	{
+		rigidDynamic->detachShape(*this->shape.GetShape());
+		this->shape = shape;
+		rigidDynamic->attachShape(*shape.GetShape());
+	}
+	else
+	{
+		rigidStatic->detachShape(*this->shape.GetShape());
+		this->shape = shape;
+		rigidStatic->attachShape(*shape.GetShape());
+	}
+}
+
+void RigidBody::Destroy()
+{
+	physx::PxActor* actor = rigidDynamic == nullptr ? rigidStatic->is<physx::PxActor>() : rigidDynamic->is<physx::PxActor>();
+	Physics::physics->RemoveActor(*actor);
+}
+
 glm::vec3 RigidBody::GetPosition()
 {
 	physx::PxTransform trans = GetTransform();
@@ -54,6 +76,13 @@ void RigidBody::SetUserData(void* data)
 		rigidDynamic->userData = data;
 	else
 		rigidStatic->userData = data;
+}
+
+void* RigidBody::GetUserData()
+{
+	if (rigidStatic == nullptr)
+		return rigidDynamic->userData;
+	return rigidStatic->userData;
 }
 
 physx::PxTransform RigidBody::GetTransform(Transform& transform)

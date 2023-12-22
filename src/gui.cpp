@@ -48,21 +48,11 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window*
 	ImGui::SetNextWindowPos(ImVec2(window->GetWidth() * 7 / 8, ImGui::GetFrameHeight() + style.FramePadding.y));
 	ImGui::SetNextWindowSize(ImVec2(window->GetWidth() / 8, window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
 	ImGui::Begin("components", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
-	if (ImGui::BeginCombo("##Components", currentItem.c_str()))
-	{
-		for (int i = 0; i < objects.size(); i++)
-		{
-			bool isSelected = objects[i]->name == currentItem;
-			if (ImGui::Selectable(objects[i]->name.c_str(), &isSelected))
-			{
-				currentItem = objects[i]->name;
-				objectIndex = i;
-			}
-			if (isSelected)
-				ImGui::SetItemDefaultFocus();
-		}
-		ImGui::EndCombo();
-	}
+
+	std::vector<std::string> items; // not the most optimal way
+	for (Object* object : objects)
+		items.push_back(object->name);
+	ShowDropdownMenu(items, currentItem, objectIndex, "##ObjectComponents");
 
 	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
 	if (objectIndex != -1 && ImGui::CollapsingHeader("Transform", flags))
@@ -78,17 +68,69 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window*
 
 void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
 {
-	ImGui::Text("type:");
-	ImGui::SameLine();
-	ImGui::Text(RigidBodyTypeToString(rigidBody.type).c_str());
+	static std::unordered_map<std::string, ShapeType> stringToShape =
+	{
+		{ "SHAPE_TYPE_BOX", SHAPE_TYPE_BOX },
+		{ "SHAPE_TYPE_SPHERE", SHAPE_TYPE_SPHERE },
+		{ "SHAPE_TYPE_CAPSULE", SHAPE_TYPE_CAPSULE }
+	};
+	static std::unordered_map<std::string, RigidBodyType> stringToRigid =
+	{
+		{ "RIGID_BODY_STATIC", RIGID_BODY_STATIC},
+		{ "RIGID_BODY_DYNAMIC", RIGID_BODY_DYNAMIC }
+	};
 
-	ImGui::Text("shape:");
-	ImGui::SameLine();
-	ImGui::Text(ShapeTypeToString(rigidBody.shape.type).c_str()); // should be a menu to change the shape
+	static int rigidIndex = -1;
+	static int shapeIndex = -1;
+	static std::vector<std::string> allShapeTypes = { "SHAPE_TYPE_BOX", "SHAPE_TYPE_SPHERE", "SHAPE_TYPE_CAPSULE" };
+	static std::vector<std::string> allRigidTypes = { "RIGID_BODY_DYNAMIC", "RIGID_BODY_STATIC" };
+	std::string currentRigid = RigidBodyTypeToString(rigidBody.type);
+	std::string currentShape = ShapeTypeToString(rigidBody.shape.type);
+	glm::vec3 holderExtents = rigidBody.shape.data;
 
-	ImGui::Text("Extents:");
+	ImGui::Text("type:   ");
 	ImGui::SameLine();
-	ImGui::Text(Vec3ToString(rigidBody.shape.data).c_str());
+	ShowDropdownMenu(allRigidTypes, currentRigid, rigidIndex, "##RigidType");
+
+	ImGui::Text("shape:  ");
+	ImGui::SameLine();
+	ShowDropdownMenu(allShapeTypes, currentShape, shapeIndex, "##rigidShapeMenu");
+
+	switch (rigidBody.shape.type)
+	{
+	case SHAPE_TYPE_BOX:
+		ImGui::Text("Extents:");
+		ImGui::SameLine();
+		ShowInputVector(holderExtents, { "##extentsx", "##extentsy", "##extentsz" });
+		break;
+	case SHAPE_TYPE_CAPSULE:
+		ImGui::Text("Height: ");
+		ImGui::SameLine();
+		ImGui::InputFloat("##height", &holderExtents.y);
+		ImGui::Text("radius: ");
+		ImGui::SameLine();
+		if (ImGui::InputFloat("##radius", &holderExtents.x))
+			holderExtents.y += holderExtents.x; // add radius on top of the half height
+		break;
+	case SHAPE_TYPE_SPHERE:
+		ImGui::Text("radius: ");
+		ImGui::SameLine();
+		ImGui::InputFloat("##radius", &holderExtents.x);
+		break;
+	}
+	// update the rigidbody shape if it has been changed via the gui
+	if (stringToShape[currentShape] != rigidBody.shape.type || holderExtents != rigidBody.shape.data)
+	{
+		Shape newShape = Shape::GetShapeFromType(stringToShape[currentShape], holderExtents);
+		rigidBody.ChangeShape(newShape);
+	}
+	if (stringToRigid[currentRigid] != rigidBody.type)
+	{
+		rigidBody.Destroy();
+		Object* obj = (Object*)rigidBody.GetUserData();
+		rigidBody = RigidBody(rigidBody.shape, stringToRigid[currentRigid], obj->transform.position, obj->transform.rotation);
+		rigidBody.SetUserData(obj);
+	}
 }
 
 void GUI::ShowObjectTransform(Transform& transform)
@@ -104,6 +146,26 @@ void GUI::ShowObjectTransform(Transform& transform)
 	ImGui::Text("scale:   ");
 	ImGui::SameLine();
 	ShowInputVector(transform.scale, { "##scalex", "##scaley", "##scalez" });
+}
+
+void GUI::ShowDropdownMenu(std::vector<std::string>& items, std::string& currentItem, int& currentIndex, const char* label)
+{
+	if (!ImGui::BeginCombo(label, currentItem.c_str()))
+		return;
+
+	for (int i = 0; i < items.size(); i++)
+	{
+		bool isSelected = items[i] == currentItem;
+		if (ImGui::Selectable(items[i].c_str(), &isSelected))
+		{
+			currentItem = items[i];
+			currentIndex = i;
+		}
+		if (isSelected)
+			ImGui::SetItemDefaultFocus();
+	}
+	ImGui::EndCombo();
+	
 }
 
 std::optional<std::string> GUI::ShowDevConsole()

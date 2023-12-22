@@ -19,6 +19,7 @@ public:
 	static void ShowGraph(const std::vector<uint64_t>& buffer, const char* label);
 	static void ShowGraph(const std::vector<float>& buffer, const char* label);
 	static void ShowPieGraph(std::vector<float>& data, const char* label = nullptr);
+	static void ShowDropdownMenu(std::vector<std::string>& items, std::string& currentItem, int& currentIndex, const char* label);
 	
 	static void ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window);
 	static void ShowObjectTransform(Transform& transform);

@@ -18,11 +18,14 @@ class RigidBody
 public:
 	RigidBody() {}
 	RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos = glm::vec3(0), glm::vec3 rot = glm::vec3(0));
+	void Destroy();
 
 	void MovePosition(Transform& transform);
 	void ForcePosition(Transform& transform);
+	void ChangeShape(Shape& shape);
 	void SetScale(glm::vec3 scale);
 	void SetUserData(void* data);
+	void* GetUserData();
 
 	glm::vec3 GetPosition();
 	glm::vec3 GetRotation();

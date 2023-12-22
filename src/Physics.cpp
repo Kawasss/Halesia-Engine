@@ -79,6 +79,11 @@ void Physics::AddActor(physx::PxActor& actor)
 	scene->addActor(actor);
 }
 
+void Physics::RemoveActor(physx::PxActor& actor)
+{
+	scene->removeActor(actor);
+}
+
 void Physics::Simulate(float delta)
 {
 	timeSinceLastStep += delta;
