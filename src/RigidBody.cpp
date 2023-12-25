@@ -1,5 +1,6 @@
 #include "physics/RigidBody.h"
 #include "Transform.h"
+#include "Object.h"
 
 RigidBody::RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos, glm::vec3 rot)
 {

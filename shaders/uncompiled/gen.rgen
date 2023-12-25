@@ -31,7 +31,8 @@ layout(binding = 1, set = 0) uniform Camera {
   int raySamples;
   int rayDepth;
   int renderProgressive;
-  int whiteAbledo;
+  int whiteAlbedo;
+  vec3 directionalLightDir;
 } camera;
 
 layout (binding = 4, set = 0, rgba32f) uniform image2D image;

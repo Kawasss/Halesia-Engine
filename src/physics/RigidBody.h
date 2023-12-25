@@ -25,6 +25,7 @@ public:
 	void ChangeShape(Shape& shape);
 	void SetScale(glm::vec3 scale);
 	void SetUserData(void* data);
+	void ChangeType(RigidBodyType type);
 	void* GetUserData();
 
 	glm::vec3 GetPosition();
@@ -39,4 +40,5 @@ private:
 
 	physx::PxRigidDynamic* rigidDynamic = nullptr; // a rigidbody can have either of these types
 	physx::PxRigidStatic*  rigidStatic = nullptr;
+	physx::PxRigidBody* rigid = nullptr;
 };

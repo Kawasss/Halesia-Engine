@@ -6,6 +6,7 @@
 #include "Camera.h"
 #include "Scene.h"
 #include "renderer/Renderer.h"
+#include "renderer/RayTracing.h"
 
 class TestCamera : public OrbitCamera
 {

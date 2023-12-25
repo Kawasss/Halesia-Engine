@@ -47,6 +47,7 @@ bool RayTracing::showUniquePrimitives = false;
 bool RayTracing::showAlbedo = false;
 bool RayTracing::renderProgressive = false;
 bool RayTracing::useWhiteAsAlbedo = false;
+glm::vec3 RayTracing::directionalLightDir = glm::vec3(-0.5, -0.5, 0);
 
 std::vector<VkCommandBuffer> commandBuffers(MAX_FRAMES_IN_FLIGHT);
 VkDescriptorPool descriptorPool;
@@ -83,6 +84,7 @@ struct UniformBuffer
 	int32_t rayDepth = 8;
 	int32_t renderProgressive = 0;
 	int useWhiteAsAlbedo = 0;
+	glm::vec3 directionalLightDir = glm::vec3(0, -1, 0);
 };
 void* uniformBufferMemPtr;
 UniformBuffer uniformBuffer{};
@@ -511,7 +513,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	setLayoutBindings[1].binding = 1;
 	setLayoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	setLayoutBindings[1].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+	setLayoutBindings[1].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR  | VK_SHADER_STAGE_MISS_BIT_KHR;
 	setLayoutBindings[1].descriptorCount = 1;
 	setLayoutBindings[1].pImmutableSamplers = nullptr;
 
@@ -1039,7 +1041,7 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 		frameCount = 0;*/
 	
 	if (showNormals && showUniquePrimitives) showNormals = false; // can't have 2 variables changing colors at once
-	uniformBuffer = UniformBuffer{ { camera->position, 1 }, glm::inverse(camera->GetViewMatrix()), glm::inverse(camera->GetProjectionMatrix()), glm::uvec2((uint32_t)absX, (uint32_t)absY), frameCount, showUniquePrimitives, raySampleCount, rayDepth, renderProgressive};
+	uniformBuffer = UniformBuffer{ { camera->position, 1 }, glm::inverse(camera->GetViewMatrix()), glm::inverse(camera->GetProjectionMatrix()), glm::uvec2((uint32_t)absX, (uint32_t)absY), frameCount, showUniquePrimitives, raySampleCount, rayDepth, renderProgressive, 0, directionalLightDir};
 	
 	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
 	TLAS->Build(creationObject, objects, false, commandBuffer);

@@ -17,24 +17,42 @@ layout(location = 0) rayPayloadInEXT Payload {
   vec3 currentAlbedo;
 } payload;
 
+layout(binding = 1, set = 0) uniform Camera {
+  vec4 position;
+  mat4 viewInv;
+  mat4 projInv;
+  uvec2 mouseXY;
+
+  uint frameCount;
+  int showUnique;
+  int raySamples;
+  int rayDepth;
+  int renderProgressive;
+  int whiteAlbedo;
+  vec3 directionalLightDir;
+} camera;
+
 void main() 
 { 
 	payload.currentAlbedo = vec3(0);
 	payload.currentNormal = vec3(0);
-	vec3 color = payload.rayDirection.y > 0 ? mix(vec3(0.6, 0.9, 1), vec3(0, 0.75, 1), payload.rayDirection.y) : mix(vec3(0.1, 0.1, 0.1), vec3(0.05, 0.05, 0.05), -payload.rayDirection.y);
+	float co = -dot(camera.directionalLightDir, payload.previousNormal);
+	vec3 color = vec3(1) * co;
 	if (payload.rayDepth == 0)
 	{
-		vec3 skyColor = color;
+		vec3 skyColor = payload.rayDirection.y > 0 ? mix(vec3(0.7, 1, 1), vec3(0.1, 0.85, 1), payload.rayDirection.y) : mix(vec3(0.2), vec3(0.06), -payload.rayDirection.y);
 		payload.indirectColor = skyColor;
 		payload.rayActive = 0;
+		payload.rayDepth = 1;
+		
 		return;
 	}
 
 	color =  color / (color + vec3(1));
 	color = pow(color, vec3(1 / 2.2));
-	float strength = (color.x + color.y + color.z) / 3.0;
+	
 	payload.directColor *= color;
-	payload.indirectColor += payload.directColor * strength;
+	payload.indirectColor += payload.directColor;// * strength;
 	payload.rayDepth++;
 
 	payload.rayActive = 0; 

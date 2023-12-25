@@ -37,6 +37,7 @@ public:
 	static bool showAlbedo;
 	static bool renderProgressive;
 	static bool useWhiteAsAlbedo;
+	static glm::vec3 directionalLightDir;
 	
 private:
 	void InitOptix();

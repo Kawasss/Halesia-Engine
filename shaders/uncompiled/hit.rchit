@@ -46,8 +46,7 @@ struct InstanceMeshData
 layout(location = 1) rayPayloadEXT bool isShadow;
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
-layout(binding = 1, set = 0) uniform Camera 
-{
+layout(binding = 1, set = 0) uniform Camera {
   vec4 position;
   mat4 viewInv;
   mat4 projInv;
@@ -58,7 +57,8 @@ layout(binding = 1, set = 0) uniform Camera
   int raySamples;
   int rayDepth;
   int renderProgressive;
-  int whiteAbledo;
+  int whiteAlbedo;
+  vec3 directionalLightDir;
 } camera;
 
 layout (binding = 2, set = 0) buffer IndexBuffer { uint16_t data[]; } indexBuffer;
