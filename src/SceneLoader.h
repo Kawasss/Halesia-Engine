@@ -17,12 +17,16 @@ constexpr int normalOffset = 20;
 enum ObjectFlags
 {
 	OBJECT_FLAG_HITBOX = 1 << 0,
-	OBJECT_FLAG_RIGID_STATIC = 1 << 1,
-	OBJECT_FLAG_RIGID_DYNAMIC = 1 << 2,
-	OBJECT_FLAG_SHAPE_SPHERE = 1 << 3,
-	OBJECT_FLAG_SHAPE_BOX = 1 << 4,
-	OBJECT_FLAG_SHAPE_CAPSULE = 1 << 5
+	OBJECT_FLAG_NO_RIGID = 1 << 1,
+	OBJECT_FLAG_RIGID_STATIC = 1 << 2,
+	OBJECT_FLAG_RIGID_DYNAMIC = 1 << 3,
+	OBJECT_FLAG_SHAPE_SPHERE = 1 << 4,
+	OBJECT_FLAG_SHAPE_BOX = 1 << 5,
+	OBJECT_FLAG_SHAPE_CAPSULE = 1 << 6,
 };
+inline extern void operator |=(ObjectFlags& f1, ObjectFlags f2);
+inline extern ObjectFlags operator |(ObjectFlags f1, ObjectFlags f2);
+inline extern ObjectFlags operator &(ObjectFlags f1, ObjectFlags f2);
 
 struct MaterialCreationData // dont know how smart it is to copy around possible megabytes of data, maybe make the stream read to the vector.data()
 {
@@ -59,12 +63,10 @@ struct MeshCreationData
 	std::vector<uint16_t> indices;
 };
 
-struct HitboxCreationData
+struct RigidCreationData
 {
-	glm::vec3 position = glm::vec3(0);
-	glm::vec3 rotation = glm::vec3(0);
 	glm::vec3 extents = glm::vec3(0);
-	ShapeType type = SHAPE_TYPE_NONE;
+	ShapeType shapeType = SHAPE_TYPE_NONE;
 	RigidBodyType rigidType = RIGID_BODY_NONE;
 };
 
@@ -74,7 +76,7 @@ struct ObjectCreationData
 	glm::vec3 position = glm::vec3(0);
 	glm::vec3 rotation = glm::vec3(0);
 	glm::vec3 scale = glm::vec3(1);
-	HitboxCreationData hitBox;
+	RigidCreationData hitBox;
 	
 	int amountOfMeshes = 0;
 	std::vector<MeshCreationData> meshes;

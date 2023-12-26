@@ -340,9 +340,26 @@ inline void GetTransform(aiMatrix4x4 mat, glm::vec3& pos, glm::vec3& rot, glm::v
 	rot = glm::eulerAngles(orientation);
 }
 
+void operator |=(ObjectFlags& f1, ObjectFlags f2)
+{
+	f1 = f1 | f2;
+}
+
+ObjectFlags operator |(ObjectFlags f1, ObjectFlags f2)
+{
+	using type = std::underlying_type_t<ObjectFlags>;
+	return (ObjectFlags)((type)f1 | (type)f2);
+}
+
+ObjectFlags operator &(ObjectFlags f1, ObjectFlags f2)
+{
+	using type = std::underlying_type_t<ObjectFlags>;
+	return (ObjectFlags)((type)f1 & (type)f2);
+}
+
 inline bool FlagHasFlag(uint8_t flag1, ObjectFlags flag2)
 {
-	return (flag1 & (uint8_t)flag2) == (uint8_t)flag2;
+	return (flag1 & flag2) == flag2;
 }
 
 inline bool HasStaticRigidFlag(uint8_t flag)
@@ -388,15 +405,15 @@ void SceneLoader::LoadFBXScene()
 		aiMesh* mesh = scene->mMeshes[i];
 		uint8_t flags = RetrieveFlagsFromName(mesh->mName.C_Str(), creationData.name);
 
+		creationData.position = pos;
+		creationData.rotation = rot;
 		if (HasHitBoxFlag(flags))
 		{
 			RigidBodyType rigidType = HasStaticRigidFlag(flags) ? RIGID_BODY_STATIC : RIGID_BODY_DYNAMIC;
-			creationData.hitBox = { pos, rot, GetExtentsFromMesh(scene->mMeshes[node->mMeshes[0]]), GetShapeType(flags), rigidType };
+			creationData.hitBox = { GetExtentsFromMesh(scene->mMeshes[node->mMeshes[0]]), GetShapeType(flags), rigidType };
 		}
 		else
 		{
-			creationData.position = pos;
-			creationData.rotation = rot;
 			creationData.scale = scale;
 			for (int j = 0; j < node->mNumMeshes; j++)
 				creationData.meshes.push_back(RetrieveMeshData(scene->mMeshes[node->mMeshes[j]]));

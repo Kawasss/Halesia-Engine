@@ -22,12 +22,12 @@ void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, 
 	for (int i = 0; i < creationData.meshes.size(); i++)
 		meshes[i].Create(creationObject, creationData.meshes[i]);
 
-	if (creationData.hitBox.type != SHAPE_TYPE_NONE)
+	if (creationData.hitBox.shapeType != SHAPE_TYPE_NONE)
 	{
-		Shape shape = Shape::GetShapeFromType(creationData.hitBox.type, creationData.hitBox.extents);
+		Shape shape = Shape::GetShapeFromType(creationData.hitBox.shapeType, creationData.hitBox.extents);
 		AddRigidBody(creationData.hitBox.rigidType, shape);
-		transform.position = creationData.hitBox.position;
-		transform.rotation = creationData.hitBox.rotation;
+		transform.position = creationData.position;
+		transform.rotation = creationData.rotation;
 		rigid.ForcePosition(transform);
 	}
 

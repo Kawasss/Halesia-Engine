@@ -168,6 +168,7 @@
     <ClCompile Include="src\RigidBody.cpp" />
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\SceneLoader.cpp" />
+    <ClCompile Include="src\SceneWriter.cpp" />
     <ClCompile Include="src\Shapes.cpp" />
     <ClCompile Include="src\Surface.cpp" />
     <ClCompile Include="src\Swapchain.cpp" />
@@ -197,6 +198,7 @@
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\gui.h" />
     <ClInclude Include="src\HalesiaEngine.h" />
+    <ClInclude Include="src\io\SceneWriter.h" />
     <ClInclude Include="src\physics\RigidBody.h" />
     <ClInclude Include="src\physics\Shapes.h" />
     <ClInclude Include="src\physics\Physics.h" />
