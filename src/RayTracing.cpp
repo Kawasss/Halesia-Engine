@@ -5,7 +5,6 @@
 #include "renderer/Vulkan.h"
 #include "renderer/Swapchain.h"
 #include "system/Window.h"
-#include "SceneLoader.h"
 #include "Vertex.h"
 
 #include <assimp/cimport.h>

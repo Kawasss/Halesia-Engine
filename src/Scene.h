@@ -6,7 +6,7 @@
 #include <future>
 #include "CreationObjects.h"
 #include "Console.h"
-#include "SceneLoader.h"
+#include "io/SceneLoader.h"
 
 class Object;
 class Camera;

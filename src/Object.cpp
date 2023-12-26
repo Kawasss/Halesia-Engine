@@ -2,7 +2,7 @@
 #include <iostream>
 #include <future>
 #include "Console.h"
-#include "SceneLoader.h"
+#include "io/SceneLoader.h"
 #include "physics/Physics.h"
 
 void Object::AwaitGeneration()

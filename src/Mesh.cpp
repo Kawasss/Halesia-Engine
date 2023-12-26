@@ -2,7 +2,7 @@
 #include "renderer/Mesh.h"
 #include "renderer/Renderer.h"
 #include "renderer/AccelerationStructures.h"
-#include "SceneLoader.h"
+#include "io/SceneLoader.h"
 
 std::vector<Material> Mesh::materials;
 std::mutex Mesh::materialMutex;

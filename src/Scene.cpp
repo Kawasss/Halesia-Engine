@@ -3,7 +3,7 @@
 #include <optional>
 #include "Scene.h"
 #include "Console.h"
-#include "SceneLoader.h"
+#include "io/SceneLoader.h"
 #include "Camera.h"
 #include "Object.h"
 #include "system/Window.h"

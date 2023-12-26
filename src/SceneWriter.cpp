@@ -1,6 +1,6 @@
 #include <cstdint>
 #include "io/SceneWriter.h"
-#include "SceneLoader.h"
+#include "io/SceneLoader.h"
 #include "Scene.h"
 #include "Object.h"
 
