@@ -20,7 +20,7 @@ public:
 	RayTracing() {}
 	void Destroy();
 	void Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface,  Win32Window* window, Swapchain* swapchain);
-	void DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, uint32_t width, uint32_t height, VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void RecreateImage(Win32Window* window);
 	void CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer);
 	void CopyDenoisedBufferToImage(VkCommandBuffer commandBuffer);
@@ -28,6 +28,7 @@ public:
 	cudaStream_t GetCudaStream() { return cudaStream; }
 
 	std::array<VkImage, 3> gBuffers{};
+	std::array<VkImageView, 3> gBufferViews;
 	void* handleBufferMemPointer = nullptr;
 
 	static int  raySampleCount;
@@ -125,8 +126,6 @@ private:
 	HANDLE semaphoreHandle;
 
 	std::array<VkDeviceMemory, 3> gBufferMemories;
-	std::array<VkImageView, 3> gBufferViews;
-	
 
 	std::unordered_map<int, Handle> processedMaterials;
 };

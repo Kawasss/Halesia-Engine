@@ -835,8 +835,8 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 	
 	for (int i = 0; i < 3; i++)
 	{
-		Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, gBuffers[i], gBufferMemories[i]);
-		gBufferViews[i] = Vulkan::CreateImageView(logicalDevice, gBuffers[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+		Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, gBuffers[i], gBufferMemories[i]);
+		gBufferViews[i] = Vulkan::CreateImageView(logicalDevice, gBuffers[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 
 		VkImageMemoryBarrier RTImageMemoryBarrier{};
 		RTImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -880,13 +880,11 @@ void RayTracing::CreateShaderBindingTable()
 
 	std::vector<char> shaderBuffer(shaderBindingTableSize);
 	VkResult result = vkGetRayTracingShaderGroupHandlesKHR(logicalDevice, pipeline, 0, 4, shaderBindingTableSize, shaderBuffer.data());
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to get the ray tracing shader group handles", result, nameof(vkGetRayTracingShaderGroupHandlesKHR), __FILENAME__, __STRLINE__);
+	CheckVulkanResult("Failed to get the ray tracing shader group handles", result, vkGetRayTracingShaderGroupHandlesKHR);
 
 	void* shaderBindingTableMemPtr;
 	result = vkMapMemory(logicalDevice, shaderBindingTableMemory, 0, shaderBindingTableSize, 0, &shaderBindingTableMemPtr);
-	if (result != VK_SUCCESS)
-		throw VulkanAPIError("Failed to map the shader binding table memory", result, nameof(vkMapMemory), __FILENAME__, __STRLINE__);
+	CheckVulkanResult("Failed to map the shader binding table memory", result, vkMapMemory);
 
 	for (uint32_t i = 0; i < 4; i++) // 4 = amount of shaders
 	{
@@ -1016,7 +1014,7 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 }
 
 uint32_t frameCount = 0;
-void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex)
+void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, uint32_t width, uint32_t height, VkCommandBuffer commandBuffer, uint32_t imageIndex)
 {
 	if (imageHasChanged)
 	{
@@ -1046,7 +1044,7 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	TLAS->Build(creationObject, objects, false, commandBuffer);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
-	vkCmdTraceRaysKHR(commandBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, window->GetWidth(), window->GetHeight(), 1);
+	vkCmdTraceRaysKHR(commandBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, width, height, 1);
 	//CopyImagesToDenoisingBuffers(commandBuffer);
 	frameCount++;
 }

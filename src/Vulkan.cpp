@@ -29,6 +29,11 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     this->message = message + vulkanError + location;
 }
 
+VkPipelineDynamicStateCreateInfo Vulkan::GetDynamicStateCreateInfo(std::vector<VkDynamicState>& dynamicStates)
+{
+    return VkPipelineDynamicStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0, (uint32_t)dynamicStates.size(), dynamicStates.data() };
+}
+
 VkPipelineViewportStateCreateInfo  Vulkan::GetDefaultViewportStateCreateInfo(VkViewport& viewport, VkRect2D& scissors, Swapchain* swapchain)
 {
     PopulateDefaultScissors(scissors, swapchain);

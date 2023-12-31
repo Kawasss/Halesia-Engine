@@ -40,7 +40,7 @@ void main()
 	vec3 color = vec3(1) * co;
 	if (payload.rayDepth == 0)
 	{
-		vec3 skyColor = payload.rayDirection.y > 0 ? mix(vec3(0.7, 1, 1), vec3(0.1, 0.85, 1), payload.rayDirection.y) : mix(vec3(0.2), vec3(0.06), -payload.rayDirection.y);
+		vec3 skyColor = payload.rayDirection.y > 0 ? mix(vec3(0.7, 1, 1), vec3(0.1, 0.85, 1), payload.rayDirection.y) : vec3(0.2);//mix(vec3(0.2), vec3(0.1), -payload.rayDirection.y);
 		payload.indirectColor = skyColor;
 		payload.rayActive = 0;
 		payload.rayDepth = 1;

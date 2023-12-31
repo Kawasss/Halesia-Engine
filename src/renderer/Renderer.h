@@ -58,6 +58,7 @@ private:
 	VkDescriptorSetLayout descriptorSetLayout	= VK_NULL_HANDLE;
 	VkPipelineLayout pipelineLayout				= VK_NULL_HANDLE;
 	VkPipeline graphicsPipeline					= VK_NULL_HANDLE;
+	VkPipeline screenPipeline                   = VK_NULL_HANDLE;
 	VkCommandPool commandPool					= VK_NULL_HANDLE;
 	VkDescriptorPool descriptorPool				= VK_NULL_HANDLE;
 	VkDescriptorPool imGUIDescriptorPool		= VK_NULL_HANDLE;
@@ -97,6 +98,8 @@ private:
 	Surface surface;
 	Win32Window* testWindow;
 
+	uint32_t viewportWidth, viewportHeight;
+	glm::vec2 viewportOffsets = glm::vec2(0);
 	uint32_t currentFrame = 0;
 	uint32_t queueIndex = 0;
 
@@ -127,7 +130,9 @@ private:
 	void SetModelData(uint32_t currentImage, std::vector<Object*> objects); //parameter is used for potential culling, this allows for 500 meshes in view rather than in scene
 	void SetViewport(VkCommandBuffer commandBuffer);
 	void SetScissors(VkCommandBuffer commandBuffer);
+	void OnResize();
 
+	void UpdateScreenShaderTexture(uint32_t currentFrame);
 	void UpdateUniformBuffers(uint32_t currentImage, Camera* camera);
 	void RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
 	void RenderCollisionBoxes(std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage);

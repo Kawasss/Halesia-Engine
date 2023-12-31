@@ -108,7 +108,7 @@ void main() {
       color += payload.indirectColor / payload.rayDepth;
   }
   color /= camera.raySamples;
-  color = pow(color, vec3(1 / 2.2));
+  //color = pow(color, vec3(1 / 2.2));
 
   if (camera.renderProgressive == 1)
   {

@@ -143,9 +143,14 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
     vulkan12Features.bufferDeviceAddress = VK_TRUE;             // buffer addresses for ray tracing
     vulkan12Features.descriptorBindingPartiallyBound = VK_TRUE;
 
+    VkPhysicalDeviceVulkan13Features vulkan13Features{};
+    vulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+    vulkan13Features.pNext = &vulkan12Features;
+    vulkan13Features.dynamicRendering = VK_TRUE;
+
     VkPhysicalDeviceFeatures2 deviceFeatures2{};
     deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-    deviceFeatures2.pNext = &vulkan12Features;
+    deviceFeatures2.pNext = &vulkan13Features;
     deviceFeatures2.features.samplerAnisotropy = VK_TRUE;
 
     vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures2);

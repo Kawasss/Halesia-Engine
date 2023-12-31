@@ -241,6 +241,8 @@
     <None Include="shaders\uncompiled\intro.frag" />
     <None Include="shaders\uncompiled\intro.vert" />
     <None Include="shaders\uncompiled\miss.rmiss" />
+    <None Include="shaders\uncompiled\screen.frag" />
+    <None Include="shaders\uncompiled\screen.vert" />
     <None Include="shaders\uncompiled\shadow.rmiss" />
     <None Include="shaders\uncompiled\triangle.frag" />
     <None Include="shaders\uncompiled\triangle.vert" />

@@ -121,6 +121,7 @@ public:
     static void                               PopulateDefaultScissors(VkRect2D& scissors, Swapchain* swapchain);
 
     static VkPipelineViewportStateCreateInfo  GetDefaultViewportStateCreateInfo(VkViewport& viewport, VkRect2D& scissors, Swapchain* swapchain);
+    static VkPipelineDynamicStateCreateInfo   GetDynamicStateCreateInfo(std::vector<VkDynamicState>& dynamicStates);
 
 private:
     static VkDebugUtilsMessengerEXT                                 debugMessenger;

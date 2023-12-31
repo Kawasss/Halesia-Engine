@@ -312,7 +312,7 @@ void Renderer::CreateRenderPass()
 	VkAttachmentDescription colorAttachment{};
 	colorAttachment.format = swapchain->format;
 	colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;//VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -515,7 +515,7 @@ void Renderer::CreateDescriptorSets()
 
 		std::vector<VkDescriptorImageInfo> imageInfos(Renderer::MAX_BINDLESS_TEXTURES, imageInfo);
 
-		std::array<VkWriteDescriptorSet, 3> writeDescriptorSets{};
+		std::array<VkWriteDescriptorSet, 2> writeDescriptorSets{};
 		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		writeDescriptorSets[0].dstSet = descriptorSets[i];
@@ -530,13 +530,13 @@ void Renderer::CreateDescriptorSets()
 		writeDescriptorSets[1].dstBinding = 1;
 		writeDescriptorSets[1].descriptorCount = 1;
 
-		writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		/*writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		writeDescriptorSets[2].dstSet = descriptorSets[i];
 		writeDescriptorSets[2].descriptorCount = MAX_BINDLESS_TEXTURES;
 		writeDescriptorSets[2].pImageInfo = imageInfos.data();
 		writeDescriptorSets[2].dstBinding = 2;
-		writeDescriptorSets[2].dstArrayElement = 0;
+		writeDescriptorSets[2].dstArrayElement = 0;*/
 		
 		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
 	}
@@ -581,17 +581,13 @@ void Renderer::CreateDescriptorSetLayout()
 
 	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
 	samplerLayoutBinding.binding = 2;
-	samplerLayoutBinding.descriptorCount = MAX_BINDLESS_TEXTURES;
+	samplerLayoutBinding.descriptorCount = MAX_FRAMES_IN_FLIGHT;//MAX_BINDLESS_TEXTURES;
 	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	std::array<VkDescriptorSetLayoutBinding, 3> bindings = { layoutBinding, modelLayoutBinding, samplerLayoutBinding };
-
-	std::vector<VkDescriptorBindingFlags> bindingFlags;
-	bindingFlags.push_back(0);
-	bindingFlags.push_back(0);
-	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+	std::vector<VkDescriptorBindingFlags> bindingFlags = { 0, 0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT };
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo{};
 	bindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
@@ -611,22 +607,8 @@ void Renderer::CreateDescriptorSetLayout()
 
 void Renderer::CreateGraphicsPipeline()
 {
-	std::vector<char> vertexShaderSource = ReadFile("shaders/spirv/vert.spv");
-	std::vector<char> fragmentShaderSource = ReadFile("shaders/spirv/frag.spv");
-
-	VkShaderModule vertexShaderModule = Vulkan::CreateShaderModule(logicalDevice, vertexShaderSource);
-	VkShaderModule fragmentShaderModule = Vulkan::CreateShaderModule(logicalDevice, fragmentShaderSource);
-
-	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(vertexShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
-	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(fragmentShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexCreateInfo, fragmentCreateInfo };
-
 	//create pipeline layout
-	VkPipelineDynamicStateCreateInfo dynamicState{};
-	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-	dynamicState.pDynamicStates = dynamicStates.data();
+	VkPipelineDynamicStateCreateInfo dynamicState = Vulkan::GetDynamicStateCreateInfo(dynamicStates);
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -636,13 +618,11 @@ void Renderer::CreateGraphicsPipeline()
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssembly.primitiveRestartEnable = false;
 
-	PipelineBuilder builder{};
-
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
 	depthStencil.depthTestEnable = VK_TRUE;
 	depthStencil.depthWriteEnable = VK_TRUE;
-	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
 	depthStencil.depthBoundsTestEnable = VK_FALSE;
 
 	VkViewport viewport;
@@ -651,35 +631,35 @@ void Renderer::CreateGraphicsPipeline()
 
 	VkPipelineRasterizationStateCreateInfo rasterizer{};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rasterizer.depthClampEnable = false;
-	rasterizer.rasterizerDiscardEnable = false;
-	rasterizer.lineWidth = 2;
 	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
 	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizer.depthBiasEnable = false;
+	rasterizer.depthBiasEnable = VK_FALSE;
+	rasterizer.depthClampEnable = VK_FALSE;
+	rasterizer.rasterizerDiscardEnable = VK_FALSE;
+	rasterizer.lineWidth = 2;
 
 	VkPipelineMultisampleStateCreateInfo multisampling{};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampling.sampleShadingEnable = false;
 	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	multisampling.sampleShadingEnable = VK_FALSE;
 
 	VkPipelineColorBlendAttachmentState blendAttachment{};
 	blendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	blendAttachment.blendEnable = true;
 	blendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
 	blendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 	blendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 	blendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 	blendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
 	blendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+	blendAttachment.blendEnable = VK_TRUE;
 
 	VkPipelineColorBlendStateCreateInfo blendCreateInfo{};
 	blendCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	blendCreateInfo.logicOpEnable = VK_FALSE;
 	blendCreateInfo.logicOp = VK_LOGIC_OP_COPY;
-	blendCreateInfo.attachmentCount = 1;
+	blendCreateInfo.logicOpEnable = VK_FALSE;
 	blendCreateInfo.pAttachments = &blendAttachment;
+	blendCreateInfo.attachmentCount = 1;
 
 	VkPushConstantRange pushConstant{};
 	pushConstant.offset = 0;
@@ -697,46 +677,60 @@ void Renderer::CreateGraphicsPipeline()
 	CheckVulkanResult("Failed to create a pipeline layout", result, vkCreatePipelineLayout);
 		
 	CreateRenderPass();
-	
-	//graphicsPipeline = builder.BuildGraphicsPipeline(logicalDevice, descriptorSetLayout, renderPass, pipelineLayout, vertexShaderSource, fragmentShaderSource, dynamicStates, viewport, scissor);
+
+	// world shaders pipeline
+
+	/*VkPipelineRenderingCreateInfo dynamicRenderInfo{};
+	dynamicRenderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+	dynamicRenderInfo.colorAttachmentCount = 1;
+	dynamicRenderInfo.depthAttachmentFormat = physicalDevice.GetDepthFormat();
+	dynamicRenderInfo.pColorAttachmentFormats = &swapchain->format;*/
+
+	VkShaderModule vertexShaderModule = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/vert.spv"));
+	VkShaderModule fragmentShaderModule = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/frag.spv"));
+
+	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(vertexShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
+	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(fragmentShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexCreateInfo, fragmentCreateInfo };
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
 	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	//pipelineCreateInfo.pNext = &dynamicRenderInfo;
 	pipelineCreateInfo.stageCount = 2;
 	pipelineCreateInfo.pStages = shaderStages;
-	pipelineCreateInfo.pVertexInputState = &vertexInputInfo;
+	pipelineCreateInfo.pVertexInputState =   &vertexInputInfo;
 	pipelineCreateInfo.pInputAssemblyState = &inputAssembly;
-	pipelineCreateInfo.pViewportState = &viewportState;
+	pipelineCreateInfo.pViewportState =      &viewportState;
 	pipelineCreateInfo.pRasterizationState = &rasterizer;
-	pipelineCreateInfo.pMultisampleState = &multisampling;
-	pipelineCreateInfo.pColorBlendState = &blendCreateInfo;
-	pipelineCreateInfo.pDynamicState = &dynamicState;
-	pipelineCreateInfo.pDepthStencilState = &depthStencil;
+	pipelineCreateInfo.pMultisampleState =   &multisampling;
+	pipelineCreateInfo.pColorBlendState =    &blendCreateInfo;
+	pipelineCreateInfo.pDynamicState =       &dynamicState;
+	pipelineCreateInfo.pDepthStencilState =  &depthStencil;
 	pipelineCreateInfo.layout = pipelineLayout;
 	pipelineCreateInfo.renderPass = renderPass;
 	pipelineCreateInfo.subpass = 0;
 
-	result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &graphicsPipeline);
+	// screen shaders pipeline
+
+	VkShaderModule screenShaderVert = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/screen.vert.spv"));
+	VkShaderModule screenShaderFrag = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/screen.frag.spv"));
+
+	vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderVert, VK_SHADER_STAGE_VERTEX_BIT);
+	fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderFrag, VK_SHADER_STAGE_FRAGMENT_BIT);
+	VkPipelineShaderStageCreateInfo screenShaderStages[] = { vertexCreateInfo, fragmentCreateInfo };
+	
+	VkGraphicsPipelineCreateInfo screenPipelineInfo = pipelineCreateInfo;
+	screenPipelineInfo.pStages = screenShaderStages;
+	VkGraphicsPipelineCreateInfo createInfos[] = { pipelineCreateInfo, screenPipelineInfo };
+
+	result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 2, createInfos, nullptr, &graphicsPipeline);
 	CheckVulkanResult("Failed to create a graphics pipeline", result, vkCreateGraphicsPipelines);
+
+	vkDestroyShaderModule(logicalDevice, screenShaderVert, nullptr);
+	vkDestroyShaderModule(logicalDevice, screenShaderFrag, nullptr);
 
 	vkDestroyShaderModule(logicalDevice, vertexShaderModule, nullptr);
 	vkDestroyShaderModule(logicalDevice, fragmentShaderModule, nullptr);
-}
-
-std::vector<char> Renderer::ReadFile(const std::string& filePath)
-{
-	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
-	if (!file.is_open())
-		throw std::runtime_error("Failed to open the shader at " + filePath);
-
-	size_t fileSize = (size_t)file.tellg();
-	std::vector<char> buffer(fileSize);
-
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-
-	file.close();
-	return buffer;
 }
 
 void Renderer::SetLogicalDevice()
@@ -790,7 +784,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
 	CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
 
-	rayTracer->DrawFrame(objects, testWindow, camera, lCommandBuffer, imageIndex);
+	rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, lCommandBuffer, imageIndex);
 
 	/*vkEndCommandBuffer(lCommandBuffer);
 	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
@@ -860,7 +854,8 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		imageToCopy = rayTracer->gBuffers[2];
 	else if (RayTracing::showAlbedo)
 		imageToCopy = rayTracer->gBuffers[1];
-	swapchain->CopyImageToSwapchain(imageToCopy, lCommandBuffer, imageIndex);
+
+	//swapchain->CopyImageToSwapchain(imageToCopy, lCommandBuffer, imageIndex);
 	
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
@@ -876,18 +871,24 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
 	vkCmdBeginRenderPass(lCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	UpdateScreenShaderTexture(currentFrame);
+
+	SetViewport(lCommandBuffer);
+	SetScissors(lCommandBuffer);
 
 	if (shouldRenderCollisionBoxes)
 	{
 		vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 		vkCmdBindPipeline(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-		SetViewport(lCommandBuffer);
-		SetScissors(lCommandBuffer);
 		RenderCollisionBoxes(objects, lCommandBuffer, currentFrame);
 	}
 
+	glm::vec4 offsets = glm::vec4(0, 0, 1, 1);//glm::vec4(viewportOffsets.x, viewportOffsets.y, viewportWidth / (float)testWindow->GetWidth(), viewportHeight / (float)testWindow->GetHeight());
+	vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+	vkCmdBindPipeline(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, screenPipeline);
+	vkCmdPushConstants(lCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &offsets);
+	vkCmdDraw(lCommandBuffer, 6, 1, 0, 0);
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), lCommandBuffer);
-
 	vkCmdEndRenderPass(lCommandBuffer);
 
 	result = vkEndCommandBuffer(lCommandBuffer);
@@ -972,6 +973,18 @@ void Renderer::RenderIntro(Intro* intro)
 	}
 }
 
+void Renderer::OnResize()
+{
+	swapchain->Recreate(renderPass);
+	rayTracer->RecreateImage(testWindow);
+	CreateDeferredFramebuffer(swapchain->extent.width, swapchain->extent.height);
+	UpdateScreenShaderTexture(currentFrame);
+	viewportWidth = testWindow->GetWidth();
+	viewportHeight = testWindow->GetHeight();
+	testWindow->resized = false;
+	Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
+}
+
 uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
 {
 	uint32_t imageIndex;
@@ -979,10 +992,7 @@ uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
-		swapchain->Recreate(renderPass);
-		rayTracer->RecreateImage(testWindow);
-		CreateDeferredFramebuffer(swapchain->extent.width, swapchain->extent.height);
-		testWindow->resized = false;
+		OnResize();
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 		throw VulkanAPIError("Failed to acquire the next swap chain image", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __STRLINE__);
@@ -1004,11 +1014,7 @@ void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
 	VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
 	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || testWindow->resized)
 	{
-		swapchain->Recreate(renderPass);
-		rayTracer->RecreateImage(testWindow);
-		CreateDeferredFramebuffer(swapchain->extent.width, swapchain->extent.height);
-		testWindow->resized = false;
-		Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
+		OnResize();
 	}
 	else CheckVulkanResult("Failed to present the swap chain image", result, nameof(vkQueuePresentKHR));
 }
@@ -1067,7 +1073,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	memcpy(&Renderer::selectedHandle, rayTracer->handleBufferMemPointer, sizeof(uint64_t));
 	memset(rayTracer->handleBufferMemPointer, 0, sizeof(uint64_t));
 
-	UpdateBindlessTextures(currentFrame, activeObjects);
+	//UpdateBindlessTextures(currentFrame, activeObjects);
 
 	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
@@ -1101,6 +1107,25 @@ void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
 		}
 	}
 	indirectDrawParameters.SubmitNewData(parameters);
+}
+
+void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame)
+{
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = rayTracer->gBufferViews[0];
+	imageInfo.sampler = defaultSampler;
+
+	VkWriteDescriptorSet writeSet{};
+	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writeSet.pImageInfo = &imageInfo;
+	writeSet.dstSet = descriptorSets[currentFrame];
+	writeSet.dstBinding = 2;
+	writeSet.descriptorCount = 1;
+	writeSet.dstArrayElement = 0;
+
+	vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
 }
 
 std::vector<Object*> processedObjects;
@@ -1208,4 +1233,20 @@ void Renderer::RenderMeshData(const std::vector<Mesh>& meshes)
 		ImGui::TableNextColumn();
 		ImGui::Text(Vec3ToString(mesh.extents).c_str());
 	}
+}
+
+std::vector<char> Renderer::ReadFile(const std::string& filePath)
+{
+	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
+	if (!file.is_open())
+		throw std::runtime_error("Failed to open the shader at " + filePath);
+
+	size_t fileSize = (size_t)file.tellg();
+	std::vector<char> buffer(fileSize);
+
+	file.seekg(0);
+	file.read(buffer.data(), fileSize);
+
+	file.close();
+	return buffer;
 }
