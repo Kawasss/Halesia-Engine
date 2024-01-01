@@ -40,6 +40,8 @@ public:
 	void DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta);
 	void RenderMeshData(const std::vector<Mesh>& meshes);
 	void RenderIntro(Intro* intro);
+	void SetViewportOffsets(glm::vec2 offsets);
+	void SetViewportModifiers(glm::vec2 modifiers);
 	VulkanCreationObject& GetVulkanCreationObject();
 
 	Swapchain* swapchain; // better to keep it private
@@ -100,6 +102,7 @@ private:
 
 	uint32_t viewportWidth, viewportHeight;
 	glm::vec2 viewportOffsets = glm::vec2(0);
+	glm::vec2 viewportTransModifiers = glm::vec2(1);
 	uint32_t currentFrame = 0;
 	uint32_t queueIndex = 0;
 

@@ -883,7 +883,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		RenderCollisionBoxes(objects, lCommandBuffer, currentFrame);
 	}
 
-	glm::vec4 offsets = glm::vec4(0, 0, 1, 1);//glm::vec4(viewportOffsets.x, viewportOffsets.y, viewportWidth / (float)testWindow->GetWidth(), viewportHeight / (float)testWindow->GetHeight());
+	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, 1, 1);
 	vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 	vkCmdBindPipeline(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, screenPipeline);
 	vkCmdPushConstants(lCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &offsets);
@@ -979,8 +979,8 @@ void Renderer::OnResize()
 	rayTracer->RecreateImage(testWindow);
 	CreateDeferredFramebuffer(swapchain->extent.width, swapchain->extent.height);
 	UpdateScreenShaderTexture(currentFrame);
-	viewportWidth = testWindow->GetWidth();
-	viewportHeight = testWindow->GetHeight();
+	viewportWidth = testWindow->GetWidth() * viewportTransModifiers.x;
+	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y;
 	testWindow->resized = false;
 	Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
 }
@@ -1249,4 +1249,14 @@ std::vector<char> Renderer::ReadFile(const std::string& filePath)
 
 	file.close();
 	return buffer;
+}
+
+void Renderer::SetViewportOffsets(glm::vec2 offsets)
+{
+	viewportOffsets = offsets;
+}
+
+void Renderer::SetViewportModifiers(glm::vec2 modifiers)
+{
+	viewportTransModifiers = modifiers;
 }

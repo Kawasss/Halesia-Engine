@@ -196,6 +196,8 @@ std::optional<std::string> HalesiaInstance::UpdateRenderer(float delta)
 
 	if (useEditor)
 	{
+		renderer->SetViewportOffsets({ 0.125f, 0 });
+		renderer->SetViewportModifiers({ 0.75f, 1 }); // doesnt have to be set every frame
 		GUI::ShowSceneGraph(scene->allObjects, window);
 		GUI::ShowMainMenuBar(showObjectData, showRAM, showCPU, showGPU);
 	}
