@@ -72,7 +72,7 @@ void Console::InterpretCommand(std::string command)
 	std::vector<TokenContent> tokens = LexInput(command), lValues, rValues;
 	for (size_t i = 0; i < tokens.size(); i++) // process all aliases first
 	{
-		if (tokens[i].lexemeToken != LEXEME_TOKEN_IDENTIFIER || aliases.count(tokens[i].content) <= 0)
+		if (tokens[i].lexemeToken != LEXEME_IDENTIFIER || aliases.count(tokens[i].content) <= 0)
 			continue;
 
 		std::cout << "Caught alias \"" << tokens[i].content << "\": replacing tokens...\n";
@@ -95,12 +95,12 @@ void Console::InterpretCommand(std::string command)
 			continue;
 		switch (content.lexemeToken)
 		{
-		case LEXEME_TOKEN_DISABLE:
-		case LEXEME_TOKEN_ENABLE:
-			*static_cast<bool*>(commandVariables[tokens[i + 1].content].location) = content.lexemeToken == LEXEME_TOKEN_ENABLE;
+		case LEXEME_DISABLE:
+		case LEXEME_ENABLE:
+			*static_cast<bool*>(commandVariables[tokens[i + 1].content].location) = content.lexemeToken == LEXEME_ENABLE;
 			break;
 
-		case LEXEME_TOKEN_GET:
+		case LEXEME_GET:
 		{
 			if (commandVariables.count(tokens[i + 1].content) == 0)
 			{
@@ -118,14 +118,14 @@ void Console::InterpretCommand(std::string command)
 			break;
 		}
 
-		case LEXEME_TOKEN_DEFINE:
+		case LEXEME_DEFINE:
 		{
 			std::string aliasName = tokens[i + 1].content;
 			
 			size_t beginIndex = i;
 			for (; i < tokens.size(); i++) // keep iterating through the tokens with i until the token to stop a define is found
 			{
-				if (tokens[i].lexemeToken == LEXEME_TOKEN_NEWLINE)
+				if (tokens[i].lexemeToken == LEXEME_NEWLINE)
 					break;
 			} 
 			std::vector<TokenContent> aliasTokens = { tokens.begin() + beginIndex + 2, tokens.begin() + i };
@@ -136,22 +136,22 @@ void Console::InterpretCommand(std::string command)
 			break;
 		}
 
-		case LEXEME_TOKEN_ENDLINE:
+		case LEXEME_ENDLINE:
 			DispatchCommand(lValues, rValues, equalsOperator);
 			lValues.clear();
 			rValues.clear();
 			isOnRightSideOfOperator = false;
 			break;
 
-		case LEXEME_TOKEN_EXIT:
+		case LEXEME_EXIT:
 			std::cout << "Exit has been requested via console" << "\n";
 			exit(0);
 
-		case LEXEME_TOKEN_EQUALS:
-		case LEXEME_TOKEN_PLUSEQUALS:
-		case LEXEME_TOKEN_MINUSEQUALS:
-		case LEXEME_TOKEN_MULTIPLYEQUALS:
-		case LEXEME_TOKEN_DIVIDEEQUALS:
+		case LEXEME_EQUALS:
+		case LEXEME_PLUSEQUALS:
+		case LEXEME_MINUSEQUALS:
+		case LEXEME_MULTIPLYEQUALS:
+		case LEXEME_DIVIDEEQUALS:
 			equalsOperator = content;
 			isOnRightSideOfOperator = true;
 			continue;
@@ -259,7 +259,7 @@ std::vector<Console::TokenContent> Console::LexInput(std::string input)
 			}
 			tokens.push_back({ LEXER_TOKEN_SEPERATOR, std::string{input[i]} });
 			EvaluateToken(tokens.back());
-			if (tokens.back().lexemeToken == LEXEME_TOKEN_WHITESPACE)
+			if (tokens.back().lexemeToken == LEXEME_WHITESPACE) // ignore any whitespace tokens, because those just clog up the interpreter
 				tokens.pop_back();
 			lexingString.clear();
 			continue;
@@ -281,7 +281,7 @@ float Console::SolveInstruction(Instruction& instruction)
 		lvalue = instruction.lvalue.token == LEXER_TOKEN_LITERAL ? std::stof(instruction.lvalue.content) : GetFloatFromLValue(commandVariables[instruction.lvalue.content]); // if the value is an identifier it should be converted to a float first
 	if (instruction.rvalue.token != LEXER_TOKEN_INVALID)
 		rvalue = instruction.rvalue.token == LEXER_TOKEN_LITERAL ? std::stof(instruction.rvalue.content) : GetFloatFromLValue(commandVariables[instruction.rvalue.content]);
-	LexemeToken op = instruction.operatorType;
+	Lexeme op = instruction.operatorType;
 	
 	return CalculateOperator(lvalue, rvalue, op);
 }
@@ -294,10 +294,10 @@ Console::VariableMetadata& Console::GetLValue(std::vector<TokenContent> tokens)
 	{
 		switch (tokens[i].lexemeToken)
 		{
-		case LEXEME_TOKEN_IDENTIFIER:
+		case LEXEME_IDENTIFIER:
 			varName = tokens[i].content;
 			break;
-		case LEXEME_TOKEN_DOT:
+		case LEXEME_DOT:
 			optGroupName = varName;
 			break;
 		}
@@ -324,29 +324,29 @@ void Console::AssignRValueToLValue(VariableMetadata& lvalue, void* rvalue)
 	}
 }
 
-float Console::CalculateOperator(float lvalue, float rvalue, LexemeToken op)
+float Console::CalculateOperator(float lvalue, float rvalue, Lexeme op)
 {
 	switch (op)
 	{
-	case LEXEME_TOKEN_PLUSEQUALS:
-	case LEXEME_TOKEN_PLUS:     
+	case LEXEME_PLUSEQUALS:
+	case LEXEME_PLUS:     
 		return lvalue + rvalue;
-	case LEXEME_TOKEN_MINUSEQUALS:
-	case LEXEME_TOKEN_MINUS:    
+	case LEXEME_MINUSEQUALS:
+	case LEXEME_MINUS:    
 		return lvalue - rvalue;
-	case LEXEME_TOKEN_MULTIPLYEQUALS:
-	case LEXEME_TOKEN_MULTIPLY: 
+	case LEXEME_MULTIPLYEQUALS:
+	case LEXEME_MULTIPLY: 
 		return lvalue * rvalue;
-	case LEXEME_TOKEN_DIVIDEEQUALS:
-	case LEXEME_TOKEN_DIVIDE:   
+	case LEXEME_DIVIDEEQUALS:
+	case LEXEME_DIVIDE:   
 		return lvalue / rvalue;
-	case LEXEME_TOKEN_IS:
+	case LEXEME_IS:
 		return (bool)(lvalue == rvalue);
-	case LEXEME_TOKEN_ISNOT:
+	case LEXEME_ISNOT:
 		return (bool)(lvalue != rvalue);
-	case LEXEME_TOKEN_ISNOT_SINGLE:
+	case LEXEME_ISNOT_SINGLE:
 		return !(bool)lvalue;
-	case LEXEME_TOKEN_EQUALS:
+	case LEXEME_EQUALS:
 		return rvalue;
 	default: WriteLine("Undefined operator \"" + op + '"', MESSAGE_SEVERITY_ERROR);
 	}
@@ -356,21 +356,21 @@ float Console::CalculateOperator(float lvalue, float rvalue, LexemeToken op)
 float Console::CalculateResult(std::vector<TokenContent>& tokens)
 {
 	std::vector<float> values;
-	LexemeToken operatorType = LEXEME_TOKEN_INVALID;
+	Lexeme operatorType = LEXEME_INVALID;
 	for (int i = 0; i < tokens.size(); i++)
 	{
 		switch (tokens[i].lexemeToken)
 		{
-		case LEXEME_TOKEN_OPEN_PARANTHESIS:
+		case LEXEME_OPEN_PARANTHESIS:
 		{
 			std::vector<TokenContent> contents;
 			int parenCount = 1;
 			i++;
 			while (parenCount > 0 && i < tokens.size()) // i < tokens.size() is used as a failsafe if there arent enough closing parentheses
 			{
-				if (tokens[i].lexemeToken == LEXEME_TOKEN_OPEN_PARANTHESIS)
+				if (tokens[i].lexemeToken == LEXEME_OPEN_PARANTHESIS)
 					parenCount++;
-				else if (tokens[i].lexemeToken == LEXEME_TOKEN_CLOSE_PARANTHESIS)
+				else if (tokens[i].lexemeToken == LEXEME_CLOSE_PARANTHESIS)
 					parenCount--;
 				if (parenCount <= 0)
 					break;
@@ -381,27 +381,27 @@ float Console::CalculateResult(std::vector<TokenContent>& tokens)
 			break;
 		}
 
-		case LEXEME_TOKEN_IDENTIFIER:
+		case LEXEME_IDENTIFIER:
 			values.push_back(GetFloatFromLValue(commandVariables[tokens[0].content]));
 			break;
 
-		case LEXEME_TOKEN_INT:
-		case LEXEME_TOKEN_FLOAT:
+		case LEXEME_INT:
+		case LEXEME_FLOAT:
 			values.push_back(std::stof(tokens[i].content));
 			break;
 
-		case LEXEME_TOKEN_PLUS:
-		case LEXEME_TOKEN_MINUS:
-		case LEXEME_TOKEN_MULTIPLY:
-		case LEXEME_TOKEN_DIVIDE:
-		case LEXEME_TOKEN_IS:
-		case LEXEME_TOKEN_ISNOT:
-		case LEXEME_TOKEN_ISNOT_SINGLE:
+		case LEXEME_PLUS:
+		case LEXEME_MINUS:
+		case LEXEME_MULTIPLY:
+		case LEXEME_DIVIDE:
+		case LEXEME_IS:
+		case LEXEME_ISNOT:
+		case LEXEME_ISNOT_SINGLE:
 			operatorType = tokens[i].lexemeToken;
 			break;
 		}
 	}
-	if (operatorType == LEXEME_TOKEN_INVALID)
+	if (operatorType == LEXEME_INVALID)
 		return values[0];
 	if (values.size() == 0)
 	{
@@ -413,20 +413,20 @@ float Console::CalculateResult(std::vector<TokenContent>& tokens)
 
 void Console::EvaluateToken(TokenContent& token)
 {
-	static std::unordered_map<std::string, LexemeToken> stringToToken =
+	static std::unordered_map<std::string, Lexeme> stringToToken =
 	{
-		{ "get", LEXEME_TOKEN_GET }, { "set", LEXEME_TOKEN_SET }, { "enable", LEXEME_TOKEN_ENABLE}, { "disable", LEXEME_TOKEN_DISABLE }, { "define", LEXEME_TOKEN_DEFINE }, { "exit", LEXEME_TOKEN_EXIT },
-		{ "-", LEXEME_TOKEN_MINUS }, { "+", LEXEME_TOKEN_PLUS }, { "*", LEXEME_TOKEN_MULTIPLY }, { "/", LEXEME_TOKEN_DIVIDE },
-		{ "=", LEXEME_TOKEN_EQUALS }, { "-=", LEXEME_TOKEN_MINUSEQUALS }, { "+=", LEXEME_TOKEN_PLUSEQUALS }, { "*=", LEXEME_TOKEN_MULTIPLYEQUALS }, { "/=", LEXEME_TOKEN_DIVIDEEQUALS }, { "==", LEXEME_TOKEN_IS }, { "!=", LEXEME_TOKEN_ISNOT },
-		{ " ", LEXEME_TOKEN_WHITESPACE }, { "", LEXEME_TOKEN_WHITESPACE }, { ";", LEXEME_TOKEN_ENDLINE }, { "(", LEXEME_TOKEN_OPEN_PARANTHESIS }, { ")", LEXEME_TOKEN_CLOSE_PARANTHESIS },
-		{ "{", LEXEME_TOKEN_OPEN_CBRACKET }, { "}", LEXEME_TOKEN_CLOSE_CBRACKET }, { "[", LEXEME_TOKEN_OPEN_SBRACKET }, { "]", LEXEME_TOKEN_CLOSE_SBRACKET },
-		{ ".", LEXEME_TOKEN_DOT }, { ",", LEXEME_TOKEN_COMMA }, { "\n", LEXEME_TOKEN_NEWLINE }
+		{ "get", LEXEME_GET }, { "set", LEXEME_SET }, { "enable", LEXEME_ENABLE}, { "disable", LEXEME_DISABLE }, { "define", LEXEME_DEFINE }, { "exit", LEXEME_EXIT },
+		{ "-", LEXEME_MINUS }, { "+", LEXEME_PLUS }, { "*", LEXEME_MULTIPLY }, { "/", LEXEME_DIVIDE },
+		{ "=", LEXEME_EQUALS }, { "-=", LEXEME_MINUSEQUALS }, { "+=", LEXEME_PLUSEQUALS }, { "*=", LEXEME_MULTIPLYEQUALS }, { "/=", LEXEME_DIVIDEEQUALS }, { "==", LEXEME_IS }, { "!=", LEXEME_ISNOT },
+		{ " ", LEXEME_WHITESPACE }, { "", LEXEME_WHITESPACE }, { ";", LEXEME_ENDLINE }, { "(", LEXEME_OPEN_PARANTHESIS }, { ")", LEXEME_CLOSE_PARANTHESIS },
+		{ "{", LEXEME_OPEN_CBRACKET }, { "}", LEXEME_CLOSE_CBRACKET }, { "[", LEXEME_OPEN_SBRACKET }, { "]", LEXEME_CLOSE_SBRACKET },
+		{ ".", LEXEME_DOT }, { ",", LEXEME_COMMA }, { "\n", LEXEME_NEWLINE }
 	};
 
 	switch (token.token)
 	{
 	case LEXER_TOKEN_IDENTIFIER:
-		token.lexemeToken = LEXEME_TOKEN_IDENTIFIER;
+		token.lexemeToken = LEXEME_IDENTIFIER;
 		break;
 		
 	case LEXER_TOKEN_KEYWORD:
@@ -439,17 +439,17 @@ void Console::EvaluateToken(TokenContent& token)
 		if (IsDigitLiteral(token.content))
 		{
 			bool isFloat = token.content.find('.') != std::string::npos;
-			token.lexemeToken = isFloat ? LEXEME_TOKEN_FLOAT : LEXEME_TOKEN_INT;
+			token.lexemeToken = isFloat ? LEXEME_FLOAT : LEXEME_INT;
 		}
 		else
 		{
 			bool isBool = token.content == "true" || token.content == "false";
-			token.lexemeToken = isBool ? LEXEME_TOKEN_BOOL : LEXEME_TOKEN_STRING;
+			token.lexemeToken = isBool ? LEXEME_BOOL : LEXEME_STRING;
 		}
 		break;
 
 	case LEXER_TOKEN_WHITESPACE:
-		token.lexemeToken = LEXEME_TOKEN_WHITESPACE;
+		token.lexemeToken = LEXEME_WHITESPACE;
 		break;
 	}
 }
@@ -583,4 +583,34 @@ glm::vec3 Console::GetColorFromMessage(std::string message)
 	default:
 		return glm::vec3(1);
 	}
+}
+
+std::string MessageSeverityToString(MessageSeverity severity)
+{
+	switch (severity)
+	{
+	case MESSAGE_SEVERITY_NORMAL:
+		return "MESSAGE_SEVERITY_NORMAL";
+	case MESSAGE_SEVERITY_WARNING:
+		return "MESSAGE_SEVERITY_WARNING";
+	case MESSAGE_SEVERITY_ERROR:
+		return "MESSAGE_SEVERITY_ERROR";
+	case MESSAGE_SEVERITY_DEBUG:
+		return "MESSAGE_SEVERITY_DEBUG";
+	}
+	return "";
+}
+
+std::string ConsoleVariableAccessToString(ConsoleVariableAccess access)
+{
+	switch (access)
+	{
+	case CONSOLE_ACCESS_READ_ONLY:
+		return "CONSOLE_ACCESS_READ_ONLY";
+	case CONSOLE_ACCESS_READ_WRITE:
+		return "CONSOLE_ACCESS_READ_WRITE";
+	case CONSOLE_ACCESS_WRITE_ONLY:
+		return "CONSOLE_ACCESS_WRITE_ONLY";
+	}
+	return "";
 }

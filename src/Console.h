@@ -16,6 +16,7 @@ enum MessageSeverity
 	MESSAGE_SEVERITY_ERROR,   // red
 	MESSAGE_SEVERITY_DEBUG    // blue
 };
+inline extern std::string MessageSeverityToString(MessageSeverity severity);
 
 enum ConsoleVariableAccess
 {
@@ -23,36 +24,7 @@ enum ConsoleVariableAccess
 	CONSOLE_ACCESS_READ_ONLY,
 	CONSOLE_ACCESS_WRITE_ONLY
 };
-
-inline std::string MessageSeverityToString(MessageSeverity severity)
-{
-	switch (severity)
-	{
-	case MESSAGE_SEVERITY_NORMAL:
-		return "MESSAGE_SEVERITY_NORMAL";
-	case MESSAGE_SEVERITY_WARNING:
-		return "MESSAGE_SEVERITY_WARNING";
-	case MESSAGE_SEVERITY_ERROR:
-		return "MESSAGE_SEVERITY_ERROR";
-	case MESSAGE_SEVERITY_DEBUG:
-		return "MESSAGE_SEVERITY_DEBUG";
-	}
-	return "";
-}
-
-inline std::string ConsoleVariableAccessToString(ConsoleVariableAccess access)
-{
-	switch (access)
-	{
-	case CONSOLE_ACCESS_READ_ONLY:
-		return "CONSOLE_ACCESS_READ_ONLY";
-	case CONSOLE_ACCESS_READ_WRITE:
-		return "CONSOLE_ACCESS_READ_WRITE";
-	case CONSOLE_ACCESS_WRITE_ONLY:
-		return "CONSOLE_ACCESS_WRITE_ONLY";
-	}
-	return "";
-}
+inline extern std::string ConsoleVariableAccessToString(ConsoleVariableAccess access);
 
 class Console
 {
@@ -82,43 +54,43 @@ private:
 		LEXER_TOKEN_WHITESPACE
 	};
 
-	enum LexemeToken
+	enum Lexeme
 	{
-		LEXEME_TOKEN_INVALID,
-		LEXEME_TOKEN_IDENTIFIER,
-		LEXEME_TOKEN_ENDLINE,
-		LEXEME_TOKEN_NEWLINE,
-		LEXEME_TOKEN_EXIT,
-		LEXEME_TOKEN_DEFINE,
-		LEXEME_TOKEN_STRING,
-		LEXEME_TOKEN_FLOAT,
-		LEXEME_TOKEN_INT,
-		LEXEME_TOKEN_BOOL,
-		LEXEME_TOKEN_DOT,
-		LEXEME_TOKEN_COMMA,
-		LEXEME_TOKEN_GET,
-		LEXEME_TOKEN_SET,
-		LEXEME_TOKEN_DISABLE,
-		LEXEME_TOKEN_ENABLE,
-		LEXEME_TOKEN_EQUALS,
-		LEXEME_TOKEN_PLUSEQUALS,
-		LEXEME_TOKEN_MINUSEQUALS,
-		LEXEME_TOKEN_MULTIPLYEQUALS,
-		LEXEME_TOKEN_DIVIDEEQUALS,
-		LEXEME_TOKEN_ISNOT,
-		LEXEME_TOKEN_ISNOT_SINGLE, // !{var}
-		LEXEME_TOKEN_IS,
-		LEXEME_TOKEN_PLUS,
-		LEXEME_TOKEN_MINUS,
-		LEXEME_TOKEN_MULTIPLY,
-		LEXEME_TOKEN_DIVIDE,
-		LEXEME_TOKEN_WHITESPACE,
-		LEXEME_TOKEN_OPEN_CBRACKET,  // {
-		LEXEME_TOKEN_CLOSE_CBRACKET, // }
-		LEXEME_TOKEN_OPEN_SBRACKET,  // [
-		LEXEME_TOKEN_CLOSE_SBRACKET, // ]
-		LEXEME_TOKEN_OPEN_PARANTHESIS,
-		LEXEME_TOKEN_CLOSE_PARANTHESIS,
+		LEXEME_INVALID,
+		LEXEME_IDENTIFIER,
+		LEXEME_ENDLINE,
+		LEXEME_NEWLINE,
+		LEXEME_EXIT,
+		LEXEME_DEFINE,
+		LEXEME_STRING,
+		LEXEME_FLOAT,
+		LEXEME_INT,
+		LEXEME_BOOL,
+		LEXEME_DOT,
+		LEXEME_COMMA,
+		LEXEME_GET,
+		LEXEME_SET,
+		LEXEME_DISABLE,
+		LEXEME_ENABLE,
+		LEXEME_EQUALS,
+		LEXEME_PLUSEQUALS,
+		LEXEME_MINUSEQUALS,
+		LEXEME_MULTIPLYEQUALS,
+		LEXEME_DIVIDEEQUALS,
+		LEXEME_ISNOT,
+		LEXEME_ISNOT_SINGLE, // !identifier
+		LEXEME_IS,
+		LEXEME_PLUS,
+		LEXEME_MINUS,
+		LEXEME_MULTIPLY,
+		LEXEME_DIVIDE,
+		LEXEME_WHITESPACE,
+		LEXEME_OPEN_CBRACKET,  // {
+		LEXEME_CLOSE_CBRACKET, // }
+		LEXEME_OPEN_SBRACKET,  // [
+		LEXEME_CLOSE_SBRACKET, // ]
+		LEXEME_OPEN_PARANTHESIS,
+		LEXEME_CLOSE_PARANTHESIS,
 	};
 
 	enum VariableType
@@ -131,9 +103,9 @@ private:
 
 	struct TokenContent
 	{
-		Token token             = LEXER_TOKEN_INVALID;
-		std::string content     = "";
-		LexemeToken lexemeToken = LEXEME_TOKEN_INVALID;
+		Token token         = LEXER_TOKEN_INVALID;
+		std::string content = "";
+		Lexeme lexemeToken  = LEXEME_INVALID;
 	};
 
 	struct VariableMetadata
@@ -152,7 +124,7 @@ private:
 
 	struct Instruction
 	{
-		LexemeToken operatorType;
+		Lexeme operatorType;
 		TokenContent lvalue;
 		TokenContent rvalue;
 	};
@@ -168,7 +140,7 @@ private:
 
 	static float GetFloatFromLValue(VariableMetadata& metadata);
 	static float CalculateResult(std::vector<TokenContent>& tokens);
-	static float CalculateOperator(float lvalue, float rvalue, LexemeToken op);
+	static float CalculateOperator(float lvalue, float rvalue, Lexeme op);
 	static float SolveInstruction(Instruction& instruction);
 	
 	static bool IsSeperatorToken(char item);
