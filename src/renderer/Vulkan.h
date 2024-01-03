@@ -21,12 +21,9 @@
 
 #define nameof(s) #s
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
-#define __STRLINE__ std::to_string(__LINE__)
-#define CheckVulkanResult(message, result, function) if (result != VK_SUCCESS) throw VulkanAPIError(message, result, nameof(function), __FILENAME__, __STRLINE__)
+#define CheckVulkanResult(message, result, function) if (result != VK_SUCCESS) throw VulkanAPIError(message, result, nameof(function), __FILENAME__, __LINE__)
 #define LockLogicalDevice(logicalDevice) std::lock_guard<std::mutex> logicalDeviceLockGuard(Vulkan::FetchLogicalDeviceMutex(logicalDevice)) // can't create a function for this beacuse a lock guard gets destroyed when it goes out of scope
 
-class Swapchain;
-class Win32Window;
 struct VulkanCreationObject;
 typedef void* HANDLE;
 
@@ -58,7 +55,7 @@ inline std::vector<const char*> requiredLogicalDeviceExtensions =
 class VulkanAPIError : public std::exception
 {
 public:
-    VulkanAPIError(std::string message, VkResult result = VK_SUCCESS, std::string functionName = "", std::string file = "", std::string line = "");
+    VulkanAPIError(std::string message, VkResult result = VK_SUCCESS, std::string functionName = "", std::string file = "", int line = 0);
     const char* what() const override{ return message.c_str(); }
 
 private:
@@ -92,10 +89,10 @@ public:
     static std::vector<VkExtensionProperties> GetLogicalDeviceExtensions(PhysicalDevice physicalDevice);
     static void                               ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, const std::vector<const char*>& logicalDeviceExtensions);
 
-    static SwapChainSupportDetails            QuerySwapChainSupport(PhysicalDevice device, Surface surface);
+    static SwapChainSupportDetails            QuerySwapChainSupport(PhysicalDevice device, VkSurfaceKHR surface);
     static VkSurfaceFormatKHR                 ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
     static VkPresentModeKHR                   ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& presentModes);
-    static VkExtent2D                         ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, Win32Window* window);
+    static VkExtent2D                         ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
 
     static void                               CreateImage(VkDevice logicalDevice, PhysicalDevice physicalDevice, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags, VkImage& image, VkDeviceMemory& memory);
     static VkImageView                        CreateImageView(VkDevice logicalDevice, VkImage image, VkImageViewType viewType, uint32_t mipLevels, uint32_t layerCount, VkFormat format, VkImageAspectFlags aspectFlags);
@@ -117,23 +114,20 @@ public:
     static void                               CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     static void                               CopyBuffer(VkDevice logicalDevice, VkCommandPool commandPool, VkQueue queue, VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size);
 
-    static void                               PopulateDefaultViewport(VkViewport& viewport, Swapchain* swapchain);
-    static void                               PopulateDefaultScissors(VkRect2D& scissors, Swapchain* swapchain);
+    static void                               PopulateDefaultViewport(VkViewport& viewport, VkExtent2D extents);
+    static void                               PopulateDefaultScissors(VkRect2D& scissors, VkExtent2D extents);
 
-    static VkPipelineViewportStateCreateInfo  GetDefaultViewportStateCreateInfo(VkViewport& viewport, VkRect2D& scissors, Swapchain* swapchain);
+    static VkPipelineViewportStateCreateInfo  GetDefaultViewportStateCreateInfo(VkViewport& viewport, VkRect2D& scissors, VkExtent2D extents);
     static VkPipelineDynamicStateCreateInfo   GetDynamicStateCreateInfo(std::vector<VkDynamicState>& dynamicStates);
 
 private:
-    static VkDebugUtilsMessengerEXT                                 debugMessenger;
     static std::mutex                                               commandPoolMutex;
     static std::unordered_map<uint32_t, std::vector<VkCommandPool>> queueCommandPools;
     static std::unordered_map<VkDevice, std::mutex>                 logicalDeviceMutexes;
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL     DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
-    static void                               CreateDebugMessenger(VkInstance instance);
-    static void                               DestroyDebugMessenger(VkInstance instance);
-
+    static void                               GetDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
     static void                               CheckDeviceRequirements(bool indicesHasValue, bool extensionsSupported, bool swapChainIsCompatible, bool samplerAnisotropy, bool shaderUniformBufferArrayDynamicIndexing, std::set<std::string> unsupportedExtensions);
     static bool                               IsDeviceCompatible(PhysicalDevice device, Surface surface);
     static bool                               CheckInstanceExtensionSupport(std::vector<const char*> extensions);

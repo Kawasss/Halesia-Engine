@@ -32,8 +32,6 @@ class PhysicalDevice
 		VkPhysicalDevice Device();
 		VkQueue presentQueue{}; //temp
 
-		bool supportsBindlessTextures = false;
-
 	private:
 		VkFormat GetSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 		VkPhysicalDevice physicalDevice{};

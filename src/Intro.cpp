@@ -122,8 +122,8 @@ void Intro::Create(VulkanCreationObject& creationObject, Swapchain* swapchain, s
 
 	VkViewport viewport{};
 	VkRect2D scissors{};
-	Vulkan::PopulateDefaultViewport(viewport, swapchain);
-	Vulkan::PopulateDefaultScissors(scissors, swapchain);
+	Vulkan::PopulateDefaultViewport(viewport, swapchain->extent);
+	Vulkan::PopulateDefaultScissors(scissors, swapchain->extent);
 
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;

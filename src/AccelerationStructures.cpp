@@ -44,7 +44,7 @@ void AccelerationStructure::CreateAS(const VulkanCreationObject& creationObject,
 void AccelerationStructure::BuildAS(const VulkanCreationObject& creationObject, const VkAccelerationStructureGeometryKHR* pGeometry, uint32_t primitiveCount, bool useSingleTimeCommands, VkCommandBuffer externalCommandBuffer)
 {
 	if (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE) // check if the external command buffer is valid, if specified that an external will be used
-		throw VulkanAPIError("Can't build the acceleration structure, because no valid command buffer was given (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE)", VK_SUCCESS, nameof(BuildAS), __FILENAME__, __STRLINE__);
+		throw VulkanAPIError("Can't build the acceleration structure, because no valid command buffer was given (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE)", VK_SUCCESS, nameof(BuildAS), __FILENAME__, __LINE__);
 
 	VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
 	buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
@@ -146,7 +146,7 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(const Vulka
 void TopLevelAccelerationStructure::Build(const VulkanCreationObject& creationObject, std::vector<Object*> objects, bool useSingleTimeCommands, VkCommandBuffer externalCommandBuffer)
 {
 	if (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE)				   // check if the external command buffer is valid, if specified that an external will be used
-		throw VulkanAPIError("Can't build the top level acceleration structure, because no valid command buffer was given (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE)", VK_SUCCESS, nameof(Build), __FILENAME__, __STRLINE__);
+		throw VulkanAPIError("Can't build the top level acceleration structure, because no valid command buffer was given (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE)", VK_SUCCESS, nameof(Build), __FILENAME__, __LINE__);
 
 	instanceBuffer.ResetAddressPointer();
 

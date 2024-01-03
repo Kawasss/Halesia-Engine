@@ -627,7 +627,7 @@ void Renderer::CreateGraphicsPipeline()
 
 	VkViewport viewport;
 	VkRect2D scissor;
-	VkPipelineViewportStateCreateInfo viewportState = Vulkan::GetDefaultViewportStateCreateInfo(viewport, scissor, swapchain);
+	VkPipelineViewportStateCreateInfo viewportState = Vulkan::GetDefaultViewportStateCreateInfo(viewport, scissor, swapchain->extent);
 
 	VkPipelineRasterizationStateCreateInfo rasterizer{};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -765,14 +765,14 @@ void Renderer::CreateCommandBuffer()
 void Renderer::SetViewport(VkCommandBuffer commandBuffer)
 {
 	VkViewport viewport{};
-	Vulkan::PopulateDefaultViewport(viewport, swapchain);
+	Vulkan::PopulateDefaultViewport(viewport, swapchain->extent);
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 }
 
 void Renderer::SetScissors(VkCommandBuffer commandBuffer)
 {
 	VkRect2D scissor{};
-	Vulkan::PopulateDefaultScissors(scissor, swapchain);
+	Vulkan::PopulateDefaultScissors(scissor, swapchain->extent);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
@@ -922,7 +922,7 @@ void Renderer::CreateSyncObjects()
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		if (vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &imageAvaibleSemaphores[i]) != VK_SUCCESS || vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS || vkCreateFence(logicalDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]))
-			throw VulkanAPIError("Failed to create the required semaphores and fence", VK_SUCCESS, nameof(CreateSyncObjects), __FILENAME__, std::to_string(__LINE__)); // too difficult / annoying to put all of these calls into result = ...
+			throw VulkanAPIError("Failed to create the required semaphores and fence", VK_SUCCESS, nameof(CreateSyncObjects), __FILENAME__, __LINE__); // too difficult / annoying to put all of these calls into result = ...
 	
 		/*getHandleInfo.semaphore = renderFinishedSemaphores[i];
 
@@ -995,7 +995,7 @@ uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
 		OnResize();
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-		throw VulkanAPIError("Failed to acquire the next swap chain image", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __STRLINE__);
+		throw VulkanAPIError("Failed to acquire the next swap chain image", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __LINE__);
 	return imageIndex;
 }
 

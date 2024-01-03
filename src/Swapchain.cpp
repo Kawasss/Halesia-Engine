@@ -21,11 +21,11 @@ void Swapchain::Generate(VkDevice logicalDevice, PhysicalDevice physicalDevice, 
     this->surface = surface;
     this->window = window;
 
-    Vulkan::SwapChainSupportDetails swapchainSupport = Vulkan::QuerySwapChainSupport(physicalDevice, surface);
+    Vulkan::SwapChainSupportDetails swapchainSupport = Vulkan::QuerySwapChainSupport(physicalDevice, surface.VkSurface());
 
     VkSurfaceFormatKHR surfaceFormat = Vulkan::ChooseSwapSurfaceFormat(swapchainSupport.formats);
     VkPresentModeKHR presentMode = Vulkan::ChooseSwapPresentMode(swapchainSupport.presentModes);
-    VkExtent2D extent2D = Vulkan::ChooseSwapExtent(swapchainSupport.capabilities, window);
+    VkExtent2D extent2D = Vulkan::ChooseSwapExtent(swapchainSupport.capabilities, window->GetWidth(), window->GetHeight());
 
     uint32_t imageCount = swapchainSupport.capabilities.minImageCount + 1;
     if (swapchainSupport.capabilities.maxImageCount > 0 && imageCount > swapchainSupport.capabilities.maxImageCount)
@@ -63,8 +63,7 @@ void Swapchain::Generate(VkDevice logicalDevice, PhysicalDevice physicalDevice, 
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
     VkResult result = vkCreateSwapchainKHR(logicalDevice, &createInfo, nullptr, &vkSwapchain);
-    if (result != VK_SUCCESS)
-        throw VulkanAPIError("Couldn't create a swapchain with the current logical device", result, nameof(vkCreateSwapchainKHR), __FILENAME__, __STRLINE__);
+    CheckVulkanResult("Couldn't create a swapchain with the current logical device", result, vkCreateSwapchainKHR);
 
     uint32_t swapchainImageCount;
     vkGetSwapchainImagesKHR(logicalDevice, vkSwapchain, &swapchainImageCount, nullptr);

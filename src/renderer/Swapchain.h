@@ -1,9 +1,10 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include <vector>
-#include "system/Window.h"
 #include "PhysicalDevice.h"
 #include "surface.h"
+
+class Win32Window;
 
 class Swapchain
 {

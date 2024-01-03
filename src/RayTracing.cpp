@@ -24,8 +24,8 @@
 #include "optix_function_table.h"
 #include "cuda_runtime_api.h"
 
-#define CheckOptixResult(result) if (result != OPTIX_SUCCESS) { std::string message = (std::string)optixGetErrorString(result) + " at line " + __STRLINE__; throw std::runtime_error(message); }
-#define CheckCudaResult(result) if (result != cudaSuccess) throw std::runtime_error(std::to_string(result) + " at line " + __STRLINE__ + " in " + (std::string)__FILENAME__);
+#define CheckOptixResult(result) if (result != OPTIX_SUCCESS) { std::string message = (std::string)optixGetErrorString(result) + " at line " + std::to_string(__LINE__); throw std::runtime_error(message); }
+#define CheckCudaResult(result) if (result != cudaSuccess) throw std::runtime_error(std::to_string(result) + " at line " + std::to_string(__LINE__) + " in " + (std::string)__FILENAME__);
 
 struct InstanceMeshData
 {
@@ -453,7 +453,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	vkGetPhysicalDeviceProperties2(physicalDevice.Device(), &properties2);
 
 	if (!physicalDevice.QueueFamilies(surface).graphicsFamily.has_value())
-		throw VulkanAPIError("No appropriate graphics family could be found for ray tracing", VK_SUCCESS, nameof(physicalDevice.QueueFamilies(surface).graphicsFamily.has_value()), __FILENAME__, __STRLINE__);
+		throw VulkanAPIError("No appropriate graphics family could be found for ray tracing", VK_SUCCESS, nameof(physicalDevice.QueueFamilies(surface).graphicsFamily.has_value()), __FILENAME__, __LINE__);
 
 	queueFamilyIndex = physicalDevice.QueueFamilies(surface).graphicsFamily.value();
 	vkGetDeviceQueue(logicalDevice, queueFamilyIndex, 0, &queue);

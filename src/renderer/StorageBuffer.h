@@ -63,7 +63,7 @@ public:
 		if (endOfBufferPointer + writeSize > reservedBufferSize && !canReuseMemory)				// throw an error if there is an attempt write over the buffers capacity
 		{
 			VkDeviceSize overflow = endOfBufferPointer + writeSize - reservedBufferSize;
-			throw VulkanAPIError("Failed to submit new storage buffer data, not enough space has been reserved: " + std::to_string(overflow / sizeof(T)) + " items (" + std::to_string(overflow) + " bytes) of overflow", VK_ERROR_OUT_OF_POOL_MEMORY, nameof(SubmitNewData), __FILENAME__, __STRLINE__);
+			throw VulkanAPIError("Failed to submit new storage buffer data, not enough space has been reserved: " + std::to_string(overflow / sizeof(T)) + " items (" + std::to_string(overflow) + " bytes) of overflow", VK_ERROR_OUT_OF_POOL_MEMORY, nameof(SubmitNewData), __FILENAME__, __LINE__);
 		}
 
 		WriteToBuffer(data, memoryHandle);
