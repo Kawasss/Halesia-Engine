@@ -225,6 +225,7 @@
     <ClInclude Include="src\system\SystemMetrics.h" />
     <ClInclude Include="src\system\Window.h" />
     <ClInclude Include="src\tools\CameraInjector.h" />
+    <ClInclude Include="src\tools\common.h" />
     <ClInclude Include="src\tools\Timer.h" />
     <ClInclude Include="src\Transform.h" />
     <ClInclude Include="src\Vertex.h" />

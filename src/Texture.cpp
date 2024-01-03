@@ -6,6 +6,7 @@
 #include "Console.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
+#include "tools/common.h"
 
 bool Image::texturesHaveChanged = false;
 Texture* Texture::placeholderAlbedo = nullptr;
@@ -123,22 +124,6 @@ void Image::AwaitGeneration()
 bool Image::HasFinishedLoading()
 {
 	return generation._Is_ready();
-}
-
-std::vector<char> ReadFile(const std::string& filePath)
-{
-	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
-	if (!file.is_open())
-		throw std::runtime_error("Failed to open the file at " + filePath);
-
-	size_t fileSize = (size_t)file.tellg();
-	std::vector<char> buffer(fileSize);
-
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-
-	file.close();
-	return buffer;
 }
 
 std::vector<std::vector<char>> GetAllImageData(std::vector<std::string> filePaths) // dont know if the copy speed is a concern

@@ -138,23 +138,29 @@ private:
 	static VariableMetadata& GetLValue(std::vector<TokenContent> tokens);
 	template<typename T> static VariableType GetVariableType();
 
-	static float GetFloatFromLValue(VariableMetadata& metadata);
+	static float GetValueFromTokenContent(TokenContent& content);
+	static float GetFloatFromVariable(VariableMetadata& metadata);
 	static float CalculateResult(std::vector<TokenContent>& tokens);
 	static float CalculateOperator(float lvalue, float rvalue, Lexeme op);
 	static float SolveInstruction(Instruction& instruction);
 	
 	static bool IsSeperatorToken(char item);
 	static bool IsDigitLiteral(std::string string);
+	static bool IsStringLiteral(std::string string);
+	static bool CheckVariableValidity(VariableMetadata& metadata, ConsoleVariableAccess access);
 
 	static void AddLocationValue(float& value, VariableMetadata& metadata);
 	static void AssignRValueToLValue(VariableMetadata& lvalue, void* rvalue);
 	static void EvaluateToken(TokenContent& token);
 	static void DispatchCommand(std::vector<TokenContent>& lvalues, std::vector<TokenContent>& rvalues, TokenContent& op);
+	static void InsertAliases(std::vector<TokenContent>& tokens);
 
 	static std::unordered_map<std::string, VariableMetadata>          commandVariables;
 	static std::unordered_map<std::string, MessageSeverity>           messageColorBinding;
 	static std::unordered_map<std::string, Group>                     groups;
 	static std::unordered_map<std::string, VariableType>              stringToType;
+	static std::unordered_map<std::string, Lexeme>                    stringToLexeme;
+	static std::unordered_map<std::string, Token>                     stringToToken;
 	static std::unordered_map<std::string, std::vector<TokenContent>> aliases;
 };
 
