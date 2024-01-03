@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 
-std::vector<std::string> SeparateStringByChar(const std::string& input, char separator)
+inline std::vector<std::string> SeparateStringByChar(const std::string& input, char separator)
 {
 	constexpr auto EMPTY_STRING = "";
 	std::vector<std::string> ret;
@@ -26,7 +26,7 @@ std::vector<std::string> SeparateStringByChar(const std::string& input, char sep
 	return ret;
 }
 
-std::vector<std::string> SeparateStringByString(const std::string& input, const std::string& separator)
+inline std::vector<std::string> SeparateStringByString(const std::string& input, const std::string& separator)
 {
 	constexpr auto EMPTY_STRING = "";
 	std::vector<std::string> ret;
