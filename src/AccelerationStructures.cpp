@@ -12,6 +12,7 @@ void AccelerationStructure::CreateAS(const VulkanCreationObject& creationObject,
 	VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
 	buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 	buildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+	buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
 	buildGeometryInfo.type = type;
 	buildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
 	buildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
@@ -41,16 +42,17 @@ void AccelerationStructure::CreateAS(const VulkanCreationObject& creationObject,
 	Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, buildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, scratchBuffer, scratchDeviceMemory);
 }
 
-void AccelerationStructure::BuildAS(const VulkanCreationObject& creationObject, const VkAccelerationStructureGeometryKHR* pGeometry, uint32_t primitiveCount, bool useSingleTimeCommands, VkCommandBuffer externalCommandBuffer)
+void AccelerationStructure::BuildAS(const VulkanCreationObject& creationObject, const VkAccelerationStructureGeometryKHR* pGeometry, uint32_t primitiveCount, VkBuildAccelerationStructureModeKHR mode, bool useSingleTimeCommands, VkCommandBuffer externalCommandBuffer)
 {
 	if (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE) // check if the external command buffer is valid, if specified that an external will be used
 		throw VulkanAPIError("Can't build the acceleration structure, because no valid command buffer was given (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE)", VK_SUCCESS, nameof(BuildAS), __FILENAME__, __LINE__);
 
 	VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
 	buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-	buildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
+	buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+	buildGeometryInfo.mode = mode;
 	buildGeometryInfo.type = type;
-	buildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
+	buildGeometryInfo.srcAccelerationStructure = accelerationStructure;
 	buildGeometryInfo.dstAccelerationStructure = accelerationStructure;
 	buildGeometryInfo.geometryCount = 1;
 	buildGeometryInfo.pGeometries = pGeometry;
@@ -116,12 +118,12 @@ BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(const
 
 	BLAS->CreateAS(creationObject, &geometry, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, mesh.faceCount);
 
-	BLAS->BuildAS(creationObject, &geometry, mesh.faceCount);
+	BLAS->BuildAS(creationObject, &geometry, mesh.faceCount, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
 
 	return BLAS;
 }
 
-TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(const VulkanCreationObject& creationObject, std::vector<Object*> objects)
+TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(const VulkanCreationObject& creationObject, std::vector<Object*>& objects)
 {
 	TopLevelAccelerationStructure* TLAS = new TopLevelAccelerationStructure();
 	TLAS->logicalDevice = creationObject.logicalDevice;
@@ -143,28 +145,45 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(const Vulka
 	return TLAS;
 }
 
-void TopLevelAccelerationStructure::Build(const VulkanCreationObject& creationObject, std::vector<Object*> objects, bool useSingleTimeCommands, VkCommandBuffer externalCommandBuffer)
+void TopLevelAccelerationStructure::Build(const VulkanCreationObject& creationObject, std::vector<Object*>& objects, bool useSingleTimeCommands, VkCommandBuffer externalCommandBuffer)
 {
 	if (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE)				   // check if the external command buffer is valid, if specified that an external will be used
 		throw VulkanAPIError("Can't build the top level acceleration structure, because no valid command buffer was given (!useSingleTimeCommands && externalCommandBuffer == VK_NULL_HANDLE)", VK_SUCCESS, nameof(Build), __FILENAME__, __LINE__);
 
 	instanceBuffer.ResetAddressPointer();
-
 	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects); // write all of the BLAS instances to a single buffer so that vulkan can easily read all of the instances in one go
 	instanceBuffer.SubmitNewData(BLASInstances);										   // make it so that only the new BLASs get submitted instead of all of the BLASs (even the old ones). the code right now is a REALLY bad implementation
 
 	VkAccelerationStructureGeometryKHR geometry{};
+	GetGeometry(creationObject, geometry);
+
+	BuildAS(creationObject, &geometry, (uint32_t)BLASInstances.size(), VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR, useSingleTimeCommands, externalCommandBuffer);
+	hasBeenBuilt = true;
+}
+
+void TopLevelAccelerationStructure::Update(const VulkanCreationObject& creationObject, std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer)
+{
+	instanceBuffer.ResetAddressPointer();
+	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects);
+	instanceBuffer.SubmitNewData(BLASInstances);
+
+	VkAccelerationStructureGeometryKHR geometry{};
+	GetGeometry(creationObject, geometry);
+
+	BuildAS(creationObject, &geometry, (uint32_t)BLASInstances.size(), VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, true, externalCommandBuffer);
+}
+
+void TopLevelAccelerationStructure::GetGeometry(const VulkanCreationObject& creationObject, VkAccelerationStructureGeometryKHR& geometry)
+{
 	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 	geometry.geometryType = VK_GEOMETRY_TYPE_INSTANCES_KHR;
 	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
 	geometry.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
 	geometry.geometry.instances.arrayOfPointers = VK_FALSE;
 	geometry.geometry.instances.data = { Vulkan::GetDeviceAddress(creationObject.logicalDevice, instanceBuffer.GetBufferHandle()) };
-
-	BuildAS(creationObject, &geometry, (uint32_t)BLASInstances.size(), useSingleTimeCommands, externalCommandBuffer);
 }
 
-std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(std::vector<Object*> objects)
+std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(std::vector<Object*>& objects)
 {
 	uint32_t processedAmount = 0; // add a second counter for each processed mesh. if an object is checked, but it doesnt have a mesh it will leave an empty instance custom index, which results in data missalignment
 	std::vector<VkAccelerationStructureInstanceKHR> instances;
@@ -190,4 +209,9 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 		processedAmount++;
 	}
 	return instances;
+}
+
+bool TopLevelAccelerationStructure::HasBeenBuilt()
+{
+	return hasBeenBuilt;
 }
