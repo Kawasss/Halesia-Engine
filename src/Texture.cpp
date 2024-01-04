@@ -159,8 +159,8 @@ Texture::Texture(const TextureCreationObject& creationObjects, std::string fileP
 
 Texture::Texture(const TextureCreationObject& creationObjects, std::vector<char> imageData, bool useMipMaps)
 {
-	if (imageData.size() <= 0)
-		throw std::runtime_error("Invalid texture size: imageData.size <= 0");
+	if (imageData.empty())
+		throw std::runtime_error("Invalid texture size: imageData.empty()");
 
 	generation = std::async([](Texture* texture, const TextureCreationObject& creationObjects, std::vector<char> imageData, bool useMipMaps) 
 		{

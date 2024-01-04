@@ -1131,7 +1131,7 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame)
 std::vector<Object*> processedObjects;
 void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects)
 {
-	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * deferredMaterialTextures.size()); // this needs to prematurely created all the image infos, beacause otherwise the pImageInfo for the write sets won't work
+	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * deferredMaterialTextures.size()); // this needs to prematurely create all the image infos, beacause otherwise the pImageInfo for the write sets won't work
 	std::vector<VkWriteDescriptorSet> writeSets;
 	for (int i = 0; i < Mesh::materials.size(); i++)
 	{

@@ -1008,7 +1008,7 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 			instanceDatas.push_back({ objects[i]->transform.GetModelMatrix(), (uint32_t)Renderer::globalIndicesBuffer.GetItemOffset(mesh.indexMemory), (uint32_t)Renderer::globalVertexBuffer.GetItemOffset(mesh.vertexMemory), mesh.materialIndex, Mesh::materials[mesh.materialIndex].isLight, objects[i]->handle});
 		}
 	}
-	if (instanceDatas.size() == 0)
+	if (instanceDatas.empty())
 		return;
 	
 	memcpy(instanceMeshDataPointer, instanceDatas.data(), instanceDatas.size() * sizeof(InstanceMeshData));
@@ -1030,7 +1030,7 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	if (amountOfActiveObjects <= 0)
 		return;
 
-	if (Mesh::materials.size() > 0)
+	if (!Mesh::materials.empty())
 		UpdateTextureBuffer();
 
 	int x, y, absX, absY;

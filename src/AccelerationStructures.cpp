@@ -139,7 +139,7 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(const Vulka
 
 	TLAS->CreateAS(creationObject, &geometry, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, Renderer::MAX_TLAS_INSTANCES);
 
-	if (objects.size() > 0)
+	if (!objects.empty())
 		TLAS->Build(creationObject, objects);
 	
 	return TLAS;
