@@ -335,5 +335,8 @@
     <None Include="shaders\uncompiled\screen.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="shaders\uncompiled\anim.comp">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -237,6 +237,7 @@
     <ResourceCompile Include="src\Halesia.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="shaders\uncompiled\anim.comp" />
     <None Include="shaders\uncompiled\gen.rgen" />
     <None Include="shaders\uncompiled\hit.rchit" />
     <None Include="shaders\uncompiled\intro.frag" />
