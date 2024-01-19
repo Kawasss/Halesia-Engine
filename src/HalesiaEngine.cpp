@@ -8,13 +8,13 @@
 #include "renderer/Renderer.h"
 #include "renderer/Intro.h"
 #include "renderer/RayTracing.h"
+#include "renderer/gui.h"
 
 #include "tools/CameraInjector.h"
 #include "physics/Physics.h"
 
 #include "CreationObjects.h"
 #include "Console.h"
-#include "gui.h"
 
 int ParseAndValidateDimensionArgument(std::string string)
 {
@@ -200,6 +200,11 @@ std::optional<std::string> HalesiaInstance::UpdateRenderer(float delta)
 		renderer->SetViewportModifiers({ 0.75f, 1 }); // doesnt have to be set every frame
 		GUI::ShowSceneGraph(scene->allObjects, window);
 		GUI::ShowMainMenuBar(showObjectData, showRAM, showCPU, showGPU);
+	}
+	else
+	{
+		renderer->SetViewportOffsets({ 0, 0 });
+		renderer->SetViewportModifiers({ 1, 1 }); // doesnt have to be set every frame
 	}
 
 	renderer->DrawFrame(scene->allObjects, scene->camera, delta);

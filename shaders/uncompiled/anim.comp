@@ -26,14 +26,13 @@ layout (binding = 3, set = 0) buffer BoneWeightBuffer { Weights data[]; } weight
 
 void main()
 {
-	uint16_t index = indexBuffer.data[gl_GlobalInvocationID.x];
-	Vertex currentVertex = vertexBuffer.data[index];
+	Vertex currentVertex = vertexBuffer.data[gl_GlobalInvocationID.x];
 
 	vec4 finalPos = vec4(0);
 	vec3 finalNormal = vec3(0);
 	for (int i = 0; i < MAX_BONES; i++)
 	{
-		Weights currentWeight = weightBuffer.data[index];
+		Weights currentWeight = weightBuffer.data[gl_GlobalInvocationID.x];
 		if (currentWeight.boneIDs1[i] == -1)
 			continue;
 
@@ -47,5 +46,5 @@ void main()
 	currentVertex.position = finalPos.xyz;
 	currentVertex.normal = finalNormal;
 
-	vertexBuffer.data[index] = currentVertex;
+	vertexBuffer.data[gl_GlobalInvocationID.x] = currentVertex;
 }

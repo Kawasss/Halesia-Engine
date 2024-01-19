@@ -9,6 +9,7 @@
 #include "renderer/RayTracing.h"
 #include "renderer/Mesh.h"
 #include "renderer/Renderer.h"
+#include "renderer/gui.h"
 
 #include "system/Input.h"
 #include "system/Window.h"
@@ -16,7 +17,6 @@
 #include "physics/RigidBody.h"
 #include "physics/Shapes.h"
 
-#include "gui.h"
 #include "Console.h"
 #include "Object.h"
 #include "Transform.h"
