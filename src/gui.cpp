@@ -275,7 +275,7 @@ std::optional<std::string> GUI::ShowDevConsole()
 	return inputText;
 }
 
-void GUI::ShowMainMenuBar(bool& showObjMeta, bool& ramGraph, bool& cpuGraph, bool& gpuGraph)
+void GUI::ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGraph, bool& cpuGraph, bool& gpuGraph)
 {
 	ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.02f, 0.02f, 0.02f, 1));
@@ -291,13 +291,14 @@ void GUI::ShowMainMenuBar(bool& showObjMeta, bool& ramGraph, bool& cpuGraph, boo
 			exit(0);
 		ImGui::EndMenu();
 	}
-	if (ImGui::BeginMenu("debug"))
+	if (ImGui::BeginMenu("view"))
 	{
-		if (ImGui::Button("show object metadata")) showObjMeta = !showObjMeta;
+		if (ImGui::Button("object metadata")) showObjMeta = !showObjMeta;
+		if (ImGui::Button("window data")) showWindowData = !showWindowData;
 		ImGui::Separator();
-		if (ImGui::Button("show RAM graph")) ramGraph = !ramGraph;
-		if (ImGui::Button("show CPU graph")) cpuGraph = !cpuGraph;
-		if (ImGui::Button("show GPU graph")) gpuGraph = !gpuGraph;
+		if (ImGui::Button("RAM graph")) ramGraph = !ramGraph;
+		if (ImGui::Button("CPU graph")) cpuGraph = !cpuGraph;
+		if (ImGui::Button("GPU graph")) gpuGraph = !gpuGraph;
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("renderer"))

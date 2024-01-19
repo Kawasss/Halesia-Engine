@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <optional>
 #include <unordered_map>
 #include <iostream>
 #include "glm.h"
@@ -40,6 +39,7 @@ public:
 	static ConsoleGroup CreateGroup(std::string name);
 	template<typename T> static void AddVariableToGroup(ConsoleGroup group, T* variable, std::string name, ConsoleVariableAccess access = CONSOLE_ACCESS_READ_WRITE);
 	template<typename T> static void AddConsoleVariable(std::string variableName, T* variable, ConsoleVariableAccess access = CONSOLE_ACCESS_READ_WRITE);
+	template<typename T> static void AddConsoleVariables(std::vector<std::string> variableNames, std::vector<T*> variables);
 	static void BindVariableToExternVariable(std::string externalVariable, void* variable);
 	
 private:
@@ -192,4 +192,10 @@ template<typename T> void Console::AddVariableToGroup(ConsoleGroup group, T* var
 template<typename T> void Console::AddConsoleVariable(std::string variableName, T* variable, ConsoleVariableAccess access)
 {
 	commandVariables[variableName] = { static_cast<void*>(variable), sizeof(*variable), GetVariableType<T>(), access};
+}
+
+template<typename T> void Console::AddConsoleVariables(std::vector<std::string> variableNames, std::vector<T*> variables)
+{
+	for (int i = 0; i < variableNames.size(); i++)
+		AddConsoleVariable(variableNames[i], variables[i]);
 }

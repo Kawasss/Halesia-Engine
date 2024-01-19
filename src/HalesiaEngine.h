@@ -68,6 +68,7 @@ public:
 	bool showGPU = false;
 	bool showAsyncTimes = false;
 	bool showObjectData = false;
+	bool showWindowData = false;
 	bool useEditor = false;
 	int minimumFPS = 60;
 	Scene* scene;

@@ -153,7 +153,7 @@ std::optional<std::string> HalesiaInstance::UpdateRenderer(float delta)
 		renderer->SetViewportOffsets({ 0.125f, 0 });
 		renderer->SetViewportModifiers({ 0.75f, 1 }); // doesnt have to be set every frame
 		GUI::ShowSceneGraph(scene->allObjects, window);
-		GUI::ShowMainMenuBar(showObjectData, showRAM, showCPU, showGPU);
+		GUI::ShowMainMenuBar(showWindowData, showObjectData, showRAM, showCPU, showGPU);
 	}
 	else
 	{
@@ -242,7 +242,8 @@ HalesiaExitCode HalesiaInstance::Run()
 				Console::InterpretCommand(command.value());
 				lastCommand = command.value();
 			}
-			GUI::ShowWindowData(window); // somehow only works in sync
+			if (showWindowData)
+				GUI::ShowWindowData(window); // somehow only works in sync, maybe use a mutex with the window to allow async stuff
 			Win32Window::PollMessages(); // moved for swapchain / surface interference
 
 			asyncScripts.get();
@@ -357,22 +358,12 @@ void HalesiaInstance::OnExit()
 
 void HalesiaInstance::RegisterConsoleVars()
 {
-	Console::AddConsoleVariable("pauseGame", &pauseGame);
-	Console::AddConsoleVariable("showFPS", &showFPS);
-	Console::AddConsoleVariable("playOneFrame", &playOneFrame);
-	Console::AddConsoleVariable("showRAM", &showRAM);
-	Console::AddConsoleVariable("showCPU", &showCPU);
-	Console::AddConsoleVariable("showGPU", &showGPU);
-	Console::AddConsoleVariable("showAsyncTimes", &showAsyncTimes);
-	Console::AddConsoleVariable("showMetaData", &showObjectData);
+	Console::AddConsoleVariables<bool>(
+		{ "pauseGame", "showFPS", "playOneFrame", "showRAM", "showCPU", "showGPU", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "useEditorUI" },
+		{ &pauseGame, &showFPS, &playOneFrame, &showRAM, &showCPU, &showGPU, &showAsyncTimes, &showObjectData, &RayTracing::showNormals, &RayTracing::showAlbedo, &RayTracing::showUniquePrimitives, &RayTracing::renderProgressive, &renderer->shouldRasterize, &useEditor }
+	);
 	Console::AddConsoleVariable("raySamples", &RayTracing::raySampleCount);
 	Console::AddConsoleVariable("rayDepth", &RayTracing::rayDepth);
-	Console::AddConsoleVariable("showNormals", &RayTracing::showNormals);
-	Console::AddConsoleVariable("renderProgressive", &RayTracing::renderProgressive);
-	Console::AddConsoleVariable("showUnique", &RayTracing::showUniquePrimitives);
-	Console::AddConsoleVariable("showAlbedo", &RayTracing::showAlbedo);
-	Console::AddConsoleVariable("rasterize", &renderer->shouldRasterize);
-	Console::AddConsoleVariable("useEditorUI", &useEditor);
 }
 
 std::string HalesiaExitCodeToString(HalesiaExitCode exitCode)
