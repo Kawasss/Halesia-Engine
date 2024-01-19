@@ -133,6 +133,13 @@ class TestScene : public Scene
 
 	void Update(float delta) override
 	{
+		RayHitInfo info;
+		
+		if (Physics::CastRay(camera->position, camera->front, 9999.9f, info))
+		{
+			std::cout << info.object->name << "\n";
+		}
+
 		if (!Input::IsKeyPressed(VirtualKey::R) || Input::IsKeyPressed(VirtualKey::P))
 			return;
 

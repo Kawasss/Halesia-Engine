@@ -14,6 +14,11 @@ constexpr float simulationStep = 1 / 60.0f;
 Physics* Physics::physics = nullptr;
 physx::PxMaterial* Physics::defaultMaterial = nullptr;
 
+inline glm::vec3 PxToGlm(physx::PxVec3 vec)
+{
+	return { vec.x, vec.y, vec.z };
+}
+
 void Physics::Init()
 {
 	physics = new Physics();
@@ -52,6 +57,23 @@ Physics::Physics()
 Physics::~Physics()
 {
 	physicsObject->release();
+}
+
+bool Physics::CastRay(glm::vec3 pos, glm::vec3 dir, float maxDistance, RayHitInfo& info)
+{
+	physx::PxRaycastBuffer hit;
+	bool hasHit = physics->scene->raycast({ pos.x, pos.y, pos.z }, { dir.x, dir.y, dir.z }, maxDistance, hit);
+	if (!hasHit)
+		return false;
+
+	info.pos = PxToGlm(hit.block.position);
+	info.uv = { hit.block.u, hit.block.v };
+	info.normal = PxToGlm(hit.block.normal);
+	info.distance = hit.block.distance;
+	if (hit.block.actor != nullptr)
+		info.object = static_cast<Object*>(hit.block.actor->userData);
+
+	return hasHit;
 }
 
 void Physics::FetchAndUpdateObjects()

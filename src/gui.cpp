@@ -63,19 +63,19 @@ void GUI::ShowWindowData(Win32Window* window)
 
 	ImGui::Text("width:      ");
 	ImGui::SameLine();
-	ImGui::InputInt("##windowWidth", &width);
+	bool changedDimensions = ImGui::InputInt("##windowWidth", &width);
 
 	ImGui::Text("height:     ");
 	ImGui::SameLine();
-	ImGui::InputInt("##windowHeight", &height);
+	changedDimensions = ImGui::InputInt("##windowHeight", &height);
 
 	ImGui::Text("x:          ");
 	ImGui::SameLine();
-	ImGui::InputInt("##windowx", &x);
+	bool changedCoord = ImGui::InputInt("##windowx", &x);
 
 	ImGui::Text("y:          ");
 	ImGui::SameLine();
-	ImGui::InputInt("##windowy", &y);
+	changedCoord = ImGui::InputInt("##windowy", &y);
 
 	ImGui::Text("lock cursor:");
 	ImGui::SameLine();
@@ -96,8 +96,10 @@ void GUI::ShowWindowData(Win32Window* window)
 	ImGui::Text("rel. cursor: %i, %i", relX, relY);
 	ImGui::Text("abs. cursor: %i, %i", absX, absY);
 
-	window->SetXAndY(x, y);
-	window->SetWidthAndHeight(width, height); // should only be called if the width and / or height has changed
+	if (changedCoord)
+		window->SetXAndY(x, y);
+	if (changedDimensions)
+		window->SetWidthAndHeight(width, height); // should only be called if the width and / or height has changed
 	if (stringToMode[currentMode] != window->GetWindowMode())
 		window->ChangeWindowMode(stringToMode[currentMode]);
 

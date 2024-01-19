@@ -130,7 +130,7 @@ void HalesiaInstance::UpdateScene(float delta)
 std::optional<std::string> HalesiaInstance::UpdateRenderer(float delta)
 {
 	SetThreadDescription(GetCurrentThread(), L"VulkanRenderingThread");
-
+	
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	std::optional<std::string> command = GUI::ShowDevConsole();
 	if (showFPS)
@@ -230,11 +230,11 @@ HalesiaExitCode HalesiaInstance::Run()
 			CheckInput();
 			devKeyIsPressedLastFrame = Input::IsKeyPressed(devConsoleKey);
 
-			asyncScripts = std::async(&HalesiaInstance::UpdateScene, this, frameDelta);
-			asyncRenderer = std::async(&HalesiaInstance::UpdateRenderer, this, frameDelta);
-			
 			if (Input::IsKeyPressed(VirtualKey::P))
 				Physics::physics->Simulate(frameDelta);
+
+			asyncScripts = std::async(&HalesiaInstance::UpdateScene, this, frameDelta);
+			asyncRenderer = std::async(&HalesiaInstance::UpdateRenderer, this, frameDelta);
 
 			std::optional<std::string> command = asyncRenderer.get();
 			if (command.has_value() && lastCommand != command.value())
@@ -243,7 +243,8 @@ HalesiaExitCode HalesiaInstance::Run()
 				lastCommand = command.value();
 			}
 			if (showWindowData)
-				GUI::ShowWindowData(window); // somehow only works in sync, maybe use a mutex with the window to allow async stuff
+				GUI::ShowWindowData(window); // only works on main thread, because it calls windows functions for changing the window
+
 			Win32Window::PollMessages(); // moved for swapchain / surface interference
 
 			asyncScripts.get();

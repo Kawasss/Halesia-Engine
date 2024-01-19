@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <unordered_set>
+#include <mutex>
 
 enum WindowMode // enum for scalability
 {
@@ -131,6 +132,7 @@ class Win32Window
 		bool shouldClose = false, lockCursor = false, containsDroppedFile = false;
 		WindowMode currentWindowMode;
 		ExtendedWindowStyle extendedWindowStyle;
+		std::mutex mutex;
 		
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 };
