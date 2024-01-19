@@ -135,7 +135,7 @@ private:
 	void SetScissors(VkCommandBuffer commandBuffer);
 	void OnResize();
 
-	void UpdateScreenShaderTexture(uint32_t currentFrame);
+	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
 	void UpdateUniformBuffers(uint32_t currentImage, Camera* camera);
 	void RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
 	void RenderCollisionBoxes(std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage);

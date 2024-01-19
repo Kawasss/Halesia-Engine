@@ -100,9 +100,16 @@ class Win32Window
 		bool ShouldClose();
 		bool CursorIsLocked();
 
+		int GetX();
+		int GetY();
 		int GetWidth();
 		int GetHeight();
 		int GetWheelRotation();
+
+		void SetWidth(int value);
+		void SetHeight(int value);
+		void SetWidthAndHeight(int width, int height); // more efficient since it only issues one windows api call
+		void SetXAndY(int x, int y);
 
 		void GetRelativeCursorPosition(int& x, int& y);
 		void GetAbsoluteCursorPosition(int& x, int& y);

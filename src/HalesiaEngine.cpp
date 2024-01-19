@@ -28,15 +28,15 @@ int ParseAndValidateDimensionArgument(std::string string)
 
 void DetermineArgs(int argsCount, char** args, Win32WindowCreateInfo& createInfo)
 {
-#ifdef _DEBUG
+	#ifdef _DEBUG
 	std::cout << "Received the following argument(s):" << std::endl;
-#endif
+	#endif
 	for (int i = 0; i < argsCount; i++)
 	{
 		std::string arg = args[i];
-#ifdef _DEBUG
+		#ifdef _DEBUG
 		std::cout << "  " << arg << std::endl;
-#endif
+		#endif
 		switch (arg[0])
 		{
 		case 'w':
@@ -109,13 +109,6 @@ inline void ManageCameraInjector(Scene* scene, bool pauseGame)
 		cameraInjector.Eject();
 }
 
-inline void HandleConsoleCommand(std::string command)
-{
-	if (command == "")
-		return;
-	Console::InterpretCommand(command);
-}
-
 void HalesiaInstance::UpdateScene(float delta)
 {
 	SetThreadDescription(GetCurrentThread(), L"SceneUpdatingThread");
@@ -154,7 +147,7 @@ std::optional<std::string> HalesiaInstance::UpdateRenderer(float delta)
 		GUI::ShowPieGraph(asyncTimes, "Async Times (µs)");
 	if (showObjectData)
 		GUI::ShowObjectTable(scene->allObjects);
-
+	
 	if (useEditor)
 	{
 		renderer->SetViewportOffsets({ 0.125f, 0 });
@@ -239,17 +232,17 @@ HalesiaExitCode HalesiaInstance::Run()
 
 			asyncScripts = std::async(&HalesiaInstance::UpdateScene, this, frameDelta);
 			asyncRenderer = std::async(&HalesiaInstance::UpdateRenderer, this, frameDelta);
-
+			
 			if (Input::IsKeyPressed(VirtualKey::P))
 				Physics::physics->Simulate(frameDelta);
 
 			std::optional<std::string> command = asyncRenderer.get();
 			if (command.has_value() && lastCommand != command.value())
 			{
-				HandleConsoleCommand(command.value());
+				Console::InterpretCommand(command.value());
 				lastCommand = command.value();
 			}
-
+			GUI::ShowWindowData(window); // somehow only works in sync
 			Win32Window::PollMessages(); // moved for swapchain / surface interference
 
 			asyncScripts.get();
@@ -323,16 +316,16 @@ void HalesiaInstance::LoadVars()
 		return;
 
 	useEditor = VVM::FindVariable("engineCore.useEditorUI", groups).As<bool>();
-	showFPS = VVM::FindVariable("engineCore.showFPS", groups).As<bool>();
+	showFPS =   VVM::FindVariable("engineCore.showFPS", groups).As<bool>();
 	devConsoleKey = (VirtualKey)VVM::FindVariable("engineCore.consoleKey", groups).As<int>();
 
 	Renderer::shouldRenderCollisionBoxes = VVM::FindVariable("renderer.rendercollision", groups).As<bool>();
-	RayTracing::raySampleCount = VVM::FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
-	RayTracing::rayDepth = VVM::FindVariable("renderer.ray-tracing.rayDepth", groups).As<int>();
-	RayTracing::showNormals = VVM::FindVariable("renderer.ray-tracing.showNormals", groups).As<bool>();
-	RayTracing::showUniquePrimitives = VVM::FindVariable("renderer.ray-tracing.showUnique", groups).As<bool>();
-	RayTracing::showAlbedo = VVM::FindVariable("renderer.ray-tracing.showAlbedo", groups).As<bool>();
-	RayTracing::renderProgressive = VVM::FindVariable("renderer.ray-tracing.renderProgressive", groups).As<bool>();
+	RayTracing::raySampleCount =           VVM::FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
+	RayTracing::rayDepth =                 VVM::FindVariable("renderer.ray-tracing.rayDepth", groups).As<int>();
+	RayTracing::showNormals =              VVM::FindVariable("renderer.ray-tracing.showNormals", groups).As<bool>();
+	RayTracing::showUniquePrimitives =     VVM::FindVariable("renderer.ray-tracing.showUnique", groups).As<bool>();
+	RayTracing::showAlbedo =               VVM::FindVariable("renderer.ray-tracing.showAlbedo", groups).As<bool>();
+	RayTracing::renderProgressive =        VVM::FindVariable("renderer.ray-tracing.renderProgressive", groups).As<bool>();
 
 	std::cout << "Finished loading from cfg/vars.vvm\n";
 }

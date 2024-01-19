@@ -24,4 +24,6 @@ public:
 	static void ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window);
 	static void ShowObjectTransform(Transform& transform);
 	static void ShowObjectRigidBody(RigidBody& rigidBody);
+
+	static void ShowWindowData(Win32Window* window);
 };

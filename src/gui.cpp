@@ -34,6 +34,76 @@ inline void ShowInputVector(glm::vec3& vector, std::vector<const char*> labels)
 	ImGui::PopItemWidth();
 }
 
+void GUI::ShowWindowData(Win32Window* window)
+{
+	static std::vector<std::string> modes = { "WINDOW_MODE_WINDOWED", "WINDOW_MODE_BORDERLESS_WINDOWED" };
+	static std::unordered_map<std::string, WindowMode> stringToMode = { { "WINDOW_MODE_WINDOWED", WINDOW_MODE_WINDOWED }, { "WINDOW_MODE_BORDERLESS_WINDOWED", WINDOW_MODE_BORDERLESS_WINDOWED } };
+	static std::string currentMode;
+	static int modeIndex = -1;
+	static bool lockCursor = false;
+	switch (window->GetWindowMode())
+	{
+	case WINDOW_MODE_WINDOWED:
+		modeIndex = 0;
+		break;
+	case WINDOW_MODE_BORDERLESS_WINDOWED:
+		modeIndex = 1;
+		break;
+	}
+	currentMode = modes[modeIndex];
+	lockCursor = window->CursorIsLocked();
+
+	int x = window->GetX(), y = window->GetY();
+	int width = window->GetWidth(), height = window->GetHeight();
+	ImGui::Begin("game window");
+
+	ImGui::Text("mode:       ");
+	ImGui::SameLine();
+	ShowDropdownMenu(modes, currentMode, modeIndex, "##modeSelect");
+
+	ImGui::Text("width:      ");
+	ImGui::SameLine();
+	ImGui::InputInt("##windowWidth", &width);
+
+	ImGui::Text("height:     ");
+	ImGui::SameLine();
+	ImGui::InputInt("##windowHeight", &height);
+
+	ImGui::Text("x:          ");
+	ImGui::SameLine();
+	ImGui::InputInt("##windowx", &x);
+
+	ImGui::Text("y:          ");
+	ImGui::SameLine();
+	ImGui::InputInt("##windowy", &y);
+
+	ImGui::Text("lock cursor:");
+	ImGui::SameLine();
+	if (ImGui::Checkbox("##lockcursor", &lockCursor))
+	{
+		if (!window->CursorIsLocked())
+			window->LockCursor();
+		else if (window->CursorIsLocked())
+			window->UnlockCursor();
+		lockCursor = window->CursorIsLocked();
+	}
+
+	ImGui::NewLine();
+
+	int relX, relY, absX, absY;
+	window->GetRelativeCursorPosition(relX, relY);
+	window->GetAbsoluteCursorPosition(absX, absY);
+	ImGui::Text("rel. cursor: %i, %i", relX, relY);
+	ImGui::Text("abs. cursor: %i, %i", absX, absY);
+
+	window->SetXAndY(x, y);
+	window->SetWidthAndHeight(width, height); // should only be called if the width and / or height has changed
+	if (stringToMode[currentMode] != window->GetWindowMode())
+		window->ChangeWindowMode(stringToMode[currentMode]);
+
+	ImGui::End();
+}
+
 void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window)
 {
 	static std::string currentItem = "None";
@@ -223,20 +293,20 @@ void GUI::ShowMainMenuBar(bool& showObjMeta, bool& ramGraph, bool& cpuGraph, boo
 	}
 	if (ImGui::BeginMenu("debug"))
 	{
-		showObjMeta = ImGui::Button("show object metadata") ? !showObjMeta : showObjMeta;
+		if (ImGui::Button("show object metadata")) showObjMeta = !showObjMeta;
 		ImGui::Separator();
-		ramGraph = ImGui::Button("show RAM graph") ? !ramGraph : ramGraph;
-		cpuGraph = ImGui::Button("show CPU graph") ? !cpuGraph : cpuGraph;
-		gpuGraph = ImGui::Button("show GPU graph") ? !gpuGraph : gpuGraph;
+		if (ImGui::Button("show RAM graph")) ramGraph = !ramGraph;
+		if (ImGui::Button("show CPU graph")) cpuGraph = !cpuGraph;
+		if (ImGui::Button("show GPU graph")) gpuGraph = !gpuGraph;
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("renderer"))
 	{
-		RayTracing::showAlbedo = ImGui::Button("show albedo") ? !RayTracing::showAlbedo : RayTracing::showAlbedo;
-		RayTracing::showNormals = ImGui::Button("show normals") ? !RayTracing::showNormals : RayTracing::showNormals;
-		RayTracing::showUniquePrimitives = ImGui::Button("show unique") ? !RayTracing::showUniquePrimitives : RayTracing::showUniquePrimitives;
+		if (ImGui::Button("show albedo"))  RayTracing::showAlbedo = !RayTracing::showAlbedo;
+		if (ImGui::Button("show normals")) RayTracing::showNormals = !RayTracing::showNormals;
+		if (ImGui::Button("show unique"))  RayTracing::showUniquePrimitives = !RayTracing::showUniquePrimitives;
 		ImGui::Separator();
-		Renderer::shouldRenderCollisionBoxes = ImGui::Button("show collision boxes") ? !Renderer::shouldRenderCollisionBoxes : Renderer::shouldRenderCollisionBoxes;
+		if (ImGui::Button("show collision boxes")) Renderer::shouldRenderCollisionBoxes = !Renderer::shouldRenderCollisionBoxes;
 		ImGui::Separator();
 		ImGui::Button("view statistics");
 		ImGui::EndMenu();
@@ -346,7 +416,7 @@ void GUI::ShowFPS(int FPS)
 	ImGui::End();
 }
 
-void SetImGuiColors()
+inline void SetImGuiColors()
 {
 	ImGuiStyle& style = ImGui::GetStyle();
 	style.WindowRounding = 5;

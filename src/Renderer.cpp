@@ -849,11 +849,11 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		vkCmdEndRenderPass(lCommandBuffer);
 	}
 
-	VkImage imageToCopy = rayTracer->gBuffers[0];
+	VkImageView imageToCopy = rayTracer->gBufferViews[0];
 	if (RayTracing::showNormals)
-		imageToCopy = rayTracer->gBuffers[2];
+		imageToCopy = rayTracer->gBufferViews[2];
 	else if (RayTracing::showAlbedo)
-		imageToCopy = rayTracer->gBuffers[1];
+		imageToCopy = rayTracer->gBufferViews[1];
 
 	//swapchain->CopyImageToSwapchain(imageToCopy, lCommandBuffer, imageIndex);
 	
@@ -871,7 +871,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
 	vkCmdBeginRenderPass(lCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-	UpdateScreenShaderTexture(currentFrame);
+	UpdateScreenShaderTexture(currentFrame, imageToCopy);
 
 	SetViewport(lCommandBuffer);
 	SetScissors(lCommandBuffer);
@@ -1109,11 +1109,11 @@ void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
 	indirectDrawParameters.SubmitNewData(parameters);
 }
 
-void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame)
+void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView)
 {
 	VkDescriptorImageInfo imageInfo{};
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = rayTracer->gBufferViews[0];
+	imageInfo.imageView = imageView == VK_NULL_HANDLE ? rayTracer->gBufferViews[0] : imageView;
 	imageInfo.sampler = defaultSampler;
 
 	VkWriteDescriptorSet writeSet{};

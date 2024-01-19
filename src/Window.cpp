@@ -156,6 +156,25 @@ bool Win32Window::ShouldClose()
 	return shouldClose;
 }
 
+int Win32Window::GetX()
+{
+	return x;
+}
+
+int Win32Window::GetY()
+{
+	return y;
+}
+
+void Win32Window::SetXAndY(int x, int y)
+{
+	if (this->x == x && this->y == y)
+		return;
+	this->x = x;
+	this->y = y;
+	SetWindowPos(window, NULL, x, y, 0, 0, SWP_NOSIZE);
+}
+
 int Win32Window::GetWidth()
 {
 	return width;
@@ -164,6 +183,27 @@ int Win32Window::GetWidth()
 int Win32Window::GetHeight()
 {
 	return height;
+}
+
+void Win32Window::SetWidth(int value)
+{
+	width = value;
+	SetWindowPos(window, NULL, 0, 0, width, height, SWP_NOMOVE);
+}
+
+void Win32Window::SetHeight(int value)
+{
+	height = value;
+	SetWindowPos(window, NULL, 0, 0, width, height, SWP_NOMOVE);
+}
+
+void Win32Window::SetWidthAndHeight(int width, int height)
+{
+	if (this->width == width && this->height == height)
+		return;
+	this->width = width;
+	this->height = height;
+	SetWindowPos(window, NULL, 0, 0, width, height, SWP_NOMOVE);
 }
 
 void Win32Window::GetRelativeCursorPosition(int& x, int& y)
@@ -232,6 +272,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 			PostQuitMessage(0);
 			break;
 
+		case WM_SIZING:
 		case WM_SIZE: // when the window is resized
 		{
 			RECT resizedWindowDimensions;
@@ -243,6 +284,15 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 			break;
 		}
 
+		case WM_WINDOWPOSCHANGING:
+		case WM_WINDOWPOSCHANGED:
+		{
+			WINDOWPOS* ptr = (WINDOWPOS*)lParam;
+			windowBinding[hwnd]->x = ptr->x;
+			windowBinding[hwnd]->y = ptr->y;
+			break;
+		}
+		
 		case WM_MOUSEMOVE: // when the cursor has moved
 			if (windowBinding[hwnd]->lockCursor) // if the cursor is locked it has to stay inside the window, so this locks resets it to the center of the screen
 				SetCursorPos(windowBinding[hwnd]->width / 2, windowBinding[hwnd]->height / 2);
