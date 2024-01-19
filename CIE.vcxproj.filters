@@ -16,9 +16,6 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{8e5c3a8e-19e1-450a-8fa1-4ffaa7601375}</UniqueIdentifier>
     </Filter>
-    <Filter Include="imgui">
-      <UniqueIdentifier>{983a078f-7c39-44e9-9318-e794860e2725}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\Renderer">
       <UniqueIdentifier>{471baf19-402d-46d8-b9d3-92b5ae76f389}</UniqueIdentifier>
     </Filter>
@@ -39,6 +36,15 @@
     </Filter>
     <Filter Include="Source Files\io">
       <UniqueIdentifier>{460eba20-5c07-4ea9-b80f-42c73ca1879a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external">
+      <UniqueIdentifier>{891bb34a-70ff-474d-b8db-9798deb56b18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\imgui">
+      <UniqueIdentifier>{983a078f-7c39-44e9-9318-e794860e2725}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\vvm">
+      <UniqueIdentifier>{298d5cb3-a06d-4bef-98de-55d859886c29}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -79,37 +85,37 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui.cpp">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_demo.cpp">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_draw.cpp">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_tables.cpp">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_widgets.cpp">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot.cpp">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_demo.cpp">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_items.cpp">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_vulkan.cpp">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_win32.cpp">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.cpp">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClCompile>
     <ClCompile Include="src\AccelerationStructures.cpp">
       <Filter>Source Files\Renderer</Filter>
@@ -162,6 +168,9 @@
     <ClCompile Include="src\SceneLoader.cpp">
       <Filter>Source Files\io</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\vvm\VVM.cpp">
+      <Filter>external\vvm</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Camera.h">
@@ -207,43 +216,43 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imconfig.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_internal.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_single_file.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_internal.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imspinner.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_rectpack.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_textedit.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_truetype.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_vulkan.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_win32.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.h">
-      <Filter>imgui</Filter>
+      <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\AccelerationStructures.h">
       <Filter>Header Files\Renderer</Filter>
@@ -313,6 +322,9 @@
     </ClInclude>
     <ClInclude Include="src\renderer\gui.h">
       <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\additionalDependencies\vvm\VVM.hpp">
+      <Filter>external\vvm</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -90,6 +90,10 @@ private:
 	void UpdateCGPUUsage();
 	void RegisterConsoleVars();
 
+	void OnLoad(HalesiaInstanceCreateInfo& createInfo);
+	void LoadVars();
+	void OnExit();
+
 	std::optional<std::string> UpdateRenderer(float delta);
 	void UpdateScene(float delta);
 

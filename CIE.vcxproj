@@ -148,6 +148,7 @@
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_demo.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_items.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\vvm\VVM.cpp" />
     <ClCompile Include="src\AccelerationStructures.cpp" />
     <ClCompile Include="src\Buffers.cpp" />
     <ClCompile Include="src\Camera.cpp" />
@@ -192,6 +193,7 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_textedit.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_truetype.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="..\..\additionalDependencies\vvm\VVM.hpp" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\Console.h" />
     <ClInclude Include="src\CreationObjects.h" />

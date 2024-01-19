@@ -1,0 +1,13 @@
+engineCore: 
+	useEditorUI: 1
+	showFPS: 0
+	consoleKey: 192
+renderer: 
+	renderCollision: 0
+	ray-tracing: 
+		raySamples: 1
+		rayDepth: 8
+		showNormals: 0
+		showUnique: 0
+		showAlbedo: 0
+		renderProgressive: 0

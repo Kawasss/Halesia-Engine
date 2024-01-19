@@ -16,6 +16,8 @@
 #include "CreationObjects.h"
 #include "Console.h"
 
+#include "vvm/VVM.hpp"
+
 int ParseAndValidateDimensionArgument(std::string string)
 {
 	int i = std::stoi(string.substr(string.find(' '), string.size() - 1));
@@ -58,30 +60,7 @@ void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, Halesia
 	std::cout << "Generating Halesia instance:\n" << "  createInfo.startingScene = " << createInfo.startingScene << "\n  createInfo.devConsoleKey = " << ToHexadecimalString((int)createInfo.devConsoleKey) << "\n  createInfo.playIntro = " << createInfo.playIntro << "\n\n";
 	try
 	{
-		Console::Init();
-		Console::WriteLine("Write \"help\" for all commands");
-		instance.useEditor = createInfo.useEditor;
-		instance.devConsoleKey = createInfo.devConsoleKey;
-		instance.playIntro = createInfo.playIntro;
-		Physics::Init();
-
-		if (createInfo.argsCount > 1)
-			DetermineArgs(createInfo.argsCount, createInfo.args, createInfo.windowCreateInfo);
-		
-		instance.window = new Win32Window(createInfo.windowCreateInfo);
-		instance.renderer = new Renderer(instance.window);
-		localRenderer = instance.renderer;
-		Scene::GetVulkanCreationObjects = &GetVulkanCreationObjects;
-
-		if (createInfo.startingScene == nullptr)
-		{
-			Console::WriteLine("The given HalesiaInstanceCreateInfo doesn't contain a valid starting scene", MESSAGE_SEVERITY_WARNING);
-			instance.scene = new Scene();
-		}
-		else
-			instance.scene = createInfo.startingScene;
-		if (createInfo.sceneFile != "")
-			instance.scene->LoadScene(createInfo.sceneFile);
+		instance.OnLoad(createInfo);
 
 		SystemInformation systemInfo = GetCpuInfo();
 		VkPhysicalDeviceProperties properties = instance.renderer->GetVulkanCreationObject().physicalDevice.Properties();
@@ -116,7 +95,7 @@ void HalesiaInstance::LoadScene(Scene* newScene)
 	scene = newScene;
 }
 
-void ManageCameraInjector(Scene* scene, bool pauseGame)
+inline void ManageCameraInjector(Scene* scene, bool pauseGame)
 {
 	static CameraInjector cameraInjector;
 	static Camera* orbitCamera = new OrbitCamera();
@@ -130,29 +109,11 @@ void ManageCameraInjector(Scene* scene, bool pauseGame)
 		cameraInjector.Eject();
 }
 
-void WriteAllCommandsToConsole()
-{
-	Console::WriteLine("-----------------------------------------------");
-	Console::WriteLine("\"pauseGame 1 or 0\" pauses or unpauses the game");      // or ctrl + F1
-	Console::WriteLine("\"showFPS 1 or 0\" shows or hides the FPS counter");     // or ctrl + F2
-	Console::WriteLine("\"showRAM 1 or 0\" shows or hides the RAM usage graph"); // or ctrl + F3
-	Console::WriteLine("\"showCPU 1 or 0\" shows or hides the CPU usage graph"); // or ctrl + F4
-	Console::WriteLine("\"showGPU 1 or 0\" shows or hides the CPU usage graph"); // or ctrl + F5
-	Console::WriteLine("\"showAsyncTimes 1 or 0\" shows or hides the the time it took to run the async tasks"); // or ctrl + F6
-	Console::WriteLine("\"playOneFrame 1\" plays one frame");
-	Console::WriteLine("\"exit\" terminates the program");
-	Console::WriteLine("-----------------------------------------------");
-}
-
-void HandleConsoleCommand(std::string command)
+inline void HandleConsoleCommand(std::string command)
 {
 	if (command == "")
 		return;
-
-	if (command != "help")
-		Console::InterpretCommand(command);
-	else
-		WriteAllCommandsToConsole();
+	Console::InterpretCommand(command);
 }
 
 void HalesiaInstance::UpdateScene(float delta)
@@ -306,6 +267,7 @@ HalesiaExitCode HalesiaInstance::Run()
 				timeSinceLastDataUpdate = 0;
 			}
 		}
+		OnExit();
 		return HALESIA_EXIT_CODE_SUCESS;
 	}
 	catch (const std::exception& e) //catch any normal exception and return
@@ -322,6 +284,82 @@ HalesiaExitCode HalesiaInstance::Run()
 		MessageBoxA(nullptr, "Caught an unknown error, this build is most likely corrupt and can't be used.", "Unknown engine error", MB_OK | MB_ICONERROR);
 		return HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION;
 	}
+}
+
+void HalesiaInstance::OnLoad(HalesiaInstanceCreateInfo& createInfo)
+{
+	Console::Init();
+	Console::WriteLine("Write \"help\" for all commands");
+	useEditor = createInfo.useEditor;
+	devConsoleKey = createInfo.devConsoleKey;
+	playIntro = createInfo.playIntro;
+	Physics::Init();
+
+	if (createInfo.argsCount > 1)
+		DetermineArgs(createInfo.argsCount, createInfo.args, createInfo.windowCreateInfo);
+
+	window = new Win32Window(createInfo.windowCreateInfo);
+	renderer = new Renderer(window);
+	localRenderer = renderer;
+	Scene::GetVulkanCreationObjects = &GetVulkanCreationObjects;
+
+	if (createInfo.startingScene == nullptr)
+	{
+		Console::WriteLine("The given HalesiaInstanceCreateInfo doesn't contain a valid starting scene", MESSAGE_SEVERITY_WARNING);
+		scene = new Scene();
+	}
+	else
+		scene = createInfo.startingScene;
+	if (createInfo.sceneFile != "")
+		scene->LoadScene(createInfo.sceneFile);
+
+	LoadVars();
+}
+
+void HalesiaInstance::LoadVars()
+{
+	std::vector<VVM::Group> groups;
+	if (VVM::ReadFromFile("cfg/vars.vvm", groups) != VVM_SUCCESS)
+		return;
+
+	useEditor = VVM::FindVariable("engineCore.useEditorUI", groups).As<bool>();
+	showFPS = VVM::FindVariable("engineCore.showFPS", groups).As<bool>();
+	devConsoleKey = (VirtualKey)VVM::FindVariable("engineCore.consoleKey", groups).As<int>();
+
+	Renderer::shouldRenderCollisionBoxes = VVM::FindVariable("renderer.rendercollision", groups).As<bool>();
+	RayTracing::raySampleCount = VVM::FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
+	RayTracing::rayDepth = VVM::FindVariable("renderer.ray-tracing.rayDepth", groups).As<int>();
+	RayTracing::showNormals = VVM::FindVariable("renderer.ray-tracing.showNormals", groups).As<bool>();
+	RayTracing::showUniquePrimitives = VVM::FindVariable("renderer.ray-tracing.showUnique", groups).As<bool>();
+	RayTracing::showAlbedo = VVM::FindVariable("renderer.ray-tracing.showAlbedo", groups).As<bool>();
+	RayTracing::renderProgressive = VVM::FindVariable("renderer.ray-tracing.renderProgressive", groups).As<bool>();
+
+	std::cout << "Finished loading from cfg/vars.vvm\n";
+}
+
+void HalesiaInstance::OnExit()
+{
+	VVM::PushGroup("engineCore");
+	VVM::AddVariable("useEditorUI", useEditor);
+	VVM::AddVariable("showFPS", showFPS);
+	VVM::AddVariable("consoleKey", (int)devConsoleKey);
+	VVM::PopGroup();
+
+	VVM::PushGroup("renderer");
+	VVM::AddVariable("renderCollision", Renderer::shouldRenderCollisionBoxes);
+
+	VVM::PushGroup("ray-tracing");
+	VVM::AddVariable("raySamples", RayTracing::raySampleCount);
+	VVM::AddVariable("rayDepth", RayTracing::rayDepth);
+	VVM::AddVariable("showNormals", RayTracing::showNormals);
+	VVM::AddVariable("showUnique", RayTracing::showUniquePrimitives);
+	VVM::AddVariable("showAlbedo", RayTracing::showAlbedo);
+	VVM::AddVariable("renderProgressive", RayTracing::renderProgressive);
+	VVM::PopGroup();
+	VVM::PopGroup();
+
+	VVM::WriteToFile("cfg/vars.vvm");
+	std::cout << "Finished writing to cfg/vars.vvm\n";
 }
 
 void HalesiaInstance::RegisterConsoleVars()
@@ -355,4 +393,5 @@ std::string HalesiaExitCodeToString(HalesiaExitCode exitCode)
 	case HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION:
 		return "HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION";
 	}
+	return "";
 }
