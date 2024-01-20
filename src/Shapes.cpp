@@ -61,21 +61,3 @@ Plane::Plane()
 	shape = Physics::GetPhysicsObject()->createShape(geometry, *Physics::defaultMaterial);
 	type = SHAPE_TYPE_PLANE;
 }
-
-std::string ShapeTypeToString(ShapeType type)
-{
-	switch (type)
-	{
-	case SHAPE_TYPE_BOX:
-		return "SHAPE_TYPE_BOX";
-	case SHAPE_TYPE_CAPSULE:
-		return "SHAPE_TYPE_CAPSULE";
-	case SHAPE_TYPE_NONE:
-		return "SHAPE_TYPE_NONE";
-	case SHAPE_TYPE_PLANE:
-		return "SHAPE_TYPE_PLANE";
-	case SHAPE_TYPE_SPHERE:
-		return "SHAPE_TYPE_SPHERE";
-	}
-	return "";
-}

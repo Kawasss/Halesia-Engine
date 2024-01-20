@@ -366,17 +366,3 @@ void HalesiaInstance::RegisterConsoleVars()
 	Console::AddConsoleVariable("raySamples", &RayTracing::raySampleCount);
 	Console::AddConsoleVariable("rayDepth", &RayTracing::rayDepth);
 }
-
-std::string HalesiaExitCodeToString(HalesiaExitCode exitCode)
-{
-	switch (exitCode)
-	{
-	case HALESIA_EXIT_CODE_SUCESS:
-		return "HALESIA_EXIT_CODE_SUCESS";
-	case HALESIA_EXIT_CODE_EXCEPTION:
-		return "HALESIA_EXIT_CODE_EXCEPTION";
-	case HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION:
-		return "HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION";
-	}
-	return "";
-}
