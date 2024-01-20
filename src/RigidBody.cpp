@@ -71,6 +71,21 @@ glm::vec3 RigidBody::GetRotation()
 	return glm::eulerAngles(glm::quat(trans.q.w, trans.q.x, trans.q.y, trans.q.z));
 }
 
+void RigidBody::AddForce(glm::vec3 force)
+{
+	if (rigidDynamic == nullptr)
+		return;
+	queuedUpForce += force;
+}
+
+void RigidBody::SetForce()
+{
+	if (rigidDynamic == nullptr || queuedUpForce == glm::vec3(0))
+		return;
+	rigidDynamic->addForce({ queuedUpForce.x, queuedUpForce.y, queuedUpForce.z });
+	queuedUpForce = glm::vec3(0);
+}
+
 void RigidBody::SetUserData(void* data)
 {
 	if (rigidStatic == nullptr)

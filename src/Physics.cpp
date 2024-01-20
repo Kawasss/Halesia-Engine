@@ -93,6 +93,7 @@ void Physics::FetchAndUpdateObjects()
 
 		object->transform.position = glm::vec3(trans.p.x, trans.p.y, trans.p.z);
 		object->transform.rotation = glm::degrees(glm::eulerAngles(quat));
+		object->rigid.SetForce();
 	}
 }
 

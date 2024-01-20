@@ -24,6 +24,8 @@ public:
 	void ForcePosition(Transform& transform);
 	void ChangeShape(Shape& shape);
 	void SetScale(glm::vec3 scale);
+	void AddForce(glm::vec3 force);
+	void SetForce();
 	void SetUserData(void* data);
 	void ChangeType(RigidBodyType type);
 	void* GetUserData();
@@ -33,6 +35,7 @@ public:
 
 	RigidBodyType type = RIGID_BODY_NONE;
 	Shape shape;
+	glm::vec3 queuedUpForce;
 
 private:
 	physx::PxTransform GetTransform(); // dont know a better way to deal with the different types of rigids

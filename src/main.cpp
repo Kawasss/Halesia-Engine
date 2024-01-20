@@ -135,9 +135,10 @@ class TestScene : public Scene
 	{
 		RayHitInfo info;
 		
-		if (Physics::CastRay(camera->position, camera->front, 9999.9f, info))
+		if (Input::IsKeyPressed(VirtualKey::LeftMouseButton) && Physics::CastRay(camera->position, camera->front, 9999.9f, info))
 		{
-			std::cout << info.object->name << "\n";
+			if (info.object->rigid.type == RIGID_BODY_DYNAMIC)
+				info.object->rigid.AddForce(glm::vec3(0, 1000, 0));
 		}
 
 		if (!Input::IsKeyPressed(VirtualKey::R) || Input::IsKeyPressed(VirtualKey::P))
