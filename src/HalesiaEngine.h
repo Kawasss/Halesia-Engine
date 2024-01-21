@@ -104,7 +104,7 @@ private:
 	VirtualKey devConsoleKey;
 
 	Renderer* renderer;
-	Win32Window* window;
+	Win32Window* window = nullptr;
 
 	float asyncRendererCompletionTime = 0;
 	float asyncScriptsCompletionTime = 0;

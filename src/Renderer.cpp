@@ -4,6 +4,7 @@
 #include <vector>
 #include <array>
 #include <chrono>
+#include <filesystem>
 
 #include "renderer/Vulkan.h"
 #include "renderer/Swapchain.h"
@@ -189,6 +190,24 @@ void Renderer::CreateImGUI()
 
 void Renderer::InitVulkan()
 {
+	#ifdef _DEBUG // recompiles all the shaders with their .bat files, this simply makes it less of a hassle to change the shaders
+	std::cout << "Debug mode detected, recompiling all shaders found in directory \"shaders\"...\n";
+	auto oldPath = std::filesystem::current_path();
+	auto newPath = std::filesystem::absolute("shaders");
+	system("@echo off");
+	for (const auto& file : std::filesystem::directory_iterator(newPath))
+	{
+		if (file.path().extension() != ".bat")
+			continue;
+		std::string shaderComp = file.path().string();
+		std::cout << "Executing script " << file.path().relative_path() << " for recompiling\n";
+		std::filesystem::current_path(newPath);
+		system(shaderComp.c_str()); // windows only!!
+	}
+	std::filesystem::current_path(oldPath);
+	system("@echo on");
+	#endif
+
 	instance = Vulkan::GenerateInstance();
 	surface = Surface::GenerateSurface(instance, testWindow);
 	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
