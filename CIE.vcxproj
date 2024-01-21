@@ -156,6 +156,7 @@
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\HalesiaEngine.cpp" />
     <ClCompile Include="src\Intro.cpp" />
+    <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Physics.cpp" />
     <ClCompile Include="src\pipelineBuilder.cpp" />

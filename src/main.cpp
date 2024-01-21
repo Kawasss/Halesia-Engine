@@ -39,8 +39,13 @@ class TestScene : public Scene
 			Object* ptr = AddStaticObject(data);
 		}*/
 
+		MaterialCreateInfo createInfo{};
+		createInfo.creationObject = GetVulkanCreationObjects();
+		createInfo.albedo = "textures/rockA.jpg";
+		createInfo.normal = "textures/rockN.jpg";
+
 		Object* ptr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/rock.obj"));
-		Material rockMat = { new Texture(GetVulkanCreationObjects(), "textures/rockA.jpg"), new Texture(GetVulkanCreationObjects(), "textures/rockN.jpg", true, TEXTURE_FORMAT_UNORM) };
+		Material rockMat = Material::Create(createInfo);
 		rockMat.AwaitGeneration();
 		ptr->meshes[0].SetMaterial(rockMat);
 	}

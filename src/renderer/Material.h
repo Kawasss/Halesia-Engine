@@ -1,6 +1,7 @@
 #pragma once
-#include "renderer/Texture.h"
+#include "Texture.h"
 #include "../ResourceManager.h"
+#include "../CreationObjects.h"
 
 typedef uint64_t Handle;
 
@@ -17,8 +18,21 @@ inline const std::vector<MaterialTexture> rayTracingMaterialTextures = { MATERIA
 inline const std::vector<MaterialTexture> deferredMaterialTextures = { MATERIAL_TEXTURE_ALBEDO, MATERIAL_TEXTURE_NORMAL };
 inline const std::vector<MaterialTexture> PBRMaterialTextures = { MATERIAL_TEXTURE_ALBEDO, MATERIAL_TEXTURE_NORMAL, MATERIAL_TEXTURE_METALLIC, MATERIAL_TEXTURE_ROUGHNESS, MATERIAL_TEXTURE_AMBIENT_OCCLUSION };
 
+struct MaterialCreateInfo
+{
+	VulkanCreationObject creationObject;
+	std::string albedo = "";
+	std::string normal = "";
+	std::string metallic = "";
+	std::string roughness = "";
+	std::string ambientOcclusion = "";
+	bool isLight = false;
+};
+
 struct Material
 {
+	static Material Create(const MaterialCreateInfo& createInfo);
+
 	// dont know if dynamically allocated is necessary since the material will always be used for the lifetime of the mesh, the class is sort of big so not so sure if copying is cheap
 	Texture* albedo = Texture::placeholderAlbedo;
 	Texture* normal = Texture::placeholderNormal;
@@ -28,74 +42,13 @@ struct Material
 	bool isLight = false;
 	Handle handle = ResourceManager::GenerateHandle();
 
-	Texture* operator[](size_t i)
-	{
-		switch (i)
-		{
-		case 0:
-			return albedo;
-		case 1:
-			return normal;
-		case 2:
-			return metallic;
-		case 3:
-			return roughness;
-		case 4:
-			return ambientOcclusion;
-		default:
-			return albedo;
-		}
-	}
+	Texture* operator[](size_t i);
+	Texture* operator[](MaterialTexture materialTexture);
 
-	Texture* operator[](MaterialTexture materialTexture)
-	{
-		switch (materialTexture)
-		{
-		case MATERIAL_TEXTURE_ALBEDO:
-			return albedo;
-		case MATERIAL_TEXTURE_NORMAL:
-			return normal;
-		case MATERIAL_TEXTURE_METALLIC:
-			return metallic;
-		case MATERIAL_TEXTURE_ROUGHNESS:
-			return roughness;
-		case MATERIAL_TEXTURE_AMBIENT_OCCLUSION:
-			return ambientOcclusion;
-		default:
-			return albedo; // not returning nullptr because that could crash the program
-		}
-	}
-
-	bool HasFinishedLoading()
-	{
-		return albedo->HasFinishedLoading() && normal->HasFinishedLoading() && metallic->HasFinishedLoading() && roughness->HasFinishedLoading() && ambientOcclusion->HasFinishedLoading();
-	}
-
-	void AwaitGeneration()
-	{
-		albedo->AwaitGeneration();
-		normal->AwaitGeneration();
-		metallic->AwaitGeneration();
-		roughness->AwaitGeneration();
-		ambientOcclusion->AwaitGeneration();
-	}
-
-	void Destroy() // only delete the textures if they arent the placeholders
-	{
-		if (albedo != Texture::placeholderAlbedo) albedo->Destroy();
-		if (normal != Texture::placeholderNormal) normal->Destroy();
-		if (metallic != Texture::placeholderMetallic) metallic->Destroy();
-		if (roughness != Texture::placeholderRoughness) roughness->Destroy();
-		if (ambientOcclusion != Texture::placeholderAmbientOcclusion) ambientOcclusion->Destroy();
-	}
+	bool HasFinishedLoading();
+	void AwaitGeneration();
+	void Destroy(); // only delete the textures if they arent the placeholders
 };
 
-inline bool operator==(const Material& lMaterial, const Material& rMaterial)
-{
-	return lMaterial.albedo == rMaterial.albedo && lMaterial.normal == rMaterial.normal && lMaterial.metallic == rMaterial.metallic && lMaterial.roughness == rMaterial.roughness && lMaterial.ambientOcclusion == rMaterial.ambientOcclusion && lMaterial.isLight == rMaterial.isLight;
-}
-
-inline bool operator!=(const Material& lMaterial, const Material& rMaterial)
-{
-	return !(lMaterial == rMaterial);
-}
+inline extern bool operator==(const Material& lMaterial, const Material& rMaterial);
+inline extern bool operator!=(const Material& lMaterial, const Material& rMaterial);
