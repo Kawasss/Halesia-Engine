@@ -79,20 +79,20 @@ vec3 MultiplyPositionWithModelMatrix(Vertex vertex)
 
 vec3 getNormalFromMap(uint normalMapIndex, vec3 barycentric, vec2 fragTexCoord, Vertex vertex1, Vertex vertex2, Vertex vertex3)
 {
-    //vec3 tangentNormal = texture(textures[normalMapIndex], fragTexCoord).xyz * 2.0 - 1.0;
+    vec3 tangentNormal = texture(textures[normalMapIndex], fragTexCoord).xyz * 2.0 - 1.0;
 
     vec3 Q1  = MultiplyPositionWithModelMatrix(vertex2) - MultiplyPositionWithModelMatrix(vertex1);
     vec3 Q2  = MultiplyPositionWithModelMatrix(vertex3) - MultiplyPositionWithModelMatrix(vertex1);
     vec2 st1 = vertex2.textureCoordinates - vertex1.textureCoordinates;
     vec2 st2 = vertex3.textureCoordinates - vertex1.textureCoordinates;
 
-    vec3 N   = normalize(cross(vertex2.position - vertex1.position, vertex3.position - vertex1.position));//vertex1.normal * barycentric.x + vertex2.normal * barycentric.y + vertex3.normal * barycentric.z;
+    vec3 N   = vertex1.normal * barycentric.x + vertex2.normal * barycentric.y + vertex3.normal * barycentric.z;//normalize(cross(vertex2.position - vertex1.position, vertex3.position - vertex1.position));
     N = normalize(mat3(transpose(inverse(GetModelMatrix()))) * N);
     vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
     vec3 B  = -normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
 
-    return N;//normalize(TBN * tangentNormal);
+    return normalize(TBN * tangentNormal);
 }
 
 float random(vec2 uv, float seed) {

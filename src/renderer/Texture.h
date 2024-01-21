@@ -7,10 +7,16 @@
 struct VulkanCreationObject;
 typedef VulkanCreationObject TextureCreationObject;
 
+enum TextureFormat
+{
+	TEXTURE_FORMAT_SRGB = VK_FORMAT_R8G8B8A8_SRGB,
+	TEXTURE_FORMAT_UNORM = VK_FORMAT_R8G8B8A8_UNORM,
+};
+
 class Image
 {
 public:
-	void GenerateImages(const TextureCreationObject& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps = true);
+	void GenerateImages(const TextureCreationObject& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
 	void GenerateEmptyImages(const TextureCreationObject& creationObjects, int width, int height, int amount);
 	void AwaitGeneration();
 	bool HasFinishedLoading();
@@ -61,6 +67,6 @@ public:
 	static void GeneratePlaceholderTextures(const TextureCreationObject& creationObjects);
 	static void DestroyPlaceholderTextures();
 
-	Texture(const TextureCreationObject& creationObjects, std::string filePath, bool useMipMaps = true);
+	Texture(const TextureCreationObject& creationObjects, std::string filePath, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
 	Texture(const TextureCreationObject& creationObjects, std::vector<char> imageData, bool useMipMaps = true);
 };

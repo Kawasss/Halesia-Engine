@@ -35,7 +35,7 @@ public:
 
 	RigidBodyType type = RIGID_BODY_NONE;
 	Shape shape;
-	glm::vec3 queuedUpForce;
+	glm::vec3 queuedUpForce = glm::vec3(0);
 
 private:
 	physx::PxTransform GetTransform(); // dont know a better way to deal with the different types of rigids

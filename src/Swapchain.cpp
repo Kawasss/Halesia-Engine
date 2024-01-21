@@ -88,41 +88,21 @@ void Swapchain::CopyImageToSwapchain(VkImage image, VkCommandBuffer commandBuffe
     swapchainMemoryBarrier.subresourceRange.levelCount = 1;
     swapchainMemoryBarrier.subresourceRange.layerCount = 1;
 
-    VkImageMemoryBarrier swapchainPresentBarrier{};
-    swapchainPresentBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    swapchainPresentBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    VkImageMemoryBarrier swapchainPresentBarrier = swapchainMemoryBarrier;
     swapchainPresentBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     swapchainPresentBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    swapchainPresentBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    swapchainPresentBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    swapchainPresentBarrier.image = images[currentImage];
-    swapchainPresentBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    swapchainPresentBarrier.subresourceRange.levelCount = 1;
-    swapchainPresentBarrier.subresourceRange.layerCount = 1;
 
-    VkImageMemoryBarrier copyMemoryBarrier{};
-    copyMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    VkImageMemoryBarrier copyMemoryBarrier = swapchainMemoryBarrier;
     copyMemoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     copyMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
     copyMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    copyMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    copyMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     copyMemoryBarrier.image = image;
-    copyMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copyMemoryBarrier.subresourceRange.levelCount = 1;
-    copyMemoryBarrier.subresourceRange.layerCount = 1;
 
-    VkImageMemoryBarrier writeBarrier{};
-    writeBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    VkImageMemoryBarrier writeBarrier = swapchainMemoryBarrier;
     writeBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
     writeBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
     writeBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    writeBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    writeBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     writeBarrier.image = image;
-    writeBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    writeBarrier.subresourceRange.levelCount = 1;
-    writeBarrier.subresourceRange.layerCount = 1;
 
     VkImageCopy imageCopy{};
     imageCopy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

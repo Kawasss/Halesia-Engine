@@ -190,6 +190,9 @@ void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
 		ImGui::InputFloat("##radius", &holderExtents.x);
 		break;
 	}
+
+	ImGui::Text("Queued up force: %f, %f, %f", rigidBody.queuedUpForce.x, rigidBody.queuedUpForce.y, rigidBody.queuedUpForce.z);
+
 	// update the rigidbody shape if it has been changed via the gui
 	if (stringToShape[currentShape] != rigidBody.shape.type || holderExtents != rigidBody.shape.data)
 	{

@@ -22,7 +22,7 @@ bool Image::TexturesHaveChanged()
 	return ret;
 }
 
-void Image::GenerateImages(const TextureCreationObject& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps)
+void Image::GenerateImages(const TextureCreationObject& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps, TextureFormat format)
 {
 	this->logicalDevice = creationObjects.logicalDevice;
 	this->commandPool = Vulkan::FetchNewCommandPool(creationObjects);
@@ -63,17 +63,17 @@ void Image::GenerateImages(const TextureCreationObject& creationObjects, std::ve
 		stbi_image_free(pixels[i]);
 
 	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-	Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
+	Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
 	
-	TransitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	CopyBufferToImage(stagingBuffer);
 
 	vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
 	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
-	imageView = Vulkan::CreateImageView(logicalDevice, image, viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-	if (useMipMaps) GenerateMipMaps(VK_FORMAT_R8G8B8A8_SRGB);
+	imageView = Vulkan::CreateImageView(logicalDevice, image, viewType, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_ASPECT_COLOR_BIT);
+	if (useMipMaps) GenerateMipMaps((VkFormat)format);
 
 	Vulkan::YieldCommandPool(creationObjects.queueIndex, commandPool);
 
@@ -147,14 +147,14 @@ Cubemap::Cubemap(const TextureCreationObject& creationObjects, std::vector<std::
 		}, this, creationObjects, filePath, useMipMaps);
 }
 
-Texture::Texture(const TextureCreationObject& creationObjects, std::string filePath, bool useMipMaps)
+Texture::Texture(const TextureCreationObject& creationObjects, std::string filePath, bool useMipMaps, TextureFormat format)
 {
 	// this async can't use the capture list ( [&] ), because then filePath gets wiped clean (??)
-	generation = std::async([](Texture* texture, const TextureCreationObject& creationObjects, std::string filePath, bool useMipMaps)
+	generation = std::async([](Texture* texture, const TextureCreationObject& creationObjects, std::string filePath, bool useMipMaps, TextureFormat format)
 		{
 			std::vector<std::vector<char>> data = GetAllImageData({ filePath });
-			texture->GenerateImages(creationObjects, data, useMipMaps);
-		}, this, creationObjects, filePath, useMipMaps);
+			texture->GenerateImages(creationObjects, data, useMipMaps, format);
+		}, this, creationObjects, filePath, useMipMaps, format);
 }
 
 Texture::Texture(const TextureCreationObject& creationObjects, std::vector<char> imageData, bool useMipMaps)

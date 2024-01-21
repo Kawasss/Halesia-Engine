@@ -8,97 +8,6 @@
 #include "renderer/Renderer.h"
 #include "renderer/RayTracing.h"
 
-class TestCamera : public OrbitCamera
-{
-public:
-	glm::vec3 pivot = glm::vec3(0);
-	float radius = 5;
-	float sumX = 0, sumY = 0;
-
-	TestCamera()
-	{
-		SetScript(this);
-		position = glm::vec3(0, 0, 5);
-	}
-
-	void Update(Win32Window* window, float delta) override
-	{
-		if (Console::isOpen)
-			return;
-
-		radius += window->GetWheelRotation() * delta * 0.001f;
-		if (radius < 0.1f) radius = 0.1f;
-
-		float phi = sumX * 2 * glm::pi<float>() / window->GetWidth();
-		float theta = std::clamp(sumY * glm::pi<float>() / window->GetHeight(), -0.49f * glm::pi<float>(), 0.49f * glm::pi<float>());
-
-		position.x = radius * (cos(phi) * cos(theta));
-		position.y = radius * sin(theta);
-		position.z = radius * (cos(theta) * sin(phi));
-		position += pivot;
-
-		front = glm::normalize(pivot - position);
-
-		right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
-		up = glm::normalize(glm::cross(right, front));
-
-		if (Input::IsKeyPressed(VirtualKey::W))
-			pivot += front * (cameraSpeed * delta * 0.001f);
-		if (Input::IsKeyPressed(VirtualKey::S))
-			pivot -= front * (cameraSpeed * delta * 0.001f);
-		if (Input::IsKeyPressed(VirtualKey::A))
-			pivot -= right * (cameraSpeed * delta * 0.001f);
-		if (Input::IsKeyPressed(VirtualKey::D))
-			pivot += right * (cameraSpeed * delta * 0.001f);
-		if (Input::IsKeyPressed(VirtualKey::Space))
-			pivot += up * (cameraSpeed * delta * 0.001f);
-		if (Input::IsKeyPressed(VirtualKey::LeftShift))
-			pivot -= up * (cameraSpeed * delta * 0.001f);
-
-		if (!Input::IsKeyPressed(VirtualKey::MiddleMouseButton))
-			return;
-
-		int x, y;
-		window->GetRelativeCursorPosition(x, y);
-
-		sumX = sumX + x * delta;
-		sumY = sumY + y * delta;
-	}
-};
-
-class ColoringTile : public Object
-{
-public:
-	Material* colorMaterial;
-	std::chrono::steady_clock::time_point timeOfClick = std::chrono::high_resolution_clock::now();
-	int indexX, indexY;
-
-	void Start() override
-	{
-		transform.position = glm::vec3(-indexX, 0, indexY);
-		transform.scale = glm::vec3(0.5f);
-	}
-
-	void Update(float delta) override
-	{
-		if (Renderer::selectedHandle != handle)
-		{
-			transform.position.y = 0;
-			return;
-		}
-		else
-			transform.position.y = 0.5f;
-		if (Renderer::selectedHandle == handle && Input::IsKeyPressed(VirtualKey::LeftMouseButton) && std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeOfClick).count() > 100)
-		{
-			timeOfClick = std::chrono::high_resolution_clock::now();
-			if (meshes[0].materialIndex == 0)
-				meshes[0].SetMaterial(*colorMaterial);
-			else
-				meshes[0].ResetMaterial();
-		}
-	}
-};
-
 class TestScene : public Scene
 {
 	Material colorMaterial;
@@ -106,7 +15,7 @@ class TestScene : public Scene
 	std::vector<Object*> spheres;
 	void Start() override
 	{
-		Object* objPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/sphere.fbx"));
+		/*Object* objPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/sphere.fbx"));
 		Material knifeMaterial = { new Texture(GetVulkanCreationObjects(), "textures/glockAlbedo.png"), new Texture(GetVulkanCreationObjects(), "textures/glockNormal.png") };
 		knifeMaterial.AwaitGeneration();
 		objPtr->meshes[0].SetMaterial(knifeMaterial);
@@ -128,12 +37,17 @@ class TestScene : public Scene
 		for (ObjectCreationData& data : loader.objects)
 		{
 			Object* ptr = AddStaticObject(data);
-		}
+		}*/
+
+		Object* ptr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/rock.obj"));
+		Material rockMat = { new Texture(GetVulkanCreationObjects(), "textures/rockA.jpg"), new Texture(GetVulkanCreationObjects(), "textures/rockN.jpg", true, TEXTURE_FORMAT_UNORM) };
+		rockMat.AwaitGeneration();
+		ptr->meshes[0].SetMaterial(rockMat);
 	}
 
 	void Update(float delta) override
 	{
-		RayHitInfo info;
+		/*RayHitInfo info;
 		
 		if (Input::IsKeyPressed(VirtualKey::LeftMouseButton) && Physics::CastRay(camera->position, camera->front, 9999.9f, info))
 		{
@@ -149,7 +63,7 @@ class TestScene : public Scene
 			spheres[i]->transform.position = glm::vec3(0, 20 + 5 * (i + 1), 0);
 			spheres[i]->transform.rotation = glm::vec3(0);
 			spheres[i]->rigid.ForcePosition(spheres[i]->transform);
-		}
+		}*/
 	}
 };
 
@@ -178,45 +92,3 @@ int main(int argsCount, char** args)
 
 	return EXIT_SUCCESS;
 }
-
-/*Object* floorPtr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/plane.obj"));
-		floorPtr->transform.position = glm::vec3(0, -1.1, 0);
-		floorPtr->AwaitGeneration();
-		Box box = Box(floorPtr->meshes[0].extents);
-		floorPtr->AddRigidBody(RIGID_BODY_STATIC, box);
-
-		Object* ramp = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/ramp.obj"));
-		ramp->AwaitGeneration();
-		ramp->transform.rotation.x = 45;
-		box = Box(GenericLoader::LoadHitBox("stdObj/ramp.obj"));
-		ramp->AddRigidBody(RIGID_BODY_STATIC, box);
-		ramp->rigid.ForcePosition(ramp->transform);
-
-		ramp = DuplicateStaticObject(ramp, "ramp2");
-		ramp->transform.rotation.y += 45;
-		ramp->rigid.ForcePosition(ramp->transform);*/
-
-		/*colorMaterial = { new Texture(GetVulkanCreationObjects(), "textures/red.png") };
-				colorMaterial.roughness = new Texture(GetVulkanCreationObjects(), "textures/white.png");
-				Object* baseObject = AddCustomObject<ColoringTile>("stdObj/cube.obj", OBJECT_IMPORT_EXTERNAL);
-				baseObject->AwaitGeneration();
-				baseObject->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
-
-				for (int i = 0; i < 5; i++)
-				{
-					for (int j = 0; j < 5; j++)
-					{
-						Object* ptr = DuplicateCustomObject<ColoringTile>(baseObject, "tile" + std::to_string(i * 5 + j));
-						ptr->GetScript<ColoringTile*>()->colorMaterial = &colorMaterial;
-						ptr->GetScript<ColoringTile*>()->indexX = i - 2;
-						ptr->GetScript<ColoringTile*>()->indexY = j - 2;
-						ptr->Start();
-					}
-				}
-				baseObject->state = OBJECT_STATE_DISABLED;
-
-				Material lightMaterial{};
-				lightMaterial.isLight = true;
-				AddStaticObject(GenericLoader::LoadObjectFile("stdObj/light.obj"))->meshes[0].SetMaterial(lightMaterial);
-
-				this->camera = new TestCamera();*/
