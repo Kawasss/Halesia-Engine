@@ -10,11 +10,6 @@
 #include "physics/RigidBody.h"
 #include "physics/Shapes.h"
 
-namespace physx
-{
-	class PxRigidDynamic;
-	class PxRigidStatic;
-}
 struct ObjectCreationData;
 typedef uint64_t Handle;
 
@@ -38,8 +33,6 @@ class Object
 {
 public:
 	Object() = default;
-	Object(const ObjectCreationData& creationData, const ObjectCreationObject& creationObjects);
-
 	virtual		~Object() {};
 	virtual void Destroy();
 	virtual void Start() {};
@@ -70,7 +63,7 @@ public:
 	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
 	/// <param name="creationData"></param>
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
-	void CreateObject(void* customClassInstancePointer, const ObjectCreationData& creationData, const ObjectCreationObject& creationObject);
+	static Object* Create(const ObjectCreationData& creationData, const ObjectCreationObject& creationObject, void* customClassInstancePointer = nullptr);
 
 	void AddRigidBody(RigidBodyType type, Shape shape);
 	void AddMesh(const std::vector<MeshCreationData>& creationData, const MeshCreationObject& creationObject);

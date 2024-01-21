@@ -99,32 +99,32 @@ void Physics::FetchAndUpdateObjects()
 
 void Physics::AddActor(physx::PxActor& actor)
 {
-	scene->addActor(actor);
+	physics->scene->addActor(actor);
 }
 
 void Physics::RemoveActor(physx::PxActor& actor)
 {
-	scene->removeActor(actor);
+	physics->scene->removeActor(actor);
 }
 
 void Physics::Simulate(float delta)
 {
-	timeSinceLastStep += delta;
-	if (timeSinceLastStep < simulationStep)
+	physics->timeSinceLastStep += delta;
+	if (physics->timeSinceLastStep < simulationStep)
 		return;
 
-	timeSinceLastStep -= simulationStep;
+	physics->timeSinceLastStep -= simulationStep;
 
-	scene->simulate(simulationStep);
-	canBeFetched = true;
+	physics->scene->simulate(simulationStep);
+	physics->canBeFetched = true;
 }
 
 physx::PxActor** Physics::FetchResults(uint32_t& num)
 {
-	if (!canBeFetched)
+	if (!physics->canBeFetched)
 		return nullptr;
 
-	scene->fetchResults(true);
-	canBeFetched = false;
-	return scene->getActiveActors(num);
+	physics->scene->fetchResults(true);
+	physics->canBeFetched = false;
+	return physics->scene->getActiveActors(num);
 }

@@ -39,11 +39,11 @@ public:
 	physx::PxDefaultCpuDispatcher* dispatcher = nullptr;
 
 	static physx::PxPhysics* GetPhysicsObject() { return physics->physicsObject; }
-	void AddActor(physx::PxActor& actor);
-	void RemoveActor(physx::PxActor& actor);
-	void Simulate(float delta);
-	physx::PxActor** FetchResults(uint32_t& num);
-	void FetchAndUpdateObjects();
+	static void AddActor(physx::PxActor& actor);
+	static void RemoveActor(physx::PxActor& actor);
+	static void Simulate(float delta);
+	static physx::PxActor** FetchResults(uint32_t& num);
+	static void FetchAndUpdateObjects();
 	static bool CastRay(glm::vec3 pos, glm::vec3 dir, float maxDistance, RayHitInfo& hitInfo);
 
 private:

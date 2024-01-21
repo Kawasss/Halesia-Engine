@@ -103,7 +103,7 @@ template<typename T> Object* Scene::AddCustomObject(std::string name, ObjectImpo
 
 	T* customPointer = new T();
 	Object* objPtr = customPointer;
-	objPtr->CreateObject(customPointer, creationData, GetVulkanCreationObjects());
+	objPtr->Create(customPointer, creationData, GetVulkanCreationObjects());
 	RegisterObjectPointer(objPtr, true);
 
 	return objPtr;

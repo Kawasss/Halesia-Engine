@@ -48,6 +48,16 @@ class TestScene : public Scene
 		Material rockMat = Material::Create(createInfo);
 		rockMat.AwaitGeneration();
 		ptr->meshes[0].SetMaterial(rockMat);
+
+		MaterialCreateInfo lampInfo{};
+		lampInfo.isLight = true;
+
+		Object* lamp = AddStaticObject({ "sphere" });
+		lamp->AddMesh(GenericLoader::LoadObjectFile("stdObj/sphere.fbx").meshes, GetVulkanCreationObjects());
+		Material lampMat = Material::Create(lampInfo);
+		lampMat.AwaitGeneration();
+		lamp->meshes[0].SetMaterial(lampMat);
+		lamp->transform.position = glm::vec3(0, 2, 4);
 	}
 
 	void Update(float delta) override

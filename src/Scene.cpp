@@ -36,7 +36,7 @@ void Scene::LoadUninitializedObjects()
 	camera->pitch = loader.cameraPitch;
 	for (const ObjectCreationData& creationData : objectCreationDatas)
 	{
-		Object* objPtr = new Object(creationData, GetVulkanCreationObjects());
+		Object* objPtr = Object::Create(creationData, GetVulkanCreationObjects());
 		allObjects.push_back(objPtr);
 		staticObjects.push_back(objPtr);
 	}
@@ -66,7 +66,7 @@ std::string GetNameFromPath(std::string path)
 
 Object* Scene::AddStaticObject(const ObjectCreationData& creationData)
 {
-	Object* objPtr = new Object(creationData, GetVulkanCreationObjects());
+	Object* objPtr = Object::Create(creationData, GetVulkanCreationObjects());
 
 	objectHandles[objPtr->handle] = objPtr;
 	allObjects.push_back(objPtr);

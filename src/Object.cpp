@@ -44,33 +44,22 @@ void Object::RecreateMeshes(const MeshCreationObject& creationObject)
 		mesh.Recreate(creationObject);
 }
 
-void Object::CreateObject(void* customClassPointer, const ObjectCreationData& creationData, const MeshCreationObject& creationObject)
+Object* Object::Create(const ObjectCreationData& creationData, const MeshCreationObject& creationObject, void* customClassPointer)
 {
-	scriptClass = customClassPointer;
-	meshes.resize(creationData.meshes.size());
+	Object* ptr = new Object();
+	ptr->scriptClass = customClassPointer;
+	ptr->meshes.resize(creationData.meshes.size());
 
 	if (!creationData.meshes.empty())
-		transform = Transform(creationData.position, creationData.rotation, creationData.scale, meshes[0].extents, meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
-	handle = ResourceManager::GenerateHandle();
-	name = creationData.name;
-	transform.position = creationData.position;
-	transform.rotation = creationData.rotation;
-	transform.scale = creationData.scale;
+		ptr->transform = Transform(creationData.position, creationData.rotation, creationData.scale, ptr->meshes[0].extents, ptr->meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
+	ptr->handle = ResourceManager::GenerateHandle();
+	ptr->name = creationData.name;
+	ptr->transform.position = creationData.position;
+	ptr->transform.rotation = creationData.rotation;
+	ptr->transform.scale = creationData.scale;
 
-	GenerateObjectWithData(creationObject, creationData); // maybe async??
-}
-
-Object::Object(const ObjectCreationData& creationData, const ObjectCreationObject& creationObject)
-{
-	CreateObject(nullptr, creationData, creationObject);
-	//meshes.resize(creationData.meshes.size());
-	//
-	//if (!creationData.meshes.empty())
-	//	transform = Transform(creationData.position, creationData.rotation, creationData.scale, creationData.meshes[0].extents, creationData.meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
-	//handle = ResourceManager::GenerateHandle();
-	//name = creationData.name;
-
-	//generationProcess = std::async(&Object::GenerateObjectWithData, this, creationObject, creationData);
+	ptr->GenerateObjectWithData(creationObject, creationData); // maybe async??
+	return ptr;
 }
 
 void Object::AddMesh(const std::vector<MeshCreationData>& creationData, const MeshCreationObject& creationObject)
