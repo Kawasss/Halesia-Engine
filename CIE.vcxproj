@@ -148,6 +148,7 @@
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_demo.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_items.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\spirv-reflect\spirv_reflect.cpp" />
     <ClCompile Include="..\..\additionalDependencies\vvm\VVM.cpp" />
     <ClCompile Include="src\AccelerationStructures.cpp" />
     <ClCompile Include="src\Buffers.cpp" />
@@ -160,7 +161,7 @@
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Physics.cpp" />
-    <ClCompile Include="src\pipelineBuilder.cpp" />
+    <ClCompile Include="src\ShaderReflector.cpp" />
     <ClCompile Include="src\RayTracing.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -213,7 +214,7 @@
     <ClInclude Include="src\renderer\Intro.h" />
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
-    <ClInclude Include="src\renderer\PipelineBuilder.h" />
+    <ClInclude Include="src\renderer\ShaderReflector.h" />
     <ClInclude Include="src\renderer\RayTracing.h" />
     <ClInclude Include="src\Object.h" />
     <ClInclude Include="src\renderer\Buffers.h" />

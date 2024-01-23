@@ -52,6 +52,9 @@
     <Filter Include="Source Files\system">
       <UniqueIdentifier>{334a5332-dfb0-4440-8311-a4473f051286}</UniqueIdentifier>
     </Filter>
+    <Filter Include="external\spirvReflect">
+      <UniqueIdentifier>{5e31bd00-424f-4813-babe-96e0319ed6a5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Camera.cpp">
@@ -132,7 +135,7 @@
     <ClCompile Include="src\PhysicalDevice.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\pipelineBuilder.cpp">
+    <ClCompile Include="src\ShaderReflector.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\RayTracing.cpp">
@@ -185,6 +188,9 @@
     </ClCompile>
     <ClCompile Include="src\Denoiser.cpp">
       <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\spirv-reflect\spirv_reflect.cpp">
+      <Filter>external\spirvReflect</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -278,7 +284,7 @@
     <ClInclude Include="src\renderer\PhysicalDevice.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="src\renderer\PipelineBuilder.h">
+    <ClInclude Include="src\renderer\ShaderReflector.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\RayTracing.h">

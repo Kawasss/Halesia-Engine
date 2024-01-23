@@ -20,6 +20,7 @@
 #include "Object.h"
 
 #include "renderer/Denoiser.h"
+#include "renderer/ShaderReflector.h"
 
 struct InstanceMeshData
 {
@@ -190,6 +191,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// descriptor set layout (frames in flight not implemented)
 
+	ShaderReflector rayGenReflection(ReadShaderFile("shaders/spirv/gen.rgen.spv")); // this will cause the shader to be read twice, also for the shader module
+	ShaderReflector CHitReflection(ReadShaderFile("shaders/spirv/hit.rchit.spv"));
+
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings(8);
 
 	setLayoutBindings[0].binding = 0;
@@ -204,41 +208,10 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	setLayoutBindings[1].descriptorCount = 1;
 	setLayoutBindings[1].pImmutableSamplers = nullptr;
 
-	setLayoutBindings[2].binding = 2;
-	setLayoutBindings[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	setLayoutBindings[2].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-	setLayoutBindings[2].descriptorCount = 1;
-	setLayoutBindings[2].pImmutableSamplers = nullptr;
-
-	setLayoutBindings[3].binding = 3;
-	setLayoutBindings[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	setLayoutBindings[3].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-	setLayoutBindings[3].descriptorCount = 1;
-	setLayoutBindings[3].pImmutableSamplers = nullptr;
-
-	setLayoutBindings[4].binding = 4;
-	setLayoutBindings[4].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	setLayoutBindings[4].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-	setLayoutBindings[4].descriptorCount = 1;
-	setLayoutBindings[4].pImmutableSamplers = nullptr;
-
-	setLayoutBindings[5].binding = 5;
-	setLayoutBindings[5].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	setLayoutBindings[5].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-	setLayoutBindings[5].descriptorCount = 1;
-	setLayoutBindings[5].pImmutableSamplers = nullptr;
-
-	setLayoutBindings[6].binding = 6;
-	setLayoutBindings[6].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	setLayoutBindings[6].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-	setLayoutBindings[6].descriptorCount = 1;
-	setLayoutBindings[6].pImmutableSamplers = nullptr;
-
-	setLayoutBindings[7].binding = 7;
-	setLayoutBindings[7].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	setLayoutBindings[7].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR;
-	setLayoutBindings[7].descriptorCount = 1;
-	setLayoutBindings[7].pImmutableSamplers = nullptr;
+	setLayoutBindings[2] = CHitReflection.GetDescriptorSetLayoutBinding(2);
+	setLayoutBindings[3] = CHitReflection.GetDescriptorSetLayoutBinding(3);
+	for (int i = 4; i < 8; i++)
+		setLayoutBindings[i] = rayGenReflection.GetDescriptorSetLayoutBinding(i);
 
 	std::vector<VkDescriptorBindingFlags> setBindingFlags;
 	for (int i = 0; i < setLayoutBindings.size(); i++)
@@ -251,9 +224,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
 	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 	layoutCreateInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
 	layoutCreateInfo.pBindings = setLayoutBindings.data();
-	layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 	layoutCreateInfo.pNext = &setBindingFlagsCreateInfo;
 
 	result = vkCreateDescriptorSetLayout(logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayout);
@@ -261,17 +234,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	std::vector<VkDescriptorSetLayoutBinding> meshDataLayoutBindings(2);
 
-	meshDataLayoutBindings[0].binding = 0;
-	meshDataLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	meshDataLayoutBindings[0].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-	meshDataLayoutBindings[0].descriptorCount = 1;
-	meshDataLayoutBindings[0].pImmutableSamplers = nullptr;
-
-	meshDataLayoutBindings[1].binding = 1;
-	meshDataLayoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	meshDataLayoutBindings[1].stageFlags = VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
+	meshDataLayoutBindings[0] = CHitReflection.GetDescriptorSetLayoutBinding(0, 1);
+	meshDataLayoutBindings[1] = CHitReflection.GetDescriptorSetLayoutBinding(1, 1);
 	meshDataLayoutBindings[1].descriptorCount = Renderer::MAX_BINDLESS_TEXTURES;
-	meshDataLayoutBindings[1].pImmutableSamplers = nullptr;
 
 	std::vector<VkDescriptorBindingFlags> bindingFlags;
 	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
@@ -285,9 +250,9 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	VkDescriptorSetLayoutCreateInfo meshDataLayoutCreateInfo{};
 	meshDataLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	meshDataLayoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 	meshDataLayoutCreateInfo.bindingCount = static_cast<uint32_t>(meshDataLayoutBindings.size());
 	meshDataLayoutCreateInfo.pBindings = meshDataLayoutBindings.data();
-	meshDataLayoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 	meshDataLayoutCreateInfo.pNext = &bindingFlagsCreateInfo;
 
 	result = vkCreateDescriptorSetLayout(logicalDevice, &meshDataLayoutCreateInfo, nullptr, &materialSetLayout);
