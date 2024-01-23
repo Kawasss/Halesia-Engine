@@ -21,6 +21,18 @@ public:
 	cudaStream_t GetCudaStream() { return cudaStream; }
 
 private:
+	struct SharedOptixImage
+	{
+		VkBuffer vkBuffer = VK_NULL_HANDLE;
+		VkDeviceMemory vkMemory = VK_NULL_HANDLE;
+		void* cudaBuffer = 0;
+		HANDLE winHandle = (void*)0;
+		OptixImage2D image{};
+
+		void Create(uint32_t width, uint32_t height, Denoiser* denoiser); // the pointer is more of a hack
+		void Destroy(VkDevice logicalDevice);
+	};
+
 	void CreateExternalCudaBuffer(VkBuffer& buffer, VkDeviceMemory& memory, void** cuPtr, HANDLE& handle, VkDeviceSize size);
 	void CreateExternalSemaphore(VkSemaphore& semaphore, HANDLE& handle, cudaExternalSemaphore_t& cuPtr);
 	
@@ -51,7 +63,13 @@ private:
 	size_t denoiserStateInBytes = 0;
 	uint32_t width = 0, height = 0;
 
-	VkBuffer copyBuffer = VK_NULL_HANDLE;
+	SharedOptixImage input{};
+	SharedOptixImage normal{};
+	SharedOptixImage albedo{};
+	SharedOptixImage output{};
+
+
+	/*VkBuffer copyBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory copyMemory = VK_NULL_HANDLE;
 	void* cuCopyBuffer = 0;
 	HANDLE copyHandle = (void*)0;
@@ -73,5 +91,5 @@ private:
 	VkDeviceMemory outputMemory = VK_NULL_HANDLE;
 	void* cuOutputBuffer = 0;
 	HANDLE outputHandle = (void*)0;
-	OptixImage2D outputImage{};
+	OptixImage2D outputImage{};*/
 };

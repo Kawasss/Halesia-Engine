@@ -5,6 +5,7 @@
 #include "optix.h"
 #include <array>
 #include "cuda_runtime_api.h"
+#include "../CreationObjects.h"
 
 typedef void* HANDLE;
 class Swapchain;
