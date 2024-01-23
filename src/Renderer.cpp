@@ -244,8 +244,7 @@ void Renderer::InitVulkan()
 		initGlobalBuffers = true;
 	}
 
-	rayTracer = new RayTracing();
-	rayTracer->Init(logicalDevice, physicalDevice, surface, testWindow, swapchain);
+	rayTracer = RayTracing::Create(creationObject, testWindow, swapchain);
 }
 
 void Renderer::CreateIndirectDrawParametersBuffer()

@@ -84,16 +84,22 @@ void RayTracing::Destroy()
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
 
-void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window, Swapchain* swapchain)
+RayTracing* RayTracing::Create(const VulkanCreationObject& creationObject, Win32Window* window, Swapchain* swapchain)
 {
-	VkResult result = VK_SUCCESS;
-	
-	this->logicalDevice = logicalDevice;
-	this->physicalDevice = physicalDevice;
+	RayTracing* ret = new RayTracing();
+	ret->Init(creationObject, window, swapchain);
+	return ret;
+}
+
+void RayTracing::SetUp(const VulkanCreationObject& creationObject, Win32Window* window, Swapchain* swapchain)
+{
+	this->logicalDevice = creationObject.logicalDevice;
+	this->physicalDevice = creationObject.physicalDevice;
 	this->swapchain = swapchain;
 	this->window = window;
+	this->creationObject = creationObject;
 
-	rayTracingProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+	commandPool = Vulkan::FetchNewCommandPool(creationObject);
 
 	VkPhysicalDeviceProperties2 properties2{};
 	properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
@@ -101,24 +107,14 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	vkGetPhysicalDeviceProperties2(physicalDevice.Device(), &properties2);
 
-	if (!physicalDevice.QueueFamilies(surface).graphicsFamily.has_value())
-		throw VulkanAPIError("No appropriate graphics family could be found for ray tracing", VK_SUCCESS, nameof(physicalDevice.QueueFamilies(surface).graphicsFamily.has_value()), __FILENAME__, __LINE__);
-
-	queueFamilyIndex = physicalDevice.QueueFamilies(surface).graphicsFamily.value();
-	vkGetDeviceQueue(logicalDevice, queueFamilyIndex, 0, &queue);
-
-	// creation object
-
-	creationObject = { logicalDevice, physicalDevice, queue, queueFamilyIndex };
-	commandPool = Vulkan::FetchNewCommandPool(creationObject);
-
 	denoiser = Denoiser::Create(creationObject);
 
 	std::vector<Object*> holder = {};
 	TLAS = TopLevelAccelerationStructure::Create(creationObject, holder); // second parameter is empty since there are no models to build, not the best way to solve this
+}
 
-	// descriptor pool (frames in flight not implemented)
-
+void RayTracing::CreateDescriptorPool() // (frames in flight not implemented)
+{
 	std::vector<VkDescriptorPoolSize> descriptorPoolSizes(5);
 	descriptorPoolSizes[0].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
 	descriptorPoolSizes[0].descriptorCount = 1;
@@ -138,26 +134,15 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(descriptorPoolSizes.size());
 	descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
 
-	result = vkCreateDescriptorPool(logicalDevice, &descriptorPoolCreateInfo, nullptr, &descriptorPool);
+	VkResult result = vkCreateDescriptorPool(logicalDevice, &descriptorPoolCreateInfo, nullptr, &descriptorPool);
 	CheckVulkanResult("Failed to create the descriptor pool for ray tracing", result, vkCreateDescriptorPool);
+}
 
-	// descriptor set layout (frames in flight not implemented)
+void RayTracing::CreateDescriptorSets(const std::vector<std::vector<char>> shaderCodes)
+{
+	ShaderGroupReflector groupReflection(shaderCodes);
 
-	ShaderReflector rayGenReflection(ReadFile("shaders/spirv/gen.rgen.spv")); // this will cause the shader to be read twice, also for the shader module
-	ShaderReflector CHitReflection(ReadFile("shaders/spirv/hit.rchit.spv"));
-
-	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings(8);
-
-	setLayoutBindings[0] = rayGenReflection.GetDescriptorSetLayoutBinding(0);
-	setLayoutBindings[0].stageFlags |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR; // might be better to make the reflector reflect on all shaders in the group and adds the stage flags of the bindings + sets that are referenced across shaders
-
-	setLayoutBindings[1] = rayGenReflection.GetDescriptorSetLayoutBinding(1);
-	setLayoutBindings[1].stageFlags |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
-
-	setLayoutBindings[2] = CHitReflection.GetDescriptorSetLayoutBinding(2);
-	setLayoutBindings[3] = CHitReflection.GetDescriptorSetLayoutBinding(3);
-	for (int i = 4; i < 8; i++)
-		setLayoutBindings[i] = rayGenReflection.GetDescriptorSetLayoutBinding(i);
+	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = groupReflection.GetLayoutBindingsOfSet(0);
 
 	std::vector<VkDescriptorBindingFlags> setBindingFlags(setLayoutBindings.size(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT setBindingFlagsCreateInfo{};
@@ -172,13 +157,10 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	layoutCreateInfo.pBindings = setLayoutBindings.data();
 	layoutCreateInfo.pNext = &setBindingFlagsCreateInfo;
 
-	result = vkCreateDescriptorSetLayout(logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayout);
+	VkResult result = vkCreateDescriptorSetLayout(logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayout);
 	CheckVulkanResult("Failed to create the descriptor set layout for ray tracing", result, vkCreateDescriptorSetLayout);
 
-	std::vector<VkDescriptorSetLayoutBinding> meshDataLayoutBindings(2);
-
-	meshDataLayoutBindings[0] = CHitReflection.GetDescriptorSetLayoutBinding(0, 1);
-	meshDataLayoutBindings[1] = CHitReflection.GetDescriptorSetLayoutBinding(1, 1);
+	std::vector<VkDescriptorSetLayoutBinding> meshDataLayoutBindings = groupReflection.GetLayoutBindingsOfSet(1);
 	meshDataLayoutBindings[1].descriptorCount = Renderer::MAX_BINDLESS_TEXTURES;
 
 	std::vector<VkDescriptorBindingFlags> bindingFlags(meshDataLayoutBindings.size(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
@@ -197,8 +179,6 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	result = vkCreateDescriptorSetLayout(logicalDevice, &meshDataLayoutCreateInfo, nullptr, &materialSetLayout);
 	CheckVulkanResult("Failed to create the material descriptor set layout for ray tracing", result, vkCreateDescriptorSetLayout);
 
-	// allocate the descriptor sets
-
 	std::vector<VkDescriptorSetLayout> descriptorSetLayouts{ descriptorSetLayout, materialSetLayout };
 
 	VkDescriptorSetAllocateInfo setAllocateInfo{};
@@ -211,8 +191,16 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	result = vkAllocateDescriptorSets(logicalDevice, &setAllocateInfo, descriptorSets.data());
 	CheckVulkanResult("Failed to allocate the descriptor sets for ray tracing", result, vkAllocateDescriptorSets);
+}
 
-	// pipeline layout
+void RayTracing::CreateRayTracingPipeline(const std::vector<std::vector<char>> shaderCodes) // 0 is rgen code, 1 is chit code, 2 is rmiss code, 3 is shadow code
+{
+	VkShaderModule genShader = Vulkan::CreateShaderModule(logicalDevice, shaderCodes[0]);
+	VkShaderModule hitShader = Vulkan::CreateShaderModule(logicalDevice, shaderCodes[1]);
+	VkShaderModule missShader = Vulkan::CreateShaderModule(logicalDevice, shaderCodes[2]);
+	VkShaderModule shadowShader = Vulkan::CreateShaderModule(logicalDevice, shaderCodes[3]);
+
+	std::vector<VkDescriptorSetLayout> descriptorSetLayouts{ descriptorSetLayout, materialSetLayout };
 
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -221,17 +209,8 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
 	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
 
-	result = vkCreatePipelineLayout(logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
+	VkResult result = vkCreatePipelineLayout(logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
 	CheckVulkanResult("Failed to create the pipeline layout for ray tracing", result, vkCreatePipelineLayout);
-
-	// shaders
-
-	VkShaderModule genShader = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/gen.rgen.spv"));
-	VkShaderModule hitShader = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/hit.rchit.spv"));
-	VkShaderModule missShader = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/miss.rmiss.spv"));
-	VkShaderModule shadowShader = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/shadow.rmiss.spv"));
-
-	// pipeline
 
 	std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos(4);
 	pipelineStageCreateInfos[0] = Vulkan::GetGenericShaderStageCreateInfo(hitShader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
@@ -275,17 +254,21 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	vkDestroyShaderModule(logicalDevice, missShader, nullptr);
 	vkDestroyShaderModule(logicalDevice, hitShader, nullptr);
 	vkDestroyShaderModule(logicalDevice, genShader, nullptr);
+}
 
-	// uniform buffer
-
+void RayTracing::CreateBuffers()
+{
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(UniformBuffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, uniformBufferBuffer, uniformBufferMemory);
 
 	vkMapMemory(logicalDevice, uniformBufferMemory, 0, sizeof(UniformBuffer), 0, &uniformBufferMemPtr);
 	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
 
-	CreateShaderBindingTable();
+	VkDeviceSize instanceDataSize = sizeof(InstanceMeshData) * Renderer::MAX_MESHES;
 
-	// handle write buffer
+	Vulkan::CreateBuffer(logicalDevice, physicalDevice, instanceDataSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, instanceMeshDataBuffer, instanceMeshDataMemory);
+	vkMapMemory(logicalDevice, instanceMeshDataMemory, 0, instanceDataSize, 0, &instanceMeshDataPointer);
+
+	CreateShaderBindingTable();
 
 	Vulkan::CreateBuffer(logicalDevice, physicalDevice, sizeof(uint64_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, handleBuffer, handleBufferMemory);
 	vkMapMemory(logicalDevice, handleBufferMemory, 0, sizeof(uint64_t), 0, &handleBufferMemPointer);
@@ -355,22 +338,22 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	writeDescriptorSets[4].descriptorCount = 1;
 	writeDescriptorSets[4].dstBinding = 7;
 	writeDescriptorSets[4].pBufferInfo = &handleBufferInfo;
-	
+
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
-
-	CreateMeshDataBuffers();
-
 	UpdateMeshDataDescriptorSets();
-
-	CreateImage(swapchain->extent.width, swapchain->extent.height);
 }
 
-void RayTracing::CreateMeshDataBuffers()
+void RayTracing::Init(const VulkanCreationObject& creationObject, Win32Window* window, Swapchain* swapchain)
 {
-	VkDeviceSize instanceDataSize = sizeof(InstanceMeshData) * Renderer::MAX_MESHES;
+	const std::vector<char> rgenCode = ReadFile("shaders/spirv/gen.rgen.spv"), chitCode = ReadFile("shaders/spirv/hit.rchit.spv");
+	const std::vector<char> rmissCode = ReadFile("shaders/spirv/miss.rmiss.spv"), shadowCode = ReadFile("shaders/spirv/shadow.rmiss.spv");
 
-	Vulkan::CreateBuffer(logicalDevice, physicalDevice, instanceDataSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, instanceMeshDataBuffer, instanceMeshDataMemory);
-	vkMapMemory(logicalDevice, instanceMeshDataMemory, 0, instanceDataSize, 0, &instanceMeshDataPointer);
+	SetUp(creationObject, window, swapchain);
+	CreateDescriptorPool();
+	CreateDescriptorSets({ rgenCode, chitCode, rmissCode, shadowCode });
+	CreateRayTracingPipeline({ rgenCode, chitCode, rmissCode, shadowCode });
+	CreateBuffers();
+	CreateImage(swapchain->extent.width, swapchain->extent.height);
 }
 
 void RayTracing::UpdateMeshDataDescriptorSets()
@@ -443,7 +426,7 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 
 		VkCommandBuffer imageBarrierCommandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 		vkCmdPipelineBarrier(imageBarrierCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &RTImageMemoryBarrier);
-		Vulkan::EndSingleTimeCommands(logicalDevice, queue, imageBarrierCommandBuffer, commandPool);
+		Vulkan::EndSingleTimeCommands(logicalDevice, creationObject.queue, imageBarrierCommandBuffer, commandPool);
 	}
 	imageHasChanged = true;
 	denoiser->AllocateBuffers(width, height);

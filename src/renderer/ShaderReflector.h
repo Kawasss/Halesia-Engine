@@ -14,3 +14,16 @@ public:
 private:
 	SpvReflectShaderModule module{};
 };
+
+class ShaderGroupReflector
+{
+public:
+	ShaderGroupReflector(const std::vector<std::vector<char>>& sourceCodes);
+	~ShaderGroupReflector();
+
+	std::vector<VkDescriptorSetLayoutBinding> GetLayoutBindingsOfSet(uint32_t setIndex);
+
+
+private:
+	std::vector<SpvReflectShaderModule> modules;
+};

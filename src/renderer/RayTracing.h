@@ -15,13 +15,15 @@ class Win32Window;
 class Object;
 class Camera;
 class Denoiser;
+class ShaderGroupReflector;
 
 class RayTracing
 {
 public:
 	RayTracing() {}
 	void Destroy();
-	void Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface,  Win32Window* window, Swapchain* swapchain);
+	
+	static RayTracing* Create(const VulkanCreationObject& creationObject, Win32Window* window, Swapchain* swapchain);
 	void DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, uint32_t width, uint32_t height, VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void RecreateImage(Win32Window* window);
 	void ApplyDenoisedImage(VkCommandBuffer commandBuffer);
@@ -46,10 +48,16 @@ private:
 	void UpdateInstanceDataBuffer(const std::vector<Object*>& objects);
 	void UpdateTextureBuffer();
 	void UpdateMeshDataDescriptorSets();
-	void CreateMeshDataBuffers();
 	void CreateShaderBindingTable();
 	void CreateImage(uint32_t width, uint32_t height);
 	void UpdateDescriptorSets();
+
+	void Init(const VulkanCreationObject& creationObject, Win32Window* window, Swapchain* swapchain);
+	void SetUp(const VulkanCreationObject& creationObject, Win32Window* window, Swapchain* swapchain);
+	void CreateDescriptorPool();
+	void CreateDescriptorSets(const std::vector<std::vector<char>> shaderCodes);
+	void CreateRayTracingPipeline(const std::vector<std::vector<char>> shaderCodes);
+	void CreateBuffers();
 
 	uint32_t amountOfActiveObjects = 0;
 	uint32_t width = 0, height = 0;
@@ -83,11 +91,9 @@ private:
 	VkDescriptorSetLayout materialSetLayout;
 	std::vector<VkDescriptorSet> descriptorSets;
 
-	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{};
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR  };
 
 	VulkanCreationObject creationObject;
-	uint32_t queueFamilyIndex;
-	VkQueue queue;
 
 	VkPipelineLayout pipelineLayout;
 	VkPipeline pipeline;
