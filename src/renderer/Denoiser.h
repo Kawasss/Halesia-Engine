@@ -67,29 +67,4 @@ private:
 	SharedOptixImage normal{};
 	SharedOptixImage albedo{};
 	SharedOptixImage output{};
-
-
-	/*VkBuffer copyBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory copyMemory = VK_NULL_HANDLE;
-	void* cuCopyBuffer = 0;
-	HANDLE copyHandle = (void*)0;
-	OptixImage2D inputImage{};
-
-	VkBuffer normalBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory normalMemory = VK_NULL_HANDLE;
-	void* cuNormal = 0;
-	HANDLE normalHandle = (void*)0;
-	OptixImage2D normalImage;
-
-	VkBuffer albedoBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory albedoMemory = VK_NULL_HANDLE;
-	void* cuAlbedo = 0;
-	HANDLE albedoHandle = (void*)0;
-	OptixImage2D albedoImage;
-
-	VkBuffer outputBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory outputMemory = VK_NULL_HANDLE;
-	void* cuOutputBuffer = 0;
-	HANDLE outputHandle = (void*)0;
-	OptixImage2D outputImage{};*/
 };
