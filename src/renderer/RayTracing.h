@@ -13,6 +13,7 @@ class TopLevelAccelerationStructure;
 class Win32Window;
 class Object;
 class Camera;
+class Denoiser;
 
 class RayTracing
 {
@@ -22,10 +23,8 @@ public:
 	void Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface,  Win32Window* window, Swapchain* swapchain);
 	void DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, uint32_t width, uint32_t height, VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void RecreateImage(Win32Window* window);
-	void CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer);
-	void CopyDenoisedBufferToImage(VkCommandBuffer commandBuffer);
-	void DenoiseImage(VkCommandBuffer commandBuffer);
-	cudaStream_t GetCudaStream() { return cudaStream; }
+	void ApplyDenoisedImage(VkCommandBuffer commandBuffer);
+	void DenoiseImage();
 
 	std::array<VkImage, 3> gBuffers{};
 	std::array<VkImageView, 3> gBufferViews;
@@ -39,9 +38,10 @@ public:
 	static bool renderProgressive;
 	static bool useWhiteAsAlbedo;
 	static glm::vec3 directionalLightDir;
+
+	VkSemaphore externSemaphore;
 	
 private:
-	void InitOptix();
 	void UpdateInstanceDataBuffer(const std::vector<Object*>& objects);
 	void UpdateTextureBuffer();
 	void UpdateMeshDataDescriptorSets();
@@ -49,25 +49,6 @@ private:
 	void CreateShaderBindingTable();
 	void CreateImage(uint32_t width, uint32_t height);
 	void UpdateDescriptorSets();
-	void AllocateOptixBuffers(uint32_t width, uint32_t height);
-	void DestroyOptixBuffers();
-	void CreateExternalCudaBuffer(VkBuffer& buffer, VkDeviceMemory& memory, void** cuPtr, HANDLE& handle, VkDeviceSize size);
-	void CreateExternalSemaphore(VkSemaphore& semaphore, HANDLE& handle, cudaExternalSemaphore_t& cuPtr);
-
-	CUcontext cudaContext;
-	CUdevice cudaDevice;
-
-	CUdeviceptr stateBuffer = 0;
-	CUdeviceptr scratchBuffer = 0;
-	CUdeviceptr minRGB = 0;
-
-	cudaStream_t cudaStream = {};
-	
-	OptixDeviceContext optixContext;
-	OptixDenoiser denoiser;
-	OptixDenoiserSizes m_denoiserSizes;
-
-	size_t denoiserStateInBytes = 0;
 
 	uint32_t amountOfActiveObjects = 0;
 	uint32_t width = 0, height = 0;
@@ -77,6 +58,7 @@ private:
 
 	Win32Window* window  = nullptr;
 	Swapchain* swapchain = nullptr;
+	Denoiser* denoiser = nullptr;
 
 	bool imageHasChanged = false;
 
@@ -94,36 +76,6 @@ private:
 	void* instanceMeshDataPointer			= nullptr;
 	VkBuffer instanceMeshDataBuffer			= VK_NULL_HANDLE;
 	VkDeviceMemory instanceMeshDataMemory	= VK_NULL_HANDLE;
-
-	VkBuffer denoiseCopyBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory denoiseCopyMemory = VK_NULL_HANDLE;
-	void* cuDenoisecopyBuffer = 0;
-	HANDLE copyHandle = (void*)0;
-	OptixImage2D inputImage{};
-
-	VkBuffer normalDenoiseBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory normalDenoiseMemory = VK_NULL_HANDLE;
-	void* cuNormalDenoise = 0;
-	HANDLE normalHandle = (void*)0;
-	OptixImage2D normalImage;
-
-	VkBuffer albedoDenoiseBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory albedoDenoiseMemory = VK_NULL_HANDLE;
-	void* cuAlbedoDenoise = 0;
-	HANDLE albedoHandle = (void*)0;
-	OptixImage2D albedoImage;
-
-	OptixDenoiserSizes denoiserSizes{};
-
-	VkBuffer outputBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory outputMemory = VK_NULL_HANDLE;
-	void* cuOutputBuffer = 0;
-	HANDLE outputHandle = (void*)0;
-	OptixImage2D outputImage{};
-
-	VkSemaphore semaphore;
-	cudaExternalSemaphore_t cuSemaphore;
-	HANDLE semaphoreHandle;
 
 	std::array<VkDeviceMemory, 3> gBufferMemories;
 

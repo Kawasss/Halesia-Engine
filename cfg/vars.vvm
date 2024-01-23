@@ -1,9 +1,10 @@
 engineCore: 
-	useEditorUI: 1
+	useEditorUI: 0
 	showFPS: 1
 	consoleKey: 192
 renderer: 
 	renderCollision: 0
+	denoiseOutput: 1
 	ray-tracing: 
 		raySamples: 1
 		rayDepth: 8

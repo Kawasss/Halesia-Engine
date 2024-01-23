@@ -322,6 +322,7 @@ void HalesiaInstance::LoadVars()
 	devConsoleKey = (VirtualKey)VVM::FindVariable("engineCore.consoleKey", groups).As<int>();
 
 	Renderer::shouldRenderCollisionBoxes = VVM::FindVariable("renderer.rendercollision", groups).As<bool>();
+	Renderer::denoiseOutput =              VVM::FindVariable("renderer.denoiseOutput", groups).As<bool>();
 	RayTracing::raySampleCount =           VVM::FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
 	RayTracing::rayDepth =                 VVM::FindVariable("renderer.ray-tracing.rayDepth", groups).As<int>();
 	RayTracing::showNormals =              VVM::FindVariable("renderer.ray-tracing.showNormals", groups).As<bool>();
@@ -342,6 +343,7 @@ void HalesiaInstance::OnExit()
 
 	VVM::PushGroup("renderer");
 	VVM::AddVariable("renderCollision", Renderer::shouldRenderCollisionBoxes);
+	VVM::AddVariable("denoiseOutput", Renderer::denoiseOutput);
 
 	VVM::PushGroup("ray-tracing");
 	VVM::AddVariable("raySamples", RayTracing::raySampleCount);
@@ -360,8 +362,8 @@ void HalesiaInstance::OnExit()
 void HalesiaInstance::RegisterConsoleVars()
 {
 	Console::AddConsoleVariables<bool>(
-		{ "pauseGame", "showFPS", "playOneFrame", "showRAM", "showCPU", "showGPU", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "useEditorUI" },
-		{ &pauseGame, &showFPS, &playOneFrame, &showRAM, &showCPU, &showGPU, &showAsyncTimes, &showObjectData, &RayTracing::showNormals, &RayTracing::showAlbedo, &RayTracing::showUniquePrimitives, &RayTracing::renderProgressive, &renderer->shouldRasterize, &useEditor }
+		{ "pauseGame", "showFPS", "playOneFrame", "showRAM", "showCPU", "showGPU", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "useEditorUI", "denoiseOutput" },
+		{ &pauseGame, &showFPS, &playOneFrame, &showRAM, &showCPU, &showGPU, &showAsyncTimes, &showObjectData, &RayTracing::showNormals, &RayTracing::showAlbedo, &RayTracing::showUniquePrimitives, &RayTracing::renderProgressive, &renderer->shouldRasterize, &useEditor, &Renderer::denoiseOutput }
 	);
 	Console::AddConsoleVariable("raySamples", &RayTracing::raySampleCount);
 	Console::AddConsoleVariable("rayDepth", &RayTracing::rayDepth);

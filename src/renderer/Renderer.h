@@ -48,6 +48,7 @@ public:
 
 	bool shouldRasterize = false;
 	static bool shouldRenderCollisionBoxes;
+	static bool denoiseOutput;
 	static Handle selectedHandle;
 
 private:

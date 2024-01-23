@@ -32,7 +32,7 @@
 
 #include "renderer/Renderer.h"
 
-#define CheckCudaResult(result) if (result != cudaSuccess) throw std::runtime_error(std::to_string(result) + " at line " + __STRLINE__ + " in " + (std::string)__FILENAME__);
+#define CheckCudaResult(result) if (result != cudaSuccess) throw std::runtime_error(std::to_string(result) + " at line " + std::to_string(__LINE__) + " in " + (std::string)__FILENAME__);
 #define nameof(s) #s
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define VariableToString(name) variableToString(#name)
@@ -47,6 +47,7 @@ bool Renderer::initGlobalBuffers = false;
 VkSampler Renderer::defaultSampler = VK_NULL_HANDLE;
 Handle Renderer::selectedHandle = 0;
 bool Renderer::shouldRenderCollisionBoxes = false;
+bool Renderer::denoiseOutput = true;
 
 std::vector<VkDynamicState> Renderer::dynamicStates =
 {
@@ -194,7 +195,6 @@ void Renderer::InitVulkan()
 	std::cout << "Debug mode detected, recompiling all shaders found in directory \"shaders\"...\n";
 	auto oldPath = std::filesystem::current_path();
 	auto newPath = std::filesystem::absolute("shaders");
-	system("@echo off");
 	for (const auto& file : std::filesystem::directory_iterator(newPath))
 	{
 		if (file.path().extension() != ".bat")
@@ -205,7 +205,6 @@ void Renderer::InitVulkan()
 		system(shaderComp.c_str()); // windows only!!
 	}
 	std::filesystem::current_path(oldPath);
-	system("@echo on");
 	#endif
 
 	instance = Vulkan::GenerateInstance();
@@ -805,33 +804,35 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 
 	rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, lCommandBuffer, imageIndex);
 
-	/*vkEndCommandBuffer(lCommandBuffer);
-	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
+	/*result = vkEndCommandBuffer(lCommandBuffer);
+	CheckVulkanResult("Failed to end the given command buffer", result, nameof(vkEndCommandBuffer));
+
+	uint64_t value = 0;
+	VkTimelineSemaphoreSubmitInfo timelineInfo{};
+	timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
+	timelineInfo.signalSemaphoreValueCount = 2;
+	timelineInfo.pSignalSemaphoreValues = &value;
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.pNext = &timelineInfo;
+	submitInfo.pCommandBuffers = &lCommandBuffer;
+	submitInfo.pSignalSemaphores = &rayTracer->externSemaphore;
+
+	result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
+	CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
 	vkDeviceWaitIdle(logicalDevice);
+	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
+	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
 
-	cudaExternalSemaphoreWaitParams waitParams{};
-	memset(&waitParams, 0, sizeof(waitParams));
-	waitParams.flags = 0;
-	waitParams.params.fence.value = 0;
-	CheckCudaResult(cudaWaitExternalSemaphoresAsync(&externalRenderSemaphores[imageIndex], &waitParams, 1, rayTracer->GetCudaStream()));
-
-	rayTracer->DenoiseImage(lCommandBuffer);
-	
-	cudaExternalSemaphoreSignalParams signalParams{};
-	memset(&signalParams, 0, sizeof(signalParams));
-	signalParams.flags = 0;
-	signalParams.params.fence.value = 0;
-
-	CheckCudaResult(cudaSignalExternalSemaphoresAsync(&externalRenderSemaphores[imageIndex], &signalParams, 1, rayTracer->GetCudaStream()));
-
-	CheckCudaResult(cudaDeviceSynchronize());
-	cudaError_t cuResult = cudaStreamSynchronize(rayTracer->GetCudaStream());
-	CheckCudaResult(cuResult);
+	if (denoiseOutput)
+		rayTracer->DenoiseImage();
 
 	result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
 	CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
 
-	rayTracer->CopyDenoisedBufferToImage(commandBuffers[currentFrame]);*/
+	if (denoiseOutput)
+		rayTracer->ApplyDenoisedImage(commandBuffers[currentFrame]);*/
 
 	if (shouldRasterize)
 	{
