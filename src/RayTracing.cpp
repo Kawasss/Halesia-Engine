@@ -21,6 +21,7 @@
 
 #include "renderer/Denoiser.h"
 #include "renderer/ShaderReflector.h"
+#include "tools/common.h"
 
 struct InstanceMeshData
 {
@@ -43,28 +44,6 @@ bool RayTracing::renderProgressive = false;
 bool RayTracing::useWhiteAsAlbedo = false;
 glm::vec3 RayTracing::directionalLightDir = glm::vec3(-0.5, -0.5, 0);
 
-std::vector<VkCommandBuffer> commandBuffers(MAX_FRAMES_IN_FLIGHT);
-VkDescriptorPool descriptorPool;
-VkDescriptorSetLayout descriptorSetLayout;
-VkDescriptorSetLayout materialSetLayout;
-std::vector<VkDescriptorSet> descriptorSets;
-
-VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{};
-
-VulkanCreationObject creationObject;
-uint32_t queueFamilyIndex;
-VkQueue queue;
-
-VkPipelineLayout pipelineLayout;
-VkPipeline pipeline;
-
-VkBuffer uniformBufferBuffer;
-VkDeviceMemory uniformBufferMemory;
-
-uint32_t facesCount;
-uint32_t verticesSize;
-uint32_t indicesSize;
-
 struct UniformBuffer
 {
 	glm::vec4 cameraPosition = glm::vec4(0);
@@ -82,22 +61,6 @@ struct UniformBuffer
 };
 void* uniformBufferMemPtr;
 UniformBuffer uniformBuffer{};
-
-std::vector<char> ReadShaderFile(const std::string& filePath)
-{
-	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
-	if (!file.is_open())
-		throw std::runtime_error("Failed to open the shader at " + filePath);
-
-	size_t fileSize = (size_t)file.tellg();
-	std::vector<char> buffer(fileSize);
-
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-
-	file.close();
-	return buffer;
-}
 
 void RayTracing::Destroy()
 {
@@ -151,17 +114,6 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	denoiser = Denoiser::Create(creationObject);
 
-	// command buffer
-
-	VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
-	commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	commandBufferAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	commandBufferAllocateInfo.commandPool = commandPool;
-	commandBufferAllocateInfo.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
-
-	result = vkAllocateCommandBuffers(logicalDevice, &commandBufferAllocateInfo, commandBuffers.data());
-	CheckVulkanResult("Failed to allocate the command buffers for ray tracing", result, vkAllocateCommandBuffers);
-
 	std::vector<Object*> holder = {};
 	TLAS = TopLevelAccelerationStructure::Create(creationObject, holder); // second parameter is empty since there are no models to build, not the best way to solve this
 
@@ -191,32 +143,23 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// descriptor set layout (frames in flight not implemented)
 
-	ShaderReflector rayGenReflection(ReadShaderFile("shaders/spirv/gen.rgen.spv")); // this will cause the shader to be read twice, also for the shader module
-	ShaderReflector CHitReflection(ReadShaderFile("shaders/spirv/hit.rchit.spv"));
+	ShaderReflector rayGenReflection(ReadFile("shaders/spirv/gen.rgen.spv")); // this will cause the shader to be read twice, also for the shader module
+	ShaderReflector CHitReflection(ReadFile("shaders/spirv/hit.rchit.spv"));
 
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings(8);
 
-	setLayoutBindings[0].binding = 0;
-	setLayoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-	setLayoutBindings[0].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR;
-	setLayoutBindings[0].descriptorCount = 1;
-	setLayoutBindings[0].pImmutableSamplers = nullptr;
+	setLayoutBindings[0] = rayGenReflection.GetDescriptorSetLayoutBinding(0);
+	setLayoutBindings[0].stageFlags |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR; // might be better to make the reflector reflect on all shaders in the group and adds the stage flags of the bindings + sets that are referenced across shaders
 
-	setLayoutBindings[1].binding = 1;
-	setLayoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	setLayoutBindings[1].stageFlags = VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR  | VK_SHADER_STAGE_MISS_BIT_KHR;
-	setLayoutBindings[1].descriptorCount = 1;
-	setLayoutBindings[1].pImmutableSamplers = nullptr;
+	setLayoutBindings[1] = rayGenReflection.GetDescriptorSetLayoutBinding(1);
+	setLayoutBindings[1].stageFlags |= VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR | VK_SHADER_STAGE_MISS_BIT_KHR;
 
 	setLayoutBindings[2] = CHitReflection.GetDescriptorSetLayoutBinding(2);
 	setLayoutBindings[3] = CHitReflection.GetDescriptorSetLayoutBinding(3);
 	for (int i = 4; i < 8; i++)
 		setLayoutBindings[i] = rayGenReflection.GetDescriptorSetLayoutBinding(i);
 
-	std::vector<VkDescriptorBindingFlags> setBindingFlags;
-	for (int i = 0; i < setLayoutBindings.size(); i++)
-		setBindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-
+	std::vector<VkDescriptorBindingFlags> setBindingFlags(setLayoutBindings.size(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT setBindingFlagsCreateInfo{};
 	setBindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
 	setBindingFlagsCreateInfo.bindingCount = static_cast<uint32_t>(setBindingFlags.size());
@@ -238,11 +181,7 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 	meshDataLayoutBindings[1] = CHitReflection.GetDescriptorSetLayoutBinding(1, 1);
 	meshDataLayoutBindings[1].descriptorCount = Renderer::MAX_BINDLESS_TEXTURES;
 
-	std::vector<VkDescriptorBindingFlags> bindingFlags;
-	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-	bindingFlags.push_back(VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-
+	std::vector<VkDescriptorBindingFlags> bindingFlags(meshDataLayoutBindings.size(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo{};
 	bindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
 	bindingFlagsCreateInfo.bindingCount = static_cast<uint32_t>(meshDataLayoutBindings.size());
@@ -287,10 +226,10 @@ void RayTracing::Init(VkDevice logicalDevice, PhysicalDevice physicalDevice, Sur
 
 	// shaders
 
-	VkShaderModule genShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/spirv/gen.rgen.spv"));
-	VkShaderModule hitShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/spirv/hit.rchit.spv"));
-	VkShaderModule missShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/spirv/miss.rmiss.spv"));
-	VkShaderModule shadowShader = Vulkan::CreateShaderModule(logicalDevice, ReadShaderFile("shaders/spirv/shadow.rmiss.spv"));
+	VkShaderModule genShader = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/gen.rgen.spv"));
+	VkShaderModule hitShader = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/hit.rchit.spv"));
+	VkShaderModule missShader = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/miss.rmiss.spv"));
+	VkShaderModule shadowShader = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/shadow.rmiss.spv"));
 
 	// pipeline
 

@@ -51,21 +51,21 @@ private:
 	size_t denoiserStateInBytes = 0;
 	uint32_t width = 0, height = 0;
 
-	VkBuffer denoiseCopyBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory denoiseCopyMemory = VK_NULL_HANDLE;
-	void* cuDenoisecopyBuffer = 0;
+	VkBuffer copyBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory copyMemory = VK_NULL_HANDLE;
+	void* cuCopyBuffer = 0;
 	HANDLE copyHandle = (void*)0;
 	OptixImage2D inputImage{};
 
-	VkBuffer normalDenoiseBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory normalDenoiseMemory = VK_NULL_HANDLE;
-	void* cuNormalDenoise = 0;
+	VkBuffer normalBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory normalMemory = VK_NULL_HANDLE;
+	void* cuNormal = 0;
 	HANDLE normalHandle = (void*)0;
 	OptixImage2D normalImage;
 
-	VkBuffer albedoDenoiseBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory albedoDenoiseMemory = VK_NULL_HANDLE;
-	void* cuAlbedoDenoise = 0;
+	VkBuffer albedoBuffer = VK_NULL_HANDLE;
+	VkDeviceMemory albedoMemory = VK_NULL_HANDLE;
+	void* cuAlbedo = 0;
 	HANDLE albedoHandle = (void*)0;
 	OptixImage2D albedoImage;
 

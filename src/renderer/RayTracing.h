@@ -77,7 +77,23 @@ private:
 	VkBuffer instanceMeshDataBuffer			= VK_NULL_HANDLE;
 	VkDeviceMemory instanceMeshDataMemory	= VK_NULL_HANDLE;
 
-	std::array<VkDeviceMemory, 3> gBufferMemories;
+	VkDescriptorPool descriptorPool;
+	VkDescriptorSetLayout descriptorSetLayout;
+	VkDescriptorSetLayout materialSetLayout;
+	std::vector<VkDescriptorSet> descriptorSets;
 
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{};
+
+	VulkanCreationObject creationObject;
+	uint32_t queueFamilyIndex;
+	VkQueue queue;
+
+	VkPipelineLayout pipelineLayout;
+	VkPipeline pipeline;
+
+	VkBuffer uniformBufferBuffer;
+	VkDeviceMemory uniformBufferMemory;
+
+	std::array<VkDeviceMemory, 3> gBufferMemories;
 	std::unordered_map<int, Handle> processedMaterials;
 };
