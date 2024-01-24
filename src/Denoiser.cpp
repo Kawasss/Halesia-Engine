@@ -38,9 +38,9 @@ void Denoiser::InitOptix()
 
 	OptixDenoiserOptions denoiserOptions{};
 	denoiserOptions.guideAlbedo = 1;
-	denoiserOptions.guideNormal = 0;
+	denoiserOptions.guideNormal = 1;
 	denoiserOptions.denoiseAlpha = OPTIX_DENOISER_ALPHA_MODE_COPY;
-
+	
 	optixResult = optixDenoiserCreate(optixContext, OPTIX_DENOISER_MODEL_KIND_LDR, &denoiserOptions, &denoiser); // not sure about the model kind
 	CheckOptixResult(optixResult);
 
@@ -167,18 +167,18 @@ void Denoiser::DenoiseImage()
 	guideLayer.outputInternalGuideLayer.data = 0;
 	guideLayer.previousOutputInternalGuideLayer.data = 0;
 
-	cudaExternalSemaphoreWaitParams waitParams{};
+	/*cudaExternalSemaphoreWaitParams waitParams{};
 	waitParams.flags = 0;
 	waitParams.params.fence.value = 0;
-	cudaWaitExternalSemaphoresAsync(&cuExternSemaphore, &waitParams, 1, nullptr);
+	cudaWaitExternalSemaphoresAsync(&cuExternSemaphore, &waitParams, 1, nullptr);*/
 
 	OptixResult result = optixDenoiserInvoke(denoiser, cudaStream, &params, stateBuffer, denoiserSizes.stateSizeInBytes, &guideLayer, &layer, 1, 0, 0, scratchBuffer, denoiserSizes.withoutOverlapScratchSizeInBytes);
 	CheckOptixResult(result);
 
-	cudaExternalSemaphoreSignalParams signalParams{};
+	/*cudaExternalSemaphoreSignalParams signalParams{};
 	signalParams.flags = 0;
 	signalParams.params.fence.value = 2;
-	cudaSignalExternalSemaphoresAsync(&cuExternSemaphore, &signalParams, 1, cudaStream);
+	cudaSignalExternalSemaphoresAsync(&cuExternSemaphore, &signalParams, 1, cudaStream);*/
 
 	CheckCudaResult(cudaDeviceSynchronize());
 	cuResult = cudaStreamSynchronize(cudaStream);

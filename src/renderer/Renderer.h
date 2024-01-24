@@ -37,6 +37,7 @@ public:
 
 	Renderer(Win32Window* window);
 	void Destroy();
+	void RecompileShaders();
 	void DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta);
 	void RenderMeshData(const std::vector<Mesh>& meshes);
 	void RenderIntro(Intro* intro);

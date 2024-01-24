@@ -189,9 +189,8 @@ void Renderer::CreateImGUI()
 	ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
-void Renderer::InitVulkan()
+void Renderer::RecompileShaders()
 {
-	#ifdef _DEBUG // recompiles all the shaders with their .bat files, this simply makes it less of a hassle to change the shaders
 	std::cout << "Debug mode detected, recompiling all shaders found in directory \"shaders\"...\n";
 	auto oldPath = std::filesystem::current_path();
 	auto newPath = std::filesystem::absolute("shaders");
@@ -205,6 +204,12 @@ void Renderer::InitVulkan()
 		system(shaderComp.c_str()); // windows only!!
 	}
 	std::filesystem::current_path(oldPath);
+}
+
+void Renderer::InitVulkan()
+{
+	#ifdef _DEBUG // recompiles all the shaders with their .bat files, this simply makes it less of a hassle to change the shaders
+	RecompileShaders();
 	#endif
 
 	instance = Vulkan::GenerateInstance();
@@ -833,6 +838,34 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	if (denoiseOutput)
 		rayTracer->ApplyDenoisedImage(commandBuffers[currentFrame]);*/
 
+	if (denoiseOutput)
+	{
+		result = vkEndCommandBuffer(lCommandBuffer);
+		CheckVulkanResult("Failed to end the given command buffer", result, nameof(vkEndCommandBuffer));
+
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &lCommandBuffer;
+
+		result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
+		CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
+
+		vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
+		vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
+
+		vkDeviceWaitIdle(logicalDevice);
+
+		rayTracer->DenoiseImage();
+		cuStreamSynchronize(nullptr);
+
+		vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+		VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
+		CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
+
+		rayTracer->ApplyDenoisedImage(lCommandBuffer);
+	}
+
 	if (shouldRasterize)
 	{
 		std::array<VkClearValue, 4> deferredClearColors{};
@@ -1098,7 +1131,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 
 	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
-	
+
 	PresentSwapchainImage(currentFrame, imageIndex);
 
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
