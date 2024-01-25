@@ -4,7 +4,7 @@ engineCore:
 	consoleKey: 192
 renderer: 
 	renderCollision: 0
-	denoiseOutput: 1
+	denoiseOutput: 0
 	ray-tracing: 
 		raySamples: 1
 		rayDepth: 8

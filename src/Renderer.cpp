@@ -552,14 +552,6 @@ void Renderer::CreateDescriptorSets()
 		writeDescriptorSets[1].dstBinding = 1;
 		writeDescriptorSets[1].descriptorCount = 1;
 
-		/*writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writeDescriptorSets[2].dstSet = descriptorSets[i];
-		writeDescriptorSets[2].descriptorCount = MAX_BINDLESS_TEXTURES;
-		writeDescriptorSets[2].pImageInfo = imageInfos.data();
-		writeDescriptorSets[2].dstBinding = 2;
-		writeDescriptorSets[2].dstArrayElement = 0;*/
-		
 		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
 	}
 }
@@ -702,12 +694,6 @@ void Renderer::CreateGraphicsPipeline()
 
 	// world shaders pipeline
 
-	/*VkPipelineRenderingCreateInfo dynamicRenderInfo{};
-	dynamicRenderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-	dynamicRenderInfo.colorAttachmentCount = 1;
-	dynamicRenderInfo.depthAttachmentFormat = physicalDevice.GetDepthFormat();
-	dynamicRenderInfo.pColorAttachmentFormats = &swapchain->format;*/
-
 	VkShaderModule vertexShaderModule = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/vert.spv"));
 	VkShaderModule fragmentShaderModule = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/frag.spv"));
 
@@ -717,7 +703,6 @@ void Renderer::CreateGraphicsPipeline()
 
 	VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
 	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	//pipelineCreateInfo.pNext = &dynamicRenderInfo;
 	pipelineCreateInfo.stageCount = 2;
 	pipelineCreateInfo.pStages = shaderStages;
 	pipelineCreateInfo.pVertexInputState =   &vertexInputInfo;
@@ -840,6 +825,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 
 	if (denoiseOutput)
 	{
+		rayTracer->PrepareForDenoising(lCommandBuffer);
 		result = vkEndCommandBuffer(lCommandBuffer);
 		CheckVulkanResult("Failed to end the given command buffer", result, nameof(vkEndCommandBuffer));
 
@@ -848,16 +834,39 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &lCommandBuffer;
 
+		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+		submitInfo.waitSemaphoreCount = 1;
+		submitInfo.pWaitSemaphores = &renderFinishedSemaphores[currentFrame];
+		submitInfo.pWaitDstStageMask = waitStages;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
+		submitInfo.signalSemaphoreCount = 1;
+		submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
+
 		result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
 		CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
+		
+		cudaExternalSemaphoreWaitParams waitParams{};
+		memset(&waitParams, 0, sizeof(waitParams));
+		waitParams.flags = 0;
+		waitParams.params.fence.value = 1;
+		
+		CheckCudaResult(cudaWaitExternalSemaphoresAsync(&externalRenderSemaphores[currentFrame], &waitParams, 1, nullptr));
 
-		vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
-		vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
+		cudaExternalSemaphoreSignalParams signalParams{};
+		memset(&signalParams, 0, sizeof(signalParams));
+		signalParams.flags = 0;
+		signalParams.params.fence.value = 0;
+
+		CheckCudaResult(cudaSignalExternalSemaphoresAsync(&externalRenderSemaphores[currentFrame], &signalParams, 1, nullptr));
 
 		vkDeviceWaitIdle(logicalDevice);
 
 		rayTracer->DenoiseImage();
 		cuStreamSynchronize(nullptr);
+
+		vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+		vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
 
 		vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 		VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
@@ -951,8 +960,8 @@ void Renderer::CreateSyncObjects()
 {
 	imageAvaibleSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	//externalRenderSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	//externalRenderSemaphoreHandles.resize(MAX_FRAMES_IN_FLIGHT);
+	externalRenderSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	externalRenderSemaphoreHandles.resize(MAX_FRAMES_IN_FLIGHT);
 	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkExportSemaphoreCreateInfo semaphoreExportInfo{};
@@ -961,7 +970,7 @@ void Renderer::CreateSyncObjects()
 
 	VkSemaphoreCreateInfo semaphoreCreateInfo{};
 	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	//semaphoreCreateInfo.pNext = &semaphoreExportInfo;
+	semaphoreCreateInfo.pNext = &semaphoreExportInfo;
 
 	VkFenceCreateInfo fenceCreateInfo{};
 	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
@@ -976,7 +985,7 @@ void Renderer::CreateSyncObjects()
 		if (vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &imageAvaibleSemaphores[i]) != VK_SUCCESS || vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS || vkCreateFence(logicalDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]))
 			throw VulkanAPIError("Failed to create the required semaphores and fence", VK_SUCCESS, nameof(CreateSyncObjects), __FILENAME__, __LINE__); // too difficult / annoying to put all of these calls into result = ...
 	
-		/*getHandleInfo.semaphore = renderFinishedSemaphores[i];
+		getHandleInfo.semaphore = renderFinishedSemaphores[i];
 
 		VkResult result = vkGetSemaphoreWin32HandleKHR(logicalDevice, &getHandleInfo, &externalRenderSemaphoreHandles[i]);
 		CheckVulkanResult("Failed to get the win32 handle of a semaphore", result, vkGetSemaphoreWin32HandleKHR);
@@ -986,7 +995,7 @@ void Renderer::CreateSyncObjects()
 		externSemaphoreDesc.handle.win32.handle = externalRenderSemaphoreHandles[i];
 		externSemaphoreDesc.flags = 0;
 
-		cudaError_t cuResult = cudaImportExternalSemaphore(&externalRenderSemaphores[i], &externSemaphoreDesc);*/
+		cudaError_t cuResult = cudaImportExternalSemaphore(&externalRenderSemaphores[i], &externSemaphoreDesc);
 	}
 }
 

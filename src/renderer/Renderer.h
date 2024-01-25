@@ -9,6 +9,7 @@
 #include "Vertex.h"
 #include "CreationObjects.h"
 #include "StorageBuffer.h"
+#include "cuda_runtime_api.h"
 
 class Intro;
 class Camera;
@@ -76,8 +77,8 @@ private:
 	std::vector<VkCommandBuffer>	commandBuffers;
 	std::vector<VkSemaphore>		imageAvaibleSemaphores;
 	std::vector<VkSemaphore>		renderFinishedSemaphores;
-	//std::vector<cudaExternalSemaphore_t> externalRenderSemaphores;
-	//std::vector<HANDLE>             externalRenderSemaphoreHandles;
+	std::vector<cudaExternalSemaphore_t> externalRenderSemaphores;
+	std::vector<HANDLE>             externalRenderSemaphoreHandles;
 	std::vector<VkFence>			inFlightFences;
 	std::vector<VkDescriptorSet>	descriptorSets;
 
