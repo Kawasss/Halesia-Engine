@@ -860,7 +860,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 
 		CheckCudaResult(cudaSignalExternalSemaphoresAsync(&externalRenderSemaphores[currentFrame], &signalParams, 1, nullptr));
 
-		vkDeviceWaitIdle(logicalDevice);
+		//vkDeviceWaitIdle(logicalDevice);
 
 		rayTracer->DenoiseImage();
 		cuStreamSynchronize(nullptr);

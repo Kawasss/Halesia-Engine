@@ -580,7 +580,7 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 		glm::vec2 ndc = objects[i]->transform.GetMotionVector(camera->GetProjectionMatrix(), camera->GetViewMatrix());
 		ndc.x *= width;
 		ndc.y *= height;
-		std::cout << ndc.x << ", " << ndc.y << '\n';
+		
 		for (int32_t j = 0; j < objects[i]->meshes.size(); j++)
 		{
 			Mesh& mesh = objects[i]->meshes[j];

@@ -15,7 +15,7 @@ class TestScene : public Scene
 	std::vector<Object*> spheres;
 	void Start() override
 	{
-		/*MaterialCreateInfo createInfo{};
+		MaterialCreateInfo createInfo{};
 		createInfo.creationObject = GetVulkanCreationObjects();
 		createInfo.albedo = "textures/rockA.jpg";
 		createInfo.normal = "textures/rockN.jpg";
@@ -33,7 +33,7 @@ class TestScene : public Scene
 		Material lampMat = Material::Create(lampInfo);
 		lampMat.AwaitGeneration();
 		lamp->meshes[0].SetMaterial(lampMat);
-		lamp->transform.position = glm::vec3(0, 2, 4);*/
+		lamp->transform.position = glm::vec3(0, 2, 4);
 		AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"))->transform.scale = glm::vec3(0.1f);
 	}
 
