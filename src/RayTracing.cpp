@@ -30,6 +30,7 @@ struct InstanceMeshData
 	uint32_t vertexBufferOffset;
 	uint32_t materialIndex;
 	int32_t meshIsLight;
+	glm::vec2 motion;
 	uint64_t intersectedObjectHandle;
 };
 
@@ -565,10 +566,9 @@ void RayTracing::UpdateTextureBuffer()
 		vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
-void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
+void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera)
 {
 	std::vector<InstanceMeshData> instanceDatas;
-
 	amountOfActiveObjects = 0;
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
@@ -576,10 +576,24 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects)
 			continue;
 		
 		std::lock_guard<std::mutex> lockGuard(objects[i]->mutex);
+
+		glm::vec2 ndc = objects[i]->transform.GetMotionVector(camera->GetProjectionMatrix(), camera->GetViewMatrix());
+		ndc.x *= width;
+		ndc.y *= height;
+		std::cout << ndc.x << ", " << ndc.y << '\n';
 		for (int32_t j = 0; j < objects[i]->meshes.size(); j++)
 		{
 			Mesh& mesh = objects[i]->meshes[j];
-			instanceDatas.push_back({ objects[i]->transform.GetModelMatrix(), (uint32_t)Renderer::globalIndicesBuffer.GetItemOffset(mesh.indexMemory), (uint32_t)Renderer::globalVertexBuffer.GetItemOffset(mesh.vertexMemory), mesh.materialIndex, Mesh::materials[mesh.materialIndex].isLight, objects[i]->handle});
+			instanceDatas.push_back(
+			{ 
+				objects[i]->transform.GetModelMatrix(), 
+				(uint32_t)Renderer::globalIndicesBuffer.GetItemOffset(mesh.indexMemory), 
+				(uint32_t)Renderer::globalVertexBuffer.GetItemOffset(mesh.vertexMemory), 
+				mesh.materialIndex, 
+				Mesh::materials[mesh.materialIndex].isLight, 
+				ndc,
+				objects[i]->handle
+			});
 		}
 	}
 	if (instanceDatas.empty())
@@ -599,7 +613,7 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	if (!TLAS->HasBeenBuilt() && !objects.empty())
 		TLAS->Build(creationObject, objects);
 
-	UpdateInstanceDataBuffer(objects);
+	UpdateInstanceDataBuffer(objects, camera);
 
 	if (amountOfActiveObjects <= 0)
 		return;

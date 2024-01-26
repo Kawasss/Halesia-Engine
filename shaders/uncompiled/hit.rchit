@@ -39,8 +39,8 @@ struct InstanceMeshData
     uint vertexBufferOffset;
     uint materialIndex;
     int meshIsLight;
+    vec2 motion;
     uint64_t handle;
-    uint64_t padding;
 };
 
 layout(location = 1) rayPayloadEXT bool isShadow;

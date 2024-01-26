@@ -69,3 +69,14 @@ void Transform::SetLocalRotation(glm::mat4 newLocalRotation)
 	localRotationModel = newLocalRotation;
 	localRotationChanged = true;
 }
+
+glm::vec2 Transform::GetMotionVector(glm::mat4 projection, glm::mat4 view)
+{
+	glm::vec4 NDC = projection * view * glm::vec4(position, 1);
+	NDC /= NDC.w;
+
+	glm::vec2 current = glm::vec2((NDC.x + 1.0f) * 0.5f, (NDC.y + 1.0f) * 0.5f);
+	glm::vec2 ret = current - prev2Dspot;
+	prev2Dspot = current;
+	return ret;
+}

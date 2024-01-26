@@ -46,7 +46,7 @@ public:
 	VkSemaphore externSemaphore;
 	
 private:
-	void UpdateInstanceDataBuffer(const std::vector<Object*>& objects);
+	void UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera);
 	void UpdateTextureBuffer();
 	void UpdateMeshDataDescriptorSets();
 	void CreateShaderBindingTable();
