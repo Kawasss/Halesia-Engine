@@ -4,7 +4,6 @@
 #include <vector>
 #include <unordered_map>
 #include <future>
-#include "CreationObjects.h"
 #include "Console.h"
 #include "io/SceneLoader.h"
 
@@ -59,7 +58,6 @@ public:
 	virtual void Update(float delta) {};
 			void Destroy();
 
-	static MeshCreationObject(*GetVulkanCreationObjects)();
 	std::vector<Object*> allObjects;
 
 private:
@@ -103,7 +101,7 @@ template<typename T> Object* Scene::AddCustomObject(std::string name, ObjectImpo
 
 	T* customPointer = new T();
 	Object* objPtr = customPointer;
-	objPtr->Create(customPointer, creationData, GetVulkanCreationObjects());
+	objPtr->Create(customPointer, creationData);
 	RegisterObjectPointer(objPtr, true);
 
 	return objPtr;

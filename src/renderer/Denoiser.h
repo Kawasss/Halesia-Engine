@@ -5,12 +5,11 @@
 #include "optix.h"
 
 typedef void* HANDLE;
-struct VulkanCreationObject;
 
 class Denoiser
 {
 public:
-	static Denoiser* Create(const VulkanCreationObject& creationObject);
+	static Denoiser* Create();
 	void Destroy();
 
 	void CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer, std::array<VkImage, 3> gBuffers);
@@ -38,9 +37,6 @@ private:
 	
 	void InitOptix();
 	void DestroyBuffers();
-
-	VkDevice logicalDevice;
-	PhysicalDevice physicalDevice;
 
 	VkSemaphore externSemaphore;
 

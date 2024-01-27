@@ -13,7 +13,6 @@
 #include "tools/CameraInjector.h"
 #include "physics/Physics.h"
 
-#include "CreationObjects.h"
 #include "Console.h"
 
 #include "vvm/VVM.hpp"
@@ -49,12 +48,6 @@ void DetermineArgs(int argsCount, char** args, Win32WindowCreateInfo& createInfo
 	}
 }
 
-Renderer* localRenderer; // really bad behavior
-MeshCreationObject GetVulkanCreationObjects()
-{
-	return localRenderer->GetVulkanCreationObject();
-}
-
 void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, HalesiaInstanceCreateInfo& createInfo)
 {
 	std::cout << "Generating Halesia instance:\n" << "  createInfo.startingScene = " << createInfo.startingScene << "\n  createInfo.devConsoleKey = " << ToHexadecimalString((int)createInfo.devConsoleKey) << "\n  createInfo.playIntro = " << createInfo.playIntro << "\n\n";
@@ -62,9 +55,10 @@ void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, Halesia
 	{
 		instance.OnLoad(createInfo);
 
+		const Vulkan::Context& context = Vulkan::GetContext();
 		SystemInformation systemInfo = GetCpuInfo();
-		VkPhysicalDeviceProperties properties = instance.renderer->GetVulkanCreationObject().physicalDevice.Properties();
-		uint64_t vram = instance.renderer->GetVulkanCreationObject().physicalDevice.VRAM();
+		VkPhysicalDeviceProperties properties = context.physicalDevice.Properties();
+		uint64_t vram = context.physicalDevice.VRAM();
 		std::cout << "\nDetected hardware:\n" << "  CPU: " << systemInfo.CPUName << "\n  logical processor count: " << systemInfo.processorCount << "\n  physical RAM: " << systemInfo.installedRAM / 1024 << " MB\n\n" << "  GPU: " << properties.deviceName << "\n  type: " << string_VkPhysicalDeviceType(properties.deviceType) << "\n  vulkan driver version: " << properties.driverVersion << "\n  API version: " << properties.apiVersion << "\n  heap 0 total memory (VRAM): " << vram / (1024.0f * 1024.0f) << " MB\n" << std::endl;;
 	}
 	catch (const std::exception& e) //catch any normal exception and return
@@ -218,7 +212,7 @@ HalesiaExitCode HalesiaInstance::Run()
 		if (playIntro)
 		{
 			Intro intro{};
-			intro.Create(renderer->GetVulkanCreationObject(), renderer->swapchain, "textures/floor.png");
+			intro.Create(renderer->swapchain, "textures/floor.png");
 
 			renderer->RenderIntro(&intro);
 			intro.Destroy();
@@ -295,8 +289,6 @@ void HalesiaInstance::OnLoad(HalesiaInstanceCreateInfo& createInfo)
 
 	window = new Win32Window(createInfo.windowCreateInfo);
 	renderer = new Renderer(window);
-	localRenderer = renderer;
-	Scene::GetVulkanCreationObjects = &GetVulkanCreationObjects;
 
 	if (createInfo.startingScene == nullptr)
 	{

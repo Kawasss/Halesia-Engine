@@ -85,9 +85,9 @@ public:
     static std::mutex                         graphicsQueueMutex;
         
     static std::mutex&                        FetchLogicalDeviceMutex(VkDevice logicalDevice);
-    static VkCommandPool                      FetchNewCommandPool(const VulkanCreationObject& creationObject);
+    static VkCommandPool                      FetchNewCommandPool(uint32_t queueIndex);
     static void                               YieldCommandPool(uint32_t queueFamilyIndex, VkCommandPool commandPool);
-    static void                               DestroyAllCommandPools(VkDevice logicalDevice);
+    static void                               DestroyAllCommandPools();
 
     static std::vector<PhysicalDevice>        GetPhysicalDevices(VkInstance instance);
     static PhysicalDevice                     GetBestPhysicalDevice(std::vector<PhysicalDevice> devices, Surface surface);
@@ -103,25 +103,25 @@ public:
     static VkPresentModeKHR                   ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& presentModes);
     static VkExtent2D                         ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, uint32_t width, uint32_t height);
 
-    static void                               CreateImage(VkDevice logicalDevice, PhysicalDevice physicalDevice, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags, VkImage& image, VkDeviceMemory& memory);
-    static VkImageView                        CreateImageView(VkDevice logicalDevice, VkImage image, VkImageViewType viewType, uint32_t mipLevels, uint32_t layerCount, VkFormat format, VkImageAspectFlags aspectFlags);
+    static void                               CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags, VkImage& image, VkDeviceMemory& memory);
+    static VkImageView                        CreateImageView(VkImage image, VkImageViewType viewType, uint32_t mipLevels, uint32_t layerCount, VkFormat format, VkImageAspectFlags aspectFlags);
 
-    static VkShaderModule                     CreateShaderModule(VkDevice logicalDevice, const std::vector<char>& code);
+    static VkShaderModule                     CreateShaderModule(const std::vector<char>& code);
     static VkPipelineShaderStageCreateInfo    GetGenericShaderStageCreateInfo(VkShaderModule module, VkShaderStageFlagBits shaderStageBit, const char* name = "main");
 
-    static VkCommandBuffer                    BeginSingleTimeCommands(VkDevice logicalDevice, VkCommandPool commandPool);
-    static void                               EndSingleTimeCommands(VkDevice logicalDevice, VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool);
+    static VkCommandBuffer                    BeginSingleTimeCommands(VkCommandPool commandPool);
+    static void                               EndSingleTimeCommands(VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool);
 
-    static VkDeviceAddress                    GetDeviceAddress(VkDevice logicalDevice, VkBuffer buffer);
-    static VkDeviceAddress                    GetDeviceAddress(VkDevice logicalDevice, VkAccelerationStructureKHR accelerationStructure);
-    static HANDLE                             GetWin32MemoryHandle(VkDevice logicalDevice, VkDeviceMemory memory);
+    static VkDeviceAddress                    GetDeviceAddress(VkBuffer buffer);
+    static VkDeviceAddress                    GetDeviceAddress(VkAccelerationStructureKHR accelerationStructure);
+    static HANDLE                             GetWin32MemoryHandle(VkDeviceMemory memory);
 
     static uint32_t                           GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice);
     static bool                               HasStencilComponent(VkFormat format);
 
-    static void                               CreateExternalBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-    static void                               CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
-    static void                               CopyBuffer(VkDevice logicalDevice, VkCommandPool commandPool, VkQueue queue, VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size);
+    static void                               CreateExternalBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    static void                               CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    static void                               CopyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size);
 
     static void                               PopulateDefaultViewport(VkViewport& viewport, VkExtent2D extents);
     static void                               PopulateDefaultScissors(VkRect2D& scissors, VkExtent2D extents);
@@ -141,6 +141,8 @@ private:
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL     DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 
+    static void                               CreateBufferHandle(VkBuffer& buffer, VkDeviceSize size, VkBufferUsageFlags usage, void* pNext = nullptr);
+    static void                               AllocateMemory(VkDeviceMemory& memory, VkMemoryRequirements& memoryRequirements, VkMemoryPropertyFlags properties, void* pNext = nullptr);
     static void                               GetDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
     static void                               CheckDeviceRequirements(bool indicesHasValue, bool extensionsSupported, bool swapChainIsCompatible, bool samplerAnisotropy, bool shaderUniformBufferArrayDynamicIndexing, std::set<std::string> unsupportedExtensions);
     static bool                               IsDeviceCompatible(PhysicalDevice device, Surface surface);

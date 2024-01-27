@@ -200,9 +200,6 @@
     <ClInclude Include="src\Console.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\CreationObjects.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\glm.h">
       <Filter>Header Files</Filter>
     </ClInclude>

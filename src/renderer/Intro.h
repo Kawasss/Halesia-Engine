@@ -3,7 +3,6 @@
 #include <string>
 #include <vector>
 
-struct VulkanCreationObject;
 class Swapchain;
 class Texture;
 
@@ -13,7 +12,7 @@ public:
 	static constexpr float maxSeconds = 3.0f;
 	static constexpr float fadeInOutTime = 1.0f;
 
-	void Create(VulkanCreationObject& creationObject, Swapchain* swapchain, std::string imagePath);
+	void Create(Swapchain* swapchain, std::string imagePath);
 
 	void WriteDataToBuffer(float timeElapsed);
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);

@@ -5,7 +5,6 @@
 #include "renderer/Denoiser.h"
 
 #include "glm.h"
-#include "CreationObjects.h"
 
 #include "optix_stubs.h"
 #include "optix_function_table_definition.h"
@@ -82,11 +81,13 @@ void Denoiser::AllocateBuffers(uint32_t width, uint32_t height)
 
 void Denoiser::CreateExternalCudaBuffer(VkBuffer& buffer, VkDeviceMemory& memory, void** cuPtr, HANDLE& handle, VkDeviceSize size)
 {
-	VkMemoryRequirements memReqs{};
-	Vulkan::CreateExternalBuffer(logicalDevice, physicalDevice, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, memory);
-	vkGetBufferMemoryRequirements(logicalDevice, buffer, &memReqs);
+	const Vulkan::Context& context = Vulkan::GetContext();
 
-	handle = Vulkan::GetWin32MemoryHandle(logicalDevice, memory);
+	VkMemoryRequirements memReqs{};
+	Vulkan::CreateExternalBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, memory);
+	vkGetBufferMemoryRequirements(context.logicalDevice, buffer, &memReqs);
+
+	handle = Vulkan::GetWin32MemoryHandle(memory);
 
 	cudaExternalMemory_t extMemory{}; // import the vk buffer to a cuda buffer
 	cudaExternalMemoryHandleDesc memoryDesc{};
@@ -109,6 +110,8 @@ void Denoiser::CreateExternalCudaBuffer(VkBuffer& buffer, VkDeviceMemory& memory
 
 void Denoiser::CreateExternalSemaphore(VkSemaphore& semaphore, HANDLE& handle, cudaExternalSemaphore_t& cuPtr)
 {
+	const Vulkan::Context& context = Vulkan::GetContext();
+
 	VkSemaphoreTypeCreateInfo semaphoreTypeInfo{};
 	semaphoreTypeInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO;
 	semaphoreTypeInfo.semaphoreType = VK_SEMAPHORE_TYPE_TIMELINE;
@@ -123,7 +126,7 @@ void Denoiser::CreateExternalSemaphore(VkSemaphore& semaphore, HANDLE& handle, c
 	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 	semaphoreCreateInfo.pNext = &semaphoreExportInfo;
 
-	VkResult vkResult = vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &semaphore);
+	VkResult vkResult = vkCreateSemaphore(context.logicalDevice, &semaphoreCreateInfo, nullptr, &semaphore);
 	CheckVulkanResult("Failed to create a semaphore", vkResult, vkCreateSemaphore);
 
 	VkSemaphoreGetWin32HandleInfoKHR getHandleInfo{};
@@ -131,7 +134,7 @@ void Denoiser::CreateExternalSemaphore(VkSemaphore& semaphore, HANDLE& handle, c
 	getHandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 	getHandleInfo.semaphore = semaphore;
 
-	vkResult = vkGetSemaphoreWin32HandleKHR(logicalDevice, &getHandleInfo, &handle);
+	vkResult = vkGetSemaphoreWin32HandleKHR(context.logicalDevice, &getHandleInfo, &handle);
 	CheckVulkanResult("Failed to get the win32 handle of a semaphore", vkResult, vkGetSemaphoreWin32HandleKHR);
 
 	cudaExternalSemaphoreHandleDesc externSemaphoreDesc{};
@@ -167,18 +170,8 @@ void Denoiser::DenoiseImage()
 	guideLayer.outputInternalGuideLayer.data = 0;
 	guideLayer.previousOutputInternalGuideLayer.data = 0;
 
-	/*cudaExternalSemaphoreWaitParams waitParams{};
-	waitParams.flags = 0;
-	waitParams.params.fence.value = 0;
-	cudaWaitExternalSemaphoresAsync(&cuExternSemaphore, &waitParams, 1, nullptr);*/
-
 	OptixResult result = optixDenoiserInvoke(denoiser, cudaStream, &params, stateBuffer, denoiserSizes.stateSizeInBytes, &guideLayer, &layer, 1, 0, 0, scratchBuffer, denoiserSizes.withoutOverlapScratchSizeInBytes);
 	CheckOptixResult(result);
-
-	/*cudaExternalSemaphoreSignalParams signalParams{};
-	signalParams.flags = 0;
-	signalParams.params.fence.value = 2;
-	cudaSignalExternalSemaphoresAsync(&cuExternSemaphore, &signalParams, 1, cudaStream);*/
 
 	CheckCudaResult(cudaDeviceSynchronize());
 	cuResult = cudaStreamSynchronize(cudaStream);
@@ -309,10 +302,11 @@ void Denoiser::DestroyBuffers()
 	if (minRGB != 0)
 		cudaFree((void*)minRGB);
 
-	input.Destroy(logicalDevice);
-	output.Destroy(logicalDevice);
-	albedo.Destroy(logicalDevice);
-	normal.Destroy(logicalDevice);
+	const Vulkan::Context& context = Vulkan::GetContext();
+	input.Destroy(context.logicalDevice);
+	output.Destroy(context.logicalDevice);
+	albedo.Destroy(context.logicalDevice);
+	normal.Destroy(context.logicalDevice);
 }
 
 void Denoiser::Destroy()
@@ -322,11 +316,9 @@ void Denoiser::Destroy()
 	optixDeviceContextDestroy(optixContext);
 }
 
-Denoiser* Denoiser::Create(const VulkanCreationObject& creationObject)
+Denoiser* Denoiser::Create()
 {
 	Denoiser* ret = new Denoiser();
-	ret->logicalDevice = creationObject.logicalDevice;
-	ret->physicalDevice = creationObject.physicalDevice;
 	ret->InitOptix();
 	return ret;
 }

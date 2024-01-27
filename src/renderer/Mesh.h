@@ -7,16 +7,12 @@
 class BottomLevelAccelerationStructure;
 struct MeshCreationData;
 struct MaterialCreationData;
-struct VulkanCreationObject;
-
-typedef VulkanCreationObject MeshCreationObject;
-typedef VulkanCreationObject TextureCreationObject;
 
 struct Mesh
 {
 	static std::vector<Material> materials;
 
-	void Create(const MeshCreationObject& creationObject, const MeshCreationData& creationData);
+	void Create(const MeshCreationData& creationData);
 	void Destroy();
 
 	std::string name = "NO_NAME";
@@ -34,8 +30,8 @@ struct Mesh
 	glm::vec3 min, max, center, extents;
 
 	void ResetMaterial(); // should make it so that it also deletes the material if no other mesh references it
-	void ProcessMaterial(const TextureCreationObject& creationObjects, const MaterialCreationData& creationData);
-	void Recreate(const MeshCreationObject& creationObject);
+	void ProcessMaterial(const MaterialCreationData& creationData);
+	void Recreate();
 	bool HasFinishedLoading();
 	void AwaitGeneration();
 

@@ -5,7 +5,6 @@
 #include "renderer/Swapchain.h"
 #include "renderer/Texture.h"
 #include "renderer/Buffers.h"
-#include "CreationObjects.h"
 
 struct Timer
 {
@@ -28,11 +27,12 @@ std::vector<char> Intro::ReadFile(const std::string& filePath)
 	return buffer;
 }
 
-void Intro::Create(VulkanCreationObject& creationObject, Swapchain* swapchain, std::string imagePath)
+void Intro::Create(Swapchain* swapchain, std::string imagePath)
 {
-	this->logicalDevice = creationObject.logicalDevice;
+	const Vulkan::Context& context = Vulkan::GetContext();
+	this->logicalDevice = context.logicalDevice;
 	this->swapchain = swapchain;
-	this->texture = new Texture(creationObject, imagePath);
+	this->texture = new Texture(imagePath);
 	this->texture->AwaitGeneration();
 
 	// descriptor pool
@@ -91,8 +91,8 @@ void Intro::Create(VulkanCreationObject& creationObject, Swapchain* swapchain, s
 	std::vector<char> vertCode = ReadFile("shaders/spirv/intro.vert.spv");
 	std::vector<char> fragCode = ReadFile("shaders/spirv/intro.frag.spv");
 
-	VkShaderModule vertexShader = Vulkan::CreateShaderModule(logicalDevice, vertCode);
-	VkShaderModule fragShader = Vulkan::CreateShaderModule(logicalDevice, fragCode);
+	VkShaderModule vertexShader = Vulkan::CreateShaderModule(vertCode);
+	VkShaderModule fragShader = Vulkan::CreateShaderModule(fragCode);
 	
 	// pipeline
 
@@ -179,7 +179,7 @@ void Intro::Create(VulkanCreationObject& creationObject, Swapchain* swapchain, s
 	colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
 	VkAttachmentDescription depthAttachment{};
-	depthAttachment.format = creationObject.physicalDevice.GetDepthFormat();
+	depthAttachment.format = context.physicalDevice.GetDepthFormat();
 	depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 	depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -249,7 +249,7 @@ void Intro::Create(VulkanCreationObject& creationObject, Swapchain* swapchain, s
 
 	// uniform buffer
 
-	Vulkan::CreateBuffer(logicalDevice, creationObject.physicalDevice, sizeof(Timer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, uniformBuffer, uniformBufferMemory);
+	Vulkan::CreateBuffer(sizeof(Timer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, uniformBuffer, uniformBufferMemory);
 	vkMapMemory(logicalDevice, uniformBufferMemory, 0, sizeof(Timer), 0, &uniformBufferPointer);
 
 	// update descriptor set

@@ -200,7 +200,6 @@
     <ClInclude Include="..\..\additionalDependencies\vvm\VVM.hpp" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\Console.h" />
-    <ClInclude Include="src\CreationObjects.h" />
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\HalesiaEngine.h" />
     <ClInclude Include="src\io\SceneLoader.h" />

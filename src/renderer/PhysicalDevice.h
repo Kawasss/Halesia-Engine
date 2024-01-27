@@ -21,18 +21,18 @@ class PhysicalDevice
 	public:
 		PhysicalDevice() = default;
 		PhysicalDevice(VkPhysicalDevice physicalDevice);
-		uint64_t VRAM();
-		uint64_t AdditionalRAM();
+		uint64_t VRAM() const;
+		uint64_t AdditionalRAM() const;
 		VkDevice GetLogicalDevice(Surface& surface);
-		QueueFamilyIndices QueueFamilies(Surface& surface);
-		VkFormat GetDepthFormat();
-		VkPhysicalDeviceProperties Properties();
-		VkPhysicalDeviceMemoryProperties MemoryProperties();
-		VkPhysicalDeviceFeatures Features();
+		QueueFamilyIndices QueueFamilies(Surface& surface) const;
+		VkFormat GetDepthFormat() const;
+		VkPhysicalDeviceProperties Properties() const;
+		VkPhysicalDeviceMemoryProperties MemoryProperties() const;
+		VkPhysicalDeviceFeatures Features() const;
 		VkPhysicalDevice Device();
 		VkQueue presentQueue{}; //temp
 
 	private:
-		VkFormat GetSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+		VkFormat GetSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
 		VkPhysicalDevice physicalDevice{};
 };

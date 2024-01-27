@@ -5,7 +5,6 @@
 #include "optix.h"
 #include <array>
 #include "cuda_runtime_api.h"
-#include "../CreationObjects.h"
 
 typedef void* HANDLE;
 class Swapchain;
@@ -23,7 +22,7 @@ public:
 	RayTracing() {}
 	void Destroy();
 	
-	static RayTracing* Create(const VulkanCreationObject& creationObject, Win32Window* window, Swapchain* swapchain);
+	static RayTracing* Create(Win32Window* window, Swapchain* swapchain);
 	void DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, uint32_t width, uint32_t height, VkCommandBuffer commandBuffer, uint32_t imageIndex);
 	void RecreateImage(Win32Window* window);
 	void ApplyDenoisedImage(VkCommandBuffer commandBuffer);
@@ -53,8 +52,8 @@ private:
 	void CreateImage(uint32_t width, uint32_t height);
 	void UpdateDescriptorSets();
 
-	void Init(const VulkanCreationObject& creationObject, Win32Window* window, Swapchain* swapchain);
-	void SetUp(const VulkanCreationObject& creationObject, Win32Window* window, Swapchain* swapchain);
+	void Init(Win32Window* window, Swapchain* swapchain);
+	void SetUp(Win32Window* window, Swapchain* swapchain);
 	void CreateDescriptorPool();
 	void CreateDescriptorSets(const std::vector<std::vector<char>> shaderCodes);
 	void CreateRayTracingPipeline(const std::vector<std::vector<char>> shaderCodes);
@@ -93,8 +92,6 @@ private:
 	std::vector<VkDescriptorSet> descriptorSets;
 
 	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR  };
-
-	VulkanCreationObject creationObject;
 
 	VkPipelineLayout pipelineLayout;
 	VkPipeline pipeline;

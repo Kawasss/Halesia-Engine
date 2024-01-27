@@ -3,11 +3,11 @@
 Material Material::Create(const MaterialCreateInfo& createInfo)
 {
 	Material ret{};
-	if (!createInfo.albedo.empty())           ret.albedo = new Texture(createInfo.creationObject, createInfo.albedo);
-	if (!createInfo.normal.empty())           ret.normal = new Texture(createInfo.creationObject, createInfo.normal, true, TEXTURE_FORMAT_UNORM);
-	if (!createInfo.metallic.empty())         ret.metallic = new Texture(createInfo.creationObject, createInfo.metallic);
-	if (!createInfo.roughness.empty())        ret.roughness = new Texture(createInfo.creationObject, createInfo.roughness);
-	if (!createInfo.ambientOcclusion.empty()) ret.ambientOcclusion = new Texture(createInfo.creationObject, createInfo.ambientOcclusion);
+	if (!createInfo.albedo.empty())           ret.albedo = new Texture(createInfo.albedo);
+	if (!createInfo.normal.empty())           ret.normal = new Texture(createInfo.normal, true, TEXTURE_FORMAT_UNORM);
+	if (!createInfo.metallic.empty())         ret.metallic = new Texture(createInfo.metallic);
+	if (!createInfo.roughness.empty())        ret.roughness = new Texture(createInfo.roughness);
+	if (!createInfo.ambientOcclusion.empty()) ret.ambientOcclusion = new Texture(createInfo.ambientOcclusion);
 	ret.isLight = createInfo.isLight;
 	
 	return ret;

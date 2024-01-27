@@ -207,15 +207,15 @@ void Swapchain::Recreate(VkRenderPass renderPass)
 void Swapchain::CreateDepthBuffers()
 {
     VkFormat depthFormat = physicalDevice.GetDepthFormat();
-    Vulkan::CreateImage(logicalDevice, physicalDevice, extent.width, extent.height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, depthImage, depthImageMemory);
-    depthImageView = Vulkan::CreateImageView(logicalDevice, depthImage, VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+    Vulkan::CreateImage(extent.width, extent.height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, depthImage, depthImageMemory);
+    depthImageView = Vulkan::CreateImageView(depthImage, VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
 void Swapchain::CreateImageViews()
 {
     imageViews.resize(this->images.size());
     for (uint32_t i = 0; i < images.size(); i++)
-        imageViews[i] = Vulkan::CreateImageView(logicalDevice, images[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, format, VK_IMAGE_ASPECT_COLOR_BIT);
+        imageViews[i] = Vulkan::CreateImageView(images[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, format, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void Swapchain::CreateFramebuffers(VkRenderPass renderPass)

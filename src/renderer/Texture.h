@@ -4,9 +4,6 @@
 #include <future>
 #include "PhysicalDevice.h"
 
-struct VulkanCreationObject;
-typedef VulkanCreationObject TextureCreationObject;
-
 enum TextureFormat
 {
 	TEXTURE_FORMAT_SRGB = VK_FORMAT_R8G8B8A8_SRGB,
@@ -16,8 +13,8 @@ enum TextureFormat
 class Image
 {
 public:
-	void GenerateImages(const TextureCreationObject& creationObjects, std::vector<std::vector<char>>& textureData, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
-	void GenerateEmptyImages(const TextureCreationObject& creationObjects, int width, int height, int amount);
+	void GenerateImages(std::vector<std::vector<char>>& textureData, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
+	void GenerateEmptyImages(int width, int height, int amount);
 	void AwaitGeneration();
 	bool HasFinishedLoading();
 	void Destroy();
@@ -52,8 +49,8 @@ protected:
 class Cubemap : public Image
 {
 public:
-	Cubemap(const TextureCreationObject& creationObjects, std::vector<std::string> filePath, bool useMipMaps = true);
-	Cubemap(const TextureCreationObject& creationObjects, std::vector<std::vector<char>> filePath, bool useMipMaps = true);
+	Cubemap(std::vector<std::string> filePath, bool useMipMaps = true);
+	Cubemap(std::vector<std::vector<char>> filePath, bool useMipMaps = true);
 };
 
 class Texture : public Image
@@ -64,9 +61,9 @@ public:
 	static Texture* placeholderMetallic;
 	static Texture* placeholderRoughness;
 	static Texture* placeholderAmbientOcclusion;
-	static void GeneratePlaceholderTextures(const TextureCreationObject& creationObjects);
+	static void GeneratePlaceholderTextures();
 	static void DestroyPlaceholderTextures();
 
-	Texture(const TextureCreationObject& creationObjects, std::string filePath, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
-	Texture(const TextureCreationObject& creationObjects, std::vector<char> imageData, bool useMipMaps = true);
+	Texture(std::string filePath, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
+	Texture(std::vector<char> imageData, bool useMipMaps = true);
 };

@@ -16,7 +16,6 @@ class TestScene : public Scene
 	void Start() override
 	{
 		MaterialCreateInfo createInfo{};
-		createInfo.creationObject = GetVulkanCreationObjects();
 		createInfo.albedo = "textures/rockA.jpg";
 		createInfo.normal = "textures/rockN.jpg";
 
@@ -29,7 +28,7 @@ class TestScene : public Scene
 		lampInfo.isLight = true;
 
 		Object* lamp = AddStaticObject({ "sphere" });
-		lamp->AddMesh(GenericLoader::LoadObjectFile("stdObj/sphere.fbx").meshes, GetVulkanCreationObjects());
+		lamp->AddMesh(GenericLoader::LoadObjectFile("stdObj/sphere.fbx").meshes);
 		Material lampMat = Material::Create(lampInfo);
 		lampMat.AwaitGeneration();
 		lamp->meshes[0].SetMaterial(lampMat);

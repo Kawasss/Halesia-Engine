@@ -7,20 +7,20 @@
 std::vector<Material> Mesh::materials;
 std::mutex Mesh::materialMutex;
 
-void Mesh::ProcessMaterial(const TextureCreationObject& creationObjects, const MaterialCreationData& creationData)
+void Mesh::ProcessMaterial(const MaterialCreationData& creationData)
 {
 	if (materialIndex != 0) // if this mesh already has a material, then dont replace that with this one
 		return;
 
-	Texture* albedo = !creationData.albedoIsDefault ? new Texture(creationObjects, creationData.albedoData) : Texture::placeholderAlbedo;
-	Texture* normal = !creationData.normalIsDefault ? new Texture(creationObjects, creationData.normalData) : Texture::placeholderNormal;
-	Texture* metallic = !creationData.metallicIsDefault ? new Texture(creationObjects, creationData.metallicData) : Texture::placeholderMetallic;
-	Texture* roughness = !creationData.roughnessIsDefault ? new Texture(creationObjects, creationData.roughnessData) : Texture::placeholderRoughness;
-	Texture* ambientOcclusion = !creationData.ambientOcclusionIsDefault ? new Texture(creationObjects, creationData.ambientOcclusionData) : Texture::placeholderAmbientOcclusion;
+	Texture* albedo = !creationData.albedoIsDefault ? new Texture(creationData.albedoData) : Texture::placeholderAlbedo;
+	Texture* normal = !creationData.normalIsDefault ? new Texture(creationData.normalData) : Texture::placeholderNormal;
+	Texture* metallic = !creationData.metallicIsDefault ? new Texture(creationData.metallicData) : Texture::placeholderMetallic;
+	Texture* roughness = !creationData.roughnessIsDefault ? new Texture(creationData.roughnessData) : Texture::placeholderRoughness;
+	Texture* ambientOcclusion = !creationData.ambientOcclusionIsDefault ? new Texture(creationData.ambientOcclusionData) : Texture::placeholderAmbientOcclusion;
 	SetMaterial({ albedo, normal, metallic, roughness, ambientOcclusion });
 }
 
-void Mesh::Create(const MeshCreationObject& creationObject, const MeshCreationData& creationData)
+void Mesh::Create(const MeshCreationData& creationData)
 {
 	if (materials.size() == 0)
 		materials.push_back({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
@@ -35,12 +35,12 @@ void Mesh::Create(const MeshCreationObject& creationObject, const MeshCreationDa
 	min = center * 2.f - max;
 	
 	if (creationData.hasMaterial)
-		ProcessMaterial(creationObject, creationData.material);
-	Recreate(creationObject);
+		ProcessMaterial(creationData.material);
+	Recreate();
 	finished = true;
 }
 
-void Mesh::Recreate(const MeshCreationObject& creationObject)
+void Mesh::Recreate()
 {
 	vertexMemory = Renderer::globalVertexBuffer.SubmitNewData(vertices);
 	indexMemory = Renderer::globalIndicesBuffer.SubmitNewData(indices);

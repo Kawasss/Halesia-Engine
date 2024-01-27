@@ -13,14 +13,14 @@ void Object::AwaitGeneration()
 		mesh.AwaitGeneration();
 }
 
-void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, const ObjectCreationData& creationData)
+void Object::GenerateObjectWithData(const ObjectCreationData& creationData)
 {
 	/*#ifdef _DEBUG
 	Console::WriteLine("Attempting to create new model \"" + name + '\"', MESSAGE_SEVERITY_DEBUG);
 	#endif*/
 
 	for (int i = 0; i < creationData.meshes.size(); i++)
-		meshes[i].Create(creationObject, creationData.meshes[i]);
+		meshes[i].Create(creationData.meshes[i]);
 
 	if (creationData.hitBox.shapeType != SHAPE_TYPE_NONE)
 	{
@@ -38,13 +38,13 @@ void Object::GenerateObjectWithData(const ObjectCreationObject& creationObject, 
 	#endif
 }
 
-void Object::RecreateMeshes(const MeshCreationObject& creationObject)
+void Object::RecreateMeshes()
 {
 	for (Mesh& mesh : meshes)
-		mesh.Recreate(creationObject);
+		mesh.Recreate();
 }
 
-Object* Object::Create(const ObjectCreationData& creationData, const MeshCreationObject& creationObject, void* customClassPointer)
+Object* Object::Create(const ObjectCreationData& creationData, void* customClassPointer)
 {
 	Object* ptr = new Object();
 	ptr->scriptClass = customClassPointer;
@@ -58,16 +58,16 @@ Object* Object::Create(const ObjectCreationData& creationData, const MeshCreatio
 	ptr->transform.rotation = creationData.rotation;
 	ptr->transform.scale = creationData.scale;
 
-	ptr->GenerateObjectWithData(creationObject, creationData); // maybe async??
+	ptr->GenerateObjectWithData(creationData); // maybe async??
 	return ptr;
 }
 
-void Object::AddMesh(const std::vector<MeshCreationData>& creationData, const MeshCreationObject& creationObject)
+void Object::AddMesh(const std::vector<MeshCreationData>& creationData)
 {
 	for (int i = 0; i < creationData.size(); i++)
 	{
 		meshes.push_back({});
-		meshes.back().Create(creationObject, creationData[i]);
+		meshes.back().Create(creationData[i]);
 	}
 }
 

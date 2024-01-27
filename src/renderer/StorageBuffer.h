@@ -2,7 +2,6 @@
 #include "Vulkan.h"
 #include "../ResourceManager.h"
 #include "../Console.h"
-#include "../CreationObjects.h"
 #include <iostream>
 #include <mutex>
 
@@ -19,10 +18,11 @@ template<typename T> class StorageBuffer
 {
 public:
 	StorageBuffer() {}
-	void Reserve(const VulkanCreationObject& creationObject, size_t maxAmountToBeStored, VkBufferUsageFlags usage)
+	void Reserve(size_t maxAmountToBeStored, VkBufferUsageFlags usage)
 	{
+		Vulkan::Context context = Vulkan::GetContext();
 		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
-		this->logicalDevice = creationObject.logicalDevice;
+		this->logicalDevice = context.logicalDevice;
 		this->usage = usage;
 
 		reservedBufferSize = maxAmountToBeStored * sizeof(T);
@@ -30,17 +30,17 @@ public:
 		VkBuffer stagingBuffer;
 		VkDeviceMemory stagingBufferMemory;
 		// create an empty buffer with the specified size
-		Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, reservedBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+		Vulkan::CreateBuffer(reservedBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
-		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(creationObject);
+		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
 
-		Vulkan::CreateBuffer(creationObject.logicalDevice, creationObject.physicalDevice, reservedBufferSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, buffer, deviceMemory);
-		Vulkan::CopyBuffer(creationObject.logicalDevice, commandPool, creationObject.queue, stagingBuffer, buffer, reservedBufferSize);
+		Vulkan::CreateBuffer(reservedBufferSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, buffer, deviceMemory);
+		Vulkan::CopyBuffer(commandPool, context.graphicsQueue, stagingBuffer, buffer, reservedBufferSize);
 
-		vkDestroyBuffer(creationObject.logicalDevice, stagingBuffer, nullptr);
-		vkFreeMemory(creationObject.logicalDevice, stagingBufferMemory, nullptr);
+		vkDestroyBuffer(context.logicalDevice, stagingBuffer, nullptr);
+		vkFreeMemory(context.logicalDevice, stagingBufferMemory, nullptr);
 
-		Vulkan::YieldCommandPool(creationObject.queueIndex, commandPool);
+		Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
 	}
 
 	StorageMemory SubmitNewData(std::vector<T> data)
@@ -210,8 +210,9 @@ private:
 		vkUnmapMemory(logicalDevice, deviceMemory);
 	}
 
-	void ClearBuffer(const VulkanCreationObject& creationObject, StorageMemory memory = 0)
+	void ClearBuffer(StorageMemory memory = 0)
 	{
+		const Vulkan::Context& context = Vulkan::GetContext();
 		VkDeviceSize offset = 0;
 		VkDeviceSize size = 0;
 
@@ -227,13 +228,13 @@ private:
 			size = memoryInfo.size;
 		}
 
-		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(creationObject);
+		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
 
 		VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
 		vkCmdFillBuffer(commandBuffer, buffer, offset, size, 0); // fill the specified part of the buffer with 0's
-		Vulkan::EndSingleTimeCommands(logicalDevice, creationObject.queue, commandBuffer, commandPool);
+		Vulkan::EndSingleTimeCommands(logicalDevice, context.graphicsQueue, commandBuffer, commandPool);
 
-		Vulkan::YieldCommandPool(creationObject.queueIndex, commandPool);
+		Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
 	}
 
 	bool CheckIfHandleIsValid(StorageMemory memory)

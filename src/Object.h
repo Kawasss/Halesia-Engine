@@ -6,7 +6,6 @@
 
 #include "renderer/Mesh.h"
 #include "Transform.h"
-#include "CreationObjects.h"
 #include "physics/RigidBody.h"
 #include "physics/Shapes.h"
 
@@ -47,7 +46,7 @@ public:
 	/// </summary>
 	void AwaitGeneration();
 
-	void RecreateMeshes(const MeshCreationObject& creationObject);
+	void RecreateMeshes();
 
 	/// <summary>
 	/// Gets the script attached to the object, if no script is attached it will return an invalid pointer
@@ -63,10 +62,10 @@ public:
 	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
 	/// <param name="creationData"></param>
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
-	static Object* Create(const ObjectCreationData& creationData, const ObjectCreationObject& creationObject, void* customClassInstancePointer = nullptr);
+	static Object* Create(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
 
 	void AddRigidBody(RigidBodyType type, Shape shape);
-	void AddMesh(const std::vector<MeshCreationData>& creationData, const MeshCreationObject& creationObject);
+	void AddMesh(const std::vector<MeshCreationData>& creationData);
 
 	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script);
 	static std::string ObjectStateToString(ObjectState state);
@@ -82,7 +81,7 @@ public:
 	bool shouldBeDestroyed = false;
 
 private:
-	void GenerateObjectWithData(const ObjectCreationObject& creationObject, const ObjectCreationData& creationData);
+	void GenerateObjectWithData(const ObjectCreationData& creationData);
 
 	void* scriptClass = nullptr;
 	std::future<void> generationProcess;

@@ -1,7 +1,6 @@
 #pragma once
 #include "Texture.h"
 #include "../ResourceManager.h"
-#include "../CreationObjects.h"
 
 typedef uint64_t Handle;
 
@@ -20,7 +19,6 @@ inline const std::vector<MaterialTexture> PBRMaterialTextures = { MATERIAL_TEXTU
 
 struct MaterialCreateInfo
 {
-	VulkanCreationObject creationObject;
 	std::string albedo = "";
 	std::string normal = "";
 	std::string metallic = "";

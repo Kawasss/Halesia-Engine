@@ -133,11 +133,6 @@ void Renderer::Destroy()
 	delete this;
 }
 
-VulkanCreationObject& Renderer::GetVulkanCreationObject()
-{
-	return creationObject;
-}
-
 void Renderer::CreateImGUI()
 {
 	VkDescriptorPoolSize poolSizes[] =
@@ -182,9 +177,9 @@ void Renderer::CreateImGUI()
 
 	ImGui_ImplVulkan_Init(&imGUICreateInfo, renderPass);
 
-	VkCommandBuffer imGUICommandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
+	VkCommandBuffer imGUICommandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
 	ImGui_ImplVulkan_CreateFontsTexture(imGUICommandBuffer);
-	Vulkan::EndSingleTimeCommands(logicalDevice, graphicsQueue, imGUICommandBuffer, commandPool);
+	Vulkan::EndSingleTimeCommands(graphicsQueue, imGUICommandBuffer, commandPool);
 
 	ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
@@ -216,7 +211,6 @@ void Renderer::InitVulkan()
 	surface = Surface::GenerateSurface(instance, testWindow);
 	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
 	SetLogicalDevice();
-	creationObject = { logicalDevice, physicalDevice, graphicsQueue, queueIndex };
 	swapchain = new Swapchain(logicalDevice, physicalDevice, surface, testWindow);
 	swapchain->CreateImageViews();
 	CreateDescriptorSetLayout();
@@ -226,7 +220,7 @@ void Renderer::InitVulkan()
 	swapchain->CreateFramebuffers(renderPass);
 	CreateDeferredFramebuffer(swapchain->extent.width, swapchain->extent.height);
 	CreateIndirectDrawParametersBuffer();
-	Texture::GeneratePlaceholderTextures(GetVulkanCreationObject());
+	Texture::GeneratePlaceholderTextures();
 	Mesh::materials.push_back({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
 	if (defaultSampler == VK_NULL_HANDLE)
 		CreateTextureSampler();
@@ -244,17 +238,17 @@ void Renderer::InitVulkan()
 
 	if (!initGlobalBuffers)
 	{
-		globalVertexBuffer.Reserve(creationObject, 1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-		globalIndicesBuffer.Reserve(creationObject, 1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+		globalVertexBuffer.Reserve(1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+		globalIndicesBuffer.Reserve(1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 		initGlobalBuffers = true;
 	}
 
-	rayTracer = RayTracing::Create(creationObject, testWindow, swapchain);
+	rayTracer = RayTracing::Create(testWindow, swapchain);
 }
 
 void Renderer::CreateIndirectDrawParametersBuffer()
 {
-	indirectDrawParameters.Reserve(GetVulkanCreationObject(), MAX_MESHES, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+	indirectDrawParameters.Reserve(MAX_MESHES, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
 }
 
 void Renderer::CreateTextureSampler()
@@ -292,7 +286,7 @@ void Renderer::CreateModelDataBuffers()
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		Vulkan::CreateBuffer(logicalDevice, physicalDevice, size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, modelBuffers[i], modelBuffersMemory[i]);
+		Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, modelBuffers[i], modelBuffersMemory[i]);
 		vkMapMemory(logicalDevice, modelBuffersMemory[i], 0, size, 0, &modelBuffersMapped[i]);
 	}
 }
@@ -322,7 +316,7 @@ void Renderer::CreateUniformBuffers()
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		Vulkan::CreateBuffer(logicalDevice, physicalDevice, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
+		Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
 		vkMapMemory(logicalDevice, uniformBuffersMemory[i], 0, size, 0, &uniformBuffersMapped[i]);
 	}
 }
@@ -464,13 +458,13 @@ void Renderer::CreateDeferredFramebuffer(uint32_t width, uint32_t height)
 	gBufferMemories.resize(3);
 	for (int i = 0; i < gBufferViews.size(); i++)
 	{
-		Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, 1, 1, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, gBufferImages[i], gBufferMemories[i]);
-		gBufferViews[i] = Vulkan::CreateImageView(logicalDevice, gBufferImages[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+		Vulkan::CreateImage(width, height, 1, 1, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, gBufferImages[i], gBufferMemories[i]);
+		gBufferViews[i] = Vulkan::CreateImageView(gBufferImages[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
 	VkFormat depthFormat = physicalDevice.GetDepthFormat();
-	Vulkan::CreateImage(logicalDevice, physicalDevice, width, height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, deferredDepth, deferredDepthMemory);
-	deferredDepthView = Vulkan::CreateImageView(logicalDevice, deferredDepth, VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	Vulkan::CreateImage(width, height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, deferredDepth, deferredDepthMemory);
+	deferredDepthView = Vulkan::CreateImageView(deferredDepth, VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 	std::array<VkImageView, 4> framebufferViews =
 	{
@@ -694,8 +688,8 @@ void Renderer::CreateGraphicsPipeline()
 
 	// world shaders pipeline
 
-	VkShaderModule vertexShaderModule = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/vert.spv"));
-	VkShaderModule fragmentShaderModule = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/frag.spv"));
+	VkShaderModule vertexShaderModule = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/vert.spv"));
+	VkShaderModule fragmentShaderModule = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/frag.spv"));
 
 	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(vertexShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
 	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(fragmentShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -719,8 +713,8 @@ void Renderer::CreateGraphicsPipeline()
 
 	// screen shaders pipeline
 
-	VkShaderModule screenShaderVert = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/screen.vert.spv"));
-	VkShaderModule screenShaderFrag = Vulkan::CreateShaderModule(logicalDevice, ReadFile("shaders/spirv/screen.frag.spv"));
+	VkShaderModule screenShaderVert = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/screen.vert.spv"));
+	VkShaderModule screenShaderFrag = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/screen.frag.spv"));
 
 	vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderVert, VK_SHADER_STAGE_VERTEX_BIT);
 	fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderFrag, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -754,7 +748,7 @@ void Renderer::SetLogicalDevice()
 
 void Renderer::CreateCommandPool()
 {
-	commandPool = Vulkan::FetchNewCommandPool(GetVulkanCreationObject());
+	commandPool = Vulkan::FetchNewCommandPool(queueIndex);
 }
 
 void Renderer::CreateCommandBuffer()
@@ -794,36 +788,6 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
 
 	rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, lCommandBuffer, imageIndex);
-
-	/*result = vkEndCommandBuffer(lCommandBuffer);
-	CheckVulkanResult("Failed to end the given command buffer", result, nameof(vkEndCommandBuffer));
-
-	uint64_t value = 0;
-	VkTimelineSemaphoreSubmitInfo timelineInfo{};
-	timelineInfo.sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO;
-	timelineInfo.signalSemaphoreValueCount = 2;
-	timelineInfo.pSignalSemaphoreValues = &value;
-
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.pNext = &timelineInfo;
-	submitInfo.pCommandBuffers = &lCommandBuffer;
-	submitInfo.pSignalSemaphores = &rayTracer->externSemaphore;
-
-	result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
-	CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
-	vkDeviceWaitIdle(logicalDevice);
-	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
-	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
-
-	if (denoiseOutput)
-		rayTracer->DenoiseImage();
-
-	result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
-	CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
-
-	if (denoiseOutput)
-		rayTracer->ApplyDenoisedImage(commandBuffers[currentFrame]);*/
 
 	if (denoiseOutput)
 	{
@@ -918,8 +882,6 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	else if (RayTracing::showAlbedo)
 		imageToCopy = rayTracer->gBufferViews[1];
 
-	//swapchain->CopyImageToSwapchain(imageToCopy, lCommandBuffer, imageIndex);
-	
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
 	clearColors[1].depthStencil = { 1, 0 };

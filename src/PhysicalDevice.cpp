@@ -9,7 +9,7 @@ PhysicalDevice::PhysicalDevice(VkPhysicalDevice physicalDevice)
     this->physicalDevice = physicalDevice;
 }
 
-QueueFamilyIndices PhysicalDevice::QueueFamilies(Surface& surface)
+QueueFamilyIndices PhysicalDevice::QueueFamilies(Surface& surface) const
 {
     QueueFamilyIndices queueFamily;
 
@@ -37,12 +37,12 @@ QueueFamilyIndices PhysicalDevice::QueueFamilies(Surface& surface)
     return queueFamily;
 }
 
-VkFormat PhysicalDevice::GetDepthFormat()
+VkFormat PhysicalDevice::GetDepthFormat() const
 {
     return GetSupportedFormat({ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT }, VK_IMAGE_TILING_OPTIMAL, VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
 }
 
-VkFormat PhysicalDevice::GetSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features)
+VkFormat PhysicalDevice::GetSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const
 {
     for (VkFormat format : candidates)
     {
@@ -57,33 +57,33 @@ VkFormat PhysicalDevice::GetSupportedFormat(const std::vector<VkFormat>& candida
     throw std::runtime_error("Failed to find a supported format");
 }
 
-VkPhysicalDeviceProperties PhysicalDevice::Properties()
+VkPhysicalDeviceProperties PhysicalDevice::Properties() const
 {
     VkPhysicalDeviceProperties properties;
     vkGetPhysicalDeviceProperties(physicalDevice, &properties);
     return properties;
 }
 
-VkPhysicalDeviceFeatures PhysicalDevice::Features()
+VkPhysicalDeviceFeatures PhysicalDevice::Features() const
 {
     VkPhysicalDeviceFeatures features;
     vkGetPhysicalDeviceFeatures(physicalDevice, &features);
     return features;
 }
 
-VkPhysicalDeviceMemoryProperties PhysicalDevice::MemoryProperties()
+VkPhysicalDeviceMemoryProperties PhysicalDevice::MemoryProperties() const
 {
     VkPhysicalDeviceMemoryProperties properties{};
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &properties);
     return properties;
 }
 
-uint64_t PhysicalDevice::VRAM()
+uint64_t PhysicalDevice::VRAM() const
 {
     return MemoryProperties().memoryHeaps[0].size;
 }
 
-uint64_t PhysicalDevice::AdditionalRAM()
+uint64_t PhysicalDevice::AdditionalRAM() const
 {
     return MemoryProperties().memoryHeaps[1].size;
 }

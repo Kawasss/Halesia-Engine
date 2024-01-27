@@ -7,7 +7,6 @@
 #include "PhysicalDevice.h"
 #include "Surface.h"
 #include "Vertex.h"
-#include "CreationObjects.h"
 #include "StorageBuffer.h"
 #include "cuda_runtime_api.h"
 
@@ -44,7 +43,6 @@ public:
 	void RenderIntro(Intro* intro);
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
-	VulkanCreationObject& GetVulkanCreationObject();
 
 	Swapchain* swapchain; // better to keep it private
 
@@ -54,8 +52,6 @@ public:
 	static Handle selectedHandle;
 
 private:
-	VulkanCreationObject creationObject;
-
 	VkInstance instance							= VK_NULL_HANDLE;
 	VkDevice logicalDevice						= VK_NULL_HANDLE;
 	VkRenderPass renderPass						= VK_NULL_HANDLE;

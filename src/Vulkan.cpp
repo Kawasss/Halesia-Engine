@@ -9,7 +9,6 @@ const bool enableValidationLayers = true;
 
 #include "renderer/Vulkan.h"
 #include "Console.h"
-#include "CreationObjects.h"
 #include "renderer/Surface.h"
 
 #define ATTACH_FUNCTION(function) p##function = (PFN_##function##)vkGetDeviceProcAddr(logicalDevice, #function) // relies on the fact that a VkDevice named logicalDevice and the function pointer already exists with DEFINE_VULKAN_FUNCTION_POINTER
@@ -88,10 +87,10 @@ std::mutex& Vulkan::FetchLogicalDeviceMutex(VkDevice logicalDevice)
     return logicalDeviceMutexes[logicalDevice];
 }
 
-VkCommandPool Vulkan::FetchNewCommandPool(const VulkanCreationObject& creationObject)
+VkCommandPool Vulkan::FetchNewCommandPool(uint32_t queueIndex)
 {
     std::lock_guard<std::mutex> lockGuard(commandPoolMutex);
-    std::vector<VkCommandPool>& commandPools = queueCommandPools[creationObject.queueIndex];
+    std::vector<VkCommandPool>& commandPools = queueCommandPools[queueIndex];
     VkCommandPool commandPool;
 
     if (commandPools.empty()) // if there are no idle command pools, create a new one
@@ -99,9 +98,9 @@ VkCommandPool Vulkan::FetchNewCommandPool(const VulkanCreationObject& creationOb
         VkCommandPoolCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         createInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        createInfo.queueFamilyIndex = creationObject.queueIndex;
+        createInfo.queueFamilyIndex = queueIndex;
 
-        VkResult result = vkCreateCommandPool(creationObject.logicalDevice, &createInfo, nullptr, &commandPool);
+        VkResult result = vkCreateCommandPool(context.logicalDevice, &createInfo, nullptr, &commandPool);
         CheckVulkanResult("Failed to create a command pool for the storage buffer", result, vkCreateCommandPool);
     }
     else // if there are idle command pools, get the last one and remove that from the vector
@@ -120,33 +119,33 @@ void Vulkan::YieldCommandPool(uint32_t index, VkCommandPool commandPool)
     queueCommandPools[index].push_back(commandPool);
 }
 
-void Vulkan::DestroyAllCommandPools(VkDevice logicalDevice)
+void Vulkan::DestroyAllCommandPools()
 {
     for (std::pair<uint32_t, std::vector<VkCommandPool>> commandPools : queueCommandPools)
         for (VkCommandPool commandPool : commandPools.second)
-            vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+            vkDestroyCommandPool(context.logicalDevice, commandPool, nullptr);
     queueCommandPools.clear();
 }
 
-VkDeviceAddress Vulkan::GetDeviceAddress(VkDevice logicalDevice, VkBuffer buffer)
+VkDeviceAddress Vulkan::GetDeviceAddress(VkBuffer buffer)
 {
     VkBufferDeviceAddressInfo addressInfo{};
     addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
     addressInfo.buffer = buffer;
 
-    return vkGetBufferDeviceAddress(logicalDevice, &addressInfo);
+    return vkGetBufferDeviceAddress(context.logicalDevice, &addressInfo);
 }
 
-VkDeviceAddress Vulkan::GetDeviceAddress(VkDevice logicalDevice, VkAccelerationStructureKHR accelerationStructure)
+VkDeviceAddress Vulkan::GetDeviceAddress(VkAccelerationStructureKHR accelerationStructure)
 {
     VkAccelerationStructureDeviceAddressInfoKHR BLASAddressInfo{};
     BLASAddressInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
     BLASAddressInfo.accelerationStructure = accelerationStructure;
 
-    return vkGetAccelerationStructureDeviceAddressKHR(logicalDevice, &BLASAddressInfo);
+    return vkGetAccelerationStructureDeviceAddressKHR(context.logicalDevice, &BLASAddressInfo);
 }
 
-HANDLE Vulkan::GetWin32MemoryHandle(VkDevice logicalDevice, VkDeviceMemory memory)
+HANDLE Vulkan::GetWin32MemoryHandle(VkDeviceMemory memory)
 {
     HANDLE handle = (void*)0;
     VkMemoryGetWin32HandleInfoKHR handleInfo{};
@@ -154,12 +153,12 @@ HANDLE Vulkan::GetWin32MemoryHandle(VkDevice logicalDevice, VkDeviceMemory memor
     handleInfo.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     handleInfo.memory = memory;
 
-    VkResult result = vkGetMemoryWin32HandleKHR(logicalDevice, &handleInfo, &handle);
+    VkResult result = vkGetMemoryWin32HandleKHR(context.logicalDevice, &handleInfo, &handle);
     CheckVulkanResult("Failed to get the win32 handle of given memory", result, vkGetMemoryWin32HandleKHR);
     return handle;
 }
 
-VkShaderModule Vulkan::CreateShaderModule(VkDevice logicalDevice, const std::vector<char>& code)
+VkShaderModule Vulkan::CreateShaderModule(const std::vector<char>& code)
 {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -167,7 +166,7 @@ VkShaderModule Vulkan::CreateShaderModule(VkDevice logicalDevice, const std::vec
     createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
 
     VkShaderModule module;
-    VkResult result = vkCreateShaderModule(logicalDevice, &createInfo, nullptr, &module);
+    VkResult result = vkCreateShaderModule(context.logicalDevice, &createInfo, nullptr, &module);
     CheckVulkanResult("Failed to create a shader module", result, vkCreateShaderModule);
 
     return module;
@@ -190,20 +189,20 @@ PhysicalDevice Vulkan::GetBestPhysicalDevice(VkInstance instance, Surface surfac
     return Vulkan::GetBestPhysicalDevice(devices, surface);
 }
 
-void Vulkan::CopyBuffer(VkDevice logicalDevice, VkCommandPool commandPool, VkQueue queue, VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size)
+void Vulkan::CopyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size)
 {
-    VkCommandBuffer localCommandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
+    VkCommandBuffer localCommandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
 
     VkBufferCopy copyRegion{};
     copyRegion.size = size;
 
     vkCmdCopyBuffer(localCommandBuffer, sourceBuffer, destinationBuffer, 1, &copyRegion);
 
-    Vulkan::EndSingleTimeCommands(logicalDevice, queue, localCommandBuffer, commandPool);
+    Vulkan::EndSingleTimeCommands(context.graphicsQueue, localCommandBuffer, commandPool);
 }
 
 std::mutex endCommandMutex;
-void Vulkan::EndSingleTimeCommands(VkDevice logicalDevice, VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool)
+void Vulkan::EndSingleTimeCommands(VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool)
 {
     VkResult result = vkEndCommandBuffer(commandBuffer);
     CheckVulkanResult("Failed to end the single time command buffer", result, vkQueueSubmit);
@@ -220,10 +219,10 @@ void Vulkan::EndSingleTimeCommands(VkDevice logicalDevice, VkQueue queue, VkComm
     result = vkQueueWaitIdle(queue);
     CheckVulkanResult("Failed to wait for the queue idle", result, vkQueueWaitIdle);
 
-    vkFreeCommandBuffers(logicalDevice, commandPool, 1, &commandBuffer);
+    vkFreeCommandBuffers(context.logicalDevice, commandPool, 1, &commandBuffer);
 }
 
-VkCommandBuffer Vulkan::BeginSingleTimeCommands(VkDevice logicalDevice, VkCommandPool commandPool)
+VkCommandBuffer Vulkan::BeginSingleTimeCommands(VkCommandPool commandPool)
 {
     VkCommandBufferAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -232,7 +231,7 @@ VkCommandBuffer Vulkan::BeginSingleTimeCommands(VkDevice logicalDevice, VkComman
     allocateInfo.commandBufferCount = 1;
 
     VkCommandBuffer localCommandBuffer;
-    vkAllocateCommandBuffers(logicalDevice, &allocateInfo, &localCommandBuffer);
+    vkAllocateCommandBuffers(context.logicalDevice, &allocateInfo, &localCommandBuffer);
 
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -244,7 +243,7 @@ VkCommandBuffer Vulkan::BeginSingleTimeCommands(VkDevice logicalDevice, VkComman
     return localCommandBuffer;
 }
 
-inline void CreateBufferHandle(VkDevice logicalDevice, VkBuffer& buffer, VkDeviceSize size, VkBufferUsageFlags usage, void* pNext = nullptr)
+void Vulkan::CreateBufferHandle(VkBuffer& buffer, VkDeviceSize size, VkBufferUsageFlags usage, void* pNext)
 {
     VkBufferCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -253,51 +252,51 @@ inline void CreateBufferHandle(VkDevice logicalDevice, VkBuffer& buffer, VkDevic
     createInfo.usage = usage;
     createInfo.pNext = pNext;
 
-    VkResult result = vkCreateBuffer(logicalDevice, &createInfo, nullptr, &buffer);
+    VkResult result = vkCreateBuffer(context.logicalDevice, &createInfo, nullptr, &buffer);
     CheckVulkanResult("Failed to create a new buffer", result, vkCreateBuffer);
 }
 
-inline void AllocateMemory(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkDeviceMemory& memory, VkMemoryRequirements& memoryRequirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
+void Vulkan::AllocateMemory(VkDeviceMemory& memory, VkMemoryRequirements& memoryRequirements, VkMemoryPropertyFlags properties, void* pNext)
 {
     VkMemoryAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocateInfo.pNext = pNext;
     allocateInfo.allocationSize = memoryRequirements.size;
-    allocateInfo.memoryTypeIndex = Vulkan::GetMemoryType(memoryRequirements.memoryTypeBits, properties, physicalDevice);
+    allocateInfo.memoryTypeIndex = Vulkan::GetMemoryType(memoryRequirements.memoryTypeBits, properties, context.physicalDevice);
 
-    VkResult result = vkAllocateMemory(logicalDevice, &allocateInfo, nullptr, &memory);
+    VkResult result = vkAllocateMemory(context.logicalDevice, &allocateInfo, nullptr, &memory);
     CheckVulkanResult("Failed to allocate " + std::to_string(memoryRequirements.size) + " bytes of memory", result, vkAllocateMemory);
 }
 
-void Vulkan::CreateExternalBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+void Vulkan::CreateExternalBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
     VkExternalMemoryBufferCreateInfo externBufferInfo{};
     externBufferInfo.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO;
     externBufferInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
-    CreateBufferHandle(logicalDevice, buffer, size, usage, &externBufferInfo);
+    CreateBufferHandle(buffer, size, usage, &externBufferInfo);
 
     VkMemoryRequirements memoryRequirements;
-    vkGetBufferMemoryRequirements(logicalDevice, buffer, &memoryRequirements);
+    vkGetBufferMemoryRequirements(context.logicalDevice, buffer, &memoryRequirements);
 
     VkExportMemoryAllocateInfo allocInfoExport{}; // dont know how to feel about win32 stuff being here
     allocInfoExport.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
     allocInfoExport.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
     allocInfoExport.pNext = optionalMemoryAllocationFlags;
 
-    AllocateMemory(logicalDevice, physicalDevice, bufferMemory, memoryRequirements, properties, &allocInfoExport);
-    vkBindBufferMemory(logicalDevice, buffer, bufferMemory, 0);
+    AllocateMemory(bufferMemory, memoryRequirements, properties, &allocInfoExport);
+    vkBindBufferMemory(context.logicalDevice, buffer, bufferMemory, 0);
 }
 
-void Vulkan::CreateBuffer(VkDevice logicalDevice, PhysicalDevice physicalDevice, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+void Vulkan::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
 {
-    CreateBufferHandle(logicalDevice, buffer, size, usage);
+    CreateBufferHandle(buffer, size, usage);
 
     VkMemoryRequirements memoryRequirements;
-    vkGetBufferMemoryRequirements(logicalDevice, buffer, &memoryRequirements);
+    vkGetBufferMemoryRequirements(context.logicalDevice, buffer, &memoryRequirements);
 
-    AllocateMemory(logicalDevice, physicalDevice, bufferMemory, memoryRequirements, properties, optionalMemoryAllocationFlags);
-    vkBindBufferMemory(logicalDevice, buffer, bufferMemory, 0);
+    AllocateMemory(bufferMemory, memoryRequirements, properties, optionalMemoryAllocationFlags);
+    vkBindBufferMemory(context.logicalDevice, buffer, bufferMemory, 0);
 }
 
 uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice)
@@ -311,7 +310,7 @@ uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags proper
     CheckVulkanResult("Failed to get the memory type " + (std::string)string_VkMemoryPropertyFlags(properties) + " for the physical device " + (std::string)physicalDevice.Properties().deviceName, VK_ERROR_DEVICE_LOST, GetMemoryType);
 }
 
-void Vulkan::CreateImage(VkDevice logicalDevice, PhysicalDevice physicalDevice, uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags, VkImage& image, VkDeviceMemory& memory)
+void Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags, VkImage& image, VkDeviceMemory& memory)
 {
     VkImageCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -329,14 +328,14 @@ void Vulkan::CreateImage(VkDevice logicalDevice, PhysicalDevice physicalDevice, 
     createInfo.usage = usage;
     createInfo.flags = flags;
     
-    VkResult result = vkCreateImage(logicalDevice, &createInfo, nullptr, &image);
+    VkResult result = vkCreateImage(context.logicalDevice, &createInfo, nullptr, &image);
     CheckVulkanResult("Failed to create an image", result, vkCreateImage);
 
     VkMemoryRequirements memoryRequirements;
-    vkGetImageMemoryRequirements(logicalDevice, image, &memoryRequirements);
+    vkGetImageMemoryRequirements(context.logicalDevice, image, &memoryRequirements);
 
-    AllocateMemory(logicalDevice, physicalDevice, memory, memoryRequirements, properties);
-    vkBindImageMemory(logicalDevice, image, memory, 0);
+    AllocateMemory(memory, memoryRequirements, properties);
+    vkBindImageMemory(context.logicalDevice, image, memory, 0);
 }
 
 bool Vulkan::HasStencilComponent(VkFormat format)
@@ -344,7 +343,7 @@ bool Vulkan::HasStencilComponent(VkFormat format)
     return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
-VkImageView Vulkan::CreateImageView(VkDevice logicalDevice, VkImage image, VkImageViewType viewType, uint32_t mipLevels, uint32_t layerCount, VkFormat format, VkImageAspectFlags aspectFlags)
+VkImageView Vulkan::CreateImageView(VkImage image, VkImageViewType viewType, uint32_t mipLevels, uint32_t layerCount, VkFormat format, VkImageAspectFlags aspectFlags)
 {
     VkImageViewCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -358,7 +357,7 @@ VkImageView Vulkan::CreateImageView(VkDevice logicalDevice, VkImage image, VkIma
     createInfo.subresourceRange.baseMipLevel = 0;
 
     VkImageView imageView;
-    VkResult result = vkCreateImageView(logicalDevice, &createInfo, nullptr, &imageView);
+    VkResult result = vkCreateImageView(context.logicalDevice, &createInfo, nullptr, &imageView);
     CheckVulkanResult("Failed to create an image view", result, vkCreateImageView);
 
     return imageView;

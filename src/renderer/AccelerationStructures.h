@@ -3,7 +3,6 @@
 #include "StorageBuffer.h"
 
 struct Mesh;
-struct VulkanCreationObject;
 class Object;
 
 class AccelerationStructure // or AS for short
