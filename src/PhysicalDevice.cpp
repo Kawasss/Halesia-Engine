@@ -23,11 +23,15 @@ QueueFamilyIndices PhysicalDevice::QueueFamilies(Surface& surface) const
     {
         if (properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
             queueFamily.graphicsFamily = i;
+        if (properties[i].queueFlags & VK_QUEUE_COMPUTE_BIT)
+            queueFamily.computeFamily = i;
+        if (properties[i].queueFlags & VK_QUEUE_TRANSFER_BIT)
+            queueFamily.transferFamily = i;
 
         VkBool32 presentFamilySupport = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface.VkSurface(), &presentFamilySupport);
 
-        if (presentFamilySupport)
+        if (presentFamilySupport && !queueFamily.presentFamily.has_value())
             queueFamily.presentFamily = i;
 
         if (queueFamily.HasValue())
@@ -94,7 +98,7 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
     QueueFamilyIndices indices = QueueFamilies(surface);
 
     std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-    std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value() };
+    std::set<uint32_t> uniqueQueueFamilies = { indices.graphicsFamily.value(), indices.presentFamily.value(), indices.computeFamily.value(), indices.transferFamily.value() };
 
     float queuePriority = 1;
     for (uint32_t queueFamily : uniqueQueueFamilies)
