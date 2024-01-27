@@ -44,7 +44,7 @@ void Mesh::Recreate(const MeshCreationObject& creationObject)
 {
 	vertexMemory = Renderer::globalVertexBuffer.SubmitNewData(vertices);
 	indexMemory = Renderer::globalIndicesBuffer.SubmitNewData(indices);
-	BLAS = BottomLevelAccelerationStructure::Create(creationObject, *this);
+	BLAS = BottomLevelAccelerationStructure::Create(*this);
 }
 
 void Mesh::ResetMaterial()

@@ -111,7 +111,7 @@ void RayTracing::SetUp(const VulkanCreationObject& creationObject, Win32Window* 
 	denoiser = Denoiser::Create(creationObject);
 
 	std::vector<Object*> holder = {};
-	TLAS = TopLevelAccelerationStructure::Create(creationObject, holder); // second parameter is empty since there are no models to build, not the best way to solve this
+	TLAS = TopLevelAccelerationStructure::Create(holder); // second parameter is empty since there are no models to build, not the best way to solve this
 }
 
 void RayTracing::CreateDescriptorPool() // (frames in flight not implemented)
@@ -611,7 +611,7 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 		imageHasChanged = false;
 	}
 	if (!TLAS->HasBeenBuilt() && !objects.empty())
-		TLAS->Build(creationObject, objects);
+		TLAS->Build(objects);
 
 	UpdateInstanceDataBuffer(objects, camera);
 
@@ -632,7 +632,7 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	uniformBuffer = UniformBuffer{ { camera->position, 1 }, glm::inverse(camera->GetViewMatrix()), glm::inverse(camera->GetProjectionMatrix()), glm::uvec2((uint32_t)absX, (uint32_t)absY), frameCount, showUniquePrimitives, raySampleCount, rayDepth, renderProgressive, 0, directionalLightDir};
 	
 	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
-	TLAS->Update(creationObject, objects, commandBuffer);
+	TLAS->Update(objects, commandBuffer);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 	vkCmdTraceRaysKHR(commandBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, width, height, 1);

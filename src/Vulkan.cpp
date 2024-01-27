@@ -23,6 +23,7 @@ std::unordered_map<VkDevice, std::mutex>                 Vulkan::logicalDeviceMu
 std::mutex Vulkan::graphicsQueueMutex;
 std::mutex Vulkan::commandPoolMutex;
 
+Vulkan::Context Vulkan::context{};
 
 VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string functionName, std::string file, int line)
 {
@@ -32,6 +33,16 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     location += file == "" ? "" : " in " + file;
 
     this->message = message + vulkanError + location;
+}
+
+void Vulkan::InitializeContext(Context context)
+{
+    Vulkan::context = context;
+}
+
+const Vulkan::Context& Vulkan::GetContext()
+{
+    return context;
 }
 
 VkPipelineDynamicStateCreateInfo Vulkan::GetDynamicStateCreateInfo(std::vector<VkDynamicState>& dynamicStates)

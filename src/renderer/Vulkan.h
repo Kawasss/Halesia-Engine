@@ -65,6 +65,15 @@ private:
 class Vulkan
 {
 public:
+    struct Context
+    {
+        VkInstance instance;
+        VkDevice logicalDevice;
+        PhysicalDevice physicalDevice;
+        VkQueue graphicsQueue;
+        uint32_t graphicsIndex;
+    };
+
     struct SwapChainSupportDetails
     {
         VkSurfaceCapabilitiesKHR        capabilities;
@@ -120,7 +129,12 @@ public:
     static VkPipelineViewportStateCreateInfo  GetDefaultViewportStateCreateInfo(VkViewport& viewport, VkRect2D& scissors, VkExtent2D extents);
     static VkPipelineDynamicStateCreateInfo   GetDynamicStateCreateInfo(std::vector<VkDynamicState>& dynamicStates);
 
+    static void                               InitializeContext(Context context);
+    static const Context&                     GetContext();
+
 private:
+    static Context context;
+
     static std::mutex                                               commandPoolMutex;
     static std::unordered_map<uint32_t, std::vector<VkCommandPool>> queueCommandPools;
     static std::unordered_map<VkDevice, std::mutex>                 logicalDeviceMutexes;
