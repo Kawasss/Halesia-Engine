@@ -22,6 +22,29 @@ std::unordered_map<VkDevice, std::mutex>                 Vulkan::logicalDeviceMu
 std::mutex Vulkan::graphicsQueueMutex;
 std::mutex Vulkan::commandPoolMutex;
 
+std::vector<const char*> Vulkan::requiredLogicalDeviceExtensions =
+{
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
+    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
+    VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
+    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+    VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
+    VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
+    VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
+    VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
+    VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
+};
+std::vector<const char*> Vulkan::requiredInstanceExtensions =
+{
+    VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+    VK_KHR_SURFACE_EXTENSION_NAME,
+};
+std::vector<const char*> Vulkan::validationLayers =
+{
+    "VK_LAYER_KHRONOS_validation"
+};
+
 Vulkan::Context Vulkan::context{};
 
 VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string functionName, std::string file, int line)

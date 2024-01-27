@@ -163,8 +163,8 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
     createInfo.pNext = &deviceFeatures2;
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredLogicalDeviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = requiredLogicalDeviceExtensions.data();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(Vulkan::requiredLogicalDeviceExtensions.size());
+    createInfo.ppEnabledExtensionNames = Vulkan::requiredLogicalDeviceExtensions.data();
     createInfo.enabledLayerCount = 0;
 
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
@@ -172,13 +172,13 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
 
 #ifdef _DEBUG
     std::cout << "Enabled logical device extensions:" << std::endl;
-    for (const char* extension : requiredLogicalDeviceExtensions)
+    for (const char* extension : Vulkan::requiredLogicalDeviceExtensions)
         std::cout << "  " + (std::string)extension << std::endl;
 #endif
 
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 
-    Vulkan::ActivateLogicalDeviceExtensionFunctions(device, requiredLogicalDeviceExtensions);
+    Vulkan::ActivateLogicalDeviceExtensionFunctions(device, Vulkan::requiredLogicalDeviceExtensions);
 
     return device;
 }

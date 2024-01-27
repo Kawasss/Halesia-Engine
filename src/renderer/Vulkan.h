@@ -11,14 +11,6 @@
 
 #include "PhysicalDevice.h"
 
-// for some reason VK_KHR_WIN32_SURFACE_EXTENSION_NAME throws an "undeclared identifier" error so this just redefines it
-#undef VK_KHR_WIN32_SURFACE_EXTENSION_NAME
-#undef VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME
-#undef VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME
-#define VK_KHR_WIN32_SURFACE_EXTENSION_NAME "VK_KHR_win32_surface"
-#define VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME "VK_KHR_external_memory_win32"
-#define VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME "VK_KHR_external_semaphore_win32"
-
 #define nameof(s) #s
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define CheckVulkanResult(message, result, function) if (result != VK_SUCCESS) throw VulkanAPIError(message, result, nameof(function), __FILENAME__, __LINE__)
@@ -26,31 +18,6 @@
 
 struct VulkanCreationObject;
 typedef void* HANDLE;
-
-const std::vector<const char*> validationLayers =
-{
-    "VK_LAYER_KHRONOS_validation"
-};
-
-inline std::vector<const char*> requiredInstanceExtensions =
-{
-    VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-    VK_KHR_SURFACE_EXTENSION_NAME,
-};
-
-inline std::vector<const char*> requiredLogicalDeviceExtensions =
-{
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME,
-    VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME,
-    VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME,
-    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-    VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
-    VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
-    VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME,
-    VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
-    VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME
-};
 
 class VulkanAPIError : public std::exception
 {
@@ -83,7 +50,11 @@ public:
 
     static VkMemoryAllocateFlagsInfo*         optionalMemoryAllocationFlags;
     static std::mutex                         graphicsQueueMutex;
-        
+
+    static std::vector<const char*> requiredLogicalDeviceExtensions;
+    static std::vector<const char*> requiredInstanceExtensions;
+    static std::vector<const char*> validationLayers;
+
     static std::mutex&                        FetchLogicalDeviceMutex(VkDevice logicalDevice);
     static VkCommandPool                      FetchNewCommandPool(uint32_t queueIndex);
     static void                               YieldCommandPool(uint32_t queueFamilyIndex, VkCommandPool commandPool);
