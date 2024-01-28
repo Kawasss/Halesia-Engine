@@ -23,6 +23,8 @@ class TestScene : public Scene
 		Material rockMat = Material::Create(createInfo);
 		rockMat.AwaitGeneration();
 		ptr->meshes[0].SetMaterial(rockMat);
+		Shape ptrShape = Box(ptr->meshes[0].extents);
+		ptr->AddRigidBody(RIGID_BODY_DYNAMIC, ptrShape);
 
 		MaterialCreateInfo lampInfo{};
 		lampInfo.isLight = true;
@@ -33,7 +35,11 @@ class TestScene : public Scene
 		lampMat.AwaitGeneration();
 		lamp->meshes[0].SetMaterial(lampMat);
 		lamp->transform.position = glm::vec3(0, 2, 4);
-		AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"))->transform.scale = glm::vec3(0.1f);
+
+		Object* cube = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		cube->transform.position.y -= 2;
+		Shape cubeShape = Box(cube->meshes[0].extents);
+		cube->AddRigidBody(RIGID_BODY_STATIC, cubeShape);
 	}
 
 	void Update(float delta) override

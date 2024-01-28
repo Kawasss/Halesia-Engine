@@ -19,6 +19,23 @@ inline glm::vec3 PxToGlm(physx::PxVec3 vec)
 	return { vec.x, vec.y, vec.z };
 }
 
+void PhysicsOnContactCallback::onContact(const physx::PxContactPairHeader& pairHeader, const physx::PxContactPair* pairs, physx::PxU32 nbPairs)
+{
+	for (uint32_t i = 0; i < nbPairs; i++)
+	{
+		const physx::PxContactPair& pair = pairs[i];
+		Object* firstObj = static_cast<Object*>(pairHeader.actors[0]->userData);
+		Object* secondObj = static_cast<Object*>(pairHeader.actors[1]->userData);
+
+		if (pairs->events & physx::PxPairFlag::eNOTIFY_TOUCH_FOUND)
+			firstObj->OnCollisionEnter();
+		else if (pairs->events & physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS)
+			firstObj->OnCollisionStay();
+		else if (pairs->events & physx::PxPairFlag::eNOTIFY_TOUCH_LOST)
+			firstObj->OnCollisionExit();
+	}
+}
+
 void Physics::Init()
 {
 	physics = new Physics();
@@ -50,6 +67,9 @@ Physics::Physics()
 	sceneInfo.cpuDispatcher = dispatcher;
 	sceneInfo.filterShader = physx::PxDefaultSimulationFilterShader;
 	sceneInfo.flags = physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
+	sceneInfo.simulationEventCallback = &contactCallback;
+	sceneInfo.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
+	sceneInfo.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	
 	scene = physicsObject->createScene(sceneInfo);
 }

@@ -36,6 +36,9 @@ public:
 	virtual void Destroy();
 	virtual void Start() {};
 	virtual void Update(float delta);
+	virtual void OnCollisionEnter() { std::cout << name << "\n"; }
+	virtual void OnCollisionStay() {}
+	virtual void OnCollisionExit() {}
 
 	bool HasFinishedLoading();
 	bool HasScript() { return scriptClass == nullptr; }
