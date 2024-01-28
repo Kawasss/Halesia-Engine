@@ -60,8 +60,7 @@ struct UniformBuffer
 	int useWhiteAsAlbedo = 0;
 	glm::vec3 directionalLightDir = glm::vec3(0, -1, 0);
 };
-void* uniformBufferMemPtr;
-UniformBuffer uniformBuffer{};
+UniformBuffer* uniformBufferMemPtr;
 
 void RayTracing::Destroy()
 {
@@ -261,13 +260,12 @@ void RayTracing::CreateBuffers()
 {
 	Vulkan::CreateBuffer(sizeof(UniformBuffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, uniformBufferBuffer, uniformBufferMemory);
 
-	vkMapMemory(logicalDevice, uniformBufferMemory, 0, sizeof(UniformBuffer), 0, &uniformBufferMemPtr);
-	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
+	vkMapMemory(logicalDevice, uniformBufferMemory, 0, sizeof(UniformBuffer), 0, (void**)&uniformBufferMemPtr);
 
 	VkDeviceSize instanceDataSize = sizeof(InstanceMeshData) * Renderer::MAX_MESHES;
 
 	Vulkan::CreateBuffer(instanceDataSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, instanceMeshDataBuffer, instanceMeshDataMemory);
-	vkMapMemory(logicalDevice, instanceMeshDataMemory, 0, instanceDataSize, 0, &instanceMeshDataPointer);
+	vkMapMemory(logicalDevice, instanceMeshDataMemory, 0, instanceDataSize, 0, (void**)&instanceMeshDataPointer);
 
 	CreateShaderBindingTable();
 
@@ -402,7 +400,7 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 	const Vulkan::Context& context = Vulkan::GetContext();
 	if (gBuffers[0] != VK_NULL_HANDLE)
 	{
-		for (int i = 0; i < 3; i++)
+		for (int i = 0; i < gBuffers.size(); i++)
 		{
 			vkDestroyImageView(logicalDevice, gBufferViews[i], nullptr);
 			vkDestroyImage(logicalDevice, gBuffers[i], nullptr);
@@ -410,7 +408,7 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 		}
 	}
 	
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < gBuffers.size(); i++)
 	{
 		Vulkan::CreateImage(width, height, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, gBuffers[i], gBufferMemories[i]);
 		gBufferViews[i] = Vulkan::CreateImageView(gBuffers[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -569,7 +567,6 @@ void RayTracing::UpdateTextureBuffer()
 
 void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera)
 {
-	std::vector<InstanceMeshData> instanceDatas;
 	amountOfActiveObjects = 0;
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
@@ -585,7 +582,7 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 		for (int32_t j = 0; j < objects[i]->meshes.size(); j++)
 		{
 			Mesh& mesh = objects[i]->meshes[j];
-			instanceDatas.push_back(
+			instanceMeshDataPointer[i * objects[i]->meshes.size() + j] =
 			{ 
 				objects[i]->transform.GetModelMatrix(), 
 				(uint32_t)Renderer::globalIndicesBuffer.GetItemOffset(mesh.indexMemory), 
@@ -594,13 +591,9 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 				Mesh::materials[mesh.materialIndex].isLight, 
 				ndc,
 				objects[i]->handle
-			});
+			};
 		}
 	}
-	if (instanceDatas.empty())
-		return;
-	
-	memcpy(instanceMeshDataPointer, instanceDatas.data(), instanceDatas.size() * sizeof(InstanceMeshData));
 }
 
 uint32_t frameCount = 0;
@@ -630,9 +623,8 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 		frameCount = 0;*/
 	
 	if (showNormals && showUniquePrimitives) showNormals = false; // can't have 2 variables changing colors at once
-	uniformBuffer = UniformBuffer{ { camera->position, 1 }, glm::inverse(camera->GetViewMatrix()), glm::inverse(camera->GetProjectionMatrix()), glm::uvec2((uint32_t)absX, (uint32_t)absY), frameCount, showUniquePrimitives, raySampleCount, rayDepth, renderProgressive, 0, directionalLightDir};
-	
-	memcpy(uniformBufferMemPtr, &uniformBuffer, sizeof(UniformBuffer));
+	*uniformBufferMemPtr = UniformBuffer{ { camera->position, 1 }, glm::inverse(camera->GetViewMatrix()), glm::inverse(camera->GetProjectionMatrix()), glm::uvec2((uint32_t)absX, (uint32_t)absY), frameCount, showUniquePrimitives, raySampleCount, rayDepth, renderProgressive, 0, directionalLightDir};
+
 	TLAS->Update(objects, commandBuffer);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);

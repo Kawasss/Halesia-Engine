@@ -12,11 +12,13 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <type_traits>
 
 template<typename T> inline std::string ToHexadecimalString(T number) // no better place to put this
 {
 	std::stringstream stream;
-	stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << number;
+	if constexpr (std::is_same_v<float, T>) stream << std::hexfloat << number;
+	else stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << number;
 	return stream.str();
 }
 

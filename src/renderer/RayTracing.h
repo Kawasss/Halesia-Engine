@@ -15,6 +15,7 @@ class Object;
 class Camera;
 class Denoiser;
 class ShaderGroupReflector;
+struct InstanceMeshData;
 
 class RayTracing
 {
@@ -82,7 +83,7 @@ private:
 	VkBuffer materialBuffer					= VK_NULL_HANDLE;
 	VkDeviceMemory materialBufferMemory		= VK_NULL_HANDLE;
 
-	void* instanceMeshDataPointer			= nullptr;
+	InstanceMeshData* instanceMeshDataPointer = nullptr;
 	VkBuffer instanceMeshDataBuffer			= VK_NULL_HANDLE;
 	VkDeviceMemory instanceMeshDataMemory	= VK_NULL_HANDLE;
 

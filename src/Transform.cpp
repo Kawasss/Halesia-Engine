@@ -77,6 +77,8 @@ glm::vec2 Transform::GetMotionVector(glm::mat4 projection, glm::mat4 view)
 
 	glm::vec2 current = glm::vec2((NDC.x + 1.0f) * 0.5f, (NDC.y + 1.0f) * 0.5f);
 	glm::vec2 ret = current - prev2Dspot;
+	if (ret != ret) // if the player is at 0, 0 ret will be NaN, according to IEEE NaN cannot be equal to NaN so this checks for that
+		ret = glm::vec2(0);
 	prev2Dspot = current;
 	return ret;
 }
