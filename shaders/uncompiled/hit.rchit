@@ -92,7 +92,7 @@ vec3 getNormalFromMap(uint normalMapIndex, vec3 barycentric, vec2 fragTexCoord, 
     vec3 B  = -normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
 
-    return normalize(TBN * tangentNormal);
+    return N;//normalize(TBN * tangentNormal);
 }
 
 float random(vec2 uv, float seed) {

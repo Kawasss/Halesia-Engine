@@ -15,31 +15,43 @@ class TestScene : public Scene
 	std::vector<Object*> spheres;
 	void Start() override
 	{
-		MaterialCreateInfo createInfo{};
-		createInfo.albedo = "textures/rockA.jpg";
-		createInfo.normal = "textures/rockN.jpg";
+		MaterialCreateInfo mirrorInfo{};
+		mirrorInfo.roughness = "textures/black.png";
+		Material mirror = Material::Create(mirrorInfo);
+		mirror.AwaitGeneration();
 
-		Object* ptr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/rock.obj"));
-		Material rockMat = Material::Create(createInfo);
-		rockMat.AwaitGeneration();
-		ptr->meshes[0].SetMaterial(rockMat);
-		Shape ptrShape = Box(ptr->meshes[0].extents);
-		ptr->AddRigidBody(RIGID_BODY_DYNAMIC, ptrShape);
+		MaterialCreateInfo wall1Info = mirrorInfo;
+		wall1Info.albedo = "textures/red.png";
+		Material wall1Mat = Material::Create(wall1Info);
+		wall1Mat.AwaitGeneration();
+		
+		MaterialCreateInfo wall2Info = mirrorInfo;
+		wall2Info.albedo = "textures/blue.png";
+		Material wall2Mat = Material::Create(wall2Info);
+		wall2Mat.AwaitGeneration();
 
-		MaterialCreateInfo lampInfo{};
-		lampInfo.isLight = true;
+		for (int i = 0; i < 6; i++)
+		{
+			Object* obj = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/RTXCube/panel" + std::to_string(i) + ".obj"));
+			Material& mat = i == 0 ? wall1Mat : i == 1 ? wall2Mat : mirror;
+			obj->meshes[0].SetMaterial(mat);
+		}
 
-		Object* lamp = AddStaticObject({ "sphere" });
-		lamp->AddMesh(GenericLoader::LoadObjectFile("stdObj/sphere.fbx").meshes);
-		Material lampMat = Material::Create(lampInfo);
-		lampMat.AwaitGeneration();
-		lamp->meshes[0].SetMaterial(lampMat);
-		lamp->transform.position = glm::vec3(0, 2, 4);
+		MaterialCreateInfo lightInfo{};
+		lightInfo.isLight = true;
+		Material lightMat = Material::Create(lightInfo);
+		lightMat.AwaitGeneration();
 
-		Object* cube = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
-		cube->transform.position.y -= 2;
-		Shape cubeShape = Box(cube->meshes[0].extents);
-		cube->AddRigidBody(RIGID_BODY_STATIC, cubeShape);
+		Object* light = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/RTXCube/light.obj"));
+		light->meshes[0].SetMaterial(lightMat);
+
+		MaterialCreateInfo monkeyInfo{};
+		monkeyInfo.roughness = "textures/grey.png";
+		Material monkeyMat = Material::Create(monkeyInfo);
+		monkeyMat.AwaitGeneration();
+
+		Object* monkey = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/RTXCube/monkey.obj"));
+		monkey->meshes[0].SetMaterial(monkeyMat);
 	}
 
 	void Update(float delta) override

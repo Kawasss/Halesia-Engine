@@ -157,12 +157,12 @@ void Denoiser::DenoiseImage()
 	params.blendFactor = 0;
 	params.hdrAverageColor = 0;
 	params.hdrIntensity = 0;
-	params.temporalModeUsePreviousLayers = 1;
+	params.temporalModeUsePreviousLayers = 0;
 
 	OptixDenoiserLayer layer{};
 	layer.input = input.image;
 	layer.output = output.image;
-	layer.previousOutput = previousFrame.image;
+	layer.previousOutput.data = 0;// = previousFrame.image;
 
 	OptixDenoiserGuideLayer guideLayer{};
 	guideLayer.albedo = albedo.image;
