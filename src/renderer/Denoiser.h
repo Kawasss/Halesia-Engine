@@ -12,7 +12,7 @@ public:
 	static Denoiser* Create();
 	void Destroy();
 
-	void CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer, std::array<VkImage, 3> gBuffers);
+	void CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer, std::array<VkImage, 4> gBuffers);
 	void CopyDenoisedBufferToImage(VkCommandBuffer commandBuffer, VkImage image);
 	void AllocateBuffers(uint32_t width, uint32_t height);
 	void DenoiseImage();
@@ -63,4 +63,6 @@ private:
 	SharedOptixImage normal{};
 	SharedOptixImage albedo{};
 	SharedOptixImage output{};
+	SharedOptixImage motion{};
+	SharedOptixImage previousFrame{};
 };

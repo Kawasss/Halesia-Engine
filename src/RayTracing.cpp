@@ -487,45 +487,39 @@ void RayTracing::CreateShaderBindingTable()
 	rmissShaderBindingTable.stride = progSize;
 }
 
+inline VkDescriptorImageInfo GetImageInfo(VkImageView imageView)
+{
+	VkDescriptorImageInfo ret{};
+	ret.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	ret.sampler = VK_NULL_HANDLE;
+	ret.imageView = imageView;
+	return ret;
+}
+
+inline VkWriteDescriptorSet WriteSetImage(VkDescriptorSet dstSet, uint32_t dstBinding, VkDescriptorImageInfo* pImageInfo)
+{
+	VkWriteDescriptorSet ret{};
+	ret.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	ret.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+	ret.pImageInfo = pImageInfo;
+	ret.dstSet = dstSet;
+	ret.descriptorCount = 1;
+	ret.dstBinding = dstBinding;
+	return ret;
+}
+
 void RayTracing::UpdateDescriptorSets()
 {
-	VkDescriptorImageInfo RTImageDescriptorImageInfo{};
-	RTImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
-	RTImageDescriptorImageInfo.imageView = gBufferViews[0];
-	RTImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	VkDescriptorImageInfo RTImageDescriptorImageInfo = GetImageInfo(gBufferViews[0]);
+	VkDescriptorImageInfo albedoImageDescriptorImageInfo = GetImageInfo(gBufferViews[1]);
+	VkDescriptorImageInfo normalImageDescriptorImageInfo = GetImageInfo(gBufferViews[2]);
+	VkDescriptorImageInfo motionImageDescriptorImageInfo = GetImageInfo(gBufferViews[3]);
 
-	VkDescriptorImageInfo albedoImageDescriptorImageInfo{};
-	albedoImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
-	albedoImageDescriptorImageInfo.imageView = gBufferViews[1];
-	albedoImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-	VkDescriptorImageInfo normalImageDescriptorImageInfo{};
-	normalImageDescriptorImageInfo.sampler = VK_NULL_HANDLE;
-	normalImageDescriptorImageInfo.imageView = gBufferViews[2];
-	normalImageDescriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-
-	std::array<VkWriteDescriptorSet, 3> writeSets{};
-
-	writeSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeSets[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	writeSets[0].pImageInfo = &RTImageDescriptorImageInfo;
-	writeSets[0].dstSet = descriptorSets[0];
-	writeSets[0].descriptorCount = 1;
-	writeSets[0].dstBinding = 4;
-
-	writeSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeSets[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	writeSets[1].pImageInfo = &albedoImageDescriptorImageInfo;
-	writeSets[1].dstSet = descriptorSets[0];
-	writeSets[1].descriptorCount = 1;
-	writeSets[1].dstBinding = 5;
-
-	writeSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeSets[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	writeSets[2].pImageInfo = &normalImageDescriptorImageInfo;
-	writeSets[2].dstSet = descriptorSets[0];
-	writeSets[2].descriptorCount = 1;
-	writeSets[2].dstBinding = 6;
+	std::array<VkWriteDescriptorSet, 4> writeSets{};
+	writeSets[0] = WriteSetImage(descriptorSets[0], 4, &RTImageDescriptorImageInfo);
+	writeSets[1] = WriteSetImage(descriptorSets[0], 5, &albedoImageDescriptorImageInfo);
+	writeSets[2] = WriteSetImage(descriptorSets[0], 6, &normalImageDescriptorImageInfo);
+	writeSets[3] = WriteSetImage(descriptorSets[0], 8, &motionImageDescriptorImageInfo);
 	
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }

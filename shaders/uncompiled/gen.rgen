@@ -17,6 +17,7 @@ layout(location = 0) rayPayloadEXT Payload {
   uint64_t intersectedObjectHandle;
   vec3 currentNormal;
   vec3 currentAlbedo;
+  vec2 motion;
 } payload;
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
@@ -42,6 +43,7 @@ layout (binding = 7, set = 0) writeonly buffer IntersectedObject
 {
     uint64_t handle;
 } intersectedObject;
+layout (binding = 8, set = 0, rgba32f) uniform image2D motionImage;
 
 float random(vec2 uv, float seed) {
   return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) * 43758.5453);
@@ -73,6 +75,7 @@ void main() {
   vec3 color = vec3(0);
   vec3 firstAlbedo = vec3(0);
   vec3 firstNormal = vec3(0);
+  vec2 firstMotion = vec2(0);
 
   uint rng = gl_LaunchIDEXT.x * gl_LaunchIDEXT.y + camera.frameCount;
   for (int j = 0; j < camera.raySamples; j++)
@@ -101,6 +104,7 @@ void main() {
             {
                 firstAlbedo = payload.currentAlbedo;
                 firstNormal = payload.currentNormal;
+                firstMotion = payload.motion;
             }
       }
       if (payload.rayDepth == 0) 
@@ -121,4 +125,5 @@ void main() {
   imageStore(albedoImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstAlbedo, 1));
   imageStore(normalImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstNormal, 1)); 
   imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1));
+  imageStore(motionImage, ivec2(gl_LaunchIDEXT.xy), vec4(vec3(firstMotion, 0), 1));
 }

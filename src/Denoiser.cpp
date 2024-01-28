@@ -73,6 +73,8 @@ void Denoiser::AllocateBuffers(uint32_t width, uint32_t height)
 	output.Create(width, height, this);
 	albedo.Create(width, height, this);
 	normal.Create(width, height, this);
+	motion.Create(width, height, this);
+	previousFrame.Create(width, height, this);
 
 	CheckCudaResult(cudaDeviceSynchronize());
 	cudaError_t cuResult = cudaStreamSynchronize(cudaStream);
@@ -155,12 +157,12 @@ void Denoiser::DenoiseImage()
 	params.blendFactor = 0;
 	params.hdrAverageColor = 0;
 	params.hdrIntensity = 0;
-	params.temporalModeUsePreviousLayers = 0;
+	params.temporalModeUsePreviousLayers = 1;
 
 	OptixDenoiserLayer layer{};
 	layer.input = input.image;
 	layer.output = output.image;
-	layer.previousOutput.data = 0;
+	layer.previousOutput = previousFrame.image;
 
 	OptixDenoiserGuideLayer guideLayer{};
 	guideLayer.albedo = albedo.image;
@@ -178,7 +180,7 @@ void Denoiser::DenoiseImage()
 	CheckCudaResult(cuResult);
 }
 
-void Denoiser::CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer, std::array<VkImage, 3> gBuffers)
+void Denoiser::CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer, std::array<VkImage, 4> gBuffers)
 {
 	VkImageSubresourceRange subresourceRange{};
 	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -201,7 +203,10 @@ void Denoiser::CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer, std::
 
 	VkImageMemoryBarrier memoryBarrierNormal = memoryBarrierInput;
 	memoryBarrierNormal.image = gBuffers[2];
-	VkImageMemoryBarrier memoryBarriers[] = { memoryBarrierInput, memoryBarrierAlbedo, memoryBarrierNormal };
+
+	VkImageMemoryBarrier memoryBarrierMotion = memoryBarrierInput;
+	memoryBarrierMotion.image = gBuffers[3];
+	VkImageMemoryBarrier memoryBarriers[] = { memoryBarrierInput, memoryBarrierAlbedo, memoryBarrierNormal, memoryBarrierMotion };
 
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, (uint32_t)std::size(memoryBarriers), memoryBarriers);
 
@@ -215,6 +220,7 @@ void Denoiser::CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer, std::
 	vkCmdCopyImageToBuffer(commandBuffer, gBuffers[0], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, input.vkBuffer, 1, &imageCopy);
 	vkCmdCopyImageToBuffer(commandBuffer, gBuffers[1], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, albedo.vkBuffer, 1, &imageCopy);
 	vkCmdCopyImageToBuffer(commandBuffer, gBuffers[2], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, normal.vkBuffer, 1, &imageCopy);
+	vkCmdCopyImageToBuffer(commandBuffer, gBuffers[3], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, motion.vkBuffer, 1, &imageCopy);
 
 	memoryBarrierInput.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	memoryBarrierInput.newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -225,7 +231,10 @@ void Denoiser::CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer, std::
 	memoryBarrierNormal.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	memoryBarrierNormal.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 
-	VkImageMemoryBarrier memoryBarriers2[] = { memoryBarrierInput, memoryBarrierAlbedo, memoryBarrierNormal };
+	memoryBarrierMotion.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	memoryBarrierMotion.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+	VkImageMemoryBarrier memoryBarriers2[] = { memoryBarrierInput, memoryBarrierAlbedo, memoryBarrierNormal, memoryBarrierMotion };
 
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, (uint32_t)std::size(memoryBarriers2), memoryBarriers2);
 }
@@ -259,6 +268,9 @@ void Denoiser::CopyDenoisedBufferToImage(VkCommandBuffer commandBuffer, VkImage 
 	region.imageOffset = { 0, 0, 0 };
 	region.imageExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 };
 
+	VkBufferCopy copyRegion{};
+	copyRegion.size = (VkDeviceSize)width * height * sizeof(glm::vec4);
+
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
 	vkCmdCopyBufferToImage(commandBuffer, output.vkBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
@@ -266,6 +278,8 @@ void Denoiser::CopyDenoisedBufferToImage(VkCommandBuffer commandBuffer, VkImage 
 	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+
+	vkCmdCopyBuffer(commandBuffer, output.vkBuffer, previousFrame.vkBuffer, 1, &copyRegion);
 }
 
 
@@ -307,6 +321,8 @@ void Denoiser::DestroyBuffers()
 	output.Destroy(context.logicalDevice);
 	albedo.Destroy(context.logicalDevice);
 	normal.Destroy(context.logicalDevice);
+	motion.Destroy(context.logicalDevice);
+	previousFrame.Destroy(context.logicalDevice);
 }
 
 void Denoiser::Destroy()

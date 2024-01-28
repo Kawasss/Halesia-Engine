@@ -30,8 +30,8 @@ public:
 	void PrepareForDenoising(VkCommandBuffer commandBuffer);
 	void DenoiseImage();
 
-	std::array<VkImage, 3> gBuffers{};
-	std::array<VkImageView, 3> gBufferViews;
+	std::array<VkImage, 4> gBuffers{};
+	std::array<VkImageView, 4> gBufferViews;
 	void* handleBufferMemPointer = nullptr;
 
 	static int  raySampleCount;
@@ -100,6 +100,6 @@ private:
 	VkBuffer uniformBufferBuffer;
 	VkDeviceMemory uniformBufferMemory;
 
-	std::array<VkDeviceMemory, 3> gBufferMemories;
+	std::array<VkDeviceMemory, 4> gBufferMemories;
 	std::unordered_map<int, Handle> processedMaterials;
 };

@@ -21,8 +21,8 @@ layout(location = 0) rayPayloadInEXT Payload {
   uint64_t intersectedObjectHandle;
   vec3 currentNormal;
   vec3 currentAlbedo;
-}
-payload;
+  vec2 motion;
+} payload;
 
 struct Vertex
 {
@@ -220,6 +220,7 @@ void main() {
   payload.previousNormal = geometricNormal;
   payload.currentNormal = geometricNormal;
   payload.currentAlbedo = surfaceColor;
+  payload.motion = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].motion;
 
   payload.rayDepth += 1;
 }
