@@ -58,6 +58,7 @@ struct UniformBuffer
 	int32_t rayDepth = 8;
 	int32_t renderProgressive = 0;
 	int useWhiteAsAlbedo = 0;
+	glm::vec2 cameraMotion;
 	glm::vec3 directionalLightDir = glm::vec3(0, -1, 0);
 };
 UniformBuffer* uniformBufferMemPtr;
@@ -121,7 +122,7 @@ void RayTracing::CreateDescriptorPool() // (frames in flight not implemented)
 	descriptorPoolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	descriptorPoolSizes[1].descriptorCount = 1;
 	descriptorPoolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	descriptorPoolSizes[2].descriptorCount = 6;
+	descriptorPoolSizes[2].descriptorCount = 10;
 	descriptorPoolSizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 	descriptorPoolSizes[3].descriptorCount = 3;
 	descriptorPoolSizes[4].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -297,7 +298,12 @@ void RayTracing::CreateBuffers()
 	handleBufferInfo.offset = 0;
 	handleBufferInfo.range = VK_WHOLE_SIZE;
 
-	std::vector<VkWriteDescriptorSet> writeDescriptorSets(5);
+	VkDescriptorBufferInfo motionBufferInfo{};
+	motionBufferInfo.buffer = denoiser->GetMotionBuffer();
+	motionBufferInfo.offset = 0;
+	motionBufferInfo.range = VK_WHOLE_SIZE;
+
+	std::vector<VkWriteDescriptorSet> writeDescriptorSets(6);
 
 	writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
@@ -337,6 +343,14 @@ void RayTracing::CreateBuffers()
 	writeDescriptorSets[4].descriptorCount = 1;
 	writeDescriptorSets[4].dstBinding = 7;
 	writeDescriptorSets[4].pBufferInfo = &handleBufferInfo;
+
+	writeDescriptorSets[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeDescriptorSets[5].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	writeDescriptorSets[5].pNext = &ASDescriptorInfo;
+	writeDescriptorSets[5].dstSet = descriptorSets[0];
+	writeDescriptorSets[5].descriptorCount = 1;
+	writeDescriptorSets[5].dstBinding = 8;
+	writeDescriptorSets[5].pBufferInfo = &motionBufferInfo;
 
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
 	UpdateMeshDataDescriptorSets();
@@ -513,13 +527,22 @@ void RayTracing::UpdateDescriptorSets()
 	VkDescriptorImageInfo RTImageDescriptorImageInfo = GetImageInfo(gBufferViews[0]);
 	VkDescriptorImageInfo albedoImageDescriptorImageInfo = GetImageInfo(gBufferViews[1]);
 	VkDescriptorImageInfo normalImageDescriptorImageInfo = GetImageInfo(gBufferViews[2]);
-	VkDescriptorImageInfo motionImageDescriptorImageInfo = GetImageInfo(gBufferViews[3]);
+
+	VkDescriptorBufferInfo motionBufferInfo{};
+	motionBufferInfo.buffer = denoiser->GetMotionBuffer();
+	motionBufferInfo.offset = 0;
+	motionBufferInfo.range = VK_WHOLE_SIZE;
 
 	std::array<VkWriteDescriptorSet, 4> writeSets{};
 	writeSets[0] = WriteSetImage(descriptorSets[0], 4, &RTImageDescriptorImageInfo);
 	writeSets[1] = WriteSetImage(descriptorSets[0], 5, &albedoImageDescriptorImageInfo);
 	writeSets[2] = WriteSetImage(descriptorSets[0], 6, &normalImageDescriptorImageInfo);
-	writeSets[3] = WriteSetImage(descriptorSets[0], 8, &motionImageDescriptorImageInfo);
+	writeSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSets[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	writeSets[3].dstSet = descriptorSets[0];
+	writeSets[3].descriptorCount = 1;
+	writeSets[3].dstBinding = 8;
+	writeSets[3].pBufferInfo = &motionBufferInfo;
 	
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
@@ -562,6 +585,7 @@ void RayTracing::UpdateTextureBuffer()
 void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera)
 {
 	amountOfActiveObjects = 0;
+	const glm::vec2 staticMotion = camera->GetMotionVector();
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
 		if (objects[i]->state != OBJECT_STATE_VISIBLE || !objects[i]->HasFinishedLoading())
@@ -569,7 +593,7 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 		
 		std::lock_guard<std::mutex> lockGuard(objects[i]->mutex);
 
-		glm::vec2 ndc = objects[i]->transform.GetMotionVector(camera->GetProjectionMatrix(), camera->GetViewMatrix());
+		glm::vec2 ndc = objects[i]->rigid.type == RIGID_BODY_DYNAMIC ? objects[i]->transform.GetMotionVector(camera->GetProjectionMatrix(), camera->GetViewMatrix()) : staticMotion;
 		ndc.x *= width;
 		ndc.y *= height;
 		
@@ -617,7 +641,16 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 		frameCount = 0;
 	
 	if (showNormals && showUniquePrimitives) showNormals = false; // can't have 2 variables changing colors at once
-	*uniformBufferMemPtr = UniformBuffer{ { camera->position, 1 }, glm::inverse(camera->GetViewMatrix()), glm::inverse(camera->GetProjectionMatrix()), glm::uvec2((uint32_t)absX, (uint32_t)absY), frameCount, showUniquePrimitives, raySampleCount, rayDepth, renderProgressive, 0, directionalLightDir};
+	uniformBufferMemPtr->cameraPosition = { camera->position, 1 };
+	uniformBufferMemPtr->viewInverse = glm::inverse(camera->GetViewMatrix());
+	uniformBufferMemPtr->projectionInverse = glm::inverse(camera->GetProjectionMatrix());
+	uniformBufferMemPtr->mouseXY = glm::uvec2((uint32_t)absX, (uint32_t)absY);
+	uniformBufferMemPtr->frameCount = frameCount;
+	uniformBufferMemPtr->showUnique = showUniquePrimitives;
+	uniformBufferMemPtr->raySamples = raySampleCount;
+	uniformBufferMemPtr->rayDepth = rayDepth;
+	uniformBufferMemPtr->renderProgressive = renderProgressive;
+	uniformBufferMemPtr->directionalLightDir = directionalLightDir;
 
 	TLAS->Update(objects, commandBuffer);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);

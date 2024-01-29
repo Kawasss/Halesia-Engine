@@ -111,6 +111,19 @@ void Camera::UpdateUpAndRightVectors()
 	up = glm::normalize(glm::cross(right, front));
 }
 
+glm::vec2 Camera::GetMotionVector()
+{
+	glm::vec4 NDC = GetProjectionMatrix() * GetViewMatrix() * glm::vec4(0, 0, 0, 1);
+	NDC /= NDC.w;
+
+	glm::vec2 current = glm::vec2((NDC.x + 1.0f) * 0.5f, (NDC.y + 1.0f) * 0.5f);
+	glm::vec2 ret = current - prev2D;
+	if (ret != ret) // if the player is at 0, 0 ret will be NaN, according to IEEE NaN cannot be equal to NaN so this checks for that
+		ret = glm::vec2(0);
+	prev2D = current;
+	return ret;
+}
+
 // orbit camera
 
 void OrbitCamera::Update(Win32Window* window, float delta)

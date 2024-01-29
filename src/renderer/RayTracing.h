@@ -30,8 +30,8 @@ public:
 	void PrepareForDenoising(VkCommandBuffer commandBuffer);
 	void DenoiseImage();
 
-	std::array<VkImage, 4> gBuffers{};
-	std::array<VkImageView, 4> gBufferViews;
+	std::array<VkImage, 3> gBuffers{};
+	std::array<VkImageView, 3> gBufferViews;
 	void* handleBufferMemPointer = nullptr;
 
 	static int  raySampleCount;

@@ -11,4 +11,4 @@ renderer:
 		showNormals: 0
 		showUnique: 0
 		showAlbedo: 0
-		renderProgressive: 1
+		renderProgressive: 0

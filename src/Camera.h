@@ -31,10 +31,12 @@ public:
 	glm::mat4 GetProjectionMatrix();
 	glm::mat4 GetOrthoProjectionMatrix();
 	glm::mat4 GetViewMatrix();
+	glm::vec2 GetMotionVector();
 
 	template<typename T> T GetScript() { return static_cast<T>(attachedScript); }
 
 private:
+	glm::vec2 prev2D = glm::vec2(0);
 	void* attachedScript = nullptr;
 	void UpdateVectors();
 

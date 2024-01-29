@@ -43,7 +43,10 @@ layout (binding = 7, set = 0) writeonly buffer IntersectedObject
 {
     uint64_t handle;
 } intersectedObject;
-layout (binding = 8, set = 0, rgba32f) uniform image2D motionImage;
+layout (binding = 8, set = 0) buffer motionImage
+{
+    vec2 data[];
+} MotionImage;
 
 float random(vec2 uv, float seed) {
   return fract(sin(mod(dot(uv, vec2(12.9898, 78.233)) + 1113.1 * seed, M_PI)) * 43758.5453);
@@ -125,5 +128,5 @@ void main() {
   imageStore(albedoImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstAlbedo, 1));
   imageStore(normalImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstNormal, 1)); 
   imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1));
-  imageStore(motionImage, ivec2(gl_LaunchIDEXT.xy), vec4(vec3(firstMotion, 0), 1));
+  MotionImage.data[gl_LaunchIDEXT.x * gl_LaunchSizeEXT.y + gl_LaunchIDEXT.y] = firstMotion;
 }

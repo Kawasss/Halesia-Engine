@@ -12,11 +12,12 @@ public:
 	static Denoiser* Create();
 	void Destroy();
 
-	void CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer, std::array<VkImage, 4> gBuffers);
+	void CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer, std::array<VkImage, 3> gBuffers);
 	void CopyDenoisedBufferToImage(VkCommandBuffer commandBuffer, VkImage image);
 	void AllocateBuffers(uint32_t width, uint32_t height);
 	void DenoiseImage();
 
+	VkBuffer GetMotionBuffer() { return motion.vkBuffer; }
 	cudaStream_t GetCudaStream() { return cudaStream; }
 
 private:
@@ -28,7 +29,7 @@ private:
 		HANDLE winHandle = (void*)0;
 		OptixImage2D image{};
 
-		void Create(uint32_t width, uint32_t height, Denoiser* denoiser); // the pointer is more of a hack
+		void Create(uint32_t width, uint32_t height, size_t pixelSize, Denoiser* denoiser); // the pointer is more of a hack
 		void Destroy(VkDevice logicalDevice);
 	};
 
