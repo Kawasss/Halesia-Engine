@@ -174,7 +174,7 @@ void TopLevelAccelerationStructure::Update(std::vector<Object*>& objects, VkComm
 	VkAccelerationStructureGeometryKHR geometry{};
 	GetGeometry(geometry);
 
-	BuildAS(&geometry, (uint32_t)BLASInstances.size(), VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, true, externalCommandBuffer);
+	BuildAS(&geometry, (uint32_t)BLASInstances.size(), VK_BUILD_ACCELERATION_STRUCTURE_MODE_UPDATE_KHR, false, externalCommandBuffer);
 }
 
 void TopLevelAccelerationStructure::GetGeometry(VkAccelerationStructureGeometryKHR& geometry)
