@@ -68,6 +68,7 @@ public:
 	/// <param name="creationData"></param>
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
 	static Object* Create(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
+	void Initialize(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
 
 	void AddRigidBody(RigidBodyType type, Shape shape);
 	void AddMesh(const std::vector<MeshCreationData>& creationData);

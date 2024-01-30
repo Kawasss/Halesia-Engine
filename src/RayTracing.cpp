@@ -646,7 +646,7 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	uniformBufferMemPtr->cameraPosition = { camera->position, 1 };
 	uniformBufferMemPtr->viewInverse = glm::inverse(camera->GetViewMatrix());
 	uniformBufferMemPtr->projectionInverse = glm::inverse(camera->GetProjectionMatrix());
-	uniformBufferMemPtr->mouseXY = glm::uvec2((uint32_t)absX, (uint32_t)absY);
+	uniformBufferMemPtr->mouseXY = glm::uvec2((uint32_t)(absX * Renderer::internalScale), (uint32_t)(absY * Renderer::internalScale));
 	uniformBufferMemPtr->frameCount = frameCount;
 	uniformBufferMemPtr->showUnique = showUniquePrimitives;
 	uniformBufferMemPtr->raySamples = raySampleCount;

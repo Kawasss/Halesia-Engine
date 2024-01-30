@@ -10,6 +10,27 @@
 #include "renderer/Renderer.h"
 #include "renderer/RayTracing.h"
 
+class TestCam : public Camera
+{
+public:
+	void Start() override
+	{
+		position = glm::vec3(0, 9, -1);
+		SetPitch(-90);
+		UpdateVectors();
+	}
+
+	void Update(Win32Window* window, float delta) {}
+};
+
+class Key : public Object
+{
+	void Update(float delta) override
+	{
+		transform.position.y = Renderer::selectedHandle == handle ? -0.2f : 0;
+	}
+};
+
 class TestScene : public Scene
 {
 	Material colorMaterial;
@@ -17,14 +38,22 @@ class TestScene : public Scene
 	std::vector<Object*> spheres;
 	void Start() override
 	{
-		MaterialCreateInfo createInfo{};
-		createInfo.albedo = "textures/rockA.jpg";
-		createInfo.normal = "textures/rockN.jpg";
+		camera = new TestCam();
+		camera->Start();
 
-		Object* ptr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/rock.obj"));
-		Material rockMat = Material::Create(createInfo);
-		rockMat.AwaitGeneration();
-		ptr->meshes[0].SetMaterial(rockMat);
+		SceneLoader loader{ "stdObj/calculator.fbx" };
+		loader.LoadFBXScene();
+		
+		for (auto& info : loader.objects)
+		{
+			std::cout << info.name << '\n';
+			if (info.name.back() == '4' && info.name[info.name.size() - 2] == '0')
+				AddStaticObject(info);
+			else
+			{
+				Object* obj = AddCustomObject<Key>(info);
+			}
+		}
 
 		MaterialCreateInfo lampInfo{};
 		lampInfo.isLight = true;
@@ -34,8 +63,8 @@ class TestScene : public Scene
 		Material lampMat = Material::Create(lampInfo);
 		lampMat.AwaitGeneration();
 		lamp->meshes[0].SetMaterial(lampMat);
-		lamp->transform.position = glm::vec3(0, 2, 8);
-		lamp->transform.scale = glm::vec3(4, 4, 1);
+		lamp->transform.position = glm::vec3(0, 10, 0);
+		lamp->transform.scale = glm::vec3(10, 1, 10);
 	}
 
 	void Update(float delta) override

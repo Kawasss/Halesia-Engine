@@ -45,7 +45,7 @@ public:
 
 	Swapchain* swapchain; // better to keep it private
 
-	float internalScale = 1;
+	static float internalScale;
 	bool shouldRasterize = false;
 	static bool shouldRenderCollisionBoxes;
 	static bool denoiseOutput;

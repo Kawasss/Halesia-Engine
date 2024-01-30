@@ -42,6 +42,7 @@ public:
 	/// <param name="objectType">: The type of object: either from inside the scene file or an outside file</param>
 	/// <returns>A pointer to the base object of the custom object. A nullptr will be returned if an object matching the name can't be found</returns>
 	template<typename T> Object* AddCustomObject(std::string name, ObjectImportType objectType = OBJECT_IMPORT_INTERNAL);
+	template<typename T> Object* AddCustomObject(const ObjectCreationData& creationData);
 						 Object* AddStaticObject(const ObjectCreationData& creationData);
 	
 	template<typename T> Object* DuplicateCustomObject(Object* objPtr, std::string name);
@@ -84,6 +85,16 @@ protected:
 	void Free(Object* object);
 };
 
+template<typename T> Object* Scene::AddCustomObject(const ObjectCreationData& creationData)
+{
+	T* customPointer = new T();
+	Object* objPtr = customPointer;
+	objPtr->Initialize(creationData, customPointer);
+	RegisterObjectPointer(objPtr, true);
+
+	return objPtr;
+}
+
 template<typename T> Object* Scene::AddCustomObject(std::string name, ObjectImportType objectType) // templates must be declared in header
 {
 	ObjectCreationData creationData;
@@ -102,7 +113,7 @@ template<typename T> Object* Scene::AddCustomObject(std::string name, ObjectImpo
 
 	T* customPointer = new T();
 	Object* objPtr = customPointer;
-	objPtr->Create(customPointer, creationData);
+	objPtr->Initialize(creationData, customPointer);
 	RegisterObjectPointer(objPtr, true);
 
 	return objPtr;

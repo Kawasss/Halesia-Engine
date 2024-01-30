@@ -335,7 +335,7 @@ void HalesiaInstance::OnExit()
 	VVM::PopGroup();
 
 	VVM::PushGroup("renderer");
-	VVM::AddVariable("interalRes", renderer->internalScale);
+	VVM::AddVariable("interalRes", Renderer::internalScale);
 	VVM::AddVariable("renderCollision", Renderer::shouldRenderCollisionBoxes);
 	VVM::AddVariable("denoiseOutput", Renderer::denoiseOutput);
 
@@ -361,5 +361,5 @@ void HalesiaInstance::RegisterConsoleVars()
 	);
 	Console::AddConsoleVariable("raySamples", &RayTracing::raySampleCount);
 	Console::AddConsoleVariable("rayDepth", &RayTracing::rayDepth);
-	Console::AddConsoleVariable("internalResScale", &renderer->internalScale);
+	Console::AddConsoleVariable("internalResScale", &Renderer::internalScale);
 }

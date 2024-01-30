@@ -49,19 +49,25 @@ void Object::RecreateMeshes()
 Object* Object::Create(const ObjectCreationData& creationData, void* customClassPointer)
 {
 	Object* ptr = new Object();
-	ptr->scriptClass = customClassPointer;
-	ptr->meshes.resize(creationData.meshes.size());
+	ptr->Initialize(creationData, customClassPointer);
+	return ptr;
+}
+
+void Object::Initialize(const ObjectCreationData& creationData, void* customClassPointer)
+{
+	name = creationData.name;
+	scriptClass = customClassPointer;
+	meshes.resize(creationData.meshes.size());
 
 	if (!creationData.meshes.empty())
-		ptr->transform = Transform(creationData.position, creationData.rotation, creationData.scale, ptr->meshes[0].extents, ptr->meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
-	ptr->handle = ResourceManager::GenerateHandle();
-	ptr->name = creationData.name;
-	ptr->transform.position = creationData.position;
-	ptr->transform.rotation = creationData.rotation;
-	ptr->transform.scale = creationData.scale;
+		transform = Transform(creationData.position, creationData.rotation, creationData.scale, meshes[0].extents, meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
+	handle = ResourceManager::GenerateHandle();
+	name = creationData.name;
+	transform.position = creationData.position;
+	transform.rotation = creationData.rotation;
+	transform.scale = creationData.scale;
 
-	ptr->GenerateObjectWithData(creationData); // maybe async??
-	return ptr;
+	GenerateObjectWithData(creationData); // maybe async??
 }
 
 void Object::AddMesh(const std::vector<MeshCreationData>& creationData)

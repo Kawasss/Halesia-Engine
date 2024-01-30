@@ -38,11 +38,12 @@ public:
 private:
 	glm::vec2 prev2D = glm::vec2(0);
 	void* attachedScript = nullptr;
-	void UpdateVectors();
-
+	
 	float nearPlane = 0.01f, farPlane = 1000, aspectRatio = monitorWidth / (float)monitorHeight;
 
 protected:
+	void UpdateVectors();
+
 	/// <summary>
 	/// This function sets the script for the base class. This makes it so that GetScript can be used.
 	/// </summary>

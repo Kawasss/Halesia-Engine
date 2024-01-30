@@ -48,6 +48,7 @@ VkSampler Renderer::defaultSampler = VK_NULL_HANDLE;
 Handle Renderer::selectedHandle = 0;
 bool Renderer::shouldRenderCollisionBoxes = false;
 bool Renderer::denoiseOutput = true;
+float Renderer::internalScale = 1;
 
 std::vector<VkDynamicState> Renderer::dynamicStates =
 {
