@@ -87,9 +87,9 @@ vec3 getNormalFromMap(uint normalMapIndex, vec3 barycentric, vec2 fragTexCoord, 
 
     vec3 N   = vertex1.normal * barycentric.x + vertex2.normal * barycentric.y + vertex3.normal * barycentric.z;//normalize(cross(vertex2.position - vertex1.position, vertex3.position - vertex1.position));
     N = normalize(mat3(transpose(inverse(GetModelMatrix()))) * N);
-    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
-    vec3 B  = -normalize(cross(N, T));
-    mat3 TBN = mat3(T, B, N);
+//    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
+//    vec3 B  = -normalize(cross(N, T));
+//    mat3 TBN = mat3(T, B, N);
 
     return N;//normalize(TBN * tangentNormal);
 }
