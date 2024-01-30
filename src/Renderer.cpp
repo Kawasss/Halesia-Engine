@@ -1001,11 +1001,11 @@ void Renderer::RenderIntro(Intro* intro)
 void Renderer::OnResize()
 {
 	swapchain->Recreate(renderPass);
-	rayTracer->RecreateImage(testWindow);
-	CreateDeferredFramebuffer(swapchain->extent.width, swapchain->extent.height);
+	rayTracer->RecreateImage(testWindow->GetWidth() * internalScale, testWindow->GetHeight() * internalScale);
+	CreateDeferredFramebuffer(swapchain->extent.width * internalScale, swapchain->extent.height * internalScale);
 	UpdateScreenShaderTexture(currentFrame);
-	viewportWidth = testWindow->GetWidth() * viewportTransModifiers.x;
-	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y;
+	viewportWidth = testWindow->GetWidth() * viewportTransModifiers.x * internalScale;
+	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y * internalScale;
 	testWindow->resized = false;
 	Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
 }
@@ -1212,52 +1212,6 @@ void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
 	ubo.view = camera->GetViewMatrix();
 	ubo.projection = camera->GetProjectionMatrix();
 	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-}
-
-void Renderer::RenderMeshData(const std::vector<Mesh>& meshes)
-{
-	constexpr int columnCount = 7;
-	ImGui::Begin("mesh data");
-	ImGui::BeginTable("mesh data", columnCount, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit);
-
-	ImGui::TableNextRow();
-	ImGui::TableNextColumn();
-	ImGui::Text("name");
-	ImGui::TableNextColumn();
-	ImGui::Text("material index");
-	ImGui::TableNextColumn();
-	ImGui::Text("vertex memory");
-	ImGui::TableNextColumn();
-	ImGui::Text("index memory");
-	ImGui::TableNextColumn();
-	ImGui::Text("BLAS");
-	ImGui::TableNextColumn();
-	ImGui::Text("face count");
-	ImGui::TableNextColumn();
-	ImGui::Text("center");
-	ImGui::TableNextColumn();
-	ImGui::Text("extents");
-	for (int i = 0; i < meshes.size(); i++)
-	{
-		const Mesh& mesh = meshes[i];
-		ImGui::TableNextRow();
-		ImGui::TableNextColumn();
-		ImGui::Text(mesh.name.c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(std::to_string(mesh.materialIndex).c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(std::to_string(mesh.vertexMemory).c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(std::to_string(mesh.indexMemory).c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(std::to_string((uint64_t)mesh.BLAS).c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(std::to_string(mesh.faceCount).c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(Vec3ToString(mesh.center).c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(Vec3ToString(mesh.extents).c_str());
-	}
 }
 
 std::vector<char> Renderer::ReadFile(const std::string& filePath)

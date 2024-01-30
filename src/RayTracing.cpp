@@ -449,9 +449,9 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 }
 
 
-void RayTracing::RecreateImage(Win32Window* window)
+void RayTracing::RecreateImage(uint32_t width, uint32_t height)
 {
-	CreateImage(window->GetWidth(), window->GetHeight());
+	CreateImage(width, height);
 }
 
 VkStridedDeviceAddressRegionKHR rchitShaderBindingTable{};

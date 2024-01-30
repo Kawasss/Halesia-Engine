@@ -39,13 +39,13 @@ public:
 	void Destroy();
 	void RecompileShaders();
 	void DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta);
-	void RenderMeshData(const std::vector<Mesh>& meshes);
 	void RenderIntro(Intro* intro);
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
 
 	Swapchain* swapchain; // better to keep it private
 
+	float internalScale = 1;
 	bool shouldRasterize = false;
 	static bool shouldRenderCollisionBoxes;
 	static bool denoiseOutput;
@@ -104,6 +104,7 @@ private:
 	glm::vec2 viewportTransModifiers = glm::vec2(1);
 	uint32_t currentFrame = 0;
 	uint32_t queueIndex = 0;
+	
 
 	RayTracing* rayTracer;
 

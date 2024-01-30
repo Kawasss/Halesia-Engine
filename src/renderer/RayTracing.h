@@ -25,7 +25,7 @@ public:
 	
 	static RayTracing* Create(Win32Window* window, Swapchain* swapchain);
 	void DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, uint32_t width, uint32_t height, VkCommandBuffer commandBuffer, uint32_t imageIndex);
-	void RecreateImage(Win32Window* window);
+	void RecreateImage(uint32_t width, uint32_t height);
 	void ApplyDenoisedImage(VkCommandBuffer commandBuffer);
 	void PrepareForDenoising(VkCommandBuffer commandBuffer);
 	void DenoiseImage();
