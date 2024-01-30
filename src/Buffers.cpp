@@ -1,8 +1,9 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <iostream>
+
 #include "renderer/Buffers.h"
-#include "Vertex.h"
+#include "renderer/Vertex.h"
 
 VertexBuffer::VertexBuffer(const std::vector<Vertex> vertices)
 {

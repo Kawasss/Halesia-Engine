@@ -7,8 +7,8 @@ const bool enableValidationLayers = true;
 #include <iostream>
 #include <algorithm>
 
+#include "core/Console.h"
 #include "renderer/Vulkan.h"
-#include "Console.h"
 #include "renderer/Surface.h"
 
 #define ATTACH_FUNCTION(function) p##function = (PFN_##function##)vkGetDeviceProcAddr(logicalDevice, #function) // relies on the fact that a VkDevice named logicalDevice and the function pointer already exists with DEFINE_VULKAN_FUNCTION_POINTER

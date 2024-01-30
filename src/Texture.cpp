@@ -2,7 +2,8 @@
 #include "renderer/Vulkan.h"
 #include "renderer/physicalDevice.h"
 #include "renderer/Texture.h"
-#include "Console.h"
+#include "core/Console.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
 #include "tools/common.h"

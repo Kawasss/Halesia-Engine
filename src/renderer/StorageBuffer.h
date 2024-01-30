@@ -1,7 +1,7 @@
 #pragma once
 #include "Vulkan.h"
 #include "../ResourceManager.h"
-#include "../Console.h"
+#include "../core/Console.h"
 #include <iostream>
 #include <mutex>
 

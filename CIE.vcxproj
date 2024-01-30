@@ -198,9 +198,11 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_truetype.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="..\..\additionalDependencies\vvm\VVM.hpp" />
-    <ClInclude Include="src\Camera.h" />
-    <ClInclude Include="src\Console.h" />
-    <ClInclude Include="src\glm.h" />
+    <ClInclude Include="src\core\Camera.h" />
+    <ClInclude Include="src\core\Console.h" />
+    <ClInclude Include="src\core\Object.h" />
+    <ClInclude Include="src\core\Scene.h" />
+    <ClInclude Include="src\core\Transform.h" />
     <ClInclude Include="src\HalesiaEngine.h" />
     <ClInclude Include="src\io\SceneLoader.h" />
     <ClInclude Include="src\io\SceneWriter.h" />
@@ -215,7 +217,6 @@
     <ClInclude Include="src\renderer\Mesh.h" />
     <ClInclude Include="src\renderer\ShaderReflector.h" />
     <ClInclude Include="src\renderer\RayTracing.h" />
-    <ClInclude Include="src\Object.h" />
     <ClInclude Include="src\renderer\Buffers.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
     <ClInclude Include="src\renderer\Renderer.h" />
@@ -223,18 +224,16 @@
     <ClInclude Include="src\renderer\Surface.h" />
     <ClInclude Include="src\renderer\Swapchain.h" />
     <ClInclude Include="src\renderer\Texture.h" />
+    <ClInclude Include="src\renderer\Vertex.h" />
     <ClInclude Include="src\renderer\Vulkan.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\ResourceManager.h" />
-    <ClInclude Include="src\Scene.h" />
     <ClInclude Include="src\system\Input.h" />
     <ClInclude Include="src\system\SystemMetrics.h" />
     <ClInclude Include="src\system\Window.h" />
     <ClInclude Include="src\tools\CameraInjector.h" />
     <ClInclude Include="src\tools\common.h" />
     <ClInclude Include="src\tools\Timer.h" />
-    <ClInclude Include="src\Transform.h" />
-    <ClInclude Include="src\Vertex.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico" />

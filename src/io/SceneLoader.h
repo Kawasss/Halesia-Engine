@@ -7,7 +7,7 @@
 #include <algorithm>
 #include <execution>
 #include "glm.h"
-#include "Vertex.h"
+#include "renderer/Vertex.h"
 #include "physics/Shapes.h"
 #include "physics/RigidBody.h"
 

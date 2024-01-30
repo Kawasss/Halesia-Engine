@@ -2,9 +2,11 @@
 #include "HalesiaEngine.h"
 #include "physics/Physics.h" // only for test
 #include "io/SceneLoader.h"
-#include "Object.h"
-#include "Camera.h"
-#include "Scene.h"
+
+#include "core/Object.h"
+#include "core/Camera.h"
+#include "core/Scene.h"
+
 #include "renderer/Renderer.h"
 #include "renderer/RayTracing.h"
 

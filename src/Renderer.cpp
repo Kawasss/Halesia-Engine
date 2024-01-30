@@ -19,9 +19,9 @@
 #include "system/Window.h"
 #include "system/Input.h"
 
-#include "Console.h"
-#include "Object.h"
-#include "Camera.h"
+#include "core/Console.h"
+#include "core/Object.h"
+#include "core/Camera.h"
 
 #define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS

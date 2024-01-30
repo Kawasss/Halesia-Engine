@@ -1,12 +1,14 @@
 #include <algorithm>
 #include <execution>
 #include <optional>
-#include "Scene.h"
-#include "Console.h"
+
 #include "io/SceneLoader.h"
-#include "Camera.h"
-#include "Object.h"
 #include "system/Window.h"
+
+#include "core/Camera.h"
+#include "core/Object.h"
+#include "core/Scene.h"
+#include "core/Console.h"
 
 Camera* Scene::defaultCamera = new Camera();
 

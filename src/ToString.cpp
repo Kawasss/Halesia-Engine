@@ -2,8 +2,8 @@
 #include "physics/Shapes.h"
 
 #include "HalesiaEngine.h"
-#include "Console.h"
-#include "Object.h"
+#include "core/Console.h"
+#include "core/Object.h"
 
 std::string HalesiaExitCodeToString(HalesiaExitCode exitCode)
 {

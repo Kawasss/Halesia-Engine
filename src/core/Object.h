@@ -4,8 +4,10 @@
 #include <future>
 #include <mutex>
 
-#include "renderer/Mesh.h"
 #include "Transform.h"
+
+#include "renderer/Mesh.h"
+
 #include "physics/RigidBody.h"
 #include "physics/Shapes.h"
 

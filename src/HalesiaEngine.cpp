@@ -13,7 +13,7 @@
 #include "tools/CameraInjector.h"
 #include "physics/Physics.h"
 
-#include "Console.h"
+#include "core/Console.h"
 
 #include "vvm/VVM.hpp"
 

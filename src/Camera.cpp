@@ -1,9 +1,11 @@
 #include <iostream>
 #include <algorithm>
-#include "Camera.h"
+
+#include "core/Camera.h"
+#include "core/Console.h"
+
 #include "system/Input.h"
 #include "system/Window.h"
-#include "Console.h"
 
 void Camera::Update(Win32Window* window, float delta)
 {
