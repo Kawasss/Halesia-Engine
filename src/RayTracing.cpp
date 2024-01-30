@@ -596,7 +596,7 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 		glm::vec2 ndc = objects[i]->rigid.type == RIGID_BODY_DYNAMIC ? objects[i]->transform.GetMotionVector(camera->GetProjectionMatrix(), camera->GetViewMatrix()) : staticMotion;
 		ndc.x *= width;
 		ndc.y *= height;
-		
+
 		for (int32_t j = 0; j < objects[i]->meshes.size(); j++)
 		{
 			Mesh& mesh = objects[i]->meshes[j];

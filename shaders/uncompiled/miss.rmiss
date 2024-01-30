@@ -5,7 +5,6 @@
 layout(location = 0) rayPayloadInEXT Payload {
   vec3 rayOrigin;
   vec3 rayDirection;
-  vec3 previousNormal;
 
   vec3 directColor;
   vec3 indirectColor;
@@ -13,8 +12,9 @@ layout(location = 0) rayPayloadInEXT Payload {
 
   int rayActive;
   uint64_t intersectedObjectHandle;
-  vec3 currentNormal;
-  vec3 currentAlbedo;
+  vec3 normal;
+  vec3 albedo;
+  vec2 motion;
 } payload;
 
 layout(binding = 1, set = 0) uniform Camera {
@@ -34,9 +34,9 @@ layout(binding = 1, set = 0) uniform Camera {
 
 void main() 
 { 
-	payload.currentAlbedo = vec3(0);
-	payload.currentNormal = vec3(0);
-	float co = -dot(camera.directionalLightDir, payload.previousNormal);
+	payload.albedo = vec3(0);
+	payload.normal = vec3(0);
+	float co = -dot(camera.directionalLightDir, payload.normal);
 	vec3 color = vec3(1) * co;
 	if (payload.rayDepth == 0)
 	{

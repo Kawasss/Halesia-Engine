@@ -40,7 +40,7 @@ void Denoiser::InitOptix()
 	denoiserOptions.guideNormal = 1;
 	denoiserOptions.denoiseAlpha = OPTIX_DENOISER_ALPHA_MODE_COPY;
 	
-	optixResult = optixDenoiserCreate(optixContext, OPTIX_DENOISER_MODEL_KIND_LDR, &denoiserOptions, &denoiser); // not sure about the model kind
+	optixResult = optixDenoiserCreate(optixContext, OPTIX_DENOISER_MODEL_KIND_TEMPORAL, &denoiserOptions, &denoiser); // not sure about the model kind
 	CheckOptixResult(optixResult);
 
 	CreateExternalSemaphore(externSemaphore, externSemaphoreHandle, cuExternSemaphore);
@@ -65,6 +65,8 @@ void Denoiser::AllocateBuffers(uint32_t width, uint32_t height)
 	CheckCudaResult(cudaMalloc((void**)&stateBuffer, denoiserSizes.stateSizeInBytes));
 	CheckCudaResult(cudaMalloc((void**)&scratchBuffer, denoiserSizes.withoutOverlapScratchSizeInBytes));
 	CheckCudaResult(cudaMalloc((void**)&minRGB, sizeof(glm::vec4)));
+	glm::vec4 test = glm::vec4(1);
+	cudaMemcpy((void*)minRGB, &test, sizeof(test), cudaMemcpyDefault);
 
 	optixResult = optixDenoiserSetup(denoiser, cudaStream, width, height, stateBuffer, denoiserSizes.stateSizeInBytes, scratchBuffer, denoiserSizes.withoutOverlapScratchSizeInBytes);
 	CheckOptixResult(optixResult);
@@ -74,7 +76,6 @@ void Denoiser::AllocateBuffers(uint32_t width, uint32_t height)
 	albedo.Create(width, height, sizeof(glm::vec4), this);
 	normal.Create(width, height, sizeof(glm::vec4), this);
 	motion.Create(width, height, sizeof(glm::vec2), this);
-	previousFrame.Create(width, height, sizeof(glm::vec4), this);
 
 	CheckCudaResult(cudaDeviceSynchronize());
 	cudaError_t cuResult = cudaStreamSynchronize(cudaStream);
@@ -155,19 +156,19 @@ void Denoiser::DenoiseImage()
 
 	OptixDenoiserParams params{};
 	params.blendFactor = 0;
-	params.hdrAverageColor = 0;
-	params.hdrIntensity = 0;
+	params.hdrAverageColor = minRGB;
+	params.hdrIntensity = minRGB;
 	params.temporalModeUsePreviousLayers = 0;
 
 	OptixDenoiserLayer layer{};
 	layer.input = input.image;
 	layer.output = output.image;
-	layer.previousOutput.data = 0;// = previousFrame.image;
+	layer.previousOutput = output.image;
 
 	OptixDenoiserGuideLayer guideLayer{};
 	guideLayer.albedo = albedo.image;
 	guideLayer.normal = normal.image;
-	guideLayer.flow.data = 0;
+	guideLayer.flow = motion.image;
 	guideLayer.flowTrustworthiness.data = 0;
 	guideLayer.outputInternalGuideLayer.data = 0;
 	guideLayer.previousOutputInternalGuideLayer.data = 0;
@@ -270,21 +271,18 @@ void Denoiser::CopyDenoisedBufferToImage(VkCommandBuffer commandBuffer, VkImage 
 	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
-
-	vkCmdCopyBuffer(commandBuffer, output.vkBuffer, previousFrame.vkBuffer, 1, &copyRegion);
 }
-
 
 void Denoiser::SharedOptixImage::Create(uint32_t width, uint32_t height, size_t pixelSize, Denoiser* denoiser)
 {
 	denoiser->CreateExternalCudaBuffer(vkBuffer, vkMemory, &cudaBuffer, winHandle, (VkDeviceSize)width * height * pixelSize);
 
 	image.data = (CUdeviceptr)cudaBuffer;
-	image.format = OPTIX_PIXEL_FORMAT_FLOAT4;
+	image.format = pixelSize == sizeof(glm::vec4) ? OPTIX_PIXEL_FORMAT_FLOAT4 : OPTIX_PIXEL_FORMAT_FLOAT2;
 	image.height = height;
 	image.width = width;
-	image.pixelStrideInBytes = sizeof(glm::vec4);
-	image.rowStrideInBytes = sizeof(glm::vec4) * width;
+	image.pixelStrideInBytes = pixelSize;
+	image.rowStrideInBytes = pixelSize * width;
 }
 
 void Denoiser::SharedOptixImage::Destroy(VkDevice logicalDevice)
@@ -314,7 +312,6 @@ void Denoiser::DestroyBuffers()
 	albedo.Destroy(context.logicalDevice);
 	normal.Destroy(context.logicalDevice);
 	motion.Destroy(context.logicalDevice);
-	previousFrame.Destroy(context.logicalDevice);
 }
 
 void Denoiser::Destroy()

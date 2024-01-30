@@ -15,43 +15,25 @@ class TestScene : public Scene
 	std::vector<Object*> spheres;
 	void Start() override
 	{
-		MaterialCreateInfo mirrorInfo{};
-		mirrorInfo.roughness = "textures/black.png";
-		Material mirror = Material::Create(mirrorInfo);
-		mirror.AwaitGeneration();
+		MaterialCreateInfo createInfo{};
+		createInfo.albedo = "textures/rockA.jpg";
+		createInfo.normal = "textures/rockN.jpg";
 
-		MaterialCreateInfo wall1Info = mirrorInfo;
-		wall1Info.albedo = "textures/red.png";
-		Material wall1Mat = Material::Create(wall1Info);
-		wall1Mat.AwaitGeneration();
-		
-		MaterialCreateInfo wall2Info = mirrorInfo;
-		wall2Info.albedo = "textures/blue.png";
-		Material wall2Mat = Material::Create(wall2Info);
-		wall2Mat.AwaitGeneration();
+		Object* ptr = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/rock.obj"));
+		Material rockMat = Material::Create(createInfo);
+		rockMat.AwaitGeneration();
+		ptr->meshes[0].SetMaterial(rockMat);
 
-		for (int i = 0; i < 6; i++)
-		{
-			Object* obj = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/RTXCube/panel" + std::to_string(i) + ".obj"));
-			Material& mat = i == 0 ? wall1Mat : i == 1 ? wall2Mat : mirror;
-			obj->meshes[0].SetMaterial(mat);
-		}
+		MaterialCreateInfo lampInfo{};
+		lampInfo.isLight = true;
 
-		MaterialCreateInfo lightInfo{};
-		lightInfo.isLight = true;
-		Material lightMat = Material::Create(lightInfo);
-		lightMat.AwaitGeneration();
-
-		Object* light = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/RTXCube/light.obj"));
-		light->meshes[0].SetMaterial(lightMat);
-
-		MaterialCreateInfo monkeyInfo{};
-		monkeyInfo.roughness = "textures/grey.png";
-		Material monkeyMat = Material::Create(monkeyInfo);
-		monkeyMat.AwaitGeneration();
-
-		Object* monkey = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/RTXCube/monkey.obj"));
-		monkey->meshes[0].SetMaterial(monkeyMat);
+		Object* lamp = AddStaticObject({ "cube" });
+		lamp->AddMesh(GenericLoader::LoadObjectFile("stdObj/cube.obj").meshes);
+		Material lampMat = Material::Create(lampInfo);
+		lampMat.AwaitGeneration();
+		lamp->meshes[0].SetMaterial(lampMat);
+		lamp->transform.position = glm::vec3(0, 2, 8);
+		lamp->transform.scale = glm::vec3(4, 4, 1);
 	}
 
 	void Update(float delta) override

@@ -7,7 +7,6 @@
 layout(location = 0) rayPayloadEXT Payload {
   vec3 rayOrigin;
   vec3 rayDirection;
-  vec3 previousNormal;
   
   vec3 directColor;
   vec3 indirectColor;
@@ -15,8 +14,8 @@ layout(location = 0) rayPayloadEXT Payload {
 
   int rayActive;
   uint64_t intersectedObjectHandle;
-  vec3 currentNormal;
-  vec3 currentAlbedo;
+  vec3 normal;
+  vec3 albedo;
   vec2 motion;
 } payload;
 
@@ -92,40 +91,41 @@ void main() {
       vec4 target = camera.projInv * vec4(uv.x, uv.y, 1, 1);
       payload.rayOrigin = (camera.viewInv * vec4(0, 0, 0, 1)).xyz;//camera.position.xyz;
       payload.rayDirection = (camera.viewInv * vec4(normalize(target.xyz), 0)).xyz;//normalize(uv.x * camera.right + uv.y * camera.up + camera.forward).xyz;
-      payload.previousNormal = vec3(0.0, 0.0, 0.0);
+      payload.normal = vec3(0.0, 0.0, 0.0);
 
       payload.directColor = vec3(1);
       payload.indirectColor = vec3(0.0, 0.0, 0.0);
       payload.rayDepth = 0;
+      payload.rayActive = 1;
 
       for (int i = 0; i < camera.rayDepth; i++) 
       {
         traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.rayOrigin, 0.001, payload.rayDirection, 10000.0, 0);
-        if (i == 0 && j == 0 && camera.mouseXY == gl_LaunchIDEXT.xy)
-            intersectedObject.handle = payload.intersectedObjectHandle;
-            if (i == 0 && j == 0)
-            {
-                firstAlbedo = payload.currentAlbedo;
-                firstNormal = payload.currentNormal;
-                firstMotion = payload.motion;
-            }
+        if (i == 0 && j == 0)
+        {
+            firstAlbedo = payload.albedo;
+            firstNormal = payload.normal;
+            firstMotion = payload.motion;
+            if (camera.mouseXY == gl_LaunchIDEXT.xy)
+                intersectedObject.handle = payload.intersectedObjectHandle;
+        }
       }
       if (payload.rayDepth == 0) 
         payload.rayDepth = 1;
       color += payload.indirectColor / payload.rayDepth;
   }
-  color /= camera.raySamples;
+  //color /= camera.raySamples;
   //color = pow(color, vec3(1 / 2.2));
 
-  if (camera.renderProgressive == 1)
-  {
-    vec3 oldColor = imageLoad(image, ivec2(gl_LaunchIDEXT.xy)).xyz;
-    float weight = 1.0f / (camera.frameCount + 1);
-    vec3 average = oldColor * (1.0f - weight) + color * weight;
-    color = clamp(average, 0.0, 1.0);
-  }
+//  if (camera.renderProgressive == 1)
+//  {
+//    vec3 oldColor = imageLoad(image, ivec2(gl_LaunchIDEXT.xy)).xyz;
+//    float weight = 1.0f / (camera.frameCount + 1);
+//    vec3 average = oldColor * (1.0f - weight) + color * weight;
+//    color = clamp(average, 0.0, 1.0);
+//  }
   
-  imageStore(albedoImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstAlbedo, 1));
+  imageStore(albedoImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstAlbedo / payload.rayDepth, 1));
   imageStore(normalImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstNormal, 1)); 
   imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1));
   MotionImage.data[gl_LaunchIDEXT.x * gl_LaunchSizeEXT.y + gl_LaunchIDEXT.y] = firstMotion;

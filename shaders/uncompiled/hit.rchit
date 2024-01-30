@@ -11,7 +11,6 @@ hitAttributeEXT vec2 hitCoordinate;
 layout(location = 0) rayPayloadInEXT Payload {
   vec3 rayOrigin;
   vec3 rayDirection;
-  vec3 previousNormal;
   
   vec3 directColor;
   vec3 indirectColor;
@@ -19,8 +18,8 @@ layout(location = 0) rayPayloadInEXT Payload {
 
   int rayActive;
   uint64_t intersectedObjectHandle;
-  vec3 currentNormal;
-  vec3 currentAlbedo;
+  vec3 normal;
+  vec3 albedo;
   vec2 motion;
 } payload;
 
@@ -205,8 +204,8 @@ void main() {
     surfaceColor = vec3(0);
     payload.rayDepth += 1;
     payload.rayActive = 0;
-    payload.currentNormal = geometricNormal;
-    payload.currentAlbedo = lightColor;
+    payload.normal = geometricNormal;
+    payload.albedo = lightColor;
     return;
   }
   payload.directColor *= mix(surfaceColor, vec3(1), smoothness * int(isSpecular));
@@ -217,9 +216,8 @@ void main() {
 
   payload.rayOrigin = position;
   payload.rayDirection = normalize(mix(alignedHemisphere, specularDirection, GetFresnelReflect(geometricNormal, payload.rayDirection, smoothness)));
-  payload.previousNormal = geometricNormal;
-  payload.currentNormal = geometricNormal;
-  payload.currentAlbedo = surfaceColor;
+  payload.normal = geometricNormal;
+  payload.albedo = surfaceColor;
   payload.motion = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].motion;
 
   payload.rayDepth += 1;

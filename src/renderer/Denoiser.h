@@ -65,5 +65,4 @@ private:
 	SharedOptixImage albedo{};
 	SharedOptixImage output{};
 	SharedOptixImage motion{};
-	SharedOptixImage previousFrame{};
 };
