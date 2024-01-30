@@ -1,11 +1,5 @@
-#define VK_USE_PLATFORM_WIN32_KHR
 #include <fstream>
 #include <vulkan/vulkan.h>
-#include "renderer/RayTracing.h"
-#include "renderer/Vulkan.h"
-#include "renderer/Swapchain.h"
-#include "system/Window.h"
-#include "Vertex.h"
 
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
@@ -13,14 +7,22 @@
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb/stb_image_write.h"
+
 #include "renderer/renderer.h"
 #include "renderer/AccelerationStructures.h"
-#include "system/Input.h"
-#include "Camera.h"
-#include "Object.h"
-
 #include "renderer/Denoiser.h"
 #include "renderer/ShaderReflector.h"
+#include "renderer/Vertex.h"
+#include "renderer/RayTracing.h"
+#include "renderer/Vulkan.h"
+#include "renderer/Swapchain.h"
+
+#include "system/Input.h"
+#include "system/Window.h"
+
+#include "core/Camera.h"
+#include "core/Object.h"
+
 #include "tools/common.h"
 
 struct InstanceMeshData

@@ -17,9 +17,9 @@
 #include "physics/RigidBody.h"
 #include "physics/Shapes.h"
 
-#include "Console.h"
-#include "Object.h"
-#include "Transform.h"
+#include "core/Console.h"
+#include "core/Object.h"
+#include "core/Transform.h"
 
 inline void ShowInputVector(glm::vec3& vector, std::vector<const char*> labels)
 {

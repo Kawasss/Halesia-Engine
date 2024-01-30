@@ -1,8 +1,10 @@
 #include <cstdint>
+
 #include "io/SceneWriter.h"
 #include "io/SceneLoader.h"
-#include "Scene.h"
-#include "Object.h"
+
+#include "core/Scene.h"
+#include "core/Object.h"
 
 struct HSFHeader
 {

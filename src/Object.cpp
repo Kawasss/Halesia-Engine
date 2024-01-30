@@ -1,7 +1,9 @@
-#include "Object.h"
 #include <iostream>
 #include <future>
-#include "Console.h"
+
+#include "core/Object.h"
+#include "core/Console.h"
+
 #include "io/SceneLoader.h"
 #include "physics/Physics.h"
 

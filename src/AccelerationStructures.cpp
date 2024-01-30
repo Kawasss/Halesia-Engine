@@ -2,7 +2,8 @@
 #include "renderer/AccelerationStructures.h"
 #include "renderer/Renderer.h"
 #include "renderer/Mesh.h"
-#include "Object.h"
+
+#include "core/Object.h"
 
 void AccelerationStructure::CreateAS(const VkAccelerationStructureGeometryKHR* pGeometry, VkAccelerationStructureTypeKHR type, uint32_t maxPrimitiveCount)
 {

@@ -1,13 +1,16 @@
 #define PX_PHYSX_STATIC_LIB
-#include "physics/Physics.h"
 #include <string>
 #include <thread>
 #include <iostream>
+
+#include "physics/Physics.h"
+
 #include "extensions/PxExtensionsAPI.h"
 #include "extensions/PxDefaultCpuDispatcher.h"
 #include "extensions/PxDefaultSimulationFilterShader.h"
+
 #include "renderer/Mesh.h"
-#include "Object.h"
+#include "core/Object.h"
 
 constexpr float simulationStep = 1 / 60.0f;
 

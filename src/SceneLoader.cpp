@@ -1,9 +1,10 @@
-#include "io/SceneLoader.h"
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <unordered_map>
-#include "Console.h"
+
+#include "io/SceneLoader.h"
+#include "core/Console.h"
 
 template<typename T> inline T GetType(char* bytes)
 {

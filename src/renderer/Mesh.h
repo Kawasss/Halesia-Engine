@@ -1,8 +1,9 @@
 #pragma once
+#include <mutex>
+
 #include "Material.h"
 #include "StorageBuffer.h"
-#include "../Vertex.h"
-#include <mutex>
+#include "Vertex.h"
 
 class BottomLevelAccelerationStructure;
 struct MeshCreationData;
