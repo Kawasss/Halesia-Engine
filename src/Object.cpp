@@ -68,6 +68,7 @@ void Object::Initialize(const ObjectCreationData& creationData, void* customClas
 	transform.scale = creationData.scale;
 
 	GenerateObjectWithData(creationData); // maybe async??
+	Start();
 }
 
 void Object::AddMesh(const std::vector<MeshCreationData>& creationData)
@@ -97,6 +98,7 @@ void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, v
 
 	newObjPtr->AddRigidBody(oldObjPtr->rigid.type, oldObjPtr->rigid.shape);
 
+	newObjPtr->Start();
 	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + oldObjPtr->name + "\" with" + (script == nullptr ? "out a script" : " a script"), MESSAGE_SEVERITY_DEBUG);
 }
 

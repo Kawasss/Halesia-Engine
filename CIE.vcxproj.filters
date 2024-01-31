@@ -195,6 +195,9 @@
     <ClCompile Include="..\..\additionalDependencies\spirv-reflect\spirv_reflect.cpp">
       <Filter>external\spirvReflect</Filter>
     </ClCompile>
+    <ClCompile Include="src\Audio.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -346,6 +349,9 @@
     </ClInclude>
     <ClInclude Include="src\core\Transform.h">
       <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Audio.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

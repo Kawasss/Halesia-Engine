@@ -17,6 +17,8 @@
 
 #include "vvm/VVM.hpp"
 
+#include "Audio.h"
+
 int ParseAndValidateDimensionArgument(std::string string)
 {
 	int i = std::stoi(string.substr(string.find(' '), string.size() - 1));
@@ -50,6 +52,8 @@ void DetermineArgs(int argsCount, char** args, Win32WindowCreateInfo& createInfo
 
 void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, HalesiaInstanceCreateInfo& createInfo)
 {
+	Audio::Init();
+
 	std::cout << "Generating Halesia instance:\n" << "  createInfo.startingScene = " << createInfo.startingScene << "\n  createInfo.devConsoleKey = " << ToHexadecimalString((int)createInfo.devConsoleKey) << "\n  createInfo.playIntro = " << createInfo.playIntro << "\n\n";
 	try
 	{
@@ -333,6 +337,8 @@ void HalesiaInstance::LoadVars()
 
 void HalesiaInstance::OnExit()
 {
+	Audio::Destroy();
+
 	VVM::PushGroup("engineCore");
 	VVM::AddVariable("useEditorUI", useEditor);
 	VVM::AddVariable("showFPS", showFPS);

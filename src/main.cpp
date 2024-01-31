@@ -10,6 +10,8 @@
 #include "renderer/Renderer.h"
 #include "renderer/RayTracing.h"
 
+#include "Audio.h"
+
 class TestCam : public Camera
 {
 public:
@@ -51,16 +53,28 @@ Win32Window* Rotator::window = nullptr;
 
 class Key : public Object
 {
+	WavSound keyPress;
+	bool LMBWasPressed = false;
+
+	void Start() override
+	{
+		keyPress.load("sounds/press.wav");
+	}
+
 	void Update(float delta) override
 	{
-		bool isLMBPressed = Input::IsKeyPressed(VirtualKey::LeftMouseButton) && !Input::IsKeyPressed(VirtualKey::MiddleMouseButton);
+		bool LMBIsPressed = Input::IsKeyPressed(VirtualKey::LeftMouseButton) && !Input::IsKeyPressed(VirtualKey::MiddleMouseButton);
 
 		if (Renderer::selectedHandle == handle)
 		{
-			transform.position.y = isLMBPressed ? 0.2f : 0.5f;
+			if (LMBIsPressed && !LMBWasPressed)
+				Audio::PlayWavSound(keyPress);
+			transform.position.y = LMBIsPressed ? 0.2f : 0.5f;
 		}
 		else
 			transform.position.y = 0.6f;
+
+		LMBWasPressed = LMBIsPressed;
 	}
 };
 
