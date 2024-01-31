@@ -51,6 +51,29 @@ Win32Window* Rotator::window = nullptr;
 
 class Key : public Object
 {
+	enum Type
+	{
+		KEY_0 = 1,
+		KEY_DOT = 2,
+		KEY_ENTER = 3,
+		KEY_1 = 4,
+		KEY_2 = 5,
+		KEY_3 = 6,
+		KEY_4 = 8,
+		KEY_5 = 9,
+		KEY_6 = 10,
+		KEY_7 = 12,
+		KEY_8 = 13,
+		KEY_9 = 14,
+		KEY_MULTIPLY, // two multiplies (**) is the same as power of (^)
+		KEY_DIVIDE,
+		KEY_ADD,
+		KEY_MINUS,
+		KEY_ANS,
+		KEY_PAREN_OPEN,
+		KEY_PAREN_CLOSE
+	};
+
 	WavSound keyPress;
 	bool LMBWasPressed = false;
 
@@ -94,7 +117,7 @@ class CalculatorScene : public Scene
 		for (auto& info : loader.objects)
 		{
 			Object* obj = nullptr;
-			if (info.name.back() == '4' && info.name[info.name.size() - 2] == '0')
+			if (info.name == "case")
 				obj = AddStaticObject(info);
 			else
 				obj = AddCustomObject<Key>(info);
