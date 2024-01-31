@@ -20,22 +20,47 @@ public:
 		UpdateVectors();
 	}
 
-	//void Update(Win32Window* window, float delta) {}
+	void Update(Win32Window* window, float delta) {}
 };
 
 class Rotator : public Object
 {
+	void Start() override
+	{
+		transform.position.y = -3;
+	}
+
 	void Update(float delta) override
 	{
-		transform.rotation.x += delta * 0.01f;
+		if (window == nullptr) return;
+
+		int x, y;
+		window->GetRelativeCursorPosition(x, y);
+
+		if (Input::IsKeyPressed(VirtualKey::MiddleMouseButton))
+		{
+			transform.rotation.z += x * delta * -0.05f;
+			transform.rotation.x += y * delta * 0.05f;
+		}
 	}
+
+public:
+	static Win32Window* window;
 };
+Win32Window* Rotator::window = nullptr;
 
 class Key : public Object
 {
 	void Update(float delta) override
 	{
-		transform.position.y = Renderer::selectedHandle == handle ? -0.2f : 0;
+		bool isLMBPressed = Input::IsKeyPressed(VirtualKey::LeftMouseButton) && !Input::IsKeyPressed(VirtualKey::MiddleMouseButton);
+
+		if (Renderer::selectedHandle == handle)
+		{
+			transform.position.y = isLMBPressed ? 0.2f : 0.5f;
+		}
+		else
+			transform.position.y = 0.6f;
 	}
 };
 
@@ -103,7 +128,9 @@ int main(int argsCount, char** args)
 #endif
 
 	HalesiaInstance::GenerateHalesiaInstance(instance, createInfo);
-	
+
+	Rotator::window = instance.GetWindow();
+
 	instance.Run();
 
 	return EXIT_SUCCESS;

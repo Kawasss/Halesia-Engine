@@ -103,6 +103,11 @@ inline void ManageCameraInjector(Scene* scene, bool pauseGame)
 		cameraInjector.Eject();
 }
 
+Win32Window* HalesiaInstance::GetWindow()
+{
+	return window;
+}
+
 void HalesiaInstance::UpdateScene(float delta)
 {
 	SetThreadDescription(GetCurrentThread(), L"SceneUpdatingThread");

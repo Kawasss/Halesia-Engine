@@ -73,6 +73,8 @@ public:
 	int minimumFPS = 60;
 	Scene* scene;
 
+	Win32Window* GetWindow();
+
 private:
 	struct UpdateRendererData
 	{
