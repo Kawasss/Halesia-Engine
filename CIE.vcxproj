@@ -205,6 +205,7 @@
     <ClInclude Include="src\core\Object.h" />
     <ClInclude Include="src\core\Scene.h" />
     <ClInclude Include="src\core\Transform.h" />
+    <ClInclude Include="src\demo\Calculator.h" />
     <ClInclude Include="src\HalesiaEngine.h" />
     <ClInclude Include="src\io\SceneLoader.h" />
     <ClInclude Include="src\io\SceneWriter.h" />
