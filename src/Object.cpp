@@ -79,6 +79,13 @@ void Object::AddMesh(const std::vector<MeshCreationData>& creationData)
 	}
 }
 
+void Object::AddChild(Object* object)
+{
+	children.insert(object);
+	object->parent = this;
+	object->transform.parent = &transform;
+}
+
 void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script)
 {
 	newObjPtr->meshes = oldObjPtr->meshes;
@@ -118,6 +125,8 @@ void Object::Destroy()
 {
 	for (Mesh& mesh : meshes)
 		mesh.Destroy();
+	for (Object* obj : children)
+		obj->Destroy();
 	delete this;
 }
 

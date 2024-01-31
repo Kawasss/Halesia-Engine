@@ -1072,7 +1072,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 {
 	std::vector<Object*> activeObjects;
 	for (Object* object : objects)
-		if (object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE)
+		if (object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && !object->meshes.empty())
 			activeObjects.push_back(object);
 	
 	ImGui::Render();

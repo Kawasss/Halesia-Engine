@@ -20,7 +20,15 @@ public:
 		UpdateVectors();
 	}
 
-	void Update(Win32Window* window, float delta) {}
+	//void Update(Win32Window* window, float delta) {}
+};
+
+class Rotator : public Object
+{
+	void Update(float delta) override
+	{
+		transform.rotation.x += delta * 0.01f;
+	}
 };
 
 class Key : public Object
@@ -41,18 +49,19 @@ class TestScene : public Scene
 		camera = new TestCam();
 		camera->Start();
 
+		Object* rotator = AddCustomObject<Rotator>(ObjectCreationData{ "rotator" });
+
 		SceneLoader loader{ "stdObj/calculator.fbx" };
 		loader.LoadFBXScene();
 		
 		for (auto& info : loader.objects)
 		{
-			std::cout << info.name << '\n';
+			Object* obj = nullptr;
 			if (info.name.back() == '4' && info.name[info.name.size() - 2] == '0')
-				AddStaticObject(info);
+				obj = AddStaticObject(info);
 			else
-			{
-				Object* obj = AddCustomObject<Key>(info);
-			}
+				obj = AddCustomObject<Key>(info);
+			rotator->AddChild(obj);
 		}
 
 		MaterialCreateInfo lampInfo{};

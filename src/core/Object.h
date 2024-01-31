@@ -3,6 +3,7 @@
 #include <vector>
 #include <future>
 #include <mutex>
+#include <set>
 
 #include "Transform.h"
 
@@ -72,6 +73,7 @@ public:
 
 	void AddRigidBody(RigidBodyType type, Shape shape);
 	void AddMesh(const std::vector<MeshCreationData>& creationData);
+	void AddChild(Object* object);
 
 	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script);
 	static std::string ObjectStateToString(ObjectState state);
@@ -93,6 +95,9 @@ private:
 	std::future<void> generationProcess;
 	
 protected:
+	Object* parent = nullptr;
+	std::set<Object*> children;
+
 	static void Free(Object* objPtr)
 	{
 		objPtr->shouldBeDestroyed = true;

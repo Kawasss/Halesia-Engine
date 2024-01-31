@@ -3,7 +3,7 @@ engineCore:
 	showFPS: 1
 	consoleKey: 192
 renderer: 
-	interalRes: 0.500000
+	interalRes: 1.000000
 	renderCollision: 1
 	denoiseOutput: 0
 	ray-tracing: 

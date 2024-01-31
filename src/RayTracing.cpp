@@ -590,7 +590,7 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 	const glm::vec2 staticMotion = camera->GetMotionVector();
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
-		if (objects[i]->state != OBJECT_STATE_VISIBLE || !objects[i]->HasFinishedLoading())
+		if (objects[i]->state != OBJECT_STATE_VISIBLE || !objects[i]->HasFinishedLoading() || objects[i]->meshes.empty())
 			continue;
 		
 		std::lock_guard<std::mutex> lockGuard(objects[i]->mutex);

@@ -23,6 +23,7 @@ public:
 	void SetLocalRotation(glm::mat4 newLocalRotation);
 
 	glm::vec3 position = glm::vec3(0), scale = glm::vec3(1), rotation = glm::vec3(0);
+	Transform* parent = nullptr;
 
 private:
 	glm::mat4 model = glm::identity<glm::mat4>(), localRotationModel = glm::identity<glm::mat4>();

@@ -17,7 +17,7 @@ glm::mat4 Transform::GetModelMatrix()
 	glm::mat4 translationModel = glm::translate(glm::identity<glm::mat4>(), position);
 	model = translationModel * localRotationModel * scaleModel;
 	localRotationChanged = false;
-	return model;
+	return parent == nullptr ? model : parent->GetModelMatrix() * model;
 }
 
 glm::vec3 Transform::GetRight()
