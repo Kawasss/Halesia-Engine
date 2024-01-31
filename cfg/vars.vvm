@@ -9,7 +9,7 @@ renderer:
 	ray-tracing: 
 		raySamples: 1
 		rayDepth: 8
-		showNormals: 1
+		showNormals: 0
 		showUnique: 0
 		showAlbedo: 0
 		renderProgressive: 0
