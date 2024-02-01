@@ -17,10 +17,6 @@ void Object::AwaitGeneration()
 
 void Object::GenerateObjectWithData(const ObjectCreationData& creationData)
 {
-	/*#ifdef _DEBUG
-	Console::WriteLine("Attempting to create new model \"" + name + '\"', MESSAGE_SEVERITY_DEBUG);
-	#endif*/
-
 	for (int i = 0; i < creationData.meshes.size(); i++)
 		meshes[i].Create(creationData.meshes[i]);
 
@@ -32,18 +28,11 @@ void Object::GenerateObjectWithData(const ObjectCreationData& creationData)
 		transform.rotation = creationData.rotation;
 		rigid.ForcePosition(transform);
 	}
-
 	finishedLoading = true; //maybe use mutex here or just find better solution
 
 	#ifdef _DEBUG
 	Console::WriteLine("Created new object \"" + name + "\" with unique id \"" + std::to_string(handle) + '\"', MESSAGE_SEVERITY_DEBUG);
 	#endif
-}
-
-void Object::RecreateMeshes()
-{
-	for (Mesh& mesh : meshes)
-		mesh.Recreate();
 }
 
 Object* Object::Create(const ObjectCreationData& creationData, void* customClassPointer)

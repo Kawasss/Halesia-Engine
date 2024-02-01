@@ -95,25 +95,25 @@ class Win32Window
 		bool cursorHasMoved = false;
 
 		std::string GetDroppedFile();
-		WindowMode GetWindowMode();
+		WindowMode GetWindowMode()   const;
 
-		bool ContainsDroppedFile();
-		bool ShouldClose();
-		bool CursorIsLocked();
+		bool ContainsDroppedFile() const;
+		bool ShouldClose()         const;
+		bool CursorIsLocked()      const;
 
-		int GetX();
-		int GetY();
-		int GetWidth();
-		int GetHeight();
-		int GetWheelRotation();
+		int GetX()             const;
+		int GetY()             const;
+		int GetWidth()         const;
+		int GetHeight()        const;
+		int GetWheelRotation() const;
 
 		void SetWidth(int value);
 		void SetHeight(int value);
 		void SetWidthAndHeight(int width, int height); // more efficient since it only issues one windows api call
 		void SetXAndY(int x, int y);
 
-		void GetRelativeCursorPosition(int& x, int& y);
-		void GetAbsoluteCursorPosition(int& x, int& y);
+		void GetRelativeCursorPosition(int& x, int& y) const;
+		void GetAbsoluteCursorPosition(int& x, int& y) const;
 		void LockCursor();
 		void UnlockCursor();
 		void ChangeWindowMode(WindowMode windowMode);

@@ -108,7 +108,7 @@ void Scene::RegisterObjectPointer(Object* objPtr, bool isCustom)
 		objectsWithScripts.push_back(objPtr);
 }
 
- void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberToErase)
+ inline void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberToErase)
 {
 	for (auto i = vector.begin(); i < vector.end(); i++)
 		if (*i == memberToErase)
@@ -145,9 +145,7 @@ void Scene::Free(Object* object)
 		object->Destroy();
 
 		Console::WriteLine("Freed " + (std::string)(object->HasScript() ? "static" : "scripted") + " object "/* + object->name*/, MESSAGE_SEVERITY_DEBUG);
-
-
-		break;
+		return;
 	}
 	Console::WriteLine("Failed to free an object, because it isn't registered in the scene. Maybe the object is already freed?", MESSAGE_SEVERITY_ERROR);
 }

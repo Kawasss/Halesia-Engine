@@ -88,7 +88,7 @@ std::string ConsoleVariableAccessToString(ConsoleVariableAccess access)
 	return "";
 }
 
-std::string Object::ObjectStateToString(ObjectState state)
+std::string ObjectStateToString(ObjectState state)
 {
 	switch (state)
 	{

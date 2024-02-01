@@ -146,22 +146,22 @@ void Win32Window::PollMessages()
 	}
 }
 
-WindowMode Win32Window::GetWindowMode()
+WindowMode Win32Window::GetWindowMode() const
 {
 	return currentWindowMode;
 }
 
-bool Win32Window::ShouldClose()
+bool Win32Window::ShouldClose() const
 {
 	return shouldClose;
 }
 
-int Win32Window::GetX()
+int Win32Window::GetX() const
 {
 	return x;
 }
 
-int Win32Window::GetY()
+int Win32Window::GetY() const
 {
 	return y;
 }
@@ -175,12 +175,12 @@ void Win32Window::SetXAndY(int x, int y)
 	SetWindowPos(window, NULL, x, y, 0, 0, SWP_NOSIZE);
 }
 
-int Win32Window::GetWidth()
+int Win32Window::GetWidth() const
 {
 	return width;
 }
 
-int Win32Window::GetHeight()
+int Win32Window::GetHeight() const
 {
 	return height;
 }
@@ -206,19 +206,19 @@ void Win32Window::SetWidthAndHeight(int width, int height)
 	SetWindowPos(window, NULL, 0, 0, width, height, SWP_NOMOVE);
 }
 
-void Win32Window::GetRelativeCursorPosition(int& x, int& y)
+void Win32Window::GetRelativeCursorPosition(int& x, int& y) const
 {
 	x = cursorX;
 	y = cursorY;
 }
 
-void Win32Window::GetAbsoluteCursorPosition(int& x, int& y)
+void Win32Window::GetAbsoluteCursorPosition(int& x, int& y) const
 {
 	x = absCursorX;
 	y = absCursorY;
 }
 
-int Win32Window::GetWheelRotation()
+int Win32Window::GetWheelRotation() const
 {
 	return wheelRotation;
 }
@@ -235,12 +235,12 @@ void Win32Window::UnlockCursor()
 	lockCursor = false;
 }
 
-bool Win32Window::CursorIsLocked()
+bool Win32Window::CursorIsLocked() const
 {
 	return lockCursor;
 }
 
-bool Win32Window::ContainsDroppedFile()
+bool Win32Window::ContainsDroppedFile() const
 {
 	return containsDroppedFile;
 }

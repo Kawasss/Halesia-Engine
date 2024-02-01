@@ -50,8 +50,6 @@ private:
 protected:
 	void UpdateVectors();
 
-	
-
 	/// <summary>
 	/// Updates the up and right vector based on the current front vector
 	/// </summary>

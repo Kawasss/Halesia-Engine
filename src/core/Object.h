@@ -30,37 +30,11 @@ enum ObjectState
 	/// </summary>
 	OBJECT_STATE_DISABLED
 };
+inline extern std::string ObjectStateToString(ObjectState state);
 
 class Object
 {
 public:
-	Object() = default;
-	virtual		~Object() {};
-	virtual void Destroy();
-	virtual void Start() {};
-	virtual void Update(float delta);
-	virtual void OnCollisionEnter() { std::cout << name << "\n"; }
-	virtual void OnCollisionStay() {}
-	virtual void OnCollisionExit() {}
-
-	bool HasFinishedLoading();
-	bool HasScript() { return scriptClass == nullptr; }
-	bool HasRigidBody() { return rigid.type != RIGID_BODY_NONE; }
-
-	/// <summary>
-	/// Awaits the async generation process of the object and meshes
-	/// </summary>
-	void AwaitGeneration();
-
-	void RecreateMeshes();
-
-	/// <summary>
-	/// Gets the script attached to the object, if no script is attached it will return an invalid pointer
-	/// </summary>
-	/// <typeparam name="T">: The name of the script's class as a pointer</typeparam>
-	/// <returns>Pointer to the given class</returns>
-	template<typename T> T* GetScript();
-
 	/// <summary>
 	/// This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.
 	/// Be weary of accessing members in the constructor, since they don't have to be loaded in. AwaitGeneration awaits the async thread.
@@ -69,6 +43,33 @@ public:
 	/// <param name="creationData"></param>
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
 	static Object* Create(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
+
+	Object() = default;
+	virtual		~Object() {}
+	virtual void Start()  {}
+	virtual void Destroy();
+	virtual void Update(float delta);
+
+	virtual void OnCollisionEnter() {}
+	virtual void OnCollisionStay()  {}
+	virtual void OnCollisionExit()  {}
+
+	bool HasFinishedLoading();
+	bool HasScript()    { return scriptClass == nullptr; }
+	bool HasRigidBody() { return rigid.type != RIGID_BODY_NONE; }
+
+	/// <summary>
+	/// Awaits the async generation process of the object and meshes
+	/// </summary>
+	void AwaitGeneration();
+
+	/// <summary>
+	/// Gets the script attached to the object, if no script is attached it will return an invalid pointer
+	/// </summary>
+	/// <typeparam name="T">: The name of the script's class as a pointer</typeparam>
+	/// <returns>Pointer to the given class</returns>
+	template<typename T> T* GetScript();
+
 	void Initialize(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
 
 	void AddRigidBody(RigidBodyType type, Shape shape);
@@ -76,7 +77,6 @@ public:
 	void AddChild(Object* object);
 
 	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script);
-	static std::string ObjectStateToString(ObjectState state);
 
 	Transform transform;
 	RigidBody rigid;

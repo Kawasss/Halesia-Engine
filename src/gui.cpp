@@ -391,7 +391,7 @@ void GUI::ShowObjectTable(const std::vector<Object*>& objects)
 		ImGui::TableNextColumn();
 		ImGui::Text(std::to_string(currentObj->handle).c_str());
 		ImGui::TableNextColumn();
-		ImGui::Text(Object::ObjectStateToString(currentObj->state).c_str());
+		ImGui::Text(ObjectStateToString(currentObj->state).c_str());
 		ImGui::TableNextColumn();
 		ImGui::Text(std::to_string(currentObj->meshes.size()).c_str());
 		ImGui::TableNextColumn();
