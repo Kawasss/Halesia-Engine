@@ -10,6 +10,17 @@
 
 #include "../Audio.h"
 
+// This demo shows:
+//  - Creating static and custom objects
+//  - Using the Input class
+//  - Using the audio engine
+//  - Overriding classes (Camera, Object and Scene)
+//  - Creating a parent - child relationship between objects
+//  - Creating a material
+//  - Adding a mesh to an object
+//  - Loading an FBX scene
+//  - mouse picking with the renderer
+
 class TestCam : public Camera
 {
 public:
@@ -101,13 +112,9 @@ class Key : public Object
 
 class CalculatorScene : public Scene
 {
-	Material colorMaterial;
-
-	std::vector<Object*> spheres;
 	void Start() override
 	{
-		camera = new TestCam();
-		camera->Start();
+		camera = AddCustomCamera<TestCam>();
 
 		Object* rotator = AddCustomObject<Rotator>(ObjectCreationData{ "rotator" });
 

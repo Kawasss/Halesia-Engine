@@ -33,7 +33,13 @@ public:
 	glm::mat4 GetViewMatrix();
 	glm::vec2 GetMotionVector();
 
-	template<typename T> T GetScript() { return static_cast<T>(attachedScript); }
+	template<typename T> T* GetScript() { return static_cast<T*>(attachedScript); }
+	
+	/// <summary>
+	/// This function sets the script for the base class. This makes it so that GetScript can be used.
+	/// </summary>
+	/// <param name="script"></param>
+	void SetScript(void* script) { attachedScript = script; }
 
 private:
 	glm::vec2 prev2D = glm::vec2(0);
@@ -44,11 +50,7 @@ private:
 protected:
 	void UpdateVectors();
 
-	/// <summary>
-	/// This function sets the script for the base class. This makes it so that GetScript can be used.
-	/// </summary>
-	/// <param name="script"></param>
-	void SetScript(void* script) { attachedScript = script; }
+	
 
 	/// <summary>
 	/// Updates the up and right vector based on the current front vector

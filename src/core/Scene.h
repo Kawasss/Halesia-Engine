@@ -41,12 +41,18 @@ public:
 	/// <param name="name">: The name of the object to find and create. If objectType is OBJECT_IMPORT_EXTERNAL this needs to be the path to the file</param>
 	/// <param name="objectType">: The type of object: either from inside the scene file or an outside file</param>
 	/// <returns>A pointer to the base object of the custom object. A nullptr will be returned if an object matching the name can't be found</returns>
-	template<typename T> Object* AddCustomObject(std::string name, ObjectImportType objectType = OBJECT_IMPORT_INTERNAL);
-	template<typename T> Object* AddCustomObject(const ObjectCreationData& creationData);
-						 Object* AddStaticObject(const ObjectCreationData& creationData);
+	template<typename T> 
+	Object* AddCustomObject(std::string name, ObjectImportType objectType = OBJECT_IMPORT_INTERNAL);
+	template<typename T> 
+	Object* AddCustomObject(const ObjectCreationData& creationData);
+	Object* AddStaticObject(const ObjectCreationData& creationData);
 	
-	template<typename T> Object* DuplicateCustomObject(Object* objPtr, std::string name);
-						 Object* DuplicateStaticObject(Object* objPtr, std::string name);
+	template<typename T> 
+	Object* DuplicateCustomObject(Object* objPtr, std::string name);
+	Object* DuplicateStaticObject(Object* objPtr, std::string name);
+
+	template<typename T>
+	Camera* AddCustomCamera();
 
 	Object* GetObjectByHandle(Handle handle);
 	bool HasFinishedLoading();
@@ -84,6 +90,15 @@ protected:
 	Object* GetObjectByName(std::string name);
 	void Free(Object* object);
 };
+
+template<typename T> Camera* Scene::AddCustomCamera()
+{
+	T* custom = new T();
+	Camera* ret = custom;
+	ret->SetScript(custom);
+	ret->Start();
+	return ret;
+}
 
 template<typename T> Object* Scene::AddCustomObject(const ObjectCreationData& creationData)
 {
