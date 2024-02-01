@@ -60,6 +60,11 @@ public:
 };
 Win32Window* Rotator::window = nullptr;
 
+class OutputChar
+{
+
+};
+
 class Key : public Object
 {
 	enum Type
@@ -121,14 +126,24 @@ class CalculatorScene : public Scene
 		SceneLoader loader{ "stdObj/calculator.fbx" };
 		loader.LoadFBXScene();
 
+		MaterialCreateInfo matInfo{};
+		matInfo.albedo = "textures/red.png";
+		Material mat = Material::Create(matInfo);
+		mat.AwaitGeneration();
+		
+		std::vector<Object*> objs;
 		for (auto& info : loader.objects)
 		{
 			Object* obj = nullptr;
-			if (info.name == "case")
+			if (info.name == "case" || info.name.substr(0, 3) == "led")
 				obj = AddStaticObject(info);
 			else
 				obj = AddCustomObject<Key>(info);
+			
+			if (info.name == "key1.001")
+				obj->meshes[0].SetMaterial(mat);
 			rotator->AddChild(obj);
+			objs.push_back(obj);
 		}
 
 		MaterialCreateInfo lampInfo{};
