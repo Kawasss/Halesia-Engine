@@ -33,13 +33,13 @@ public:
 	glm::mat4 GetViewMatrix();
 	glm::vec2 GetMotionVector();
 
-	template<typename T> T* GetScript() { return static_cast<T*>(attachedScript); }
+	template<typename T> T* GetScript();
 	
 	/// <summary>
 	/// This function sets the script for the base class. This makes it so that GetScript can be used.
 	/// </summary>
 	/// <param name="script"></param>
-	void SetScript(void* script) { attachedScript = script; }
+	template<typename T> void SetScript(T* script);
 
 private:
 	glm::vec2 prev2D = glm::vec2(0);
@@ -72,3 +72,15 @@ public:
 private:
 	float sumX = 0, sumY = 0;
 };
+
+template<typename T> void Camera::SetScript(T* script) 
+{ 
+	static_assert(!std::is_base_of_v<T, Camera>, "Cannot set the camera script: the given typename does not have Camera as a base");
+	attachedScript = script; 
+}
+
+template<typename T> T* Camera::GetScript() 
+{ 
+	static_assert(!std::is_base_of_v<T, Camera> || attachedScript == nullptr, "Cannot set the camera script: the given typename does not have Camera as a base or the pointer is null");
+	return static_cast<T*>(attachedScript); 
+}

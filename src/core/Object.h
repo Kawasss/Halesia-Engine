@@ -59,7 +59,7 @@ public:
 	/// </summary>
 	/// <typeparam name="T">: The name of the script's class as a pointer</typeparam>
 	/// <returns>Pointer to the given class</returns>
-	template<typename T> T GetScript() { if (scriptClass == nullptr) throw std::runtime_error("Failed to get a script class: the pointer is a nullptr"); return static_cast<T>(scriptClass); };
+	template<typename T> T* GetScript();
 
 	/// <summary>
 	/// This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.
@@ -89,6 +89,7 @@ public:
 	bool shouldBeDestroyed = false;
 
 private:
+	template<typename T> void SetScript(T* script);
 	void GenerateObjectWithData(const ObjectCreationData& creationData);
 
 	void* scriptClass = nullptr;
@@ -103,3 +104,15 @@ protected:
 		objPtr->shouldBeDestroyed = true;
 	}
 };
+
+template<typename T> void Object::SetScript(T* script)
+{
+	static_assert(!std::is_base_of_v<T, Object>, "Cannot set the script: the typename does not have Object as a base or the pointer is null");
+	scriptClass = script;
+}
+
+template<typename T> T* Object::GetScript() 
+{ 
+	static_assert(!std::is_base_of_v<T, Object> || scriptClass == nullptr, "Cannot get the script: the typename does not have Object as a base or the pointer is null");
+	return static_cast<T>(scriptClass); 
+}
