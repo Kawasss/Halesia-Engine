@@ -71,7 +71,7 @@ void Object::AddMesh(const std::vector<MeshCreationData>& creationData)
 
 void Object::AddChild(Object* object)
 {
-	children.insert(object);
+	children.push_back(object);
 	object->parent = this;
 	object->transform.parent = &transform;
 }

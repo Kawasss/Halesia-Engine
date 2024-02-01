@@ -3,7 +3,6 @@
 #include <vector>
 #include <future>
 #include <mutex>
-#include <set>
 
 #include "Transform.h"
 
@@ -97,7 +96,7 @@ private:
 	
 protected:
 	Object* parent = nullptr;
-	std::set<Object*> children;
+	std::vector<Object*> children;
 
 	static void Free(Object* objPtr)
 	{
@@ -114,5 +113,5 @@ template<typename T> void Object::SetScript(T* script)
 template<typename T> T* Object::GetScript() 
 { 
 	static_assert(!std::is_base_of_v<T, Object> || scriptClass == nullptr, "Cannot get the script: the typename does not have Object as a base or the pointer is null");
-	return static_cast<T>(scriptClass); 
+	return static_cast<T*>(scriptClass); 
 }
