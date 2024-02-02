@@ -19,42 +19,19 @@
 
 #include "Audio.h"
 
-int ParseAndValidateDimensionArgument(std::string string)
+inline void ProcessError(const std::exception& e)
 {
-	int i = std::stoi(string.substr(string.find(' '), string.size() - 1));
-	if (i <= 0)
-		throw std::runtime_error("Incorrect argument was given, it must be higher than 0, not " + std::to_string(i));
-	return i;
-}
-
-void DetermineArgs(int argsCount, char** args, Win32WindowCreateInfo& createInfo)
-{
-	#ifdef _DEBUG
-	std::cout << "Received the following argument(s):" << std::endl;
-	#endif
-	for (int i = 0; i < argsCount; i++)
-	{
-		std::string arg = args[i];
-		#ifdef _DEBUG
-		std::cout << "  " << arg << std::endl;
-		#endif
-		switch (arg[0])
-		{
-		case 'w':
-			createInfo.width = ParseAndValidateDimensionArgument(arg);
-			break;
-		case 'h':
-			createInfo.height = ParseAndValidateDimensionArgument(arg);
-			break;
-		}
-	}
+	std::string fullError = e.what();
+	MessageBoxA(nullptr, fullError.c_str(), ((std::string)"Engine error (" + (std::string)typeid(e).name() + ')').c_str(), MB_OK | MB_ICONERROR);
+	std::cerr << e.what() << std::endl;
 }
 
 void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, HalesiaInstanceCreateInfo& createInfo)
 {
-	Audio::Init();
-
-	std::cout << "Generating Halesia instance:\n" << "  createInfo.startingScene = " << createInfo.startingScene << "\n  createInfo.devConsoleKey = " << ToHexadecimalString((int)createInfo.devConsoleKey) << "\n  createInfo.playIntro = " << createInfo.playIntro << "\n\n";
+	std::cout << "Generating Halesia instance:" 
+		<< "\n  createInfo.startingScene = " << ToHexadecimalString((int)createInfo.startingScene) 
+		<< "\n  createInfo.devConsoleKey = " << ToHexadecimalString((int)createInfo.devConsoleKey) 
+		<< "\n  createInfo.playIntro     = " << createInfo.playIntro << "\n\n";
 	try
 	{
 		instance.OnLoad(createInfo);
@@ -63,14 +40,20 @@ void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, Halesia
 		SystemInformation systemInfo = GetCpuInfo();
 		VkPhysicalDeviceProperties properties = context.physicalDevice.Properties();
 		uint64_t vram = context.physicalDevice.VRAM();
-		std::cout << "\nDetected hardware:\n" << "  CPU: " << systemInfo.CPUName << "\n  logical processor count: " << systemInfo.processorCount << "\n  physical RAM: " << systemInfo.installedRAM / 1024 << " MB\n\n" << "  GPU: " << properties.deviceName << "\n  type: " << string_VkPhysicalDeviceType(properties.deviceType) << "\n  vulkan driver version: " << properties.driverVersion << "\n  API version: " << properties.apiVersion << "\n  heap 0 total memory (VRAM): " << vram / (1024.0f * 1024.0f) << " MB\n" << std::endl;;
+
+		std::cout << "\nDetected hardware:" 
+			<< "\n  CPU: " << systemInfo.CPUName 
+			<< "\n  logical processor count: " << systemInfo.processorCount 
+			<< "\n  physical RAM: " << systemInfo.installedRAM / 1024 << " MB\n" 
+			<< "\n  GPU: " << properties.deviceName 
+			<< "\n  type: " << string_VkPhysicalDeviceType(properties.deviceType) 
+			<< "\n  vulkan driver version: " << properties.driverVersion 
+			<< "\n  API version: " << properties.apiVersion 
+			<< "\n  heap 0 total memory (VRAM): " << vram / (1024.0f * 1024.0f) << " MB\n\n";
 	}
 	catch (const std::exception& e) //catch any normal exception and return
 	{
-		std::string fullError = e.what();
-		MessageBoxA(nullptr, fullError.c_str(), "Engine error", MB_OK | MB_ICONERROR);
-		std::cerr << e.what() << std::endl;
-		return;
+		ProcessError(e);
 	}
 	catch (...) //catch any unknown exceptions and return, doesnt catch any read or write errors etc.
 	{
@@ -83,7 +66,6 @@ void HalesiaInstance::Destroy()
 {
 	renderer->Destroy();
 	scene->Destroy();
-	//delete physics;
 	delete window;
 }
 
@@ -130,12 +112,12 @@ void HalesiaInstance::UpdateScene(float delta)
 	asyncScriptsCompletionTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 }
 
-std::optional<std::string> HalesiaInstance::UpdateRenderer(float delta)
+void HalesiaInstance::UpdateRenderer(float delta)
 {
 	SetThreadDescription(GetCurrentThread(), L"VulkanRenderingThread");
 	
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
-	std::optional<std::string> command = GUI::ShowDevConsole();
+	GUI::ShowDevConsole();
 	if (showFPS)
 		GUI::ShowFPS((int)(1 / delta * 1000));
 
@@ -167,7 +149,6 @@ std::optional<std::string> HalesiaInstance::UpdateRenderer(float delta)
 	renderer->DrawFrame(scene->allObjects, scene->camera, delta);
 
 	asyncRendererCompletionTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
-	return command;
 }
 
 void HalesiaInstance::CheckInput()
@@ -233,22 +214,17 @@ HalesiaExitCode HalesiaInstance::Run()
 			CheckInput();
 			devKeyIsPressedLastFrame = Input::IsKeyPressed(devConsoleKey);
 
-			if (Input::IsKeyPressed(VirtualKey::P))
-				Physics::physics->Simulate(frameDelta);
+			Physics::physics->Simulate(frameDelta);
 
 			asyncScripts = std::async(&HalesiaInstance::UpdateScene, this, frameDelta);
 			asyncRenderer = std::async(&HalesiaInstance::UpdateRenderer, this, frameDelta);
 
-			std::optional<std::string> command = asyncRenderer.get();
-			if (command.has_value() && lastCommand != command.value())
-			{
-				Console::InterpretCommand(command.value());
-				lastCommand = command.value();
-			}
+			asyncRenderer.get();
+
 			if (showWindowData)
 				GUI::ShowWindowData(window); // only works on main thread, because it calls windows functions for changing the window
 
-			Win32Window::PollMessages(); // moved for swapchain / surface interference
+			Win32Window::PollMessages();
 
 			asyncScripts.get();
 
@@ -271,10 +247,7 @@ HalesiaExitCode HalesiaInstance::Run()
 	catch (const std::exception& e) //catch any normal exception and return
 	{
 		std::string fullError = e.what();
-		ShowWindow(window->window, 0);
-		
-		MessageBoxA(nullptr, fullError.c_str(), ((std::string)"Engine error (" + (std::string)typeid(e).name() + ')').c_str(), MB_OK | MB_ICONERROR);
-		std::cerr << e.what() << std::endl;
+		ProcessError(e);
 		return HALESIA_EXIT_CODE_EXCEPTION;
 	}
 	catch (...) //catch any unknown exceptions and return, doesnt catch any read or write errors etc.
@@ -286,15 +259,13 @@ HalesiaExitCode HalesiaInstance::Run()
 
 void HalesiaInstance::OnLoad(HalesiaInstanceCreateInfo& createInfo)
 {
+	Audio::Init();
 	Console::Init();
-	Console::WriteLine("Write \"help\" for all commands");
+	Physics::Init();
+	
 	useEditor = createInfo.useEditor;
 	devConsoleKey = createInfo.devConsoleKey;
 	playIntro = createInfo.playIntro;
-	Physics::Init();
-
-	if (createInfo.argsCount > 1)
-		DetermineArgs(createInfo.argsCount, createInfo.args, createInfo.windowCreateInfo);
 
 	window = new Win32Window(createInfo.windowCreateInfo);
 	renderer = new Renderer(window);

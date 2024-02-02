@@ -1,6 +1,5 @@
 #pragma once
 #include <string>
-#include <optional>
 #include <vector>
 
 class Object;
@@ -11,7 +10,7 @@ class RigidBody;
 class GUI
 {
 public:
-	static std::optional<std::string> ShowDevConsole();
+	static void ShowDevConsole();
 	static void ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGraph, bool& cpuGraph, bool& gpuGraph);
 	static void ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* window);
 	static void ShowObjectTable(const std::vector<Object*>& objects);

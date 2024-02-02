@@ -243,10 +243,8 @@ void GUI::ShowDropdownMenu(std::vector<std::string>& items, std::string& current
 	
 }
 
-std::optional<std::string> GUI::ShowDevConsole()
+void GUI::ShowDevConsole()
 {
-	std::optional<std::string> inputText;
-
 	if (Console::isOpen)
 	{
 		ImGui::Begin("Dev Console", nullptr, ImGuiWindowFlags_NoCollapse);
@@ -273,11 +271,10 @@ std::optional<std::string> GUI::ShowDevConsole()
 		ImGui::InputTextWithHint("##input", "Console commands...", &result);
 
 		if (Input::IsKeyPressed(VirtualKey::Return)) // if enter is pressed place the input value into the optional variable
-			inputText = result;
+			Console::InterpretCommand(result);
 
 		ImGui::End();
 	}
-	return inputText;
 }
 
 void GUI::ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGraph, bool& cpuGraph, bool& gpuGraph)

@@ -97,7 +97,7 @@ private:
 	void LoadVars();
 	void OnExit();
 
-	std::optional<std::string> UpdateRenderer(float delta);
+	void UpdateRenderer(float delta);
 	void UpdateScene(float delta);
 
 	bool playIntro = true;
@@ -113,7 +113,7 @@ private:
 	std::vector<float> asyncTimes;
 
 	std::future<void> asyncScripts;
-	std::future<std::optional<std::string>> asyncRenderer;
+	std::future<void> asyncRenderer;
 
 	ScrollingBuffer<float> CPUUsage{ 100 };
 	ScrollingBuffer<float> GPUUsage{ 100 };
