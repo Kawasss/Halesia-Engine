@@ -212,7 +212,7 @@ class CalculatorScene : public Scene
 
 		Object* rotator = AddCustomObject<Rotator>(ObjectCreationData{ "rotator" });
 
-		for (int i = 0; i < 6; i++)
+		for (int i = 0; i < 4; i++)
 			outputChars.push_back(AddCustomObject<OutputChar>(ObjectCreationData{ "output" + std::to_string(i) }));
 
 		SceneLoader loader{ "stdObj/calculator.fbx" };

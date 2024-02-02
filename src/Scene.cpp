@@ -143,7 +143,7 @@ void Scene::Free(Object* object)
 		allObjects.erase(allObjects.begin() + i);
 		EraseMemberFromVector(object->HasScript() ? staticObjects : objectsWithScripts, object);
 		object->Destroy();
-
+		
 		Console::WriteLine("Freed " + (std::string)(object->HasScript() ? "static" : "scripted") + " object "/* + object->name*/, MESSAGE_SEVERITY_DEBUG);
 		return;
 	}
