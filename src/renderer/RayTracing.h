@@ -55,10 +55,10 @@ private:
 
 	void Init(Win32Window* window, Swapchain* swapchain);
 	void SetUp(Win32Window* window, Swapchain* swapchain);
-	void CreateDescriptorPool();
-	void CreateDescriptorSets(const std::vector<std::vector<char>> shaderCodes);
+	void CreateDescriptorPool(const ShaderGroupReflector& groupReflection);
+	void CreateDescriptorSets(const ShaderGroupReflector& groupReflection);
 	void CreateRayTracingPipeline(const std::vector<std::vector<char>> shaderCodes);
-	void CreateBuffers();
+	void CreateBuffers(const ShaderGroupReflector& groupReflection);
 
 	uint32_t amountOfActiveObjects = 0;
 	uint32_t width = 0, height = 0;

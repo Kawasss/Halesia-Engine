@@ -9,7 +9,7 @@ public:
 	ShaderReflector(const std::vector<char>& sourceCode);
 	~ShaderReflector();
 
-	VkDescriptorSetLayoutBinding GetDescriptorSetLayoutBinding(uint32_t bindingIndex, uint32_t setIndex = 0); // the set is by default 0 in GLSL
+	VkDescriptorSetLayoutBinding GetDescriptorSetLayoutBinding(uint32_t bindingIndex, uint32_t setIndex = 0) const; // the set is by default 0 in GLSL
 
 private:
 	SpvReflectShaderModule module{};
@@ -21,8 +21,10 @@ public:
 	ShaderGroupReflector(const std::vector<std::vector<char>>& sourceCodes);
 	~ShaderGroupReflector();
 
-	std::vector<VkDescriptorSetLayoutBinding> GetLayoutBindingsOfSet(uint32_t setIndex);
+	std::vector<VkDescriptorSetLayoutBinding> GetLayoutBindingsOfSet(uint32_t setIndex) const;
+	std::vector<VkDescriptorPoolSize> GetDescriptorPoolSize() const;
 
+	void WriteToDescriptorSet(VkDevice logicalDevice, VkDescriptorSet set, VkBuffer buffer, uint32_t setIndex, uint32_t binding) const;
 
 private:
 	std::vector<SpvReflectShaderModule> modules;

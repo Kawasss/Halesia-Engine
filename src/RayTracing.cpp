@@ -116,19 +116,12 @@ void RayTracing::SetUp(Win32Window* window, Swapchain* swapchain)
 	TLAS = TopLevelAccelerationStructure::Create(holder); // second parameter is empty since there are no models to build, not the best way to solve this
 }
 
-void RayTracing::CreateDescriptorPool() // (frames in flight not implemented)
+void RayTracing::CreateDescriptorPool(const ShaderGroupReflector& groupReflection) // (frames in flight not implemented)
 {
-	std::vector<VkDescriptorPoolSize> descriptorPoolSizes(5);
-	descriptorPoolSizes[0].type = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-	descriptorPoolSizes[0].descriptorCount = 1;
-	descriptorPoolSizes[1].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	descriptorPoolSizes[1].descriptorCount = 1;
-	descriptorPoolSizes[2].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	descriptorPoolSizes[2].descriptorCount = 10;
-	descriptorPoolSizes[3].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-	descriptorPoolSizes[3].descriptorCount = 3;
-	descriptorPoolSizes[4].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	descriptorPoolSizes[4].descriptorCount = Renderer::MAX_TLAS_INSTANCES;
+	std::vector<VkDescriptorPoolSize> descriptorPoolSizes = groupReflection.GetDescriptorPoolSize();
+	for (int i = 0; i < descriptorPoolSizes.size(); i++)
+		if (descriptorPoolSizes[i].type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)		
+			descriptorPoolSizes[i].descriptorCount = Renderer::MAX_TLAS_INSTANCES; // reflection cannot detect the size of the texture array in this shader, so its size has to be overwritten (maybe change it into a parameter for the function?)
 
 	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
 	descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -141,10 +134,8 @@ void RayTracing::CreateDescriptorPool() // (frames in flight not implemented)
 	CheckVulkanResult("Failed to create the descriptor pool for ray tracing", result, vkCreateDescriptorPool);
 }
 
-void RayTracing::CreateDescriptorSets(const std::vector<std::vector<char>> shaderCodes)
+void RayTracing::CreateDescriptorSets(const ShaderGroupReflector& groupReflection)
 {
-	ShaderGroupReflector groupReflection(shaderCodes);
-
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = groupReflection.GetLayoutBindingsOfSet(0);
 
 	std::vector<VkDescriptorBindingFlags> setBindingFlags(setLayoutBindings.size(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
@@ -259,7 +250,7 @@ void RayTracing::CreateRayTracingPipeline(const std::vector<std::vector<char>> s
 	vkDestroyShaderModule(logicalDevice, genShader, nullptr);
 }
 
-void RayTracing::CreateBuffers()
+void RayTracing::CreateBuffers(const ShaderGroupReflector& groupReflection)
 {
 	Vulkan::CreateBuffer(sizeof(UniformBuffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, uniformBufferBuffer, uniformBufferMemory);
 
@@ -280,81 +271,22 @@ void RayTracing::CreateBuffers()
 	ASDescriptorInfo.accelerationStructureCount = 1;
 	ASDescriptorInfo.pAccelerationStructures = &TLAS->accelerationStructure;
 
-	VkDescriptorBufferInfo uniformDescriptorInfo{};
-	uniformDescriptorInfo.buffer = uniformBufferBuffer;
-	uniformDescriptorInfo.offset = 0;
-	uniformDescriptorInfo.range = VK_WHOLE_SIZE;
+	VkWriteDescriptorSet writeSet{};
 
-	VkDescriptorBufferInfo indexDescriptorInfo{};
-	indexDescriptorInfo.buffer = Renderer::globalIndicesBuffer.GetBufferHandle();
-	indexDescriptorInfo.offset = 0;
-	indexDescriptorInfo.range = VK_WHOLE_SIZE;
+	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+	writeSet.pNext = &ASDescriptorInfo;
+	writeSet.dstSet = descriptorSets[0];
+	writeSet.descriptorCount = 1;
+	writeSet.dstBinding = 0;
 
-	VkDescriptorBufferInfo vertexDescriptorInfo{};
-	vertexDescriptorInfo.buffer = Renderer::globalVertexBuffer.GetBufferHandle();
-	vertexDescriptorInfo.offset = 0;
-	vertexDescriptorInfo.range = VK_WHOLE_SIZE;
+	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], uniformBufferBuffer, 0, 1);
+	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], Renderer::globalIndicesBuffer.GetBufferHandle(), 0, 2);
+	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], Renderer::globalVertexBuffer.GetBufferHandle(), 0, 3);
+	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], handleBuffer, 0, 7);
+	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], denoiser->GetMotionBuffer(), 0, 8);
 
-	VkDescriptorBufferInfo handleBufferInfo{};
-	handleBufferInfo.buffer = handleBuffer;
-	handleBufferInfo.offset = 0;
-	handleBufferInfo.range = VK_WHOLE_SIZE;
-
-	VkDescriptorBufferInfo motionBufferInfo{};
-	motionBufferInfo.buffer = denoiser->GetMotionBuffer();
-	motionBufferInfo.offset = 0;
-	motionBufferInfo.range = VK_WHOLE_SIZE;
-
-	std::vector<VkWriteDescriptorSet> writeDescriptorSets(6);
-
-	writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-	writeDescriptorSets[0].pNext = &ASDescriptorInfo;
-	writeDescriptorSets[0].dstSet = descriptorSets[0];
-	writeDescriptorSets[0].descriptorCount = 1;
-	writeDescriptorSets[0].dstBinding = 0;
-
-	writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	writeDescriptorSets[1].pNext = &ASDescriptorInfo;
-	writeDescriptorSets[1].dstSet = descriptorSets[0];
-	writeDescriptorSets[1].descriptorCount = 1;
-	writeDescriptorSets[1].dstBinding = 1;
-	writeDescriptorSets[1].pBufferInfo = &uniformDescriptorInfo;
-
-	writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	writeDescriptorSets[2].pNext = &ASDescriptorInfo;
-	writeDescriptorSets[2].dstSet = descriptorSets[0];
-	writeDescriptorSets[2].descriptorCount = 1;
-	writeDescriptorSets[2].dstBinding = 2;
-	writeDescriptorSets[2].pBufferInfo = &indexDescriptorInfo;
-
-	writeDescriptorSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSets[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	writeDescriptorSets[3].pNext = &ASDescriptorInfo;
-	writeDescriptorSets[3].dstSet = descriptorSets[0];
-	writeDescriptorSets[3].descriptorCount = 1;
-	writeDescriptorSets[3].dstBinding = 3;
-	writeDescriptorSets[3].pBufferInfo = &vertexDescriptorInfo;
-
-	writeDescriptorSets[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSets[4].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	writeDescriptorSets[4].pNext = &ASDescriptorInfo;
-	writeDescriptorSets[4].dstSet = descriptorSets[0];
-	writeDescriptorSets[4].descriptorCount = 1;
-	writeDescriptorSets[4].dstBinding = 7;
-	writeDescriptorSets[4].pBufferInfo = &handleBufferInfo;
-
-	writeDescriptorSets[5].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeDescriptorSets[5].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	writeDescriptorSets[5].pNext = &ASDescriptorInfo;
-	writeDescriptorSets[5].dstSet = descriptorSets[0];
-	writeDescriptorSets[5].descriptorCount = 1;
-	writeDescriptorSets[5].dstBinding = 8;
-	writeDescriptorSets[5].pBufferInfo = &motionBufferInfo;
-
-	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
+	vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
 	UpdateMeshDataDescriptorSets();
 }
 
@@ -362,12 +294,13 @@ void RayTracing::Init(Win32Window* window, Swapchain* swapchain)
 {
 	const std::vector<char> rgenCode = ReadFile("shaders/spirv/gen.rgen.spv"), chitCode = ReadFile("shaders/spirv/hit.rchit.spv");
 	const std::vector<char> rmissCode = ReadFile("shaders/spirv/miss.rmiss.spv"), shadowCode = ReadFile("shaders/spirv/shadow.rmiss.spv");
+	ShaderGroupReflector groupReflection({ rgenCode, chitCode, rmissCode, shadowCode });
 
 	SetUp(window, swapchain);
-	CreateDescriptorPool();
-	CreateDescriptorSets({ rgenCode, chitCode, rmissCode, shadowCode });
+	CreateDescriptorPool(groupReflection);
+	CreateDescriptorSets(groupReflection);
 	CreateRayTracingPipeline({ rgenCode, chitCode, rmissCode, shadowCode });
-	CreateBuffers();
+	CreateBuffers(groupReflection);
 	CreateImage(swapchain->extent.width, swapchain->extent.height);
 }
 
