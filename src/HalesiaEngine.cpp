@@ -26,6 +26,12 @@ inline void ProcessError(const std::exception& e)
 	std::cerr << e.what() << std::endl;
 }
 
+inline float CalculateFrameTime(int fps)
+{
+	if (fps <= 0) return 0;
+	return 1000.0f / fps;
+}
+
 void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, HalesiaInstanceCreateInfo& createInfo)
 {
 	std::cout << "Generating Halesia instance:" 
@@ -214,7 +220,7 @@ HalesiaExitCode HalesiaInstance::Run()
 			CheckInput();
 			devKeyIsPressedLastFrame = Input::IsKeyPressed(devConsoleKey);
 
-			Physics::physics->Simulate(frameDelta);
+			Physics::Simulate(frameDelta);
 
 			asyncScripts = std::async(&HalesiaInstance::UpdateScene, this, frameDelta);
 			asyncRenderer = std::async(&HalesiaInstance::UpdateRenderer, this, frameDelta);
@@ -228,11 +234,13 @@ HalesiaExitCode HalesiaInstance::Run()
 
 			asyncScripts.get();
 
-			Physics::physics->FetchAndUpdateObjects();
+			Physics::FetchAndUpdateObjects();
+
+			while (std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count() < CalculateFrameTime(maxFPS)); // wait untill the fps limit is reached
 
 			frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();
 			timeSinceLastFrame = std::chrono::high_resolution_clock::now();
-			
+
 			timeSinceLastDataUpdate += frameDelta;
 			if (timeSinceLastDataUpdate > 500)
 			{
@@ -291,6 +299,7 @@ void HalesiaInstance::LoadVars()
 
 	useEditor = VVM::FindVariable("engineCore.useEditorUI", groups).As<bool>();
 	showFPS =   VVM::FindVariable("engineCore.showFPS", groups).As<bool>();
+	maxFPS =    VVM::FindVariable("engineCore.maxFPS", groups).As<int>();
 	devConsoleKey = (VirtualKey)VVM::FindVariable("engineCore.consoleKey", groups).As<int>();
 
 	renderer->internalScale =              VVM::FindVariable("renderer.internalRes", groups).As<float>();
@@ -313,6 +322,7 @@ void HalesiaInstance::OnExit()
 	VVM::PushGroup("engineCore");
 	VVM::AddVariable("useEditorUI", useEditor);
 	VVM::AddVariable("showFPS", showFPS);
+	VVM::AddVariable("maxFPS", maxFPS);
 	VVM::AddVariable("consoleKey", (int)devConsoleKey);
 	VVM::PopGroup();
 

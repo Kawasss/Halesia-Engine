@@ -70,7 +70,7 @@ public:
 	bool showObjectData = false;
 	bool showWindowData = false;
 	bool useEditor = false;
-	int minimumFPS = 60;
+	int maxFPS = -1;
 	Scene* scene;
 
 	Win32Window* GetWindow();
