@@ -30,6 +30,7 @@ RefPointer<Type>::RefPointer(Type* ptr) : value(ptr)
 {
 	if (counter.find(ptr) == counter.end())
 		counter[ptr] = 0;
+	else counter[ptr++];
 }
 
 template<typename Type>
