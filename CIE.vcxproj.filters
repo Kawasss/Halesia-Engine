@@ -356,6 +356,9 @@
     <ClInclude Include="src\demo\Calculator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\tools\RefPointer.h">
+      <Filter>Header Files\tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">

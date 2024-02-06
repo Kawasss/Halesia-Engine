@@ -236,6 +236,7 @@
     <ClInclude Include="src\system\Window.h" />
     <ClInclude Include="src\tools\CameraInjector.h" />
     <ClInclude Include="src\tools\common.h" />
+    <ClInclude Include="src\tools\RefPointer.h" />
     <ClInclude Include="src\tools\Timer.h" />
   </ItemGroup>
   <ItemGroup>
