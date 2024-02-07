@@ -3,8 +3,8 @@
 
 int main(int argsCount, char** args)
 {
-	HalesiaInstance instance{};
-	HalesiaInstanceCreateInfo createInfo{};
+	HalesiaEngine* instance = nullptr;
+	HalesiaEngineCreateInfo createInfo{};
 	createInfo.argsCount = argsCount;
 	createInfo.args = args;
 	createInfo.startingScene = new CalculatorScene();
@@ -20,11 +20,12 @@ int main(int argsCount, char** args)
 	createInfo.playIntro = false;
 #endif
 
-	HalesiaInstance::GenerateHalesiaInstance(instance, createInfo);
+	HalesiaEngine::SetCreateInfo(createInfo);
+	instance = HalesiaEngine::GetInstance();
 
-	Rotator::window = instance.GetWindow();
+	Rotator::window = instance->GetEngineCore().window;
 
-	instance.Run();
+	instance->Run();
 
 	return EXIT_SUCCESS;
 }

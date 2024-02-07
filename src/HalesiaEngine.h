@@ -39,7 +39,7 @@ enum HalesiaExitCode
 };
 inline extern std::string HalesiaExitCodeToString(HalesiaExitCode exitCode);
 
-struct HalesiaInstanceCreateInfo
+struct HalesiaEngineCreateInfo
 {
 	Scene* startingScene = nullptr;
 	std::string sceneFile = "";
@@ -53,13 +53,24 @@ struct HalesiaInstanceCreateInfo
 	char** args;
 };
 
-class HalesiaInstance
+struct EngineCore
+{
+	Renderer* renderer;
+	Win32Window* window;
+	Scene* scene;
+	int maxFPS = -1;
+};
+
+class HalesiaEngine
 {
 public:
-	static void GenerateHalesiaInstance(HalesiaInstance& instance, HalesiaInstanceCreateInfo& createInfo); //dont know if its better to return a pointer or the whole class or write to a reference
+	static void SetCreateInfo(const HalesiaEngineCreateInfo& createInfo);
+	static HalesiaEngine* GetInstance(); //dont know if its better to return a pointer or the whole class or write to a reference
+	EngineCore& GetEngineCore();
 	HalesiaExitCode Run();
 	void LoadScene(Scene* newScene);
 	void Destroy();
+
 	bool pauseGame = false; //these bools dont reallyy need to be here
 	bool playOneFrame = false;
 	bool showFPS = false;
@@ -70,10 +81,7 @@ public:
 	bool showObjectData = false;
 	bool showWindowData = false;
 	bool useEditor = false;
-	int maxFPS = -1;
-	Scene* scene;
-
-	Win32Window* GetWindow();
+	Scene* scene = nullptr;
 
 private:
 	struct UpdateRendererData
@@ -93,12 +101,15 @@ private:
 	void UpdateCGPUUsage();
 	void RegisterConsoleVars();
 
-	void OnLoad(HalesiaInstanceCreateInfo& createInfo);
+	void OnLoad(HalesiaEngineCreateInfo& createInfo);
 	void LoadVars();
 	void OnExit();
 
 	void UpdateRenderer(float delta);
 	void UpdateScene(float delta);
+
+	static HalesiaEngineCreateInfo createInfo;
+	EngineCore core;
 
 	bool playIntro = true;
 	bool devKeyIsPressedLastFrame = false;

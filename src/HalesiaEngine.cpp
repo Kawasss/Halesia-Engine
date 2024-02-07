@@ -19,6 +19,8 @@
 
 #include "Audio.h"
 
+HalesiaEngineCreateInfo HalesiaEngine::createInfo{};
+
 inline void ProcessError(const std::exception& e)
 {
 	std::string fullError = e.what();
@@ -32,8 +34,13 @@ inline float CalculateFrameTime(int fps)
 	return 1000.0f / fps;
 }
 
-void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, HalesiaInstanceCreateInfo& createInfo)
+HalesiaEngine* HalesiaEngine::GetInstance()
 {
+	static HalesiaEngine instance;
+	static  bool init = false;
+	if (init)
+		return &instance;
+
 	std::cout << "Generating Halesia instance:" 
 		<< "\n  createInfo.startingScene = " << ToHexadecimalString((int)createInfo.startingScene) 
 		<< "\n  createInfo.devConsoleKey = " << ToHexadecimalString((int)createInfo.devConsoleKey) 
@@ -56,6 +63,8 @@ void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, Halesia
 			<< "\n  vulkan driver version: " << properties.driverVersion 
 			<< "\n  API version: " << properties.apiVersion 
 			<< "\n  heap 0 total memory (VRAM): " << vram / (1024.0f * 1024.0f) << " MB\n\n";
+
+		init = true;
 	}
 	catch (const std::exception& e) //catch any normal exception and return
 	{
@@ -64,18 +73,23 @@ void HalesiaInstance::GenerateHalesiaInstance(HalesiaInstance& instance, Halesia
 	catch (...) //catch any unknown exceptions and return, doesnt catch any read or write errors etc.
 	{
 		MessageBoxA(nullptr, "Caught an unknown error, this build is most likely corrupt and can't be used.", "Unknown engine error", MB_OK | MB_ICONERROR);
-		return;
 	}
+	return &instance;
 }
 
-void HalesiaInstance::Destroy()
+void HalesiaEngine::SetCreateInfo(const HalesiaEngineCreateInfo& createInfo)
+{
+	HalesiaEngine::createInfo = createInfo;
+}
+
+void HalesiaEngine::Destroy()
 {
 	renderer->Destroy();
 	scene->Destroy();
 	delete window;
 }
 
-void HalesiaInstance::LoadScene(Scene* newScene)
+void HalesiaEngine::LoadScene(Scene* newScene)
 {
 	scene->Destroy();
 	scene = newScene;
@@ -95,12 +109,12 @@ inline void ManageCameraInjector(Scene* scene, bool pauseGame)
 		cameraInjector.Eject();
 }
 
-Win32Window* HalesiaInstance::GetWindow()
+EngineCore& HalesiaEngine::GetEngineCore()
 {
-	return window;
+	return core;
 }
 
-void HalesiaInstance::UpdateScene(float delta)
+void HalesiaEngine::UpdateScene(float delta)
 {
 	SetThreadDescription(GetCurrentThread(), L"SceneUpdatingThread");
 
@@ -118,7 +132,7 @@ void HalesiaInstance::UpdateScene(float delta)
 	asyncScriptsCompletionTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 }
 
-void HalesiaInstance::UpdateRenderer(float delta)
+void HalesiaEngine::UpdateRenderer(float delta)
 {
 	SetThreadDescription(GetCurrentThread(), L"VulkanRenderingThread");
 	
@@ -157,7 +171,7 @@ void HalesiaInstance::UpdateRenderer(float delta)
 	asyncRendererCompletionTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 }
 
-void HalesiaInstance::CheckInput()
+void HalesiaEngine::CheckInput()
 {
 	playOneFrame = Input::IsKeyPressed(VirtualKey::RightArrow);
 
@@ -170,7 +184,7 @@ void HalesiaInstance::CheckInput()
 		Console::isOpen = !Console::isOpen;
 }
 
-void HalesiaInstance::UpdateAsyncCompletionTimes(float frameDelta)
+void HalesiaEngine::UpdateAsyncCompletionTimes(float frameDelta)
 {
 	float timeSpentInMainThread = frameDelta - asyncScriptsCompletionTime - asyncRendererCompletionTime;
 
@@ -179,7 +193,7 @@ void HalesiaInstance::UpdateAsyncCompletionTimes(float frameDelta)
 	asyncTimes.push_back(asyncRendererCompletionTime * 1000);
 }
 
-void HalesiaInstance::UpdateCGPUUsage()
+void HalesiaEngine::UpdateCGPUUsage()
 {
 	float cpu = GetCPUPercentageUsedByApp();
 	if (cpu != -1 && cpu != 0) //dont know if 0 is junk data
@@ -189,7 +203,7 @@ void HalesiaInstance::UpdateCGPUUsage()
 	GPUUsage.Add(gpu);
 }
 
-HalesiaExitCode HalesiaInstance::Run()
+HalesiaExitCode HalesiaEngine::Run()
 {
 	std::string lastCommand;
 	float timeSinceLastDataUpdate = 0;
@@ -222,8 +236,8 @@ HalesiaExitCode HalesiaInstance::Run()
 
 			Physics::Simulate(frameDelta);
 
-			asyncScripts = std::async(&HalesiaInstance::UpdateScene, this, frameDelta);
-			asyncRenderer = std::async(&HalesiaInstance::UpdateRenderer, this, frameDelta);
+			asyncScripts = std::async(&HalesiaEngine::UpdateScene, this, frameDelta);
+			asyncRenderer = std::async(&HalesiaEngine::UpdateRenderer, this, frameDelta);
 
 			asyncRenderer.get();
 
@@ -236,7 +250,7 @@ HalesiaExitCode HalesiaInstance::Run()
 
 			Physics::FetchAndUpdateObjects();
 
-			while (std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count() < CalculateFrameTime(maxFPS)); // wait untill the fps limit is reached
+			while (std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count() < CalculateFrameTime(core.maxFPS)); // wait untill the fps limit is reached
 
 			frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();
 			timeSinceLastFrame = std::chrono::high_resolution_clock::now();
@@ -265,7 +279,7 @@ HalesiaExitCode HalesiaInstance::Run()
 	}
 }
 
-void HalesiaInstance::OnLoad(HalesiaInstanceCreateInfo& createInfo)
+void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
 {
 	Audio::Init();
 	Console::Init();
@@ -291,15 +305,15 @@ void HalesiaInstance::OnLoad(HalesiaInstanceCreateInfo& createInfo)
 	LoadVars();
 }
 
-void HalesiaInstance::LoadVars()
+void HalesiaEngine::LoadVars()
 {
 	std::vector<VVM::Group> groups;
 	if (VVM::ReadFromFile("cfg/vars.vvm", groups) != VVM_SUCCESS)
 		return;
 
-	useEditor = VVM::FindVariable("engineCore.useEditorUI", groups).As<bool>();
-	showFPS =   VVM::FindVariable("engineCore.showFPS", groups).As<bool>();
-	maxFPS =    VVM::FindVariable("engineCore.maxFPS", groups).As<int>();
+	useEditor =   VVM::FindVariable("engineCore.useEditorUI", groups).As<bool>();
+	showFPS =     VVM::FindVariable("engineCore.showFPS", groups).As<bool>();
+	core.maxFPS = VVM::FindVariable("engineCore.maxFPS", groups).As<int>();
 	devConsoleKey = (VirtualKey)VVM::FindVariable("engineCore.consoleKey", groups).As<int>();
 
 	renderer->internalScale =              VVM::FindVariable("renderer.internalRes", groups).As<float>();
@@ -315,14 +329,14 @@ void HalesiaInstance::LoadVars()
 	std::cout << "Finished loading from cfg/vars.vvm\n";
 }
 
-void HalesiaInstance::OnExit()
+void HalesiaEngine::OnExit()
 {
 	Audio::Destroy();
 
 	VVM::PushGroup("engineCore");
 	VVM::AddVariable("useEditorUI", useEditor);
 	VVM::AddVariable("showFPS", showFPS);
-	VVM::AddVariable("maxFPS", maxFPS);
+	VVM::AddVariable("maxFPS", core.maxFPS);
 	VVM::AddVariable("consoleKey", (int)devConsoleKey);
 	VVM::PopGroup();
 
@@ -345,7 +359,7 @@ void HalesiaInstance::OnExit()
 	std::cout << "Finished writing to cfg/vars.vvm\n";
 }
 
-void HalesiaInstance::RegisterConsoleVars()
+void HalesiaEngine::RegisterConsoleVars()
 {
 	Console::AddConsoleVariables<bool>(
 		{ "pauseGame", "showFPS", "playOneFrame", "showRAM", "showCPU", "showGPU", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "useEditorUI", "denoiseOutput" },
