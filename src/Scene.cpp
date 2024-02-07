@@ -19,7 +19,7 @@ inline Type* GetPointer(const Class* parent, Type Class::* member)
 }
 
 template<typename Type, typename Class>
-inline Class* GetItemIndexByMember(Type Class::* member, Type comp, const std::vector<Class*>& vector)
+inline Class* GetItemByMember(Type Class::* member, Type comp, const std::vector<Class*>& vector)
 {
 	for (size_t index = 0; index < vector.size(); index++)
 		if (*GetPointer(vector[index], member) == comp)
@@ -60,13 +60,7 @@ void Scene::LoadUninitializedObjects()
 
 Object* Scene::GetObjectByName(std::string name)
 {
-	//for (Object* object : allObjects)
-	//	if (object->name == name)
-	//		return object;
-	//Console::WriteLine("Failed to find an object matching the name \"" + name + '"', MESSAGE_SEVERITY_ERROR);
-	//return nullptr; //not really that safe
-
-	return GetItemIndexByMember(&Object::name, name, allObjects);
+	return GetItemByMember(&Object::name, name, allObjects);
 }
 
 Object* Scene::GetObjectByHandle(Handle handle)
