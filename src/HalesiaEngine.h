@@ -6,6 +6,7 @@
 
 class Renderer;
 class Scene;
+class Profiler;
 
 template<typename T> struct ScrollingBuffer //dont know where to put this struct, maybe make it private
 {
@@ -58,6 +59,7 @@ struct EngineCore
 	Renderer* renderer;
 	Win32Window* window;
 	Scene* scene;
+	Profiler* profiler;
 	int maxFPS = -1;
 };
 
@@ -81,7 +83,6 @@ public:
 	bool showObjectData = false;
 	bool showWindowData = false;
 	bool useEditor = false;
-	Scene* scene = nullptr;
 
 private:
 	struct UpdateRendererData
@@ -115,9 +116,6 @@ private:
 	bool devKeyIsPressedLastFrame = false;
 	bool renderDevConsole = false;
 	VirtualKey devConsoleKey;
-
-	Renderer* renderer;
-	Win32Window* window = nullptr;
 
 	float asyncRendererCompletionTime = 0;
 	float asyncScriptsCompletionTime = 0;

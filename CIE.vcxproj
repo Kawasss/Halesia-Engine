@@ -162,6 +162,7 @@
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Physics.cpp" />
+    <ClCompile Include="src\Profiler.cpp" />
     <ClCompile Include="src\ShaderReflector.cpp" />
     <ClCompile Include="src\RayTracing.cpp" />
     <ClCompile Include="src\Input.cpp" />
@@ -203,6 +204,7 @@
     <ClInclude Include="src\core\Camera.h" />
     <ClInclude Include="src\core\Console.h" />
     <ClInclude Include="src\core\Object.h" />
+    <ClInclude Include="src\core\Profiler.h" />
     <ClInclude Include="src\core\Scene.h" />
     <ClInclude Include="src\core\Transform.h" />
     <ClInclude Include="src\demo\Calculator.h" />

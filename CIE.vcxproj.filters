@@ -198,6 +198,9 @@
     <ClCompile Include="src\Audio.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Profiler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -358,6 +361,9 @@
     </ClInclude>
     <ClInclude Include="src\tools\RefPointer.h">
       <Filter>Header Files\tools</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\Profiler.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

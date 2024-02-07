@@ -14,6 +14,7 @@
 #include "physics/Physics.h"
 
 #include "core/Console.h"
+#include "core/Profiler.h"
 
 #include "vvm/VVM.hpp"
 
@@ -84,15 +85,15 @@ void HalesiaEngine::SetCreateInfo(const HalesiaEngineCreateInfo& createInfo)
 
 void HalesiaEngine::Destroy()
 {
-	renderer->Destroy();
-	scene->Destroy();
-	delete window;
+	core.renderer->Destroy();
+	core.scene->Destroy();
+	delete core.window;
 }
 
 void HalesiaEngine::LoadScene(Scene* newScene)
 {
-	scene->Destroy();
-	scene = newScene;
+	core.scene->Destroy();
+	core.scene = newScene;
 }
 
 inline void ManageCameraInjector(Scene* scene, bool pauseGame)
@@ -120,13 +121,13 @@ void HalesiaEngine::UpdateScene(float delta)
 
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
-	ManageCameraInjector(scene, pauseGame);
+	ManageCameraInjector(core.scene, pauseGame);
 
-	scene->UpdateCamera(window, delta);
+	core.scene->UpdateCamera(core.window, delta);
 	if (!pauseGame || playOneFrame)
 	{
-		scene->UpdateScripts(delta);
-		scene->Update(delta);
+		core.scene->UpdateScripts(delta);
+		core.scene->Update(delta);
 		playOneFrame = false;
 	}
 	asyncScriptsCompletionTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
@@ -151,22 +152,22 @@ void HalesiaEngine::UpdateRenderer(float delta)
 	if (showAsyncTimes)
 		GUI::ShowPieGraph(asyncTimes, "Async Times (µs)");
 	if (showObjectData)
-		GUI::ShowObjectTable(scene->allObjects);
+		GUI::ShowObjectTable(core.scene->allObjects);
 	
 	if (useEditor)
 	{
-		renderer->SetViewportOffsets({ 0.125f, 0 });
-		renderer->SetViewportModifiers({ 0.75f, 1 }); // doesnt have to be set every frame
-		GUI::ShowSceneGraph(scene->allObjects, window);
+		core.renderer->SetViewportOffsets({ 0.125f, 0 });
+		core.renderer->SetViewportModifiers({ 0.75f, 1 }); // doesnt have to be set every frame
+		GUI::ShowSceneGraph(core.scene->allObjects, core.window);
 		GUI::ShowMainMenuBar(showWindowData, showObjectData, showRAM, showCPU, showGPU);
 	}
 	else
 	{
-		renderer->SetViewportOffsets({ 0, 0 });
-		renderer->SetViewportModifiers({ 1, 1 }); // doesnt have to be set every frame
+		core.renderer->SetViewportOffsets({ 0, 0 });
+		core.renderer->SetViewportModifiers({ 1, 1 }); // doesnt have to be set every frame
 	}
 
-	renderer->DrawFrame(scene->allObjects, scene->camera, delta);
+	core.renderer->DrawFrame(core.scene->allObjects, core.scene->camera, delta);
 
 	asyncRendererCompletionTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 }
@@ -176,9 +177,9 @@ void HalesiaEngine::CheckInput()
 	playOneFrame = Input::IsKeyPressed(VirtualKey::RightArrow);
 
 	if (Input::IsKeyPressed(VirtualKey::Q))
-		window->LockCursor();
+		core.window->LockCursor();
 	if (Input::IsKeyPressed(VirtualKey::E))
-		window->UnlockCursor();
+		core.window->UnlockCursor();
 
 	if (!Input::IsKeyPressed(devConsoleKey) && devKeyIsPressedLastFrame)
 		Console::isOpen = !Console::isOpen;
@@ -208,7 +209,7 @@ HalesiaExitCode HalesiaEngine::Run()
 	std::string lastCommand;
 	float timeSinceLastDataUpdate = 0;
 
-	if (renderer == nullptr || window == nullptr/* || physics == nullptr*/)
+	if (core.renderer == nullptr || core.window == nullptr/* || physics == nullptr*/)
 		return HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION;
 
 	RegisterConsoleVars();
@@ -218,18 +219,18 @@ HalesiaExitCode HalesiaEngine::Run()
 		float frameDelta = 0;
 		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
-		window->maximized = true;
+		core.window->maximized = true;
 		if (playIntro)
 		{
 			Intro intro{};
-			intro.Create(renderer->swapchain, "textures/floor.png");
+			intro.Create(core.renderer->swapchain, "textures/floor.png");
 
-			renderer->RenderIntro(&intro);
+			core.renderer->RenderIntro(&intro);
 			intro.Destroy();
 		}
 		
-		scene->Start();
-		while (!window->ShouldClose())
+		core.scene->Start();
+		while (!core.window->ShouldClose())
 		{
 			CheckInput();
 			devKeyIsPressedLastFrame = Input::IsKeyPressed(devConsoleKey);
@@ -242,7 +243,7 @@ HalesiaExitCode HalesiaEngine::Run()
 			asyncRenderer.get();
 
 			if (showWindowData)
-				GUI::ShowWindowData(window); // only works on main thread, because it calls windows functions for changing the window
+				GUI::ShowWindowData(core.window); // only works on main thread, because it calls windows functions for changing the window
 
 			Win32Window::PollMessages();
 
@@ -289,18 +290,20 @@ void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
 	devConsoleKey = createInfo.devConsoleKey;
 	playIntro = createInfo.playIntro;
 
-	window = new Win32Window(createInfo.windowCreateInfo);
-	renderer = new Renderer(window);
+	core.window = new Win32Window(createInfo.windowCreateInfo);
+	core.renderer = new Renderer(core.window);
+	core.profiler = Profiler::Get();
+	core.profiler->SetFlags(PROFILE_FLAG_FRAME_TIME | PROFILE_FLAG_OBJECT_COUNT);
 
 	if (createInfo.startingScene == nullptr)
 	{
 		Console::WriteLine("The given HalesiaInstanceCreateInfo doesn't contain a valid starting scene", MESSAGE_SEVERITY_WARNING);
-		scene = new Scene();
+		core.scene = new Scene();
 	}
 	else
-		scene = createInfo.startingScene;
+		core.scene = createInfo.startingScene;
 	if (createInfo.sceneFile != "")
-		scene->LoadScene(createInfo.sceneFile);
+		core.scene->LoadScene(createInfo.sceneFile);
 
 	LoadVars();
 }
@@ -316,7 +319,7 @@ void HalesiaEngine::LoadVars()
 	core.maxFPS = VVM::FindVariable("engineCore.maxFPS", groups).As<int>();
 	devConsoleKey = (VirtualKey)VVM::FindVariable("engineCore.consoleKey", groups).As<int>();
 
-	renderer->internalScale =              VVM::FindVariable("renderer.internalRes", groups).As<float>();
+	core.renderer->internalScale =         VVM::FindVariable("renderer.internalRes", groups).As<float>();
 	Renderer::shouldRenderCollisionBoxes = VVM::FindVariable("renderer.rendercollision", groups).As<bool>();
 	Renderer::denoiseOutput =              VVM::FindVariable("renderer.denoiseOutput", groups).As<bool>();
 	RayTracing::raySampleCount =           VVM::FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
@@ -363,7 +366,7 @@ void HalesiaEngine::RegisterConsoleVars()
 {
 	Console::AddConsoleVariables<bool>(
 		{ "pauseGame", "showFPS", "playOneFrame", "showRAM", "showCPU", "showGPU", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "useEditorUI", "denoiseOutput" },
-		{ &pauseGame, &showFPS, &playOneFrame, &showRAM, &showCPU, &showGPU, &showAsyncTimes, &showObjectData, &RayTracing::showNormals, &RayTracing::showAlbedo, &RayTracing::showUniquePrimitives, &RayTracing::renderProgressive, &renderer->shouldRasterize, &useEditor, &Renderer::denoiseOutput }
+		{ &pauseGame, &showFPS, &playOneFrame, &showRAM, &showCPU, &showGPU, &showAsyncTimes, &showObjectData, &RayTracing::showNormals, &RayTracing::showAlbedo, &RayTracing::showUniquePrimitives, &RayTracing::renderProgressive, &core.renderer->shouldRasterize, &useEditor, &Renderer::denoiseOutput }
 	);
 	Console::AddConsoleVariable("raySamples", &RayTracing::raySampleCount);
 	Console::AddConsoleVariable("rayDepth", &RayTracing::rayDepth);
