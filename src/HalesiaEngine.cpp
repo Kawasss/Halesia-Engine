@@ -142,13 +142,12 @@ void HalesiaEngine::UpdateRenderer(float delta)
 	if (showFPS)
 		GUI::ShowFPS((int)(1 / delta * 1000));
 
-	ramUsed.Add(GetPhysicalMemoryUsedByApp() / (1024ULL * 1024));
 	if (showRAM)
-		GUI::ShowGraph(ramUsed.buffer, "RAM in MB");
+		GUI::ShowGraph(core.profiler->GetRAM(), "RAM in MB");
 	if (showCPU)
-		GUI::ShowGraph(CPUUsage.buffer, "CPU %");
+		GUI::ShowGraph(core.profiler->GetCPU(), "CPU %");
 	if (showGPU)
-		GUI::ShowGraph(GPUUsage.buffer, "GPU %");
+		GUI::ShowGraph(core.profiler->GetGPU(), "GPU %");
 	if (showAsyncTimes)
 		GUI::ShowPieGraph(asyncTimes, "Async Times (µs)");
 	if (showObjectData)
@@ -192,16 +191,6 @@ void HalesiaEngine::UpdateAsyncCompletionTimes(float frameDelta)
 	asyncTimes.push_back(timeSpentInMainThread * 1000);
 	asyncTimes.push_back(asyncScriptsCompletionTime * 1000);
 	asyncTimes.push_back(asyncRendererCompletionTime * 1000);
-}
-
-void HalesiaEngine::UpdateCGPUUsage()
-{
-	float cpu = GetCPUPercentageUsedByApp();
-	if (cpu != -1 && cpu != 0) //dont know if 0 is junk data
-		CPUUsage.Add(cpu);
-
-	float gpu = (float)GetGPUUsage() * 100.0f; //doesnt look incredibly accurate but it works good enough
-	GPUUsage.Add(gpu);
 }
 
 HalesiaExitCode HalesiaEngine::Run()
@@ -256,10 +245,11 @@ HalesiaExitCode HalesiaEngine::Run()
 			frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();
 			timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
+			core.profiler->Update(frameDelta);
+
 			timeSinceLastDataUpdate += frameDelta;
 			if (timeSinceLastDataUpdate > 500)
 			{
-				UpdateCGPUUsage();
 				UpdateAsyncCompletionTimes(frameDelta);
 				timeSinceLastDataUpdate = 0;
 			}
@@ -293,7 +283,7 @@ void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
 	core.window = new Win32Window(createInfo.windowCreateInfo);
 	core.renderer = new Renderer(core.window);
 	core.profiler = Profiler::Get();
-	core.profiler->SetFlags(PROFILE_FLAG_FRAME_TIME | PROFILE_FLAG_OBJECT_COUNT);
+	core.profiler->SetFlags(Profiler::ALL_OPTIONS);
 
 	if (createInfo.startingScene == nullptr)
 	{

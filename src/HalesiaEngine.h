@@ -8,29 +8,7 @@ class Renderer;
 class Scene;
 class Profiler;
 
-template<typename T> struct ScrollingBuffer //dont know where to put this struct, maybe make it private
-{
-	ScrollingBuffer(int size, int offset = 0)
-	{
-		this->size = size;
-		this->offset = offset;
-	}
 
-	std::vector<T> buffer;
-	int size = 0;
-	int offset = 1;
-
-	void Add(T value)
-	{
-		if (buffer.size() < size)
-			buffer.push_back(value);
-		else
-		{
-			buffer[offset] = value;
-			offset = (offset + 1) % size;
-		}
-	}
-};
 
 enum HalesiaExitCode
 {
@@ -99,7 +77,6 @@ private:
 
 	void CheckInput();
 	void UpdateAsyncCompletionTimes(float frameDelta);
-	void UpdateCGPUUsage();
 	void RegisterConsoleVars();
 
 	void OnLoad(HalesiaEngineCreateInfo& createInfo);
@@ -123,8 +100,4 @@ private:
 
 	std::future<void> asyncScripts;
 	std::future<void> asyncRenderer;
-
-	ScrollingBuffer<float> CPUUsage{ 100 };
-	ScrollingBuffer<float> GPUUsage{ 100 };
-	ScrollingBuffer<uint64_t> ramUsed{ 500 };
 };
