@@ -55,6 +55,11 @@ public:
 	uint32_t renderedObjects = 0;
 	uint32_t submittedCount = 0;
 
+	float rayTracingTime = 0;
+	float denoisingPrepTime = 0;
+	float denoisingTime = 0;
+	float finalRenderPassTime = 0;
+
 private:
 	VkInstance instance							= VK_NULL_HANDLE;
 	VkDevice logicalDevice						= VK_NULL_HANDLE;
@@ -73,6 +78,7 @@ private:
 	VkImageView	deferredDepthView				= VK_NULL_HANDLE;
 	VkImage	deferredDepth						= VK_NULL_HANDLE;
 	VkDeviceMemory deferredDepthMemory			= VK_NULL_HANDLE;
+	VkQueryPool queryPool                       = VK_NULL_HANDLE;
 
 	std::vector<VkCommandBuffer>	commandBuffers;
 	std::vector<VkSemaphore>		imageAvaibleSemaphores;
@@ -130,6 +136,8 @@ private:
 	void CreateRenderPass();
 	void CreateModelDataBuffers();
 	void CreateImGUI();
+	void CreateQueryPool();
+	void GetQueryResults();
 	void CreateIndirectDrawParametersBuffer();
 	void WriteIndirectDrawParameters(std::vector<Object*>& objects);
 	void CreateDeferredFramebuffer(uint32_t width, uint32_t height);

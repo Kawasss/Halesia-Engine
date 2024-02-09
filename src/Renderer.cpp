@@ -214,6 +214,7 @@ void Renderer::InitVulkan()
 	SetLogicalDevice();
 	swapchain = new Swapchain(logicalDevice, physicalDevice, surface, testWindow);
 	swapchain->CreateImageViews();
+	CreateQueryPool();
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	CreateCommandPool();
@@ -245,6 +246,28 @@ void Renderer::InitVulkan()
 	}
 
 	rayTracer = RayTracing::Create(testWindow, swapchain);
+}
+
+void Renderer::CreateQueryPool()
+{
+	VkQueryPoolCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+	createInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+	createInfo.queryCount = 8;
+	
+	VkResult result = vkCreateQueryPool(logicalDevice, &createInfo, nullptr, &queryPool);
+	CheckVulkanResult("Failed to create a query pool", result, vkCreateQueryPool);
+}
+
+void Renderer::GetQueryResults()
+{
+	std::vector<uint64_t> results(8);
+	vkGetQueryPoolResults(logicalDevice, queryPool, 0, results.size(), results.size() * sizeof(uint64_t), results.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
+
+	rayTracingTime =      (results[1] - results[0]) * 0.000001f; // nanoseconds to milliseconds
+	denoisingPrepTime =   (results[3] - results[2]) * 0.000001f;
+	denoisingTime =       (results[5] - results[4]) * 0.000001f;
+	finalRenderPassTime = (results[7] - results[6]) * 0.000001f;
 }
 
 void Renderer::CreateIndirectDrawParametersBuffer()
@@ -787,12 +810,20 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 
 	VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
 	CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
+	vkCmdResetQueryPool(lCommandBuffer, queryPool, 0, 8);
+
+	vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0); // begin of the command buffer
 
 	rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, lCommandBuffer, imageIndex);
 
+	vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 1); // end of ray tracing
 	if (denoiseOutput)
 	{
+		vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 2);
 		rayTracer->PrepareForDenoising(lCommandBuffer);
+		vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 3); // end of copying ray tracing images
+
+		vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 4); // start of denoising
 		result = vkEndCommandBuffer(lCommandBuffer);
 		CheckVulkanResult("Failed to end the given command buffer", result, nameof(vkEndCommandBuffer));
 
@@ -841,7 +872,9 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
 		CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
 
+
 		rayTracer->ApplyDenoisedImage(lCommandBuffer);
+		vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 5); // end of denoising
 	}
 
 	if (shouldRasterize)
@@ -901,6 +934,8 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	vkCmdBeginRenderPass(lCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 	UpdateScreenShaderTexture(currentFrame, imageToCopy);
 
+	vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 6); // begin final render pass
+
 	SetViewport(lCommandBuffer);
 	SetScissors(lCommandBuffer);
 
@@ -918,6 +953,8 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	vkCmdDraw(lCommandBuffer, 6, 1, 0, 0);
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), lCommandBuffer);
 	vkCmdEndRenderPass(lCommandBuffer);
+
+	vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 7); // end final render pass
 
 	result = vkEndCommandBuffer(lCommandBuffer);
 	CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
@@ -1113,6 +1150,8 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 
 	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
+
+	GetQueryResults();
 
 	PresentSwapchainImage(currentFrame, imageIndex);
 
