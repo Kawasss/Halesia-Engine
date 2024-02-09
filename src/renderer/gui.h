@@ -15,9 +15,10 @@ public:
 	static void ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* window);
 	static void ShowObjectTable(const std::vector<Object*>& objects);
 	static void ShowFPS(int fps);
-	static void ShowGraph(const std::vector<uint64_t>& buffer, const char* label);
-	static void ShowGraph(const std::vector<float>& buffer, const char* label);
+	static void ShowGraph(const std::vector<uint64_t>& buffer, const char* label, float max = 100.0f);
+	static void ShowGraph(const std::vector<float>& buffer, const char* label, float max = 100.0f);
 	static void ShowPieGraph(std::vector<float>& data, const char* label = nullptr);
+	static void ShowChartGraph(size_t item, size_t max, const char* label);
 	static void ShowDropdownMenu(std::vector<std::string>& items, std::string& currentItem, int& currentIndex, const char* label);
 	
 	static void ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window);
@@ -25,4 +26,6 @@ public:
 	static void ShowObjectRigidBody(RigidBody& rigidBody);
 
 	static void ShowWindowData(Win32Window* window);
+
+	static void ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePercentLow);
 };

@@ -446,30 +446,67 @@ void GUI::ShowPieGraph(std::vector<float>& data, const char* label)
 	ImGui::End();
 }
 
-void GUI::ShowGraph(const std::vector<uint64_t>& buffer, const char* label)
+void GUI::ShowGraph(const std::vector<uint64_t>& buffer, const char* label, float max)
 {
-	ImGui::Begin("RAM Usage", nullptr, ImGuiWindowFlags_NoScrollbar);
+	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
 	SetImGuiColors();
 
 	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
-	ImPlot::SetupAxisLimits(ImAxis_X1, 0, 500);
-	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, buffer[buffer.size() - 1] * 1.3);
+	ImPlot::SetupAxisLimits(ImAxis_X1, 0, buffer.size());
+	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, max);
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
 	ImPlot::PlotLine(label, buffer.data(), (int)buffer.size());
 	ImPlot::EndPlot();
 	ImGui::End();
 }
 
-void GUI::ShowGraph(const std::vector<float>& buffer, const char* label)
+void GUI::ShowGraph(const std::vector<float>& buffer, const char* label, float max)
 {
 	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
 	SetImGuiColors();
 
 	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
-	ImPlot::SetupAxisLimits(ImAxis_X1, 0, 100);
-	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 100);
+	ImPlot::SetupAxisLimits(ImAxis_X1, 0, buffer.size());
+	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, max);
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
 	ImPlot::PlotLine(label, buffer.data(), (int)buffer.size());
+	ImPlot::EndPlot();
+	ImGui::End();
+}
+
+void GUI::ShowChartGraph(size_t item, size_t max, const char* label)
+{
+	constexpr int CHART_WIDTH = 300, CHART_HEIGHT = 150;
+
+	float relative = (float)item / max * 100;
+
+	ImGui::Begin(label);
+	ImDrawList* drawList = ImGui::GetWindowDrawList();
+	ImVec2 pos = ImGui::GetWindowPos();
+	ImVec2 endPos = { pos.x + CHART_WIDTH, pos.y + CHART_HEIGHT };
+	ImVec2 midPos = { pos.x + CHART_WIDTH * relative, pos.y + CHART_HEIGHT };
+	drawList->AddRectFilled(pos, endPos, IM_COL32(43, 43, 43, 255));
+	drawList->AddRectFilled(pos, midPos, IM_COL32(100, 100, 200, 255));
+	ImGui::End();
+}
+
+void GUI::ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePercentLow)
+{
+	const std::vector<float> Line60FPS(frameTime.size(), 1000 / 60); // not that efficient since the vector is made every frame
+	const std::vector<float> Line30FPS(frameTime.size(), 1000 / 30);
+	const std::vector<float> line1PLow(frameTime.size(), onePercentLow);
+
+	ImGui::Begin("frameTime", nullptr, ImGuiWindowFlags_NoScrollbar);
+	SetImGuiColors();
+
+	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
+	ImPlot::SetupAxisLimits(ImAxis_X1, 0, frameTime.size());
+	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 40);
+	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
+	ImPlot::PlotLine("##frametime", frameTime.data(), (int)frameTime.size());
+	ImPlot::PlotLine("##1PLow", line1PLow.data(), (int)line1PLow.size());
+	ImPlot::PlotLine("##60fps", Line60FPS.data(), (int)Line60FPS.size());
+	ImPlot::PlotLine("##30fps", Line30FPS.data(), (int)Line30FPS.size());
 	ImPlot::EndPlot();
 	ImGui::End();
 }
