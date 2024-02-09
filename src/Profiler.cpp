@@ -2,6 +2,8 @@
 
 #include "system/SystemMetrics.h"
 
+#include "renderer/Renderer.h"
+
 Profiler* Profiler::Get()
 {
 	static Profiler profiler;
@@ -28,4 +30,9 @@ void Profiler::Update(float delta)
 	if (options & PROFILE_FLAG_RAM_USAGE) ramUsed.Add(GetPhysicalMemoryUsedByApp() / (1024ULL * 1024));
 	if (options & PROFILE_FLAG_CPU_USAGE) CPUUsage.Add(GetCPUPercentageUsedByApp());
 	if (options & PROFILE_FLAG_GPU_USAGE) GPUUsage.Add((float)GetGPUUsage() * 100.0f);
+
+	if (options & PROFILE_FLAG_GPU_BUFFERS)
+	{
+		Renderer::globalVertexBuffer.GetSize();
+	}
 }

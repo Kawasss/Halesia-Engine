@@ -11,6 +11,7 @@ enum ProfilerFlags : ProfilerOptions
 	PROFILE_FLAG_GPU_USAGE = 1 << 2,
 	PROFILE_FLAG_CPU_USAGE = 1 << 3,
 	PROFILE_FLAG_RAM_USAGE = 1 << 4,
+	PROFILE_FLAG_GPU_BUFFERS = 1 << 5,
 };
 
 
@@ -59,4 +60,6 @@ private:
 	ScrollingBuffer<float> GPUUsage{ 100 };
 	ScrollingBuffer<float> frameTime{ 100 };
 	ScrollingBuffer<uint64_t> ramUsed{ 500 };
+	ScrollingBuffer<size_t> vertexBufferUsage{ 100 };
+	ScrollingBuffer<size_t> indexBufferUsage{ 100 };
 };
