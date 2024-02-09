@@ -222,6 +222,11 @@ class CalculatorScene : public Scene
 		matInfo.albedo = "textures/red.png";
 		Material mat = Material::Create(matInfo);
 		mat.AwaitGeneration();
+
+		MaterialCreateInfo buttonMat{};
+		buttonMat.albedo = "textures/glockAlbedo.png";
+		Material buttonMaterial = Material::Create(buttonMat);
+		buttonMaterial.AwaitGeneration();
 		
 		int keyCount = 0;
 		std::vector<Key*> objs;
@@ -245,6 +250,7 @@ class CalculatorScene : public Scene
 
 			if (info.name == "key3.001")
 				obj->meshes[0].SetMaterial(mat);
+			else obj->meshes[0].SetMaterial(buttonMaterial);
 			rotator->AddChild(obj);
 		}
 

@@ -561,6 +561,7 @@ void GUI::ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePerce
 
 void GUI::ShowDebugWindow(Profiler* profiler)
 {
+	static std::vector<float> values(4);
 	EngineCore core = HalesiaEngine::GetInstance()->GetEngineCore();
 
 	ImGui::SetNextWindowSize({ 0, 0 });
@@ -577,6 +578,18 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 		Vulkan::Context context = Vulkan::GetContext();
 		VkPhysicalDeviceProperties properties = context.physicalDevice.Properties();
 		ImGui::Text("GPU: %s   VRAM: %i MB", properties.deviceName, context.physicalDevice.VRAM() / 1024ULL / 1024ULL);
+
+		static int times = 0;
+		const char* labels[] = { "ray-tracing", "denoising prep", "denoising", "final pass" };
+		if (times > 5)
+		{
+			values = { core.renderer->rayTracingTime, core.renderer->denoisingPrepTime, core.renderer->denoisingTime, core.renderer->finalRenderPassTime };
+			times = 0;
+		}
+		ImPlot::BeginPlot("timestap queries", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);
+		ImPlot::PlotPieChart(labels, values.data(), values.size(), 0.5, 0.5, 0.5, "%.3f", 180);
+		ImPlot::EndPlot();
+		times++;
 	}
 
 	if (ImGui::CollapsingHeader("scene"))

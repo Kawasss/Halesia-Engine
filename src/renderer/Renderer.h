@@ -59,6 +59,7 @@ public:
 	float denoisingPrepTime = 0;
 	float denoisingTime = 0;
 	float finalRenderPassTime = 0;
+	float idleTime = 0;
 
 private:
 	VkInstance instance							= VK_NULL_HANDLE;

@@ -266,7 +266,7 @@ void Renderer::GetQueryResults()
 
 	rayTracingTime =      (results[1] - results[0]) * 0.000001f; // nanoseconds to milliseconds
 	denoisingPrepTime =   (results[3] - results[2]) * 0.000001f;
-	denoisingTime =       (results[5] - results[4]) * 0.000001f;
+	//denoisingTime =       (results[5] - results[4]) * 0.000001f;
 	finalRenderPassTime = (results[7] - results[6]) * 0.000001f;
 }
 
@@ -823,7 +823,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		rayTracer->PrepareForDenoising(lCommandBuffer);
 		vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 3); // end of copying ray tracing images
 
-		vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 4); // start of denoising
+		vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 4); // start of denoising
 		result = vkEndCommandBuffer(lCommandBuffer);
 		CheckVulkanResult("Failed to end the given command buffer", result, nameof(vkEndCommandBuffer));
 
@@ -846,6 +846,8 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		
 		submittedCount++;
 
+		auto start = std::chrono::high_resolution_clock::now();
+
 		cudaExternalSemaphoreWaitParams waitParams{};
 		memset(&waitParams, 0, sizeof(waitParams));
 		waitParams.flags = 0;
@@ -860,13 +862,14 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 
 		CheckCudaResult(cudaSignalExternalSemaphoresAsync(&externalRenderSemaphores[currentFrame], &signalParams, 1, nullptr));
 
-		//vkDeviceWaitIdle(logicalDevice);
-
 		rayTracer->DenoiseImage();
+
 		cuStreamSynchronize(nullptr);
 
 		vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 		vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
+
+		denoisingTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - start).count();
 
 		vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 		VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
@@ -875,6 +878,11 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 
 		rayTracer->ApplyDenoisedImage(lCommandBuffer);
 		vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 5); // end of denoising
+	}
+	else
+	{
+		denoisingPrepTime = 0;
+		denoisingTime = 0;
 	}
 
 	if (shouldRasterize)
@@ -1137,6 +1145,8 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	
 	uint32_t imageIndex = GetNextSwapchainImage(currentFrame);
 
+	GetQueryResults();
+
 	UpdateUniformBuffers(currentFrame, camera);
 	SetModelData(currentFrame, activeObjects);
 	WriteIndirectDrawParameters(activeObjects);
@@ -1150,8 +1160,6 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 
 	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
-
-	GetQueryResults();
 
 	PresentSwapchainImage(currentFrame, imageIndex);
 
