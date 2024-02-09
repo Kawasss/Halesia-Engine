@@ -57,7 +57,7 @@ public:
 	VkDeviceSize GetBufferEnd() { return (VkDeviceSize)endOfBufferPointer + 1; } // not sure about the + 1
 	VkBuffer GetBufferHandle() { return buffer; }
 	size_t GetSize() { return size; }
-	size_t GetMaxSize() { return reservedBufferSize; }
+	size_t GetMaxSize() { return reservedBufferSize / sizeof(T); }
 	bool HasChanged() { bool ret = hasChanged; hasChanged = false; return ret; }
 
 	/// <summary>

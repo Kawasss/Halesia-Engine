@@ -10,6 +10,10 @@ class RigidBody;
 class GUI
 {
 public:
+	static void AutomaticallyCreateWindows(bool setting);
+	static void CreateGUIWindow(const char* name);
+	static void EndGUIWindow();
+
 	static void ShowDevConsole();
 	static void ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGraph, bool& cpuGraph, bool& gpuGraph);
 	static void ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* window);

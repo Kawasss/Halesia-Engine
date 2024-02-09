@@ -31,7 +31,13 @@ void Profiler::Update(float delta)
 		vertexBufferUsage.Add(Renderer::globalVertexBuffer.GetSize() / 1024ULL);
 		indexBufferUsage.Add(Renderer::globalIndicesBuffer.GetSize() / 1024ULL);
 	}
+	GUI::AutomaticallyCreateWindows(false);
+	GUI::CreateGUIWindow("debug");
 	GUI::ShowFrameTimeGraph(frameTime.buffer, frameTime1PLow);
+	GUI::ShowChartGraph(Renderer::globalIndicesBuffer.GetSize(), Renderer::globalIndicesBuffer.GetMaxSize(), "index");
+	GUI::ShowChartGraph(Renderer::globalVertexBuffer.GetSize(), Renderer::globalVertexBuffer.GetMaxSize(), "vertex");
+	GUI::EndGUIWindow();
+	GUI::AutomaticallyCreateWindows(true);
 	if (timeSinceUpdate < 1000)
 		return;
 	OneSecondUpdate();
@@ -54,7 +60,7 @@ void Profiler::Calculate1PLow()
 
 	float average = 0;
 	for (int i = 0; i < onePercent; i++)
-		average += frameTime.buffer[i];
+		average += frameTime.buffer[frameTime.size - onePercent + i];
 	average /= onePercent;
 	frameTime1PLow = average;
 }

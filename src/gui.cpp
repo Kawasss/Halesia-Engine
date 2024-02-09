@@ -21,6 +21,22 @@
 #include "core/Object.h"
 #include "core/Transform.h"
 
+inline bool createWindow = false;
+void GUI::AutomaticallyCreateWindows(bool setting)
+{
+	createWindow = setting;
+}
+
+void GUI::CreateGUIWindow(const char* name)
+{
+	ImGui::Begin(name);
+}
+
+void GUI::EndGUIWindow()
+{
+	ImGui::End();
+}
+
 inline void ShowInputVector(glm::vec3& vector, std::vector<const char*> labels)
 {
 	if (labels.size() < 3) return;
@@ -55,7 +71,8 @@ void GUI::ShowWindowData(Win32Window* window)
 
 	int x = window->GetX(), y = window->GetY();
 	int width = window->GetWidth(), height = window->GetHeight();
-	ImGui::Begin("game window");
+	if (createWindow)
+		ImGui::Begin("game window");
 
 	ImGui::Text("mode:       ");
 	ImGui::SameLine();
@@ -103,7 +120,8 @@ void GUI::ShowWindowData(Win32Window* window)
 	if (stringToMode[currentMode] != window->GetWindowMode())
 		window->ChangeWindowMode(stringToMode[currentMode]);
 
-	ImGui::End();
+	if (createWindow)
+		ImGui::End();
 }
 
 void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window)
@@ -119,7 +137,8 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window*
 	ImGuiStyle& style = ImGui::GetStyle();
 	ImGui::SetNextWindowPos(ImVec2(window->GetWidth() * 7 / 8, ImGui::GetFrameHeight() + style.FramePadding.y));
 	ImGui::SetNextWindowSize(ImVec2(window->GetWidth() / 8, window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
-	ImGui::Begin("components", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+	if (createWindow)
+		ImGui::Begin("components", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 
 	std::vector<std::string> items; // not the most optimal way
 	for (Object* object : objects)
@@ -135,7 +154,8 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window*
 
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
-	ImGui::End();
+	if (createWindow)
+		ImGui::End();
 }
 
 void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
@@ -247,7 +267,8 @@ void GUI::ShowDevConsole()
 {
 	if (Console::isOpen)
 	{
-		ImGui::Begin("Dev Console", nullptr, ImGuiWindowFlags_NoCollapse);
+		if (createWindow)
+			ImGui::Begin("Dev Console", nullptr, ImGuiWindowFlags_NoCollapse);
 		ImGuiStyle& style = ImGui::GetStyle();
 		ImVec4* colors = style.Colors;
 
@@ -273,7 +294,8 @@ void GUI::ShowDevConsole()
 		if (Input::IsKeyPressed(VirtualKey::Return)) // if enter is pressed place the input value into the optional variable
 			Console::InterpretCommand(result);
 
-		ImGui::End();
+		if (createWindow)
+			ImGui::End();
 	}
 }
 
@@ -332,7 +354,8 @@ void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* windo
 	ImGuiStyle& style = ImGui::GetStyle();
 	ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetFrameHeight() + style.FramePadding.y));
 	ImGui::SetNextWindowSize(ImVec2(window->GetWidth() / 8, window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
-	ImGui::Begin("scene graph", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+	if (createWindow)
+		ImGui::Begin("scene graph", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 	ImGui::BeginChild(1, ImVec2(0, (window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y) / 2));
 	for (int i = 0; i < objects.size(); i++)
 	{
@@ -346,7 +369,8 @@ void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* windo
 		ImGui::TreePop();
 	}
 	ImGui::EndChild();
-	ImGui::End();
+	if (createWindow)
+		ImGui::End();
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
 
@@ -356,7 +380,8 @@ void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* windo
 void GUI::ShowObjectTable(const std::vector<Object*>& objects)
 {
 	constexpr int columnCount = 9;
-	ImGui::Begin("object metadata");
+	if (createWindow)
+		ImGui::Begin("object metadata");
 	ImGui::BeginTable("Object metadata", columnCount, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit);
 	ImGui::TableHeader("object metadata");
 
@@ -404,19 +429,22 @@ void GUI::ShowObjectTable(const std::vector<Object*>& objects)
 	}
 
 	ImGui::EndTable();
-	ImGui::End();
+	if (createWindow)
+		ImGui::End();
 }
 
 void GUI::ShowFPS(int FPS)
 {
-	ImGui::Begin("##FPS Counter", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground);
+	if (createWindow)
+		ImGui::Begin("##FPS Counter", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground);
 
 	ImGui::SetWindowPos(ImVec2(0, 0/*ImGui::GetWindowSize().y * 0.2f*/));
 	ImGui::SetWindowSize(ImVec2(ImGui::GetWindowSize().x * 2, ImGui::GetWindowSize().y));
 	std::string text = std::to_string(FPS) + " FPS";
 	ImGui::Text(text.c_str());
 
-	ImGui::End();
+	if (createWindow)
+		ImGui::End();
 }
 
 inline void SetImGuiColors()
@@ -434,7 +462,8 @@ inline void SetImGuiColors()
 
 void GUI::ShowPieGraph(std::vector<float>& data, const char* label)
 {
-	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
+	if (createWindow)
+		ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
 	SetImGuiColors();
 
 	ImPlot::BeginPlot("##Time Per Async Task", ImVec2(-1, 0), ImPlotFlags_Equal | ImPlotFlags_NoMouseText | ImPlotFlags_NoFrame);
@@ -443,12 +472,14 @@ void GUI::ShowPieGraph(std::vector<float>& data, const char* label)
 	const char* labels[] = { "Main Thread", "Script Thread", "Renderer Thread" };
 	ImPlot::PlotPieChart(labels, data.data(), 3, 0.5, 0.5, 0.5, "%.1f", 180);
 	ImPlot::EndPlot();
-	ImGui::End();
+	if (createWindow)
+		ImGui::End();
 }
 
 void GUI::ShowGraph(const std::vector<uint64_t>& buffer, const char* label, float max)
 {
-	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
+	if (createWindow)
+		ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
 	SetImGuiColors();
 
 	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
@@ -457,12 +488,14 @@ void GUI::ShowGraph(const std::vector<uint64_t>& buffer, const char* label, floa
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
 	ImPlot::PlotLine(label, buffer.data(), (int)buffer.size());
 	ImPlot::EndPlot();
-	ImGui::End();
+	if (createWindow)
+		ImGui::End();
 }
 
 void GUI::ShowGraph(const std::vector<float>& buffer, const char* label, float max)
 {
-	ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
+	if (createWindow)
+		ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
 	SetImGuiColors();
 
 	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
@@ -471,23 +504,31 @@ void GUI::ShowGraph(const std::vector<float>& buffer, const char* label, float m
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
 	ImPlot::PlotLine(label, buffer.data(), (int)buffer.size());
 	ImPlot::EndPlot();
-	ImGui::End();
+	if (createWindow)
+		ImGui::End();
 }
 
 void GUI::ShowChartGraph(size_t item, size_t max, const char* label)
 {
-	constexpr int CHART_WIDTH = 300, CHART_HEIGHT = 150;
+	constexpr int CHART_WIDTH = 300, CHART_HEIGHT = 75;
 
-	float relative = (float)item / max * 100;
+	float relative = (float)item / max;
 
-	ImGui::Begin(label);
+	if (createWindow)
+		ImGui::Begin(label);
+	ImGui::BeginChild((uint64_t)label, {CHART_WIDTH, CHART_HEIGHT}, true);
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	ImVec2 pos = ImGui::GetWindowPos();
 	ImVec2 endPos = { pos.x + CHART_WIDTH, pos.y + CHART_HEIGHT };
 	ImVec2 midPos = { pos.x + CHART_WIDTH * relative, pos.y + CHART_HEIGHT };
 	drawList->AddRectFilled(pos, endPos, IM_COL32(43, 43, 43, 255));
 	drawList->AddRectFilled(pos, midPos, IM_COL32(100, 100, 200, 255));
-	ImGui::End();
+	ImGui::Text("%s  size: %i max: %i", label, item, max);
+	ImGui::EndChildFrame();
+	if (createWindow)
+		ImGui::End();
+	
+	ImGui::SameLine();
 }
 
 void GUI::ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePercentLow)
@@ -496,10 +537,11 @@ void GUI::ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePerce
 	const std::vector<float> Line30FPS(frameTime.size(), 1000 / 30);
 	const std::vector<float> line1PLow(frameTime.size(), onePercentLow);
 
-	ImGui::Begin("frameTime", nullptr, ImGuiWindowFlags_NoScrollbar);
+	if (createWindow)
+		ImGui::Begin("frameTime", nullptr, ImGuiWindowFlags_NoScrollbar);
 	SetImGuiColors();
 
-	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
+	ImPlot::BeginPlot("frame time (ms)", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);
 	ImPlot::SetupAxisLimits(ImAxis_X1, 0, frameTime.size());
 	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 40);
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
@@ -508,5 +550,9 @@ void GUI::ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePerce
 	ImPlot::PlotLine("##60fps", Line60FPS.data(), (int)Line60FPS.size());
 	ImPlot::PlotLine("##30fps", Line30FPS.data(), (int)Line30FPS.size());
 	ImPlot::EndPlot();
-	ImGui::End();
+
+	ImGui::Text("current frame time: %.3f ms  1%% low frame time: %.3f ms  1%% low as fps: %.1f", frameTime.back(), onePercentLow, 1000 / onePercentLow);
+
+	if (createWindow)
+		ImGui::End();
 }
