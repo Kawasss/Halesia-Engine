@@ -813,6 +813,8 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
 		CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
 		
+		submittedCount++;
+
 		cudaExternalSemaphoreWaitParams waitParams{};
 		memset(&waitParams, 0, sizeof(waitParams));
 		waitParams.flags = 0;
@@ -1066,6 +1068,8 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
 	VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]);
 	CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
+
+	submittedCount++;
 }
 
 void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
@@ -1075,6 +1079,10 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 		if (object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && !object->meshes.empty())
 			activeObjects.push_back(object);
 	
+	receivedObjects = objects.size();
+	renderedObjects = activeObjects.size();
+	submittedCount = 0;
+
 	ImGui::Render();
 
 	if (activeObjects.empty())

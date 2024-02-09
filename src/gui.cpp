@@ -20,8 +20,12 @@
 #include "core/Console.h"
 #include "core/Object.h"
 #include "core/Transform.h"
+#include "core/Profiler.h"
+#include "core/Scene.h"
+#include "core/Camera.h"
+#include "HalesiaEngine.h"
 
-inline bool createWindow = false;
+inline bool createWindow = true;
 void GUI::AutomaticallyCreateWindows(bool setting)
 {
 	createWindow = setting;
@@ -466,7 +470,7 @@ void GUI::ShowPieGraph(std::vector<float>& data, const char* label)
 		ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
 	SetImGuiColors();
 
-	ImPlot::BeginPlot("##Time Per Async Task", ImVec2(-1, 0), ImPlotFlags_Equal | ImPlotFlags_NoMouseText | ImPlotFlags_NoFrame);
+	ImPlot::BeginPlot("##Time Per Async Task", ImVec2(-1, 0), ImPlotFlags_Equal | ImPlotFlags_NoMouseText);
 	ImPlot::SetupAxes(nullptr, nullptr, ImPlotAxisFlags_NoDecorations, ImPlotAxisFlags_NoDecorations);
 	ImPlot::SetupAxesLimits(0, 1, 0, 1);
 	const char* labels[] = { "Main Thread", "Script Thread", "Renderer Thread" };
@@ -482,7 +486,7 @@ void GUI::ShowGraph(const std::vector<uint64_t>& buffer, const char* label, floa
 		ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
 	SetImGuiColors();
 
-	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
+	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);
 	ImPlot::SetupAxisLimits(ImAxis_X1, 0, buffer.size());
 	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, max);
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
@@ -498,7 +502,7 @@ void GUI::ShowGraph(const std::vector<float>& buffer, const char* label, float m
 		ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
 	SetImGuiColors();
 
-	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame | ImPlotFlags_CanvasOnly);
+	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);
 	ImPlot::SetupAxisLimits(ImAxis_X1, 0, buffer.size());
 	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, max);
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
@@ -527,8 +531,6 @@ void GUI::ShowChartGraph(size_t item, size_t max, const char* label)
 	ImGui::EndChildFrame();
 	if (createWindow)
 		ImGui::End();
-	
-	ImGui::SameLine();
 }
 
 void GUI::ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePercentLow)
@@ -555,4 +557,52 @@ void GUI::ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePerce
 
 	if (createWindow)
 		ImGui::End();
+}
+
+void GUI::ShowDebugWindow(Profiler* profiler)
+{
+	EngineCore core = HalesiaEngine::GetInstance()->GetEngineCore();
+
+	ImGui::SetNextWindowSize({ 0, 0 });
+	CreateGUIWindow("debug");
+	createWindow = false;
+	if (ImGui::CollapsingHeader("renderer"))
+	{
+		ShowFrameTimeGraph(profiler->GetFrameTime(), profiler->Get1PercentLowFrameTime());
+		ShowChartGraph(Renderer::globalIndicesBuffer.GetSize(), Renderer::globalIndicesBuffer.GetMaxSize(), "index");
+		ImGui::SameLine();
+		ShowChartGraph(Renderer::globalVertexBuffer.GetSize(), Renderer::globalVertexBuffer.GetMaxSize(), "vertex");
+		ImGui::Text("received objects: %i  renderered objects: %i", core.renderer->receivedObjects, core.renderer->renderedObjects);
+
+		Vulkan::Context context = Vulkan::GetContext();
+		VkPhysicalDeviceProperties properties = context.physicalDevice.Properties();
+		ImGui::Text("GPU: %s   VRAM: %i MB", properties.deviceName, context.physicalDevice.VRAM() / 1024ULL / 1024ULL);
+	}
+
+	if (ImGui::CollapsingHeader("scene"))
+	{
+		ImGui::Text("object count: %i", core.scene->allObjects.size());
+		Camera* camera = core.scene->camera;
+		ImGui::Text(
+			"camera: %s\n"
+			"  position: %f, %f, %f\n"
+			"  front:    %f, %f, %f\n"
+			, ToHexadecimalString((uint64_t)camera).c_str(), 
+			camera->position.x, camera->position.y, camera->position.z, 
+			camera->front.x, camera->front.y, camera->front.z);
+	}
+
+	if (ImGui::CollapsingHeader("window"))
+	{
+		ShowWindowData(core.window);
+	}
+
+	if (ImGui::CollapsingHeader("system"))
+	{
+		ShowGraph(profiler->GetCPU(), "CPU usage %");
+		ShowGraph(profiler->GetGPU(), "GPU usage %");
+	}
+
+	createWindow = true;
+	EndGUIWindow();
 }

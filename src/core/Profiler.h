@@ -65,7 +65,7 @@ private:
 	ScrollingBuffer<float> CPUUsage{ 100 };
 	ScrollingBuffer<float> GPUUsage{ 100 };
 	ScrollingBuffer<float> frameTime{ 100 };
-	ScrollingBuffer<uint64_t> ramUsed{ 500 };
-	ScrollingBuffer<size_t> vertexBufferUsage{ 500 };
-	ScrollingBuffer<size_t> indexBufferUsage{ 500 };
+	ScrollingBuffer<uint64_t> ramUsed{ 100 };
+	ScrollingBuffer<size_t> vertexBufferUsage{ 100 };
+	ScrollingBuffer<size_t> indexBufferUsage{ 100 };
 };

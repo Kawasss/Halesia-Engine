@@ -6,6 +6,7 @@ class Object;
 class Win32Window;
 class Transform;
 class RigidBody;
+class Profiler;
 
 class GUI
 {
@@ -14,6 +15,7 @@ public:
 	static void CreateGUIWindow(const char* name);
 	static void EndGUIWindow();
 
+	static void ShowDebugWindow(Profiler* profiler);
 	static void ShowDevConsole();
 	static void ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGraph, bool& cpuGraph, bool& gpuGraph);
 	static void ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* window);

@@ -51,6 +51,10 @@ public:
 	static bool denoiseOutput;
 	static Handle selectedHandle;
 
+	uint32_t receivedObjects = 0;
+	uint32_t renderedObjects = 0;
+	uint32_t submittedCount = 0;
+
 private:
 	VkInstance instance							= VK_NULL_HANDLE;
 	VkDevice logicalDevice						= VK_NULL_HANDLE;
