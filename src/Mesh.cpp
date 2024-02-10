@@ -42,8 +42,8 @@ void Mesh::Create(const MeshCreationData& creationData)
 
 void Mesh::Recreate()
 {
-	vertexMemory = Renderer::globalVertexBuffer.SubmitNewData(vertices);
-	indexMemory = Renderer::globalIndicesBuffer.SubmitNewData(indices);
+	vertexMemory = Renderer::g_vertexBuffer.SubmitNewData(vertices);
+	indexMemory = Renderer::g_indexBuffer.SubmitNewData(indices);
 	BLAS = BottomLevelAccelerationStructure::Create(*this);
 }
 
@@ -82,8 +82,8 @@ void Mesh::Destroy()
 {
 	// should also delete the material in materials here (if no other meshes are referencing that material)
 	BLAS->Destroy();
-	Renderer::globalVertexBuffer.DestroyData(vertexMemory);
-	Renderer::globalIndicesBuffer.DestroyData(indexMemory);
+	Renderer::g_vertexBuffer.DestroyData(vertexMemory);
+	Renderer::g_indexBuffer.DestroyData(indexMemory);
 	indices.clear();
 	vertices.clear();
 	//delete this;

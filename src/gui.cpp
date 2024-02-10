@@ -570,9 +570,9 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 	if (ImGui::CollapsingHeader("renderer"))
 	{
 		ShowFrameTimeGraph(profiler->GetFrameTime(), profiler->Get1PercentLowFrameTime());
-		ShowChartGraph(Renderer::globalIndicesBuffer.GetSize(), Renderer::globalIndicesBuffer.GetMaxSize(), "index");
+		ShowChartGraph(Renderer::g_indexBuffer.GetSize(), Renderer::g_indexBuffer.GetMaxSize(), "index");
 		ImGui::SameLine();
-		ShowChartGraph(Renderer::globalVertexBuffer.GetSize(), Renderer::globalVertexBuffer.GetMaxSize(), "vertex");
+		ShowChartGraph(Renderer::g_vertexBuffer.GetSize(), Renderer::g_vertexBuffer.GetMaxSize(), "vertex");
 		ImGui::Text("received objects: %i  renderered objects: %i", core.renderer->receivedObjects, core.renderer->renderedObjects);
 
 		Vulkan::Context context = Vulkan::GetContext();

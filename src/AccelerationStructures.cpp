@@ -104,8 +104,8 @@ BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(Mesh&
 	BottomLevelAccelerationStructure* BLAS = new BottomLevelAccelerationStructure();
 	BLAS->logicalDevice = context.logicalDevice;
 
-	VkDeviceAddress vertexBufferAddress = Vulkan::GetDeviceAddress(Renderer::globalVertexBuffer.GetBufferHandle());
-	VkDeviceAddress indexBufferAddress = Vulkan::GetDeviceAddress(Renderer::globalIndicesBuffer.GetBufferHandle());
+	VkDeviceAddress vertexBufferAddress = Vulkan::GetDeviceAddress(Renderer::g_vertexBuffer.GetBufferHandle());
+	VkDeviceAddress indexBufferAddress = Vulkan::GetDeviceAddress(Renderer::g_indexBuffer.GetBufferHandle());
 
 	VkAccelerationStructureGeometryKHR geometry{};
 	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
@@ -113,11 +113,11 @@ BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(Mesh&
 	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
 	geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
 	geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-	geometry.geometry.triangles.vertexData = { vertexBufferAddress + Renderer::globalVertexBuffer.GetMemoryOffset(mesh.vertexMemory) };
+	geometry.geometry.triangles.vertexData = { vertexBufferAddress + Renderer::g_vertexBuffer.GetMemoryOffset(mesh.vertexMemory) };
 	geometry.geometry.triangles.vertexStride = sizeof(Vertex);
 	geometry.geometry.triangles.maxVertex = static_cast<uint32_t>(mesh.vertices.size());
 	geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT16;
-	geometry.geometry.triangles.indexData = { indexBufferAddress + Renderer::globalIndicesBuffer.GetMemoryOffset(mesh.indexMemory) };
+	geometry.geometry.triangles.indexData = { indexBufferAddress + Renderer::g_indexBuffer.GetMemoryOffset(mesh.indexMemory) };
 	geometry.geometry.triangles.transformData = { 0 };
 
 	BLAS->CreateAS(&geometry, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, mesh.faceCount);

@@ -28,8 +28,8 @@ void Profiler::Update(float delta)
 	
 	if (options & PROFILE_FLAG_GPU_BUFFERS)
 	{
-		vertexBufferUsage.Add(Renderer::globalVertexBuffer.GetSize() / 1024ULL);
-		indexBufferUsage.Add(Renderer::globalIndicesBuffer.GetSize() / 1024ULL);
+		vertexBufferUsage.Add(Renderer::g_vertexBuffer.GetSize() / 1024ULL);
+		indexBufferUsage.Add(Renderer::g_indexBuffer.GetSize() / 1024ULL);
 	}
 	GUI::ShowDebugWindow(this);
 	if (timeSinceUpdate < 1000)

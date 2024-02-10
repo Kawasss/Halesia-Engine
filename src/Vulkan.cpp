@@ -67,6 +67,26 @@ const Vulkan::Context& Vulkan::GetContext()
     return context;
 }
 
+VkQueryPool Vulkan::CreateQueryPool(VkQueryType type, uint32_t amount)
+{
+    VkQueryPool ret;
+    VkQueryPoolCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+    createInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    createInfo.queryCount = 8;
+
+    VkResult result = vkCreateQueryPool(context.logicalDevice, &createInfo, nullptr, &ret);
+    CheckVulkanResult("Failed to create a query pool", result, vkCreateQueryPool);
+    return ret;
+}
+
+std::vector<uint64_t> Vulkan::GetQueryPoolResults(VkQueryPool queryPool, uint32_t amount, uint32_t offset)
+{
+    std::vector<uint64_t> ret(amount);
+    vkGetQueryPoolResults(context.logicalDevice, queryPool, offset, amount, amount * sizeof(uint64_t), ret.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
+    return ret;
+}
+
 VkPipelineDynamicStateCreateInfo Vulkan::GetDynamicStateCreateInfo(std::vector<VkDynamicState>& dynamicStates)
 {
     return VkPipelineDynamicStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0, (uint32_t)dynamicStates.size(), dynamicStates.data() };

@@ -281,8 +281,8 @@ void RayTracing::CreateBuffers(const ShaderGroupReflector& groupReflection)
 	writeSet.dstBinding = 0;
 
 	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], uniformBufferBuffer, 0, 1);
-	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], Renderer::globalIndicesBuffer.GetBufferHandle(), 0, 2);
-	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], Renderer::globalVertexBuffer.GetBufferHandle(), 0, 3);
+	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], Renderer::g_indexBuffer.GetBufferHandle(), 0, 2);
+	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], Renderer::g_vertexBuffer.GetBufferHandle(), 0, 3);
 	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], handleBuffer, 0, 7);
 	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], denoiser->GetMotionBuffer(), 0, 8);
 
@@ -538,8 +538,8 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 			instanceMeshDataPointer[i * objects[i]->meshes.size() + j] =
 			{ 
 				objects[i]->transform.GetModelMatrix(), 
-				(uint32_t)Renderer::globalIndicesBuffer.GetItemOffset(mesh.indexMemory), 
-				(uint32_t)Renderer::globalVertexBuffer.GetItemOffset(mesh.vertexMemory), 
+				(uint32_t)Renderer::g_indexBuffer.GetItemOffset(mesh.indexMemory), 
+				(uint32_t)Renderer::g_vertexBuffer.GetItemOffset(mesh.vertexMemory), 
 				mesh.materialIndex, 
 				Mesh::materials[mesh.materialIndex].isLight, 
 				ndc,

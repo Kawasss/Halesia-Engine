@@ -28,8 +28,9 @@ public:
 	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT	= 1;
 	static constexpr uint32_t MAX_TLAS_INSTANCES	= MAX_MESHES;
 
-	static StorageBuffer<Vertex>	globalVertexBuffer;
-	static StorageBuffer<uint16_t>	globalIndicesBuffer;
+	static StorageBuffer<Vertex>	g_vertexBuffer;
+	static StorageBuffer<uint16_t>	g_indexBuffer;
+	static StorageBuffer<Vertex>    g_defaultVertexBuffer;
 
 	static VkSampler defaultSampler;
 
@@ -116,12 +117,9 @@ private:
 	uint32_t currentFrame = 0;
 	uint32_t queueIndex = 0;
 	
-
 	RayTracing* rayTracer;
 
 	static bool initGlobalBuffers;
-
-	static std::vector<char> ReadFile(const std::string& filePath);
 
 	void InitVulkan();
 	void SetLogicalDevice();
@@ -137,9 +135,8 @@ private:
 	void CreateRenderPass();
 	void CreateModelDataBuffers();
 	void CreateImGUI();
-	void CreateQueryPool();
 	void GetQueryResults();
-	void CreateIndirectDrawParametersBuffer();
+	void WriteTimestamp(VkCommandBuffer commandBuffer, bool reset = false);
 	void WriteIndirectDrawParameters(std::vector<Object*>& objects);
 	void CreateDeferredFramebuffer(uint32_t width, uint32_t height);
 	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);

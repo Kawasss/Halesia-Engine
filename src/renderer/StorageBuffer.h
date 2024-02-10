@@ -72,7 +72,7 @@ private:
 	std::unordered_set<StorageMemory> terminatedMemories;
 	std::unordered_set<StorageMemory> allCreatedMemory;
 	std::mutex readWriteMutex;
-	size_t size;
+	size_t size = 0;
 
 	/// <summary>
 	/// This looks for for any free space within used memories, reducing the need to create a bigger buffer since terminated spots can be reused
@@ -274,3 +274,5 @@ bool StorageBuffer<T>::CheckIfHandleIsValid(StorageMemory memory)
 {
 	return allCreatedMemory.count(memory) > 0;
 }
+
+#undef CheckHandleValidity

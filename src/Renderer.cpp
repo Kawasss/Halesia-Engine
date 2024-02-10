@@ -15,9 +15,7 @@
 #include "renderer/Mesh.h"
 #include "renderer/RayTracing.h"
 
-#include "system/SystemMetrics.h"
 #include "system/Window.h"
-#include "system/Input.h"
 
 #include "core/Console.h"
 #include "core/Object.h"
@@ -32,23 +30,20 @@
 
 #include "renderer/Renderer.h"
 
-#define CheckCudaResult(result) if (result != cudaSuccess) throw std::runtime_error(std::to_string(result) + " at line " + std::to_string(__LINE__) + " in " + (std::string)__FILENAME__);
-#define nameof(s) #s
-#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
-#define VariableToString(name) variableToString(#name)
-std::string variableToString(const char* name)
-{
-	return name; //gimmicky? yes
-}
+#include "tools/common.h"
 
-StorageBuffer<Vertex> Renderer::globalVertexBuffer;
-StorageBuffer<uint16_t> Renderer::globalIndicesBuffer;
-bool Renderer::initGlobalBuffers = false;
+#define CheckCudaResult(result) if (result != cudaSuccess) throw std::runtime_error(std::to_string(result) + " at line " + std::to_string(__LINE__) + " in " + (std::string)__FILENAME__);
+
+StorageBuffer<Vertex>   Renderer::g_vertexBuffer;
+StorageBuffer<uint16_t> Renderer::g_indexBuffer;
+StorageBuffer<Vertex>   Renderer::g_defaultVertexBuffer;
+
 VkSampler Renderer::defaultSampler = VK_NULL_HANDLE;
-Handle Renderer::selectedHandle = 0;
-bool Renderer::shouldRenderCollisionBoxes = false;
-bool Renderer::denoiseOutput = true;
-float Renderer::internalScale = 1;
+Handle    Renderer::selectedHandle = 0;
+bool      Renderer::initGlobalBuffers = false;
+bool      Renderer::shouldRenderCollisionBoxes = false;
+bool      Renderer::denoiseOutput = true;
+float     Renderer::internalScale = 1;
 
 std::vector<VkDynamicState> Renderer::dynamicStates =
 {
@@ -124,6 +119,7 @@ void Renderer::Destroy()
 		vkDestroyFence(logicalDevice, inFlightFences[i], nullptr);
 	}
 
+	vkDestroyQueryPool(logicalDevice, queryPool, nullptr);
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 
 	vkDestroyDevice(logicalDevice, nullptr);
@@ -214,14 +210,14 @@ void Renderer::InitVulkan()
 	SetLogicalDevice();
 	swapchain = new Swapchain(logicalDevice, physicalDevice, surface, testWindow);
 	swapchain->CreateImageViews();
-	CreateQueryPool();
+	queryPool = Vulkan::CreateQueryPool(VK_QUERY_TYPE_TIMESTAMP, 6);
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	CreateCommandPool();
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(renderPass);
 	CreateDeferredFramebuffer(swapchain->extent.width, swapchain->extent.height);
-	CreateIndirectDrawParametersBuffer();
+	indirectDrawParameters.Reserve(MAX_MESHES, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
 	Texture::GeneratePlaceholderTextures();
 	Mesh::materials.push_back({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
 	if (defaultSampler == VK_NULL_HANDLE)
@@ -240,39 +236,30 @@ void Renderer::InitVulkan()
 
 	if (!initGlobalBuffers)
 	{
-		globalVertexBuffer.Reserve(100000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-		globalIndicesBuffer.Reserve(100000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+		g_vertexBuffer.Reserve(100000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+		g_indexBuffer.Reserve(100000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 		initGlobalBuffers = true;
 	}
 
 	rayTracer = RayTracing::Create(testWindow, swapchain);
 }
 
-void Renderer::CreateQueryPool()
-{
-	VkQueryPoolCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
-	createInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
-	createInfo.queryCount = 8;
-	
-	VkResult result = vkCreateQueryPool(logicalDevice, &createInfo, nullptr, &queryPool);
-	CheckVulkanResult("Failed to create a query pool", result, vkCreateQueryPool);
-}
-
 void Renderer::GetQueryResults()
 {
-	std::vector<uint64_t> results(8);
-	vkGetQueryPoolResults(logicalDevice, queryPool, 0, results.size(), results.size() * sizeof(uint64_t), results.data(), sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
+	std::vector<uint64_t> results = Vulkan::GetQueryPoolResults(queryPool, 6);
 
-	rayTracingTime =      (results[1] - results[0]) * 0.000001f; // nanoseconds to milliseconds
-	denoisingPrepTime =   (results[3] - results[2]) * 0.000001f;
-	//denoisingTime =       (results[5] - results[4]) * 0.000001f;
-	finalRenderPassTime = (results[7] - results[6]) * 0.000001f;
-}
-
-void Renderer::CreateIndirectDrawParametersBuffer()
-{
-	indirectDrawParameters.Reserve(MAX_MESHES, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+	rayTracingTime =          (results[1] - results[0]) * 0.000001f; // nanoseconds to milliseconds
+	if (denoiseOutput)
+	{
+		denoisingPrepTime =   (results[3] - results[2]) * 0.000001f;
+		finalRenderPassTime = (results[5] - results[4]) * 0.000001f;
+	}
+	else
+	{
+		finalRenderPassTime = (results[3] - results[2]) * 0.000001f;
+		denoisingPrepTime = 0;
+		denoisingTime = 0;
+	}
 }
 
 void Renderer::CreateTextureSampler()
@@ -803,34 +790,39 @@ void Renderer::SetScissors(VkCommandBuffer commandBuffer)
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
-void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> objects, Camera* camera)
+void Renderer::WriteTimestamp(VkCommandBuffer commandBuffer, bool reset)
+{
+	static uint32_t index = 0;
+	vkCmdWriteTimestamp(commandBuffer, index % 2 == 0 ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, index);
+	index = reset ? 0 : index + 1;
+}
+
+void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> objects, Camera* camera)
 {
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	
+	VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	CheckVulkanResult("Failed to begin the given command buffer", result, vkBeginCommandBuffer);
+	vkCmdResetQueryPool(commandBuffer, queryPool, 0, 6);
 
-	VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
-	CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
-	vkCmdResetQueryPool(lCommandBuffer, queryPool, 0, 8);
+	WriteTimestamp(commandBuffer);
+	rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, commandBuffer, imageIndex);
 
-	vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 0); // begin of the command buffer
-
-	rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, lCommandBuffer, imageIndex);
-
-	vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 1); // end of ray tracing
+	WriteTimestamp(commandBuffer);
 	if (denoiseOutput)
 	{
-		vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 2);
-		rayTracer->PrepareForDenoising(lCommandBuffer);
-		vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 3); // end of copying ray tracing images
+		WriteTimestamp(commandBuffer);
+		rayTracer->PrepareForDenoising(commandBuffer);
+		WriteTimestamp(commandBuffer);
 
-		vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 4); // start of denoising
-		result = vkEndCommandBuffer(lCommandBuffer);
-		CheckVulkanResult("Failed to end the given command buffer", result, nameof(vkEndCommandBuffer));
+		result = vkEndCommandBuffer(commandBuffer);
+		CheckVulkanResult("Failed to end the given command buffer", result, vkEndCommandBuffer);
 
 		VkSubmitInfo submitInfo{};
 		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &lCommandBuffer;
+		submitInfo.pCommandBuffers = &commandBuffer;
 
 		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 		submitInfo.waitSemaphoreCount = 1;
@@ -842,7 +834,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
 
 		result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
-		CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
+		CheckVulkanResult("Failed to submit the queue", result, vkQueueSubmit);
 		
 		submittedCount++;
 
@@ -872,17 +864,10 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		denoisingTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - start).count();
 
 		vkResetCommandBuffer(commandBuffers[currentFrame], 0);
-		VkResult result = vkBeginCommandBuffer(lCommandBuffer, &beginInfo);
-		CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
+		VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+		CheckVulkanResult("Failed to begin the given command buffer", result, vkBeginCommandBuffer);
 
-
-		rayTracer->ApplyDenoisedImage(lCommandBuffer);
-		vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 5); // end of denoising
-	}
-	else
-	{
-		denoisingPrepTime = 0;
-		denoisingTime = 0;
+		rayTracer->ApplyDenoisedImage(commandBuffer);
 	}
 
 	if (shouldRasterize)
@@ -902,22 +887,22 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 		deferredRenderPassBeginInfo.clearValueCount = static_cast<uint32_t>(deferredClearColors.size());
 		deferredRenderPassBeginInfo.pClearValues = deferredClearColors.data();
 
-		vkCmdBeginRenderPass(lCommandBuffer, &deferredRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+		vkCmdBeginRenderPass(commandBuffer, &deferredRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		vkCmdBindPipeline(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
 
-		SetViewport(lCommandBuffer);
-		SetScissors(lCommandBuffer);
+		SetViewport(commandBuffer);
+		SetScissors(commandBuffer);
 
-		VkBuffer vertexBuffers[] = { globalVertexBuffer.GetBufferHandle() };
+		VkBuffer vertexBuffers[] = { g_vertexBuffer.GetBufferHandle() };
 		VkDeviceSize offsets[] = { 0 };
 
-		vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
-		vkCmdBindVertexBuffers(lCommandBuffer, 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(lCommandBuffer, globalIndicesBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+		vkCmdBindIndexBuffer(commandBuffer, g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
  
-		vkCmdDrawIndexedIndirect(lCommandBuffer, indirectDrawParameters.GetBufferHandle(), 0, (uint32_t)indirectDrawParameters.GetSize(), sizeof(VkDrawIndexedIndirectCommand));
-		vkCmdEndRenderPass(lCommandBuffer);
+		vkCmdDrawIndexedIndirect(commandBuffer, indirectDrawParameters.GetBufferHandle(), 0, (uint32_t)indirectDrawParameters.GetSize(), sizeof(VkDrawIndexedIndirectCommand));
+		vkCmdEndRenderPass(commandBuffer);
 	}
 
 	VkImageView imageToCopy = rayTracer->gBufferViews[0];
@@ -939,32 +924,32 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imag
 	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
-	vkCmdBeginRenderPass(lCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 	UpdateScreenShaderTexture(currentFrame, imageToCopy);
 
-	vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queryPool, 6); // begin final render pass
+	WriteTimestamp(commandBuffer);
 
-	SetViewport(lCommandBuffer);
-	SetScissors(lCommandBuffer);
+	SetViewport(commandBuffer);
+	SetScissors(commandBuffer);
 
 	if (shouldRenderCollisionBoxes)
 	{
-		vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
-		vkCmdBindPipeline(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-		RenderCollisionBoxes(objects, lCommandBuffer, currentFrame);
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+		RenderCollisionBoxes(objects, commandBuffer, currentFrame);
 	}
 
 	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, 1, 1);
-	vkCmdBindDescriptorSets(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
-	vkCmdBindPipeline(lCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, screenPipeline);
-	vkCmdPushConstants(lCommandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &offsets);
-	vkCmdDraw(lCommandBuffer, 6, 1, 0, 0);
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), lCommandBuffer);
-	vkCmdEndRenderPass(lCommandBuffer);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, screenPipeline);
+	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &offsets);
+	vkCmdDraw(commandBuffer, 6, 1, 0, 0);
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+	vkCmdEndRenderPass(commandBuffer);
 
-	vkCmdWriteTimestamp(lCommandBuffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, 7); // end final render pass
+	WriteTimestamp(commandBuffer, true);
 
-	result = vkEndCommandBuffer(lCommandBuffer);
+	result = vkEndCommandBuffer(commandBuffer);
 	CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
 }
 
@@ -1180,8 +1165,8 @@ void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
 		{
 			VkDrawIndexedIndirectCommand parameter{};
 			parameter.indexCount = static_cast<uint32_t>(objects[i]->meshes[j].indices.size());
-			parameter.firstIndex = static_cast<uint32_t>(globalIndicesBuffer.GetItemOffset(objects[i]->meshes[j].indexMemory));
-			parameter.vertexOffset = static_cast<uint32_t>(globalVertexBuffer.GetItemOffset(objects[i]->meshes[j].vertexMemory));
+			parameter.firstIndex = static_cast<uint32_t>(g_indexBuffer.GetItemOffset(objects[i]->meshes[j].indexMemory));
+			parameter.vertexOffset = static_cast<uint32_t>(g_vertexBuffer.GetItemOffset(objects[i]->meshes[j].vertexMemory));
 			parameter.instanceCount = 1;
 
 			parameters.push_back(parameter);
@@ -1268,22 +1253,6 @@ void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
 	ubo.view = camera->GetViewMatrix();
 	ubo.projection = camera->GetProjectionMatrix();
 	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-}
-
-std::vector<char> Renderer::ReadFile(const std::string& filePath)
-{
-	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
-	if (!file.is_open())
-		throw std::runtime_error("Failed to open the shader at " + filePath);
-
-	size_t fileSize = (size_t)file.tellg();
-	std::vector<char> buffer(fileSize);
-
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-
-	file.close();
-	return buffer;
 }
 
 void Renderer::SetViewportOffsets(glm::vec2 offsets)

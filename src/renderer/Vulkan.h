@@ -103,6 +103,9 @@ public:
     static void                               InitializeContext(Context context);
     static const Context&                     GetContext();
 
+    static VkQueryPool                        CreateQueryPool(VkQueryType type, uint32_t amount);
+    static std::vector<uint64_t>              GetQueryPoolResults(VkQueryPool queryPool, uint32_t amount, uint32_t offset = 0);
+
 private:
     static Context context;
 
