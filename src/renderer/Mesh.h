@@ -2,12 +2,12 @@
 #include <mutex>
 
 #include "Material.h"
-#include "StorageBuffer.h"
 #include "Vertex.h"
 
 class BottomLevelAccelerationStructure;
 struct MeshCreationData;
 struct MaterialCreationData;
+typedef Handle StorageMemory;
 
 struct Mesh
 {
@@ -21,6 +21,7 @@ struct Mesh
 	uint32_t materialIndex = 0;
 	StorageMemory vertexMemory;
 	StorageMemory indexMemory;
+	StorageMemory defaultVertexMemory;
 
 	BottomLevelAccelerationStructure* BLAS;
 

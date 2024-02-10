@@ -44,6 +44,7 @@ void Mesh::Recreate()
 {
 	vertexMemory = Renderer::g_vertexBuffer.SubmitNewData(vertices);
 	indexMemory = Renderer::g_indexBuffer.SubmitNewData(indices);
+	defaultVertexMemory = Renderer::g_defaultVertexBuffer.SubmitNewData(vertices);
 	BLAS = BottomLevelAccelerationStructure::Create(*this);
 }
 
@@ -84,6 +85,7 @@ void Mesh::Destroy()
 	BLAS->Destroy();
 	Renderer::g_vertexBuffer.DestroyData(vertexMemory);
 	Renderer::g_indexBuffer.DestroyData(indexMemory);
+	Renderer::g_defaultVertexBuffer.DestroyData(defaultVertexMemory);
 	indices.clear();
 	vertices.clear();
 	//delete this;

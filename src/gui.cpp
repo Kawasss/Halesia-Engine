@@ -514,7 +514,7 @@ void GUI::ShowGraph(const std::vector<float>& buffer, const char* label, float m
 
 void GUI::ShowChartGraph(size_t item, size_t max, const char* label)
 {
-	constexpr int CHART_WIDTH = 300, CHART_HEIGHT = 75;
+	constexpr int CHART_WIDTH = 200, CHART_HEIGHT = 75;
 
 	float relative = (float)item / max;
 
@@ -527,7 +527,7 @@ void GUI::ShowChartGraph(size_t item, size_t max, const char* label)
 	ImVec2 midPos = { pos.x + CHART_WIDTH * relative, pos.y + CHART_HEIGHT };
 	drawList->AddRectFilled(pos, endPos, IM_COL32(43, 43, 43, 255));
 	drawList->AddRectFilled(pos, midPos, IM_COL32(100, 100, 200, 255));
-	ImGui::Text("%s  size: %i max: %i", label, item, max);
+	ImGui::Text("%s, %i : %i", label, item, max);
 	ImGui::EndChildFrame();
 	if (createWindow)
 		ImGui::End();
@@ -573,6 +573,8 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 		ShowChartGraph(Renderer::g_indexBuffer.GetSize(), Renderer::g_indexBuffer.GetMaxSize(), "index");
 		ImGui::SameLine();
 		ShowChartGraph(Renderer::g_vertexBuffer.GetSize(), Renderer::g_vertexBuffer.GetMaxSize(), "vertex");
+		ImGui::SameLine();
+		ShowChartGraph(Renderer::g_defaultVertexBuffer.GetSize(), Renderer::g_defaultVertexBuffer.GetMaxSize(), "d_vertex");
 		ImGui::Text("received objects: %i  renderered objects: %i", core.renderer->receivedObjects, core.renderer->renderedObjects);
 
 		Vulkan::Context context = Vulkan::GetContext();
