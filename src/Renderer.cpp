@@ -14,6 +14,7 @@
 #include "renderer/Intro.h"
 #include "renderer/Mesh.h"
 #include "renderer/RayTracing.h"
+#include "renderer/AnimationManager.h"
 
 #include "system/Window.h"
 
@@ -79,6 +80,7 @@ void Renderer::Destroy()
 {
 	vkDeviceWaitIdle(logicalDevice);
 
+	animationManager->Destroy();
 	rayTracer->Destroy();
 
 	vkDestroyDescriptorPool(logicalDevice, imGUIDescriptorPool, nullptr);
@@ -213,6 +215,7 @@ void Renderer::InitVulkan()
 	queryPool = Vulkan::CreateQueryPool(VK_QUERY_TYPE_TIMESTAMP, 6);
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
+	animationManager = AnimationManager::Get();
 	CreateCommandPool();
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(renderPass);
@@ -754,8 +757,9 @@ void Renderer::SetLogicalDevice()
 
 	vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
 	vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
+	vkGetDeviceQueue(logicalDevice, indices.computeFamily.value(), 0, &computeQueue);
 	
-	Vulkan::InitializeContext({ instance, logicalDevice, physicalDevice, graphicsQueue, queueIndex });
+	Vulkan::InitializeContext({ instance, logicalDevice, physicalDevice, graphicsQueue, queueIndex, presentQueue, indices.presentFamily.value(), computeQueue, indices.computeFamily.value() });
 }
 
 void Renderer::CreateCommandPool()

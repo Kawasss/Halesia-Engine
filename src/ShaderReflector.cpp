@@ -44,8 +44,9 @@ ShaderGroupReflector::ShaderGroupReflector(const std::vector<std::vector<char>>&
 	modules.resize(sourceCodes.size());
 	for (int i = 0; i < sourceCodes.size(); i++)
 	{
-		if (spvReflectCreateShaderModule(sourceCodes[i].size(), sourceCodes[i].data(), &modules[i]) != SPV_REFLECT_RESULT_SUCCESS)
-			throw VulkanAPIError("Cannot reflect on a given shader", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
+		SpvReflectResult result = spvReflectCreateShaderModule(sourceCodes[i].size(), sourceCodes[i].data(), &modules[i]);
+		if (result  != SPV_REFLECT_RESULT_SUCCESS)
+			throw VulkanAPIError("Cannot reflect on a given shader (code: " + std::to_string((int)result) + ')', VK_SUCCESS, "spvReflectCreateShaderModule", __FILENAME__, __LINE__);
 	}
 }
 

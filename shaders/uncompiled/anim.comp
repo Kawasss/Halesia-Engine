@@ -4,6 +4,8 @@
 #define MAX_BONES 4
 #define NO_BONES 65535U; // should be max uint16_t value
 
+layout (local_size_x = 256) in;
+
 struct Vertex
 {
     vec3 position;

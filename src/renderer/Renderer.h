@@ -17,6 +17,7 @@ class Swapchain;
 class RayTracing;
 class Image;
 struct Mesh;
+class AnimationManager;
 
 typedef void* HANDLE;
 
@@ -45,6 +46,7 @@ public:
 	void SetViewportModifiers(glm::vec2 modifiers);
 
 	Swapchain* swapchain; // better to keep it private
+	AnimationManager* animationManager;
 
 	static float internalScale;
 	bool shouldRasterize = false;
@@ -76,6 +78,7 @@ private:
 	VkDescriptorPool imGUIDescriptorPool		= VK_NULL_HANDLE;
 	VkQueue graphicsQueue						= VK_NULL_HANDLE;
 	VkQueue presentQueue						= VK_NULL_HANDLE;
+	VkQueue computeQueue                        = VK_NULL_HANDLE;
 	VkFramebuffer deferredFramebuffer			= VK_NULL_HANDLE;
 	VkImageView	deferredDepthView				= VK_NULL_HANDLE;
 	VkImage	deferredDepth						= VK_NULL_HANDLE;

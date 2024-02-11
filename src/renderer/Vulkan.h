@@ -39,6 +39,10 @@ public:
         PhysicalDevice physicalDevice;
         VkQueue graphicsQueue;
         uint32_t graphicsIndex;
+        VkQueue presentQueue;
+        uint32_t presentIndex;
+        VkQueue computeQueue;
+        uint32_t computeIndex;
     };
 
     struct SwapChainSupportDetails

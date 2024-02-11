@@ -527,7 +527,7 @@ void GUI::ShowChartGraph(size_t item, size_t max, const char* label)
 	ImVec2 midPos = { pos.x + CHART_WIDTH * relative, pos.y + CHART_HEIGHT };
 	drawList->AddRectFilled(pos, endPos, IM_COL32(43, 43, 43, 255));
 	drawList->AddRectFilled(pos, midPos, IM_COL32(100, 100, 200, 255));
-	ImGui::Text("%s, %i : %i", label, item, max);
+	ImGui::Text("%s, %i : %i\nusing %.1f%%", label, item, max, relative * 100);
 	ImGui::EndChildFrame();
 	if (createWindow)
 		ImGui::End();
@@ -570,11 +570,11 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 	if (ImGui::CollapsingHeader("renderer"))
 	{
 		ShowFrameTimeGraph(profiler->GetFrameTime(), profiler->Get1PercentLowFrameTime());
-		ShowChartGraph(Renderer::g_indexBuffer.GetSize(), Renderer::g_indexBuffer.GetMaxSize(), "index");
+		ShowChartGraph(Renderer::g_indexBuffer.GetSize() / 1024ULL, Renderer::g_indexBuffer.GetMaxSize() / 1024ULL, "index (kb)");
 		ImGui::SameLine();
-		ShowChartGraph(Renderer::g_vertexBuffer.GetSize(), Renderer::g_vertexBuffer.GetMaxSize(), "vertex");
+		ShowChartGraph(Renderer::g_vertexBuffer.GetSize() / 1024ULL, Renderer::g_vertexBuffer.GetMaxSize() / 1024ULL, "vertex (kb)");
 		ImGui::SameLine();
-		ShowChartGraph(Renderer::g_defaultVertexBuffer.GetSize(), Renderer::g_defaultVertexBuffer.GetMaxSize(), "d_vertex");
+		ShowChartGraph(Renderer::g_defaultVertexBuffer.GetSize() / 1024ULL, Renderer::g_defaultVertexBuffer.GetMaxSize() / 1024ULL, "d_vertex (kb)");
 		ImGui::Text("received objects: %i  renderered objects: %i", core.renderer->receivedObjects, core.renderer->renderedObjects);
 
 		Vulkan::Context context = Vulkan::GetContext();
