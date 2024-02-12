@@ -5,27 +5,14 @@
 #include "renderer/Swapchain.h"
 #include "renderer/Texture.h"
 #include "renderer/Buffers.h"
+#include "renderer/ShaderReflector.h"
 
-struct Timer
+#include "tools/common.h"
+
+struct Intro::Timer
 {
 	float completionPercentage;
 };
-
-std::vector<char> Intro::ReadFile(const std::string& filePath)
-{
-	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
-	if (!file.is_open())
-		throw std::runtime_error("Failed to open the shader at " + filePath);
-
-	size_t fileSize = (size_t)file.tellg();
-	std::vector<char> buffer(fileSize);
-
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-
-	file.close();
-	return buffer;
-}
 
 void Intro::Create(Swapchain* swapchain, std::string imagePath)
 {
@@ -35,13 +22,14 @@ void Intro::Create(Swapchain* swapchain, std::string imagePath)
 	this->texture = new Texture(imagePath);
 	this->texture->AwaitGeneration();
 
+	std::vector<char> vertCode = ReadFile("shaders/spirv/intro.vert.spv");
+	std::vector<char> fragCode = ReadFile("shaders/spirv/intro.frag.spv");
+
+	ShaderGroupReflector reflector({ vertCode, fragCode });
+
 	// descriptor pool
 
-	std::array<VkDescriptorPoolSize, 2> poolSizes{};
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	poolSizes[0].descriptorCount = 1;
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[1].descriptorCount = 1;
+	std::vector<VkDescriptorPoolSize> poolSizes = reflector.GetDescriptorPoolSize();
 
 	VkDescriptorPoolCreateInfo poolCreateInfo{};
 	poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -54,18 +42,7 @@ void Intro::Create(Swapchain* swapchain, std::string imagePath)
 
 	// descriptor set layout
 
-	std::array<VkDescriptorSetLayoutBinding, 2> layoutBindings{};
-	layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER; // texture image
-	layoutBindings[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	layoutBindings[0].binding = 0;
-	layoutBindings[0].descriptorCount = 1;
-	layoutBindings[0].pImmutableSamplers = nullptr;
-
-	layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // uniform buffer
-	layoutBindings[1].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	layoutBindings[1].binding = 1;
-	layoutBindings[1].descriptorCount = 1;
-	layoutBindings[1].pImmutableSamplers = nullptr;
+	std::vector<VkDescriptorSetLayoutBinding> layoutBindings = reflector.GetLayoutBindingsOfSet(0);
 
 	VkDescriptorSetLayoutCreateInfo setLayoutCreateInfo{};
 	setLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -87,9 +64,6 @@ void Intro::Create(Swapchain* swapchain, std::string imagePath)
 	CheckVulkanResult("Faield to allocate the descriptor set for the intro", result, vkAllocateDescriptorSets);
 
 	// shaders
-
-	std::vector<char> vertCode = ReadFile("shaders/spirv/intro.vert.spv");
-	std::vector<char> fragCode = ReadFile("shaders/spirv/intro.frag.spv");
 
 	VkShaderModule vertexShader = Vulkan::CreateShaderModule(vertCode);
 	VkShaderModule fragShader = Vulkan::CreateShaderModule(fragCode);
@@ -250,7 +224,7 @@ void Intro::Create(Swapchain* swapchain, std::string imagePath)
 	// uniform buffer
 
 	Vulkan::CreateBuffer(sizeof(Timer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, uniformBuffer, uniformBufferMemory);
-	vkMapMemory(logicalDevice, uniformBufferMemory, 0, sizeof(Timer), 0, &uniformBufferPointer);
+	vkMapMemory(logicalDevice, uniformBufferMemory, 0, sizeof(Timer), 0, (void**)&pTimer);
 
 	// update descriptor set
 	VkDescriptorImageInfo imageInfo{};
@@ -285,16 +259,12 @@ void Intro::Create(Swapchain* swapchain, std::string imagePath)
 
 void Intro::WriteDataToBuffer(float timeElapsed)
 {
-	static Timer timer{ 0 };
-
 	if (timeElapsed < fadeInOutTime) // fade in
-		timer.completionPercentage = timeElapsed / fadeInOutTime;
+		pTimer->completionPercentage = timeElapsed / fadeInOutTime;
 	else if (timeElapsed > maxSeconds - fadeInOutTime) // fade out
-		timer.completionPercentage = 1 - (timeElapsed - (maxSeconds - fadeInOutTime)) / fadeInOutTime;
+		pTimer->completionPercentage = 1 - (timeElapsed - (maxSeconds - fadeInOutTime)) / fadeInOutTime;
 	
-	if (timer.completionPercentage > 1) timer.completionPercentage = 1;
-
-	memcpy(uniformBufferPointer, &timer, sizeof(Timer)); // write the update percentage to the buffer
+	if (pTimer->completionPercentage > 1) pTimer->completionPercentage = 1;
 }
 
 void Intro::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)

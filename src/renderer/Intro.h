@@ -19,15 +19,14 @@ public:
 	void Destroy();
 
 private:
-	std::vector<char> ReadFile(const std::string& path);
-
 	Texture* texture;
 	Swapchain* swapchain;
 	VkDevice logicalDevice;
 
 	// maybe better to create all of these statically, so that every intro uses the same resources instead of pointlessly making new isntances for everything
 
-	void* uniformBufferPointer;
+	struct Timer;
+	Timer* pTimer;
 	VkBuffer uniformBuffer;
 	VkDeviceMemory uniformBufferMemory;
 
