@@ -293,6 +293,57 @@ inline std::vector<uint16_t> RetrieveIndices(aiMesh* pMesh)
 	return ret;
 }
 
+inline glm::mat4 GetMat4(const aiMatrix4x4& from)
+{
+	glm::mat4 to{};
+	//the a,b,c,d in assimp is the row ; the 1,2,3,4 is the column
+	to[0][0] = from.a1; to[1][0] = from.a2; to[2][0] = from.a3; to[3][0] = from.a4;
+	to[0][1] = from.b1; to[1][1] = from.b2; to[2][1] = from.b3; to[3][1] = from.b4;
+	to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
+	to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
+	return to;
+}
+
+inline void SetVertexBones(Vertex& vertex, int ID, float weight)
+{
+	for (int i = 0; i < MAX_BONES_PER_VERTEX; i++)
+	{
+		if (vertex.boneIndices[i] >= 0)
+			continue;
+
+		vertex.boneWeights[i] = weight;
+		vertex.boneIndices[i] = ID;
+		break; // break?
+	}
+}
+
+inline void RetrieveBoneData(MeshCreationData& creationData, const aiMesh* pMesh)
+{
+	if (!pMesh->HasBones())
+		return;
+
+	for (int i = 0; i < pMesh->mNumBones; i++)
+	{
+		int ID = -1;
+		std::string name = pMesh->mBones[i]->mName.C_Str();
+		if (creationData.boneInfoMap.find(name) == creationData.boneInfoMap.end())
+		{
+			BoneInfo info{};
+			info.index = i;
+			info.offset = GetMat4(pMesh->mBones[i]->mOffsetMatrix);
+			creationData.boneInfoMap[name] = info;
+			ID = i;
+		}
+		else ID = creationData.boneInfoMap[name].index;
+
+		if (ID == -1) throw std::runtime_error("Failed to retrieve bone data");
+		aiVertexWeight* weights = pMesh->mBones[i]->mWeights;
+
+		for (int j = 0; j < pMesh->mBones[i]->mNumWeights; j++)
+			SetVertexBones(creationData.vertices[weights[j].mVertexId], ID, weights[j].mWeight);
+	}
+}
+
 inline MeshCreationData RetrieveMeshData(aiMesh* pMesh)
 {
 	MeshCreationData ret{};
@@ -302,6 +353,8 @@ inline MeshCreationData RetrieveMeshData(aiMesh* pMesh)
 	ret.faceCount = pMesh->mNumFaces;
 	ret.vertices = RetrieveVertices(pMesh, min, max);
 	ret.indices = RetrieveIndices(pMesh);
+	RetrieveBoneData(ret, pMesh);
+	
 
 	ret.center = (min + max) * 0.5f;
 	ret.extents = max - ret.center;
@@ -403,7 +456,7 @@ void SceneLoader::LoadFBXScene()
 		scale /= 100;
 		rot = glm::degrees(rot);
 		
-		aiMesh* mesh = scene->mMeshes[i];
+		aiMesh* mesh = scene->mMeshes[0];
 		uint8_t flags = RetrieveFlagsFromName(mesh->mName.C_Str(), creationData.name);
 
 		creationData.position = pos;
@@ -420,6 +473,12 @@ void SceneLoader::LoadFBXScene()
 				creationData.meshes.push_back(RetrieveMeshData(scene->mMeshes[node->mMeshes[j]]));
 		}
 		objects.push_back(creationData);
+	}
+	if (!scene->HasAnimations())
+		return;
+	for (int i = 0; i < scene->mNumAnimations; i++)
+	{
+		objects.back().meshes[0].animations.push_back(Animation(scene->mAnimations[i], scene->mRootNode, objects.back().meshes[0]));
 	}
 }
 

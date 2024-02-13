@@ -6,8 +6,11 @@
 #include <vector>
 #include <algorithm>
 #include <execution>
+#include <map>
 #include "glm.h"
 #include "renderer/Vertex.h"
+#include "renderer/Bone.h"
+#include "renderer/AnimationManager.h"
 #include "physics/Shapes.h"
 #include "physics/RigidBody.h"
 
@@ -61,6 +64,8 @@ struct MeshCreationData
 	int amountOfVertices;
 	std::vector<Vertex> vertices;
 	std::vector<uint16_t> indices;
+	std::vector<Animation> animations;
+	std::map<std::string, BoneInfo> boneInfoMap;
 };
 
 struct RigidCreationData

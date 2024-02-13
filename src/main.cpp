@@ -1,5 +1,26 @@
 #define NOMINMAX
 #include "demo/Calculator.h"
+#include "io/SceneLoader.h"
+
+class AnimationTest : public Scene
+{
+	Animation animation;
+	AnimationManager* manager;
+	void Start() override
+	{
+		SceneLoader loader{ "stdObj/animation.fbx" };
+		loader.LoadFBXScene();
+		for (auto& t : loader.objects)
+			AddStaticObject(t);
+		animation = loader.objects[1].meshes[0].animations[0];
+		manager = AnimationManager::Get();
+		manager->AddAnimation(&animation);
+	}
+
+	void Update(float delta) override
+	{
+	}
+};
 
 int main(int argsCount, char** args)
 {
@@ -7,7 +28,7 @@ int main(int argsCount, char** args)
 	HalesiaEngineCreateInfo createInfo{};
 	createInfo.argsCount = argsCount;
 	createInfo.args = args;
-	createInfo.startingScene = new CalculatorScene();
+	createInfo.startingScene = new AnimationTest();
 	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;
 	createInfo.windowCreateInfo.height = 600;

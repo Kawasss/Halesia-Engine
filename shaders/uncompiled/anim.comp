@@ -1,10 +1,11 @@
 #version 460
 #extension GL_EXT_shader_16bit_storage : enable
 #extension GL_EXT_shader_explicit_arithmetic_types : enable
+#extension GL_EXT_control_flow_attributes : enable
 #define MAX_BONES 4
 #define NO_BONES 65535U; // should be max uint16_t value
 
-layout (local_size_x = 256) in;
+layout (local_size_x = 16, local_size_y = 1, local_size_z = 1) in;
 
 struct Vertex
 {
@@ -12,38 +13,65 @@ struct Vertex
 	vec3 normal;
 	vec2 textureCoordinates;
     vec2 padding;
-};
-
-struct Weights // this contains all of the bone IDs and weights of one vertex
-{              // there is currently a limit of 4 bones per vertex
 	ivec4 boneIDs1;
 	vec4 weights1;
 };
 
-layout (binding = 0, set = 0) buffer IndexBuffer { uint16_t data[]; } indexBuffer;
-layout (binding = 1, set = 0) buffer VertexBuffer { Vertex data[]; } vertexBuffer;
+layout (binding = 0, set = 0) readonly buffer IndexBuffer { uint16_t data[]; } indexBuffer;
+layout (binding = 1, set = 0) writeonly buffer VertexBuffer { Vertex data[]; } vertexBuffer;
+layout (binding = 2, set = 0) readonly buffer SourceBuffer { Vertex data[]; } sourceBuffer;
 
-layout (binding = 2, set = 0) buffer AnimMatrixBuffer { mat4 data[]; } animMatrices;
-layout (binding = 3, set = 0) buffer BoneWeightBuffer { Weights data[]; } weightBuffer;
+layout (binding = 3, set = 0) readonly buffer AnimMatrixBuffer { mat4 data[]; } animMatrices;
+
+int GetID(Vertex v, int index)
+{
+	switch (index)
+	{
+	case 0:
+		return v.boneIDs1.x;
+	case 1:
+		return v.boneIDs1.y;
+	case 2:
+		return v.boneIDs1.z;
+	case 3:
+		return v.boneIDs1.w;
+	}
+	return 0;
+}
+
+float GetWeight(Vertex v, int index)
+{
+	switch (index)
+	{
+	case 0:
+		return v.weights1.x;
+	case 1:
+		return v.weights1.y;
+	case 2:
+		return v.weights1.z;
+	case 3:
+		return v.weights1.w;
+	}
+	return 0.0f;
+}
 
 void main()
 {
-	Vertex currentVertex = vertexBuffer.data[gl_GlobalInvocationID.x];
+	Vertex currentVertex = sourceBuffer.data[gl_GlobalInvocationID.x];
 
 	vec4 finalPos = vec4(0);
 	vec3 finalNormal = vec3(0);
 	for (int i = 0; i < MAX_BONES; i++)
 	{
-		Weights currentWeight = weightBuffer.data[gl_GlobalInvocationID.x];
-		if (currentWeight.boneIDs1[i] == -1)
+		if (GetID(currentVertex, i) == -1)
 			continue;
 
-		mat4 trans = animMatrices.data[currentWeight.boneIDs1[i]];
+		mat4 trans = animMatrices.data[GetID(currentVertex, i)];
 		vec4 localPos = trans * vec4(currentVertex.position, 1);
-		finalPos += localPos * currentWeight.weights1[i];
+		finalPos += localPos * GetWeight(currentVertex, i);
 
 		vec3 normal = mat3(trans) * currentVertex.normal;
-		finalNormal += normal * currentWeight.weights1[i];
+		finalNormal += normal * GetWeight(currentVertex, i);
 	}
 	currentVertex.position = finalPos.xyz;
 	currentVertex.normal = finalNormal;

@@ -1,17 +1,65 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include <vector>
+#include <string>
+#include <map>
+
+#include "../glm.h"
+
+#include "Bone.h"
+
+struct aiAnimation;
+struct aiNode;
+struct MeshCreationData;
+
+class Animation
+{
+public:
+	Animation() = default;
+	Animation(const aiAnimation* animation, const aiNode* root, const MeshCreationData& mesh);
+	Bone* GetBone(std::string name);
+	std::vector<glm::mat4> GetTransforms();
+
+	void Update(float delta);
+	void Reset();
+
+private:
+	struct HierarchyNode
+	{
+		std::string name;
+		glm::mat4 transformation = glm::mat4(1.0f);
+		std::vector<HierarchyNode> children;
+	};
+
+	void ReadHierarchy(HierarchyNode& node, const aiNode* source);
+	void ReadBones(const aiAnimation* animation);
+	void ComputeTransform(const HierarchyNode* node, glm::mat4 parentTransform);
+	
+	std::map<std::string, BoneInfo> boneInfo;
+	std::vector<Bone> bones;
+	std::vector<glm::mat4> transforms;
+	HierarchyNode root;
+
+	float duration;
+	float ticksPerSecond;
+	float time;
+};
 
 class AnimationManager
 {
 public:
 	static AnimationManager* Get();
 
-	void Compute(VkCommandBuffer commandBuffer);
+	void ComputeAnimations(float delta);
+	void ApplyAnimations(VkCommandBuffer commandBuffer);
+	void AddAnimation(Animation* animation);
 	void Destroy();
 
 private:
 	void Create();
 	void CreateShader();
+
+	std::vector<Animation*> animations;
 
 	VkDevice logicalDevice = VK_NULL_HANDLE;
 
@@ -21,4 +69,8 @@ private:
 	VkQueue computeQueue = VK_NULL_HANDLE;
 	VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
+
+	glm::mat4* mat4BufferPtr;
+	VkBuffer mat4Buffer;
+	VkDeviceMemory mat4Memory;
 };

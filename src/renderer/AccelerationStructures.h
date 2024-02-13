@@ -34,6 +34,7 @@ class BottomLevelAccelerationStructure : public AccelerationStructure
 {
 public:
 	static BottomLevelAccelerationStructure* Create(Mesh& mesh);
+	void RebuildGeometry(VkCommandBuffer commandBuffer, Mesh& mesh);
 };
 
 class TopLevelAccelerationStructure : public AccelerationStructure

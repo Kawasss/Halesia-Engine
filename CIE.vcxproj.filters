@@ -204,6 +204,9 @@
     <ClCompile Include="src\AnimationManager.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\Bone.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -369,6 +372,9 @@
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\AnimationManager.h">
+      <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\Bone.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
   </ItemGroup>

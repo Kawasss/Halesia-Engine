@@ -153,6 +153,7 @@
     <ClCompile Include="src\AccelerationStructures.cpp" />
     <ClCompile Include="src\AnimationManager.cpp" />
     <ClCompile Include="src\Audio.cpp" />
+    <ClCompile Include="src\Bone.cpp" />
     <ClCompile Include="src\Buffers.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Console.cpp" />
@@ -217,6 +218,7 @@
     <ClInclude Include="src\physics\Physics.h" />
     <ClInclude Include="src\renderer\AccelerationStructures.h" />
     <ClInclude Include="src\renderer\AnimationManager.h" />
+    <ClInclude Include="src\renderer\Bone.h" />
     <ClInclude Include="src\renderer\Denoiser.h" />
     <ClInclude Include="src\renderer\gui.h" />
     <ClInclude Include="src\renderer\Intro.h" />

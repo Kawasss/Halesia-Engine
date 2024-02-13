@@ -28,7 +28,8 @@ struct Vertex
     vec3 position;
 	vec3 normal;
 	vec2 textureCoordinates;
-    vec2 padding;
+    ivec4 boneIDs1;
+	vec4 weights1;
 };
 
 struct InstanceMeshData

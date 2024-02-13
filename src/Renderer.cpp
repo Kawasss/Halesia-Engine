@@ -15,6 +15,7 @@
 #include "renderer/Mesh.h"
 #include "renderer/RayTracing.h"
 #include "renderer/AnimationManager.h"
+#include "renderer/AccelerationStructures.h"
 
 #include "system/Window.h"
 
@@ -215,7 +216,7 @@ void Renderer::InitVulkan()
 	queryPool = Vulkan::CreateQueryPool(VK_QUERY_TYPE_TIMESTAMP, 6);
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
-	animationManager = AnimationManager::Get();
+	
 	CreateCommandPool();
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(renderPass);
@@ -244,6 +245,7 @@ void Renderer::InitVulkan()
 		g_indexBuffer.Reserve(100000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 		initGlobalBuffers = true;
 	}
+	animationManager = AnimationManager::Get();
 
 	rayTracer = RayTracing::Create(testWindow, swapchain);
 }
@@ -811,6 +813,12 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	CheckVulkanResult("Failed to begin the given command buffer", result, vkBeginCommandBuffer);
 	vkCmdResetQueryPool(commandBuffer, queryPool, 0, 6);
 
+	animationManager->ApplyAnimations(commandBuffer); // not good
+
+	for (Object* obj : objects)
+		for (Mesh& mesh : obj->meshes)
+			mesh.BLAS->RebuildGeometry(commandBuffer, mesh);
+
 	WriteTimestamp(commandBuffer);
 	rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, commandBuffer, imageIndex);
 
@@ -1088,7 +1096,7 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
 	VkSemaphore waitSemaphores[] = { imageAvaibleSemaphores[frameIndex] };
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT };
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
@@ -1117,6 +1125,8 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	receivedObjects = objects.size();
 	renderedObjects = activeObjects.size();
 	submittedCount = 0;
+
+	animationManager->ComputeAnimations(delta); // not good
 
 	ImGui::Render();
 
