@@ -79,6 +79,8 @@ void Animation::ComputeTransform(const HierarchyNode* node, glm::mat4 parentTran
 	{
 		BoneInfo& info = boneInfo[node->name];
 		transforms[info.index] = globalTrans * info.offset;
+		if (transforms[info.index] == glm::mat4(0.0f))
+			transforms[info.index] = glm::mat4(1.0f);
 	}
 
 	for (int i = 0; i < node->children.size(); i++)
@@ -121,6 +123,19 @@ void AnimationManager::Create()
 void AnimationManager::AddAnimation(Animation* animation)
 {
 	animations.push_back(animation);
+}
+
+void AnimationManager::RemoveAnimation(Animation* animation)
+{
+	std::vector<Animation*>::iterator iter = std::find_if
+	(
+		animations.begin(), animations.end(),
+		[&](Animation* ptr)
+		{
+			return animation == ptr;
+		}
+	);
+	if (iter != animations.end()) animations.erase(iter);
 }
 
 void AnimationManager::ComputeAnimations(float delta)
@@ -235,6 +250,9 @@ void AnimationManager::CreateShader()
 	reflector.WriteToDescriptorSet(logicalDevice, descriptorSet, Renderer::g_vertexBuffer.GetBufferHandle(), 0, 1);
 	reflector.WriteToDescriptorSet(logicalDevice, descriptorSet, Renderer::g_defaultVertexBuffer.GetBufferHandle(), 0, 2);
 	reflector.WriteToDescriptorSet(logicalDevice, descriptorSet, mat4Buffer, 0, 3);
+
+	std::vector<glm::mat4> defaultValue(500, glm::mat4(1.0f));
+	memcpy(mat4BufferPtr, defaultValue.data(), 500 * sizeof(glm::mat4));
 }
 
 void AnimationManager::Destroy()

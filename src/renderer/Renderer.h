@@ -16,8 +16,8 @@ class Object;
 class Swapchain;
 class RayTracing;
 class Image;
-struct Mesh;
 class AnimationManager;
+struct Mesh;
 
 typedef void* HANDLE;
 

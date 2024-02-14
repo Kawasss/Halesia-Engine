@@ -1139,8 +1139,6 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	renderedObjects = activeObjects.size();
 	submittedCount = 0;
 
-	animationManager->ComputeAnimations(delta); // not good
-
 	ImGui::Render();
 
 	if (activeObjects.empty())

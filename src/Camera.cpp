@@ -133,6 +133,22 @@ void OrbitCamera::Update(Win32Window* window, float delta)
 	if (Console::isOpen)
 		return;
 
+	radius += window->GetWheelRotation() * delta * 0.001f;
+	if (radius < 0.1f) radius = 0.1f;
+
+	float phi = sumX * 2 * glm::pi<float>() / window->GetWidth();
+	float theta = std::clamp(sumY * glm::pi<float>() / window->GetHeight(), -0.49f * glm::pi<float>(), 0.49f * glm::pi<float>());
+
+	position.x = radius * (cos(phi) * cos(theta));
+	position.y = radius * sin(theta);
+	position.z = radius * (cos(theta) * sin(phi));
+	position += pivot;
+
+	front = glm::normalize(pivot - position);
+
+	right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
+	up = glm::normalize(glm::cross(right, front));
+
 	if (Input::IsKeyPressed(VirtualKey::W))
 		pivot += front * (cameraSpeed * delta * 0.001f);
 	if (Input::IsKeyPressed(VirtualKey::S))
@@ -146,26 +162,12 @@ void OrbitCamera::Update(Win32Window* window, float delta)
 	if (Input::IsKeyPressed(VirtualKey::LeftShift))
 		pivot -= up * (cameraSpeed * delta * 0.001f);
 
+	if (!Input::IsKeyPressed(VirtualKey::MiddleMouseButton))
+		return;
+
 	int x, y;
 	window->GetRelativeCursorPosition(x, y);
 
-	sumX += x * delta;
-	sumY += y * delta;
-
-	radius += window->GetWheelRotation() * delta * 0.001f;
-	if (radius < 0.1f) radius = 0.1f;
-
-	float phi = sumX * 2 * glm::pi<float>() / window->GetWidth();
-	float theta = std::clamp(sumY * glm::pi<float>() / window->GetHeight(), -0.49f * glm::pi<float>(), 0.49f * glm::pi<float>());
-
-	position.x = radius * (cos(phi) * cos(theta));
-	position.y = radius * sin(theta);
-	position.z = radius * (cos(theta) * sin(phi));
-	position += pivot;
-	position.y = std::clamp(position.y, -pivot.y, pivot.y);
-
-	front = glm::normalize(pivot - position);
-
-	right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
-	up = glm::normalize(glm::cross(right, front));
+	sumX = sumX + x * delta;
+	sumY = sumY + y * delta;
 }

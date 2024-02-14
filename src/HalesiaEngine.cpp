@@ -9,6 +9,7 @@
 #include "renderer/Intro.h"
 #include "renderer/RayTracing.h"
 #include "renderer/gui.h"
+#include "renderer/AnimationManager.h"
 
 #include "tools/CameraInjector.h"
 #include "physics/Physics.h"
@@ -140,6 +141,10 @@ void HalesiaEngine::UpdateRenderer(float delta)
 	
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	GUI::ShowDevConsole();
+
+	if (!pauseGame)
+		core.animationManager->ComputeAnimations(delta);
+
 	if (showFPS)
 		GUI::ShowFPS((int)(1 / delta * 1000));
 
@@ -287,6 +292,7 @@ void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
 	core.renderer = new Renderer(core.window);
 	core.profiler = Profiler::Get();
 	core.profiler->SetFlags(Profiler::ALL_OPTIONS);
+	core.animationManager = AnimationManager::Get();
 
 	if (createInfo.startingScene == nullptr)
 	{

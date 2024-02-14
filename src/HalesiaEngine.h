@@ -7,8 +7,7 @@
 class Renderer;
 class Scene;
 class Profiler;
-
-
+class AnimationManager;
 
 enum HalesiaExitCode
 {
@@ -38,6 +37,7 @@ struct EngineCore
 	Win32Window* window;
 	Scene* scene;
 	Profiler* profiler;
+	AnimationManager* animationManager;
 	int maxFPS = -1;
 };
 

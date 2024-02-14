@@ -34,8 +34,6 @@ layout(binding = 1, set = 0) uniform Camera {
 
 void main() 
 { 
-	payload.albedo = vec3(0);
-	payload.normal = vec3(0);
 	float co = -dot(camera.directionalLightDir, payload.normal);
 	vec3 color = vec3(1) * co;
 	if (payload.rayDepth == 0)
@@ -48,12 +46,15 @@ void main()
 		return;
 	}
 
-	color =  color / (color + vec3(1));
+	color = color / (color + vec3(1));
 	color = pow(color, vec3(1 / 2.2));
 	
 	payload.directColor *= color;
 	payload.indirectColor += payload.directColor;// * strength;
 	payload.rayDepth++;
+
+	payload.albedo = vec3(0);
+	payload.normal = vec3(0);
 
 	payload.rayActive = 0; 
 }

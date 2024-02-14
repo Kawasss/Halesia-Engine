@@ -53,6 +53,7 @@ public:
 	void ComputeAnimations(float delta);
 	void ApplyAnimations(VkCommandBuffer commandBuffer);
 	void AddAnimation(Animation* animation);
+	void RemoveAnimation(Animation* animation);
 	void Destroy();
 
 private:
