@@ -7,7 +7,7 @@
 #include "renderer/Bone.h"
 
 inline glm::vec3 GetVec3(aiVector3D vec) { return { vec.x, vec.y, vec.z }; }
-inline glm::quat GetQuat(aiQuaternion quat) { return { quat.x, quat.y, quat.z, quat.w }; } // if error check this
+inline glm::quat GetQuat(aiQuaternion quat) { return { quat.w, quat.x, quat.y, quat.z }; } // if error check this
 
 
 Bone::Bone(const aiNodeAnim* animNode) : time(0), transform(glm::mat4(1.0f)), name(animNode->mNodeName.C_Str())
@@ -29,9 +29,14 @@ Bone::Bone(const aiNodeAnim* animNode) : time(0), transform(glm::mat4(1.0f)), na
 	}
 }
 
-glm::mat4 Bone::GetTransform()
+glm::mat4 Bone::GetTransform() const
 {
 	return transform;
+}
+
+std::string Bone::GetName() const
+{
+	return name;
 }
 
 void Bone::Update(float time)

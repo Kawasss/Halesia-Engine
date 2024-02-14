@@ -338,7 +338,7 @@ inline void RetrieveBoneData(MeshCreationData& creationData, const aiMesh* pMesh
 
 		if (ID == -1) throw std::runtime_error("Failed to retrieve bone data");
 		aiVertexWeight* weights = pMesh->mBones[i]->mWeights;
-
+		
 		for (int j = 0; j < pMesh->mBones[i]->mNumWeights; j++)
 			SetVertexBones(creationData.vertices[weights[j].mVertexId], ID, weights[j].mWeight);
 	}

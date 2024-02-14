@@ -36,9 +36,8 @@ public:
     Bone(const aiNodeAnim* animNode);
     void Update(float time);
 
-    glm::mat4 GetTransform();
-
-    std::string name;
+    glm::mat4 GetTransform() const;
+    std::string GetName()    const;
 
 private:
     float time;
@@ -57,4 +56,5 @@ private:
     glm::mat4 InterpolateRotation();
     glm::mat4 InterpolateScale();
     glm::mat4 transform;
+    std::string name;
 };

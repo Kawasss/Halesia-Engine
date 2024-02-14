@@ -50,17 +50,6 @@ void Animation::ReadBones(const aiAnimation* animation)
 		bones.push_back(Bone(animation->mChannels[i]));
 }
 
-AnimationManager* AnimationManager::Get()
-{
-	static AnimationManager* singleton = nullptr;
-	if (singleton == nullptr)
-	{
-		singleton = new AnimationManager();
-		singleton->Create();
-	}
-	return singleton;
-}
-
 Bone* Animation::GetBone(std::string name)
 {
 	std::vector<Bone>::iterator index = std::find_if
@@ -68,7 +57,7 @@ Bone* Animation::GetBone(std::string name)
 		bones.begin(), bones.end(),
 		[&](const Bone& bone)
 		{
-			return bone.name == name;
+			return bone.GetName() == name;
 		}
 	);
 	if (index == bones.end()) return nullptr;
@@ -95,6 +84,17 @@ void Animation::ComputeTransform(const HierarchyNode* node, glm::mat4 parentTran
 
 	for (int i = 0; i < node->children.size(); i++)
 		ComputeTransform(&node->children[i], globalTrans);
+}
+
+AnimationManager* AnimationManager::Get()
+{
+	static AnimationManager* singleton = nullptr;
+	if (singleton == nullptr)
+	{
+		singleton = new AnimationManager();
+		singleton->Create();
+	}
+	return singleton;
 }
 
 void Animation::Update(float delta)
@@ -131,11 +131,8 @@ void AnimationManager::ComputeAnimations(float delta)
 	{
 		animations[i]->Update(delta);
 		std::vector<glm::mat4> mats = animations[i]->GetTransforms();
-		for (int j = 0; j < mats.size(); j++)
-		{
-			mat4BufferPtr[offset] = mats[j];
-			offset++;
-		}
+		memcpy(mat4BufferPtr + offset, mats.data(), sizeof(glm::mat4) * mats.size());
+		offset += mats.size();
 	}
 }
 
