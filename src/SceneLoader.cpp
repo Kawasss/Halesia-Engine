@@ -412,39 +412,22 @@ inline void GetTransform(aiMatrix4x4 mat, glm::vec3& pos, glm::vec3& rot, glm::v
 	rot = glm::eulerAngles(orientation);
 }
 
-void operator |=(ObjectFlags& f1, ObjectFlags f2)
-{
-	f1 = f1 | f2;
-}
-
-ObjectFlags operator |(ObjectFlags f1, ObjectFlags f2)
-{
-	using type = std::underlying_type_t<ObjectFlags>;
-	return (ObjectFlags)((type)f1 | (type)f2);
-}
-
-ObjectFlags operator &(ObjectFlags f1, ObjectFlags f2)
-{
-	using type = std::underlying_type_t<ObjectFlags>;
-	return (ObjectFlags)((type)f1 & (type)f2);
-}
-
-inline bool FlagHasFlag(uint8_t flag1, ObjectFlags flag2)
+inline bool FlagHasFlag(ObjectOptions flag1, ObjectFlags flag2)
 {
 	return (flag1 & flag2) == flag2;
 }
 
-inline bool HasStaticRigidFlag(uint8_t flag)
+inline bool HasStaticRigidFlag(ObjectOptions flag)
 {
 	return FlagHasFlag(flag, OBJECT_FLAG_RIGID_STATIC);
 }
 
-inline bool HasHitBoxFlag(uint8_t flag)
+inline bool HasHitBoxFlag(ObjectOptions flag)
 {
 	return FlagHasFlag(flag, OBJECT_FLAG_HITBOX);
 }
 
-inline ShapeType GetShapeType(uint8_t flag)
+inline ShapeType GetShapeType(ObjectOptions flag)
 {
 	if (FlagHasFlag(flag, OBJECT_FLAG_SHAPE_BOX))
 		return SHAPE_TYPE_BOX;

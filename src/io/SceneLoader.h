@@ -19,7 +19,8 @@ constexpr int normalOffset = 20;
 
 struct aiMesh;
 
-enum ObjectFlags
+typedef uint32_t ObjectOptions;
+enum ObjectFlags : ObjectOptions
 {
 	OBJECT_FLAG_HITBOX = 1 << 0,
 	OBJECT_FLAG_NO_RIGID = 1 << 1,
@@ -29,9 +30,6 @@ enum ObjectFlags
 	OBJECT_FLAG_SHAPE_BOX = 1 << 5,
 	OBJECT_FLAG_SHAPE_CAPSULE = 1 << 6,
 };
-inline extern void operator |=(ObjectFlags& f1, ObjectFlags f2);
-inline extern ObjectFlags operator |(ObjectFlags f1, ObjectFlags f2);
-inline extern ObjectFlags operator &(ObjectFlags f1, ObjectFlags f2);
 
 struct MaterialCreationData // dont know how smart it is to copy around possible megabytes of data, maybe make the stream read to the vector.data()
 {
