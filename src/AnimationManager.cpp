@@ -143,7 +143,7 @@ void AnimationManager::ApplyAnimations(VkCommandBuffer commandBuffer)
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computeLayout, 0, 1, &descriptorSet, 0, nullptr);
-	vkCmdDispatch(commandBuffer, Renderer::g_defaultVertexBuffer.GetSize() / 16, 1, 1);
+	vkCmdDispatch(commandBuffer, Renderer::g_defaultVertexBuffer.GetSize() / 16 + 1, 1, 1);
 
 	VkBufferMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;

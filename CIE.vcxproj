@@ -203,6 +203,7 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="..\..\additionalDependencies\vvm\VVM.hpp" />
     <ClInclude Include="src\Audio.h" />
+    <ClInclude Include="src\core\Behavior.h" />
     <ClInclude Include="src\core\Camera.h" />
     <ClInclude Include="src\core\Console.h" />
     <ClInclude Include="src\core\Object.h" />

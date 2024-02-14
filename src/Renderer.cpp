@@ -22,6 +22,7 @@
 #include "core/Console.h"
 #include "core/Object.h"
 #include "core/Camera.h"
+#include "core/Behavior.h"
 
 #define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -186,6 +187,12 @@ void Renderer::CreateImGUI()
 
 void Renderer::RecompileShaders()
 {
+	if (Behavior::arguments.find("-no_shader_recompilation") != Behavior::arguments.end())
+	{
+		Console::WriteLine("Cannot recompile shaders because of the argument \"-no_shader_recompilation\"");
+		return;
+	}
+
 	std::cout << "Debug mode detected, recompiling all shaders found in directory \"shaders\"...\n";
 	auto oldPath = std::filesystem::current_path();
 	auto newPath = std::filesystem::absolute("shaders");

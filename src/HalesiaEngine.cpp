@@ -15,6 +15,7 @@
 
 #include "core/Console.h"
 #include "core/Profiler.h"
+#include "core/Behavior.h"
 
 #include "vvm/VVM.hpp"
 
@@ -276,6 +277,8 @@ void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
 	Console::Init();
 	Physics::Init();
 	
+	Behavior::ProcessArguments(createInfo.argsCount, createInfo.args);
+
 	useEditor = createInfo.useEditor;
 	devConsoleKey = createInfo.devConsoleKey;
 	playIntro = createInfo.playIntro;
