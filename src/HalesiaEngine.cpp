@@ -142,7 +142,7 @@ void HalesiaEngine::UpdateRenderer(float delta)
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	GUI::ShowDevConsole();
 
-	if (!pauseGame)
+	if (!pauseGame || playOneFrame)
 		core.animationManager->ComputeAnimations(delta);
 
 	if (showFPS)
@@ -179,7 +179,9 @@ void HalesiaEngine::UpdateRenderer(float delta)
 
 void HalesiaEngine::CheckInput()
 {
-	playOneFrame = Input::IsKeyPressed(VirtualKey::RightArrow);
+	static bool pressedLastFrame = false;
+	bool pressedThisFrame = Input::IsKeyPressed(VirtualKey::RightArrow) && Input::IsKeyPressed(VirtualKey::LeftControl);
+	playOneFrame = pressedLastFrame && !pressedThisFrame;
 
 	if (Input::IsKeyPressed(VirtualKey::Q))
 		core.window->LockCursor();
@@ -188,6 +190,8 @@ void HalesiaEngine::CheckInput()
 
 	if (!Input::IsKeyPressed(devConsoleKey) && devKeyIsPressedLastFrame)
 		Console::isOpen = !Console::isOpen;
+
+	pressedLastFrame = pressedThisFrame;
 }
 
 void HalesiaEngine::UpdateAsyncCompletionTimes(float frameDelta)

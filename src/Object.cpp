@@ -85,7 +85,8 @@ void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, v
 	newObjPtr->scriptClass = script;
 	newObjPtr->handle = ResourceManager::GenerateHandle();
 
-	newObjPtr->AddRigidBody(oldObjPtr->rigid.type, oldObjPtr->rigid.shape);
+	if (oldObjPtr->rigid.type != RIGID_BODY_NONE)
+		newObjPtr->AddRigidBody(oldObjPtr->rigid.type, oldObjPtr->rigid.shape);
 
 	newObjPtr->Start();
 	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + oldObjPtr->name + "\" with" + (script == nullptr ? "out a script" : " a script"), MESSAGE_SEVERITY_DEBUG);

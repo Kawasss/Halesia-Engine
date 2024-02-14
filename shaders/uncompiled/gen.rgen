@@ -125,7 +125,7 @@ void main() {
 //    color = clamp(average, 0.0, 1.0);
 //  }
 
-  imageStore(albedoImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstAlbedo / payload.rayDepth, 1));
+  imageStore(albedoImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstAlbedo, 1));
   imageStore(normalImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstNormal, 1)); 
   imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1));
   MotionImage.data[gl_LaunchIDEXT.x * gl_LaunchSizeEXT.y + gl_LaunchIDEXT.y] = firstMotion;
