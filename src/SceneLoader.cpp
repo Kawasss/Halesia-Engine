@@ -273,13 +273,13 @@ inline std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::
 		if (pMesh->HasNormals() || ret.size() % 3 != 0)
 			continue;
 
-		Vertex& vert1 = ret[ret.size() - 3];
+		/*Vertex& vert1 = ret[ret.size() - 3];
 		Vertex& vert2 = ret[ret.size() - 2];
 		Vertex& vert3 = ret.back();
 		glm::vec3 norm = glm::cross(vert2.position - vert1.position, vert3.position - vert1.position);
 		vert1.normal = norm;
 		vert2.normal = norm;
-		vert3.normal = norm;
+		vert3.normal = norm;*/
 	}
 	return ret;
 }
@@ -317,7 +317,7 @@ inline void SetVertexBones(Vertex& vertex, int ID, float weight)
 	}
 }
 
-inline void RetrieveBoneData(MeshCreationData& creationData, const aiMesh* pMesh)
+void SceneLoader::RetrieveBoneData(MeshCreationData& creationData, const aiMesh* pMesh)
 {
 	if (!pMesh->HasBones())
 		return;
@@ -326,15 +326,15 @@ inline void RetrieveBoneData(MeshCreationData& creationData, const aiMesh* pMesh
 	{
 		int ID = -1;
 		std::string name = pMesh->mBones[i]->mName.C_Str();
-		if (creationData.boneInfoMap.find(name) == creationData.boneInfoMap.end())
+		if (boneInfoMap.find(name) == boneInfoMap.end())
 		{
 			BoneInfo info{};
 			info.index = i;
 			info.offset = GetMat4(pMesh->mBones[i]->mOffsetMatrix);
-			creationData.boneInfoMap[name] = info;
+			boneInfoMap[name] = info;
 			ID = i;
 		}
-		else ID = creationData.boneInfoMap[name].index;
+		else ID = boneInfoMap[name].index;
 
 		if (ID == -1) throw std::runtime_error("Failed to retrieve bone data");
 		aiVertexWeight* weights = pMesh->mBones[i]->mWeights;
@@ -344,7 +344,7 @@ inline void RetrieveBoneData(MeshCreationData& creationData, const aiMesh* pMesh
 	}
 }
 
-inline MeshCreationData RetrieveMeshData(aiMesh* pMesh)
+MeshCreationData SceneLoader::RetrieveMeshData(aiMesh* pMesh)
 {
 	MeshCreationData ret{};
 
@@ -354,7 +354,25 @@ inline MeshCreationData RetrieveMeshData(aiMesh* pMesh)
 	ret.vertices = RetrieveVertices(pMesh, min, max);
 	ret.indices = RetrieveIndices(pMesh);
 	RetrieveBoneData(ret, pMesh);
-	
+
+	ret.center = (min + max) * 0.5f;
+	ret.extents = max - ret.center;
+
+	ret.name = pMesh->mName.C_Str();
+	if (ret.name == "") ret.name = "NO_NAME";
+
+	return ret;
+}
+
+inline MeshCreationData GetMeshFromAssimp(aiMesh* pMesh)
+{
+	MeshCreationData ret{};
+
+	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
+	ret.amountOfVertices = pMesh->mNumVertices;
+	ret.faceCount = pMesh->mNumFaces;
+	ret.vertices = RetrieveVertices(pMesh, min, max);
+	ret.indices = RetrieveIndices(pMesh);
 
 	ret.center = (min + max) * 0.5f;
 	ret.extents = max - ret.center;
@@ -478,7 +496,7 @@ void SceneLoader::LoadFBXScene()
 		return;
 	for (int i = 0; i < scene->mNumAnimations; i++)
 	{
-		objects.back().meshes[0].animations.push_back(Animation(scene->mAnimations[i], scene->mRootNode, objects.back().meshes[0]));
+		animations.push_back(Animation(scene->mAnimations[i], scene->mRootNode, boneInfoMap));
 	}
 }
 
@@ -500,7 +518,7 @@ ObjectCreationData GenericLoader::LoadObjectFile(std::string path)
 	{
 		aiMesh* pMesh = scene->mMeshes[i];
 		aiMaterial* pMaterial = scene->mMaterials[pMesh->mMaterialIndex];
-		ret.meshes.push_back(RetrieveMeshData(pMesh));
+		ret.meshes.push_back(GetMeshFromAssimp(pMesh));
 	}
 	return ret;
 }

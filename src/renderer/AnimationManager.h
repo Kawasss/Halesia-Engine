@@ -16,7 +16,7 @@ class Animation
 {
 public:
 	Animation() = default;
-	Animation(const aiAnimation* animation, const aiNode* root, const MeshCreationData& mesh);
+	Animation(const aiAnimation* animation, const aiNode* root, std::map<std::string, BoneInfo> boneInfoMap);
 	Bone* GetBone(std::string name);
 	std::vector<glm::mat4> GetTransforms();
 

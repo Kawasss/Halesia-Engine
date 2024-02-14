@@ -12,7 +12,7 @@ class AnimationTest : public Scene
 		loader.LoadFBXScene();
 		for (auto& t : loader.objects)
 			AddStaticObject(t);
-		animation = loader.objects[1].meshes[0].animations[0];
+		animation = loader.animations[0];
 		manager = AnimationManager::Get();
 		manager->AddAnimation(&animation);
 	}

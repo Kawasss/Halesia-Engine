@@ -17,6 +17,8 @@
 constexpr int textureCoordinateOffset = 12;
 constexpr int normalOffset = 20;
 
+struct aiMesh;
+
 enum ObjectFlags
 {
 	OBJECT_FLAG_HITBOX = 1 << 0,
@@ -35,12 +37,12 @@ struct MaterialCreationData // dont know how smart it is to copy around possible
 {
 	std::string name;
 
-	bool albedoIsDefault;
-	bool normalIsDefault;
-	bool metallicIsDefault;
-	bool roughnessIsDefault;
-	bool ambientOcclusionIsDefault;
-	bool heightIsDefault;
+	bool albedoIsDefault = true;
+	bool normalIsDefault = true;
+	bool metallicIsDefault = true;
+	bool roughnessIsDefault = true;
+	bool ambientOcclusionIsDefault = true;
+	bool heightIsDefault = true;
 
 	std::vector<char> albedoData;
 	std::vector<char> normalData;
@@ -55,17 +57,15 @@ struct MeshCreationData
 	std::string name;
 	MaterialCreationData material;
 
-	bool hasBones;
-	bool hasMaterial;
+	bool hasBones = false;
+	bool hasMaterial = false;
 	
 	glm::vec3 center = glm::vec3(0), extents = glm::vec3(0);
 
-	int faceCount;
-	int amountOfVertices;
+	int faceCount = 0;
+	int amountOfVertices = 0;
 	std::vector<Vertex> vertices;
 	std::vector<uint16_t> indices;
-	std::vector<Animation> animations;
-	std::map<std::string, BoneInfo> boneInfoMap;
 };
 
 struct RigidCreationData
@@ -107,6 +107,10 @@ public:
 	int amountOfObjects;
 	std::vector<ObjectCreationData> objects;
 
+	// animations
+	std::vector<Animation> animations;
+	std::map<std::string, BoneInfo> boneInfoMap;
+
 private:
 	// file specific info
 	std::string location;
@@ -115,6 +119,9 @@ private:
 
 	glm::vec3 GetVec3(char* bytes);
 	glm::vec2 GetVec2(char* bytes);
+
+	void RetrieveBoneData(MeshCreationData& creationData, const aiMesh* pMesh);
+	MeshCreationData RetrieveMeshData(aiMesh* pMesh);
 
 	std::string RetrieveName();
 	glm::vec3 RetrieveTransformData();

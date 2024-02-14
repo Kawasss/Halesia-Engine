@@ -25,10 +25,9 @@ inline glm::mat4 GetMat4(const aiMatrix4x4& from)
 	return to;
 }
 
-Animation::Animation(const aiAnimation* animation, const aiNode* root, const MeshCreationData& mesh) : duration(animation->mDuration), ticksPerSecond(animation->mTicksPerSecond), time(0), transforms(animation->mNumChannels, glm::mat4(1.0f))
+Animation::Animation(const aiAnimation* animation, const aiNode* root, std::map<std::string, BoneInfo> boneInfoMap) : duration(animation->mDuration), ticksPerSecond(animation->mTicksPerSecond), time(0), transforms(animation->mNumChannels, glm::mat4(1.0f)), boneInfo(boneInfoMap)
 {
 	ReadHierarchy(this->root, root);
-	boneInfo = mesh.boneInfoMap;
 	ReadBones(animation);
 }
 
