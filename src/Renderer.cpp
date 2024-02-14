@@ -220,7 +220,7 @@ void Renderer::InitVulkan()
 	SetLogicalDevice();
 	swapchain = new Swapchain(logicalDevice, physicalDevice, surface, testWindow);
 	swapchain->CreateImageViews();
-	queryPool = Vulkan::CreateQueryPool(VK_QUERY_TYPE_TIMESTAMP, 6);
+	queryPool = Vulkan::CreateQueryPool(VK_QUERY_TYPE_TIMESTAMP, 10);
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	
@@ -259,17 +259,19 @@ void Renderer::InitVulkan()
 
 void Renderer::GetQueryResults()
 {
-	std::vector<uint64_t> results = Vulkan::GetQueryPoolResults(queryPool, 6);
+	std::vector<uint64_t> results = Vulkan::GetQueryPoolResults(queryPool, 10);
 
-	rayTracingTime =          (results[1] - results[0]) * 0.000001f; // nanoseconds to milliseconds
+	animationTime =           (results[1] - results[0]) * 0.000001f; // nanoseconds to milliseconds
+	rebuildingTime =          (results[3] - results[2]) * 0.000001f;
+	rayTracingTime =          (results[5] - results[4]) * 0.000001f;
 	if (denoiseOutput)
 	{
-		denoisingPrepTime =   (results[3] - results[2]) * 0.000001f;
-		finalRenderPassTime = (results[5] - results[4]) * 0.000001f;
+		denoisingPrepTime =   (results[7] - results[6]) * 0.000001f;
+		finalRenderPassTime = (results[9] - results[8]) * 0.000001f;
 	}
 	else
 	{
-		finalRenderPassTime = (results[3] - results[2]) * 0.000001f;
+		finalRenderPassTime = (results[7] - results[6]) * 0.000001f;
 		denoisingPrepTime = 0;
 		denoisingTime = 0;
 	}
@@ -818,13 +820,17 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	
 	VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
 	CheckVulkanResult("Failed to begin the given command buffer", result, vkBeginCommandBuffer);
-	vkCmdResetQueryPool(commandBuffer, queryPool, 0, 6);
+	vkCmdResetQueryPool(commandBuffer, queryPool, 0, 10);
 
+	WriteTimestamp(commandBuffer);
 	animationManager->ApplyAnimations(commandBuffer); // not good
+	WriteTimestamp(commandBuffer);
 
+	WriteTimestamp(commandBuffer);
 	for (Object* obj : objects)
 		for (Mesh& mesh : obj->meshes)
 			mesh.BLAS->RebuildGeometry(commandBuffer, mesh);
+	WriteTimestamp(commandBuffer);
 
 	WriteTimestamp(commandBuffer);
 	rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, commandBuffer, imageIndex);

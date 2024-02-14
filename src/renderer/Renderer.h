@@ -58,6 +58,8 @@ public:
 	uint32_t renderedObjects = 0;
 	uint32_t submittedCount = 0;
 
+	float animationTime = 0;
+	float rebuildingTime = 0;
 	float rayTracingTime = 0;
 	float denoisingPrepTime = 0;
 	float denoisingTime = 0;

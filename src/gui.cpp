@@ -582,10 +582,10 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 		ImGui::Text("GPU: %s   VRAM: %i MB", properties.deviceName, context.physicalDevice.VRAM() / 1024ULL / 1024ULL);
 
 		static int times = 0;
-		const char* labels[] = { "ray-tracing", "denoising prep", "denoising", "final pass" };
-		if (times > 5)
+		const char* labels[] = { "ray-tracing", "denoising prep", "denoising", "final pass", "animation", "rebuilding" };
+		if (times > 10)
 		{
-			values = { core.renderer->rayTracingTime, core.renderer->denoisingPrepTime, core.renderer->denoisingTime, core.renderer->finalRenderPassTime };
+			values = { core.renderer->rayTracingTime, core.renderer->denoisingPrepTime, core.renderer->denoisingTime, core.renderer->finalRenderPassTime, core.renderer->animationTime, core.renderer->rebuildingTime };
 			times = 0;
 		}
 		ImPlot::BeginPlot("timestap queries", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);

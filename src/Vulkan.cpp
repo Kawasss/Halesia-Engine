@@ -73,7 +73,7 @@ VkQueryPool Vulkan::CreateQueryPool(VkQueryType type, uint32_t amount)
     VkQueryPoolCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
     createInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
-    createInfo.queryCount = 8;
+    createInfo.queryCount = amount;
 
     VkResult result = vkCreateQueryPool(context.logicalDevice, &createInfo, nullptr, &ret);
     CheckVulkanResult("Failed to create a query pool", result, vkCreateQueryPool);
