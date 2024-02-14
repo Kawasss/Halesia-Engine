@@ -43,6 +43,8 @@ void main()
 		payload.rayActive = 0;
 		payload.rayDepth = 1;
 		
+		payload.albedo = vec3(0);
+		payload.normal = vec3(0);
 		return;
 	}
 
