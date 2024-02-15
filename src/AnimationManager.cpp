@@ -101,6 +101,8 @@ AnimationManager* AnimationManager::Get()
 void Animation::Update(float delta)
 {
 	time += delta / 1000 * ticksPerSecond;
+	if (!loop && fmod(time, duration) < time)
+		return;
 	time = fmod(time, duration);
 	ComputeTransform(&root, glm::mat4(1.0f));
 }
@@ -152,6 +154,15 @@ void AnimationManager::ComputeAnimations(float delta)
 
 void AnimationManager::ApplyAnimations(VkCommandBuffer commandBuffer)
 {
+	if (disable)
+	{
+		VkBufferCopy copy{};
+		copy.size = Renderer::g_defaultVertexBuffer.GetSize() * sizeof(Vertex);
+
+		vkCmdCopyBuffer(commandBuffer, Renderer::g_defaultVertexBuffer.GetBufferHandle(), Renderer::g_vertexBuffer.GetBufferHandle(), 1, &copy);
+		return;
+	}
+
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computeLayout, 0, 1, &descriptorSet, 0, nullptr);
 	vkCmdDispatch(commandBuffer, Renderer::g_defaultVertexBuffer.GetSize() / 16 + 1, 1, 1);

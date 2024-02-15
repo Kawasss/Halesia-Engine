@@ -10,6 +10,7 @@ class AnimationTest : public Scene
 	std::vector<Animation> animations;
 	Object* obj = nullptr;
 	Object* light = nullptr;
+	bool loop = true;
 
 	void Start() override
 	{
@@ -46,6 +47,8 @@ class AnimationTest : public Scene
 
 		light->meshes[0].SetMaterial(lightMat);
 		obj->meshes[0].SetMaterial(agentMat);
+
+		Console::AddConsoleVariable("loop", &loop);
 	}
 
 	void Update(float delta) override
@@ -63,6 +66,9 @@ class AnimationTest : public Scene
 			manager->AddAnimation(&animations[index]);
 		}
 		wasPressed = isPressed;
+
+		obj->transform.rotation.x = manager->disable ? 0 : 180;
+		animations[index].loop = loop;
 		//obj->transform.position = camera->position;
 		//obj->transform.rotation = glm::vec3(-180, glm::degrees(camera->yaw) + 90, 180);
 	}

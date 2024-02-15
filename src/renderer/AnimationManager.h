@@ -23,6 +23,8 @@ public:
 	void Update(float delta);
 	void Reset();
 
+	bool loop = true;
+
 private:
 	struct HierarchyNode
 	{
@@ -55,6 +57,8 @@ public:
 	void AddAnimation(Animation* animation);
 	void RemoveAnimation(Animation* animation);
 	void Destroy();
+
+	bool disable = false;
 
 private:
 	void Create();

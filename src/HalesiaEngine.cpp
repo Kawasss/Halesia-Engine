@@ -368,8 +368,8 @@ void HalesiaEngine::OnExit()
 void HalesiaEngine::RegisterConsoleVars()
 {
 	Console::AddConsoleVariables<bool>(
-		{ "pauseGame", "showFPS", "playOneFrame", "showRAM", "showCPU", "showGPU", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "useEditorUI", "denoiseOutput" },
-		{ &pauseGame, &showFPS, &playOneFrame, &showRAM, &showCPU, &showGPU, &showAsyncTimes, &showObjectData, &RayTracing::showNormals, &RayTracing::showAlbedo, &RayTracing::showUniquePrimitives, &RayTracing::renderProgressive, &core.renderer->shouldRasterize, &useEditor, &Renderer::denoiseOutput }
+		{ "pauseGame", "showFPS", "playOneFrame", "showRAM", "showCPU", "showGPU", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "useEditorUI", "denoiseOutput", "disableAnimations" },
+		{ &pauseGame, &showFPS, &playOneFrame, &showRAM, &showCPU, &showGPU, &showAsyncTimes, &showObjectData, &RayTracing::showNormals, &RayTracing::showAlbedo, &RayTracing::showUniquePrimitives, &RayTracing::renderProgressive, &core.renderer->shouldRasterize, &useEditor, &Renderer::denoiseOutput, &core.animationManager->disable }
 	);
 	Console::AddConsoleVariable("raySamples", &RayTracing::raySampleCount);
 	Console::AddConsoleVariable("rayDepth", &RayTracing::rayDepth);
