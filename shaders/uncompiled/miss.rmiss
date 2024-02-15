@@ -43,7 +43,7 @@ void main()
 		payload.rayActive = 0;
 		payload.rayDepth = 1;
 		
-		payload.albedo = vec3(0);
+		payload.albedo = skyColor;
 		payload.normal = vec3(0);
 		return;
 	}
@@ -55,7 +55,7 @@ void main()
 	payload.indirectColor += payload.directColor;// * strength;
 	payload.rayDepth++;
 
-	payload.albedo = vec3(0);
+	payload.albedo = payload.rayDirection.y > 0 ? mix(vec3(0.7, 1, 1), vec3(0.1, 0.85, 1), payload.rayDirection.y) : vec3(0.2);
 	payload.normal = vec3(0);
 
 	payload.rayActive = 0; 
