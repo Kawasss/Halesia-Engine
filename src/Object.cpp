@@ -76,6 +76,36 @@ void Object::AddChild(Object* object)
 	object->transform.parent = &transform;
 }
 
+void Object::DeleteChild(Object* child)
+{
+	std::vector<Object*>::iterator iter = std::find(children.begin(), children.end(), child);
+	if (iter == children.end())
+		return;
+
+	(*iter)->Destroy();
+	children.erase(iter);
+	delete child;
+}
+
+void Object::RemoveChild(Object* child)
+{
+	std::vector<Object*>::iterator iter = std::find(children.begin(), children.end(), child);
+	if (iter == children.end())
+		return;
+	children.erase(iter);
+}
+
+void Object::TransferChild(Object* child, Object* destination)
+{
+	std::vector<Object*>::iterator iter = std::find(children.begin(), children.end(), child);
+	if (iter == children.end())
+		return;
+
+	children.erase(iter);
+	destination->children.push_back(child);
+	child->parent = destination;
+}
+
 void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script)
 {
 	newObjPtr->meshes = oldObjPtr->meshes;
@@ -119,6 +149,7 @@ void Object::Destroy()
 		mesh.Destroy();
 	for (Object* obj : children)
 		obj->Destroy();
+	if (parent != nullptr)
+		parent->RemoveChild(this);
 	delete this;
 }
-

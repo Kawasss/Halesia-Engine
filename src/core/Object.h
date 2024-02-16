@@ -74,6 +74,9 @@ public:
 	void AddRigidBody(RigidBodyType type, Shape shape);
 	void AddMesh(const std::vector<MeshCreationData>& creationData);
 	void AddChild(Object* object);
+	void RemoveChild(Object* child); // those removes the child from this objects children
+	void DeleteChild(Object* child); // this does the same as RemoveChild, but also deletes the object
+	void TransferChild(Object* child, Object* destination); // this removes the child from this objects children and adds to the destinations children
 
 	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script);
 
