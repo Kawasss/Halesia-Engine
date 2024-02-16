@@ -124,12 +124,12 @@ void Swapchain::CopyImageToSwapchain(VkImage image, VkCommandBuffer commandBuffe
 
 void Swapchain::Destroy()
 {
-    /*vkDestroyImageView(logicalDevice, depthImageView, nullptr);
+    vkDestroyImageView(logicalDevice, depthImageView, nullptr);
     vkDestroyImage(logicalDevice, depthImage, nullptr);
     vkFreeMemory(logicalDevice, depthImageMemory, nullptr);
 
     for (const VkFramebuffer& framebuffer : framebuffers)
-        vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);*/
+        vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
 
     for (const VkImageView& imageView : imageViews)
         vkDestroyImageView(logicalDevice, imageView, nullptr);   

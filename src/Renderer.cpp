@@ -468,6 +468,9 @@ void Renderer::CreateDeferredFramebuffer(uint32_t width, uint32_t height)
 	if (!gBufferViews.empty())
 	{
 		vkDestroyFramebuffer(logicalDevice, deferredFramebuffer, nullptr);
+		vkDestroyImage(logicalDevice, deferredDepth, nullptr);
+		vkFreeMemory(logicalDevice, deferredDepthMemory, nullptr);
+		vkDestroyImageView(logicalDevice, deferredDepthView, nullptr);
 		for (int i = 0; i < gBufferViews.size(); i++)
 		{
 			vkDestroyImage(logicalDevice, gBufferImages[i], nullptr);
