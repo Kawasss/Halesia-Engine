@@ -294,7 +294,7 @@ void Denoiser::SharedOptixImage::Destroy(VkDevice logicalDevice)
 	if (vkMemory != VK_NULL_HANDLE)
 		vkFreeMemory(logicalDevice, vkMemory, nullptr);
 	if (cudaBuffer != 0)
-		cudaFree(cudaBuffer);
+		CheckCudaResult(cudaFree(cudaBuffer));
 }
 
 void Denoiser::DestroyBuffers()
@@ -305,7 +305,7 @@ void Denoiser::DestroyBuffers()
 		cudaFree((void*)scratchBuffer);
 	if (minRGB != 0)
 		cudaFree((void*)minRGB);
-
+	
 	const Vulkan::Context& context = Vulkan::GetContext();
 	input.Destroy(context.logicalDevice);
 	output.Destroy(context.logicalDevice);

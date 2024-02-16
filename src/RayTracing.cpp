@@ -378,7 +378,8 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 		Vulkan::EndSingleTimeCommands(context.graphicsQueue, imageBarrierCommandBuffer, commandPool);
 	}
 	imageHasChanged = true;
-	denoiser->AllocateBuffers(width, height);
+	if (Renderer::denoiseOutput)
+		denoiser->AllocateBuffers(width, height);
 }
 
 
