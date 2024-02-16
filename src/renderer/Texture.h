@@ -10,6 +10,16 @@ enum TextureFormat
 	TEXTURE_FORMAT_UNORM = VK_FORMAT_R8G8B8A8_UNORM,
 };
 
+struct Color
+{
+	explicit Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) : r(r), g(g), b(b), a(a) {}
+	explicit Color(float r, float g, float b, float a = 1.0f) : r(uint8_t(r * 255)), g(uint8_t(g * 255)), b(uint8_t(b * 255)), a(uint8_t(a * 255)) {}
+	uint8_t* GetData() const;
+	
+private:
+	uint8_t r, g, b, a;
+};
+
 class Image
 {
 public:
@@ -42,6 +52,7 @@ protected:
 	void TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void CopyBufferToImage(VkBuffer buffer);
 	void GenerateMipMaps(VkFormat imageFormat);
+	void WritePixelsToBuffer(std::vector<uint8_t*> pixels, bool useMipMaps, TextureFormat format);
 
 	static bool texturesHaveChanged;
 };
@@ -65,5 +76,6 @@ public:
 	static void DestroyPlaceholderTextures();
 
 	Texture(std::string filePath, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
-	Texture(std::vector<char> imageData, bool useMipMaps = true);
+	Texture(std::vector<char> imageData, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
+	Texture(const Color& color, TextureFormat format = TEXTURE_FORMAT_SRGB); // solid color textures cannot use mip maps because theyre already 1x1
 };

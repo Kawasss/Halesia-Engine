@@ -15,6 +15,11 @@ Texture* Texture::placeholderMetallic = nullptr;
 Texture* Texture::placeholderRoughness = nullptr;
 Texture* Texture::placeholderAmbientOcclusion = nullptr;
 
+uint8_t* Color::GetData() const
+{
+	return (uint8_t*)this;
+}
+
 bool Image::TexturesHaveChanged()
 {
 	bool ret = texturesHaveChanged;
@@ -41,42 +46,10 @@ void Image::GenerateImages(std::vector<std::vector<char>>& textureData, bool use
 	for (uint32_t i = 0; i < layerCount; i++)
 		pixels[i] = stbi_load_from_memory((unsigned char*)textureData[i].data(), (int)textureData[i].size(), &width, &height, &textureChannels, STBI_rgb_alpha);
 
-	VkDeviceSize layerSize = width * height * 4;
-	VkDeviceSize imageSize = layerSize * layerCount;
+	WritePixelsToBuffer(pixels, useMipMaps, format);
 
-	if (layerSize == 0)
-		throw std::runtime_error("Invalid image found: layer size is 0");
-
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
-	
-	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
-	Vulkan::CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
-
-	// copy all of the different sides of the cubemap into a single buffer
-	void* data;
-	vkMapMemory(logicalDevice, stagingBufferMemory, 0, imageSize, 0, &data);
 	for (uint32_t i = 0; i < layerCount; i++)
-		memcpy((char*)data + (layerSize * i), pixels[i], static_cast<size_t>(imageSize)); // cast the void* to char for working arithmetic
-	vkUnmapMemory(logicalDevice, stagingBufferMemory);
-
-	for (uint32_t i = 0; i < layerCount; i++) // dont know if this can be put in the other for loop used for reading the files
 		stbi_image_free(pixels[i]);
-
-	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-	Vulkan::CreateImage(width, height, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
-	
-	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	CopyBufferToImage(stagingBuffer);
-
-	vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
-	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
-
-	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
-	imageView = Vulkan::CreateImageView(image, viewType, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_ASPECT_COLOR_BIT);
-	if (useMipMaps) GenerateMipMaps((VkFormat)format);
-
-	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
 
 	this->texturesHaveChanged = true;
 }
@@ -115,6 +88,45 @@ void Image::GenerateEmptyImages(int width, int height, int amount)
 	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
 
 	this->texturesHaveChanged = true;
+}
+
+void Image::WritePixelsToBuffer(std::vector<uint8_t*> pixels, bool useMipMaps, TextureFormat format)
+{
+	const Vulkan::Context context = Vulkan::GetContext();
+
+	VkDeviceSize layerSize = width * height * 4;
+	VkDeviceSize imageSize = layerSize * layerCount;
+
+	if (layerSize == 0)
+		throw std::runtime_error("Invalid image found: layer size is 0");
+
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+
+	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+	Vulkan::CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+	// copy all of the different sides of the cubemap into a single buffer
+	void* data;
+	vkMapMemory(logicalDevice, stagingBufferMemory, 0, imageSize, 0, &data);
+	for (uint32_t i = 0; i < layerCount; i++)
+		memcpy((char*)data + (layerSize * i), pixels[i], static_cast<size_t>(imageSize)); // cast the void* to char for working arithmetic
+	vkUnmapMemory(logicalDevice, stagingBufferMemory);
+
+	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
+	Vulkan::CreateImage(width, height, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
+
+	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	CopyBufferToImage(stagingBuffer);
+
+	vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
+	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
+
+	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
+	imageView = Vulkan::CreateImageView(image, viewType, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_ASPECT_COLOR_BIT);
+	if (useMipMaps) GenerateMipMaps((VkFormat)format);
+
+	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
 }
 
 void Image::AwaitGeneration()
@@ -159,16 +171,30 @@ Texture::Texture(std::string filePath, bool useMipMaps, TextureFormat format)
 		}, this, filePath, useMipMaps, format);
 }
 
-Texture::Texture(std::vector<char> imageData, bool useMipMaps)
+Texture::Texture(std::vector<char> imageData, bool useMipMaps, TextureFormat format)
 {
 	if (imageData.empty())
 		throw std::runtime_error("Invalid texture size: imageData.empty()");
 
-	generation = std::async([](Texture* texture, std::vector<char> imageData, bool useMipMaps) 
+	generation = std::async([](Texture* texture, std::vector<char> imageData, bool useMipMaps, TextureFormat format) 
 		{
 			std::vector<std::vector<char>> data{ imageData };
-			texture->GenerateImages(data, useMipMaps);
-		}, this, imageData, useMipMaps);
+			texture->GenerateImages(data, useMipMaps, format);
+		}, this, imageData, useMipMaps, format);
+}
+
+Texture::Texture(const Color& color, TextureFormat format)
+{
+	const Vulkan::Context context = Vulkan::GetContext();
+	logicalDevice = context.logicalDevice;
+	commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
+	queue = context.graphicsQueue;
+	physicalDevice = context.physicalDevice;
+	width = 1, height = 1, layerCount = 1;
+	generation = std::async([](Texture* texture, const Color& color, TextureFormat format)
+		{
+			texture->WritePixelsToBuffer({ color.GetData() }, false, format);
+		}, this, color, format);
 }
 
 void Texture::GeneratePlaceholderTextures()

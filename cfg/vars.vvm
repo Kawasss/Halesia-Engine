@@ -6,10 +6,10 @@ engineCore:
 renderer: 
 	interalRes: 1.000000
 	renderCollision: 1
-	denoiseOutput: 1
+	denoiseOutput: 0
 	ray-tracing: 
 		raySamples: 1
-		rayDepth: 8
+		rayDepth: 16
 		showNormals: 0
 		showUnique: 0
 		showAlbedo: 0
