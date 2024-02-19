@@ -9,7 +9,8 @@ enum RigidBodyType
 {
 	RIGID_BODY_NONE,
 	RIGID_BODY_STATIC,
-	RIGID_BODY_DYNAMIC
+	RIGID_BODY_DYNAMIC,
+	RIGID_BODY_KINEMATIC,
 };
 inline extern std::string RigidBodyTypeToString(RigidBodyType type);
 

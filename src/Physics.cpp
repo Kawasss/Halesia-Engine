@@ -31,11 +31,20 @@ void PhysicsOnContactCallback::onContact(const physx::PxContactPairHeader& pairH
 		Object* secondObj = static_cast<Object*>(pairHeader.actors[1]->userData);
 
 		if (pairs->events & physx::PxPairFlag::eNOTIFY_TOUCH_FOUND)
+		{
 			firstObj->OnCollisionEnter();
+			secondObj->OnCollisionEnter();
+		}
 		else if (pairs->events & physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS)
+		{
 			firstObj->OnCollisionStay();
+			secondObj->OnCollisionStay();
+		}
 		else if (pairs->events & physx::PxPairFlag::eNOTIFY_TOUCH_LOST)
+		{
 			firstObj->OnCollisionExit();
+			secondObj->OnCollisionExit();
+		}
 	}
 }
 
@@ -68,13 +77,29 @@ Physics::Physics()
 	physx::PxSceneDesc sceneInfo{ physicsObject->getTolerancesScale() };
 	sceneInfo.gravity = physx::PxVec3(0.0f, -9.81f, 0.0f);
 	sceneInfo.cpuDispatcher = dispatcher;
-	sceneInfo.filterShader = physx::PxDefaultSimulationFilterShader;
+	sceneInfo.filterShader = FilterShader;
 	sceneInfo.flags = physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 	sceneInfo.simulationEventCallback = &contactCallback;
 	sceneInfo.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneInfo.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	
 	scene = physicsObject->createScene(sceneInfo);
+}
+
+physx::PxFilterFlags Physics::FilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0, physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1, physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize)
+{
+	if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1))
+	{
+		pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
+		return physx::PxFilterFlag::eDEFAULT;
+	}
+
+	pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
+
+	//if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
+		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
+
+	return physx::PxFilterFlag::eDEFAULT;
 }
 
 Physics::~Physics()
@@ -105,7 +130,7 @@ void Physics::FetchAndUpdateObjects()
 	physx::PxActor** actors = FetchResults(numActors);
 	if (actors == nullptr)
 		return;
-
+	
 	for (int i = 0; i < numActors; i++)
 	{
 		physx::PxActor* actor = actors[i];
@@ -122,7 +147,8 @@ void Physics::FetchAndUpdateObjects()
 
 void Physics::AddActor(physx::PxActor& actor)
 {
-	physics->scene->addActor(actor);
+	if (!physics->scene->addActor(actor))
+		throw std::runtime_error("Failed to add an actor");
 }
 
 void Physics::RemoveActor(physx::PxActor& actor)
@@ -138,7 +164,8 @@ void Physics::Simulate(float delta)
 
 	physics->timeSinceLastStep -= simulationStep;
 
-	physics->scene->simulate(simulationStep);
+	if (!physics->scene->simulate(simulationStep))
+		throw std::runtime_error("cannot simulate physics");
 	physics->canBeFetched = true;
 }
 
@@ -147,7 +174,8 @@ physx::PxActor** Physics::FetchResults(uint32_t& num)
 	if (!physics->canBeFetched)
 		return nullptr;
 
-	physics->scene->fetchResults(true);
+	if (!physics->scene->fetchResults(true))
+		throw std::runtime_error("cannot fetch physics");
 	physics->canBeFetched = false;
 	return physics->scene->getActiveActors(num);
 }

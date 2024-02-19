@@ -4,73 +4,112 @@
 
 #include "system/Input.h"
 
-class AnimationTest : public Scene
+class FollowCam : public Camera
 {
-	AnimationManager* manager;
-	std::vector<Animation> animations;
-	Object* obj = nullptr;
-	Object* light = nullptr;
-	bool loop = true;
+public:
+	Object* objToFollow = nullptr;
 
 	void Start() override
 	{
-		SceneLoader loader{ "stdObj/animation.fbx" };
-		loader.LoadFBXScene();
-		obj = AddStaticObject(loader.objects.back());
-		
-		obj->name = "animation";
-		obj->transform.scale = glm::vec3(.1f);
-		obj->transform.rotation.z = 180;
-		animations = loader.animations;
+		position.y = 8;
+	}
 
-		manager = AnimationManager::Get();
-		manager->AddAnimation(&animations[0]);
+	void Update(Win32Window* window, float delta) override
+	{
+		position = objToFollow->transform.position;
+		position.y = 8;
+		position.z += 5;
+		pitch = glm::radians(-45.0f);
+		UpdateVectors();
+	}
+};
 
-		light = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
-		light->AwaitGeneration();
-
-		light->transform.scale = glm::vec3(100, 1, 100);
-		light->transform.position = glm::vec3(0, 30, 0);
-
-		Object* floor = DuplicateStaticObject(light, "floor");
-		floor->transform.position = glm::vec3(0, -1, 0);
-
-		MaterialCreateInfo createInfo{};
-		createInfo.isLight = true;
-		Material lightMat = Material::Create(createInfo);
-		lightMat.AwaitGeneration();
-
-		MaterialCreateInfo agentInfo{};
-		agentInfo.albedo = "textures/uv.png";
-		Material agentMat = Material::Create(agentInfo);
-		agentMat.AwaitGeneration();
-
-		light->meshes[0].SetMaterial(lightMat);
-		obj->meshes[0].SetMaterial(agentMat);
-
-		Console::AddConsoleVariable("loop", &loop);
+class Ship : public Object
+{
+	Win32Window* mouse;
+	void Start() override
+	{
+		AwaitGeneration();
+		Shape shape = Box(meshes[0].extents);
+		AddRigidBody(RIGID_BODY_KINEMATIC, shape);
+		mouse = HalesiaEngine::GetInstance()->GetEngineCore().window;
 	}
 
 	void Update(float delta) override
 	{
-		static bool wasPressed = false;
-		static int index = 0;
-		
-		bool isPressed = Input::IsKeyPressed(VirtualKey::RightArrow) && !Input::IsKeyPressed(VirtualKey::LeftControl);
-		if (!isPressed && wasPressed)
-		{
-			animations[index].Reset();
-				manager->RemoveAnimation(&animations[index]);
-			index = ++index % animations.size();
-			std::cout << index << '\n';
-			manager->AddAnimation(&animations[index]);
-		}
-		wasPressed = isPressed;
+		int x, y;
+		mouse->GetRelativeCursorPosition(x, y);
+		transform.rotation += glm::vec3(0, cos(x) * sin(y), 0);
 
-		obj->transform.rotation.x = manager->disable ? 0 : 180;
-		animations[index].loop = loop;
-		//obj->transform.position = camera->position;
-		//obj->transform.rotation = glm::vec3(-180, glm::degrees(camera->yaw) + 90, 180);
+		if (!Input::IsKeyPressed(VirtualKey::LeftControl))
+			return;
+		
+		if (Input::IsKeyPressed(VirtualKey::W))
+			transform.position.z -= delta * 0.01f;
+		if (Input::IsKeyPressed(VirtualKey::S))
+			transform.position.z += delta * 0.01f;
+		if (Input::IsKeyPressed(VirtualKey::A))
+			transform.position.x -= delta * 0.01f;
+		if (Input::IsKeyPressed(VirtualKey::D))
+			transform.position.x += delta * 0.01f;
+
+		rigid.MovePosition(transform);
+	}
+
+	void OnCollisionEnter() override
+	{
+		std::cout << __FUNCTION__ << '\n';
+	}
+	void OnCollisionStay() override
+	{
+		std::cout << __FUNCTION__ << '\n';
+	}
+	void OnCollisionExit() override
+	{
+		std::cout << __FUNCTION__ << '\n';
+	}
+};
+
+class CollisionTest : public Scene
+{
+	void Start() override
+	{
+		camera = AddCustomCamera<FollowCam>();
+
+		Object* ship = AddCustomObject<Ship>(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		ship->AwaitGeneration();
+		camera->GetScript<FollowCam>()->objToFollow = ship;
+
+		Object* floor = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		floor->AwaitGeneration();
+		floor->name = "floor";
+		floor->transform.scale = glm::vec3(20, 1, 20);
+		floor->transform.position.y = -3;
+
+		Shape floorShape = Box(glm::vec3(20, 1, 20));
+		floor->AddRigidBody(RIGID_BODY_STATIC, floorShape);
+		floor->rigid.ForcePosition(floor->transform);
+
+		Object* light = DuplicateStaticObject(floor, "light");
+		light->transform.position.y = 10;
+
+		MaterialCreateInfo lightInfo{};
+		lightInfo.isLight = true;
+		Material lightMat = Material::Create(lightInfo);
+		light->meshes[0].SetMaterial(lightMat);
+
+		Object* box = DuplicateStaticObject(floor, "box");
+		box->AwaitGeneration();
+		box->transform.scale = glm::vec3(1, 1, 1);
+		box->transform.position = glm::vec3(5, 0, 0);
+
+		Shape boxShape = Box(box->meshes[0].extents);
+		box->AddRigidBody(RIGID_BODY_DYNAMIC, boxShape);
+	}
+
+	void Update(float delta) override
+	{
+
 	}
 };
 
@@ -80,7 +119,7 @@ int main(int argsCount, char** args)
 	HalesiaEngineCreateInfo createInfo{};
 	createInfo.argsCount = argsCount;
 	createInfo.args = args;
-	createInfo.startingScene = new AnimationTest();
+	createInfo.startingScene = new CollisionTest();
 	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;
 	createInfo.windowCreateInfo.height = 600;

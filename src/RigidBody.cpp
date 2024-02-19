@@ -13,11 +13,16 @@ RigidBody::RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos, glm::vec3 r
 	{
 	case RIGID_BODY_DYNAMIC:
 		rigidDynamic = physx::PxCreateDynamic(*Physics::GetPhysicsObject(), transform, *shape.GetShape(), 1);
-		Physics::physics->AddActor(*rigidDynamic);
+		Physics::AddActor(*rigidDynamic);
 		break;
 	case RIGID_BODY_STATIC:
 		rigidStatic = physx::PxCreateStatic(*Physics::GetPhysicsObject(), transform, *shape.GetShape());
-		Physics::physics->AddActor(*rigidStatic);
+		Physics::AddActor(*rigidStatic);
+		break;
+	case RIGID_BODY_KINEMATIC:
+		rigidDynamic = physx::PxCreateDynamic(*Physics::GetPhysicsObject(), transform, *shape.GetShape(), 1);
+		Physics::AddActor(*rigidDynamic);
+		rigidDynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
 		break;
 	case RIGID_BODY_NONE:
 		throw std::invalid_argument("Failed to create a rigidbody: invalid rigidbody type argument (RIGID_BODY_NONE)");
@@ -26,9 +31,7 @@ RigidBody::RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos, glm::vec3 r
 
 void RigidBody::MovePosition(Transform& transform) // only works if the rigid is dynamic !!
 {
-	physx::PxTransform trans = GetTransform(transform);
-	rigidDynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
-	rigidDynamic->setKinematicTarget(trans);
+	rigidDynamic->setKinematicTarget(GetTransform(transform));
 }
 
 void RigidBody::ForcePosition(Transform& transform)
@@ -56,7 +59,7 @@ void RigidBody::ChangeShape(Shape& shape)
 void RigidBody::Destroy()
 {
 	physx::PxActor* actor = rigidDynamic == nullptr ? rigidStatic->is<physx::PxActor>() : rigidDynamic->is<physx::PxActor>();
-	Physics::physics->RemoveActor(*actor);
+	Physics::RemoveActor(*actor);
 }
 
 glm::vec3 RigidBody::GetPosition()

@@ -88,7 +88,7 @@ void Object::DeleteChild(Object* child)
 }
 
 void Object::RemoveChild(Object* child)
-{
+{ 
 	std::vector<Object*>::iterator iter = std::find(children.begin(), children.end(), child);
 	if (iter == children.end())
 		return;

@@ -58,6 +58,8 @@ public:
 	static bool CastRay(glm::vec3 pos, glm::vec3 dir, float maxDistance, RayHitInfo& hitInfo);
 
 private:
+	static physx::PxFilterFlags FilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0, physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1, physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize);
+
 	PhysXErrorHandler errorHandler{};
 	PhysicsOnContactCallback contactCallback{};
 	physx::PxDefaultAllocator allocator{};
