@@ -44,6 +44,13 @@ std::unordered_map<std::string, Console::Token> Console::stringToToken =
 	{ " ",   LEXER_TOKEN_SEPERATOR }, { ";",   LEXER_TOKEN_SEPERATOR }, { ".",      LEXER_TOKEN_SEPERATOR }, { ",",      LEXER_TOKEN_SEPERATOR }, { "\n",     LEXER_TOKEN_SEPERATOR },
 	{ "{",   LEXER_TOKEN_SEPERATOR }, { "}",   LEXER_TOKEN_SEPERATOR }, { "(",      LEXER_TOKEN_SEPERATOR }, { ")",      LEXER_TOKEN_SEPERATOR }, { "!=",     LEXER_TOKEN_OPERATOR  },
 };
+// this is defined as a macro so that it can directly exit out of a function
+#define CheckForInvalidAccess(metadata, ret)                                                \
+if (metadata.location == nullptr)                                                           \
+{                                                                                           \
+	WriteLine("Cannot write to the given location: it is invalid", MESSAGE_SEVERITY_ERROR); \
+	return ret;                                                                             \
+}
 
 bool Console::isOpen = false;
 
@@ -465,6 +472,7 @@ void Console::EvaluateToken(TokenContent& token)
 
 void Console::AssignRValueToLValue(VariableMetadata& lvalue, void* rvalue) // the rvalue is automatically cast to the type of the lvalue since it assumes that the user uses the correct types for everything, otherwise it can cause for incorrect casting
 {                                                                          // wrong casting can result in freezing with for example casting a float pointer to an int pointer (a small int is the same as an incredibly large float)
+	CheckForInvalidAccess(lvalue,);
 	switch (lvalue.type)
 	{
 	case VARIABLE_TYPE_BOOL:
@@ -484,6 +492,7 @@ void Console::AssignRValueToLValue(VariableMetadata& lvalue, void* rvalue) // th
 
 void Console::AddLocationValue(float& value, VariableMetadata& metadata)
 {
+	CheckForInvalidAccess(metadata,);
 	switch (metadata.type)
 	{
 	case VARIABLE_TYPE_BOOL:
@@ -500,6 +509,7 @@ void Console::AddLocationValue(float& value, VariableMetadata& metadata)
 
 std::string Console::GetVariableAsString(VariableMetadata& metadata)
 {
+	CheckForInvalidAccess(metadata, "");
 	switch (metadata.type)
 	{
 	case VARIABLE_TYPE_BOOL:   return *static_cast<bool*>(metadata.location) == 1 ? "true" : "false";
@@ -512,6 +522,7 @@ std::string Console::GetVariableAsString(VariableMetadata& metadata)
 
 float Console::GetFloatFromVariable(VariableMetadata& metadata)
 {
+	CheckForInvalidAccess(metadata, 0);
 	switch (metadata.type)
 	{
 	case VARIABLE_TYPE_BOOL:  return *static_cast<bool*>(metadata.location);
