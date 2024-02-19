@@ -32,18 +32,18 @@ void PhysicsOnContactCallback::onContact(const physx::PxContactPairHeader& pairH
 
 		if (pairs->events & physx::PxPairFlag::eNOTIFY_TOUCH_FOUND)
 		{
-			firstObj->OnCollisionEnter();
-			secondObj->OnCollisionEnter();
+			firstObj->OnCollisionEnter(secondObj);
+			secondObj->OnCollisionEnter(firstObj);
 		}
 		else if (pairs->events & physx::PxPairFlag::eNOTIFY_TOUCH_PERSISTS)
 		{
-			firstObj->OnCollisionStay();
-			secondObj->OnCollisionStay();
+			firstObj->OnCollisionStay(secondObj);
+			secondObj->OnCollisionStay(firstObj);
 		}
 		else if (pairs->events & physx::PxPairFlag::eNOTIFY_TOUCH_LOST)
 		{
-			firstObj->OnCollisionExit();
-			secondObj->OnCollisionExit();
+			firstObj->OnCollisionExit(secondObj);
+			secondObj->OnCollisionExit(firstObj);
 		}
 	}
 }

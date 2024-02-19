@@ -49,9 +49,9 @@ public:
 	virtual void Destroy();
 	virtual void Update(float delta);
 
-	virtual void OnCollisionEnter() {}
-	virtual void OnCollisionStay()  {}
-	virtual void OnCollisionExit()  {}
+	virtual void OnCollisionEnter(Object* object) {}
+	virtual void OnCollisionStay(Object* object)  {}
+	virtual void OnCollisionExit(Object* object)  {}
 
 	bool HasFinishedLoading();
 	bool HasScript()    { return scriptClass == nullptr; }

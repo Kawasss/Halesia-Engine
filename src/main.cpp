@@ -56,15 +56,15 @@ class Ship : public Object
 		rigid.MovePosition(transform);
 	}
 
-	void OnCollisionEnter() override
+	void OnCollisionEnter(Object* object) override
+	{
+		std::cout << "collided with " << object->name << '\n';
+	}
+	void OnCollisionStay(Object* object) override
 	{
 		std::cout << __FUNCTION__ << '\n';
 	}
-	void OnCollisionStay() override
-	{
-		std::cout << __FUNCTION__ << '\n';
-	}
-	void OnCollisionExit() override
+	void OnCollisionExit(Object* object) override
 	{
 		std::cout << __FUNCTION__ << '\n';
 	}
