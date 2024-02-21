@@ -104,8 +104,8 @@ template<typename T> Object* Scene::AddCustomObject(const ObjectCreationData& cr
 {
 	T* customPointer = new T();
 	Object* objPtr = customPointer;
-	objPtr->Initialize(creationData, customPointer);
 	RegisterObjectPointer(objPtr, true);
+	objPtr->Initialize(creationData, customPointer);
 
 	return objPtr;
 }
@@ -128,9 +128,9 @@ template<typename T> Object* Scene::AddCustomObject(std::string name, ObjectImpo
 
 	T* customPointer = new T();
 	Object* objPtr = customPointer;
-	objPtr->Initialize(creationData, customPointer);
 	RegisterObjectPointer(objPtr, true);
-
+	objPtr->Initialize(creationData, customPointer);
+	
 	return objPtr;
 }
 
@@ -140,6 +140,7 @@ template<typename T> Object* Scene::DuplicateCustomObject(Object* objPtr, std::s
 	Object* newObjPtr = tPtr;
 	Object::Duplicate(objPtr, newObjPtr, name, tPtr);
 	RegisterObjectPointer(newObjPtr, true);
+	newObjPtr->Start();
 	
 	return newObjPtr;
 }

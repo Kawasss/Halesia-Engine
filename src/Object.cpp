@@ -151,5 +151,8 @@ void Object::Destroy()
 		obj->Destroy();
 	if (parent != nullptr)
 		parent->RemoveChild(this);
+	meshes.clear();
+	rigid.Destroy();
+	rigid.type = RIGID_BODY_NONE;
 	delete this;
 }

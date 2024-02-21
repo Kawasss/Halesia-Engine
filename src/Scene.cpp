@@ -115,6 +115,7 @@ void Scene::RegisterObjectPointer(Object* objPtr, bool isCustom)
 {
 	objectHandles[objPtr->handle] = objPtr;
 	allObjects.push_back(objPtr);
+	objPtr->scene = this;
 	if (isCustom)
 		objectsWithScripts.push_back(objPtr);
 }
@@ -171,14 +172,21 @@ void Scene::UpdateScripts(float delta)
 	if (!HasFinishedLoading())
 		return;
 	
-	std::for_each(std::execution::par, objectsWithScripts.begin(), objectsWithScripts.end(), [&](Object* object) // update all of the scripts in parallel
-		{
-			std::lock_guard<std::mutex> lockGuard(object->mutex);
-			if (object->shouldBeDestroyed)
-				Free(object);
-			else if (object->state != OBJECT_STATE_DISABLED)
-				object->Update(delta);
-		});
+	//std::for_each(std::execution::par, objectsWithScripts.begin(), objectsWithScripts.end(), [&](Object* object) // update all of the scripts in parallel
+	//	{
+	//		std::lock_guard<std::mutex> lockGuard(object->mutex);
+	//		if (object->shouldBeDestroyed)
+	//			Free(object);
+	//		else if (object->state != OBJECT_STATE_DISABLED)
+	//			object->Update(delta);
+	//	});
+	for (int i = 0; i < objectsWithScripts.size(); i++)
+	{
+		if (objectsWithScripts[i]->shouldBeDestroyed)
+			Free(objectsWithScripts[i]);
+		else if (objectsWithScripts[i]->state != OBJECT_STATE_DISABLED)
+			objectsWithScripts[i]->Update(delta);
+	}
 }
 
 void Scene::Destroy()

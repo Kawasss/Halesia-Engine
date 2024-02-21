@@ -96,6 +96,9 @@ physx::PxFilterFlags Physics::FilterShader(physx::PxFilterObjectAttributes attri
 
 	pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
 
+	if (physx::PxFilterObjectIsKinematic(attributes0) && physx::PxFilterObjectIsKinematic(attributes1))
+		pairFlags &= ~physx::PxPairFlag::eSOLVE_CONTACT;
+
 	//if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
 		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
 

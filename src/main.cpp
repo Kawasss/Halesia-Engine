@@ -24,15 +24,50 @@ public:
 	}
 };
 
+class Bullet : public Object
+{
+public:
+	glm::vec3 forward = glm::vec3(0);
+
+	void Start() override
+	{
+		//Shape shape = Box(meshes[0].extents);
+		//AddRigidBody(RIGID_BODY_KINEMATIC, shape);
+	}
+
+	void Update(float delta) override
+	{
+		//transform.position += forward * delta;
+		//rigid.MovePosition(transform);
+	}
+
+	void OnCollisionEnter(Object* object) override
+	{
+		if (object->name == "box")
+		{
+			forward = glm::vec3(0);
+		}
+	}
+};
+
 class Ship : public Object
 {
+	static constexpr float fireRate = 1 / 4;
+	bool lastFrame = false;
+
 	Win32Window* mouse;
+	Object* baseBullet;
 	void Start() override
 	{
 		AwaitGeneration();
 		Shape shape = Box(meshes[0].extents);
 		AddRigidBody(RIGID_BODY_KINEMATIC, shape);
 		mouse = HalesiaEngine::GetInstance()->GetEngineCore().window;
+		baseBullet = scene->AddCustomObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		baseBullet->name = "bullet";
+		//baseBullet->state = OBJECT_STATE_DISABLED;
+		baseBullet->transform.position.y = -5;
+		baseBullet->rigid.ForcePosition(baseBullet->transform);
 	}
 
 	void Update(float delta) override
@@ -53,7 +88,22 @@ class Ship : public Object
 		if (Input::IsKeyPressed(VirtualKey::D))
 			transform.position.x += delta * 0.01f;
 
+		bool thisFrame = Input::IsKeyPressed(VirtualKey::LeftMouseButton);
+		if (!thisFrame && lastFrame)
+		{
+			Object* newBullet = scene->AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+			newBullet->name = std::to_string(newBullet->handle);
+			Bullet* script = newBullet->GetScript<Bullet>();
+			script->forward = transform.GetForward();
+			newBullet->transform.position = transform.position;// +transform.GetForward() * glm::vec3(2);
+			newBullet->state = OBJECT_STATE_VISIBLE;
+			std::cout << scene->allObjects.size() << '\n';
+			std::cout << "dupe" << '\n';
+		}
+
 		rigid.MovePosition(transform);
+
+		lastFrame = thisFrame;
 	}
 
 	void OnCollisionEnter(Object* object) override
@@ -85,6 +135,7 @@ class CollisionTest : public Scene
 		floor->name = "floor";
 		floor->transform.scale = glm::vec3(20, 1, 20);
 		floor->transform.position.y = -3;
+		floor->state = OBJECT_STATE_INVISIBLE;
 
 		Shape floorShape = Box(glm::vec3(20, 1, 20));
 		floor->AddRigidBody(RIGID_BODY_STATIC, floorShape);
