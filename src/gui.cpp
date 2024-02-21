@@ -114,8 +114,11 @@ void GUI::ShowWindowData(Win32Window* window)
 	int relX, relY, absX, absY;
 	window->GetRelativeCursorPosition(relX, relY);
 	window->GetAbsoluteCursorPosition(absX, absY);
-	ImGui::Text("rel. cursor: %i, %i", relX, relY);
-	ImGui::Text("abs. cursor: %i, %i", absX, absY);
+	ImGui::Text(
+		"rel. cursor: %i, %i\n"
+		"abs. cursor: %i, %i\n"
+		, relX, relY, absX, absY
+	);
 
 	if (changedCoord)
 		window->SetXAndY(x, y);
@@ -126,6 +129,33 @@ void GUI::ShowWindowData(Win32Window* window)
 
 	if (createWindow)
 		ImGui::End();
+}
+
+void GUI::ShowObjectMeshes(std::vector<Mesh>& meshes)
+{
+	ImGui::Text
+	(
+		"Memory:\n"
+		"  vertex:   %I64u\n"
+		"  d_vertex: %i64u\n"
+		"  index:    %I64u\n"
+		"BLAS:       %I64u\n\n"
+		"Material:   %i\n\n"
+		"center:     %.2f, %.2f, %.2f\n"
+		"extents:    %.2f, %.2f, %.2f\n",
+	meshes[0].vertexMemory, meshes[0].defaultVertexMemory, meshes[0].indexMemory, (uint64_t)meshes[0].BLAS, (int)meshes[0].materialIndex, meshes[0].center.x, meshes[0].center.y, meshes[0].center.z, meshes[0].extents.x, meshes[0].extents.y, meshes[0].extents.z);
+}
+
+void GUI::ShowObjectData(Object* object)
+{
+	ImGui::Text
+	(
+		"Handle:  %I64u\n"
+		"Script:  %I64u\n"
+		"State:   %s\n"
+		"\n"
+		"loading: %i\n"
+	, object->handle, object->GetScript<Object*>(), ObjectStateToString(object->state).c_str(), !object->finishedLoading);
 }
 
 void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window)
@@ -150,11 +180,17 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window*
 	ShowDropdownMenu(items, currentItem, objectIndex, "##ObjectComponents");
 
 	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
+	if (objectIndex != -1 && ImGui::CollapsingHeader("Metadata", flags))
+		ShowObjectData(objects[objectIndex]);
+
 	if (objectIndex != -1 && ImGui::CollapsingHeader("Transform", flags))
 		ShowObjectTransform(objects[objectIndex]->transform);
 
-	if (objectIndex != -1 && ImGui::CollapsingHeader("Rigid body", flags))
+	if (objectIndex != -1 && ImGui::CollapsingHeader("Rigid body", flags) && objects[objectIndex]->rigid.type != RIGID_BODY_NONE)
 		ShowObjectRigidBody(objects[objectIndex]->rigid);
+
+	if (objectIndex != -1 && ImGui::CollapsingHeader("Meshes", flags) && !objects[objectIndex]->meshes.empty())
+		ShowObjectMeshes(objects[objectIndex]->meshes);
 
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
@@ -215,7 +251,7 @@ void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
 		break;
 	}
 
-	ImGui::Text("Queued up force: %f, %f, %f", rigidBody.queuedUpForce.x, rigidBody.queuedUpForce.y, rigidBody.queuedUpForce.z);
+	ImGui::Text("Force:   %.1f, %.1f, %.1f", rigidBody.queuedUpForce.x, rigidBody.queuedUpForce.y, rigidBody.queuedUpForce.z);
 
 	// update the rigidbody shape if it has been changed via the gui
 	if (stringToShape[currentShape] != rigidBody.shape.type || holderExtents != rigidBody.shape.data)

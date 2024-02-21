@@ -548,8 +548,6 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 			};
 		}
 	}
-	if (objects.size() > 3)
-		std::cout << '\n';
 }
 
 uint32_t frameCount = 0;

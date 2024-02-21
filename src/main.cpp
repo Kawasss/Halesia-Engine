@@ -67,7 +67,7 @@ class Ship : public Object
 		baseBullet->name = "bullet";
 		//baseBullet->state = OBJECT_STATE_DISABLED;
 		baseBullet->transform.position.y = -5;
-		baseBullet->rigid.ForcePosition(baseBullet->transform);
+		//baseBullet->rigid.ForcePosition(baseBullet->transform);
 	}
 
 	void Update(float delta) override

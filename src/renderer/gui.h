@@ -7,6 +7,7 @@ class Win32Window;
 class Transform;
 class RigidBody;
 class Profiler;
+struct Mesh;
 
 class GUI
 {
@@ -30,6 +31,8 @@ public:
 	static void ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window);
 	static void ShowObjectTransform(Transform& transform);
 	static void ShowObjectRigidBody(RigidBody& rigidBody);
+	static void ShowObjectData(Object* object);
+	static void ShowObjectMeshes(std::vector<Mesh>& mesh);
 
 	static void ShowWindowData(Win32Window* window);
 
