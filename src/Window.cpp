@@ -3,6 +3,8 @@
 #include <iostream>
 #include <stdexcept>
 
+#define BORDERLESS_WINDOWED WS_POPUP
+
 std::map<HWND, Win32Window*> Win32Window::windowBinding;
 std::unordered_set<Win32Window*> Win32Window::windows;
 
@@ -72,10 +74,10 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 		window = CreateWindowExW(WS_EX_APPWINDOW, className.c_str(), windowName.c_str(), WS_POPUPWINDOW, createInfo.x, createInfo.y, monitorWidth, monitorHeight, NULL, NULL, hInstance, NULL);
 	}
 	else if (createInfo.windowMode == WINDOW_MODE_WINDOWED)
-		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)WindowStyle::OverlappedWindow, createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
+		window = CreateWindowExW((DWORD)extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)WindowStyle::OverlappedWindow, createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
 
 	else
-		window = CreateWindowExW((DWORD)createInfo.extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)createInfo.style, createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
+		window = CreateWindowExW((DWORD)extendedWindowStyle, className.c_str(), windowName.c_str(), (DWORD)createInfo.style & ~(WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU), createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
 
 	windowBinding[window] = this;
 	windows.insert(this);
@@ -122,7 +124,7 @@ void Win32Window::ChangeWindowMode(WindowMode windowMode)
 	{
 		width = monitorWidth;
 		height = monitorHeight;
-		SetWindowLong(window, GWL_STYLE, WS_POPUPWINDOW);
+		SetWindowLong(window, GWL_STYLE, BORDERLESS_WINDOWED);
 		if (SetWindowPos(window, NULL, 0, 0, monitorWidth, monitorHeight, SWP_FRAMECHANGED) == 0)
 			throw std::runtime_error("Failed to resize the window to borderless windowed mode: " + WinGetLastErrorAsString());
 		currentWindowMode = WINDOW_MODE_BORDERLESS_WINDOWED;
@@ -361,6 +363,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 		default:
 			return DefWindowProc(hwnd, message, wParam, lParam);
 	}
+	return 0;
 }
 
 void Win32Window::Destroy()
