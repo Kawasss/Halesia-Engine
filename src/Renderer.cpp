@@ -1136,6 +1136,13 @@ inline bool ObjectIsValid(Object* object)
 	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && !object->meshes.empty();
 }
 
+inline void ResetImGui()
+{
+	ImGui_ImplVulkan_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+}
+
 void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
 {
 	std::vector<Object*> activeObjects;
@@ -1159,9 +1166,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 
 	if (activeObjects.empty())
 	{
-		ImGui_ImplVulkan_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
+		ResetImGui();
 		return;
 	}
 		
@@ -1178,8 +1183,8 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	SetModelData(currentFrame, activeObjects);
 	WriteIndirectDrawParameters(activeObjects);
 
-	memcpy(&Renderer::selectedHandle, rayTracer->handleBufferMemPointer, sizeof(uint64_t));
-	memset(rayTracer->handleBufferMemPointer, 0, sizeof(uint64_t));
+	selectedHandle = *rayTracer->handleBufferMemPointer;
+	*rayTracer->handleBufferMemPointer = 0;
 
 	//UpdateBindlessTextures(currentFrame, activeObjects);
 
@@ -1192,9 +1197,7 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	
-	ImGui_ImplVulkan_NewFrame(); // not great that this is mentionned twice in one function
-	ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
+	ResetImGui();
 }
 
 void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)

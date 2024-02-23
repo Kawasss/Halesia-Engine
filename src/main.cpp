@@ -154,8 +154,7 @@ class CollisionTest : public Scene
 		box->transform.scale = glm::vec3(1, 1, 1);
 		box->transform.position = glm::vec3(5, 0, 0);
 
-		Shape boxShape = Box(box->meshes[0].extents);
-		box->AddRigidBody(RIGID_BODY_DYNAMIC, boxShape);
+		box->AddRigidBody(RIGID_BODY_DYNAMIC, Box(box->meshes[0].extents));
 	}
 
 	void Update(float delta) override
@@ -170,7 +169,7 @@ int main(int argsCount, char** args)
 	HalesiaEngineCreateInfo createInfo{};
 	createInfo.argsCount = argsCount;
 	createInfo.args = args;
-	createInfo.startingScene = new CalculatorScene();
+	createInfo.startingScene = new CollisionTest();
 	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;
 	createInfo.windowCreateInfo.height = 600;

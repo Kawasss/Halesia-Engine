@@ -32,7 +32,7 @@ public:
 
 	std::array<VkImage, 3> gBuffers{};
 	std::array<VkImageView, 3> gBufferViews;
-	void* handleBufferMemPointer = nullptr;
+	uint64_t* handleBufferMemPointer = nullptr;
 
 	static int  raySampleCount;
 	static int  rayDepth;

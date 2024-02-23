@@ -264,7 +264,7 @@ void RayTracing::CreateBuffers(const ShaderGroupReflector& groupReflection)
 	CreateShaderBindingTable();
 
 	Vulkan::CreateBuffer(sizeof(uint64_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, handleBuffer, handleBufferMemory);
-	vkMapMemory(logicalDevice, handleBufferMemory, 0, sizeof(uint64_t), 0, &handleBufferMemPointer);
+	vkMapMemory(logicalDevice, handleBufferMemory, 0, sizeof(uint64_t), 0, (void**)&handleBufferMemPointer);
 
 	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
 	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;

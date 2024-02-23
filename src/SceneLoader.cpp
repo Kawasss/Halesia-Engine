@@ -6,7 +6,7 @@
 #include "io/SceneLoader.h"
 #include "core/Console.h"
 
-template<typename T> inline T GetType(char* bytes)
+template<typename T> inline T GetType(char* bytes) // wtf ???
 {
 	T f = 0;
 	memcpy(&f, bytes, sizeof(T));
