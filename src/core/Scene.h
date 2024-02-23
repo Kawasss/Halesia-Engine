@@ -62,6 +62,12 @@ public:
 	void UpdateCamera(Win32Window* window, float delta);
 	void UpdateScripts(float delta);
 
+	/// <summary>
+	/// Transfers the ownership of the child from the scene to the object. The scene can no longer access the child after the transfer,
+	/// the object will become the sole owner. The scene will no longer be responsible for deletion.
+	/// </summary>
+	void TransferObjectOwnership(Object* newOwner, Object* child);
+
 	virtual void Start() {};
 	virtual void Update(float delta) {};
 			void Destroy();

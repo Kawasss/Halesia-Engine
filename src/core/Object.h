@@ -69,11 +69,13 @@ public:
 	/// <typeparam name="T">: The name of the script's class as a pointer</typeparam>
 	/// <returns>Pointer to the given class</returns>
 	template<typename T> T* GetScript();
+	template<typename T> Object* AddCustomChild(const ObjectCreationData& creationData);
 
 	void Initialize(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
 
 	void AddRigidBody(RigidBodyType type, Shape shape);
 	void AddMesh(const std::vector<MeshCreationData>& creationData);
+	Object* AddChild(const ObjectCreationData& creationData);
 	void AddChild(Object* object);
 	void RemoveChild(Object* child); // this removes the child from this objects children
 	void DeleteChild(Object* child); // this does the same as RemoveChild, but also deletes the object
@@ -110,14 +112,27 @@ protected:
 	}
 };
 
-template<typename T> void Object::SetScript(T* script)
+template<typename T> 
+void Object::SetScript(T* script)
 {
 	static_assert(!std::is_base_of_v<T, Object>, "Cannot set the script: the typename does not have Object as a base or the pointer is null");
 	scriptClass = script;
 }
 
-template<typename T> T* Object::GetScript() 
+template<typename T> 
+T* Object::GetScript() 
 { 
 	static_assert(!std::is_base_of_v<T, Object> || scriptClass == nullptr, "Cannot get the script: the typename does not have Object as a base or the pointer is null");
 	return static_cast<T*>(scriptClass); 
+}
+
+template<typename T> 
+Object* Object::AddCustomChild(const ObjectCreationData& creationData)
+{
+	static_assert(!std::is_base_of_v<T, Object>, "Cannot Create a custom object: the typename does not have Object as a base");
+	T* custom = new T();
+	Object* base = custom;
+	base->Initialize(creationData, custom);
+	children.push_back(base);
+	return base;
 }

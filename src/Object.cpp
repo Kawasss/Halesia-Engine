@@ -127,6 +127,13 @@ void Object::Update(float delta)
 	
 }
 
+Object* Object::AddChild(const ObjectCreationData& creationData)
+{
+	Object* obj = Create(creationData);
+	children.push_back(obj);
+	return obj;
+}
+
 void Object::AddRigidBody(RigidBodyType type, Shape shape)
 {
 	rigid = RigidBody(shape, type, transform.position, transform.rotation);

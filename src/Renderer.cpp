@@ -1131,12 +1131,25 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 	submittedCount++;
 }
 
+inline bool ObjectIsValid(Object* object)
+{
+	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && !object->meshes.empty();
+}
+
 void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
 {
 	std::vector<Object*> activeObjects;
 	for (Object* object : objects)
-		if (object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && !object->meshes.empty())
+	{
+		if (ObjectIsValid(object))
 			activeObjects.push_back(object);
+
+		if (object->children.empty())
+			continue;
+		for (Object* child : object->children)
+			if (ObjectIsValid(child))
+				activeObjects.push_back(child);
+	}
 	
 	receivedObjects = objects.size();
 	renderedObjects = activeObjects.size();

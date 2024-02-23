@@ -251,7 +251,7 @@ class CalculatorScene : public Scene
 			if (info.name == "key3.001")
 				obj->meshes[0].SetMaterial(mat);
 			else obj->meshes[0].SetMaterial(buttonMaterial);
-			rotator->AddChild(obj);
+			TransferObjectOwnership(rotator, obj);
 		}
 
 		MaterialCreateInfo lampInfo{};

@@ -189,6 +189,20 @@ void Scene::UpdateScripts(float delta)
 	}
 }
 
+void Scene::TransferObjectOwnership(Object* newOwner, Object* child)
+{
+	objectHandles.erase(child->handle);
+	std::vector<Object*>::iterator iter = std::find(allObjects.begin(), allObjects.end(), child);
+	if (iter != allObjects.end())
+		allObjects.erase(iter);
+
+	std::vector<Object*>& holder = child->HasScript() ? objectsWithScripts : staticObjects;
+	iter = std::find(holder.begin(), holder.end(), child);
+	if (iter != holder.end())
+		holder.erase(iter);
+	newOwner->AddChild(child);
+}
+
 void Scene::Destroy()
 {
 	for (Object* object : allObjects)
