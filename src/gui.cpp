@@ -168,7 +168,15 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window*
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 5);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5);
+
 	ImGuiStyle& style = ImGui::GetStyle();
+	ImVec4* colors = style.Colors;
+	colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
+	colors[ImGuiCol_Header] = ImVec4(0.06f, 0.06f, 0.06f, 1);
+	colors[ImGuiCol_FrameBg] = ImVec4(0.06f, 0.06f, 0.06f, 1);
+	colors[ImGuiCol_Button] = ImVec4(0.05f, 0.05f, 0.05f, 1);
+
 	ImGui::SetNextWindowPos(ImVec2(window->GetWidth() * 7 / 8, ImGui::GetFrameHeight() + style.FramePadding.y));
 	ImGui::SetNextWindowSize(ImVec2(window->GetWidth() / 8, window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
 	if (createWindow)
@@ -192,7 +200,7 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window*
 	if (objectIndex != -1 && ImGui::CollapsingHeader("Meshes", flags) && !objects[objectIndex]->meshes.empty())
 		ShowObjectMeshes(objects[objectIndex]->meshes);
 
-	ImGui::PopStyleVar(2);
+	ImGui::PopStyleVar(3);
 	ImGui::PopStyleColor(3);
 	if (createWindow)
 		ImGui::End();
@@ -209,13 +217,14 @@ void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
 	static std::unordered_map<std::string, RigidBodyType> stringToRigid =
 	{
 		{ "RIGID_BODY_STATIC", RIGID_BODY_STATIC},
-		{ "RIGID_BODY_DYNAMIC", RIGID_BODY_DYNAMIC }
+		{ "RIGID_BODY_DYNAMIC", RIGID_BODY_DYNAMIC },
+		{ "RIGID_BODY_KINEMATIC", RIGID_BODY_KINEMATIC }
 	};
 
 	static int rigidIndex = -1;
 	static int shapeIndex = -1;
 	static std::vector<std::string> allShapeTypes = { "SHAPE_TYPE_BOX", "SHAPE_TYPE_SPHERE", "SHAPE_TYPE_CAPSULE" };
-	static std::vector<std::string> allRigidTypes = { "RIGID_BODY_DYNAMIC", "RIGID_BODY_STATIC" };
+	static std::vector<std::string> allRigidTypes = { "RIGID_BODY_DYNAMIC", "RIGID_BODY_STATIC", "RIGID_BODY_KINEMATIC" };
 	std::string currentRigid = RigidBodyTypeToString(rigidBody.type);
 	std::string currentShape = ShapeTypeToString(rigidBody.shape.type);
 	glm::vec3 holderExtents = rigidBody.shape.data;

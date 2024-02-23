@@ -20,9 +20,10 @@ std::string RigidBodyTypeToString(RigidBodyType type)
 {
 	switch (type)
 	{
-	case RIGID_BODY_DYNAMIC: return "RIGID_BODY_DYNAMIC";
-	case RIGID_BODY_STATIC:  return "RIGID_BODY_STATIC";
-	case RIGID_BODY_NONE:    return "RIGID_BODY_NONE";
+	case RIGID_BODY_DYNAMIC:   return "RIGID_BODY_DYNAMIC";
+	case RIGID_BODY_KINEMATIC: return "RIGID_BODY_KINEMATIC";
+	case RIGID_BODY_STATIC:    return "RIGID_BODY_STATIC";
+	case RIGID_BODY_NONE:      return "RIGID_BODY_NONE";
 	}
 	return "";
 }

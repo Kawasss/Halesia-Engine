@@ -31,8 +31,8 @@ public:
 
 	void Start() override
 	{
-		//Shape shape = Box(meshes[0].extents);
-		//AddRigidBody(RIGID_BODY_KINEMATIC, shape);
+		Shape shape = Box(meshes[0].extents);
+		AddRigidBody(RIGID_BODY_KINEMATIC, shape);
 	}
 
 	void Update(float delta) override
