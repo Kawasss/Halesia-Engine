@@ -170,7 +170,7 @@ int main(int argsCount, char** args)
 	HalesiaEngineCreateInfo createInfo{};
 	createInfo.argsCount = argsCount;
 	createInfo.args = args;
-	createInfo.startingScene = new CollisionTest();
+	createInfo.startingScene = new CalculatorScene();
 	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;
 	createInfo.windowCreateInfo.height = 600;

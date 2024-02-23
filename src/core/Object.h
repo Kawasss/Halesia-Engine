@@ -86,6 +86,7 @@ public:
 	Transform transform;
 	RigidBody rigid;
 	std::vector<Mesh> meshes;
+	std::vector<Object*> children;
 	ObjectState state = OBJECT_STATE_VISIBLE;
 	std::string name;
 	std::mutex mutex;
@@ -102,7 +103,6 @@ private:
 	
 protected:
 	Object* parent = nullptr;
-	std::vector<Object*> children;
 
 	static void Free(Object* objPtr)
 	{

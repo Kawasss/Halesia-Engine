@@ -408,12 +408,18 @@ void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* windo
 	ImGui::BeginChild(1, ImVec2(0, (window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y) / 2));
 	for (int i = 0; i < objects.size(); i++)
 	{
+		if (objects[i]->children.empty())
+		{
+			ImGui::Selectable(objects[i]->name.c_str());
+			continue;
+		}
+
 		if (!ImGui::TreeNode(objects[i]->name.c_str()))
 			continue;
 
-		for (int j = 0; j < objects[i]->meshes.size(); j++)
+		for (int j = 0; j < objects[i]->children.size(); j++)
 		{
-			ImGui::Text(objects[i]->meshes[j].name.c_str());
+			ImGui::Text(objects[i]->children[j]->name.c_str());
 		}
 		ImGui::TreePop();
 	}
