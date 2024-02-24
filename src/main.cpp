@@ -93,10 +93,10 @@ class Ship : public Object
 		{
 			Object* newBullet = scene->AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
 			newBullet->name = std::to_string(newBullet->handle);
-			Bullet* script = newBullet->GetScript<Bullet>();
-			script->forward = transform.GetForward();
-			newBullet->transform.position = transform.position;// +transform.GetForward() * glm::vec3(2);
-			newBullet->state = OBJECT_STATE_VISIBLE;
+			//Bullet* script = newBullet->GetScript<Bullet>();
+			//script->forward = transform.GetForward();
+			//newBullet->transform.position = transform.position;// +transform.GetForward() * glm::vec3(2);
+			//newBullet->state = OBJECT_STATE_VISIBLE;
 			std::cout << scene->allObjects.size() << '\n';
 			std::cout << "dupe" << '\n';
 		}

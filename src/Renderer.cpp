@@ -257,6 +257,17 @@ void Renderer::InitVulkan()
 	rayTracer = RayTracing::Create(testWindow, swapchain);
 }
 
+void Renderer::SetInternalResolutionScale(float scale)
+{
+	internalScale = scale;
+	OnResize();
+}
+
+float Renderer::GetInternalResolutionScale()
+{
+	return internalScale;
+}
+
 void Renderer::GetQueryResults()
 {
 	std::vector<uint64_t> results = Vulkan::GetQueryPoolResults(queryPool, 10);

@@ -626,6 +626,14 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 		ShowChartGraph(Renderer::g_vertexBuffer.GetSize() / 1024ULL, Renderer::g_vertexBuffer.GetMaxSize() / 1024ULL, "vertex (kb)");
 		ImGui::SameLine();
 		ShowChartGraph(Renderer::g_defaultVertexBuffer.GetSize() / 1024ULL, Renderer::g_defaultVertexBuffer.GetMaxSize() / 1024ULL, "d_vertex (kb)");
+
+		float scale = Renderer::internalScale;
+		ImGui::Text("Internal resolution:");
+		ImGui::SameLine();
+		ImGui::SliderFloat("##resslider", &scale, 0.01f, 2, "%.2f");
+		if (scale != Renderer::internalScale)
+			core.renderer->SetInternalResolutionScale(scale);
+
 		ImGui::Text("received objects: %i  renderered objects: %i", core.renderer->receivedObjects, core.renderer->renderedObjects);
 
 		Vulkan::Context context = Vulkan::GetContext();

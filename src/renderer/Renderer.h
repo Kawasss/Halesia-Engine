@@ -45,6 +45,9 @@ public:
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
 
+	void SetInternalResolutionScale(float scale);
+	static float GetInternalResolutionScale();
+
 	Swapchain* swapchain; // better to keep it private
 	AnimationManager* animationManager;
 
