@@ -1,10 +1,17 @@
 #include <cstdint>
+#include <iostream>
 
 #include "io/SceneWriter.h"
 #include "io/SceneLoader.h"
 
 #include "core/Scene.h"
 #include "core/Object.h"
+
+#include "physics/RigidBody.h"
+
+#include "renderer/Mesh.h"
+
+typedef unsigned char byte;
 
 struct HSFHeader
 {
@@ -35,4 +42,22 @@ inline MeshCreationData GetMeshCreationData(Mesh& mesh)
 void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 {
 
+}
+
+void SerializeName(std::ofstream& stream, std::string name)
+{
+	NodeType type = NODE_TYPE_NAME;
+	NodeSize size = name.size() + 1;
+	stream.write((char*)&type, sizeof(type));
+	stream.write((char*)&size, sizeof(size));
+	stream.write(name.c_str(), name.size() + 1); // string has to be written seperately
+}
+
+void HSFWriter::WriteObject(Object* object, std::string destination)
+{
+	std::ofstream stream(destination, std::ios::binary);
+	
+	NodeType type = NODE_TYPE_OBJECT;
+	stream.write((char*)&type, sizeof(type));
+	SerializeName(stream, object->name);
 }
