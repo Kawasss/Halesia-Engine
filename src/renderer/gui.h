@@ -7,6 +7,7 @@ class Win32Window;
 class Transform;
 class RigidBody;
 class Profiler;
+class Camera;
 struct Mesh;
 
 class GUI
@@ -35,6 +36,7 @@ public:
 	static void ShowObjectMeshes(std::vector<Mesh>& mesh);
 
 	static void ShowWindowData(Win32Window* window);
+	static void ShowCameraData(Camera* camera);
 
 	static void ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePercentLow);
 };

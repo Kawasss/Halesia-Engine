@@ -25,6 +25,15 @@
 #include "core/Camera.h"
 #include "HalesiaEngine.h"
 
+inline void InputFloat(std::string name, float& value, float width)
+{
+	ImGui::Text(name.c_str());
+	ImGui::SameLine();
+	ImGui::PushItemWidth(width * 8);
+	ImGui::InputFloat(("##" + name).c_str(), &value);
+	ImGui::PopItemWidth();
+}
+
 inline bool createWindow = true;
 void GUI::AutomaticallyCreateWindows(bool setting)
 {
@@ -41,7 +50,7 @@ void GUI::EndGUIWindow()
 	ImGui::End();
 }
 
-inline void ShowInputVector(glm::vec3& vector, std::vector<const char*> labels)
+inline void ShowInputVector(glm::vec3& vector, const std::vector<const char*>& labels)
 {
 	if (labels.size() < 3) return;
 	float width = ImGui::CalcTextSize("w").x;
@@ -51,6 +60,17 @@ inline void ShowInputVector(glm::vec3& vector, std::vector<const char*> labels)
 	ImGui::InputFloat(labels[1], &vector.y);
 	ImGui::SameLine();
 	ImGui::InputFloat(labels[2], &vector.z);
+	ImGui::PopItemWidth();
+}
+
+inline void ShowInputVector(glm::vec2& vector, const std::vector<const char*>& labels)
+{
+	if (labels.size() < 2) return;
+	float width = ImGui::CalcTextSize("w").x;
+	ImGui::PushItemWidth(width * 8);
+	ImGui::InputFloat(labels[0], &vector.x);
+	ImGui::SameLine();
+	ImGui::InputFloat(labels[1], &vector.y);
 	ImGui::PopItemWidth();
 }
 
@@ -584,6 +604,23 @@ void GUI::ShowChartGraph(size_t item, size_t max, const char* label)
 		ImGui::End();
 }
 
+void GUI::ShowCameraData(Camera* camera)
+{
+	float width = ImGui::CalcTextSize("w").x;
+	ImGui::Text("camera: %s\n", ToHexadecimalString((uint64_t)camera).c_str());
+	ImGui::Text("position:");
+	ImGui::SameLine();
+	ShowInputVector(camera->position, { "##camposx", "##camposy", "##camposz" });
+	ImGui::Text("front:   ");
+	ImGui::SameLine();
+	ShowInputVector(camera->front, { "##frontx", "##fronty", "##frontz" });
+	InputFloat("pitch:   ", camera->pitch, width); // all in radians
+	ImGui::SameLine();
+	InputFloat("yaw:", camera->yaw, width);
+	InputFloat("FOV:     ", camera->fov, width);
+	InputFloat("speed:   ", camera->cameraSpeed, width);
+}
+
 void GUI::ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePercentLow)
 {
 	const std::vector<float> Line60FPS(frameTime.size(), 1000 / 60); // not that efficient since the vector is made every frame
@@ -617,6 +654,7 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 
 	ImGui::SetNextWindowSize({ 0, 0 });
 	CreateGUIWindow("debug");
+	SetImGuiColors();
 	createWindow = false;
 	if (ImGui::CollapsingHeader("renderer"))
 	{
@@ -656,14 +694,7 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 	if (ImGui::CollapsingHeader("scene"))
 	{
 		ImGui::Text("object count: %i", core.scene->allObjects.size());
-		Camera* camera = core.scene->camera;
-		ImGui::Text(
-			"camera: %s\n"
-			"  position: %f, %f, %f\n"
-			"  front:    %f, %f, %f\n"
-			, ToHexadecimalString((uint64_t)camera).c_str(), 
-			camera->position.x, camera->position.y, camera->position.z, 
-			camera->front.x, camera->front.y, camera->front.z);
+		ShowCameraData(core.scene->camera);
 	}
 
 	if (ImGui::CollapsingHeader("window"))
