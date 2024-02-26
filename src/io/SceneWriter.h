@@ -5,9 +5,10 @@
 
 class Scene;
 class Object;
+class BinaryWriter;
 
 namespace HSFWriter
 {
 	inline extern void WriteHSFScene(Scene* scene, std::string destination);
-	inline extern void WriteObject(Object* object, std::string destination);
+	inline extern void WriteObject(BinaryWriter& writer, Object* object);
 }

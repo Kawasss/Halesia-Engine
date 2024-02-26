@@ -5,7 +5,7 @@
 
 class Transform;
 
-enum RigidBodyType
+enum RigidBodyType : uint8_t
 {
 	RIGID_BODY_NONE,
 	RIGID_BODY_STATIC,

@@ -70,45 +70,53 @@ inline MeshCreationData GetMeshCreationData(Mesh& mesh)
 
 void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 {
-
+	BinaryWriter writer(destination);
+	for (Object* object : scene->allObjects)
+		WriteObject(writer, object);
 }
 
 constexpr uint64_t SIZE_OF_NODE_HEADER = sizeof(NodeType) + sizeof(NodeSize);
 
 template<typename Type>
-inline NodeSize GetArrayNodeSize(const std::vector<Type> vec)
+inline NodeSize GetArrayNodeSize(const std::vector<Type> vec) { return SIZE_OF_NODE_HEADER + vec.size() * sizeof(Type); }
+inline NodeSize GetNameNodeSize(const std::string& name)      { return SIZE_OF_NODE_HEADER + name.size() + 1; }
+inline NodeSize GetMeshNodeSize(const Mesh& mesh)             { return SIZE_OF_NODE_HEADER + GetArrayNodeSize(mesh.vertices) + GetArrayNodeSize(mesh.indices) + sizeof(uint32_t); }
+inline NodeSize GetObjectNodeSize(const Object* object)       { return SIZE_OF_NODE_HEADER + GetNameNodeSize(object->name) + GetMeshNodeSize(object->meshes[0]); } // should account for all meshes
+inline NodeSize GetTransformNodeSize()                        { return SIZE_OF_NODE_HEADER + sizeof(glm::vec3) * 3; }
+inline NodeSize GetRigidBodyNodeSize()                        { return SIZE_OF_NODE_HEADER + sizeof(uint8_t) * 2 + sizeof(glm::vec3); }
+
+inline void WriteMesh(BinaryWriter& writer, const Mesh& mesh)
 {
-	return SIZE_OF_NODE_HEADER + vec.size() * sizeof(Type);
+	writer 
+		<< NODE_TYPE_MESH << GetMeshNodeSize(mesh) 
+		<< mesh.materialIndex
+		<< NODE_TYPE_VERTICES << mesh.vertices.size() * sizeof(mesh.vertices[0]) << mesh.vertices // vertices array
+		<< NODE_TYPE_INDICES << mesh.indices.size() * sizeof(mesh.indices[0]) << mesh.indices;    // indices array
 }
 
-inline NodeSize GetNameNodeSize(const std::string& name)
+inline void WriteRigidBody(BinaryWriter& writer, const RigidBody& rigid)
 {
-	return SIZE_OF_NODE_HEADER + name.size() + 1;
+	writer
+		<< NODE_TYPE_RIGIDBODY << GetRigidBodyNodeSize()
+		<< rigid.type        // rigid body type
+		<< rigid.shape.type  // shape type
+		<< rigid.shape.data; // shape extents
 }
 
-inline NodeSize GetMeshNodeSize(const Mesh& mesh)
+inline void WriteTransform(BinaryWriter& writer, const Transform& transform)
 {
-	return SIZE_OF_NODE_HEADER + GetArrayNodeSize(mesh.vertices) + GetArrayNodeSize(mesh.indices);
+	writer 
+		<< NODE_TYPE_TRANSFORM << GetTransformNodeSize() 
+		<< transform.position 
+		<< transform.rotation 
+		<< transform.scale;
 }
 
-inline NodeSize GetObjectNodeSize(const Object* object)
+void HSFWriter::WriteObject(BinaryWriter& writer, Object* object)
 {
-	return SIZE_OF_NODE_HEADER + GetNameNodeSize(object->name) + GetMeshNodeSize(object->meshes[0]); // should account for all meshes
-}
+	writer << NODE_TYPE_OBJECT << SIZE_OF_NODE_HEADER + GetObjectNodeSize(object) << object->state << NODE_TYPE_NAME << object->name.size() + 1 << object->name;
 
-void HSFWriter::WriteObject(Object* object, std::string destination)
-{
-	BinaryWriter writer(destination);
-
-	writer << NODE_TYPE_OBJECT << SIZE_OF_NODE_HEADER + GetObjectNodeSize(object) << NODE_TYPE_NAME << object->name.size() + 1 << object->name;
-
-	// mesh testing
-	Mesh& mesh = object->meshes[0];
-
-	writer << NODE_TYPE_MESH << GetMeshNodeSize(mesh);
-
-	// vertices
-	writer << NODE_TYPE_ARRAY << mesh.vertices.size() << mesh.vertices;
-	//indices
-	writer << NODE_TYPE_ARRAY << mesh.indices.size() << mesh.indices;
+	WriteTransform(writer, object->transform);
+	WriteRigidBody(writer, object->rigid);
+	WriteMesh(writer, object->meshes[0]);
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include "../glm.h"
 
-enum ShapeType
+enum ShapeType : uint8_t
 {
 	SHAPE_TYPE_NONE,
 	SHAPE_TYPE_SPHERE,

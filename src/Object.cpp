@@ -47,6 +47,7 @@ void Object::Initialize(const ObjectCreationData& creationData, void* customClas
 	name = creationData.name;
 	scriptClass = customClassPointer;
 	meshes.resize(creationData.meshes.size());
+	state = (ObjectState)creationData.state;
 
 	if (!creationData.meshes.empty())
 		transform = Transform(creationData.position, creationData.rotation, creationData.scale, meshes[0].extents, meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one

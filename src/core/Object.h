@@ -15,7 +15,7 @@ class Scene;
 struct ObjectCreationData;
 typedef uint64_t Handle;
 
-enum ObjectState
+enum ObjectState : uint8_t
 {
 	/// <summary>
 	/// The attached script is run and the object is rendered

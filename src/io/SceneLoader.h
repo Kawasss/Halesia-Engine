@@ -56,6 +56,7 @@ struct MeshCreationData
 {
 	std::string name;
 	MaterialCreationData material;
+	uint32_t materialIndex;
 
 	bool hasBones = false;
 	bool hasMaterial = false;
@@ -82,6 +83,7 @@ struct ObjectCreationData
 	glm::vec3 rotation = glm::vec3(0);
 	glm::vec3 scale = glm::vec3(1);
 	RigidCreationData hitBox;
+	uint8_t state = 0;
 	
 	int amountOfMeshes = 0;
 	std::vector<MeshCreationData> meshes;
@@ -102,8 +104,7 @@ public:
 	template<typename Type>
 	BinaryReader& operator>>(std::vector<Type>& vec) // this expects the vector to already be resized to the correct size
 	{
-		for (int i = 0; i < vec.size(); i++)
-			stream.read((char*)&vec[i], sizeof(Type));
+		stream.read((char*)vec.data(), sizeof(Type) * vec.size());
 		return *this;
 	}
 
@@ -116,8 +117,11 @@ public:
 			stream.read(&ch, sizeof(ch));
 			str += ch;
 		}
+		str.pop_back();
 		return *this;
 	}
+
+	bool IsAtEndOfFile() { return stream.eof(); }
 
 private:
 	std::ifstream stream;
@@ -159,6 +163,10 @@ private:
 	uint8_t RetrieveFlagsFromName(std::string string, std::string& name); 
 
 	void GetNodeHeader(NodeType& type, NodeSize& size);
+	void RetrieveType(NodeType type, NodeSize size);
+
+	std::vector<MeshCreationData>::iterator currentMesh;
+	std::vector<ObjectCreationData>::iterator currentObject;
 };
 
 inline namespace GenericLoader

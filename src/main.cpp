@@ -59,15 +59,15 @@ class Ship : public Object
 	Object* baseBullet;
 	void Start() override
 	{
-		AwaitGeneration();
-		Shape shape = Box(meshes[0].extents);
-		AddRigidBody(RIGID_BODY_KINEMATIC, shape);
+		//AwaitGeneration();
+		//Shape shape = Box(meshes[0].extents);
+		//AddRigidBody(RIGID_BODY_KINEMATIC, shape);
+		//baseBullet = scene->AddCustomObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		//baseBullet->name = "bullet";
+		////baseBullet->state = OBJECT_STATE_DISABLED;
+		//baseBullet->transform.position.y = -5;
+		////baseBullet->rigid.ForcePosition(baseBullet->transform);
 		mouse = HalesiaEngine::GetInstance()->GetEngineCore().window;
-		baseBullet = scene->AddCustomObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
-		baseBullet->name = "bullet";
-		//baseBullet->state = OBJECT_STATE_DISABLED;
-		baseBullet->transform.position.y = -5;
-		//baseBullet->rigid.ForcePosition(baseBullet->transform);
 	}
 
 	void Update(float delta) override
@@ -125,43 +125,28 @@ class CollisionTest : public Scene
 {
 	void Start() override
 	{
-		/*camera = AddCustomCamera<FollowCam>();
-
-		Object* ship = AddCustomObject<Ship>(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
-		ship->AwaitGeneration();
-		camera->GetScript<FollowCam>()->objToFollow = ship;
-
-		Object* floor = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
-		floor->AwaitGeneration();
-		floor->name = "floor";
-		floor->transform.scale = glm::vec3(20, 1, 20);
-		floor->transform.position.y = -3;
-		floor->state = OBJECT_STATE_INVISIBLE;
-
-		Shape floorShape = Box(glm::vec3(20, 1, 20));
-		floor->AddRigidBody(RIGID_BODY_STATIC, floorShape);
-		floor->rigid.ForcePosition(floor->transform);
-
-		Object* light = DuplicateStaticObject(floor, "light");
-		light->transform.position.y = 10;
+		camera = AddCustomCamera<FollowCam>();
 
 		MaterialCreateInfo lightInfo{};
 		lightInfo.isLight = true;
 		Material lightMat = Material::Create(lightInfo);
-		light->meshes[0].SetMaterial(lightMat);
 
-		Object* box = DuplicateStaticObject(floor, "box");
-		box->AwaitGeneration();
-		box->transform.scale = glm::vec3(1, 1, 1);
-		box->transform.position = glm::vec3(5, 0, 0);
-
-		box->AddRigidBody(RIGID_BODY_DYNAMIC, Box(box->meshes[0].extents));
-
-		HSFWriter::WriteObject(floor, "floor.hsf");*/
-		SceneLoader loader("floor.hsf");
+		SceneLoader loader("scene.hsf");
 		loader.LoadScene();
-		Object* obj = AddStaticObject(loader.objects[0]);
-		std::cout << obj->name << '\n';
+		for (ObjectCreationData& data : loader.objects)
+		{
+			if (data.name == "ship")
+			{
+				Object* ship = AddCustomObject<Ship>(data);
+				camera->GetScript<FollowCam>()->objToFollow = ship;
+			}
+			else if (data.name == "light")
+			{
+				Object* light = AddStaticObject(data);
+				light->meshes[0].SetMaterial(lightMat);
+			}
+			else AddStaticObject(data);
+		}
 	}
 
 	void Update(float delta) override

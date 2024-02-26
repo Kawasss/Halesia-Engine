@@ -24,7 +24,9 @@ enum NodeType : uint16_t
 	NODE_TYPE_ARRAY,
 	NODE_TYPE_TEXTURE,
 	NODE_TYPE_MATERIAL,
-	NODE_TYPE_METADATA
+	NODE_TYPE_METADATA,
+	NODE_TYPE_VERTICES,
+	NODE_TYPE_INDICES
 };
 
 // These identifiers are represented like this in binary:

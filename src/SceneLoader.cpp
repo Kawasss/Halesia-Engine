@@ -17,28 +17,69 @@ SceneLoader::SceneLoader(std::string sceneLocation) : reader(BinaryReader(sceneL
 
 void SceneLoader::LoadScene() 
 {
-	objects.push_back({});
-	ObjectCreationData& data = objects.back();
-	data.meshes.push_back({});
-	MeshCreationData& mesh = data.meshes.back();
-
 	NodeType type = NODE_TYPE_NONE;
 	NodeSize size = 0;
-	GetNodeHeader(type, size);
-	GetNodeHeader(type, size);
-	std::string name;
-	reader >> data.name;
 
-	// mesh
+	while (!reader.IsAtEndOfFile())
+	{
+		GetNodeHeader(type, size);
+		RetrieveType(type, size);
+	}
+}
 
-	GetNodeHeader(type, size);
-	GetNodeHeader(type, size);
-	mesh.vertices.resize(size);
-	reader >> mesh.vertices;
-	GetNodeHeader(type, size);
-	mesh.indices.resize(size);
-	reader >> mesh.indices;
-	mesh.faceCount = mesh.indices.size() / 3;
+void SceneLoader::RetrieveType(NodeType type, NodeSize size)
+{
+	if (reader.IsAtEndOfFile())
+		return;
+
+	NodeType childType = NODE_TYPE_NONE;
+	NodeSize childSize = 0;
+	switch (type)
+	{
+	case NODE_TYPE_OBJECT:
+		objects.push_back({});
+		currentObject = objects.begin() + objects.size() - 1;
+		reader >> currentObject->state;
+		GetNodeHeader(childType, childSize);
+		RetrieveType(childType, childSize); // name
+		GetNodeHeader(childType, childSize);
+		RetrieveType(childType, childSize); // transform
+		GetNodeHeader(childType, childSize);
+		RetrieveType(childType, childSize); // rigid body
+		GetNodeHeader(childType, childSize);
+		RetrieveType(childType, childSize); // mesh
+		break;
+	case NODE_TYPE_MESH:
+		currentObject->meshes.push_back({});
+		currentMesh = currentObject->meshes.begin() + currentObject->meshes.size() - 1;
+		reader >> currentMesh->materialIndex;
+		GetNodeHeader(childType, childSize);
+		RetrieveType(childType, childSize); // vertices
+		GetNodeHeader(childType, childSize);
+		RetrieveType(childType, childSize); // indices
+		currentMesh->faceCount = currentMesh->indices.size() / 3;
+		if (currentMesh->vertices.empty())
+			currentObject->meshes.erase(currentMesh);
+		break;
+	case NODE_TYPE_VERTICES:
+		currentMesh->vertices.resize(size / sizeof(Vertex));
+		reader >> currentMesh->vertices;
+		break;
+	case NODE_TYPE_INDICES:
+		currentMesh->indices.resize(size / sizeof(uint16_t));
+		reader >> currentMesh->indices;
+		break;
+	case NODE_TYPE_RIGIDBODY:
+		reader >> currentObject->hitBox.rigidType >> currentObject->hitBox.shapeType >> currentObject->hitBox.extents;
+		break;
+	case NODE_TYPE_NAME:
+		reader >> currentObject->name;
+		break;
+	case NODE_TYPE_TRANSFORM:
+		reader >> currentObject->position >> currentObject->rotation >> currentObject->scale;
+		break;
+	default: std::cout << "unused node type " << type << '\n'; break;
+	}
 }
 
 void SceneLoader::GetNodeHeader(NodeType& type, NodeSize& size)
