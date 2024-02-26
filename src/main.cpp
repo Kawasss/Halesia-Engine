@@ -143,10 +143,48 @@ class CollisionTest : public Scene
 			else if (data.name == "light")
 			{
 				Object* light = AddStaticObject(data);
+				light->AwaitGeneration();
 				light->meshes[0].SetMaterial(lightMat);
 			}
-			else AddStaticObject(data);
+			else AddStaticObject(data)->AwaitGeneration();
 		}
+		// the code that generated the scene.hsf
+		/*camera = AddCustomCamera<FollowCam>();
+
+		Object* ship = AddCustomObject<Ship>(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		ship->name = "ship";
+		ship->AwaitGeneration();
+		Shape shape = Box(ship->meshes[0].extents);
+		ship->AddRigidBody(RIGID_BODY_KINEMATIC, shape);
+		camera->GetScript<FollowCam>()->objToFollow = ship;
+
+		Object* floor = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		floor->AwaitGeneration();
+		floor->name = "floor";
+		floor->transform.scale = glm::vec3(20, 1, 20);
+		floor->transform.position.y = -3;
+		floor->state = OBJECT_STATE_INVISIBLE;
+
+		Shape floorShape = Box(glm::vec3(20, 1, 20));
+		floor->AddRigidBody(RIGID_BODY_STATIC, floorShape);
+		floor->rigid.ForcePosition(floor->transform);
+
+		Object* light = DuplicateStaticObject(floor, "light");
+		light->transform.position.y = 10;
+
+		MaterialCreateInfo lightInfo{};
+		lightInfo.isLight = true;
+		Material lightMat = Material::Create(lightInfo);
+		light->meshes[0].SetMaterial(lightMat);
+
+		Object* box = DuplicateStaticObject(floor, "box");
+		box->AwaitGeneration();
+		box->transform.scale = glm::vec3(1, 1, 1);
+		box->transform.position = glm::vec3(5, 0, 0);
+
+		box->AddRigidBody(RIGID_BODY_DYNAMIC, Box(box->meshes[0].extents));
+
+		HSFWriter::WriteHSFScene(this, "scene.hsf");*/
 	}
 
 	void Update(float delta) override

@@ -33,11 +33,14 @@ public:
 	int GetHeight();
 	int GetMipLevels();
 
+	std::vector<uint8_t> GetImageData();
+
 	static bool TexturesHaveChanged();
 
 	VkImage image;
 	VkImageView imageView = VK_NULL_HANDLE;
 	VkDeviceMemory imageMemory;
+	VkDeviceSize size = 0; // in bytes!
 
 protected:
 	std::future<void> generation;

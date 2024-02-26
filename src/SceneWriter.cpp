@@ -23,6 +23,11 @@ class BinaryWriter
 public:
 	BinaryWriter(std::string destination) : stream(std::ofstream(destination, std::ios::binary)) {}
 
+	void Write(const char* ptr, size_t size)
+	{
+		stream.write(ptr, size);
+	}
+
 	template<typename Type>
 	BinaryWriter& operator<<(Type value)
 	{
@@ -33,7 +38,8 @@ public:
 	template<typename Type>
 	BinaryWriter& operator<<(const std::vector<Type>& vector)
 	{
-		stream.write((char*)&vector[0], sizeof(Type)* vector.size());
+		if (vector.empty()) return *this;
+		stream.write((char*)&vector[0], sizeof(Type) * vector.size());
 		return *this;
 	}
 
@@ -68,22 +74,41 @@ inline MeshCreationData GetMeshCreationData(Mesh& mesh)
 	return creationData;
 }
 
+template<typename Type>
+inline NodeSize GetArrayNodeSize(const std::vector<Type> vec) { return vec.size() * sizeof(Type); }
+inline NodeSize GetNameNodeSize(const std::string& name)      { return name.size() + 1; }
+inline NodeSize GetMeshNodeSize(const Mesh& mesh)             { return GetArrayNodeSize(mesh.vertices) + GetArrayNodeSize(mesh.indices) + sizeof(uint32_t); }
+inline NodeSize GetObjectNodeSize(const Object* object)       { return GetNameNodeSize(object->name) + GetMeshNodeSize(object->meshes[0]); } // should account for all meshes
+inline NodeSize GetTextureNodeSize(Texture* tex)              { return tex->size; }
+inline NodeSize GetMaterialNodeSize(const Material& mat)      { return GetTextureNodeSize(mat.albedo) + GetTextureNodeSize(mat.normal) + GetTextureNodeSize(mat.roughness) + GetTextureNodeSize(mat.metallic) + GetTextureNodeSize(mat.ambientOcclusion); }
+inline NodeSize GetTransformNodeSize()                        { return sizeof(glm::vec3) * 3; }
+inline NodeSize GetRigidBodyNodeSize()                        { return sizeof(uint8_t) * 2 + sizeof(glm::vec3); }
+
+inline void WriteTexture(BinaryWriter& writer, Texture* texture)
+{
+	writer << NODE_TYPE_TEXTURE << GetTextureNodeSize(texture) << texture->GetImageData();
+}
+
+inline void WriteMaterial(BinaryWriter& writer, const Material& material)
+{
+	writer << NODE_TYPE_MATERIAL << GetMaterialNodeSize(material) << material.isLight;
+	WriteTexture(writer, material.albedo);
+	WriteTexture(writer, material.normal);
+	WriteTexture(writer, material.roughness);
+	WriteTexture(writer, material.metallic);
+	WriteTexture(writer, material.ambientOcclusion);
+}
+
 void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 {
 	BinaryWriter writer(destination);
 	for (Object* object : scene->allObjects)
 		WriteObject(writer, object);
+	for (int i = 1; i < Mesh::materials.size(); i++)
+		WriteMaterial(writer, Mesh::materials[i]);
 }
 
 constexpr uint64_t SIZE_OF_NODE_HEADER = sizeof(NodeType) + sizeof(NodeSize);
-
-template<typename Type>
-inline NodeSize GetArrayNodeSize(const std::vector<Type> vec) { return SIZE_OF_NODE_HEADER + vec.size() * sizeof(Type); }
-inline NodeSize GetNameNodeSize(const std::string& name)      { return SIZE_OF_NODE_HEADER + name.size() + 1; }
-inline NodeSize GetMeshNodeSize(const Mesh& mesh)             { return SIZE_OF_NODE_HEADER + GetArrayNodeSize(mesh.vertices) + GetArrayNodeSize(mesh.indices) + sizeof(uint32_t); }
-inline NodeSize GetObjectNodeSize(const Object* object)       { return SIZE_OF_NODE_HEADER + GetNameNodeSize(object->name) + GetMeshNodeSize(object->meshes[0]); } // should account for all meshes
-inline NodeSize GetTransformNodeSize()                        { return SIZE_OF_NODE_HEADER + sizeof(glm::vec3) * 3; }
-inline NodeSize GetRigidBodyNodeSize()                        { return SIZE_OF_NODE_HEADER + sizeof(uint8_t) * 2 + sizeof(glm::vec3); }
 
 inline void WriteMesh(BinaryWriter& writer, const Mesh& mesh)
 {

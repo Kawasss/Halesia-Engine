@@ -95,7 +95,7 @@ void Image::WritePixelsToBuffer(std::vector<uint8_t*> pixels, bool useMipMaps, T
 	const Vulkan::Context context = Vulkan::GetContext();
 
 	VkDeviceSize layerSize = width * height * 4;
-	VkDeviceSize imageSize = layerSize * layerCount;
+	size = layerSize * layerCount;
 
 	if (layerSize == 0)
 		throw std::runtime_error("Invalid image found: layer size is 0");
@@ -104,13 +104,13 @@ void Image::WritePixelsToBuffer(std::vector<uint8_t*> pixels, bool useMipMaps, T
 	VkDeviceMemory stagingBufferMemory;
 
 	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
-	Vulkan::CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+	Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 	// copy all of the different sides of the cubemap into a single buffer
 	void* data;
-	vkMapMemory(logicalDevice, stagingBufferMemory, 0, imageSize, 0, &data);
+	vkMapMemory(logicalDevice, stagingBufferMemory, 0, size, 0, &data);
 	for (uint32_t i = 0; i < layerCount; i++)
-		memcpy((char*)data + (layerSize * i), pixels[i], static_cast<size_t>(imageSize)); // cast the void* to char for working arithmetic
+		memcpy((char*)data + (layerSize * i), pixels[i], static_cast<size_t>(size)); // cast the void* to char for working arithmetic
 	vkUnmapMemory(logicalDevice, stagingBufferMemory);
 
 	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
@@ -127,6 +127,69 @@ void Image::WritePixelsToBuffer(std::vector<uint8_t*> pixels, bool useMipMaps, T
 	if (useMipMaps) GenerateMipMaps((VkFormat)format);
 
 	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
+}
+
+std::vector<uint8_t> Image::GetImageData()
+{
+	const Vulkan::Context& context = Vulkan::GetContext();
+	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
+
+	VkBuffer copyBuffer;
+	VkDeviceMemory copyMemory;
+	Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, copyBuffer, copyMemory);
+
+	VkBufferImageCopy imageCopy{};
+	imageCopy.imageExtent = { (uint32_t)width, (uint32_t)height, 1 };
+	imageCopy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageCopy.imageSubresource.baseArrayLayer = 0;
+	imageCopy.imageSubresource.mipLevel = 0;
+	imageCopy.imageSubresource.layerCount = 1;
+
+	VkImageSubresourceRange subresourceRange{};
+	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subresourceRange.baseArrayLayer = 0;
+	subresourceRange.baseMipLevel = 0;
+	subresourceRange.levelCount = 1;
+	subresourceRange.layerCount = 1;
+
+	VkImageMemoryBarrier memoryBarrier{};
+	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	memoryBarrier.image = image;
+	memoryBarrier.subresourceRange = subresourceRange;
+	
+	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool); // messy
+	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+	Vulkan::EndSingleTimeCommands(context.graphicsQueue, commandBuffer, commandPool);
+
+	commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
+	vkCmdCopyImageToBuffer(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, copyBuffer, 1, &imageCopy);
+	Vulkan::EndSingleTimeCommands(context.graphicsQueue, commandBuffer, commandPool);
+
+	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+
+	commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool); // still messy
+	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+	Vulkan::EndSingleTimeCommands(context.graphicsQueue, commandBuffer, commandPool);
+
+	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
+
+	uint8_t* ptr = nullptr;
+	vkMapMemory(logicalDevice, copyMemory, 0, size, 0, (void**)&ptr);
+	std::vector<uint8_t> ret;
+	ret.resize(size / sizeof(uint8_t));
+	for (int i = 0; i < size / sizeof(uint8_t); i++)
+		ret[i] = ptr[i];
+
+	vkUnmapMemory(logicalDevice, copyMemory);
+	vkDestroyBuffer(logicalDevice, copyBuffer, nullptr);
+	vkFreeMemory(logicalDevice, copyMemory, nullptr);
+
+	return ret;
 }
 
 void Image::AwaitGeneration()

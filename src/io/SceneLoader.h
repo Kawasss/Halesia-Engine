@@ -37,6 +37,7 @@ struct MaterialCreationData // dont know how smart it is to copy around possible
 {
 	std::string name;
 
+	bool isLight = false;
 	bool albedoIsDefault = true;
 	bool normalIsDefault = true;
 	bool metallicIsDefault = true;
