@@ -213,6 +213,7 @@
     <ClInclude Include="src\core\Transform.h" />
     <ClInclude Include="src\demo\Calculator.h" />
     <ClInclude Include="src\HalesiaEngine.h" />
+    <ClInclude Include="src\io\FileFormat.h" />
     <ClInclude Include="src\io\SceneLoader.h" />
     <ClInclude Include="src\io\SceneWriter.h" />
     <ClInclude Include="src\physics\RigidBody.h" />

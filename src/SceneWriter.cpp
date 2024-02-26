@@ -18,6 +18,35 @@ struct HSFHeader
 	uint32_t version = 1;
 };
 
+class BinaryWriter
+{
+public:
+	BinaryWriter(std::string destination) : stream(std::ofstream(destination, std::ios::binary)) {}
+
+	template<typename Type>
+	BinaryWriter& operator<<(Type value)
+	{
+		stream.write(reinterpret_cast<char*>(&value), sizeof(Type));
+		return *this;
+	}
+
+	template<typename Type>
+	BinaryWriter& operator<<(const std::vector<Type>& vector)
+	{
+		stream.write((char*)&vector[0], sizeof(Type)* vector.size());
+		return *this;
+	}
+
+	BinaryWriter& operator<<(std::string str)
+	{
+		stream.write(str.c_str(), str.size() + 1); // also writes the null character
+		return *this;
+	}
+
+private:
+	std::ofstream stream;
+};
+
 inline RigidCreationData GetRigidCreationData(RigidBody& rigid)
 {
 	return RigidCreationData{ rigid.shape.data, rigid.shape.type, rigid.type };
@@ -44,20 +73,42 @@ void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 
 }
 
-void SerializeName(std::ofstream& stream, std::string name)
+constexpr uint64_t SIZE_OF_NODE_HEADER = sizeof(NodeType) + sizeof(NodeSize);
+
+template<typename Type>
+inline NodeSize GetArrayNodeSize(const std::vector<Type> vec)
 {
-	NodeType type = NODE_TYPE_NAME;
-	NodeSize size = name.size() + 1;
-	stream.write((char*)&type, sizeof(type));
-	stream.write((char*)&size, sizeof(size));
-	stream.write(name.c_str(), name.size() + 1); // string has to be written seperately
+	return SIZE_OF_NODE_HEADER + vec.size() * sizeof(Type);
+}
+
+inline NodeSize GetNameNodeSize(const std::string& name)
+{
+	return SIZE_OF_NODE_HEADER + name.size() + 1;
+}
+
+inline NodeSize GetMeshNodeSize(const Mesh& mesh)
+{
+	return SIZE_OF_NODE_HEADER + GetArrayNodeSize(mesh.vertices) + GetArrayNodeSize(mesh.indices);
+}
+
+inline NodeSize GetObjectNodeSize(const Object* object)
+{
+	return SIZE_OF_NODE_HEADER + GetNameNodeSize(object->name) + GetMeshNodeSize(object->meshes[0]); // should account for all meshes
 }
 
 void HSFWriter::WriteObject(Object* object, std::string destination)
 {
-	std::ofstream stream(destination, std::ios::binary);
-	
-	NodeType type = NODE_TYPE_OBJECT;
-	stream.write((char*)&type, sizeof(type));
-	SerializeName(stream, object->name);
+	BinaryWriter writer(destination);
+
+	writer << NODE_TYPE_OBJECT << SIZE_OF_NODE_HEADER + GetObjectNodeSize(object) << NODE_TYPE_NAME << object->name.size() + 1 << object->name;
+
+	// mesh testing
+	Mesh& mesh = object->meshes[0];
+
+	writer << NODE_TYPE_MESH << GetMeshNodeSize(mesh);
+
+	// vertices
+	writer << NODE_TYPE_ARRAY << mesh.vertices.size() << mesh.vertices;
+	//indices
+	writer << NODE_TYPE_ARRAY << mesh.indices.size() << mesh.indices;
 }

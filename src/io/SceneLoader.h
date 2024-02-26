@@ -14,6 +14,8 @@
 #include "physics/Shapes.h"
 #include "physics/RigidBody.h"
 
+#include "FileFormat.h"
+
 constexpr int textureCoordinateOffset = 12;
 constexpr int normalOffset = 20;
 
@@ -85,6 +87,42 @@ struct ObjectCreationData
 	std::vector<MeshCreationData> meshes;
 };
 
+class BinaryReader
+{
+public:
+	BinaryReader(std::string source) : stream(std::ifstream(source, std::ios::in | std::ios::binary)) {}
+
+	template<typename Type>
+	BinaryReader& operator>>(Type& in)
+	{
+		stream.read((char*)&in, sizeof(in));
+		return *this;
+	}
+
+	template<typename Type>
+	BinaryReader& operator>>(std::vector<Type>& vec) // this expects the vector to already be resized to the correct size
+	{
+		for (int i = 0; i < vec.size(); i++)
+			stream.read((char*)&vec[i], sizeof(Type));
+		return *this;
+	}
+
+	BinaryReader& operator>>(std::string& str) // this expects the string in the file to be null terminated
+	{
+		str = "";
+		for (int i = 0; i == 0 || str.back() != '\0'; i++)
+		{
+			char ch;
+			stream.read(&ch, sizeof(ch));
+			str += ch;
+		}
+		return *this;
+	}
+
+private:
+	std::ifstream stream;
+};
+
 class SceneLoader
 {
 public:
@@ -111,31 +149,16 @@ public:
 
 private:
 	// file specific info
-	std::string location;
 	std::string header;
-	std::ifstream stream;
-
-	glm::vec3 GetVec3(char* bytes);
-	glm::vec2 GetVec2(char* bytes);
+	std::string location;
+	BinaryReader reader;
 
 	void RetrieveBoneData(MeshCreationData& creationData, const aiMesh* pMesh);
 	MeshCreationData RetrieveMeshData(aiMesh* pMesh);
 
-	std::string RetrieveName();
-	glm::vec3 RetrieveTransformData();
-	void RetrieveTexture(std::vector<char>& vectorToWriteTo, bool& isDefault);
-	void RetrieveOneMaterial(MaterialCreationData& creationData);
-	Vertex RetrieveOneVertex();
-	void RetrieveOneMesh(MeshCreationData& creationData);
-	void RetrieveOneObject(int index);
-	void RetrieveAllObjects();
-	void RetrieveObjectVariables();
-	void RetrieveCameraVariables();
-	void RetrieveLightVariables();
-	void RetrieveHeader();
-	uint8_t RetrieveFlagsFromName(std::string string, std::string& name);
+	uint8_t RetrieveFlagsFromName(std::string string, std::string& name); 
 
-	void OpenInputFile(std::string path);
+	void GetNodeHeader(NodeType& type, NodeSize& size);
 };
 
 inline namespace GenericLoader

@@ -120,11 +120,12 @@ class Ship : public Object
 	}
 };
 
+#include "io/SceneWriter.h"
 class CollisionTest : public Scene
 {
 	void Start() override
 	{
-		camera = AddCustomCamera<FollowCam>();
+		/*camera = AddCustomCamera<FollowCam>();
 
 		Object* ship = AddCustomObject<Ship>(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
 		ship->AwaitGeneration();
@@ -155,6 +156,12 @@ class CollisionTest : public Scene
 		box->transform.position = glm::vec3(5, 0, 0);
 
 		box->AddRigidBody(RIGID_BODY_DYNAMIC, Box(box->meshes[0].extents));
+
+		HSFWriter::WriteObject(floor, "floor.hsf");*/
+		SceneLoader loader("floor.hsf");
+		loader.LoadScene();
+		Object* obj = AddStaticObject(loader.objects[0]);
+		std::cout << obj->name << '\n';
 	}
 
 	void Update(float delta) override
