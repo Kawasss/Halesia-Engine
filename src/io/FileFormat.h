@@ -35,7 +35,7 @@ inline extern const char* NodeTypeToString(NodeType type);
 // NODE_TYPE_NAME:
 // 16 bit value corresponding to NodeType
 // 64 bit value dictating the size of the name (including the null character)
-// the string itself
+// the string itself, whose length is given by the previous value.
 // 
 // NODE_TYPE_ARRAY:
 // 16 bit value corresponding to NodeType
@@ -44,24 +44,66 @@ inline extern const char* NodeTypeToString(NodeType type);
 // 
 // NODE_TYPE_OBJECT:
 // 16 bit value corresponding to NodeType
+// 64 bit value containing the size of the node
+// an 8 bit unsigned integer representing the objects state from the enum "ObjectState"
+// name node
+// a transform node  (NODE_TYPE_TRANSFORM)
+// a rigid body node (NODE_TYPE_RIGIDBODY)
+// a mesh node       (NODE_TYPE_MESH)
 // 
 // NODE_TYPE_MESH:
 // 16 bit value corresponding to NodeType
-// 64 bit value dictating the size of the node
-// a NODE_TYPE_ARRAY containing the vertices
-// a NODE_TYPE_ARRAY containing the indices
+// 64 bit value containing the size of the node
+// a 32 bit unsigned integer representing the material index
+// a vertices node (NODE_TYPE_VERTICES)
+// an indices node (NODE_TYPE_INDICES)
+// 
+// NODE_TYPE_VERTICES:
+// 16 bit value corresponding to NodeType
+// 64 bit value containing the size of the node
+// an array of vertices
+// each vertex can be copied directly into the "Vertex" struct.
+// 
+// NODE_TYPE_INDICES:
+// 16 bit value corresponding to NodeType
+// 64 bit value containing the size of the node
+// an array of 8 bit unsigned integers representing indices
 // 
 // NODE_TYPE_RIGIDBODY:
 // 16 bit value corresponding to NodeType
+// 64 bit value containing the size of the node
+// an 8 bit unsigned integer from the "RigidBodyType" enum
+// an 8 bit unsigned integer from the "ShapeType" enum
+// a vec3 containing the data of the shape
 // 
 // NODE_TYPE_TRANSFORM:
 // 16 bit value corresponding to NodeType
+// 64 bit value containing the size of the node
+// a vec3 containing the position
+// a vec3 containing the rotation
+// a vec3 containing the scale
+// the size of a NODE_TYPE_TRANSFORM is constant.
 // 
 // NODE_TYPE_CAMERA:
 // 16 bit value corresponding to NodeType
+// 64 bit value containing the size of the node
 // 
 // NODE_TYPE_TEXTURE:
 // 16 bit value corresponding to NodeType
+// 64 bit value containing the size of the node
+// an array of which the size is determined by the previous value
+// the texture data is written in the PNG format.
+// 
+// NODE_TYPE_MATERIAL:
+// 16 bit value corresponding to NodeType
+// 64 bit value containing the size of the node
+// a bool to indicate of the material is a light source or not
+// albedo texture node            (NODE_TYPE_TEXTURE)
+// normal texture node            (NODE_TYPE_TEXTURE)
+// roughness texture node         (NODE_TYPE_TEXTURE)
+// metallic texture node          (NODE_TYPE_TEXTURE)
+// ambient occlusion texture node (NODE_TYPE_TEXTURE)
 // 
 // NODE_TYPE_METADATA:
 // 16 bit value corresponding to NodeType
+// 64 bit value containing the size of the node

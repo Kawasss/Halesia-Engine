@@ -48,7 +48,7 @@ std::string RigidBodyTypeToString(RigidBodyType type)
 	case RIGID_BODY_STATIC:    return "RIGID_BODY_STATIC";
 	case RIGID_BODY_NONE:      return "RIGID_BODY_NONE";
 	}
-	return "";
+	return "RIGID_BODY_UNKNOWN";
 }
 
 std::string ShapeTypeToString(ShapeType type)
@@ -61,7 +61,7 @@ std::string ShapeTypeToString(ShapeType type)
 	case SHAPE_TYPE_PLANE:   return "SHAPE_TYPE_PLANE";
 	case SHAPE_TYPE_SPHERE:  return "SHAPE_TYPE_SPHERE";
 	}
-	return "";
+	return "SHAPE_TYPE_UNKNOWN";
 }
 
 std::string Console::TokenToString(Token token)
@@ -74,7 +74,7 @@ std::string Console::TokenToString(Token token)
 	case LEXER_TOKEN_OPERATOR:   return "LEXER_TOKEN_OPERATOR";
 	case LEXER_TOKEN_SEPERATOR:  return "LEXER_TOKEN_SEPERATOR";
 	}
-	return "";
+	return "LEXER_TOKEN_UNKNOWN";
 }
 
 std::string Console::variableTypeToString(VariableType type)
@@ -86,7 +86,7 @@ std::string Console::variableTypeToString(VariableType type)
 	case VARIABLE_TYPE_INT:    return "VARIABLE_TYPE_INT";
 	case VARIABLE_TYPE_STRING: return "VARIABLE_TYPE_STRING";
 	}
-	return "";
+	return "VARIABLE_TYPE_UNKNOWN";
 }
 
 std::string MessageSeverityToString(MessageSeverity severity)
@@ -98,7 +98,7 @@ std::string MessageSeverityToString(MessageSeverity severity)
 	case MESSAGE_SEVERITY_ERROR:   return "MESSAGE_SEVERITY_ERROR";
 	case MESSAGE_SEVERITY_DEBUG:   return "MESSAGE_SEVERITY_DEBUG";
 	}
-	return "";
+	return "MESSAGE_SEVERITY_UNKNOWN";
 }
 
 std::string ConsoleVariableAccessToString(ConsoleVariableAccess access)
@@ -109,7 +109,7 @@ std::string ConsoleVariableAccessToString(ConsoleVariableAccess access)
 	case CONSOLE_ACCESS_READ_WRITE: return "CONSOLE_ACCESS_READ_WRITE";
 	case CONSOLE_ACCESS_WRITE_ONLY: return "CONSOLE_ACCESS_WRITE_ONLY";
 	}
-	return "";
+	return "CONSOLE_ACCESS_UNKNOWN";
 }
 
 std::string ObjectStateToString(ObjectState state)
@@ -120,5 +120,5 @@ std::string ObjectStateToString(ObjectState state)
 	case OBJECT_STATE_INVISIBLE: return "OBJECT_STATE_INVISIBLE";
 	case OBJECT_STATE_VISIBLE:   return "OBJECT_STATE_VISIBLE";
 	}
-	return "";
+	return "OBJECT_STATE_UNKNOWN";
 }
