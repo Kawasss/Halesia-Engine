@@ -29,7 +29,7 @@ public:
 	static void ShowChartGraph(size_t item, size_t max, const char* label);
 	static void ShowDropdownMenu(std::vector<std::string>& items, std::string& currentItem, int& currentIndex, const char* label);
 	
-	static void ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window);
+	static void ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window, int index);
 	static void ShowObjectTransform(Transform& transform);
 	static void ShowObjectRigidBody(RigidBody& rigidBody);
 	static void ShowObjectData(Object* object);

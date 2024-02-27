@@ -1183,8 +1183,10 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 		
 	std::lock_guard<std::mutex> lockGuard(drawingMutex);
 	
-	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
-	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
+	VkResult result = vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
+	CheckVulkanResult("Failed to wait for fences", result, vkWaitForFences);
+	result = vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
+	CheckVulkanResult("Failed to reset for fences", result, vkResetFences);
 	
 	uint32_t imageIndex = GetNextSwapchainImage(currentFrame);
 

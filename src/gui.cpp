@@ -159,11 +159,12 @@ void GUI::ShowObjectMeshes(std::vector<Mesh>& meshes)
 		"  vertex:   %I64u\n"
 		"  d_vertex: %I64u\n"
 		"  index:    %I64u\n"
-		"BLAS:       %I64u\n\n"
+		"BLAS:       %I64u\n"
+		"face count: %i\n\n"
 		"Material:   %i\n\n"
 		"center:     %.2f, %.2f, %.2f\n"
 		"extents:    %.2f, %.2f, %.2f\n",
-	meshes[0].vertexMemory, meshes[0].defaultVertexMemory, meshes[0].indexMemory, (uint64_t)meshes[0].BLAS, (int)meshes[0].materialIndex, meshes[0].center.x, meshes[0].center.y, meshes[0].center.z, meshes[0].extents.x, meshes[0].extents.y, meshes[0].extents.z);
+	meshes[0].vertexMemory, meshes[0].defaultVertexMemory, meshes[0].indexMemory, (uint64_t)meshes[0].BLAS, meshes[0].faceCount, (int)meshes[0].materialIndex, meshes[0].center.x, meshes[0].center.y, meshes[0].center.z, meshes[0].extents.x, meshes[0].extents.y, meshes[0].extents.z);
 }
 
 void GUI::ShowObjectData(Object* object)
@@ -194,10 +195,12 @@ void GUI::ShowObjectData(Object* object)
 	, object->handle, object->GetScript<Object*>(), !object->finishedLoading);
 }
 
-void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window)
+void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window, int index)
 {
 	static std::string currentItem = "None";
 	static int objectIndex = -1;
+	if (index != -1)
+		objectIndex = index;
 
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.03f, 0.03f, 0.03f, 1));
@@ -428,8 +431,7 @@ void GUI::ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGrap
 
 void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* window)
 {
-	static int currentListBoxItem = -1;
-	static bool viewMaterial = false;
+	int selectedIndex = -1;
 
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.03f, 0.03f, 0.03f, 1));
@@ -446,12 +448,14 @@ void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* windo
 	{
 		if (objects[i]->children.empty())
 		{
-			ImGui::Selectable(objects[i]->name.c_str());
+			if (ImGui::Selectable(objects[i]->name.c_str()))
+				selectedIndex = i;
 			continue;
 		}
 
 		if (!ImGui::TreeNode(objects[i]->name.c_str()))
 			continue;
+		selectedIndex = i;
 
 		for (int j = 0; j < objects[i]->children.size(); j++)
 		{
@@ -465,7 +469,7 @@ void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* windo
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
 
-	ShowObjectComponents(objects, window);
+	ShowObjectComponents(objects, window, selectedIndex);
 }
 
 void GUI::ShowObjectTable(const std::vector<Object*>& objects)

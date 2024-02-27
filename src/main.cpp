@@ -31,8 +31,7 @@ public:
 
 	void Start() override
 	{
-		Shape shape = Box(meshes[0].extents);
-		AddRigidBody(RIGID_BODY_KINEMATIC, shape);
+		
 	}
 
 	void Update(float delta) override
@@ -59,14 +58,14 @@ class Ship : public Object
 	Object* baseBullet;
 	void Start() override
 	{
-		//AwaitGeneration();
-		//Shape shape = Box(meshes[0].extents);
-		//AddRigidBody(RIGID_BODY_KINEMATIC, shape);
-		//baseBullet = scene->AddCustomObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
-		//baseBullet->name = "bullet";
+		AwaitGeneration();
+		baseBullet = scene->AddCustomObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		baseBullet->name = "bullet";
+		Shape shape = Box(baseBullet->meshes[0].extents);
+		baseBullet->AddRigidBody(RIGID_BODY_KINEMATIC, shape);
 		////baseBullet->state = OBJECT_STATE_DISABLED;
-		//baseBullet->transform.position.y = -5;
-		////baseBullet->rigid.ForcePosition(baseBullet->transform);
+		baseBullet->transform.position.y = -5;
+		baseBullet->rigid.ForcePosition(baseBullet->transform);
 		mouse = HalesiaEngine::GetInstance()->GetEngineCore().window;
 	}
 
@@ -91,14 +90,13 @@ class Ship : public Object
 		bool thisFrame = Input::IsKeyPressed(VirtualKey::LeftMouseButton);
 		if (!thisFrame && lastFrame)
 		{
-			Object* newBullet = scene->AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+			Object* newBullet = scene->DuplicateCustomObject<Bullet>(baseBullet, "bullet");
 			newBullet->name = std::to_string(newBullet->handle);
 			//Bullet* script = newBullet->GetScript<Bullet>();
 			//script->forward = transform.GetForward();
-			//newBullet->transform.position = transform.position;// +transform.GetForward() * glm::vec3(2);
-			//newBullet->state = OBJECT_STATE_VISIBLE;
-			std::cout << scene->allObjects.size() << '\n';
-			std::cout << "dupe" << '\n';
+			newBullet->transform.position = transform.position + transform.GetForward() * glm::vec3(2);
+			newBullet->rigid.ForcePosition(newBullet->transform);
+			newBullet->state = OBJECT_STATE_VISIBLE;
 		}
 
 		rigid.MovePosition(transform);
@@ -138,10 +136,7 @@ class CollisionTest : public Scene
 		SceneLoader loader("scene.hsf");
 		loader.LoadScene();
 		for (MaterialCreationData& data : loader.materials)
-		{
 			Mesh::materials.push_back(Material::Create(data));
-			Mesh::materials.back().AwaitGeneration();
-		}
 		for (ObjectCreationData& data : loader.objects)
 		{
 			if (data.name == "ship")

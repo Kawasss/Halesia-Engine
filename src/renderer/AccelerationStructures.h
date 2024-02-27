@@ -14,7 +14,7 @@ public:
 
 protected:
 	void CreateAS(const VkAccelerationStructureGeometryKHR* pGeometry, VkAccelerationStructureTypeKHR type, uint32_t maxPrimitiveCount);
-	void BuildAS(const VkAccelerationStructureGeometryKHR* pGeometry, uint32_t primitiveCount, VkBuildAccelerationStructureModeKHR mode, bool useSingleTimeCommands = true, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
+	void BuildAS(const VkAccelerationStructureGeometryKHR* pGeometry, uint32_t primitiveCount, VkBuildAccelerationStructureModeKHR mode, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
 
 	VkBuffer ASBuffer =              VK_NULL_HANDLE;
 	VkDeviceMemory ASBufferMemory =  VK_NULL_HANDLE;
@@ -45,7 +45,7 @@ public:
 	/// <summary>
 	/// Builds the top level acceleration structure. It uses single time commands per default, but can use an external command buffer. An external command buffer is recommended if it's being rebuild with performance in mind
 	/// </summary>
-	void Build(std::vector<Object*>& objects, bool useSingleTimeCommands = true, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
+	void Build(std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
 	void Update(std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer);
 	bool HasBeenBuilt();
 
