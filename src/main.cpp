@@ -138,7 +138,10 @@ class CollisionTest : public Scene
 		SceneLoader loader("scene.hsf");
 		loader.LoadScene();
 		for (MaterialCreationData& data : loader.materials)
+		{
 			Mesh::materials.push_back(Material::Create(data));
+			Mesh::materials.back().AwaitGeneration();
+		}
 		for (ObjectCreationData& data : loader.objects)
 		{
 			if (data.name == "ship")
@@ -186,10 +189,16 @@ class CollisionTest : public Scene
 		Material lightMat = Material::Create(lightInfo);
 		light->meshes[0].SetMaterial(lightMat);
 
+		MaterialCreateInfo boxInfo{};
+		boxInfo.albedo = "textures/red.png";
+		Material boxMat = Material::Create(boxInfo);
+		boxMat.AwaitGeneration();
+
 		Object* box = DuplicateStaticObject(floor, "box");
 		box->AwaitGeneration();
 		box->transform.scale = glm::vec3(1, 1, 1);
 		box->transform.position = glm::vec3(5, 0, 0);
+		box->meshes[0].SetMaterial(boxMat);
 
 		box->AddRigidBody(RIGID_BODY_DYNAMIC, Box(box->meshes[0].extents));
 

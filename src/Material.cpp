@@ -42,18 +42,12 @@ Texture* Material::operator[](MaterialTexture materialTexture)
 {
 	switch (materialTexture)
 	{
-	case MATERIAL_TEXTURE_ALBEDO:
-		return albedo;
-	case MATERIAL_TEXTURE_NORMAL:
-		return normal;
-	case MATERIAL_TEXTURE_METALLIC:
-		return metallic;
-	case MATERIAL_TEXTURE_ROUGHNESS:
-		return roughness;
-	case MATERIAL_TEXTURE_AMBIENT_OCCLUSION:
-		return ambientOcclusion;
-	default:
-		return albedo; // not returning nullptr because that could crash the program
+	case MATERIAL_TEXTURE_ALBEDO:            return albedo;
+	case MATERIAL_TEXTURE_NORMAL:            return normal;
+	case MATERIAL_TEXTURE_METALLIC:          return metallic;
+	case MATERIAL_TEXTURE_ROUGHNESS:         return roughness;
+	case MATERIAL_TEXTURE_AMBIENT_OCCLUSION: return ambientOcclusion;
+	default:                                 return albedo; // not returning nullptr because that could crash the program
 	}
 }
 

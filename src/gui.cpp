@@ -157,7 +157,7 @@ void GUI::ShowObjectMeshes(std::vector<Mesh>& meshes)
 	(
 		"Memory:\n"
 		"  vertex:   %I64u\n"
-		"  d_vertex: %i64u\n"
+		"  d_vertex: %I64u\n"
 		"  index:    %I64u\n"
 		"BLAS:       %I64u\n\n"
 		"Material:   %i\n\n"
@@ -168,19 +168,30 @@ void GUI::ShowObjectMeshes(std::vector<Mesh>& meshes)
 
 void GUI::ShowObjectData(Object* object)
 {
+	static std::vector<std::string> allStates = { "OBJECT_STATE_VISIBLE", "OBJECT_STATE_INVISIBLE", "OBJECT_STATE_DISABLED" };
+	static std::unordered_map<std::string, ObjectState> stringToState = { { "OBJECT_STATE_VISIBLE", OBJECT_STATE_VISIBLE }, { "OBJECT_STATE_INVISIBLE", OBJECT_STATE_INVISIBLE }, { "OBJECT_STATE_DISABLED", OBJECT_STATE_DISABLED } };
+
+	std::string currentState = ObjectStateToString(object->state);
+	int currentIndex = -1;
+
 	ImGui::Text("name:   ");
 	ImGui::SameLine();
 	ImGui::InputText("##objectname", &object->name);
 	if (object->name.size() == 0)
 		object->name = "NO_NAME";
+
+	ImGui::Text("state:  ");
+	ImGui::SameLine();
+	ShowDropdownMenu(allStates, currentState, currentIndex, "##objectstate");
+	object->state = stringToState[currentState];
+
 	ImGui::Text
 	(
 		"Handle:  %I64u\n"
 		"Script:  %I64u\n"
-		"State:   %s\n"
 		"\n"
 		"loading: %i\n"
-	, object->handle, object->GetScript<Object*>(), ObjectStateToString(object->state).c_str(), !object->finishedLoading);
+	, object->handle, object->GetScript<Object*>(), !object->finishedLoading);
 }
 
 void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window)

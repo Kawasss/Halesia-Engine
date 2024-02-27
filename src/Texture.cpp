@@ -185,7 +185,7 @@ std::vector<uint8_t> Image::GetImageDataAsPNG()
 	vkMapMemory(logicalDevice, copyMemory, 0, size, 0, (void**)&ptr);
 
 	int pngSize = 0;
-	unsigned char* pngPtr = stbi_write_png_to_mem(ptr, width * sizeof(glm::vec3), width, height, 4, &pngSize); // 4 channels = rgba
+	unsigned char* pngPtr = stbi_write_png_to_mem(ptr, width * sizeof(uint8_t), width, height, 4, &pngSize); // 4 channels = rgba
 
 	vkUnmapMemory(logicalDevice, copyMemory);
 	vkDestroyBuffer(logicalDevice, copyBuffer, nullptr);
