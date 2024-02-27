@@ -168,6 +168,11 @@ void GUI::ShowObjectMeshes(std::vector<Mesh>& meshes)
 
 void GUI::ShowObjectData(Object* object)
 {
+	ImGui::Text("name:   ");
+	ImGui::SameLine();
+	ImGui::InputText("##objectname", &object->name);
+	if (object->name.size() == 0)
+		object->name = "NO_NAME";
 	ImGui::Text
 	(
 		"Handle:  %I64u\n"
