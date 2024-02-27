@@ -74,29 +74,32 @@ inline MeshCreationData GetMeshCreationData(Mesh& mesh)
 	return creationData;
 }
 
+constexpr uint64_t SIZE_OF_NODE_HEADER = sizeof(NodeType) + sizeof(NodeSize);
+
 template<typename Type>
 inline NodeSize GetArrayNodeSize(const std::vector<Type> vec) { return vec.size() * sizeof(Type); }
 inline NodeSize GetNameNodeSize(const std::string& name)      { return name.size() + 1; }
 inline NodeSize GetMeshNodeSize(const Mesh& mesh)             { return GetArrayNodeSize(mesh.vertices) + GetArrayNodeSize(mesh.indices) + sizeof(uint32_t); }
 inline NodeSize GetObjectNodeSize(const Object* object)       { return GetNameNodeSize(object->name) + GetMeshNodeSize(object->meshes[0]); } // should account for all meshes
-inline NodeSize GetTextureNodeSize(Texture* tex)              { return tex->size; }
-inline NodeSize GetMaterialNodeSize(const Material& mat)      { return GetTextureNodeSize(mat.albedo) + GetTextureNodeSize(mat.normal) + GetTextureNodeSize(mat.roughness) + GetTextureNodeSize(mat.metallic) + GetTextureNodeSize(mat.ambientOcclusion); }
 inline NodeSize GetTransformNodeSize()                        { return sizeof(glm::vec3) * 3; }
 inline NodeSize GetRigidBodyNodeSize()                        { return sizeof(uint8_t) * 2 + sizeof(glm::vec3); }
 
-inline void WriteTexture(BinaryWriter& writer, Texture* texture)
+inline void WriteTexture(BinaryWriter& writer, const std::vector<uint8_t>& compressedData)
 {
-	writer << NODE_TYPE_TEXTURE << GetTextureNodeSize(texture) << texture->GetImageData();
+	writer << NODE_TYPE_TEXTURE << compressedData.size() << compressedData;
 }
 
 inline void WriteMaterial(BinaryWriter& writer, const Material& material)
 {
-	writer << NODE_TYPE_MATERIAL << GetMaterialNodeSize(material) << material.isLight;
-	WriteTexture(writer, material.albedo);
-	WriteTexture(writer, material.normal);
-	WriteTexture(writer, material.roughness);
-	WriteTexture(writer, material.metallic);
-	WriteTexture(writer, material.ambientOcclusion);
+	std::vector<uint8_t> albedo = material.albedo->GetImageDataAsPNG(), normal = material.normal->GetImageDataAsPNG(), roughness = material.roughness->GetImageDataAsPNG();
+	std::vector<uint8_t> metallic = material.metallic->GetImageDataAsPNG(), ao = material.ambientOcclusion->GetImageDataAsPNG();
+
+	writer << NODE_TYPE_MATERIAL << SIZE_OF_NODE_HEADER * 5 + albedo.size() + normal.size() + roughness.size() + metallic.size() + ao.size() + sizeof(material.isLight) << material.isLight;
+	WriteTexture(writer, albedo);
+	WriteTexture(writer, normal);
+	WriteTexture(writer, roughness);
+	WriteTexture(writer, metallic);
+	WriteTexture(writer, ao);
 }
 
 void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
@@ -107,8 +110,6 @@ void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 	for (int i = 1; i < Mesh::materials.size(); i++)
 		WriteMaterial(writer, Mesh::materials[i]);
 }
-
-constexpr uint64_t SIZE_OF_NODE_HEADER = sizeof(NodeType) + sizeof(NodeSize);
 
 inline void WriteMesh(BinaryWriter& writer, const Mesh& mesh)
 {

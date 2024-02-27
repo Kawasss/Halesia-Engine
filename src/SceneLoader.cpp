@@ -78,7 +78,12 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 	case NODE_TYPE_TRANSFORM:
 		reader >> currentObject->position >> currentObject->rotation >> currentObject->scale;
 		break;
-	default: std::cout << "unused node type " << type << '\n'; break;
+	default: 
+		std::cout << "unused node type " << NodeTypeToString(type) << " (" << type << ")\n";
+		uint8_t* junk = new uint8_t[size];
+		reader.Read((char*)junk, size);
+		delete[] junk;
+		break;
 	}
 }
 

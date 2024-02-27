@@ -33,7 +33,7 @@ public:
 	int GetHeight();
 	int GetMipLevels();
 
-	std::vector<uint8_t> GetImageData();
+	std::vector<uint8_t> GetImageDataAsPNG();
 
 	static bool TexturesHaveChanged();
 

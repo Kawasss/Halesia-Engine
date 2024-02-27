@@ -1,11 +1,14 @@
 #include <fstream>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb/stb_image_write.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
+
 #include "renderer/Vulkan.h"
 #include "renderer/physicalDevice.h"
 #include "renderer/Texture.h"
 #include "core/Console.h"
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb/stb_image.h"
 #include "tools/common.h"
 
 bool Image::texturesHaveChanged = false;
@@ -129,7 +132,7 @@ void Image::WritePixelsToBuffer(std::vector<uint8_t*> pixels, bool useMipMaps, T
 	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
 }
 
-std::vector<uint8_t> Image::GetImageData()
+std::vector<uint8_t> Image::GetImageDataAsPNG()
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
@@ -180,14 +183,18 @@ std::vector<uint8_t> Image::GetImageData()
 
 	uint8_t* ptr = nullptr;
 	vkMapMemory(logicalDevice, copyMemory, 0, size, 0, (void**)&ptr);
-	std::vector<uint8_t> ret;
-	ret.resize(size / sizeof(uint8_t));
-	for (int i = 0; i < size / sizeof(uint8_t); i++)
-		ret[i] = ptr[i];
+
+	int pngSize = 0;
+	unsigned char* pngPtr = stbi_write_png_to_mem(ptr, width * sizeof(glm::vec3), width, height, 4, &pngSize); // 4 channels = rgba
 
 	vkUnmapMemory(logicalDevice, copyMemory);
 	vkDestroyBuffer(logicalDevice, copyBuffer, nullptr);
 	vkFreeMemory(logicalDevice, copyMemory, nullptr);
+
+	std::vector<uint8_t> ret;
+	ret.resize(pngSize / sizeof(uint8_t));
+	memcpy(ret.data(), pngPtr, pngSize);
+	STBI_FREE(pngPtr);
 
 	return ret;
 }

@@ -28,6 +28,7 @@ enum NodeType : uint16_t
 	NODE_TYPE_VERTICES,
 	NODE_TYPE_INDICES
 };
+inline extern const char* NodeTypeToString(NodeType type);
 
 // These identifiers are represented like this in binary:
 //

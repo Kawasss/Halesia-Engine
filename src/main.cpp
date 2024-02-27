@@ -125,6 +125,10 @@ class CollisionTest : public Scene
 {
 	void Start() override
 	{
+		ReadScene();
+	}
+	void ReadScene()
+	{
 		camera = AddCustomCamera<FollowCam>();
 
 		MaterialCreateInfo lightInfo{};
@@ -148,8 +152,11 @@ class CollisionTest : public Scene
 			}
 			else AddStaticObject(data)->AwaitGeneration();
 		}
-		// the code that generated the scene.hsf
-		/*camera = AddCustomCamera<FollowCam>();
+	}
+
+	void WriteScene()
+	{
+		camera = AddCustomCamera<FollowCam>();
 
 		Object* ship = AddCustomObject<Ship>(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
 		ship->name = "ship";
@@ -184,7 +191,7 @@ class CollisionTest : public Scene
 
 		box->AddRigidBody(RIGID_BODY_DYNAMIC, Box(box->meshes[0].extents));
 
-		HSFWriter::WriteHSFScene(this, "scene.hsf");*/
+		HSFWriter::WriteHSFScene(this, "scene.hsf");
 	}
 
 	void Update(float delta) override

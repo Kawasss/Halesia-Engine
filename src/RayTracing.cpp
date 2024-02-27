@@ -5,9 +5,6 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb/stb_image_write.h"
-
 #include "renderer/renderer.h"
 #include "renderer/AccelerationStructures.h"
 #include "renderer/Denoiser.h"

@@ -95,6 +95,11 @@ class BinaryReader
 public:
 	BinaryReader(std::string source) : stream(std::ifstream(source, std::ios::in | std::ios::binary)) {}
 
+	void Read(char* ptr, size_t size)
+	{
+		stream.read(ptr, size);
+	}
+
 	template<typename Type>
 	BinaryReader& operator>>(Type& in)
 	{
