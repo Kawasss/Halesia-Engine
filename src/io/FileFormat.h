@@ -26,7 +26,12 @@ enum NodeType : uint16_t
 	NODE_TYPE_MATERIAL,
 	NODE_TYPE_METADATA,
 	NODE_TYPE_VERTICES,
-	NODE_TYPE_INDICES
+	NODE_TYPE_INDICES,
+	NODE_TYPE_ALBEDO,
+	NODE_TYPE_NORMAL,
+	NODE_TYPE_ROUGHNESS,
+	NODE_TYPE_METALLIC,
+	NODE_TYPE_AMBIENT_OCCLUSION
 };
 inline extern const char* NodeTypeToString(NodeType type);
 
@@ -93,6 +98,7 @@ inline extern const char* NodeTypeToString(NodeType type);
 // 64 bit value containing the size of the node
 // an array of which the size is determined by the previous value
 // the texture data is written in the PNG format.
+// NODE_TYPE_ALBEDO, NODE_TYPE_NORMAL, NODE_TYPE_ROUGHNESS, NODE_TYPE_METALLIC and NODE_TYPE_AMBIENT_OCCLUSION are specialised versions of this node
 // 
 // NODE_TYPE_MATERIAL:
 // 16 bit value corresponding to NodeType

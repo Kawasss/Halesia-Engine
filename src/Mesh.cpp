@@ -33,9 +33,7 @@ void Mesh::Create(const MeshCreationData& creationData)
 	extents = creationData.extents;
 	max = extents + center;
 	min = center * 2.f - max;
-	
-	if (creationData.hasMaterial)
-		ProcessMaterial(creationData.material);
+
 	Recreate();
 	finished = true;
 }

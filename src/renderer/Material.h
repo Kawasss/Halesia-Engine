@@ -3,6 +3,7 @@
 #include "../ResourceManager.h"
 
 typedef uint64_t Handle;
+struct MaterialCreationData;
 
 enum MaterialTexture
 {
@@ -30,6 +31,7 @@ struct MaterialCreateInfo
 struct Material
 {
 	static Material Create(const MaterialCreateInfo& createInfo);
+	static Material Create(const MaterialCreationData& createInfo);
 
 	// dont know if dynamically allocated is necessary since the material will always be used for the lifetime of the mesh, the class is sort of big so not so sure if copying is cheap
 	Texture* albedo = Texture::placeholderAlbedo;

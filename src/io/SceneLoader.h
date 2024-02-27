@@ -56,7 +56,6 @@ struct MaterialCreationData // dont know how smart it is to copy around possible
 struct MeshCreationData
 {
 	std::string name;
-	MaterialCreationData material;
 	uint32_t materialIndex;
 
 	bool hasBones = false;
@@ -152,6 +151,7 @@ public:
 	// model related info
 	int amountOfObjects;
 	std::vector<ObjectCreationData> objects;
+	std::vector<MaterialCreationData> materials;
 
 	// animations
 	std::vector<Animation> animations;
@@ -173,6 +173,7 @@ private:
 
 	std::vector<MeshCreationData>::iterator currentMesh;
 	std::vector<ObjectCreationData>::iterator currentObject;
+	std::vector<MaterialCreationData>::iterator currentMat;
 };
 
 inline namespace GenericLoader

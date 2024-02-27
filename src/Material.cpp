@@ -1,4 +1,5 @@
 #include "renderer/Material.h"
+#include "io/SceneLoader.h"
 
 Material Material::Create(const MaterialCreateInfo& createInfo)
 {
@@ -13,22 +14,27 @@ Material Material::Create(const MaterialCreateInfo& createInfo)
 	return ret;
 }
 
+Material Material::Create(const MaterialCreationData& createInfo)
+{
+	Material ret{};
+	if (!createInfo.albedoIsDefault)           ret.albedo = new Texture(createInfo.albedoData);
+	if (!createInfo.normalIsDefault)           ret.normal = new Texture(createInfo.normalData, true, TEXTURE_FORMAT_UNORM);
+	if (!createInfo.metallicIsDefault)         ret.metallic = new Texture(createInfo.metallicData);
+	if (!createInfo.roughnessIsDefault)        ret.roughness = new Texture(createInfo.roughnessData);
+	if (!createInfo.ambientOcclusionIsDefault) ret.ambientOcclusion = new Texture(createInfo.ambientOcclusionData);
+	return ret;
+}
+
 Texture* Material::operator[](size_t i)
 {
 	switch (i)
 	{
-	case 0:
-		return albedo;
-	case 1:
-		return normal;
-	case 2:
-		return metallic;
-	case 3:
-		return roughness;
-	case 4:
-		return ambientOcclusion;
-	default:
-		return albedo;
+	case 0:  return albedo;
+	case 1:  return normal;
+	case 2:  return metallic;
+	case 3:  return roughness;
+	case 4:  return ambientOcclusion;
+	default: return albedo;
 	}
 }
 

@@ -78,6 +78,46 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 	case NODE_TYPE_TRANSFORM:
 		reader >> currentObject->position >> currentObject->rotation >> currentObject->scale;
 		break;
+	case NODE_TYPE_MATERIAL:
+		materials.push_back({});
+		currentMat = materials.begin() + materials.size() - 1;
+		reader >> currentMat->isLight;
+		GetNodeHeader(childType, childSize); // all textures
+		RetrieveType(childType, childSize);
+		GetNodeHeader(childType, childSize);
+		RetrieveType(childType, childSize);
+		GetNodeHeader(childType, childSize);
+		RetrieveType(childType, childSize);
+		GetNodeHeader(childType, childSize);
+		RetrieveType(childType, childSize);
+		GetNodeHeader(childType, childSize);
+		RetrieveType(childType, childSize);
+		break;
+	case NODE_TYPE_ALBEDO:
+		currentMat->albedoIsDefault = false;
+		currentMat->albedoData.resize(size);
+		reader >> currentMat->albedoData;
+		break;
+	case NODE_TYPE_NORMAL:
+		currentMat->normalIsDefault = false;
+		currentMat->normalData.resize(size);
+		reader >> currentMat->normalData;
+		break;
+	case NODE_TYPE_ROUGHNESS:
+		currentMat->roughnessIsDefault = false;
+		currentMat->roughnessData.resize(size);
+		reader >> currentMat->roughnessData;
+		break;
+	case NODE_TYPE_METALLIC:
+		currentMat->metallicIsDefault = false;
+		currentMat->metallicData.resize(size);
+		reader >> currentMat->metallicData;
+		break;
+	case NODE_TYPE_AMBIENT_OCCLUSION:
+		currentMat->ambientOcclusionIsDefault = false;
+		currentMat->ambientOcclusionData.resize(size);
+		reader >> currentMat->ambientOcclusionData;
+		break;
 	default: 
 		std::cout << "unused node type " << NodeTypeToString(type) << " (" << type << ")\n";
 		uint8_t* junk = new uint8_t[size];

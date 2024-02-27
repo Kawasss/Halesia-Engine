@@ -137,6 +137,8 @@ class CollisionTest : public Scene
 
 		SceneLoader loader("scene.hsf");
 		loader.LoadScene();
+		for (MaterialCreationData& data : loader.materials)
+			Mesh::materials.push_back(Material::Create(data));
 		for (ObjectCreationData& data : loader.objects)
 		{
 			if (data.name == "ship")
