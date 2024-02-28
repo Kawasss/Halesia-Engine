@@ -517,15 +517,10 @@ void RayTracing::UpdateTextureBuffer()
 
 void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera)
 {
-	amountOfActiveObjects = 0;
+	amountOfActiveObjects = 1;
 	const glm::vec2 staticMotion = camera->GetMotionVector();
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
-		if (objects[i]->state != OBJECT_STATE_VISIBLE || !objects[i]->HasFinishedLoading() || objects[i]->meshes.empty())
-			continue;
-		
-		std::lock_guard<std::mutex> lockGuard(objects[i]->mutex);
-
 		glm::vec2 ndc = objects[i]->rigid.type == RIGID_BODY_DYNAMIC ? objects[i]->transform.GetMotionVector(camera->GetProjectionMatrix(), camera->GetViewMatrix()) : staticMotion;
 		ndc.x *= width;
 		ndc.y *= height;

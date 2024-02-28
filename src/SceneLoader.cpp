@@ -16,7 +16,9 @@ template<typename T> inline T GetTypeFromStream(std::ifstream& stream)
 	return f;
 }
 
-BinaryReader::BinaryReader(std::string source) : input(std::ifstream(source, std::ios::in | std::ios::binary))
+BinaryReader::BinaryReader(std::string source) : input(std::ifstream(source, std::ios::in | std::ios::binary)) {}
+
+void BinaryReader::DecompressFile()
 {
 	NodeType type = NODE_TYPE_NONE;
 	NodeSize nodeSize = 0;
@@ -36,13 +38,13 @@ BinaryReader::BinaryReader(std::string source) : input(std::ifstream(source, std
 	input.seekg(beginSize, std::ios::beg);
 	input.read(compressed, size);
 	input.close();
-	
+
 	size_t uncompressedSize = 0;
 	DECOMPRESSOR_HANDLE decompressor;
 	if (!CreateDecompressor(compressMode, NULL, &decompressor))                                  throw std::runtime_error("Cannot create a compressor"); // XPRESS is fast but not the best compression, XPRESS with huffman has better compression but is slower, MSZIP uses more resources and LZMS is slow. its Using xpress right now since its the fastest
 	if (!Decompress(decompressor, compressed, size, uncompressed, givenSize, &uncompressedSize)) throw std::runtime_error("Cannot decompress");
 	if (!CloseDecompressor(decompressor))                                                        throw std::runtime_error("Cannot close a compressor"); // currently not checking the return value
-	
+
 	stream.resize(uncompressedSize);
 	memcpy((void*)stream.data(), uncompressed, uncompressedSize);
 	if (givenSize != uncompressedSize)
@@ -56,6 +58,8 @@ SceneLoader::SceneLoader(std::string sceneLocation) : reader(BinaryReader(sceneL
 
 void SceneLoader::LoadScene() 
 {
+	reader.DecompressFile();
+
 	NodeType type = NODE_TYPE_NONE;
 	NodeSize size = 0;
 

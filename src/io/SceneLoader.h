@@ -96,6 +96,8 @@ public:
 	BinaryReader() {}
 	BinaryReader(std::string source);
 
+	void DecompressFile();
+
 	void Read(char* ptr, size_t size)
 	{
 		memcpy(ptr, stream.data() + pointer, size);

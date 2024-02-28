@@ -53,7 +53,7 @@ class Ship : public Object
 {
 	static constexpr float fireRate = 1 / 4;
 	bool lastFrame = false;
-
+	
 	Win32Window* mouse;
 	Object* baseBullet;
 	void Start() override
