@@ -837,13 +837,13 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	vkCmdResetQueryPool(commandBuffer, queryPool, 0, 10);
 
 	WriteTimestamp(commandBuffer);
-	animationManager->ApplyAnimations(commandBuffer); // not good
+	//animationManager->ApplyAnimations(commandBuffer); // not good
 	WriteTimestamp(commandBuffer);
 
 	WriteTimestamp(commandBuffer);
-	for (Object* obj : objects)
+	/*for (Object* obj : objects)
 		for (Mesh& mesh : obj->meshes)
-			mesh.BLAS->RebuildGeometry(commandBuffer, mesh);
+			mesh.BLAS->RebuildGeometry(commandBuffer, mesh);*/
 	WriteTimestamp(commandBuffer);
 
 	WriteTimestamp(commandBuffer);

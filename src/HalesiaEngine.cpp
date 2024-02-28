@@ -237,17 +237,19 @@ HalesiaExitCode HalesiaEngine::Run()
 			Physics::Simulate(frameDelta);
 			Physics::FetchAndUpdateObjects();
 
-			asyncScripts = std::async(&HalesiaEngine::UpdateScene, this, frameDelta);
-			asyncRenderer = std::async(&HalesiaEngine::UpdateRenderer, this, frameDelta);
+			//asyncScripts = std::async(&HalesiaEngine::UpdateScene, this, frameDelta);
+			//asyncRenderer = std::async(&HalesiaEngine::UpdateRenderer, this, frameDelta);
+			UpdateScene(frameDelta);
+			UpdateRenderer(frameDelta);
 
-			asyncRenderer.get();
+			//asyncRenderer.get();
 			
 			if (showWindowData)
 				GUI::ShowWindowData(core.window); // only works on main thread, because it calls windows functions for changing the window
 
 			Win32Window::PollMessages();
 
-			asyncScripts.get();
+			//asyncScripts.get();
 
 			while (std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count() < CalculateFrameTime(core.maxFPS)); // wait untill the fps limit is reached
 

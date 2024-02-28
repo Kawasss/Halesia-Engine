@@ -65,7 +65,6 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 	if (externalCommandBuffer == VK_NULL_HANDLE)
 	{
 		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
-		std::cout << GetThreadId(GetCurrentThread()) << '\n';
 		VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
 		vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &buildGeometryInfo, &pBuildRangeInfo);
 		Vulkan::EndSingleTimeCommands(context.graphicsQueue, commandBuffer, commandPool);

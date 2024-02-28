@@ -94,7 +94,7 @@ class Ship : public Object
 			newBullet->name = std::to_string(newBullet->handle);
 			//Bullet* script = newBullet->GetScript<Bullet>();
 			//script->forward = transform.GetForward();
-			newBullet->transform.position = transform.position + transform.GetForward() * glm::vec3(2);
+			newBullet->transform.position = transform.position;
 			newBullet->rigid.ForcePosition(newBullet->transform);
 			newBullet->state = OBJECT_STATE_VISIBLE;
 		}
