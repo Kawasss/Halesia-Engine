@@ -1,5 +1,9 @@
+#pragma comment(lib, "cabinet.lib") // needed for compression
 #include <cstdint>
 #include <iostream>
+#include <sstream>
+#include <Windows.h>
+#include <compressapi.h>
 
 #include "io/SceneWriter.h"
 #include "io/SceneLoader.h"
@@ -21,7 +25,7 @@ struct HSFHeader
 class BinaryWriter
 {
 public:
-	BinaryWriter(std::string destination) : stream(std::ofstream(destination, std::ios::binary)) {}
+	BinaryWriter(std::string destination) : output(std::ofstream(destination, std::ios::binary)) {}
 
 	void Write(const char* ptr, size_t size)
 	{
@@ -29,9 +33,16 @@ public:
 	}
 
 	template<typename Type>
-	BinaryWriter& operator<<(Type value)
+	BinaryWriter& WriteDataToFile(const Type& data)
 	{
-		stream.write(reinterpret_cast<char*>(&value), sizeof(Type));
+		output.write(reinterpret_cast<const char*>(&data), sizeof(Type));
+		return *this;
+	}
+
+	template<typename Type>
+	BinaryWriter& operator<<(const Type& value)
+	{
+		stream.write(reinterpret_cast<const char*>(&value), sizeof(Type));
 		return *this;
 	}
 
@@ -39,18 +50,53 @@ public:
 	BinaryWriter& operator<<(const std::vector<Type>& vector)
 	{
 		if (vector.empty()) return *this;
-		stream.write((char*)&vector[0], sizeof(Type) * vector.size());
+		stream.write((const char*)&vector[0], sizeof(Type) * vector.size());
 		return *this;
 	}
 
-	BinaryWriter& operator<<(std::string str)
+	BinaryWriter& operator<<(const std::string& str)
 	{
 		stream.write(str.c_str(), str.size() + 1); // also writes the null character
 		return *this;
 	}
 
+	void WriteToFileCompressed()
+	{
+		size_t size = stream.seekg(0, std::ios::end).tellg();
+		stream.seekg(0, std::ios::beg);
+		char* data = new char[size];
+		stream.read(data, size); // copying the stream into a usable buffer
+
+		size_t compressedSize = 0;
+		COMPRESSOR_HANDLE compressor; 
+		char* compressed = new char[size]; // size is the max size, not the actual compressed size
+		if (!CreateCompressor(COMPRESS_ALGORITHM_XPRESS, NULL, &compressor)) throw std::runtime_error("Cannot create a compressor"); // XPRESS is fast but not the best compression, XPRESS with huffman has better compression but is slower, MSZIP uses more resources and LZMS is slow. its Using xpress right now since its the fastest
+		if (!Compress(compressor, data, size, compressed, size, &compressedSize)) throw std::runtime_error("Cannot compress");
+		if (!CloseCompressor(compressor)) throw std::runtime_error("Cannot close a compressor"); // currently not checking the return value
+
+		output.write(compressed, compressedSize);
+		output.close();
+		delete[] data;
+		delete[] compressed;
+	}
+
+	void WriteToFileUncompressed()
+	{
+		size_t size = stream.seekg(0, std::ios::end).tellg();
+		stream.seekg(0, std::ios::beg);
+		char* data = new char[size];
+		stream.read(data, size); // copying the stream into a usable buffer
+
+		output.write(data, size);
+		output.close();
+		delete[] data;
+	}
+
+	size_t GetCurrentSize() { size_t ret = stream.seekg(0, std::ios::end).tellg(); stream.seekg(0); return ret; }
+
 private:
-	std::ofstream stream;
+	std::stringstream stream;
+	std::ofstream output;
 };
 
 inline RigidCreationData GetRigidCreationData(RigidBody& rigid)
@@ -109,6 +155,8 @@ void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 		WriteObject(writer, object);
 	for (int i = 1; i < Mesh::materials.size(); i++)
 		WriteMaterial(writer, Mesh::materials[i]);
+	writer.WriteDataToFile(NODE_TYPE_COMPRESSION).WriteDataToFile(sizeof(uint64_t) + sizeof(uint32_t)).WriteDataToFile(writer.GetCurrentSize()).WriteDataToFile(COMPRESS_ALGORITHM_XPRESS);
+	writer.WriteToFileCompressed();
 }
 
 inline void WriteMesh(BinaryWriter& writer, const Mesh& mesh)

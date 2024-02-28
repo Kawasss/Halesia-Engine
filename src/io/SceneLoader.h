@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <fstream>
 #include <iomanip>
@@ -92,49 +93,52 @@ struct ObjectCreationData
 class BinaryReader
 {
 public:
-	BinaryReader(std::string source) : stream(std::ifstream(source, std::ios::in | std::ios::binary)) {}
+	BinaryReader() {}
+	BinaryReader(std::string source);
 
 	void Read(char* ptr, size_t size)
 	{
-		stream.read(ptr, size);
+		memcpy(ptr, stream.data() + pointer, size);
+		pointer += size;
 	}
 
 	template<typename Type>
 	BinaryReader& operator>>(Type& in)
 	{
-		stream.read((char*)&in, sizeof(in));
+		memcpy((void*)&in, stream.data() + pointer, sizeof(Type));
+		pointer += sizeof(Type);
 		return *this;
 	}
 
 	template<typename Type>
 	BinaryReader& operator>>(std::vector<Type>& vec) // this expects the vector to already be resized to the correct size
 	{
-		stream.read((char*)vec.data(), sizeof(Type) * vec.size());
+		memcpy((void*)vec.data(), stream.data() + pointer, sizeof(Type) * vec.size());
+		pointer += sizeof(Type) * vec.size();
 		return *this;
 	}
 
 	BinaryReader& operator>>(std::string& str) // this expects the string in the file to be null terminated
 	{
 		str = "";
-		for (int i = 0; i == 0 || str.back() != '\0'; i++)
-		{
-			char ch;
-			stream.read(&ch, sizeof(ch));
-			str += ch;
-		}
-		str.pop_back();
+		while (stream[pointer] != '\0')
+			str += stream[pointer++];
+		pointer++;
 		return *this;
 	}
 
-	bool IsAtEndOfFile() { return stream.eof(); }
+	bool IsAtEndOfFile() { return pointer >= stream.size() - 1; }
 
 private:
-	std::ifstream stream;
+	size_t pointer = 0;
+	std::vector<char> stream;
+	std::ifstream input;
 };
 
 class SceneLoader
 {
 public:
+	SceneLoader() {}
 	SceneLoader(std::string sceneLocation);
 
 	void LoadScene();

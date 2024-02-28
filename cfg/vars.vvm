@@ -5,7 +5,7 @@ engineCore:
 	consoleKey: 192
 renderer: 
 	interalRes: 1.000000
-	renderCollision: 0
+	renderCollision: 1
 	denoiseOutput: 0
 	ray-tracing: 
 		raySamples: 1

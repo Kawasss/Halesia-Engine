@@ -27,7 +27,7 @@ inline Class* GetItemByMember(Type Class::* member, Type comp, const std::vector
 	return nullptr; // unsafe
 }
 
-SceneLoader loader("");
+SceneLoader loader;
 void Scene::LoadScene(std::string path)
 {
 	sceneIsLoading = true;

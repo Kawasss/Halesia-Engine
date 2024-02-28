@@ -31,7 +31,8 @@ enum NodeType : uint16_t
 	NODE_TYPE_NORMAL,
 	NODE_TYPE_ROUGHNESS,
 	NODE_TYPE_METALLIC,
-	NODE_TYPE_AMBIENT_OCCLUSION
+	NODE_TYPE_AMBIENT_OCCLUSION,
+	NODE_TYPE_COMPRESSION,
 };
 inline extern const char* NodeTypeToString(NodeType type);
 
@@ -113,3 +114,11 @@ inline extern const char* NodeTypeToString(NodeType type);
 // NODE_TYPE_METADATA:
 // 16 bit value corresponding to NodeType
 // 64 bit value containing the size of the node
+// 
+// NODE_TYPE_COMPRESSION:
+// 16 bit value corresponding to NodeType
+// 64 bit value containing the size of the node
+// 64 bit value representing the uncompressed size
+// 32 bit unsigned integer representing the compression algorithm used
+// this node is ALWAYS at the start of the file
+//
