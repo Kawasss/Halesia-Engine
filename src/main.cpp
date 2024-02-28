@@ -28,6 +28,7 @@ class Bullet : public Object
 {
 public:
 	glm::vec3 forward = glm::vec3(0);
+	float timeAlive = 0;
 
 	void Start() override
 	{
@@ -36,8 +37,16 @@ public:
 
 	void Update(float delta) override
 	{
-		//transform.position += forward * delta;
-		//rigid.MovePosition(transform);
+		timeAlive += delta;
+		
+		glm::vec3 forward2D = glm::normalize(glm::vec3(forward.x, 0, forward.z));
+		transform.rotation.x = glm::degrees(-asin(glm::dot(forward, glm::vec3(0, 1, 0))));
+		transform.rotation.y = glm::degrees(acos(glm::dot(forward2D, glm::vec3(1, 0, 0)))) + 90;
+		if (glm::dot(forward, glm::vec3(0, 0, 1)) > 0)
+			transform.rotation.y = 360 - transform.rotation.y;
+
+		transform.position += forward * delta * 0.01f;
+		rigid.MovePosition(transform);
 	}
 
 	void OnCollisionEnter(Object* object) override
@@ -59,11 +68,11 @@ class Ship : public Object
 	void Start() override
 	{
 		AwaitGeneration();
-		baseBullet = scene->AddCustomObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		baseBullet = scene->AddCustomObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/bullet.obj"));
 		baseBullet->name = "bullet";
 		Shape shape = Box(baseBullet->meshes[0].extents);
 		baseBullet->AddRigidBody(RIGID_BODY_KINEMATIC, shape);
-		////baseBullet->state = OBJECT_STATE_DISABLED;
+		baseBullet->state = OBJECT_STATE_DISABLED;
 		baseBullet->transform.position.y = -5;
 		baseBullet->rigid.ForcePosition(baseBullet->transform);
 		mouse = HalesiaEngine::GetInstance()->GetEngineCore().window;
@@ -92,9 +101,9 @@ class Ship : public Object
 		{
 			Object* newBullet = scene->DuplicateCustomObject<Bullet>(baseBullet, "bullet");
 			newBullet->name = std::to_string(newBullet->handle);
-			//Bullet* script = newBullet->GetScript<Bullet>();
-			//script->forward = transform.GetForward();
-			newBullet->transform.position = transform.position;
+			Bullet* script = newBullet->GetScript<Bullet>();
+			script->forward = transform.GetForward();
+			newBullet->transform.position = transform.position + transform.GetForward() * 2.0f;
 			newBullet->rigid.ForcePosition(newBullet->transform);
 			newBullet->state = OBJECT_STATE_VISIBLE;
 		}
@@ -123,7 +132,7 @@ class CollisionTest : public Scene
 {
 	void Start() override
 	{
-		ReadScene();
+		WriteScene();
 	}
 	void ReadScene()
 	{
@@ -158,7 +167,7 @@ class CollisionTest : public Scene
 	{
 		camera = AddCustomCamera<FollowCam>();
 
-		Object* ship = AddCustomObject<Ship>(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		Object* ship = AddCustomObject<Ship>(GenericLoader::LoadObjectFile("stdObj/ship.obj"));
 		ship->name = "ship";
 		ship->AwaitGeneration();
 		Shape shape = Box(ship->meshes[0].extents);
@@ -170,7 +179,6 @@ class CollisionTest : public Scene
 		floor->name = "floor";
 		floor->transform.scale = glm::vec3(20, 1, 20);
 		floor->transform.position.y = -3;
-		floor->state = OBJECT_STATE_INVISIBLE;
 
 		Shape floorShape = Box(glm::vec3(20, 1, 20));
 		floor->AddRigidBody(RIGID_BODY_STATIC, floorShape);
