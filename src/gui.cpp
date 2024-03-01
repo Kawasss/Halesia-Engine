@@ -348,7 +348,6 @@ void GUI::ShowDropdownMenu(std::vector<std::string>& items, std::string& current
 			ImGui::SetItemDefaultFocus();
 	}
 	ImGui::EndCombo();
-	
 }
 
 void GUI::ShowDevConsole()

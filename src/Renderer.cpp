@@ -1144,7 +1144,7 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 
 inline bool ObjectIsValid(Object* object)
 {
-	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && !object->meshes.empty();
+	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && !object->meshes.empty() && !object->shouldBeDestroyed;
 }
 
 inline void ResetImGui()

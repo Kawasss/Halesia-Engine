@@ -61,6 +61,7 @@ public:
 	void LoadUninitializedObjects();
 	void UpdateCamera(Win32Window* window, float delta);
 	void UpdateScripts(float delta);
+	void CollectGarbage();
 
 	/// <summary>
 	/// Transfers the ownership of the child from the scene to the object. The scene can no longer access the child after the transfer,

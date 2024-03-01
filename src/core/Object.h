@@ -17,19 +17,19 @@ typedef uint64_t Handle;
 
 enum ObjectState : uint8_t
 {
-	/// <summary>
-	/// The attached script is run and the object is rendered
-	/// </summary>
-	OBJECT_STATE_VISIBLE,
-	/// <summary>
-	/// The attached script is run, but the object isn't rendered
-	/// </summary>
-	OBJECT_STATE_INVISIBLE,
-	/// <summary>
-	/// The attached script isn't run and the object isn't rendered
-	/// </summary>
-	OBJECT_STATE_DISABLED
-};
+		/// <summary>
+		/// The attached script is run and the object is rendered
+		/// </summary>
+		OBJECT_STATE_VISIBLE,
+		/// <summary>
+		/// The attached script is run, but the object isn't rendered
+		/// </summary>
+		OBJECT_STATE_INVISIBLE,
+		/// <summary>
+		/// The attached script isn't run and the object isn't rendered
+		/// </summary>
+		OBJECT_STATE_DISABLED
+	};
 inline extern std::string ObjectStateToString(ObjectState state);
 
 class Object

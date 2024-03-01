@@ -38,7 +38,12 @@ public:
 	void Update(float delta) override
 	{
 		timeAlive += delta;
-		
+		if (timeAlive > 1000)
+		{
+			shouldBeDestroyed = true;
+			return;
+		}
+
 		glm::vec3 forward2D = glm::normalize(glm::vec3(forward.x, 0, forward.z));
 		transform.rotation.x = glm::degrees(-asin(glm::dot(forward, glm::vec3(0, 1, 0))));
 		transform.rotation.y = glm::degrees(acos(glm::dot(forward2D, glm::vec3(1, 0, 0)))) + 90;

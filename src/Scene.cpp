@@ -180,23 +180,26 @@ void Scene::UpdateScripts(float delta)
 	//		else if (object->state != OBJECT_STATE_DISABLED)
 	//			object->Update(delta);
 	//	});
-	std::vector<std::vector<Object*>::iterator> deadObjects;
-	std::vector<std::vector<Object*>::iterator> deadScriptObjects;
+	
 	for (int i = 0; i < objectsWithScripts.size(); i++)
 	{
-		if (objectsWithScripts[i]->shouldBeDestroyed)
-		{
-			deadScriptObjects.push_back(objectsWithScripts.begin() + i);
-			continue;
-		}
-		if (objectsWithScripts[i]->state == OBJECT_STATE_DISABLED)
+		if (objectsWithScripts[i]->shouldBeDestroyed || objectsWithScripts[i]->state == OBJECT_STATE_DISABLED)
 			continue;
 		objectsWithScripts[i]->Update(delta);
 	}
-	
+}
+
+void Scene::CollectGarbage()
+{
+	std::vector<std::vector<Object*>::iterator> deadObjects;
+	std::vector<std::vector<Object*>::iterator> deadScriptObjects;
 	for (int i = 0; i < allObjects.size(); i++) // really weird way to do garbage collection? really slow..(also doesnt account for static objects)
 		if (allObjects[i]->shouldBeDestroyed)
 			deadObjects.push_back(allObjects.begin() + i);
+	for (int i = 0; i < objectsWithScripts.size(); i++)
+		if (objectsWithScripts[i]->shouldBeDestroyed)
+			deadScriptObjects.push_back(objectsWithScripts.begin() + i);
+
 	for (std::vector<Object*>::iterator& iter : deadObjects)
 	{
 		(*iter)->Destroy();

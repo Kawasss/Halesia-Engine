@@ -248,6 +248,7 @@ HalesiaExitCode HalesiaEngine::Run()
 			Win32Window::PollMessages();
 
 			asyncScripts.get();
+			core.scene->CollectGarbage();
 
 			while (std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count() < CalculateFrameTime(core.maxFPS)); // wait untill the fps limit is reached
 
