@@ -234,3 +234,16 @@ bool TopLevelAccelerationStructure::HasBeenBuilt()
 {
 	return hasBeenBuilt;
 }
+
+void TopLevelAccelerationStructure::Destroy()
+{
+	vkDestroyAccelerationStructureKHR(logicalDevice, accelerationStructure, nullptr);
+
+	vkDestroyBuffer(logicalDevice, ASBuffer, nullptr);
+	vkFreeMemory(logicalDevice, ASBufferMemory, nullptr);
+
+	vkDestroyBuffer(logicalDevice, scratchBuffer, nullptr);
+	vkFreeMemory(logicalDevice, scratchDeviceMemory, nullptr);
+
+	instanceBuffer.Destroy();
+}

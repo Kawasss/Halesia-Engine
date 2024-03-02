@@ -12,6 +12,8 @@ public:
 	VkDeviceAddress GetAccelerationStructureAddress() { return ASAddress; }
 	VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
 
+	~AccelerationStructure() { Destroy(); }
+
 protected:
 	void CreateAS(const VkAccelerationStructureGeometryKHR* pGeometry, VkAccelerationStructureTypeKHR type, uint32_t maxPrimitiveCount);
 	void BuildAS(const VkAccelerationStructureGeometryKHR* pGeometry, uint32_t primitiveCount, VkBuildAccelerationStructureModeKHR mode, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
@@ -48,6 +50,8 @@ public:
 	void Build(std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
 	void Update(std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer);
 	bool HasBeenBuilt();
+
+	void Destroy() override;
 
 private:
 	static std::vector<VkAccelerationStructureInstanceKHR> GetInstances(std::vector<Object*>& objects);

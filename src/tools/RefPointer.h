@@ -14,6 +14,7 @@ public:
 	Type* Get() { return value; }
 	Type* operator->() { return value; }
 	Type& operator*() { return *value; }
+	RefPointer<Type>& operator=(Type* ptr);
 
 	template<typename... Args>
 	static RefPointer<Type> Create(Args&&... args);
@@ -29,7 +30,7 @@ template<typename Type>
 RefPointer<Type>::RefPointer(Type* ptr) : value(ptr)
 {
 	if (counter.find(ptr) == counter.end())
-		counter[ptr] = 0;
+		counter[ptr] = 1;
 	else counter[ptr]++;
 }
 
@@ -49,6 +50,17 @@ RefPointer<Type>::~RefPointer()
 		return;
 	}
 	counter[value]--;
+}
+
+template<typename Type>
+RefPointer<Type>& RefPointer<Type>::operator=(Type* ptr)
+{
+	assert(value == nullptr);
+	if (counter.find(ptr) == counter.end())
+		counter[ptr] = 1;
+	else counter[ptr]++;
+	value = ptr;
+	return *this;
 }
 
 template<typename Type>

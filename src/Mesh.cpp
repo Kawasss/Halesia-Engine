@@ -81,7 +81,7 @@ void Mesh::AwaitGeneration()
 void Mesh::Destroy()
 {
 	// should also delete the material in materials here (if no other meshes are referencing that material)
-	BLAS->Destroy();
+	//BLAS->Destroy();
 	Renderer::g_vertexBuffer.DestroyData(vertexMemory);
 	Renderer::g_indexBuffer.DestroyData(indexMemory);
 	Renderer::g_defaultVertexBuffer.DestroyData(defaultVertexMemory);

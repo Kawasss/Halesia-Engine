@@ -164,7 +164,7 @@ void GUI::ShowObjectMeshes(std::vector<Mesh>& meshes)
 		"Material:   %i\n\n"
 		"center:     %.2f, %.2f, %.2f\n"
 		"extents:    %.2f, %.2f, %.2f\n",
-	meshes[0].vertexMemory, meshes[0].defaultVertexMemory, meshes[0].indexMemory, (uint64_t)meshes[0].BLAS, meshes[0].faceCount, (int)meshes[0].materialIndex, meshes[0].center.x, meshes[0].center.y, meshes[0].center.z, meshes[0].extents.x, meshes[0].extents.y, meshes[0].extents.z);
+	meshes[0].vertexMemory, meshes[0].defaultVertexMemory, meshes[0].indexMemory, (uint64_t)meshes[0].BLAS.Get(), meshes[0].faceCount, (int)meshes[0].materialIndex, meshes[0].center.x, meshes[0].center.y, meshes[0].center.z, meshes[0].extents.x, meshes[0].extents.y, meshes[0].extents.z);
 }
 
 void GUI::ShowObjectData(Object* object)
