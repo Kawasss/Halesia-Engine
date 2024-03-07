@@ -93,6 +93,8 @@ public:
 
     static uint32_t                           GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice);
     static bool                               HasStencilComponent(VkFormat format);
+    static bool                               LogicalDeviceExtensionIsSupported(PhysicalDevice physicalDevice, const char* extension);
+    static bool                               InstanceExtensionIsSupported(const char* extension);
 
     static void                               CreateExternalBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     static void                               CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);

@@ -67,6 +67,18 @@ const Vulkan::Context& Vulkan::GetContext()
     return context;
 }
 
+bool Vulkan::LogicalDeviceExtensionIsSupported(PhysicalDevice physicalDevice, const char* extension)
+{
+    std::set<std::string> supported;
+    CheckLogicalDeviceExtensionSupport(physicalDevice, { extension }, supported);
+    return supported.empty();
+}
+
+bool Vulkan::InstanceExtensionIsSupported(const char* extension)
+{
+    return CheckInstanceExtensionSupport({ extension });
+}
+
 VkQueryPool Vulkan::CreateQueryPool(VkQueryType type, uint32_t amount)
 {
     VkQueryPool ret;
