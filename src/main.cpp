@@ -38,7 +38,7 @@ public:
 	void Update(float delta) override
 	{
 		timeAlive += delta;
-		if (timeAlive > 1000)
+		if (timeAlive > 10000)
 		{
 			shouldBeDestroyed = true;
 			return;
@@ -58,7 +58,7 @@ public:
 	{
 		if (object->name == "box")
 		{
-			forward = glm::vec3(0);
+			shouldBeDestroyed = true;
 		}
 	}
 };

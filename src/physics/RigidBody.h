@@ -19,6 +19,7 @@ class RigidBody
 public:
 	RigidBody() {}
 	RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos = glm::vec3(0), glm::vec3 rot = glm::vec3(0));
+	~RigidBody();
 	void Destroy();
 
 	void MovePosition(Transform& transform);

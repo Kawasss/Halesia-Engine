@@ -29,6 +29,11 @@ RigidBody::RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos, glm::vec3 r
 	}
 }
 
+RigidBody::~RigidBody()
+{
+	//Destroy();
+}
+
 void RigidBody::MovePosition(Transform& transform) // only works if the rigid is dynamic !!
 {
 	rigidDynamic->setKinematicTarget(GetTransform(transform));
@@ -58,6 +63,8 @@ void RigidBody::ChangeShape(Shape& shape)
 
 void RigidBody::Destroy()
 {
+	if (type == RIGID_BODY_NONE)
+		return;
 	physx::PxActor* actor = rigidDynamic == nullptr ? rigidStatic->is<physx::PxActor>() : rigidDynamic->is<physx::PxActor>();
 	Physics::RemoveActor(*actor);
 }

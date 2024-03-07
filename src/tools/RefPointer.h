@@ -29,9 +29,7 @@ std::unordered_map<Type*, size_t> RefPointer<Type>::counter;
 template<typename Type>
 RefPointer<Type>::RefPointer(Type* ptr) : value(ptr)
 {
-	if (counter.find(ptr) == counter.end())
-		counter[ptr] = 1;
-	else counter[ptr]++;
+	counter.find(ptr) == counter.end() ? counter[ptr] = 1 : counter[ptr]++;
 }
 
 template<typename Type>
@@ -56,9 +54,7 @@ template<typename Type>
 RefPointer<Type>& RefPointer<Type>::operator=(Type* ptr)
 {
 	assert(value == nullptr);
-	if (counter.find(ptr) == counter.end())
-		counter[ptr] = 1;
-	else counter[ptr]++;
+	counter.find(ptr) == counter.end() ? counter[ptr] = 1 : counter[ptr]++;
 	value = ptr;
 	return *this;
 }
