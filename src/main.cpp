@@ -27,12 +27,12 @@ public:
 class Enemy : public Object
 {
 public:
-	float health = 3;
+	int health = 3;
 
 	void Update(float delta) override
 	{
 		if (health > 0) return;
-		shouldBeDestroyed = true;
+		//shouldBeDestroyed = true;
 	}
 };
 
@@ -72,7 +72,7 @@ public:
 		if (object->name == "box")
 		{
 			object->GetScript<Enemy>()->health--;
-			shouldBeDestroyed = true;
+			//shouldBeDestroyed = true;
 		}
 	}
 };
@@ -81,7 +81,6 @@ class Ship : public Object
 {
 	static constexpr float fireRate = 1.0f / 4.0f * 1000.0f;
 	float timeSinceLastShot = 999.0f;
-	bool lastFrame = false;
 	
 	Win32Window* mouse;
 	Object* baseBullet;
@@ -142,17 +141,6 @@ class Ship : public Object
 			transform.position.x += delta * 0.01f;
 
 		bool thisFrame = Input::IsKeyPressed(VirtualKey::LeftMouseButton);
-		/*if (!thisFrame && lastFrame)
-		{
-			Object* newBullet = scene->DuplicateCustomObject<Bullet>(baseBullet, "bullet");
-			newBullet->name = std::to_string(newBullet->handle);
-			Bullet* script = newBullet->GetScript<Bullet>();
-			script->forward = transform.GetForward();
-			newBullet->transform.position = transform.position + transform.GetForward() * 2.0f;
-			newBullet->rigid.ForcePosition(newBullet->transform);
-			newBullet->state = OBJECT_STATE_VISIBLE;
-		}*/
-
 		if (thisFrame && timeSinceLastShot > fireRate)
 		{
 			Object* newBullet = scene->DuplicateCustomObject<Bullet>(baseBullet, "bullet");
@@ -167,8 +155,6 @@ class Ship : public Object
 		else timeSinceLastShot += delta;
 
 		//rigid.MovePosition(transform);
-
-		lastFrame = thisFrame;
 	}
 
 	void OnCollisionEnter(Object* object) override
@@ -266,7 +252,7 @@ class CollisionTest : public Scene
 		box->transform.position = glm::vec3(5, 0, 0);
 		box->meshes[0].SetMaterial(boxMat);
 
-		box->AddRigidBody(RIGID_BODY_STATIC, Box(box->meshes[0].extents));
+		box->AddRigidBody(RIGID_BODY_DYNAMIC, Box(box->meshes[0].extents));
 
 		HSFWriter::WriteHSFScene(this, "scene.hsf");
 	}

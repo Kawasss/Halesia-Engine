@@ -19,6 +19,8 @@ VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 std::unordered_map<uint32_t, std::vector<VkCommandPool>> Vulkan::queueCommandPools;
 std::unordered_map<VkDevice, std::mutex>                 Vulkan::logicalDeviceMutexes;
 
+std::deque<std::function<void()>> Vulkan::deletionQueue;
+
 std::mutex Vulkan::graphicsQueueMutex;
 std::mutex Vulkan::commandPoolMutex;
 
@@ -65,6 +67,18 @@ void Vulkan::InitializeContext(Context context)
 const Vulkan::Context& Vulkan::GetContext()
 {
     return context;
+}
+
+void Vulkan::DeleteSubmittedObjects()
+{
+    for (auto iter = deletionQueue.begin(); iter < deletionQueue.end(); iter++)
+        (*iter)();
+    deletionQueue.clear();
+}
+
+void Vulkan::SubmitObjectForDeletion(std::function<void()>&& func)
+{
+    deletionQueue.push_back(func);
 }
 
 bool Vulkan::LogicalDeviceExtensionIsSupported(PhysicalDevice physicalDevice, const char* extension)

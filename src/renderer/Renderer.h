@@ -151,6 +151,7 @@ private:
 	void SetModelData(uint32_t currentImage, std::vector<Object*> objects); //parameter is used for potential culling, this allows for 500 meshes in view rather than in scene
 	void SetViewport(VkCommandBuffer commandBuffer);
 	void SetScissors(VkCommandBuffer commandBuffer);
+	void DenoiseSynchronized(VkCommandBuffer commandBuffer);
 	void OnResize();
 
 	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);

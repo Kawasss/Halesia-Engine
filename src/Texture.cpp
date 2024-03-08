@@ -445,8 +445,14 @@ int Image::GetMipLevels()
 void Image::Destroy()
 {
 	this->texturesHaveChanged = true;
-	vkDestroyImageView(logicalDevice, imageView, nullptr);
-	vkDestroyImage(logicalDevice, image, nullptr);
-	vkFreeMemory(logicalDevice, imageMemory, nullptr);
+	Vulkan::SubmitObjectForDeletion
+	(
+		[device = logicalDevice, view = imageView, image = image, memory = imageMemory]()
+		{
+			vkDestroyImageView(device, view, nullptr);
+			vkDestroyImage(device, image, nullptr);
+			vkFreeMemory(device, memory, nullptr);
+		}
+	);
 	delete this;
 }

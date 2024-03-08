@@ -7,6 +7,8 @@
 #include <set>
 #include <mutex>
 #include <unordered_map>
+#include <functional>
+#include <deque>
 #include <stdint.h>
 
 #include "PhysicalDevice.h"
@@ -112,12 +114,16 @@ public:
     static VkQueryPool                        CreateQueryPool(VkQueryType type, uint32_t amount);
     static std::vector<uint64_t>              GetQueryPoolResults(VkQueryPool queryPool, uint32_t amount, uint32_t offset = 0);
 
+    static void                               SubmitObjectForDeletion(std::function<void()>&& func);
+    static void                               DeleteSubmittedObjects();
+
 private:
     static Context context;
 
     static std::mutex                                               commandPoolMutex;
     static std::unordered_map<uint32_t, std::vector<VkCommandPool>> queueCommandPools;
     static std::unordered_map<VkDevice, std::mutex>                 logicalDeviceMutexes;
+    static std::deque<std::function<void()>>                        deletionQueue;
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL     DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 

@@ -85,13 +85,19 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 
 void AccelerationStructure::Destroy()
 {
-	vkDestroyAccelerationStructureKHR(logicalDevice, accelerationStructure, nullptr);
+	Vulkan::SubmitObjectForDeletion
+	(
+		[device = logicalDevice, structure = accelerationStructure, ASBuf = ASBuffer, ASMem = ASBufferMemory, scratchBuf = scratchBuffer, scratchMem = scratchDeviceMemory]()
+		{
+			vkDestroyAccelerationStructureKHR(device, structure, nullptr);
 
-	vkDestroyBuffer(logicalDevice, ASBuffer, nullptr);
-	vkFreeMemory(logicalDevice, ASBufferMemory, nullptr);
+			vkDestroyBuffer(device, ASBuf, nullptr);
+			vkFreeMemory(device, ASMem, nullptr);
 
-	vkDestroyBuffer(logicalDevice, scratchBuffer, nullptr);
-	vkFreeMemory(logicalDevice, scratchDeviceMemory, nullptr);
+			vkDestroyBuffer(device, scratchBuf, nullptr);
+			vkFreeMemory(device, scratchMem, nullptr);
+		}
+	);
 }
 
 BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(Mesh& mesh)

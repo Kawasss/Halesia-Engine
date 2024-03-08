@@ -855,62 +855,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	WriteTimestamp(commandBuffer);
 	if (denoiseOutput)
 	{
-		WriteTimestamp(commandBuffer);
-		rayTracer->PrepareForDenoising(commandBuffer);
-		WriteTimestamp(commandBuffer);
-
-		result = vkEndCommandBuffer(commandBuffer);
-		CheckVulkanResult("Failed to end the given command buffer", result, vkEndCommandBuffer);
-
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffer;
-
-		VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-		submitInfo.waitSemaphoreCount = 1;
-		submitInfo.pWaitSemaphores = &renderFinishedSemaphores[currentFrame];
-		submitInfo.pWaitDstStageMask = waitStages;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
-		submitInfo.signalSemaphoreCount = 1;
-		submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
-
-		result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
-		CheckVulkanResult("Failed to submit the queue", result, vkQueueSubmit);
-		
-		submittedCount++;
-
-		auto start = std::chrono::high_resolution_clock::now();
-
-		cudaExternalSemaphoreWaitParams waitParams{};
-		memset(&waitParams, 0, sizeof(waitParams));
-		waitParams.flags = 0;
-		waitParams.params.fence.value = 1;
-		
-		CheckCudaResult(cudaWaitExternalSemaphoresAsync(&externalRenderSemaphores[currentFrame], &waitParams, 1, nullptr));
-
-		cudaExternalSemaphoreSignalParams signalParams{};
-		memset(&signalParams, 0, sizeof(signalParams));
-		signalParams.flags = 0;
-		signalParams.params.fence.value = 0;
-
-		CheckCudaResult(cudaSignalExternalSemaphoresAsync(&externalRenderSemaphores[currentFrame], &signalParams, 1, nullptr));
-
-		rayTracer->DenoiseImage();
-
-		cuStreamSynchronize(nullptr);
-
-		vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-		vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
-
-		denoisingTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - start).count();
-
-		vkResetCommandBuffer(commandBuffers[currentFrame], 0);
-		VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
-		CheckVulkanResult("Failed to begin the given command buffer", result, vkBeginCommandBuffer);
-
-		rayTracer->ApplyDenoisedImage(commandBuffer);
+		DenoiseSynchronized(commandBuffer);
 	}
 
 	if (shouldRasterize)
@@ -994,6 +939,69 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	result = vkEndCommandBuffer(commandBuffer);
 	CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
+}
+
+void Renderer::DenoiseSynchronized(VkCommandBuffer commandBuffer)
+{
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+	WriteTimestamp(commandBuffer);
+	rayTracer->PrepareForDenoising(commandBuffer);
+	WriteTimestamp(commandBuffer);
+
+	VkResult result = vkEndCommandBuffer(commandBuffer);
+	CheckVulkanResult("Failed to end the given command buffer", result, vkEndCommandBuffer);
+
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer;
+
+	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = &renderFinishedSemaphores[currentFrame];
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
+
+	result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
+	CheckVulkanResult("Failed to submit the queue", result, vkQueueSubmit);
+
+	submittedCount++;
+
+	auto start = std::chrono::high_resolution_clock::now();
+
+	cudaExternalSemaphoreWaitParams waitParams{};
+	memset(&waitParams, 0, sizeof(waitParams));
+	waitParams.flags = 0;
+	waitParams.params.fence.value = 1;
+
+	CheckCudaResult(cudaWaitExternalSemaphoresAsync(&externalRenderSemaphores[currentFrame], &waitParams, 1, nullptr));
+
+	cudaExternalSemaphoreSignalParams signalParams{};
+	memset(&signalParams, 0, sizeof(signalParams));
+	signalParams.flags = 0;
+	signalParams.params.fence.value = 0;
+
+	CheckCudaResult(cudaSignalExternalSemaphoresAsync(&externalRenderSemaphores[currentFrame], &signalParams, 1, nullptr));
+
+	rayTracer->DenoiseImage();
+
+	cuStreamSynchronize(nullptr);
+
+	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
+	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
+
+	denoisingTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - start).count();
+
+	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+	result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
+	CheckVulkanResult("Failed to begin the given command buffer", result, vkBeginCommandBuffer);
+
+	rayTracer->ApplyDenoisedImage(commandBuffer);
 }
 
 void Renderer::CreateSyncObjects()
@@ -1192,6 +1200,8 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	CheckVulkanResult("Failed to reset for fences", result, vkResetFences);
 	
 	uint32_t imageIndex = GetNextSwapchainImage(currentFrame);
+
+	Vulkan::DeleteSubmittedObjects();
 
 	GetQueryResults();
 
