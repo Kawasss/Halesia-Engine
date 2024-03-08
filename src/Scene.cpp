@@ -191,22 +191,33 @@ void Scene::UpdateScripts(float delta)
 
 void Scene::CollectGarbage()
 {
-	std::vector<std::vector<Object*>::iterator> deadObjects;
-	std::vector<std::vector<Object*>::iterator> deadScriptObjects;
-	for (int i = 0; i < allObjects.size(); i++) // really weird way to do garbage collection? really slow..(also doesnt account for static objects)
-		if (allObjects[i]->shouldBeDestroyed)
-			deadObjects.push_back(allObjects.begin() + i);
-	for (int i = 0; i < objectsWithScripts.size(); i++)
-		if (objectsWithScripts[i]->shouldBeDestroyed)
-			deadScriptObjects.push_back(objectsWithScripts.begin() + i);
-
-	for (std::vector<Object*>::iterator& iter : deadObjects)
+	for (auto iter = staticObjects.begin(); iter < staticObjects.end(); iter++) // pretty inefficient since it has to traverse all of the objects twice and if it has to remove one it has to reiterate all the way again
 	{
-		(*iter)->Destroy();
-		allObjects.erase(iter);
+		Object* obj = *iter;
+		if (!obj->shouldBeDestroyed)
+			continue;
+		staticObjects.erase(iter);
+		iter = staticObjects.begin();
 	}
-	for (std::vector<Object*>::iterator& iter : deadScriptObjects)
+
+	for (auto iter = objectsWithScripts.begin(); iter < objectsWithScripts.end(); iter++)
+	{
+		Object* obj = *iter;
+		if (!obj->shouldBeDestroyed)
+			continue;
 		objectsWithScripts.erase(iter);
+		iter = objectsWithScripts.begin();
+	}
+
+	for (auto iter = allObjects.begin(); iter < allObjects.end(); iter++)
+	{
+		Object* obj = *iter;
+		if (!obj->shouldBeDestroyed)
+			continue;
+		allObjects.erase(iter);
+		obj->Destroy();
+		iter = allObjects.begin();
+	}
 }
 
 void Scene::TransferObjectOwnership(Object* newOwner, Object* child)

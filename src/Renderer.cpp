@@ -217,7 +217,7 @@ void Renderer::InitVulkan()
 	instance = Vulkan::GenerateInstance();
 	surface = Surface::GenerateSurface(instance, testWindow);
 	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
-	if (Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
+	if (!Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
 		throw VulkanAPIError("Cannot initialize the renderer: a required extension is not supported (Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
 
 	SetLogicalDevice();

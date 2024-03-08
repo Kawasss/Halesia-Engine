@@ -24,6 +24,18 @@ public:
 	}
 };
 
+class Enemy : public Object
+{
+public:
+	float health = 3;
+
+	void Update(float delta) override
+	{
+		if (health > 0) return;
+		shouldBeDestroyed = true;
+	}
+};
+
 class Bullet : public Object
 {
 public:
@@ -58,6 +70,7 @@ public:
 	{
 		if (object->name == "box")
 		{
+			object->GetScript<Enemy>()->health--;
 			shouldBeDestroyed = true;
 		}
 	}
@@ -73,6 +86,7 @@ class Ship : public Object
 	void Start() override
 	{
 		AwaitGeneration();
+		transform.scale = glm::vec3(0.75f, 0.75f, 0.75f);
 		baseBullet = scene->AddCustomObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/bullet.obj"));
 		baseBullet->name = "bullet";
 		Shape shape = Box(baseBullet->meshes[0].extents);
@@ -137,7 +151,7 @@ class CollisionTest : public Scene
 {
 	void Start() override
 	{
-		WriteScene();
+		ReadScene();
 	}
 	void ReadScene()
 	{
@@ -163,6 +177,10 @@ class CollisionTest : public Scene
 				Object* light = AddStaticObject(data);
 				light->AwaitGeneration();
 				light->meshes[0].SetMaterial(lightMat);
+			}
+			else if (data.name == "box")
+			{
+				Object* box = AddCustomObject<Enemy>(data);
 			}
 			else AddStaticObject(data)->AwaitGeneration();
 		}
@@ -202,13 +220,13 @@ class CollisionTest : public Scene
 		Material boxMat = Material::Create(boxInfo);
 		boxMat.AwaitGeneration();
 
-		Object* box = DuplicateStaticObject(floor, "box");
+		Object* box = DuplicateCustomObject<Enemy>(floor, "box");
 		box->AwaitGeneration();
 		box->transform.scale = glm::vec3(1, 1, 1);
 		box->transform.position = glm::vec3(5, 0, 0);
 		box->meshes[0].SetMaterial(boxMat);
 
-		box->AddRigidBody(RIGID_BODY_DYNAMIC, Box(box->meshes[0].extents));
+		box->AddRigidBody(RIGID_BODY_STATIC, Box(box->meshes[0].extents));
 
 		HSFWriter::WriteHSFScene(this, "scene.hsf");
 	}
