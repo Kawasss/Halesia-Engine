@@ -178,7 +178,7 @@ class CollisionTest : public Scene
 	{
 		WriteScene();
 	}
-	void ReadScene()
+	/*void ReadScene()
 	{
 		camera = AddCustomCamera<FollowCam>();
 
@@ -210,7 +210,7 @@ class CollisionTest : public Scene
 			}
 			else AddStaticObject(data)->AwaitGeneration();
 		}
-	}
+	}*/
 
 	void WriteScene()
 	{
@@ -255,7 +255,7 @@ class CollisionTest : public Scene
 
 		box->AddRigidBody(RIGID_BODY_DYNAMIC, Box(box->meshes[0].extents));
 
-		HSFWriter::WriteHSFScene(this, "scene.hsf");
+		//HSFWriter::WriteHSFScene(this, "scene.hsf");
 	}
 
 	void Update(float delta) override
