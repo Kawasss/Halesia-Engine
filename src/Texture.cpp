@@ -186,17 +186,17 @@ std::vector<uint8_t> Image::GetImageDataAsPNG()
 	uint8_t* ptr = nullptr;
 	vkMapMemory(logicalDevice, copyMemory, 0, size, 0, (void**)&ptr);
 
-	int pngSize = 0;
-	unsigned char* pngPtr = stbi_write_png_to_mem(ptr, width * sizeof(uint8_t), width, height, 4, &pngSize); // 4 channels = rgba
-
-	vkUnmapMemory(logicalDevice, copyMemory);
-	vkDestroyBuffer(logicalDevice, copyBuffer, nullptr);
-	vkFreeMemory(logicalDevice, copyMemory, nullptr);
+	int pngSize = size;
+	unsigned char* pngPtr = ptr;//stbi_write_png_to_mem(ptr, width * sizeof(uint8_t), width, height, 4, &pngSize); // 4 channels = rgba
 
 	std::vector<uint8_t> ret;
 	ret.resize(pngSize / sizeof(uint8_t));
 	memcpy(ret.data(), pngPtr, pngSize);
-	STBI_FREE(pngPtr);
+	//STBI_FREE(pngPtr);
+
+	vkUnmapMemory(logicalDevice, copyMemory);
+	vkDestroyBuffer(logicalDevice, copyBuffer, nullptr);
+	vkFreeMemory(logicalDevice, copyMemory, nullptr);
 
 	return ret;
 }

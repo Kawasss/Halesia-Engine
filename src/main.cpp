@@ -176,7 +176,7 @@ class CollisionTest : public Scene
 {
 	void Start() override
 	{
-		ReadScene();
+		WriteScene();
 	}
 	void ReadScene()
 	{
@@ -237,6 +237,7 @@ class CollisionTest : public Scene
 		light->transform.position.y = 10;
 
 		MaterialCreateInfo lightInfo{};
+		lightInfo.albedo = "textures/glockAlbedo.png";
 		lightInfo.isLight = true;
 		Material lightMat = Material::Create(lightInfo);
 		light->meshes[0].SetMaterial(lightMat);
