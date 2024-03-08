@@ -86,6 +86,12 @@ class Ship : public Object
 	void Start() override
 	{
 		AwaitGeneration();
+
+		MaterialCreateInfo bulletInfo{};
+		bulletInfo.albedo = "textures/uv.png";
+		bulletInfo.isLight = true;
+		Material bulletMat = Material::Create(bulletInfo);
+
 		transform.scale = glm::vec3(0.75f, 0.75f, 0.75f);
 		baseBullet = scene->AddCustomObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/bullet.obj"));
 		baseBullet->name = "bullet";
@@ -93,6 +99,7 @@ class Ship : public Object
 		baseBullet->AddRigidBody(RIGID_BODY_KINEMATIC, shape);
 		baseBullet->state = OBJECT_STATE_DISABLED;
 		baseBullet->transform.position.y = -5;
+		baseBullet->meshes[0].SetMaterial(bulletMat);
 		baseBullet->rigid.ForcePosition(baseBullet->transform);
 		mouse = HalesiaEngine::GetInstance()->GetEngineCore().window;
 	}
@@ -100,8 +107,25 @@ class Ship : public Object
 	void Update(float delta) override
 	{
 		int x, y;
-		mouse->GetRelativeCursorPosition(x, y);
-		transform.rotation += glm::vec3(0, cos(x) * sin(y), 0);
+		mouse->GetAbsoluteCursorPosition(x, y);
+		glm::vec2 inUv = glm::vec2(x, y) / glm::vec2((float)mouse->GetWidth(), (float)mouse->GetHeight());
+		glm::vec2 uv = inUv * 2.0f - 1.0f;
+
+		glm::mat4 invView = glm::inverse(scene->camera->GetViewMatrix());
+		glm::vec4 target = glm::inverse(scene->camera->GetProjectionMatrix()) * glm::vec4(uv.x, uv.y, 1, 1);
+		glm::vec3 origin = invView * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		glm::vec3 dir = invView * glm::vec4(glm::normalize(glm::vec3(target.x, target.y, target.z)), 0);
+
+		RayHitInfo hitInfo;
+		Physics::CastRay(origin, dir, 100000.0f, hitInfo);
+
+		glm::vec3 dest = origin + dir * hitInfo.distance;
+		glm::vec3 forward = glm::normalize(glm::vec3(dest.x, 0, dest.z) - glm::vec3(transform.position.x, 0, transform.position.z));
+
+		transform.rotation.y = glm::degrees(acos(glm::dot(forward, glm::vec3(1, 0, 0))));
+		if (glm::dot(forward, glm::vec3(0, 0, 1)) > 0)
+			transform.rotation.y = 270 - transform.rotation.y;
+		else transform.rotation.y -= 90;
 
 		if (!Input::IsKeyPressed(VirtualKey::LeftControl))
 			return;
@@ -127,7 +151,7 @@ class Ship : public Object
 			newBullet->state = OBJECT_STATE_VISIBLE;
 		}
 
-		rigid.MovePosition(transform);
+		//rigid.MovePosition(transform);
 
 		lastFrame = thisFrame;
 	}
@@ -158,6 +182,7 @@ class CollisionTest : public Scene
 		camera = AddCustomCamera<FollowCam>();
 
 		MaterialCreateInfo lightInfo{};
+		lightInfo.albedo = "textures/glockAlbedo.png";
 		lightInfo.isLight = true;
 		Material lightMat = Material::Create(lightInfo);
 
@@ -194,7 +219,7 @@ class CollisionTest : public Scene
 		ship->name = "ship";
 		ship->AwaitGeneration();
 		Shape shape = Box(ship->meshes[0].extents);
-		ship->AddRigidBody(RIGID_BODY_KINEMATIC, shape);
+		//ship->AddRigidBody(RIGID_BODY_KINEMATIC, shape);
 		camera->GetScript<FollowCam>()->objToFollow = ship;
 
 		Object* floor = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));

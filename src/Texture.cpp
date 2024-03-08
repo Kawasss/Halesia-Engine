@@ -134,6 +134,8 @@ void Image::WritePixelsToBuffer(std::vector<uint8_t*> pixels, bool useMipMaps, T
 
 std::vector<uint8_t> Image::GetImageDataAsPNG()
 {
+	AwaitGeneration();
+
 	const Vulkan::Context& context = Vulkan::GetContext();
 	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
 

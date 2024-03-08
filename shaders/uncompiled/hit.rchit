@@ -200,7 +200,7 @@ void main() {
 
   if (instanceDataBuffer.data[gl_InstanceCustomIndexEXT].meshIsLight == 1)
   {
-    vec3 lightColor = vec3(1);
+    vec3 lightColor = surfaceColor;
     payload.indirectColor += lightColor * payload.directColor;
     surfaceColor = vec3(0);
     payload.rayDepth += 1;

@@ -70,8 +70,8 @@ public:
 		size_t compressedSize = 0;
 		COMPRESSOR_HANDLE compressor; 
 		char* compressed = new char[size]; // size is the max size, not the actual compressed size
-		if (!CreateCompressor(COMPRESS_ALGORITHM_XPRESS, NULL, &compressor)) throw std::runtime_error("Cannot create a compressor"); // XPRESS is fast but not the best compression, XPRESS with huffman has better compression but is slower, MSZIP uses more resources and LZMS is slow. its Using xpress right now since its the fastest
-		if (!Compress(compressor, data, size, compressed, size, &compressedSize)) throw std::runtime_error("Cannot compress");
+		if (!CreateCompressor(COMPRESS_ALGORITHM_XPRESS, NULL, &compressor)) throw std::runtime_error("Cannot create a compressor "); // XPRESS is fast but not the best compression, XPRESS with huffman has better compression but is slower, MSZIP uses more resources and LZMS is slow. its Using xpress right now since its the fastest
+		if (!Compress(compressor, data, size, compressed, size, &compressedSize)) throw std::runtime_error((std::string)"Cannot compress " + std::to_string(GetLastError()));
 		if (!CloseCompressor(compressor)) throw std::runtime_error("Cannot close a compressor"); // currently not checking the return value
 
 		output.write(compressed, compressedSize);

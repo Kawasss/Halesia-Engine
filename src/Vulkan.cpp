@@ -320,6 +320,8 @@ void Vulkan::AllocateMemory(VkDeviceMemory& memory, VkMemoryRequirements& memory
     allocateInfo.memoryTypeIndex = Vulkan::GetMemoryType(memoryRequirements.memoryTypeBits, properties, context.physicalDevice);
 
     VkResult result = vkAllocateMemory(context.logicalDevice, &allocateInfo, nullptr, &memory);
+    if (result != VK_SUCCESS)
+        std::cout << 1;
     CheckVulkanResult("Failed to allocate " + std::to_string(memoryRequirements.size) + " bytes of memory", result, vkAllocateMemory);
 }
 
