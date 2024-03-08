@@ -9,8 +9,8 @@
 
 void Object::AwaitGeneration()
 {
-	if (generationProcess.valid())
-		generationProcess.get();
+	if (generation.valid())
+		generation.get();
 	for (Mesh& mesh : meshes)
 		mesh.AwaitGeneration();
 }
@@ -148,7 +148,9 @@ bool Object::HasFinishedLoading()
 	/*for (Mesh& mesh : meshes)
 		if (!mesh.HasFinishedLoading())
 			return false;*/
-	return finishedLoading || generationProcess._Is_ready();
+	if (generation.valid() && generation.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+		generation.get(); // change the status of the image if it it done loading
+	return finishedLoading || !generation.valid();
 }
 
 void Object::Destroy()

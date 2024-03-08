@@ -207,7 +207,9 @@ void Image::AwaitGeneration()
 
 bool Image::HasFinishedLoading()
 {
-	return generation._Is_ready();
+	if (generation.valid() && generation.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+		generation.get(); // change the status of the image if it it done loading
+	return !generation.valid();
 }
 
 std::vector<std::vector<char>> GetAllImageData(std::vector<std::string> filePaths) // dont know if the copy speed is a concern
@@ -274,6 +276,12 @@ void Texture::GeneratePlaceholderTextures()
 	placeholderMetallic = new Texture("textures/placeholderMetallic.png", false);
 	placeholderRoughness = new Texture("textures/placeholderRoughness.png", false);
 	placeholderAmbientOcclusion = new Texture("textures/placeholderAO.png", false);
+
+	placeholderAlbedo->AwaitGeneration();
+	placeholderNormal->AwaitGeneration();
+	placeholderMetallic->AwaitGeneration();
+	placeholderRoughness->AwaitGeneration();
+	placeholderAmbientOcclusion->AwaitGeneration();
 }
 
 void Texture::DestroyPlaceholderTextures()

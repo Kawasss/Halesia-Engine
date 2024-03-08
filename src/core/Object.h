@@ -55,7 +55,7 @@ public:
 	virtual void OnCollisionExit(Object* object)  {}
 
 	bool HasFinishedLoading();
-	bool HasScript()    { return scriptClass == nullptr; }
+	bool HasScript()    { return scriptClass != nullptr; }
 	bool HasRigidBody() { return rigid.type != RIGID_BODY_NONE; }
 
 	/// <summary>
@@ -101,7 +101,7 @@ private:
 	void GenerateObjectWithData(const ObjectCreationData& creationData);
 
 	void* scriptClass = nullptr;
-	std::future<void> generationProcess;
+	std::future<void> generation;
 	
 protected:
 	Object* parent = nullptr;

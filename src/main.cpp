@@ -62,7 +62,7 @@ public:
 		if (glm::dot(forward, glm::vec3(0, 0, 1)) > 0)
 			transform.rotation.y = 360 - transform.rotation.y;
 
-		transform.position += forward * delta * 0.01f;
+		transform.position += forward2D * delta * 0.01f;
 		rigid.MovePosition(transform);
 	}
 

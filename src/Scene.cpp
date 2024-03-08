@@ -54,7 +54,6 @@ void Scene::LoadUninitializedObjects()
 	{
 		Object* objPtr = Object::Create(creationData);
 		allObjects.push_back(objPtr);
-		staticObjects.push_back(objPtr);
 	}
 }
 
@@ -82,7 +81,6 @@ Object* Scene::AddStaticObject(const ObjectCreationData& creationData)
 
 	objectHandles[objPtr->handle] = objPtr;
 	allObjects.push_back(objPtr);
-	staticObjects.push_back(objPtr);
 
 	return objPtr;
 }
@@ -116,8 +114,6 @@ void Scene::RegisterObjectPointer(Object* objPtr, bool isCustom)
 	objectHandles[objPtr->handle] = objPtr;
 	allObjects.push_back(objPtr);
 	objPtr->scene = this;
-	if (isCustom)
-		objectsWithScripts.push_back(objPtr);
 }
 
  inline void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberToErase)
@@ -153,7 +149,6 @@ void Scene::Free(Object* object)
 			continue;
 
 		allObjects.erase(allObjects.begin() + i);
-		EraseMemberFromVector(object->HasScript() ? staticObjects : objectsWithScripts, object);
 		object->Destroy();
 		
 		Console::WriteLine("Freed " + (std::string)(object->HasScript() ? "static" : "scripted") + " object "/* + object->name*/, MESSAGE_SEVERITY_DEBUG);
@@ -181,34 +176,16 @@ void Scene::UpdateScripts(float delta)
 	//			object->Update(delta);
 	//	});
 	
-	for (int i = 0; i < objectsWithScripts.size(); i++)
+	for (int i = 0; i < allObjects.size(); i++)
 	{
-		if (objectsWithScripts[i]->shouldBeDestroyed || objectsWithScripts[i]->state == OBJECT_STATE_DISABLED)
+		if (!allObjects[i]->HasScript() || allObjects[i]->shouldBeDestroyed || allObjects[i]->state == OBJECT_STATE_DISABLED)
 			continue;
-		objectsWithScripts[i]->Update(delta);
+		allObjects[i]->Update(delta);
 	}
 }
 
 void Scene::CollectGarbage()
 {
-	for (auto iter = staticObjects.begin(); iter < staticObjects.end(); iter++) // pretty inefficient since it has to traverse all of the objects twice and if it has to remove one it has to reiterate all the way again
-	{
-		Object* obj = *iter;
-		if (!obj->shouldBeDestroyed)
-			continue;
-		staticObjects.erase(iter);
-		iter = staticObjects.begin();
-	}
-
-	for (auto iter = objectsWithScripts.begin(); iter < objectsWithScripts.end(); iter++)
-	{
-		Object* obj = *iter;
-		if (!obj->shouldBeDestroyed)
-			continue;
-		objectsWithScripts.erase(iter);
-		iter = objectsWithScripts.begin();
-	}
-
 	for (auto iter = allObjects.begin(); iter < allObjects.end(); iter++)
 	{
 		Object* obj = *iter;
@@ -226,11 +203,6 @@ void Scene::TransferObjectOwnership(Object* newOwner, Object* child)
 	std::vector<Object*>::iterator iter = std::find(allObjects.begin(), allObjects.end(), child);
 	if (iter != allObjects.end())
 		allObjects.erase(iter);
-
-	std::vector<Object*>& holder = child->HasScript() ? objectsWithScripts : staticObjects;
-	iter = std::find(holder.begin(), holder.end(), child);
-	if (iter != holder.end())
-		holder.erase(iter);
 	newOwner->AddChild(child);
 }
 

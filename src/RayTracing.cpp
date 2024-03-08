@@ -487,7 +487,7 @@ void RayTracing::UpdateTextureBuffer()
 	std::vector<VkWriteDescriptorSet> writeSets;
 	for (int i = 0; i < Mesh::materials.size(); i++)
 	{
-		if (processedMaterials.count(i) > 0 && processedMaterials[i] == Mesh::materials[i].handle)
+		if ((processedMaterials.count(i) > 0 && processedMaterials[i] == Mesh::materials[i].handle) || !Mesh::materials[i].HasFinishedLoading())
 			continue;
 
 		for (int j = 0; j < amountOfTexturesPerMaterial; j++)
