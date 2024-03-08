@@ -73,7 +73,7 @@ public:
 	virtual void Update(float delta) {};
 			void Destroy();
 
-	std::vector<Object*> allObjects;
+	std::vector<Object*> allObjects; // this vector owns the objects
 
 private:
 	void LoadFileIntoScene(std::string path);
@@ -81,7 +81,7 @@ private:
 	bool GetInternalObjectCreationData(std::string name, ObjectCreationData& creationData);
 
 	std::future<void> loadingProcess;
-	std::vector<Object*> objectsWithScripts;
+	std::vector<Object*> objectsWithScripts; // these two vectors simply view the objects, "allObjects" owns the objects
 	std::vector<Object*> staticObjects;
 	std::unordered_map<Handle, Object*> objectHandles;
 	std::vector<ObjectCreationData> objectCreationDatas;
