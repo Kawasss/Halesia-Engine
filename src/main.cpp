@@ -50,7 +50,7 @@ public:
 	void Update(float delta) override
 	{
 		timeAlive += delta;
-		if (timeAlive > 10000)
+		if (timeAlive > 3000)
 		{
 			shouldBeDestroyed = true;
 			return;
@@ -59,6 +59,7 @@ public:
 		glm::vec3 forward2D = glm::normalize(glm::vec3(forward.x, 0, forward.z));
 		transform.rotation.x = glm::degrees(-asin(glm::dot(forward, glm::vec3(0, 1, 0))));
 		transform.rotation.y = glm::degrees(acos(glm::dot(forward2D, glm::vec3(1, 0, 0)))) + 90;
+		transform.rotation.z = 0;
 		if (glm::dot(forward, glm::vec3(0, 0, 1)) > 0)
 			transform.rotation.y = 360 - transform.rotation.y;
 
@@ -78,7 +79,8 @@ public:
 
 class Ship : public Object
 {
-	static constexpr float fireRate = 1 / 4;
+	static constexpr float fireRate = 1.0f / 4.0f * 1000.0f;
+	float timeSinceLastShot = 999.0f;
 	bool lastFrame = false;
 	
 	Win32Window* mouse;
@@ -129,7 +131,7 @@ class Ship : public Object
 
 		if (!Input::IsKeyPressed(VirtualKey::LeftControl))
 			return;
-		
+
 		if (Input::IsKeyPressed(VirtualKey::W))
 			transform.position.z -= delta * 0.01f;
 		if (Input::IsKeyPressed(VirtualKey::S))
@@ -140,7 +142,7 @@ class Ship : public Object
 			transform.position.x += delta * 0.01f;
 
 		bool thisFrame = Input::IsKeyPressed(VirtualKey::LeftMouseButton);
-		if (!thisFrame && lastFrame)
+		/*if (!thisFrame && lastFrame)
 		{
 			Object* newBullet = scene->DuplicateCustomObject<Bullet>(baseBullet, "bullet");
 			newBullet->name = std::to_string(newBullet->handle);
@@ -149,7 +151,20 @@ class Ship : public Object
 			newBullet->transform.position = transform.position + transform.GetForward() * 2.0f;
 			newBullet->rigid.ForcePosition(newBullet->transform);
 			newBullet->state = OBJECT_STATE_VISIBLE;
+		}*/
+
+		if (thisFrame && timeSinceLastShot > fireRate)
+		{
+			Object* newBullet = scene->DuplicateCustomObject<Bullet>(baseBullet, "bullet");
+			newBullet->name = std::to_string(newBullet->handle);
+			Bullet* script = newBullet->GetScript<Bullet>();
+			script->forward = transform.GetForward();
+			newBullet->transform.position = transform.position + transform.GetForward() * 2.0f;
+			newBullet->rigid.ForcePosition(newBullet->transform);
+			newBullet->state = OBJECT_STATE_VISIBLE;
+			timeSinceLastShot = 0;
 		}
+		else timeSinceLastShot += delta;
 
 		//rigid.MovePosition(transform);
 

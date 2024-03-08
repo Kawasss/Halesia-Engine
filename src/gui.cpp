@@ -199,6 +199,8 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window*
 {
 	static std::string currentItem = "None";
 	static int objectIndex = -1;
+	if (objectIndex >= objects.size())
+		objectIndex = -1;
 	if (index != -1)
 		objectIndex = index;
 
