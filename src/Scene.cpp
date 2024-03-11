@@ -13,16 +13,16 @@
 Camera* Scene::defaultCamera = new Camera();
 
 template<typename Class, typename Type>
-inline Type* GetPointer(const Class* parent, Type Class::* member)
+inline Type* GetPointerToClassMember(const Class* parent, Type Class::* member)
 {
-	return (Type*)((char*)parent + (size_t)&((Class*)0->*member)); // calculates the offset of the member relative to the class
+	return reinterpret_cast<Type*>((char*)parent + reinterpret_cast<size_t>(&(reinterpret_cast<Class*>(0)->*member))); // calculates the offset of the member relative to the class
 }
 
 template<typename Type, typename Class>
 inline Class* GetItemByMember(Type Class::* member, Type comp, const std::vector<Class*>& vector)
 {
 	for (size_t index = 0; index < vector.size(); index++)
-		if (*GetPointer(vector[index], member) == comp)
+		if (*GetPointerToClassMember(vector[index], member) == comp)
 			return vector[index];
 	return nullptr; // unsafe
 }
