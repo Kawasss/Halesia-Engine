@@ -323,7 +323,7 @@ void HalesiaEngine::LoadVars()
 	devConsoleKey = (VirtualKey)VVM::FindVariable("engineCore.consoleKey", groups).As<int>();
 
 	core.renderer->internalScale =         VVM::FindVariable("renderer.internalRes", groups).As<float>();
-	Renderer::shouldRenderCollisionBoxes = VVM::FindVariable("renderer.rendercollision", groups).As<bool>();
+	Renderer::shouldRenderCollisionBoxes = VVM::FindVariable("renderer.renderCollision", groups).As<bool>();
 	Renderer::denoiseOutput =              VVM::FindVariable("renderer.denoiseOutput", groups).As<bool>();
 	RayTracing::raySampleCount =           VVM::FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
 	RayTracing::rayDepth =                 VVM::FindVariable("renderer.ray-tracing.rayDepth", groups).As<int>();

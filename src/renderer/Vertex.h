@@ -25,9 +25,9 @@ struct Vertex
 		return bindingDescription;
 	}
 
-	static std::array<VkVertexInputAttributeDescription, 3> GetAttributeDescriptions()
+	static std::array<VkVertexInputAttributeDescription, 5> GetAttributeDescriptions()
 	{
-		std::array<VkVertexInputAttributeDescription, 3> descriptions{};
+		std::array<VkVertexInputAttributeDescription, 5> descriptions{};
 
 		descriptions[0].binding = 0;
 		descriptions[0].location = 0;
@@ -43,6 +43,16 @@ struct Vertex
 		descriptions[2].location = 2;
 		descriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
 		descriptions[2].offset = offsetof(Vertex, textureCoordinates);
+
+		descriptions[3].binding = 0;
+		descriptions[3].location = 3;
+		descriptions[3].format = VK_FORMAT_R32G32B32A32_SINT;
+		descriptions[3].offset = offsetof(Vertex, boneIndices);
+
+		descriptions[4].binding = 0;
+		descriptions[4].location = 4;
+		descriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		descriptions[4].offset = offsetof(Vertex, boneWeights);
 
 		return descriptions;
 	}

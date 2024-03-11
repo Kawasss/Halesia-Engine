@@ -16,7 +16,7 @@
 #include "renderer/RayTracing.h"
 #include "renderer/AnimationManager.h"
 #include "renderer/AccelerationStructures.h"
-#include "renderer/RenderPassCreator.h"
+#include "renderer/PipelineCreator.h"
 
 #include "system/Window.h"
 
@@ -366,7 +366,7 @@ void Renderer::CreateRenderPass()
 {
 	// swapchain renderpass
 
-	renderPass = Creator::CreateRenderPass(physicalDevice, swapchain, PIPELINE_FLAG_CLEAR_ON_LOAD, 1);
+	renderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain, PIPELINE_FLAG_CLEAR_ON_LOAD, 1);
 
 	// deferred renderpass
 
@@ -609,59 +609,7 @@ void Renderer::CreateDescriptorSetLayout()
 void Renderer::CreateGraphicsPipeline()
 {
 	//create pipeline layout
-	VkPipelineDynamicStateCreateInfo dynamicState = Vulkan::GetDynamicStateCreateInfo(dynamicStates);
-
-	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-
-	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
-	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	inputAssembly.primitiveRestartEnable = false;
-
-	VkPipelineDepthStencilStateCreateInfo depthStencil{};
-	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-	depthStencil.depthTestEnable = VK_TRUE;
-	depthStencil.depthWriteEnable = VK_TRUE;
-	depthStencil.depthBoundsTestEnable = VK_FALSE;
-
-	VkViewport viewport;
-	VkRect2D scissor;
-	VkPipelineViewportStateCreateInfo viewportState = Vulkan::GetDefaultViewportStateCreateInfo(viewport, scissor, swapchain->extent);
-
-	VkPipelineRasterizationStateCreateInfo rasterizer{};
-	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-	rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizer.depthBiasEnable = VK_FALSE;
-	rasterizer.depthClampEnable = VK_FALSE;
-	rasterizer.rasterizerDiscardEnable = VK_FALSE;
-	rasterizer.lineWidth = 2;
-
-	VkPipelineMultisampleStateCreateInfo multisampling{};
-	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-	multisampling.sampleShadingEnable = VK_FALSE;
-
-	VkPipelineColorBlendAttachmentState blendAttachment{};
-	blendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	blendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-	blendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-	blendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-	blendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-	blendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-	blendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-	blendAttachment.blendEnable = VK_TRUE;
-
-	VkPipelineColorBlendStateCreateInfo blendCreateInfo{};
-	blendCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	blendCreateInfo.logicOp = VK_LOGIC_OP_COPY;
-	blendCreateInfo.logicOpEnable = VK_FALSE;
-	blendCreateInfo.pAttachments = &blendAttachment;
-	blendCreateInfo.attachmentCount = 1;
-
+	
 	VkPushConstantRange pushConstant{};
 	pushConstant.offset = 0;
 	pushConstant.size = sizeof(glm::mat4);
@@ -686,23 +634,7 @@ void Renderer::CreateGraphicsPipeline()
 
 	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(vertexShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
 	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(fragmentShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
-	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexCreateInfo, fragmentCreateInfo };
-
-	VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
-	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineCreateInfo.stageCount = 2;
-	pipelineCreateInfo.pStages = shaderStages;
-	pipelineCreateInfo.pVertexInputState =   &vertexInputInfo;
-	pipelineCreateInfo.pInputAssemblyState = &inputAssembly;
-	pipelineCreateInfo.pViewportState =      &viewportState;
-	pipelineCreateInfo.pRasterizationState = &rasterizer;
-	pipelineCreateInfo.pMultisampleState =   &multisampling;
-	pipelineCreateInfo.pColorBlendState =    &blendCreateInfo;
-	pipelineCreateInfo.pDynamicState =       &dynamicState;
-	pipelineCreateInfo.pDepthStencilState =  &depthStencil;
-	pipelineCreateInfo.layout = pipelineLayout;
-	pipelineCreateInfo.renderPass = renderPass;
-	pipelineCreateInfo.subpass = 0;
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexCreateInfo, fragmentCreateInfo }; // this is not used an a pipeline!!
 
 	// screen shaders pipeline
 
@@ -711,14 +643,11 @@ void Renderer::CreateGraphicsPipeline()
 
 	vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderVert, VK_SHADER_STAGE_VERTEX_BIT);
 	fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderFrag, VK_SHADER_STAGE_FRAGMENT_BIT);
-	VkPipelineShaderStageCreateInfo screenShaderStages[] = { vertexCreateInfo, fragmentCreateInfo };
-	
-	VkGraphicsPipelineCreateInfo screenPipelineInfo = pipelineCreateInfo;
-	screenPipelineInfo.pStages = screenShaderStages;
-	VkGraphicsPipelineCreateInfo createInfos[] = { pipelineCreateInfo, screenPipelineInfo };
 
-	result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 2, createInfos, nullptr, &graphicsPipeline);
-	CheckVulkanResult("Failed to create a graphics pipeline", result, vkCreateGraphicsPipelines);
+	screenPipeline = PipelineCreator::CreatePipeline(pipelineLayout, renderPass, swapchain, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX);
+
+	//result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 2, createInfos, nullptr, &graphicsPipeline);
+	//CheckVulkanResult("Failed to create a graphics pipeline", result, vkCreateGraphicsPipelines);
 
 	vkDestroyShaderModule(logicalDevice, screenShaderVert, nullptr);
 	vkDestroyShaderModule(logicalDevice, screenShaderFrag, nullptr);

@@ -210,6 +210,9 @@
     <ClCompile Include="src\SytemMetrics.cpp">
       <Filter>Source Files\system</Filter>
     </ClCompile>
+    <ClCompile Include="src\PipelineCreator.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -386,7 +389,7 @@
     <ClInclude Include="src\ResourceManager.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\renderer\RenderPassCreator.h">
+    <ClInclude Include="src\renderer\PipelineCreator.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\demo\Topdown.h">

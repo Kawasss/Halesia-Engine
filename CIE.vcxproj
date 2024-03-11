@@ -165,6 +165,7 @@
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Physics.cpp" />
+    <ClCompile Include="src\PipelineCreator.cpp" />
     <ClCompile Include="src\Profiler.cpp" />
     <ClCompile Include="src\ShaderReflector.cpp" />
     <ClCompile Include="src\RayTracing.cpp" />
@@ -228,7 +229,7 @@
     <ClInclude Include="src\renderer\Intro.h" />
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
-    <ClInclude Include="src\renderer\RenderPassCreator.h" />
+    <ClInclude Include="src\renderer\PipelineCreator.h" />
     <ClInclude Include="src\renderer\ShaderReflector.h" />
     <ClInclude Include="src\renderer\RayTracing.h" />
     <ClInclude Include="src\renderer\Buffers.h" />
