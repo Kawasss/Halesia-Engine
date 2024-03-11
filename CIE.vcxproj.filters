@@ -386,6 +386,9 @@
     <ClInclude Include="src\ResourceManager.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
+    <ClInclude Include="src\renderer\RenderPassCreator.h">
+      <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">

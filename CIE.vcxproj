@@ -227,6 +227,7 @@
     <ClInclude Include="src\renderer\Intro.h" />
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
+    <ClInclude Include="src\renderer\RenderPassCreator.h" />
     <ClInclude Include="src\renderer\ShaderReflector.h" />
     <ClInclude Include="src\renderer\RayTracing.h" />
     <ClInclude Include="src\renderer\Buffers.h" />
