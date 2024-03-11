@@ -6,6 +6,10 @@
 
 static constexpr float fireRate = 1.0f / 4.0f * 1000.0f;
 
+static constexpr glm::vec3 UnitXVector = glm::vec3(1, 0, 0);
+static constexpr glm::vec3 UnitYVector = glm::vec3(0, 1, 0);
+static constexpr glm::vec3 UnitZVector = glm::vec3(0, 0, 1);
+
 class FollowCam : public Camera
 {
 public:
@@ -69,11 +73,9 @@ void Enemy::Update(float delta)
 {
 	if (player == nullptr)
 		return;
-	if (health <= 0)
-		shouldBeDestroyed = true;
 
-	bool thisFrame = Input::IsKeyPressed(VirtualKey::LeftMouseButton);
-	if (thisFrame && timeSinceLastShot > fireRate)
+	shouldBeDestroyed = !health;
+	if (Input::IsKeyPressed(VirtualKey::LeftMouseButton) && timeSinceLastShot > fireRate)
 	{
 		SpawnBullet();
 		timeSinceLastShot = 0;
@@ -102,10 +104,10 @@ void Bullet::Update(float delta)
 	}
 
 	glm::vec3 forward2D = glm::normalize(glm::vec3(forward.x, 0, forward.z));
-	transform.rotation.x = glm::degrees(-asin(glm::dot(forward, glm::vec3(0, 1, 0))));
-	transform.rotation.y = glm::degrees(acos(glm::dot(forward2D, glm::vec3(1, 0, 0)))) + 90;
+	transform.rotation.x = glm::degrees(-asin(glm::dot(forward, UnitYVector)));
+	transform.rotation.y = glm::degrees(acos(glm::dot(forward2D, UnitXVector))) + 90;
 	transform.rotation.z = 0;
-	if (glm::dot(forward, glm::vec3(0, 0, 1)) > 0)
+	if (glm::dot(forward, UnitZVector) > 0)
 		transform.rotation.y = 360 - transform.rotation.y;
 
 	transform.position += forward2D * delta * 0.01f;
@@ -121,9 +123,7 @@ void Bullet::OnCollisionEnter(Object* object)
 
 void Ship::Start()
 {
-	AwaitGeneration();
-
-	transform.scale = glm::vec3(0.75f, 0.75f, 0.75f);
+	transform.scale = glm::vec3(0.75f);
 	mouse = HalesiaEngine::GetInstance()->GetEngineCore().window;
 }
 
@@ -132,8 +132,8 @@ void Ship::Update(float delta)
 	glm::vec3 dest = GetMousePosIn3D();
 	glm::vec3 forward = glm::normalize(glm::vec3(dest.x, 0, dest.z) - glm::vec3(transform.position.x, 0, transform.position.z));
 
-	transform.rotation = glm::vec3(0, glm::degrees(acos(glm::dot(forward, glm::vec3(1, 0, 0)))), 0);
-	if (glm::dot(forward, glm::vec3(0, 0, 1)) > 0)
+	transform.rotation = glm::vec3(0, glm::degrees(acos(glm::dot(forward, UnitXVector))), 0);
+	if (glm::dot(forward, UnitZVector) > 0)
 		transform.rotation.y = 270 - transform.rotation.y;
 	else transform.rotation.y -= 90;
 
