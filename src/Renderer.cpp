@@ -231,7 +231,6 @@ void Renderer::InitVulkan()
 	CreateCommandPool();
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(renderPass);
-	CreateDeferredFramebuffer(swapchain->extent.width, swapchain->extent.height);
 	indirectDrawParameters.Reserve(MAX_MESHES, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
 	Texture::GeneratePlaceholderTextures();
 	Mesh::materials.push_back({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
@@ -371,59 +370,6 @@ void Renderer::CreateRenderPass()
 	// deferred renderpass
 
 	deferredRenderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain, PIPELINE_FLAG_CLEAR_ON_LOAD, 1);
-}
-
-void Renderer::CreateDeferredFramebuffer(uint32_t width, uint32_t height)
-{
-	/*if (!gBufferViews.empty())
-	{
-		vkDestroyFramebuffer(logicalDevice, deferredFramebuffer, nullptr);
-		vkDestroyImage(logicalDevice, deferredDepth, nullptr);
-		vkFreeMemory(logicalDevice, deferredDepthMemory, nullptr);
-		vkDestroyImageView(logicalDevice, deferredDepthView, nullptr);
-		for (int i = 0; i < gBufferViews.size(); i++)
-		{
-			vkDestroyImage(logicalDevice, gBufferImages[i], nullptr);
-			vkDestroyImageView(logicalDevice, gBufferViews[i], nullptr);
-			vkFreeMemory(logicalDevice, gBufferMemories[i], nullptr);
-		}
-		gBufferImages.clear();
-		gBufferViews.clear();
-		gBufferMemories.clear();
-	}
-
-	gBufferImages.resize(3);
-	gBufferViews.resize(3);
-	gBufferMemories.resize(3);
-	for (int i = 0; i < gBufferViews.size(); i++)
-	{
-		Vulkan::CreateImage(width, height, 1, 1, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, gBufferImages[i], gBufferMemories[i]);
-		gBufferViews[i] = Vulkan::CreateImageView(gBufferImages[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-	}
-
-	VkFormat depthFormat = physicalDevice.GetDepthFormat();
-	Vulkan::CreateImage(width, height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, deferredDepth, deferredDepthMemory);
-	deferredDepthView = Vulkan::CreateImageView(deferredDepth, VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-	std::array<VkImageView, 4> framebufferViews =
-	{
-		gBufferViews[0],
-		gBufferViews[1],
-		gBufferViews[2],
-		deferredDepthView
-	};
-
-	VkFramebufferCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	createInfo.renderPass = deferredRenderPass;
-	createInfo.attachmentCount = static_cast<uint32_t>(framebufferViews.size());
-	createInfo.pAttachments = framebufferViews.data();
-	createInfo.width = static_cast<uint32_t>(width);
-	createInfo.height = static_cast<uint32_t>(height);
-	createInfo.layers = 1;
-
-	VkResult result = vkCreateFramebuffer(logicalDevice, &createInfo, nullptr, &deferredFramebuffer);
-	CheckVulkanResult("Failed to create the deferred framebuffer", result, vkCreateFramebuffer);*/
 }
 
 void Renderer::CreateDescriptorSets()
@@ -896,7 +842,6 @@ void Renderer::OnResize()
 {
 	swapchain->Recreate(renderPass);
 	rayTracer->RecreateImage(testWindow->GetWidth() * internalScale, testWindow->GetHeight() * internalScale);
-	CreateDeferredFramebuffer(swapchain->extent.width * internalScale, swapchain->extent.height * internalScale);
 	UpdateScreenShaderTexture(currentFrame);
 	viewportWidth = testWindow->GetWidth() * viewportTransModifiers.x * internalScale;
 	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y * internalScale;

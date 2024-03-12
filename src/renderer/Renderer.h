@@ -84,10 +84,6 @@ private:
 	VkQueue graphicsQueue						= VK_NULL_HANDLE;
 	VkQueue presentQueue						= VK_NULL_HANDLE;
 	VkQueue computeQueue                        = VK_NULL_HANDLE;
-	VkFramebuffer deferredFramebuffer			= VK_NULL_HANDLE;
-	VkImageView	deferredDepthView				= VK_NULL_HANDLE;
-	VkImage	deferredDepth						= VK_NULL_HANDLE;
-	VkDeviceMemory deferredDepthMemory			= VK_NULL_HANDLE;
 	VkQueryPool queryPool                       = VK_NULL_HANDLE;
 
 	std::vector<VkCommandBuffer>	commandBuffers;
@@ -105,10 +101,6 @@ private:
 	std::vector<VkBuffer>			modelBuffers;
 	std::vector<VkDeviceMemory>		modelBuffersMemory;
 	std::vector<void*>				modelBuffersMapped;
-
-	std::vector<VkImage>			gBufferImages;
-	std::vector<VkImageView>		gBufferViews;
-	std::vector<VkDeviceMemory>		gBufferMemories;
 
 	StorageBuffer<VkDrawIndexedIndirectCommand> indirectDrawParameters;
 	std::unordered_map<int, Handle> processedMaterials;
@@ -146,7 +138,6 @@ private:
 	void GetQueryResults();
 	void WriteTimestamp(VkCommandBuffer commandBuffer, bool reset = false);
 	void WriteIndirectDrawParameters(std::vector<Object*>& objects);
-	void CreateDeferredFramebuffer(uint32_t width, uint32_t height);
 	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);
 	void SetModelData(uint32_t currentImage, const std::vector<Object*>& objects); //parameter is used for potential culling, this allows for 500 meshes in view rather than in scene
 	void SetViewport(VkCommandBuffer commandBuffer);
