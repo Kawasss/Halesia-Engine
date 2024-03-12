@@ -89,7 +89,7 @@ void Enemy::Update(float delta)
 		return;
 
 	shouldBeDestroyed = !health;
-	if (Input::IsKeyPressed(VirtualKey::LeftMouseButton) && timeSinceLastShot > fireRate)
+	if (Input::IsKeyPressed(VirtualKey::LeftMouseButton) && Input::IsKeyPressed(VirtualKey::LeftControl) && timeSinceLastShot > fireRate)
 	{
 		SpawnBullet();
 		timeSinceLastShot = 0;

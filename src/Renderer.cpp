@@ -332,7 +332,7 @@ void Renderer::CreateModelDataBuffers()
 	}
 }
 
-void Renderer::SetModelData(uint32_t currentImage, std::vector<Object*> objects)
+void Renderer::SetModelData(uint32_t currentImage, const std::vector<Object*>& objects)
 {
 	std::vector<ModelData> modelMatrices;
 	for (Object* object : objects)
@@ -370,66 +370,12 @@ void Renderer::CreateRenderPass()
 
 	// deferred renderpass
 
-	std::array<VkAttachmentDescription, 4> deferredAttachments{};
-	for (int i = 0; i < deferredAttachments.size() - 1; i++) // first 3 are color attachments
-	{
-		deferredAttachments[i].format = VK_FORMAT_R8G8B8A8_SRGB;
-		deferredAttachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
-		deferredAttachments[i].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		deferredAttachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		deferredAttachments[i].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		deferredAttachments[i].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	}
-	deferredAttachments[3].format = physicalDevice.GetDepthFormat(); // last attachment is depth buffer
-	deferredAttachments[3].samples = VK_SAMPLE_COUNT_1_BIT;
-	deferredAttachments[3].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	deferredAttachments[3].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	deferredAttachments[3].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	deferredAttachments[3].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	deferredAttachments[3].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	deferredAttachments[3].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	std::array<VkAttachmentReference, 3> deferredColorReferences{};
-	for (int i = 0; i < deferredColorReferences.size(); i++)
-	{
-		deferredColorReferences[i].attachment = i;
-		deferredColorReferences[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	}
-	
-	VkAttachmentReference deferredDepthReference{};
-	deferredDepthReference.attachment = 3;
-	deferredDepthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	VkSubpassDescription deferredSubpass{};
-	deferredSubpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	deferredSubpass.colorAttachmentCount = 3;
-	deferredSubpass.pColorAttachments = deferredColorReferences.data();
-	deferredSubpass.pDepthStencilAttachment = &deferredDepthReference;
-
-	VkSubpassDependency deferredDependency{};
-	deferredDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-	deferredDependency.dstSubpass = 0;
-	deferredDependency.srcAccessMask = 0;
-	deferredDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	deferredDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	deferredDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-	
-	VkRenderPassCreateInfo deferredRenderPassInfo{};
-	deferredRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-	deferredRenderPassInfo.attachmentCount = static_cast<uint32_t>(deferredAttachments.size());
-	deferredRenderPassInfo.pAttachments = deferredAttachments.data();
-	deferredRenderPassInfo.subpassCount = 1;
-	deferredRenderPassInfo.pSubpasses = &deferredSubpass;
-	deferredRenderPassInfo.dependencyCount = 1;
-	deferredRenderPassInfo.pDependencies = &deferredDependency;
-
-	VkResult result = vkCreateRenderPass(logicalDevice, &deferredRenderPassInfo, nullptr, &deferredRenderPass);
-	CheckVulkanResult("Failed to create the deferred render pass", result, vkCreateRenderPass);
+	deferredRenderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain, PIPELINE_FLAG_CLEAR_ON_LOAD, 1);
 }
 
 void Renderer::CreateDeferredFramebuffer(uint32_t width, uint32_t height)
 {
-	if (!gBufferViews.empty())
+	/*if (!gBufferViews.empty())
 	{
 		vkDestroyFramebuffer(logicalDevice, deferredFramebuffer, nullptr);
 		vkDestroyImage(logicalDevice, deferredDepth, nullptr);
@@ -477,7 +423,7 @@ void Renderer::CreateDeferredFramebuffer(uint32_t width, uint32_t height)
 	createInfo.layers = 1;
 
 	VkResult result = vkCreateFramebuffer(logicalDevice, &createInfo, nullptr, &deferredFramebuffer);
-	CheckVulkanResult("Failed to create the deferred framebuffer", result, vkCreateFramebuffer);
+	CheckVulkanResult("Failed to create the deferred framebuffer", result, vkCreateFramebuffer);*/
 }
 
 void Renderer::CreateDescriptorSets()
@@ -634,7 +580,9 @@ void Renderer::CreateGraphicsPipeline()
 
 	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(vertexShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
 	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(fragmentShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
-	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexCreateInfo, fragmentCreateInfo }; // this is not used an a pipeline!!
+	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexCreateInfo, fragmentCreateInfo }; // this is not used in a pipeline!!
+
+	graphicsPipeline = PipelineCreator::CreatePipeline(pipelineLayout, renderPass, swapchain, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW);
 
 	// screen shaders pipeline
 
@@ -645,9 +593,6 @@ void Renderer::CreateGraphicsPipeline()
 	fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderFrag, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	screenPipeline = PipelineCreator::CreatePipeline(pipelineLayout, renderPass, swapchain, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX);
-
-	//result = vkCreateGraphicsPipelines(logicalDevice, VK_NULL_HANDLE, 2, createInfos, nullptr, &graphicsPipeline);
-	//CheckVulkanResult("Failed to create a graphics pipeline", result, vkCreateGraphicsPipelines);
 
 	vkDestroyShaderModule(logicalDevice, screenShaderVert, nullptr);
 	vkDestroyShaderModule(logicalDevice, screenShaderFrag, nullptr);
@@ -729,47 +674,13 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	WriteTimestamp(commandBuffer);
 
 	WriteTimestamp(commandBuffer);
-	rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, commandBuffer, imageIndex);
+	if (!shouldRasterize)
+		rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, commandBuffer, imageIndex);
 
 	WriteTimestamp(commandBuffer);
 	if (denoiseOutput)
 	{
 		DenoiseSynchronized(commandBuffer);
-	}
-
-	if (shouldRasterize)
-	{
-		std::array<VkClearValue, 4> deferredClearColors{};
-		deferredClearColors[0].color = { 0, 0, 0, 1 };
-		deferredClearColors[1].color = { 0, 0, 0, 1 };
-		deferredClearColors[2].color = { 1, 1, 1, 1 };
-		deferredClearColors[3].depthStencil = { 1, 0 };
-
-		VkRenderPassBeginInfo deferredRenderPassBeginInfo{};
-		deferredRenderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		deferredRenderPassBeginInfo.renderPass = deferredRenderPass;
-		deferredRenderPassBeginInfo.framebuffer = deferredFramebuffer;
-		deferredRenderPassBeginInfo.renderArea.offset = { 0, 0 };
-		deferredRenderPassBeginInfo.renderArea.extent = swapchain->extent;
-		deferredRenderPassBeginInfo.clearValueCount = static_cast<uint32_t>(deferredClearColors.size());
-		deferredRenderPassBeginInfo.pClearValues = deferredClearColors.data();
-
-		vkCmdBeginRenderPass(commandBuffer, &deferredRenderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
-		SetViewport(commandBuffer);
-		SetScissors(commandBuffer);
-
-		VkBuffer vertexBuffers[] = { g_vertexBuffer.GetBufferHandle() };
-		VkDeviceSize offsets[] = { 0 };
-
-		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
-		vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-		vkCmdBindIndexBuffer(commandBuffer, g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
- 
-		vkCmdDrawIndexedIndirect(commandBuffer, indirectDrawParameters.GetBufferHandle(), 0, (uint32_t)indirectDrawParameters.GetSize(), sizeof(VkDrawIndexedIndirectCommand));
-		vkCmdEndRenderPass(commandBuffer);
 	}
 
 	VkImageView imageToCopy = rayTracer->gBufferViews[0];
@@ -806,11 +717,14 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		RenderCollisionBoxes(objects, commandBuffer, currentFrame);
 	}
 
+	if (shouldRasterize)
+		RasterizeObjects(commandBuffer, objects);
+
 	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, 1, 1);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, screenPipeline);
 	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &offsets);
-	vkCmdDraw(commandBuffer, 6, 1, 0, 0);
+	if (!shouldRasterize) vkCmdDraw(commandBuffer, 6, 1, 0, 0);
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -818,6 +732,23 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	result = vkEndCommandBuffer(commandBuffer);
 	CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
+}
+
+void Renderer::RasterizeObjects(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects)
+{
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+
+	SetViewport(commandBuffer);
+	SetScissors(commandBuffer);
+
+	VkBuffer vertexBuffers[] = { g_vertexBuffer.GetBufferHandle() };
+	VkDeviceSize offsets[] = { 0 };
+
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+	vkCmdBindIndexBuffer(commandBuffer, g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
+
+	vkCmdDrawIndexedIndirect(commandBuffer, indirectDrawParameters.GetBufferHandle(), 0, (uint32_t)indirectDrawParameters.GetSize(), sizeof(VkDrawIndexedIndirectCommand));
 }
 
 void Renderer::DenoiseSynchronized(VkCommandBuffer commandBuffer)
@@ -1179,7 +1110,7 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 		vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
-void Renderer::RenderCollisionBoxes(std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage)
+void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
 	for (Object* object : objects)
 	{

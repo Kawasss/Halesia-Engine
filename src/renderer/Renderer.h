@@ -148,7 +148,7 @@ private:
 	void WriteIndirectDrawParameters(std::vector<Object*>& objects);
 	void CreateDeferredFramebuffer(uint32_t width, uint32_t height);
 	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);
-	void SetModelData(uint32_t currentImage, std::vector<Object*> objects); //parameter is used for potential culling, this allows for 500 meshes in view rather than in scene
+	void SetModelData(uint32_t currentImage, const std::vector<Object*>& objects); //parameter is used for potential culling, this allows for 500 meshes in view rather than in scene
 	void SetViewport(VkCommandBuffer commandBuffer);
 	void SetScissors(VkCommandBuffer commandBuffer);
 	void DenoiseSynchronized(VkCommandBuffer commandBuffer);
@@ -156,8 +156,9 @@ private:
 
 	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
 	void UpdateUniformBuffers(uint32_t currentImage, Camera* camera);
-	void RecordCommandBuffer(VkCommandBuffer lCommandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
-	void RenderCollisionBoxes(std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage);
+	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
+	void RenderCollisionBoxes(const std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage);
+	void RasterizeObjects(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects);
 
 	uint32_t GetNextSwapchainImage(uint32_t frameIndex);
 	void PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex);

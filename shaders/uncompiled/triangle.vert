@@ -1,5 +1,15 @@
 #version 460
-#define MAX_MESHES 1000
+layout (location = 0) in  vec3 inPosition;
+layout (location = 1) in  vec3 inNormal;
+layout (location = 2) in  vec2 inTexCoords;
+layout (location = 3) in ivec4 inBoneIDs;
+layout (location = 4) in  vec4 inBoneWeights;
+
+layout (location = 0) out vec3 position;
+layout (location = 1) out vec3 normal;
+layout (location = 2) out vec2 texCoords;
+layout (location = 3) out vec3 camPos;
+layout (location = 4) out flat uint ID;
 
 layout(set = 0, binding = 0) uniform sceneInfo {
     vec3 camPos;
@@ -12,27 +22,24 @@ layout(push_constant) uniform constant
     mat4 model;
 } Constant;
 
+struct ModelData
+{
+    mat4 model;
+    vec4 IDColor;
+};
 
-vec3 coordinates[36] = vec3[](
-	vec3(-1, -1, -1), vec3(1, 1, -1), vec3(1, -1, -1),
-    vec3(1, 1, -1), vec3(-1, -1, -1), vec3(-1, 1, -1),
-	
-	vec3(-1, -1, 1), vec3(1, -1, 1), vec3(1, 1, 1),
-    vec3(1, 1, 1), vec3(-1, 1, 1), vec3(-1, -1, 1),
-	
-	vec3(-1, 1, 1), vec3(-1, 1, -1), vec3(-1, -1, -1),
-    vec3(-1, -1, -1), vec3(-1, -1, 1), vec3(-1, 1, 1),
+layout (set = 0, binding = 1) buffer ModelBuffer
+{
+    ModelData data[];
+} modelBuffer;
 
-	vec3(1, 1, 1), vec3(1, -1, -1), vec3(1, 1, -1),
-    vec3(1, -1, -1), vec3(1, 1, 1), vec3(1, -1, 1),
+void main() 
+{
+    position = (modelBuffer.data[gl_DrawID].model * vec4(inPosition, 1.0)).xyz;
+    normal = mat3(transpose(inverse(modelBuffer.data[gl_DrawID].model))) * inNormal;
+    texCoords = inTexCoords;
+    camPos = ubo.camPos;
+    ID = gl_DrawID;
 
-	vec3(-1, -1, -1), vec3(1, -1, -1), vec3(1, -1, 1),
-    vec3(1, -1, 1), vec3(-1, -1, 1), vec3(-1, -1, -1),
-
-	vec3(-1, 1, -1), vec3(1, 1, 1), vec3(1, 1, -1),
-    vec3(1, 1, 1), vec3(-1, 1, -1), vec3(-1, 1, 1)
-);
-
-void main() {
-    gl_Position = ubo.proj * ubo.view * Constant.model * vec4(coordinates[gl_VertexIndex], 1.0);
+    gl_Position = ubo.proj * ubo.view * vec4(position, 1);
 }
