@@ -31,7 +31,7 @@ void Object::GenerateObjectWithData(const ObjectCreationData& creationData)
 	finishedLoading = true; //maybe use mutex here or just find better solution
 
 	#ifdef _DEBUG
-	Console::WriteLine("Created new object \"" + name + "\" with unique id \"" + std::to_string(handle) + '\"', MESSAGE_SEVERITY_DEBUG);
+	Console::WriteLine("Created new object \"" + name + "\" with unique id \"" + ToHexadecimalString(handle) + '\"', MESSAGE_SEVERITY_DEBUG);
 	#endif
 }
 
@@ -140,7 +140,7 @@ void Object::AddRigidBody(RigidBodyType type, Shape shape)
 	rigid = RigidBody(shape, type, transform.position, transform.rotation);
 	rigid.SetUserData(this);
 
-	std::cout << "Created new rigid body (" << RigidBodyTypeToString(type) << ") with shape " << ShapeTypeToString(shape.type) << " for object \"" << name << "\"\n";
+	Console::WriteLine("Created " + RigidBodyTypeToString(type) + " with " + ShapeTypeToString(shape.type) + " for object \"" + name + "\"", MESSAGE_SEVERITY_DEBUG);
 }
 
 bool Object::HasFinishedLoading()

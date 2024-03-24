@@ -3,6 +3,8 @@
 #include <vector>
 #include <mutex>
 #include <fstream>
+#include <sstream>
+#include <time.h>
 
 #include "core/Console.h"
 #include "system/Input.h"
@@ -54,16 +56,49 @@ if (metadata.location == nullptr)                                               
 
 bool Console::isOpen = false;
 
+inline std::string GetTimeAsString()
+{
+	
+	std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+	std::stringstream stream;
+	std::tm ltime;
+
+	localtime_s(&ltime, &t);
+	stream << '[' << std::put_time(&ltime, "%H:%M:%S") << "] ";
+	return stream.str();
+}
+
+inline void WriteMessageWithColor(const std::string& message, MessageSeverity severity)
+{
+	switch (severity)
+	{
+	case MESSAGE_SEVERITY_DEBUG:
+		std::cout << "\x1B[34m" << message << "\033[0m\n";
+		break;
+	case MESSAGE_SEVERITY_ERROR:
+		std::cout << "\x1B[31m" << message << "\033[0m\n";
+		break;
+	case MESSAGE_SEVERITY_NORMAL:
+		std::cout << message << '\n';
+		break;
+	case MESSAGE_SEVERITY_WARNING:
+		std::cout << "\x1B[33m" << message << "\033[0m\n";
+		break;
+	}
+}
+
 std::mutex writingLinesMutex;
 void Console::WriteLine(std::string message, MessageSeverity severity)
 {
 	std::lock_guard<std::mutex> guard(writingLinesMutex);
+	message = GetTimeAsString() + message;
+
 	messages.push_back(message);
 	messageColorBinding[message] = severity;
 
 	#ifdef _DEBUG
-	std::string severityString = severity == MESSAGE_SEVERITY_NORMAL ? "" : " (" + MessageSeverityToString(severity) + ")";
-	std::cout << message << severityString << "\n";
+	//std::string severityString = severity == MESSAGE_SEVERITY_NORMAL ? "" : " (" + MessageSeverityToString(severity) + ")";
+	WriteMessageWithColor(message/* + severityString*/, severity);
 	#endif
 }
 
