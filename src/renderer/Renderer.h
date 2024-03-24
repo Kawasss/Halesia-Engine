@@ -143,6 +143,7 @@ private:
 	void SetViewport(VkCommandBuffer commandBuffer);
 	void SetScissors(VkCommandBuffer commandBuffer);
 	void DenoiseSynchronized(VkCommandBuffer commandBuffer);
+	void DetectExternalTools();
 	void OnResize();
 
 	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);

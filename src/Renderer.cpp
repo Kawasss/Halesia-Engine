@@ -222,6 +222,7 @@ void Renderer::InitVulkan()
 		throw VulkanAPIError("Cannot initialize the renderer: a required extension is not supported (Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
 
 	SetLogicalDevice();
+	DetectExternalTools();
 	swapchain = new Swapchain(logicalDevice, physicalDevice, surface, testWindow);
 	swapchain->CreateImageViews();
 	queryPool = Vulkan::CreateQueryPool(VK_QUERY_TYPE_TIMESTAMP, 10);
@@ -258,6 +259,30 @@ void Renderer::InitVulkan()
 	animationManager = AnimationManager::Get();
 
 	rayTracer = RayTracing::Create(testWindow, swapchain);
+}
+
+void Renderer::DetectExternalTools()
+{
+	uint32_t numTools = 0;
+	vkGetPhysicalDeviceToolProperties(physicalDevice.Device(), &numTools, nullptr);
+	std::cout << "Detected external tools:\n";
+	if (numTools == 0)
+	{
+		std::cout << "  None\n\n";
+		return;
+	}
+
+	std::vector<VkPhysicalDeviceToolProperties> properties(numTools);
+	vkGetPhysicalDeviceToolProperties(physicalDevice.Device(), &numTools, properties.data());
+	for (int i = 0; i < numTools; i++)
+	{
+		std::cout << 
+			"\n  name: " << properties[i].name <<
+			"\n  version: " << properties[i].version <<
+			"\n  purposes: " << string_VkToolPurposeFlags(properties[i].purposes) <<
+			"\n  description: " << properties[i].description << '\n';
+	}
+	std::cout << '\n';
 }
 
 void Renderer::SetInternalResolutionScale(float scale)
@@ -526,7 +551,6 @@ void Renderer::CreateGraphicsPipeline()
 
 	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(vertexShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
 	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(fragmentShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
-	VkPipelineShaderStageCreateInfo shaderStages[] = { vertexCreateInfo, fragmentCreateInfo }; // this is not used in a pipeline!!
 
 	graphicsPipeline = PipelineCreator::CreatePipeline(pipelineLayout, renderPass, swapchain, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW);
 
