@@ -4,6 +4,8 @@
 #extension GL_EXT_shader_16bit_storage : enable
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
 
+#include "layouts.glsl"
+
 #define M_PI 3.1415926535897932384626433832795
 
 hitAttributeEXT vec2 hitCoordinate;
@@ -64,8 +66,8 @@ layout(binding = 1, set = 0) uniform Camera {
 layout (binding = 2, set = 0) buffer IndexBuffer { uint16_t data[]; } indexBuffer;
 layout (binding = 3, set = 0) buffer VertexBuffer { Vertex data[]; } vertexBuffer;
 
-layout (binding = 0, set = 1) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
-layout (binding = 1, set = 1) uniform sampler2D[] textures;
+layout (mesh_instances) buffer InstanceData { InstanceMeshData data[]; } instanceDataBuffer;
+layout (bindless_textures) uniform sampler2D[] textures;
 
 mat4 GetModelMatrix()
 {
@@ -152,6 +154,51 @@ float GetFresnelReflect(vec3 normal, vec3 incident, float reflectivity)
     return ret;
 }
 
+float DistributionGGX(vec3 N, vec3 H, float roughness)
+{
+    float a = roughness*roughness;
+    float a2 = a*a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH*NdotH;
+
+    float nom   = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = M_PI * denom * denom;
+
+    return nom / denom;
+}
+            
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r*r) / 8.0;
+
+    float nom   = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+
+    return nom / denom;
+}
+            
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+
+    return ggx1 * ggx2;
+}
+            
+vec3 fresnelSchlick(float cosTheta, vec3 F0)
+{
+    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
+            
+vec3 fresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}  
+
 void main() {
   payload.intersectedObjectHandle = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].handle;
   if (payload.rayActive == 0) {
@@ -192,24 +239,61 @@ void main() {
       return;
   }
 
-  vec3 surfaceColor = texture(textures[4 * materialIndex], uvCoordinates).xyz;
-  float smoothness = 1 - texture(textures[4 * materialIndex + 2], uvCoordinates).g;
-  float metallic = texture(textures[4 * materialIndex + 3], uvCoordinates).b;
-
-  bool isSpecular = metallic >= RandomValue(state);
-
+  vec3 albedo = texture(textures[4 * materialIndex], uvCoordinates).xyz;
+  
   if (instanceDataBuffer.data[gl_InstanceCustomIndexEXT].meshIsLight == 1)
   {
-    vec3 lightColor = surfaceColor;
+    vec3 lightColor = albedo;
     payload.indirectColor += lightColor * payload.directColor;
-    surfaceColor = vec3(0);
+    albedo = vec3(0);
     payload.rayDepth += 1;
     payload.rayActive = 0;
     payload.normal = geometricNormal;
     payload.albedo = lightColor;
     return;
   }
-  payload.directColor *= mix(surfaceColor, vec3(1), smoothness * int(isSpecular));
+
+  float smoothness = 1 - texture(textures[4 * materialIndex + 2], uvCoordinates).g;
+  float roughness = 1 - smoothness;
+  float metallic = texture(textures[4 * materialIndex + 3], uvCoordinates).b;
+
+  vec3 V = normalize(camera.position.xyz - position);
+
+  vec3 F0 = vec3(0.04); 
+  F0 = mix(F0, albedo, metallic);
+
+  vec3 L = normalize(payload.rayOrigin - position);
+  vec3 H = normalize(V + L);
+
+  // Cook-Torrance BRDF
+  float NDF = DistributionGGX(geometricNormal, H, roughness);   
+  float G   = GeometrySmith(geometricNormal, V, L, roughness);      
+  vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
+
+  vec3 numerator    = NDF * G * F; 
+  float denominator = 4.0 * max(dot(geometricNormal, V), 0.0) * max(dot(geometricNormal, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
+  vec3 specular = numerator / denominator;
+
+  vec3 kS = F;
+                    
+  vec3 kD = vec3(1.0) - kS;
+                    
+  kD *= 1.0 - metallic;	  
+
+  // scale light by NdotL
+  float NdotL = max(dot(geometricNormal, L), 0.0);        
+
+  // add to outgoing radiance Lo
+  vec3 Lo = (kD * albedo / M_PI + specular) * NdotL;
+
+  vec3 FRough = fresnelSchlickRoughness(max(dot(geometricNormal, V), 0.0), F0, roughness);
+
+  vec3 kSRough = FRough;
+  vec3 kDRough = 1.0 - kS;
+  kDRough *= 1.0 - metallic;
+
+  vec3 ambient = kDRough * albedo + payload.directColor * FRough * metallic;
+  payload.directColor *= Lo + ambient;//mix(albedo, vec3(1), smoothness * int(isSpecular));
   
   vec3 hemisphere = CosineSampleHemisphere(vec2(random(gl_LaunchIDEXT.xy, camera.frameCount), random(gl_LaunchIDEXT.xy, camera.frameCount + 1)));
   vec3 alignedHemisphere = geometricNormal + RandomDirection(state);
@@ -218,7 +302,7 @@ void main() {
   payload.rayOrigin = position;
   payload.rayDirection = normalize(mix(alignedHemisphere, specularDirection, GetFresnelReflect(geometricNormal, payload.rayDirection, smoothness)));
   payload.normal = geometricNormal;
-  payload.albedo = surfaceColor;
+  payload.albedo = albedo;
   payload.motion = instanceDataBuffer.data[gl_InstanceCustomIndexEXT].motion;
 
   payload.rayDepth += 1;

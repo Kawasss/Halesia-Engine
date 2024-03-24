@@ -275,6 +275,8 @@ class Topdown : public Scene
 
 		MaterialCreateInfo boxInfo{};
 		boxInfo.albedo = "textures/red.png";
+		boxInfo.metallic = "textures/white.png";
+		boxInfo.roughness = "textures/black.png";
 		Material boxMat = Material::Create(boxInfo);
 		boxMat.AwaitGeneration();
 

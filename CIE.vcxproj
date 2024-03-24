@@ -259,6 +259,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\uncompiled\anim.comp" />
+    <None Include="shaders\uncompiled\layouts.glsl" />
     <None Include="shaders\uncompiled\gen.rgen" />
     <None Include="shaders\uncompiled\hit.rchit" />
     <None Include="shaders\uncompiled\intro.frag" />
