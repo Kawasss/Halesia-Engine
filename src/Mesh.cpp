@@ -44,7 +44,8 @@ void Mesh::Recreate()
 	vertexMemory = Renderer::g_vertexBuffer.SubmitNewData(vertices);
 	indexMemory = Renderer::g_indexBuffer.SubmitNewData(indices);
 	defaultVertexMemory = Renderer::g_defaultVertexBuffer.SubmitNewData(vertices);
-	BLAS = BottomLevelAccelerationStructure::Create(*this);
+	if (Renderer::canRayTrace)
+		BLAS = BottomLevelAccelerationStructure::Create(*this);
 }
 
 void Mesh::ResetMaterial()

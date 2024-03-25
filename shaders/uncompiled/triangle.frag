@@ -27,7 +27,7 @@ float RandomValue(inout uint state)
 
 void main() 
 {
-    vec3 lightPos = vec3(0, 5, 0);
+    vec3 lightPos = camPos;
     vec3 lightColor = vec3(1);
     uint state = ID;
     

@@ -11,8 +11,29 @@ class Room : public Scene
 		lightInfo.isLight = true;
 		Material lightMat = Material::Create(lightInfo);
 
+		MaterialCreateInfo lampInfo{};
+		lampInfo.albedo = "textures/red.png";
+		lampInfo.isLight = true;
+		Material lampMat  = Material::Create(lampInfo);
+		lampMat.AwaitGeneration();
+
 		for (const ObjectCreationData& data : loader.objects)
-			data.name == "Backdrop" ? AddStaticObject(data)->meshes[0].SetMaterial(lightMat) : (void)AddStaticObject(data);
+			data.name == "Backdrop" ? AddStaticObject(data)->meshes[0].SetMaterial(lightMat) : data.name[0] == '#' ? AddStaticObject(data)->meshes[0].SetMaterial(lampMat) : (void)AddStaticObject(data);
+	}
+
+	void Update(float delta) override
+	{
+		static float addage = 0;
+		if (Input::IsKeyPressed(VirtualKey::R))
+		{
+			Color color(0.7f + addage, 1.0f, 1.0f - addage);
+			addage = fmod(addage + delta * 0.001f, 1.0f);
+			if (const Object* light = GetObjectByName("Backdrop"))
+			{
+				std::cout << Mesh::materials.size() << '\n';
+				Mesh::materials[light->meshes[0].materialIndex].albedo->ChangeData((uint8_t*)&color, sizeof(Color), TEXTURE_FORMAT_UNORM);
+			}
+		}
 	}
 };
 

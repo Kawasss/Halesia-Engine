@@ -132,6 +132,26 @@ void Image::WritePixelsToBuffer(std::vector<uint8_t*> pixels, bool useMipMaps, T
 	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
 }
 
+void Image::ChangeData(uint8_t* data, uint32_t size, TextureFormat format)
+{
+	VkBuffer stagingBuffer;
+	VkDeviceMemory stagingBufferMemory;
+
+	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+	Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+
+	void* ptr;
+	vkMapMemory(logicalDevice, stagingBufferMemory, 0, size, 0, &ptr);
+	memcpy(ptr, data, size);
+	vkUnmapMemory(logicalDevice, stagingBufferMemory);
+
+	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	CopyBufferToImage(stagingBuffer);
+
+	vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
+	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
+}
+
 std::vector<uint8_t> Image::GetImageDataAsPNG()
 {
 	AwaitGeneration();

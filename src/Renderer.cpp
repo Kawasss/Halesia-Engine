@@ -47,6 +47,7 @@ Handle    Renderer::selectedHandle = 0;
 bool      Renderer::initGlobalBuffers = false;
 bool      Renderer::shouldRenderCollisionBoxes = false;
 bool      Renderer::denoiseOutput = true;
+bool      Renderer::canRayTrace = false;
 float     Renderer::internalScale = 1;
 
 std::vector<VkDynamicState> Renderer::dynamicStates =
@@ -218,8 +219,19 @@ void Renderer::InitVulkan()
 	instance = Vulkan::GenerateInstance();
 	surface = Surface::GenerateSurface(instance, testWindow);
 	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
-	if (!Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))
-		throw VulkanAPIError("Cannot initialize the renderer: a required extension is not supported (Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
+	canRayTrace = false;// Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+	if (!canRayTrace)
+		shouldRasterize = true;//throw VulkanAPIError("Cannot initialize the renderer: a required extension is not supported (Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
+	else
+	{
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+	}
 
 	SetLogicalDevice();
 	DetectExternalTools();
@@ -258,7 +270,9 @@ void Renderer::InitVulkan()
 	}
 	animationManager = AnimationManager::Get();
 
-	rayTracer = RayTracing::Create(testWindow, swapchain);
+	if (canRayTrace)
+		rayTracer = RayTracing::Create(testWindow, swapchain);
+	else shouldRasterize = true;
 }
 
 void Renderer::DetectExternalTools()
@@ -643,21 +657,25 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 			mesh.BLAS->RebuildGeometry(commandBuffer, mesh);*/
 	WriteTimestamp(commandBuffer);
 
-	WriteTimestamp(commandBuffer);
-	if (!shouldRasterize)
-		rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, commandBuffer, imageIndex);
-
-	WriteTimestamp(commandBuffer);
-	if (denoiseOutput)
+	VkImageView imageToCopy = VK_NULL_HANDLE;
+	if (canRayTrace)
 	{
-		DenoiseSynchronized(commandBuffer);
-	}
+		WriteTimestamp(commandBuffer);
+		if (!shouldRasterize)
+			rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, commandBuffer, imageIndex);
 
-	VkImageView imageToCopy = rayTracer->gBufferViews[0];
-	if (RayTracing::showNormals)
-		imageToCopy = rayTracer->gBufferViews[2];
-	else if (RayTracing::showAlbedo)
-		imageToCopy = rayTracer->gBufferViews[1];
+		WriteTimestamp(commandBuffer);
+		if (denoiseOutput)
+		{
+			DenoiseSynchronized(commandBuffer);
+		}
+
+		imageToCopy = rayTracer->gBufferViews[0];
+		if (RayTracing::showNormals)
+			imageToCopy = rayTracer->gBufferViews[2];
+		else if (RayTracing::showAlbedo)
+			imageToCopy = rayTracer->gBufferViews[1];
+	}
 
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
@@ -673,7 +691,8 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-	UpdateScreenShaderTexture(currentFrame, imageToCopy);
+	if (canRayTrace)
+		UpdateScreenShaderTexture(currentFrame, imageToCopy);
 
 	WriteTimestamp(commandBuffer);
 
@@ -788,8 +807,6 @@ void Renderer::CreateSyncObjects()
 {
 	imageAvaibleSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	externalRenderSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	externalRenderSemaphoreHandles.resize(MAX_FRAMES_IN_FLIGHT);
 	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkExportSemaphoreCreateInfo semaphoreExportInfo{};
@@ -798,21 +815,34 @@ void Renderer::CreateSyncObjects()
 
 	VkSemaphoreCreateInfo semaphoreCreateInfo{};
 	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-	semaphoreCreateInfo.pNext = &semaphoreExportInfo;
+	if (canRayTrace)
+		semaphoreCreateInfo.pNext = &semaphoreExportInfo;
 
 	VkFenceCreateInfo fenceCreateInfo{};
 	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-	
+
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		if (vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &imageAvaibleSemaphores[i]) != VK_SUCCESS || vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS || vkCreateFence(logicalDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]))
+			throw VulkanAPIError("Failed to create the required semaphores and fence", VK_SUCCESS, nameof(CreateSyncObjects), __FILENAME__, __LINE__); // too difficult / annoying to put all of these calls into result = ...
+	}
+
+	if (canRayTrace)
+		ExportSemaphores();
+}
+
+void Renderer::ExportSemaphores()
+{
+	externalRenderSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+	externalRenderSemaphoreHandles.resize(MAX_FRAMES_IN_FLIGHT);
+
 	VkSemaphoreGetWin32HandleInfoKHR getHandleInfo{};
 	getHandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
 	getHandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		if (vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &imageAvaibleSemaphores[i]) != VK_SUCCESS || vkCreateSemaphore(logicalDevice, &semaphoreCreateInfo, nullptr, &renderFinishedSemaphores[i]) != VK_SUCCESS || vkCreateFence(logicalDevice, &fenceCreateInfo, nullptr, &inFlightFences[i]))
-			throw VulkanAPIError("Failed to create the required semaphores and fence", VK_SUCCESS, nameof(CreateSyncObjects), __FILENAME__, __LINE__); // too difficult / annoying to put all of these calls into result = ...
-	
 		getHandleInfo.semaphore = renderFinishedSemaphores[i];
 
 		VkResult result = vkGetSemaphoreWin32HandleKHR(logicalDevice, &getHandleInfo, &externalRenderSemaphoreHandles[i]);
@@ -865,7 +895,8 @@ void Renderer::RenderIntro(Intro* intro)
 void Renderer::OnResize()
 {
 	swapchain->Recreate(renderPass);
-	rayTracer->RecreateImage(testWindow->GetWidth() * internalScale, testWindow->GetHeight() * internalScale);
+	if (canRayTrace)
+		rayTracer->RecreateImage(testWindow->GetWidth() * internalScale, testWindow->GetHeight() * internalScale);
 	UpdateScreenShaderTexture(currentFrame);
 	viewportWidth = testWindow->GetWidth() * viewportTransModifiers.x * internalScale;
 	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y * internalScale;
@@ -988,8 +1019,11 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 	SetModelData(currentFrame, activeObjects);
 	WriteIndirectDrawParameters(activeObjects);
 
-	selectedHandle = *rayTracer->handleBufferMemPointer;
-	*rayTracer->handleBufferMemPointer = 0;
+	if (canRayTrace)
+	{
+		selectedHandle = *rayTracer->handleBufferMemPointer;
+		*rayTracer->handleBufferMemPointer = 0;
+	}
 
 	//UpdateBindlessTextures(currentFrame, activeObjects);
 
@@ -1029,7 +1063,7 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 {
 	VkDescriptorImageInfo imageInfo{};
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = imageView == VK_NULL_HANDLE ? rayTracer->gBufferViews[0] : imageView;
+	imageInfo.imageView = imageView == VK_NULL_HANDLE && canRayTrace ? rayTracer->gBufferViews[0] : imageView;
 	imageInfo.sampler = defaultSampler;
 
 	VkWriteDescriptorSet writeSet{};

@@ -53,6 +53,7 @@ public:
 
 	static float internalScale;
 	bool shouldRasterize = false;
+	static bool canRayTrace;
 	static bool shouldRenderCollisionBoxes;
 	static bool denoiseOutput;
 	static Handle selectedHandle;
@@ -143,6 +144,7 @@ private:
 	void SetViewport(VkCommandBuffer commandBuffer);
 	void SetScissors(VkCommandBuffer commandBuffer);
 	void DenoiseSynchronized(VkCommandBuffer commandBuffer);
+	void ExportSemaphores();
 	void DetectExternalTools();
 	void OnResize();
 

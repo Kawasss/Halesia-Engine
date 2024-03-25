@@ -25,6 +25,7 @@ class Image
 public:
 	void GenerateImages(std::vector<std::vector<char>>& textureData, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
 	void GenerateEmptyImages(int width, int height, int amount);
+	void ChangeData(uint8_t* data, uint32_t size, TextureFormat format);
 	void AwaitGeneration();
 	bool HasFinishedLoading();
 	void Destroy();
