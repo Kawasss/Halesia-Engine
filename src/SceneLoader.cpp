@@ -254,6 +254,17 @@ inline glm::mat4 GetMat4(const aiMatrix4x4& from)
 	return to;
 }
 
+inline aiMatrix4x4 GetMatrix4x4(const glm::mat4& from)
+{
+	aiMatrix4x4 to{};
+	//the a,b,c,d in assimp is the row ; the 1,2,3,4 is the column
+	to.a1 = from[0][0]; to.a2 = from[1][0]; to.a3 = from[2][0]; to.a4 = from[3][0];
+	to.b1 = from[0][1]; to.b2 = from[1][1]; to.b3 = from[2][1]; to.b4 = from[3][1];
+	to.c1 = from[0][2]; to.c2 = from[1][2]; to.c3 = from[2][2]; to.c4 = from[3][2];
+	to.d1 = from[0][3]; to.d2 = from[1][3]; to.d3 = from[2][3]; to.d4 = from[3][3];
+	return to;
+}
+
 inline void SetVertexBones(Vertex& vertex, int ID, float weight)
 {
 	for (int i = 0; i < MAX_BONES_PER_VERTEX; i++)
@@ -350,7 +361,7 @@ inline glm::vec3 GetExtentsFromMesh(aiMesh* pMesh)
 	return max - center;
 }
 
-inline void GetTransform(aiMatrix4x4 mat, glm::vec3& pos, glm::vec3& rot, glm::vec3& scale)
+inline void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::vec3& rot, glm::vec3& scale)
 {
 	glm::mat4 trans;
 	memcpy(&trans, &mat, sizeof(glm::mat4));
@@ -388,13 +399,23 @@ void SceneLoader::LoadFBXScene()
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + location);
 
-	for (int i = 0; i < scene->mRootNode->mNumChildren; i++)
+	RetrieveObject(scene, scene->mRootNode, glm::mat4(1));
+	if (!scene->HasAnimations())
+		return;
+	for (int i = 0; i < scene->mNumAnimations; i++)
 	{
-		ObjectCreationData creationData;
-		aiNode* node = scene->mRootNode->mChildren[i];
-		GetTransform(node->mTransformation, creationData.position, creationData.rotation, creationData.scale);
-		
-		aiMesh* mesh = scene->mMeshes[0];
+		animations.push_back(Animation(scene->mAnimations[i], scene->mRootNode, boneInfoMap));
+	}
+}
+
+void SceneLoader::RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans)
+{
+	ObjectCreationData creationData;
+	GetTransform(GetMatrix4x4(parentTrans) * node->mTransformation, creationData.position, creationData.rotation, creationData.scale);
+
+	for (int i = 0; i < node->mNumMeshes; i++)
+	{
+		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 		uint8_t flags = RetrieveFlagsFromName(mesh->mName.C_Str(), creationData.name);
 		if (HasHitBoxFlag(flags))
 		{
@@ -406,14 +427,11 @@ void SceneLoader::LoadFBXScene()
 			for (int j = 0; j < node->mNumMeshes; j++)
 				creationData.meshes.push_back(RetrieveMeshData(scene->mMeshes[node->mMeshes[j]]));
 		}
-		objects.push_back(creationData);
 	}
-	if (!scene->HasAnimations())
-		return;
-	for (int i = 0; i < scene->mNumAnimations; i++)
-	{
-		animations.push_back(Animation(scene->mAnimations[i], scene->mRootNode, boneInfoMap));
-	}
+	for (int i = 0; i < node->mNumChildren; i++)
+		RetrieveObject(scene, node->mChildren[i], parentTrans * GetMat4(node->mTransformation));
+	
+	objects.push_back(creationData);
 }
 
 ObjectCreationData GenericLoader::LoadObjectFile(std::string path)

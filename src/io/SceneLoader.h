@@ -21,6 +21,8 @@ constexpr int textureCoordinateOffset = 12;
 constexpr int normalOffset = 20;
 
 struct aiMesh;
+struct aiNode;
+struct aiScene;
 
 typedef uint32_t ObjectOptions;
 enum ObjectFlags : ObjectOptions
@@ -176,6 +178,7 @@ private:
 
 	void GetNodeHeader(NodeType& type, NodeSize& size);
 	void RetrieveType(NodeType type, NodeSize size);
+	void RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans);
 
 	std::vector<MeshCreationData>::iterator currentMesh;
 	std::vector<ObjectCreationData>::iterator currentObject;
