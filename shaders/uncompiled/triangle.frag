@@ -29,7 +29,7 @@ void main()
 {
     vec3 lightPos = camPos;
     vec3 lightColor = vec3(1);
-    uint state = ID;
+    uint state = ID * gl_PrimitiveID;
     
     vec3 lightDir   = normalize(lightPos - position);
     vec3 viewDir    = normalize(camPos - position);

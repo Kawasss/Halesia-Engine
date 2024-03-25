@@ -30,7 +30,6 @@ class Room : public Scene
 			addage = fmod(addage + delta * 0.001f, 1.0f);
 			if (const Object* light = GetObjectByName("Backdrop"))
 			{
-				std::cout << Mesh::materials.size() << '\n';
 				Mesh::materials[light->meshes[0].materialIndex].albedo->ChangeData((uint8_t*)&color, sizeof(Color), TEXTURE_FORMAT_UNORM);
 			}
 		}

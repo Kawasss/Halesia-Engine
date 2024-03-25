@@ -6,7 +6,7 @@ engineCore:
 renderer: 
 	interalRes: 1.000000
 	renderCollision: 0
-	denoiseOutput: 0
+	denoiseOutput: 1
 	ray-tracing: 
 		raySamples: 1
 		rayDepth: 8

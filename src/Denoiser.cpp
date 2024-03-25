@@ -10,6 +10,10 @@
 #include "optix_function_table_definition.h"
 #include "optix_function_table.h"
 
+#ifdef USE_CUDA
+#pragma comment(lib, "cudart_static.lib")
+#endif
+
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define CheckOptixResult(result) if (result != OPTIX_SUCCESS) { std::string message = (std::string)optixGetErrorString(result) + " at line " + std::to_string(__LINE__); throw std::runtime_error(message); }
 #define CheckCudaResult(result) if (result != cudaSuccess) throw std::runtime_error(std::to_string(result) + " at line " + std::to_string(__LINE__) + " in " + (std::string)__FILENAME__);
@@ -21,6 +25,7 @@ void CallBack(unsigned int level, const char* tag, const char* message, void* cb
 
 void Denoiser::InitOptix()
 {
+#ifdef USE_CUDA
 	cudaError_t error = cudaFree(nullptr); // init runtime cuda
 	cudaContext = nullptr;
 	CheckCudaResult(error);
@@ -49,10 +54,12 @@ void Denoiser::InitOptix()
 	CheckCudaResult(cudaDeviceSynchronize());
 	cudaError_t cuResult = cudaStreamSynchronize(cudaStream);
 	CheckCudaResult(cuResult);
+#endif
 }
 
 void Denoiser::AllocateBuffers(uint32_t width, uint32_t height)
 {
+#ifdef USE_CUDA
 	this->width = width;
 	this->height = height;
 
@@ -80,10 +87,12 @@ void Denoiser::AllocateBuffers(uint32_t width, uint32_t height)
 	CheckCudaResult(cudaDeviceSynchronize());
 	cudaError_t cuResult = cudaStreamSynchronize(cudaStream);
 	CheckCudaResult(cuResult);
+#endif
 }
 
 void Denoiser::CreateExternalCudaBuffer(VkBuffer& buffer, VkDeviceMemory& memory, void** cuPtr, HANDLE& handle, VkDeviceSize size)
 {
+#ifdef USE_CUDA
 	const Vulkan::Context& context = Vulkan::GetContext();
 
 	VkMemoryRequirements memReqs{};
@@ -109,10 +118,12 @@ void Denoiser::CreateExternalCudaBuffer(VkBuffer& buffer, VkDeviceMemory& memory
 
 	cuResult = cudaExternalMemoryGetMappedBuffer(cuPtr, extMemory, &bufferDesc);
 	CheckCudaResult(cuResult);
+#endif
 }
 
 void Denoiser::CreateExternalSemaphore(VkSemaphore& semaphore, HANDLE& handle, cudaExternalSemaphore_t& cuPtr)
 {
+#ifdef USE_CUDA
 	const Vulkan::Context& context = Vulkan::GetContext();
 
 	VkSemaphoreTypeCreateInfo semaphoreTypeInfo{};
@@ -146,10 +157,12 @@ void Denoiser::CreateExternalSemaphore(VkSemaphore& semaphore, HANDLE& handle, c
 	externSemaphoreDesc.flags = 0;
 
 	CheckCudaResult(cudaImportExternalSemaphore(&cuPtr, &externSemaphoreDesc));
+#endif
 }
 
 void Denoiser::DenoiseImage()
 {
+#ifdef USE_CUDA
 	CheckCudaResult(cudaDeviceSynchronize());
 	cudaError_t cuResult = cudaStreamSynchronize(cudaStream);
 	CheckCudaResult(cuResult);
@@ -179,10 +192,12 @@ void Denoiser::DenoiseImage()
 	CheckCudaResult(cudaDeviceSynchronize());
 	cuResult = cudaStreamSynchronize(cudaStream);
 	CheckCudaResult(cuResult);
+#endif
 }
 
 void Denoiser::CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer, std::array<VkImage, 3> gBuffers)
 {
+#ifdef USE_CUDA
 	VkImageSubresourceRange subresourceRange{};
 	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	subresourceRange.baseArrayLayer = 0;
@@ -230,10 +245,12 @@ void Denoiser::CopyImagesToDenoisingBuffers(VkCommandBuffer commandBuffer, std::
 
 	VkImageMemoryBarrier memoryBarriers2[] = { memoryBarrierInput, memoryBarrierAlbedo, memoryBarrierNormal };
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, (uint32_t)std::size(memoryBarriers2), memoryBarriers2);
+#endif
 }
 
 void Denoiser::CopyDenoisedBufferToImage(VkCommandBuffer commandBuffer, VkImage image)
 {
+#ifdef USE_CUDA
 	VkImageSubresourceRange subresourceRange{};
 	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	subresourceRange.baseArrayLayer = 0;
@@ -271,10 +288,12 @@ void Denoiser::CopyDenoisedBufferToImage(VkCommandBuffer commandBuffer, VkImage 
 	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+#endif
 }
 
 void Denoiser::SharedOptixImage::Create(uint32_t width, uint32_t height, size_t pixelSize, Denoiser* denoiser)
 {
+#ifdef USE_CUDA
 	denoiser->CreateExternalCudaBuffer(vkBuffer, vkMemory, &cudaBuffer, winHandle, (VkDeviceSize)width * height * pixelSize);
 
 	image.data = (CUdeviceptr)cudaBuffer;
@@ -283,10 +302,12 @@ void Denoiser::SharedOptixImage::Create(uint32_t width, uint32_t height, size_t 
 	image.width = width;
 	image.pixelStrideInBytes = pixelSize;
 	image.rowStrideInBytes = pixelSize * width;
+#endif
 }
 
 void Denoiser::SharedOptixImage::Destroy(VkDevice logicalDevice)
 {
+#ifdef USE_CUDA
 	if (winHandle != (void*)0)
 		CloseHandle(winHandle);
 	if (vkBuffer != VK_NULL_HANDLE)
@@ -295,23 +316,26 @@ void Denoiser::SharedOptixImage::Destroy(VkDevice logicalDevice)
 		vkFreeMemory(logicalDevice, vkMemory, nullptr);
 	if (cudaBuffer != 0)
 		CheckCudaResult(cudaFree(cudaBuffer));
+#endif
 }
 
 void Denoiser::DestroyBuffers()
 {
+#ifdef USE_CUDA
 	if (stateBuffer != 0)
 		cudaFree((void*)stateBuffer);
 	if (scratchBuffer != 0)
 		cudaFree((void*)scratchBuffer);
 	if (minRGB != 0)
 		cudaFree((void*)minRGB);
-	
+
 	const Vulkan::Context& context = Vulkan::GetContext();
 	input.Destroy(context.logicalDevice);
 	output.Destroy(context.logicalDevice);
 	albedo.Destroy(context.logicalDevice);
 	normal.Destroy(context.logicalDevice);
 	motion.Destroy(context.logicalDevice);
+#endif
 }
 
 void Denoiser::Destroy()

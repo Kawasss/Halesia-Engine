@@ -219,7 +219,7 @@ void Renderer::InitVulkan()
 	instance = Vulkan::GenerateInstance();
 	surface = Surface::GenerateSurface(instance, testWindow);
 	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
-	canRayTrace = false;// Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+	canRayTrace = Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 	if (!canRayTrace)
 		shouldRasterize = true;//throw VulkanAPIError("Cannot initialize the renderer: a required extension is not supported (Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
 	else
@@ -772,7 +772,7 @@ void Renderer::DenoiseSynchronized(VkCommandBuffer commandBuffer)
 	submittedCount++;
 
 	auto start = std::chrono::high_resolution_clock::now();
-
+#ifdef USE_CUDA
 	cudaExternalSemaphoreWaitParams waitParams{};
 	memset(&waitParams, 0, sizeof(waitParams));
 	waitParams.flags = 0;
@@ -790,7 +790,7 @@ void Renderer::DenoiseSynchronized(VkCommandBuffer commandBuffer)
 	rayTracer->DenoiseImage();
 
 	cuStreamSynchronize(nullptr);
-
+#endif
 	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
 	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
 
@@ -837,6 +837,7 @@ void Renderer::ExportSemaphores()
 	externalRenderSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	externalRenderSemaphoreHandles.resize(MAX_FRAMES_IN_FLIGHT);
 
+#ifdef USE_CUDA
 	VkSemaphoreGetWin32HandleInfoKHR getHandleInfo{};
 	getHandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
 	getHandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
@@ -855,6 +856,7 @@ void Renderer::ExportSemaphores()
 
 		cudaError_t cuResult = cudaImportExternalSemaphore(&externalRenderSemaphores[i], &externSemaphoreDesc);
 	}
+#endif
 }
 
 void Renderer::RenderIntro(Intro* intro)
