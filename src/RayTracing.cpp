@@ -518,7 +518,11 @@ void RayTracing::UpdateTextureBuffer()
 void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera)
 {
 	amountOfActiveObjects = 1;
-	const glm::vec2 staticMotion = camera->GetMotionVector();
+	glm::vec2 staticMotion = camera->GetMotionVector();
+	staticMotion.x *= width;
+	staticMotion.y *= height;
+	std::cout << staticMotion.x << ", " << staticMotion.y << '\n';
+
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
 		glm::vec2 ndc = objects[i]->rigid.type == RIGID_BODY_DYNAMIC ? objects[i]->transform.GetMotionVector(camera->GetProjectionMatrix(), camera->GetViewMatrix()) : staticMotion;
@@ -564,9 +568,6 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	int x, y, absX, absY;
 	window->GetRelativeCursorPosition(x, y);
 	window->GetAbsoluteCursorPosition(absX, absY);
-	
-	if (renderProgressive && (x != 0 || y != 0 || Input::IsKeyPressed(VirtualKey::W) || Input::IsKeyPressed(VirtualKey::A) || Input::IsKeyPressed(VirtualKey::S) || Input::IsKeyPressed(VirtualKey::D) || showNormals))
-		frameCount = 0;
 	
 	if (showNormals && showUniquePrimitives) showNormals = false; // can't have 2 variables changing colors at once
 	uniformBufferMemPtr->cameraPosition = { camera->position, 1 };

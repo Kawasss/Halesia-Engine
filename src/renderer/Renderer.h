@@ -1,4 +1,8 @@
 #pragma once
+#define USE_CUDA
+#ifdef USE_CUDA
+#pragma comment(lib, "cudart_static.lib")
+#endif
 #include <vector>
 #include <string>
 #include <unordered_map>

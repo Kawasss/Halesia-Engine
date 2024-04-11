@@ -10,10 +10,6 @@
 #include "optix_function_table_definition.h"
 #include "optix_function_table.h"
 
-#ifdef USE_CUDA
-#pragma comment(lib, "cudart_static.lib")
-#endif
-
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define CheckOptixResult(result) if (result != OPTIX_SUCCESS) { std::string message = (std::string)optixGetErrorString(result) + " at line " + std::to_string(__LINE__); throw std::runtime_error(message); }
 #define CheckCudaResult(result) if (result != cudaSuccess) throw std::runtime_error(std::to_string(result) + " at line " + std::to_string(__LINE__) + " in " + (std::string)__FILENAME__);
