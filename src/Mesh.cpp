@@ -12,11 +12,11 @@ void Mesh::ProcessMaterial(const MaterialCreationData& creationData)
 	if (materialIndex != 0) // if this mesh already has a material, then dont replace that with this one
 		return;
 
-	Texture* albedo = !creationData.albedoIsDefault ? new Texture(creationData.albedoData) : Texture::placeholderAlbedo;
-	Texture* normal = !creationData.normalIsDefault ? new Texture(creationData.normalData) : Texture::placeholderNormal;
-	Texture* metallic = !creationData.metallicIsDefault ? new Texture(creationData.metallicData) : Texture::placeholderMetallic;
-	Texture* roughness = !creationData.roughnessIsDefault ? new Texture(creationData.roughnessData) : Texture::placeholderRoughness;
-	Texture* ambientOcclusion = !creationData.ambientOcclusionIsDefault ? new Texture(creationData.ambientOcclusionData) : Texture::placeholderAmbientOcclusion;
+	Texture* albedo = !creationData.albedoIsDefault ? new Texture(creationData.albedoData, creationData.aWidth, creationData.aHeight) : Texture::placeholderAlbedo;
+	Texture* normal = !creationData.normalIsDefault ? new Texture(creationData.normalData, creationData.nWidth, creationData.nHeight) : Texture::placeholderNormal;
+	Texture* metallic = !creationData.metallicIsDefault ? new Texture(creationData.metallicData, creationData.mWidth, creationData.mHeight) : Texture::placeholderMetallic;
+	Texture* roughness = !creationData.roughnessIsDefault ? new Texture(creationData.roughnessData, creationData.rWidth, creationData.rHeight) : Texture::placeholderRoughness;
+	Texture* ambientOcclusion = !creationData.ambientOcclusionIsDefault ? new Texture(creationData.ambientOcclusionData, creationData.aoWidth, creationData.aoHeight) : Texture::placeholderAmbientOcclusion;
 	SetMaterial({ albedo, normal, metallic, roughness, ambientOcclusion });
 }
 

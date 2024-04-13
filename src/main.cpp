@@ -1,8 +1,14 @@
 #include "demo/Topdown.h"
+#include "io/SceneWriter.h"
 
 class Room : public Scene
 {
 	void Start() override
+	{
+		LoadScene();
+	}
+
+	void WriteScene()
 	{
 		SceneLoader loader("stdObj/room.fbx");
 		loader.LoadFBXScene();
@@ -14,11 +20,27 @@ class Room : public Scene
 		MaterialCreateInfo lampInfo{};
 		lampInfo.albedo = "textures/red.png";
 		lampInfo.isLight = true;
-		Material lampMat  = Material::Create(lampInfo);
+		Material lampMat = Material::Create(lampInfo);
 		lampMat.AwaitGeneration();
 
 		for (const ObjectCreationData& data : loader.objects)
 			data.name == "Backdrop" ? AddStaticObject(data)->meshes[0].SetMaterial(lightMat) : data.name[0] == '#' ? AddStaticObject(data)->meshes[0].SetMaterial(lampMat) : (void)AddStaticObject(data);
+
+		HSFWriter::WriteHSFScene(this, "dinner.hsf");
+	}
+
+	void LoadScene()
+	{
+		SceneLoader loader("dinner.hsf");
+		loader.LoadScene();
+
+		for (const auto& data : loader.materials)
+			Mesh::materials.push_back(Material::Create(data));
+
+		for (const auto& data : loader.objects)
+		{
+			AddStaticObject(data);
+		}
 	}
 
 	void Update(float delta) override

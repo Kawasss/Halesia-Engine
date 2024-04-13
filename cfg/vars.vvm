@@ -1,5 +1,5 @@
 engineCore: 
-	useEditorUI: 0
+	useEditorUI: 1
 	showFPS: 1
 	maxFPS: -1
 	consoleKey: 192

@@ -48,6 +48,12 @@ struct MaterialCreationData // dont know how smart it is to copy around possible
 	bool ambientOcclusionIsDefault = true;
 	bool heightIsDefault = true;
 
+	uint32_t aWidth, aHeight,
+		nWidth, nHeight,
+		mWidth, mHeight,
+		rWidth, rHeight,
+		aoWidth, aoHeight;
+
 	std::vector<char> albedoData;
 	std::vector<char> normalData;
 	std::vector<char> metallicData;

@@ -34,7 +34,7 @@ public:
 	int GetHeight();
 	int GetMipLevels();
 
-	std::vector<uint8_t> GetImageDataAsPNG();
+	std::vector<uint8_t> GetImageData();
 
 	static bool TexturesHaveChanged();
 
@@ -56,7 +56,7 @@ protected:
 	void TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void CopyBufferToImage(VkBuffer buffer);
 	void GenerateMipMaps(VkFormat imageFormat);
-	void WritePixelsToBuffer(std::vector<uint8_t*> pixels, bool useMipMaps, TextureFormat format);
+	void WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMipMaps, TextureFormat format);
 
 	static bool texturesHaveChanged;
 };
@@ -80,6 +80,6 @@ public:
 	static void DestroyPlaceholderTextures();
 
 	Texture(std::string filePath, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
-	Texture(std::vector<char> imageData, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
+	Texture(std::vector<char> imageData, uint32_t width, uint32_t height, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB); // uncompressed image !!
 	Texture(const Color& color, TextureFormat format = TEXTURE_FORMAT_SRGB); // solid color textures cannot use mip maps because theyre already 1x1
 };

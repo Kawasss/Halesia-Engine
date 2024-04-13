@@ -97,8 +97,10 @@ inline extern const char* NodeTypeToString(NodeType type);
 // NODE_TYPE_TEXTURE:
 // 16 bit value corresponding to NodeType
 // 64 bit value containing the size of the node
-// an array of which the size is determined by the previous value
-// the texture data is written in the PNG format.
+// 32 bit value determining the width
+// 32 bit value determining the height
+// an array of which the size is determined by the node size minus the 64 bits used by the dimensions
+// the texture data itself is uncompressed
 // NODE_TYPE_ALBEDO, NODE_TYPE_NORMAL, NODE_TYPE_ROUGHNESS, NODE_TYPE_METALLIC and NODE_TYPE_AMBIENT_OCCLUSION are specialised versions of this node
 // 
 // NODE_TYPE_MATERIAL:

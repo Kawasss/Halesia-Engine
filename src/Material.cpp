@@ -17,11 +17,12 @@ Material Material::Create(const MaterialCreateInfo& createInfo)
 Material Material::Create(const MaterialCreationData& createInfo)
 {
 	Material ret{};
-	if (!createInfo.albedoIsDefault)           ret.albedo = new Texture(createInfo.albedoData);
-	if (!createInfo.normalIsDefault)           ret.normal = new Texture(createInfo.normalData, true, TEXTURE_FORMAT_UNORM);
-	if (!createInfo.metallicIsDefault)         ret.metallic = new Texture(createInfo.metallicData);
-	if (!createInfo.roughnessIsDefault)        ret.roughness = new Texture(createInfo.roughnessData);
-	if (!createInfo.ambientOcclusionIsDefault) ret.ambientOcclusion = new Texture(createInfo.ambientOcclusionData);
+	ret.isLight = createInfo.isLight;
+	if (!createInfo.albedoIsDefault)           ret.albedo = new Texture(createInfo.albedoData, createInfo.aWidth, createInfo.aHeight);
+	if (!createInfo.normalIsDefault)           ret.normal = new Texture(createInfo.normalData, createInfo.nWidth, createInfo.nHeight, true, TEXTURE_FORMAT_UNORM);
+	if (!createInfo.metallicIsDefault)         ret.metallic = new Texture(createInfo.metallicData, createInfo.mWidth, createInfo.mHeight);
+	if (!createInfo.roughnessIsDefault)        ret.roughness = new Texture(createInfo.roughnessData, createInfo.rWidth, createInfo.rHeight);
+	if (!createInfo.ambientOcclusionIsDefault) ret.ambientOcclusion = new Texture(createInfo.ambientOcclusionData, createInfo.aoWidth, createInfo.aoHeight);
 	return ret;
 }
 

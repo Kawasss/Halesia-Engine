@@ -53,8 +53,6 @@ void Image::GenerateImages(std::vector<std::vector<char>>& textureData, bool use
 
 	for (uint32_t i = 0; i < layerCount; i++)
 		stbi_image_free(pixels[i]);
-
-	this->texturesHaveChanged = true;
 }
 
 void Image::GenerateEmptyImages(int width, int height, int amount)
@@ -93,7 +91,7 @@ void Image::GenerateEmptyImages(int width, int height, int amount)
 	this->texturesHaveChanged = true;
 }
 
-void Image::WritePixelsToBuffer(std::vector<uint8_t*> pixels, bool useMipMaps, TextureFormat format)
+void Image::WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMipMaps, TextureFormat format)
 {
 	const Vulkan::Context context = Vulkan::GetContext();
 
@@ -130,6 +128,8 @@ void Image::WritePixelsToBuffer(std::vector<uint8_t*> pixels, bool useMipMaps, T
 	if (useMipMaps) GenerateMipMaps((VkFormat)format);
 
 	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
+
+	this->texturesHaveChanged = true;
 }
 
 void Image::ChangeData(uint8_t* data, uint32_t size, TextureFormat format)
@@ -152,7 +152,7 @@ void Image::ChangeData(uint8_t* data, uint32_t size, TextureFormat format)
 	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
 }
 
-std::vector<uint8_t> Image::GetImageDataAsPNG()
+std::vector<uint8_t> Image::GetImageData()
 {
 	AwaitGeneration();
 
@@ -265,16 +265,26 @@ Texture::Texture(std::string filePath, bool useMipMaps, TextureFormat format)
 		}, this, filePath, useMipMaps, format);
 }
 
-Texture::Texture(std::vector<char> imageData, bool useMipMaps, TextureFormat format)
+Texture::Texture(std::vector<char> imageData, uint32_t width, uint32_t height, bool useMipMaps, TextureFormat format)
 {
 	if (imageData.empty())
 		throw std::runtime_error("Invalid texture size: imageData.empty()");
 
-	generation = std::async([](Texture* texture, std::vector<char> imageData, bool useMipMaps, TextureFormat format) 
-		{
-			std::vector<std::vector<char>> data{ imageData };
-			texture->GenerateImages(data, useMipMaps, format);
-		}, this, imageData, useMipMaps, format);
+	const Vulkan::Context context = Vulkan::GetContext();
+	this->logicalDevice = context.logicalDevice;
+	this->commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
+	this->queue = context.graphicsQueue;
+	this->physicalDevice = context.physicalDevice;
+	this->width = width;
+	this->height = height;
+	this->layerCount = 1;
+
+	//generation = std::async([](Texture* texture, std::vector<char> imageData, bool useMipMaps, TextureFormat format) 
+		//{
+			std::vector<uint8_t*> data{ (uint8_t*)imageData.data() };
+			WritePixelsToBuffer(data, useMipMaps, format);
+			texturesHaveChanged = true;
+		//}, this, imageData, useMipMaps, format);
 }
 
 Texture::Texture(const Color& color, TextureFormat format)
@@ -285,6 +295,7 @@ Texture::Texture(const Color& color, TextureFormat format)
 	queue = context.graphicsQueue;
 	physicalDevice = context.physicalDevice;
 	width = 1, height = 1, layerCount = 1;
+
 	generation = std::async([](Texture* texture, const Color& color, TextureFormat format)
 		{
 			texture->WritePixelsToBuffer({ color.GetData() }, false, format);

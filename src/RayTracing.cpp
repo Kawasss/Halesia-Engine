@@ -521,7 +521,6 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 	glm::vec2 staticMotion = camera->GetMotionVector();
 	staticMotion.x *= width;
 	staticMotion.y *= height;
-	std::cout << staticMotion.x << ", " << staticMotion.y << '\n';
 
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
