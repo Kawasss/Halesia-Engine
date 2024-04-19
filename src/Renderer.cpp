@@ -413,16 +413,6 @@ void Renderer::CreateRenderPass()
 
 void Renderer::CreateDescriptorSets()
 {
-	std::vector<uint32_t> setCounts;
-	setCounts.push_back(MAX_FRAMES_IN_FLIGHT);
-	setCounts.push_back(MAX_FRAMES_IN_FLIGHT);
-	setCounts.push_back(MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES);
-
-	VkDescriptorSetVariableDescriptorCountAllocateInfoEXT countAllocateInfo{};
-	countAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO_EXT;
-	countAllocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
-	countAllocateInfo.pDescriptorCounts = setCounts.data();
-
 	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

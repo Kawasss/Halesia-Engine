@@ -159,6 +159,7 @@
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Console.cpp" />
     <ClCompile Include="src\Denoiser.cpp" />
+    <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\HalesiaEngine.cpp" />
     <ClCompile Include="src\Intro.cpp" />
@@ -225,6 +226,7 @@
     <ClInclude Include="src\renderer\AnimationManager.h" />
     <ClInclude Include="src\renderer\Bone.h" />
     <ClInclude Include="src\renderer\Denoiser.h" />
+    <ClInclude Include="src\renderer\Framebuffer.h" />
     <ClInclude Include="src\renderer\gui.h" />
     <ClInclude Include="src\renderer\Intro.h" />
     <ClInclude Include="src\renderer\Material.h" />

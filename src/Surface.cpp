@@ -12,8 +12,8 @@ Surface Surface::GenerateSurface(VkInstance instance, Win32Window* window)
 	surfaceCreateInfo.hwnd = window->window;
 	surfaceCreateInfo.hinstance = window->hInstance;
 
-	if (vkCreateWin32SurfaceKHR(instance, &surfaceCreateInfo, nullptr, &lSurface.surface) != VK_SUCCESS)
-		throw std::runtime_error("Failed to create a window surface for the current instance");
+	VkResult result = vkCreateWin32SurfaceKHR(instance, &surfaceCreateInfo, nullptr, &lSurface.surface);
+	CheckVulkanResult("Failed to create a window surface for the current instance", result, vkCreateWin32SurfaceKHR);
 
 	return lSurface;
 }
