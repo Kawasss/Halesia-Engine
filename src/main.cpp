@@ -58,12 +58,12 @@ class Room : public Scene
 	}
 };
 
-int main(int argsCount, char** args)
+int main(int argc, char** argv)
 {
 	HalesiaEngine* instance = nullptr;
 	HalesiaEngineCreateInfo createInfo{};
-	createInfo.argsCount = argsCount;
-	createInfo.args = args;
+	createInfo.argsCount = argc;
+	createInfo.args = argv;
 	createInfo.startingScene = new Room();
 	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;
@@ -82,4 +82,9 @@ int main(int argsCount, char** args)
 	instance->Run();
 
 	return EXIT_SUCCESS;
+}
+
+int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
+	return main(__argc, __argv);
 }
