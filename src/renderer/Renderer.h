@@ -49,6 +49,10 @@ public:
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
 
+	void StartRecording();
+	void SubmitRecording();
+	void RenderObjects(const std::vector<Object*>& objects, Camera* camera);
+
 	void SetInternalResolutionScale(float scale);
 	static float GetInternalResolutionScale();
 
@@ -120,6 +124,7 @@ private:
 	glm::vec2 viewportOffsets = glm::vec2(0);
 	glm::vec2 viewportTransModifiers = glm::vec2(1);
 	uint32_t currentFrame = 0;
+	uint32_t imageIndex = 0;
 	uint32_t queueIndex = 0;
 	
 	RayTracing* rayTracer;

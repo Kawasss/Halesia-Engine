@@ -967,7 +967,39 @@ inline void ResetImGui()
 	ImGui::NewFrame();
 }
 
-void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
+void Renderer::StartRecording()
+{
+	VkResult result = vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
+	CheckVulkanResult("Failed to wait for fences", result, vkWaitForFences);
+	result = vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
+	CheckVulkanResult("Failed to reset fences", result, vkResetFences);
+
+	Vulkan::DeleteSubmittedObjects();
+	GetQueryResults();
+
+	if (canRayTrace)
+	{
+		selectedHandle = *rayTracer->handleBufferMemPointer;
+		*rayTracer->handleBufferMemPointer = 0;
+	}
+
+	imageIndex = GetNextSwapchainImage(currentFrame);
+
+	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+	submittedCount = 0;
+
+	ImGui::Render();
+}
+
+void Renderer::SubmitRecording()
+{
+	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
+	PresentSwapchainImage(currentFrame, imageIndex);
+	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	ResetImGui();
+}
+
+void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera)
 {
 	std::vector<Object*> activeObjects;
 	for (Object* object : objects)
@@ -981,54 +1013,30 @@ void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, fl
 			if (ObjectIsValid(child))
 				activeObjects.push_back(child);
 	}
+
+	receivedObjects += objects.size();
+	renderedObjects += activeObjects.size();
 	
-	receivedObjects = objects.size();
-	renderedObjects = activeObjects.size();
-	submittedCount = 0;
-
-	ImGui::Render();
-
 	if (activeObjects.empty())
-	{
-		ResetImGui();
 		return;
-	}
-		
+
 	std::lock_guard<std::mutex> lockGuard(drawingMutex);
-	
-	VkResult result = vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
-	CheckVulkanResult("Failed to wait for fences", result, vkWaitForFences);
-	result = vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
-	CheckVulkanResult("Failed to reset for fences", result, vkResetFences);
-	
-	uint32_t imageIndex = GetNextSwapchainImage(currentFrame);
 
-	Vulkan::DeleteSubmittedObjects();
-
-	GetQueryResults();
-
+	//UpdateBindlessTextures(currentFrame, activeObjects);
 	UpdateUniformBuffers(currentFrame, camera);
 	SetModelData(currentFrame, activeObjects);
 	WriteIndirectDrawParameters(activeObjects);
 
-	if (canRayTrace)
-	{
-		selectedHandle = *rayTracer->handleBufferMemPointer;
-		*rayTracer->handleBufferMemPointer = 0;
-	}
-
-	//UpdateBindlessTextures(currentFrame, activeObjects);
-
-	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
+}
 
-	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
+void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
+{
+	StartRecording();
 
-	PresentSwapchainImage(currentFrame, imageIndex);
+	RenderObjects(objects, camera);
 
-	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-	
-	ResetImGui();
+	SubmitRecording();
 }
 
 void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
