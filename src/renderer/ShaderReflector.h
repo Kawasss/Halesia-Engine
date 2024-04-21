@@ -23,6 +23,7 @@ public:
 
 	std::vector<VkDescriptorSetLayoutBinding> GetLayoutBindingsOfSet(uint32_t setIndex) const;
 	std::vector<VkDescriptorPoolSize> GetDescriptorPoolSize() const;
+	uint32_t GetDescriptorSetCount() const;
 
 	void WriteToDescriptorSet(VkDevice logicalDevice, VkDescriptorSet set, VkBuffer buffer, uint32_t setIndex, uint32_t binding) const;
 

@@ -119,6 +119,14 @@ std::vector<VkDescriptorPoolSize> ShaderGroupReflector::GetDescriptorPoolSize() 
 	return ret;
 }
 
+uint32_t ShaderGroupReflector::GetDescriptorSetCount() const
+{
+	uint32_t ret = 0;
+	for (int i = 0; i < modules.size(); i++)
+		ret += modules[i].descriptor_set_count;
+	return ret;
+}
+
 void ShaderGroupReflector::WriteToDescriptorSet(VkDevice logicalDevice, VkDescriptorSet set, VkBuffer buffer, uint32_t setIndex, uint32_t binding) const
 {
 	std::vector<VkDescriptorSetLayoutBinding> bindings = GetLayoutBindingsOfSet(setIndex); // not the fastest way, but cleaner

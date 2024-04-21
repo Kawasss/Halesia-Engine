@@ -11,6 +11,7 @@
 struct aiAnimation;
 struct aiNode;
 struct MeshCreationData;
+class  ComputeShader;
 
 class Animation
 {
@@ -66,15 +67,7 @@ private:
 
 	std::vector<Animation*> animations;
 
-	VkDevice logicalDevice = VK_NULL_HANDLE;
-
-	VkPipeline computePipeline = VK_NULL_HANDLE;
-	VkDescriptorSetLayout computeSetLayout = VK_NULL_HANDLE;
-	VkPipelineLayout computeLayout = VK_NULL_HANDLE;
-	VkQueue computeQueue = VK_NULL_HANDLE;
-	VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
-	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
-
+	ComputeShader* computeShader;
 	glm::mat4* mat4BufferPtr;
 	VkBuffer mat4Buffer;
 	VkDeviceMemory mat4Memory;
