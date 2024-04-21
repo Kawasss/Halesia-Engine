@@ -999,19 +999,27 @@ void Renderer::SubmitRecording()
 	ResetImGui();
 }
 
+inline void GetAllObjectsFromObject(std::vector<Object*>& ret, Object* obj)
+{
+	if (!ObjectIsValid(obj))
+		return;
+
+	ret.push_back(obj);
+	for (Object* object : obj->children)
+	{
+		if (ObjectIsValid(object))
+		{
+			GetAllObjectsFromObject(ret, object);
+		}
+	}
+}
+
 void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera)
 {
 	std::vector<Object*> activeObjects;
 	for (Object* object : objects)
 	{
-		if (ObjectIsValid(object))
-			activeObjects.push_back(object);
-
-		if (object->children.empty())
-			continue;
-		for (Object* child : object->children)
-			if (ObjectIsValid(child))
-				activeObjects.push_back(child);
+		GetAllObjectsFromObject(activeObjects, object);
 	}
 
 	receivedObjects += objects.size();
