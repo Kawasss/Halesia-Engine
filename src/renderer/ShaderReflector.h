@@ -1,4 +1,5 @@
 #pragma once
+#include <set>
 #include <vector>
 #include <vulkan/vulkan.h>
 #include "spirv-reflect/spirv_reflect.h"
@@ -21,6 +22,8 @@ public:
 	ShaderGroupReflector(const std::vector<std::vector<char>>& sourceCodes);
 	~ShaderGroupReflector();
 
+	void ExcludeBinding(uint32_t set, uint32_t binding);
+
 	std::vector<VkDescriptorSetLayoutBinding> GetLayoutBindingsOfSet(uint32_t setIndex) const;
 	std::vector<VkDescriptorPoolSize> GetDescriptorPoolSize() const;
 	uint32_t GetDescriptorSetCount() const;
@@ -28,5 +31,6 @@ public:
 	void WriteToDescriptorSet(VkDevice logicalDevice, VkDescriptorSet set, VkBuffer buffer, uint32_t setIndex, uint32_t binding) const;
 
 private:
+	std::set<uint64_t> removedBindings;
 	std::vector<SpvReflectShaderModule> modules;
 };

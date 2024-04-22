@@ -71,6 +71,9 @@ std::vector<VkDescriptorSetLayoutBinding> ShaderGroupReflector::GetLayoutBinding
 				continue;
 
 			uint64_t bindingID = CreateUniqueID(current.set, current.binding); // encode 2 uint32_t's into one uint64_t
+			if (removedBindings.find(bindingID) != removedBindings.end())
+				continue;
+
 			if (uniqueBindingIndexMap.count(bindingID) > 0) // if that binding already exists, then dont create a new one
 			{
 				ret[uniqueBindingIndexMap[bindingID]].stageFlags |= modules[i].shader_stage; // not a good way if determining the index
@@ -151,6 +154,11 @@ void ShaderGroupReflector::WriteToDescriptorSet(VkDevice logicalDevice, VkDescri
 	writeSet.pBufferInfo = &bufferInfo;
 
 	vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
+}
+
+void ShaderGroupReflector::ExcludeBinding(uint32_t set, uint32_t binding)
+{
+	removedBindings.insert(CreateUniqueID(set, binding));
 }
 
 ShaderGroupReflector::~ShaderGroupReflector()

@@ -92,7 +92,7 @@ void ForwardPlusRenderer::AddLight(glm::vec3 pos)
 	const Vulkan::Context& context = Vulkan::GetContext();
 
 	glm::vec3* lights = nullptr;
-	VkDeviceSize offset = (lightCount - 1) * sizeof(glm::vec3);
+	VkDeviceSize offset = lightCount == 0 ? 0 : (lightCount - 1) * sizeof(glm::vec3);
 	VkResult result = vkMapMemory(context.logicalDevice, lightMemory, offset, sizeof(glm::vec3), 0, (void**)&lights);
 	CheckVulkanResult("Failed to map the forward+ light memory", result, vkMapMemory);
 
