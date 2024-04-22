@@ -11,9 +11,9 @@ struct Cell
 
 layout (set = 0, binding = 0) buffer Cells
 {
-	int depth;
-	int width;
-	int height;
+	uint depth;
+	uint width;
+	uint height;
 	Cell data[];
 } cells;
 
@@ -32,11 +32,11 @@ void main()
 {
 	vec3 pos = lights.position[gl_GlobalInvocationID.x];
 	vec4 screenSpace = matrices.proj * matrices.view * vec4(pos, 1);
-	vec3 cellSpace = screenSpace.xyz * vec3(cells.width, cells.height, cells.depth);
+	vec3 cellSpace = screenSpace.xyz * vec3(cells.width, cells.height, cells.depth) * 2.0f - 1.0f;
 
-	int zIndex = int(cellSpace.z) * cells.width * cells.height;
-	int cellIndex = int(cells.height * cellSpace.x + cellSpace.y);
-	int index = zIndex + cellIndex;
+	uint zIndex = uint(cellSpace.z) * cells.width * cells.height;
+	uint cellIndex = uint(cells.height * cellSpace.x + cellSpace.y);
+	uint index = zIndex + cellIndex;
 
 	cells.data[index].lightIndices[cells.data[index].lightCount++] = gl_GlobalInvocationID.x;
 }

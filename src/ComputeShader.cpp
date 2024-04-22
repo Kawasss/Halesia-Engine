@@ -6,7 +6,7 @@
 
 ComputeShader::ComputeShader(std::string path)
 {
-	std::vector<char> code = ReadFile("shaders/spirv/anim.comp.spv");
+	std::vector<char> code = ReadFile(path);
 	ShaderGroupReflector reflector({ code });
 	VkShaderModule module = Vulkan::CreateShaderModule(code);
 

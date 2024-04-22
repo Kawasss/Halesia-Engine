@@ -21,6 +21,7 @@ class Swapchain;
 class RayTracing;
 class Image;
 class AnimationManager;
+class ForwardPlusRenderer;
 struct Mesh;
 
 typedef void* HANDLE;
@@ -128,6 +129,7 @@ private:
 	uint32_t queueIndex = 0;
 	
 	RayTracing* rayTracer;
+	ForwardPlusRenderer* fwdPlus;
 
 	static bool initGlobalBuffers;
 

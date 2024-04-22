@@ -17,6 +17,7 @@
 #include "renderer/AnimationManager.h"
 #include "renderer/AccelerationStructures.h"
 #include "renderer/PipelineCreator.h"
+#include "renderer/ForwardPlus.h"
 
 #include "system/Window.h"
 
@@ -83,6 +84,8 @@ Renderer::Renderer(Win32Window* window)
 void Renderer::Destroy()
 {
 	vkDeviceWaitIdle(logicalDevice);
+
+	delete fwdPlus;
 
 	animationManager->Destroy();
 	rayTracer->Destroy();
@@ -273,6 +276,8 @@ void Renderer::InitVulkan()
 	if (canRayTrace)
 		rayTracer = RayTracing::Create(testWindow, swapchain);
 	else shouldRasterize = true;
+
+	fwdPlus = new ForwardPlusRenderer();
 }
 
 void Renderer::DetectExternalTools()
@@ -697,8 +702,11 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	}
 
 	if (shouldRasterize)
+	{
+		fwdPlus->Draw(commandBuffer, camera); // should maybe (?) not be here when its fully implemented
 		RasterizeObjects(commandBuffer, objects);
-
+	}
+	
 	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, 1, 1);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, screenPipeline);
