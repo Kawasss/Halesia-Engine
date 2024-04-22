@@ -1,0 +1,42 @@
+#version 460
+#define MAX_LIGHT_INDICES 32
+
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+struct Cell
+{
+	uint lightCount;
+	uint lightIndices[MAX_LIGHT_INDICES];
+};
+
+layout (set = 0, binding = 0) buffer Cells
+{
+	int depth;
+	int width;
+	int height;
+	Cell data[];
+} cells;
+
+layout (set = 0, binding = 1) readonly buffer Lights
+{
+	vec3 position[];
+} lights;
+
+layout (set = 0, binding = 2) uniform Matrices
+{
+	mat4 proj;
+	mat4 view;
+} matrices;
+
+void main()
+{
+	vec3 pos = lights.position[gl_GlobalInvocationID.x];
+	vec4 screenSpace = matrices.proj * matrices.view * vec4(pos, 1);
+	vec3 cellSpace = screenSpace.xyz * vec3(cells.width, cells.height, cells.depth);
+
+	int zIndex = int(cellSpace.z) * cells.width * cells.height;
+	int cellIndex = int(cells.height * cellSpace.x + cellSpace.y);
+	int index = zIndex + cellIndex;
+
+	cells.data[index].lightIndices[cells.data[index].lightCount++] = gl_GlobalInvocationID.x;
+}

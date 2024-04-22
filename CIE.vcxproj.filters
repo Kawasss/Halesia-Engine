@@ -219,6 +219,9 @@
     <ClCompile Include="src\ComputeShader.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\ForwardPlus.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -407,6 +410,9 @@
     <ClInclude Include="src\renderer\ComputeShader.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\renderer\ForwardPlus.h">
+      <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">
@@ -453,6 +459,9 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\uncompiled\layouts.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\uncompiled\forwardPlus.comp">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>
