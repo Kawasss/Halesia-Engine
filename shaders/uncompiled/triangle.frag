@@ -25,6 +25,31 @@ float RandomValue(inout uint state)
 	return NextRandom(state) / 4294967295.0;
 }
 
+#define MAX_LIGHT_INDICES 32
+
+struct Cell
+{
+	float lightCount;
+	float lightIndices[MAX_LIGHT_INDICES];
+};
+
+layout (set = 0, binding = 3) buffer Cells
+{
+	uint depth;
+	uint width;
+	uint height;
+	Cell data[];
+} cells;
+
+uint GetCellIndex()
+{
+    vec3 cellSpace = position * vec3(cells.width, cells.height, cells.depth) * 2 - 1;
+    uint zIndex = uint(cellSpace.z) * cells.width * cells.height;
+	uint cellIndex = uint(cells.height * cellSpace.x + cellSpace.y);
+
+	return zIndex + cellIndex;
+}
+
 void main() 
 {
     vec3 lightPos = camPos;
@@ -45,5 +70,8 @@ void main()
     vec3 specular = lightColor * spec;
 
     vec3 color = vec3(RandomValue(state), RandomValue(state), RandomValue(state));
-    result = vec4((ambient + diffuse + specular) * color, 1);
+    //result = vec4((ambient + diffuse + specular) * color, 1);
+    float rel = cells.data[GetCellIndex()].lightCount / float(MAX_LIGHT_INDICES);
+
+    result = cells.data[GetCellIndex()].lightCount > 0 ? vec4(1, 0, 0, 1) : vec4(0, 0, 1, 1);//vec4(rel, 0, 1 - rel, 1);
 }

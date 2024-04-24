@@ -458,10 +458,10 @@
     <None Include="shaders\uncompiled\anim.comp">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\uncompiled\layouts.glsl">
+    <None Include="shaders\uncompiled\forwardPlus.comp">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\uncompiled\forwardPlus.comp">
+    <None Include="shaders\uncompiled\include\layouts.glsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

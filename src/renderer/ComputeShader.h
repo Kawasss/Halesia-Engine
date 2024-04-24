@@ -14,6 +14,8 @@ public:
 	void Execute(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z);
 	void WriteToDescriptorBuffer(VkBuffer buffer, VkDescriptorType type, uint32_t setIndex, uint32_t binding, VkDeviceSize range = VK_WHOLE_SIZE);
 
+	std::vector<VkDescriptorSet>& GetDescriptorSets() { return sets; }
+
 private:
 	void CreateDescriptorPool(const ShaderGroupReflector& reflector);
 	void CreateSetLayout(const ShaderGroupReflector& reflector);

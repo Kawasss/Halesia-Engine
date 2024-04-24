@@ -15,6 +15,9 @@ public:
 	void Draw(VkCommandBuffer commandBuffer, Camera* camera);
 	void AddLight(glm::vec3 pos);
 
+	ComputeShader* GetShader() { return computeShader; }
+	VkBuffer GetCellBuffer() { return cellBuffer; }
+
 private:
 	void Allocate();
 	void Destroy();
@@ -25,8 +28,8 @@ private:
 
 	struct Cell
 	{
-		uint32_t lightCount;
-		uint32_t lightIndices[MAX_LIGHT_INDICES];
+		float lightCount;
+		alignas(sizeof(float) * MAX_LIGHT_INDICES) float lightIndices[MAX_LIGHT_INDICES];
 	};
 
 	struct Matrices
@@ -35,7 +38,7 @@ private:
 		glm::mat4 view;
 	};
 
-	uint32_t cellWidth = 1, cellHeight = 1, cellDepth = 1;
+	uint32_t cellWidth = 8, cellHeight = 8, cellDepth = 8;
 
 	VkBuffer cellBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory cellMemory = VK_NULL_HANDLE;

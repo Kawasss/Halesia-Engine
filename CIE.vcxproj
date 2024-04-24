@@ -266,9 +266,9 @@
   <ItemGroup>
     <None Include="shaders\uncompiled\anim.comp" />
     <None Include="shaders\uncompiled\forwardPlus.comp" />
-    <None Include="shaders\uncompiled\layouts.glsl" />
     <None Include="shaders\uncompiled\gen.rgen" />
     <None Include="shaders\uncompiled\hit.rchit" />
+    <None Include="shaders\uncompiled\include\layouts.glsl" />
     <None Include="shaders\uncompiled\intro.frag" />
     <None Include="shaders\uncompiled\intro.vert" />
     <None Include="shaders\uncompiled\miss.rmiss" />

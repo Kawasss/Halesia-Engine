@@ -74,7 +74,7 @@ void ForwardPlusRenderer::Draw(VkCommandBuffer commandBuffer, Camera* camera)
 
 	memset(cells, 0, size); // reset Cell::lightCount for every cell
 	vkUnmapMemory(context.logicalDevice, cellMemory);
-
+	
 	if (lightCount == 0)
 		return;
 

@@ -18,6 +18,7 @@
 #include "renderer/AccelerationStructures.h"
 #include "renderer/PipelineCreator.h"
 #include "renderer/ForwardPlus.h"
+#include "renderer/ComputeShader.h"
 
 #include "system/Window.h"
 
@@ -252,6 +253,11 @@ void Renderer::InitVulkan()
 	Mesh::materials.push_back({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
 	if (defaultSampler == VK_NULL_HANDLE)
 		CreateTextureSampler();
+
+	fwdPlus = new ForwardPlusRenderer();
+	for (int i = 0; i < 128; i++)
+		fwdPlus->AddLight(glm::vec3(i / 16.0f, 0, 0)); // test !!
+
 	CreateUniformBuffers();
 	CreateModelDataBuffers();
 	CreateDescriptorPool();
@@ -277,7 +283,7 @@ void Renderer::InitVulkan()
 		rayTracer = RayTracing::Create(testWindow, swapchain);
 	else shouldRasterize = true;
 
-	fwdPlus = new ForwardPlusRenderer();
+	
 }
 
 void Renderer::DetectExternalTools()
@@ -443,6 +449,11 @@ void Renderer::CreateDescriptorSets()
 		modelBufferInfo.offset = 0;
 		modelBufferInfo.range = sizeof(glm::mat4) * MAX_MESHES;
 
+		VkDescriptorBufferInfo cellBufferInfo{};
+		cellBufferInfo.buffer = fwdPlus->GetCellBuffer();
+		cellBufferInfo.offset = 0;
+		cellBufferInfo.range = VK_WHOLE_SIZE;
+
 		VkDescriptorImageInfo imageInfo{};
 		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		imageInfo.imageView = VK_NULL_HANDLE;
@@ -450,7 +461,7 @@ void Renderer::CreateDescriptorSets()
 
 		std::vector<VkDescriptorImageInfo> imageInfos(Renderer::MAX_BINDLESS_TEXTURES, imageInfo);
 
-		std::array<VkWriteDescriptorSet, 2> writeDescriptorSets{};
+		std::array<VkWriteDescriptorSet, 3> writeDescriptorSets{};
 		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 		writeDescriptorSets[0].dstSet = descriptorSets[i];
@@ -465,6 +476,13 @@ void Renderer::CreateDescriptorSets()
 		writeDescriptorSets[1].dstBinding = 1;
 		writeDescriptorSets[1].descriptorCount = 1;
 
+		writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		writeDescriptorSets[2].dstSet = descriptorSets[i];
+		writeDescriptorSets[2].pBufferInfo = &cellBufferInfo;
+		writeDescriptorSets[2].dstBinding = 3;
+		writeDescriptorSets[2].descriptorCount = 1;
+
 		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
 	}
 }
@@ -475,7 +493,7 @@ void Renderer::CreateDescriptorPool()
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	poolSizes[1].descriptorCount = MAX_FRAMES_IN_FLIGHT;
+	poolSizes[1].descriptorCount = MAX_FRAMES_IN_FLIGHT * 2;
 	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSizes[2].descriptorCount = MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES;
 
@@ -513,8 +531,15 @@ void Renderer::CreateDescriptorSetLayout()
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	std::array<VkDescriptorSetLayoutBinding, 3> bindings = { layoutBinding, modelLayoutBinding, samplerLayoutBinding };
-	std::vector<VkDescriptorBindingFlags> bindingFlags = { 0, 0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT };
+	VkDescriptorSetLayoutBinding cellLayoutBinding{};
+	cellLayoutBinding.binding = 3;
+	cellLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	cellLayoutBinding.descriptorCount = 1;
+	cellLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	cellLayoutBinding.pImmutableSamplers = nullptr;
+
+	std::array<VkDescriptorSetLayoutBinding, 4> bindings = { layoutBinding, modelLayoutBinding, samplerLayoutBinding, cellLayoutBinding };
+	std::vector<VkDescriptorBindingFlags> bindingFlags = { 0, 0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, 0 };
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo{};
 	bindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
@@ -555,8 +580,8 @@ void Renderer::CreateGraphicsPipeline()
 
 	// world shaders pipeline
 
-	VkShaderModule vertexShaderModule = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/vert.spv"));
-	VkShaderModule fragmentShaderModule = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/frag.spv"));
+	VkShaderModule vertexShaderModule = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/triangle.vert.spv"));
+	VkShaderModule fragmentShaderModule = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/triangle.frag.spv"));
 
 	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(vertexShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
 	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(fragmentShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -672,6 +697,9 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 			imageToCopy = rayTracer->gBufferViews[1];
 	}
 
+	if (shouldRasterize)
+		fwdPlus->Draw(commandBuffer, camera); // should maybe (?) not be here when its fully implemented
+
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
 	clearColors[1].depthStencil = { 1, 0 };
@@ -702,10 +730,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	}
 
 	if (shouldRasterize)
-	{
-		fwdPlus->Draw(commandBuffer, camera); // should maybe (?) not be here when its fully implemented
 		RasterizeObjects(commandBuffer, objects);
-	}
 	
 	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, 1, 1);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
