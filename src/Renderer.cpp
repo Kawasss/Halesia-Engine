@@ -64,6 +64,8 @@ struct UniformBufferObject
 	
 	alignas(16) glm::mat4 view;
 	alignas(16) glm::mat4 projection;
+	uint32_t width;
+	uint32_t height;
 };
 
 struct ModelData
@@ -514,7 +516,7 @@ void Renderer::CreateDescriptorSetLayout()
 	layoutBinding.binding = 0;
 	layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	layoutBinding.descriptorCount = 1;
-	layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	layoutBinding.pImmutableSamplers = nullptr;
 
 	VkDescriptorSetLayoutBinding modelLayoutBinding{};
@@ -1177,6 +1179,8 @@ void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
 	ubo.cameraPos = camera->position;
 	ubo.view = camera->GetViewMatrix();
 	ubo.projection = camera->GetProjectionMatrix();
+	ubo.width = testWindow->GetWidth();
+	ubo.height = testWindow->GetHeight();
 	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 }
 

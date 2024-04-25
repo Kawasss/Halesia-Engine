@@ -41,9 +41,17 @@ layout (set = 0, binding = 3) buffer Cells
 	Cell data[];
 } cells;
 
+layout(set = 0, binding = 0) uniform sceneInfo {
+    vec3 camPos;
+    mat4 view;
+    mat4 proj;
+    uint width;
+    uint height;
+} ubo;
+
 vec2 GetRelativePosition()
 {
-    return gl_FragCoord.xy / vec2(800, 600);
+    return gl_FragCoord.xy / vec2(ubo.width, ubo.height);
 }
 
 float GetLinearizedDepth()
@@ -82,7 +90,7 @@ void main()
 
     vec3 color = vec3(RandomValue(state), RandomValue(state), RandomValue(state));
     //result = vec4((ambient + diffuse + specular) * color, 1);
-    float rel = cells.data[GetCellIndex()].lightCount / (32*32);
+    float rel = cells.data[GetCellIndex()].lightCount / (32*32*32);
 
     result = vec4(rel, 0, 1 - rel, 1);
 }
