@@ -29,7 +29,7 @@ private:
 	struct Cell
 	{
 		float lightCount;
-		alignas(sizeof(float) * MAX_LIGHT_INDICES) float lightIndices[MAX_LIGHT_INDICES];
+		//float lightIndices[MAX_LIGHT_INDICES];
 	};
 
 	struct Matrices
@@ -38,7 +38,7 @@ private:
 		glm::mat4 view;
 	};
 
-	uint32_t cellWidth = 8, cellHeight = 8, cellDepth = 8;
+	uint32_t cellWidth = 32, cellHeight = 32, cellDepth = 32;
 
 	VkBuffer cellBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory cellMemory = VK_NULL_HANDLE;

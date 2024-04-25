@@ -255,7 +255,7 @@ void Renderer::InitVulkan()
 		CreateTextureSampler();
 
 	fwdPlus = new ForwardPlusRenderer();
-	for (int i = 0; i < 128; i++)
+	for (int i = 0; i < 1; i++)
 		fwdPlus->AddLight(glm::vec3(i / 16.0f, 0, 0)); // test !!
 
 	CreateUniformBuffers();

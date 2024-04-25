@@ -30,7 +30,7 @@ float RandomValue(inout uint state)
 struct Cell
 {
 	float lightCount;
-	float lightIndices[MAX_LIGHT_INDICES];
+	//float lightIndices[MAX_LIGHT_INDICES];
 };
 
 layout (set = 0, binding = 3) buffer Cells
@@ -41,10 +41,21 @@ layout (set = 0, binding = 3) buffer Cells
 	Cell data[];
 } cells;
 
+vec2 GetRelativePosition()
+{
+    return gl_FragCoord.xy / vec2(800, 600);
+}
+
+float GetLinearizedDepth()
+{
+    return (2 * 0.01f * 1000.0f) / (1000.0f - gl_FragCoord.z * (1000.0f - 0.01f)) / 1000.0f;
+}
+
 uint GetCellIndex()
 {
-    vec3 cellSpace = position * vec3(cells.width, cells.height, cells.depth) * 2 - 1;
-    uint zIndex = uint(cellSpace.z) * cells.width * cells.height;
+    vec2 cellSpace = GetRelativePosition() * vec2(cells.width, cells.height);
+    uint sliceSize = uint(cells.width * cells.height);
+    uint zIndex = uint(GetLinearizedDepth() * cells.depth) * sliceSize;
 	uint cellIndex = uint(cells.height * cellSpace.x + cellSpace.y);
 
 	return zIndex + cellIndex;
@@ -71,7 +82,7 @@ void main()
 
     vec3 color = vec3(RandomValue(state), RandomValue(state), RandomValue(state));
     //result = vec4((ambient + diffuse + specular) * color, 1);
-    float rel = cells.data[GetCellIndex()].lightCount / float(MAX_LIGHT_INDICES);
+    float rel = cells.data[GetCellIndex()].lightCount / (32*32);
 
-    result = cells.data[GetCellIndex()].lightCount > 0 ? vec4(1, 0, 0, 1) : vec4(0, 0, 1, 1);//vec4(rel, 0, 1 - rel, 1);
+    result = vec4(rel, 0, 1 - rel, 1);
 }
