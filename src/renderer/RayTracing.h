@@ -59,7 +59,9 @@ private:
 	void CreateDescriptorSets(const ShaderGroupReflector& groupReflection);
 	void CreateRayTracingPipeline(const std::vector<std::vector<char>> shaderCodes);
 	void CreateBuffers(const ShaderGroupReflector& groupReflection);
-
+	void CopyPreviousResult(VkCommandBuffer commandBuffer);
+	void CreateMotionBuffer();
+		
 	uint32_t amountOfActiveObjects = 0;
 	uint32_t width = 0, height = 0;
 	
@@ -99,6 +101,13 @@ private:
 
 	VkBuffer uniformBufferBuffer;
 	VkDeviceMemory uniformBufferMemory;
+
+	VkImage prevImage;
+	VkImageView prevImageView;
+	VkDeviceMemory prevMemory;
+
+	VkBuffer motionBuffer;
+	VkDeviceMemory motionMemory;
 
 	std::array<VkDeviceMemory, 4> gBufferMemories;
 	std::unordered_map<int, Handle> processedMaterials;

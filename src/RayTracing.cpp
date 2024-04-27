@@ -287,6 +287,12 @@ void RayTracing::CreateBuffers(const ShaderGroupReflector& groupReflection)
 	UpdateMeshDataDescriptorSets();
 }
 
+void RayTracing::CreateMotionBuffer()
+{
+	VkDeviceSize size = width * height * sizeof(glm::vec2);
+	Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, motionBuffer, motionMemory);
+}
+
 void RayTracing::Init(Win32Window* window, Swapchain* swapchain)
 {
 	const std::vector<char> rgenCode = ReadFile("shaders/spirv/gen.rgen.spv"), chitCode = ReadFile("shaders/spirv/hit.rchit.spv");
@@ -352,6 +358,12 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 			vkDestroyImage(logicalDevice, gBuffers[i], nullptr);
 			vkFreeMemory(logicalDevice, gBufferMemories[i], nullptr);
 		}
+		vkDestroyImageView(logicalDevice, prevImageView, nullptr);
+		vkDestroyImage(logicalDevice, prevImage, nullptr);
+		vkFreeMemory(logicalDevice, prevMemory, nullptr);
+
+		vkDestroyBuffer(context.logicalDevice, motionBuffer, nullptr);
+		vkFreeMemory(context.logicalDevice, motionMemory, nullptr);
 	}
 	
 	for (int i = 0; i < gBuffers.size(); i++)
@@ -374,6 +386,11 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 		vkCmdPipelineBarrier(imageBarrierCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &RTImageMemoryBarrier);
 		Vulkan::EndSingleTimeCommands(context.graphicsQueue, imageBarrierCommandBuffer, commandPool);
 	}
+	Vulkan::CreateImage(width, height, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, prevImage, prevMemory);
+	prevImageView = Vulkan::CreateImageView(prevImage, VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	CreateMotionBuffer();
+
 	imageHasChanged = true;
 	if (Renderer::denoiseOutput)
 		denoiser->AllocateBuffers(width, height);
@@ -455,27 +472,70 @@ inline VkWriteDescriptorSet WriteSetImage(VkDescriptorSet dstSet, uint32_t dstBi
 	return ret;
 }
 
+void RayTracing::CopyPreviousResult(VkCommandBuffer commandBuffer)
+{
+	VkImageSubresourceRange subresourceRange{};
+	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	subresourceRange.baseArrayLayer = 0;
+	subresourceRange.baseMipLevel = 0;
+	subresourceRange.levelCount = 1;
+	subresourceRange.layerCount = 1;
+
+	VkImageMemoryBarrier barriers[2]{};
+	barriers[0].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barriers[0].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	barriers[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	barriers[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barriers[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barriers[0].image = gBuffers[0];
+	barriers[0].subresourceRange = subresourceRange;
+
+	barriers[1] = barriers[0];
+	barriers[1].newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barriers[1].image = prevImage;
+
+	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 2, barriers);
+
+	VkImageCopy imageCopy{};
+	imageCopy.extent = { width, height, 1 };
+	imageCopy.dstSubresource.layerCount = 1;
+	imageCopy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	imageCopy.srcSubresource.layerCount = 1;
+	imageCopy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+
+	vkCmdCopyImage(commandBuffer, gBuffers[0], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, prevImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
+
+	barriers[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	barriers[0].newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	barriers[1].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	barriers[1].newLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 2, barriers);
+}
+
 void RayTracing::UpdateDescriptorSets()
 {
 	VkDescriptorImageInfo RTImageDescriptorImageInfo = GetImageInfo(gBufferViews[0]);
 	VkDescriptorImageInfo albedoImageDescriptorImageInfo = GetImageInfo(gBufferViews[1]);
 	VkDescriptorImageInfo normalImageDescriptorImageInfo = GetImageInfo(gBufferViews[2]);
+	VkDescriptorImageInfo prevImageDescriptorImageInfo = GetImageInfo(prevImageView);
 
 	VkDescriptorBufferInfo motionBufferInfo{};
-	motionBufferInfo.buffer = denoiser->GetMotionBuffer();
+	motionBufferInfo.buffer = motionBuffer;
 	motionBufferInfo.offset = 0;
 	motionBufferInfo.range = VK_WHOLE_SIZE;
 
-	std::array<VkWriteDescriptorSet, 4> writeSets{};
+	std::array<VkWriteDescriptorSet, 5> writeSets{};
 	writeSets[0] = WriteSetImage(descriptorSets[0], 4, &RTImageDescriptorImageInfo);
 	writeSets[1] = WriteSetImage(descriptorSets[0], 5, &albedoImageDescriptorImageInfo);
 	writeSets[2] = WriteSetImage(descriptorSets[0], 6, &normalImageDescriptorImageInfo);
-	writeSets[3].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeSets[3].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	writeSets[3].dstSet = descriptorSets[0];
-	writeSets[3].descriptorCount = 1;
-	writeSets[3].dstBinding = 8;
-	writeSets[3].pBufferInfo = &motionBufferInfo;
+	writeSets[3] = WriteSetImage(descriptorSets[0], 9, &prevImageDescriptorImageInfo);
+	writeSets[4].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSets[4].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	writeSets[4].dstSet = descriptorSets[0];
+	writeSets[4].descriptorCount = 1;
+	writeSets[4].dstBinding = 8;
+	writeSets[4].pBufferInfo = &motionBufferInfo;
 	
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
@@ -518,16 +578,11 @@ void RayTracing::UpdateTextureBuffer()
 void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera)
 {
 	amountOfActiveObjects = 1;
-	glm::vec2 staticMotion = camera->GetMotionVector();
-	staticMotion.x *= width;
-	staticMotion.y *= height;
+	glm::vec2 staticMotion = camera->GetMotionVector() * glm::vec2(width, height); // this only factors in the rotation of the camera, not the changes in position
 
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
-		glm::vec2 ndc = objects[i]->rigid.type == RIGID_BODY_DYNAMIC ? objects[i]->transform.GetMotionVector(camera->GetProjectionMatrix(), camera->GetViewMatrix()) : staticMotion;
-		ndc.x *= width;
-		ndc.y *= height;
-
+		glm::vec2 ndc = objects[i]->rigid.type == RIGID_BODY_DYNAMIC ? objects[i]->transform.GetMotionVector(camera->GetProjectionMatrix(), camera->GetViewMatrix()) * glm::vec2(width, height) : staticMotion;
 		for (int32_t j = 0; j < objects[i]->meshes.size(); j++)
 		{
 			Mesh& mesh = objects[i]->meshes[j];
@@ -581,6 +636,7 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	uniformBufferMemPtr->directionalLightDir = directionalLightDir;
 
 	TLAS->Update(objects, commandBuffer);
+	CopyPreviousResult(commandBuffer);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 	vkCmdTraceRaysKHR(commandBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, width, height, 1);

@@ -38,6 +38,7 @@ layout(binding = 1, set = 0) uniform Camera {
 layout (binding = 4, set = 0, rgba32f) uniform image2D image;
 layout (binding = 5, set = 0, rgba32f) uniform image2D albedoImage;
 layout (binding = 6, set = 0, rgba32f) uniform image2D normalImage;
+layout (binding = 9, set = 0, rgba32f) uniform image2D prevImage;
 layout (binding = 7, set = 0) writeonly buffer IntersectedObject
 {
     uint64_t handle;
@@ -115,11 +116,11 @@ void main() {
   color /= camera.raySamples;
 
   vec2 prevMotion = MotionImage.data[gl_LaunchIDEXT.x * gl_LaunchSizeEXT.y + gl_LaunchIDEXT.y];
-  ivec2 prevPos = ivec2(gl_LaunchIDEXT.xy + payload.motion);
+  ivec2 prevPos = ivec2(gl_LaunchIDEXT.xy - payload.motion);
 
   //if (abs(distance(payload.motion, prevMotion)) < 0.1)
   //{
-    vec3 old = imageLoad(image, prevPos).xyz;
+    vec3 old = imageLoad(prevImage, prevPos).xyz;
     if (color == vec3(0.0f))
         color = old;
     else if (old != vec3(0))

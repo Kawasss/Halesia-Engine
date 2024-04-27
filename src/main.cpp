@@ -48,7 +48,7 @@ class Room : public Scene
 		static float addage = 0;
 		if (Input::IsKeyPressed(VirtualKey::R))
 		{
-			Color color(0.7f + addage, 1.0f, 1.0f - addage);
+			Color color(addage, 0, 1.0f - addage);
 			addage = fmod(addage + delta * 0.001f, 1.0f);
 			if (const Object* light = GetObjectByName("Backdrop"))
 			{

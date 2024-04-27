@@ -42,5 +42,4 @@ void main()
     ID = gl_DrawID;
 
     gl_Position = ubo.proj * ubo.view * vec4(position, 1);
-    position = (ubo.proj * ubo.view * vec4(position, 1)).xyz;
 }
