@@ -121,7 +121,7 @@ void main() {
   //if (abs(distance(payload.motion, prevMotion)) < 0.1)
   //{
     vec3 old = imageLoad(prevImage, prevPos).xyz;
-    if (color == vec3(0.0f))
+    if (color == vec3(0.0f) && old != vec3(0))
         color = old;
     else if (old != vec3(0))
         color = (color + old) * 0.5f;
