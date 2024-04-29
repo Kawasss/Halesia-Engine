@@ -1,32 +1,13 @@
 #include "demo/Topdown.h"
 #include "io/SceneWriter.h"
 
+#include "core/ObjectStreamer.h"
+
 class Room : public Scene
 {
 	void Start() override
 	{
 		LoadScene();
-	}
-
-	void WriteScene()
-	{
-		SceneLoader loader("stdObj/room.fbx");
-		loader.LoadFBXScene();
-
-		MaterialCreateInfo lightInfo{};
-		lightInfo.isLight = true;
-		Material lightMat = Material::Create(lightInfo);
-
-		MaterialCreateInfo lampInfo{};
-		lampInfo.albedo = "textures/red.png";
-		lampInfo.isLight = true;
-		Material lampMat = Material::Create(lampInfo);
-		lampMat.AwaitGeneration();
-
-		for (const ObjectCreationData& data : loader.objects)
-			data.name == "Backdrop" ? AddStaticObject(data)->meshes[0].SetMaterial(lightMat) : data.name[0] == '#' ? AddStaticObject(data)->meshes[0].SetMaterial(lampMat) : (void)AddStaticObject(data);
-
-		HSFWriter::WriteHSFScene(this, "dinner.hsf");
 	}
 
 	void LoadScene()
@@ -42,19 +23,20 @@ class Room : public Scene
 			AddStaticObject(data);
 		}
 	}
+};
+
+class StreamerTest : public Scene
+{
+	ObjectStreamer* streamer;
+
+	void Start() override
+	{
+		streamer = new ObjectStreamer(this, "stdObj/streamTest.obj");
+	}
 
 	void Update(float delta) override
 	{
-		static float addage = 0;
-		if (Input::IsKeyPressed(VirtualKey::R))
-		{
-			Color color(addage, 0, 1.0f - addage);
-			addage = fmod(addage + delta * 0.001f, 1.0f);
-			if (const Object* light = GetObjectByName("Backdrop"))
-			{
-				Mesh::materials[light->meshes[0].materialIndex].albedo->ChangeData(color.GetData(), sizeof(Color), TEXTURE_FORMAT_UNORM);
-			}
-		}
+		streamer->Poll();
 	}
 };
 
@@ -64,7 +46,7 @@ int main(int argc, char** argv)
 	HalesiaEngineCreateInfo createInfo{};
 	createInfo.argsCount = argc;
 	createInfo.args = argv;
-	createInfo.startingScene = new Room();
+	createInfo.startingScene = new StreamerTest();
 	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;
 	createInfo.windowCreateInfo.height = 600;

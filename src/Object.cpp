@@ -153,7 +153,7 @@ bool Object::HasFinishedLoading()
 	return finishedLoading || !generation.valid();
 }
 
-void Object::Destroy()
+void Object::Destroy(bool del)
 {
 	for (Mesh& mesh : meshes)
 		mesh.Destroy();
@@ -164,5 +164,5 @@ void Object::Destroy()
 	meshes.clear();
 	rigid.Destroy();
 	rigid.type = RIGID_BODY_NONE;
-	delete this;
+	if (del) delete this;
 }

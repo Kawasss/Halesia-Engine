@@ -183,6 +183,7 @@
     <ClCompile Include="src\SceneLoader.cpp" />
     <ClCompile Include="src\SceneWriter.cpp" />
     <ClCompile Include="src\Shapes.cpp" />
+    <ClCompile Include="src\objectStreamer.cpp" />
     <ClCompile Include="src\Surface.cpp" />
     <ClCompile Include="src\Swapchain.cpp" />
     <ClCompile Include="src\SytemMetrics.cpp" />
@@ -212,6 +213,7 @@
     <ClInclude Include="src\core\Camera.h" />
     <ClInclude Include="src\core\Console.h" />
     <ClInclude Include="src\core\Object.h" />
+    <ClInclude Include="src\core\ObjectStreamer.h" />
     <ClInclude Include="src\core\Profiler.h" />
     <ClInclude Include="src\core\Scene.h" />
     <ClInclude Include="src\core\Transform.h" />

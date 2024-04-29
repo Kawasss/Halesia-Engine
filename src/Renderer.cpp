@@ -1191,5 +1191,8 @@ void Renderer::SetViewportOffsets(glm::vec2 offsets)
 
 void Renderer::SetViewportModifiers(glm::vec2 modifiers)
 {
+	if (viewportTransModifiers == modifiers)
+		return;
 	viewportTransModifiers = modifiers;
+	OnResize();
 }

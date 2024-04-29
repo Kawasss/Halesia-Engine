@@ -47,7 +47,7 @@ public:
 	Object() = default;
 	virtual		~Object() {}
 	virtual void Start()  {}
-	virtual void Destroy();
+	virtual void Destroy(bool del = true);
 	virtual void Update(float delta);
 
 	virtual void OnCollisionEnter(Object* object) {}

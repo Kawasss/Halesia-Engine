@@ -222,6 +222,9 @@
     <ClCompile Include="src\ForwardPlus.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\objectStreamer.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -412,6 +415,9 @@
     </ClInclude>
     <ClInclude Include="src\renderer\ForwardPlus.h">
       <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\ObjectStreamer.h">
+      <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
