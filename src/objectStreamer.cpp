@@ -7,57 +7,64 @@
 
 #include "io/SceneLoader.h"
 
-ObjectStreamer::ObjectStreamer(Scene* scene, std::string path) : path(path)
+FileStreamer::FileStreamer(std::string path) : path(path)
 {
-	file = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
-	ObjectCreationData creationData = GenericLoader::LoadObjectFile(path);
-	obj = scene->AddStaticObject(creationData); // only static objects!
-
-	if (!GetFileTime(file, NULL, NULL, (FILETIME*)&time)) // dangerous cast
-		throw std::runtime_error("ObjectStreamer::Poll(): Failed to get file time for file " + path + " (" + std::to_string(GetLastError()) + ')');
+	handle = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	GetTime();
 }
 
-ObjectStreamer::~ObjectStreamer()
+FileStreamer::~FileStreamer()
 {
-	if (file) CloseHandle(file);
+	if (handle) CloseHandle(handle);
 }
 
-void ObjectStreamer::Poll()
+void FileStreamer::CheckStatus()
 {
 	uint64_t oldTime = time;
-	if (!GetFileTime(file, NULL, NULL, (FILETIME*)&time)) // dangerous cast
-		throw std::runtime_error("ObjectStreamer::Poll(): Failed to get file time for file " + path + " (" + std::to_string(GetLastError()) + ')');
+	GetTime();
 
-	if (time == oldTime)
-		return;
-
-	WaitForFileAccess();
-	ObjectCreationData data = GenericLoader::LoadObjectFile(path);
-	obj->Destroy(false);
-	obj->Initialize(data);
+	if (time != oldTime)
+	{
+		WaitForAccess();
+		OnChange();
+	}
+		
 }
 
-ObjectStreamer::ObjectStreamer(ObjectStreamer& rhs)
-{
-	file = rhs.file;
-	path = rhs.path;
-	obj = rhs.obj;
-
-	rhs.file = 0;
-
-	Poll();
-}
-
-void ObjectStreamer::WaitForFileAccess()
+void FileStreamer::WaitForAccess()
 {
 	HANDLE temp = 0;
 	while (temp = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0)) // seems wasteful??
 	{
-		
 		if (GetLastError() == ERROR_SHARING_VIOLATION)
 			Sleep(5); // random time
 		else break;
 	}
 	if (temp)
 		CloseHandle(temp);
+}
+
+void FileStreamer::GetTime()
+{
+	static_assert(sizeof(time) == sizeof(FILETIME));
+	if (!GetFileTime(handle, NULL, NULL, (FILETIME*)&time)) // dangerous cast, hence the static_assert the line before
+		throw std::runtime_error("ObjectStreamer::Poll(): Failed to get file time for file " + path + " (" + std::to_string(GetLastError()) + ')');
+}
+
+ObjectStreamer::ObjectStreamer(Scene* scene, std::string path) : FileStreamer(path)
+{
+	ObjectCreationData creationData = GenericLoader::LoadObjectFile(path);
+	obj = scene->AddStaticObject(creationData); // only static objects!
+}
+
+void ObjectStreamer::Poll()
+{
+	CheckStatus();
+}
+
+void ObjectStreamer::OnChange()
+{
+	ObjectCreationData data = GenericLoader::LoadObjectFile(path);
+	obj->Destroy(false);
+	obj->Initialize(data);
 }
