@@ -17,6 +17,7 @@
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define CheckVulkanResult(message, result, function) if (result != VK_SUCCESS) throw VulkanAPIError(message, result, nameof(function), __FILENAME__, __LINE__)
 #define LockLogicalDevice(logicalDevice) std::lock_guard<std::mutex> logicalDeviceLockGuard(Vulkan::FetchLogicalDeviceMutex(logicalDevice)) // can't create a function for this beacuse a lock guard gets destroyed when it goes out of scope
+#undef CreateSemaphore
 
 struct VulkanCreationObject;
 typedef void* HANDLE;
@@ -116,6 +117,9 @@ public:
 
     static void                               SubmitObjectForDeletion(std::function<void()>&& func);
     static void                               DeleteSubmittedObjects();
+
+    static VkFence                            CreateFence(VkFenceCreateFlags flags = 0, void* pNext = nullptr);
+    static VkSemaphore                        CreateSemaphore(void* pNext = nullptr);
 
 private:
     static Context context;

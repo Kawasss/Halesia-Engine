@@ -490,6 +490,33 @@ Vulkan::SwapChainSupportDetails Vulkan::QuerySwapChainSupport(PhysicalDevice dev
     return details;
 }
 
+VkFence Vulkan::CreateFence(VkFenceCreateFlags flags, void* pNext)
+{
+    VkFenceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    createInfo.flags = flags;
+    createInfo.pNext = pNext;
+
+    VkFence ret = VK_NULL_HANDLE;
+    VkResult result = vkCreateFence(context.logicalDevice, &createInfo, nullptr, &ret);
+    CheckVulkanResult("Failed to create a signaled fence", result, vkCreateFence);
+
+    return ret;
+}
+
+VkSemaphore Vulkan::CreateSemaphore(void* pNext)
+{
+    VkSemaphoreCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    createInfo.pNext = pNext;
+
+    VkSemaphore ret = VK_NULL_HANDLE;
+    VkResult result = vkCreateSemaphore(context.logicalDevice, &createInfo, nullptr, &ret);
+    CheckVulkanResult("Failed to create a semaphore", result, vkCreateSemaphore);
+
+    return ret;
+}
+
 VkInstance Vulkan::GenerateInstance()
 {
     if (enableValidationLayers && !CheckValidationSupport())
@@ -745,103 +772,81 @@ std::string CreateFunctionNotActivatedError(std::string functionName, std::strin
     return "Function \"" + functionName + "\" was called, but is invalid.\nIts extension \"" + extensionName + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"";
 }
 
+#ifdef _DEBUG
+#define DEBUG_ONLY(cont) cont
+#else
+#define DEBUG_ONLY(cont)
+#endif
+
+#define CHECK_VALIDITY_DEBUG(ptr, ext) \
+DEBUG_ONLY(                            \
+if (ptr == nullptr)                    \
+    throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, ext), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__));
+
 #pragma region VulkanExtensionFunctionDefinitions
 VkResult vkGetSemaphoreWin32HandleKHR(VkDevice logicalDevice, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle)
 {
-    #ifdef _DEBUG // gives warning C4297 (doesnt expect a throw), but can (presumably) be ignored because it's only for debug
-    if (pvkGetSemaphoreWin32HandleKHR == nullptr)
-        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__);
-    #endif
+    CHECK_VALIDITY_DEBUG(pvkGetSemaphoreWin32HandleKHR, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
     return pvkGetSemaphoreWin32HandleKHR(logicalDevice, pGetWin32HandleInfo, pHandle);
 }
 
 VkResult vkGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle)
 {
-    #ifdef _DEBUG // gives warning C4297 (doesnt expect a throw), but can (presumably) be ignored because it's only for debug
-    if (pvkGetSemaphoreWin32HandleKHR == nullptr)
-        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__);
-    #endif
+    CHECK_VALIDITY_DEBUG(pvkGetSemaphoreWin32HandleKHR, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME)
     return pvkGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
 }
 
 VkDeviceAddress vkGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) 
 { 
-    #ifdef _DEBUG // gives warning C4297 (doesnt expect a throw), but can (presumably) be ignored because it's only for debug
-    if (pvkGetBufferDeviceAddressKHR == nullptr)
-        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__);
-    #endif
+    CHECK_VALIDITY_DEBUG(pvkGetBufferDeviceAddressKHR, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     return pvkGetBufferDeviceAddressKHR(device, pInfo); 
 }
 
 VkDeviceAddress vkGetAccelerationStructureDeviceAddressKHR(VkDevice device, const VkAccelerationStructureDeviceAddressInfoKHR* pInfo)
 {
-    #ifdef _DEBUG
-    if (pvkGetAccelerationStructureDeviceAddressKHR == nullptr)
-        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__);
-    #endif
+    CHECK_VALIDITY_DEBUG(pvkGetAccelerationStructureDeviceAddressKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     return pvkGetAccelerationStructureDeviceAddressKHR(device, pInfo);
 }
 
 VkResult vkCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoKHR* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) 
 { 
-    #ifdef _DEBUG
-    if (pvkCreateRayTracingPipelinesKHR == nullptr)
-        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__);
-    #endif
+    CHECK_VALIDITY_DEBUG(pvkCreateRayTracingPipelinesKHR, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     return pvkCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines); 
 }
 
 VkResult vkCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkAccelerationStructureKHR* pAccelerationStructure)
 {
-    #ifdef _DEBUG
-    if (pvkCreateAccelerationStructureKHR == nullptr)
-        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__);
-    #endif
+    CHECK_VALIDITY_DEBUG(pvkCreateAccelerationStructureKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     return pvkCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
 }
 
 VkResult vkGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount, size_t dataSize, void* pData)
 {
-    #ifdef _DEBUG
-    if (pvkGetRayTracingShaderGroupHandlesKHR == nullptr)
-        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__);
-    #endif
+    CHECK_VALIDITY_DEBUG(pvkGetRayTracingShaderGroupHandlesKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     return pvkGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
 }
 
 void vkGetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType, const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo, const uint32_t* pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo)
 {
-    #ifdef _DEBUG
-    if (pvkGetAccelerationStructureBuildSizesKHR == nullptr)
-        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__);
-    #endif
+    CHECK_VALIDITY_DEBUG(pvkGetAccelerationStructureBuildSizesKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
 }
 
 void vkDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure, const VkAllocationCallbacks* pAllocator)
 {
-    #ifdef _DEBUG
-    if (pvkDestroyAccelerationStructureKHR == nullptr)
-        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__);
-    #endif
+    CHECK_VALIDITY_DEBUG(pvkDestroyAccelerationStructureKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
 }
 
 void vkCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
 {
-    #ifdef _DEBUG
-    if (pvkCmdBuildAccelerationStructuresKHR == nullptr)
-        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__);
-    #endif
+    CHECK_VALIDITY_DEBUG(pvkCmdBuildAccelerationStructuresKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
 }
 
 void vkCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height, uint32_t depth)
 {
-    #ifdef _DEBUG
-    if (pvkCmdTraceRaysKHR == nullptr)
-        throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__);
-    #endif
+    CHECK_VALIDITY_DEBUG(pvkCmdTraceRaysKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
 }
 #pragma endregion VulkanExtensionFunctionDefinitions
