@@ -32,6 +32,16 @@ class StreamerTest : public Scene
 	void Start() override
 	{
 		streamer = new ObjectStreamer(this, "stdObj/streamTest.obj");
+
+		MaterialCreateInfo createInfo{};
+		createInfo.isLight = true;
+		Material lightMat = Material::Create(createInfo);
+
+		Object* light = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		light->AwaitGeneration();
+		light->meshes[0].SetMaterial(lightMat);
+		light->transform.position.y += 10;
+		light->transform.scale += glm::vec3(5, 0, 5);
 	}
 
 	void Update(float delta) override
