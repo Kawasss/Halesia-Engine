@@ -102,6 +102,7 @@ public:
     static void                               CreateExternalBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     static void                               CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     static void                               CopyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size);
+    static void                               ReallocateBuffer(VkBuffer buffer, VkDeviceMemory& memory, VkDeviceSize size, VkMemoryPropertyFlags properties);
 
     static void                               PopulateDefaultViewport(VkViewport& viewport, VkExtent2D extents);
     static void                               PopulateDefaultScissors(VkRect2D& scissors, VkExtent2D extents);

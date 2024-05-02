@@ -360,6 +360,33 @@ void Vulkan::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryP
     vkBindBufferMemory(context.logicalDevice, buffer, bufferMemory, 0);
 }
 
+void Vulkan::ReallocateBuffer(VkBuffer buffer, VkDeviceMemory& memory, VkDeviceSize size, VkMemoryPropertyFlags properties) // tjis relies on the fact that the memory can be mapped
+{
+    VkDeviceMemory newMem = VK_NULL_HANDLE;
+
+    VkMemoryRequirements memoryRequirements;
+    vkGetBufferMemoryRequirements(context.logicalDevice, buffer, &memoryRequirements);
+    AllocateMemory(newMem, memoryRequirements, properties, optionalMemoryAllocationFlags);
+
+    void* oldMemData = nullptr, *newMemData = nullptr;
+    VkResult result = vkMapMemory(context.logicalDevice, memory, 0, size, 0, &oldMemData);
+    CheckVulkanResult("Canot map the memory needed for reallocation", result, vkMapMemory);
+
+    result = vkMapMemory(context.logicalDevice, newMem, 0, size, 0, &newMemData);
+    CheckVulkanResult("Canot map the memory needed for reallocation", result, vkMapMemory);
+
+    memcpy(newMemData, oldMemData, size);
+
+    result = vkBindBufferMemory(context.logicalDevice, buffer, newMem, 0);
+    CheckVulkanResult("Cannot bind the buffer memory for reallocation", result, vkBindBufferMemory);
+
+    vkUnmapMemory(context.logicalDevice, memory);
+    vkUnmapMemory(context.logicalDevice, newMem);
+    vkFreeMemory(context.logicalDevice, memory, nullptr);
+    
+    memory = newMem;
+}
+
 uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice)
 {
     VkPhysicalDeviceMemoryProperties physicalMemoryProperties = physicalDevice.MemoryProperties();

@@ -1,6 +1,4 @@
-#include <fstream>
 #include <stdexcept>
-#include <cstdlib>
 #include <vector>
 #include <array>
 #include <chrono>
@@ -284,8 +282,6 @@ void Renderer::InitVulkan()
 	if (canRayTrace)
 		rayTracer = RayTracing::Create(testWindow, swapchain);
 	else shouldRasterize = true;
-
-	
 }
 
 void Renderer::DetectExternalTools()
@@ -945,9 +941,8 @@ void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
 	presentInfo.waitSemaphoreCount = 1;
 	presentInfo.pWaitSemaphores = &renderFinishedSemaphores[frameIndex];
 
-	VkSwapchainKHR swapchains[] = { swapchain->vkSwapchain };
 	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapchains;
+	presentInfo.pSwapchains = &swapchain->vkSwapchain;
 	presentInfo.pImageIndices = &imageIndex;
 
 	VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
@@ -963,17 +958,14 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-	VkSemaphore waitSemaphores[] = { imageAvaibleSemaphores[frameIndex] };
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT };
+	VkPipelineStageFlags waitStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.pWaitSemaphores = &imageAvaibleSemaphores[frameIndex];
+	submitInfo.pWaitDstStageMask = &waitStages;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffers[frameIndex];
-
-	VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[frameIndex] };
 	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
+	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[frameIndex];
 
 	LockLogicalDevice(logicalDevice);
 	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
