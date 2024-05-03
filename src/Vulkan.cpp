@@ -360,7 +360,7 @@ void Vulkan::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryP
     vkBindBufferMemory(context.logicalDevice, buffer, bufferMemory, 0);
 }
 
-void Vulkan::ReallocateBuffer(VkBuffer buffer, VkDeviceMemory& memory, VkDeviceSize size, VkMemoryPropertyFlags properties) // tjis relies on the fact that the memory can be mapped
+void Vulkan::ReallocateBuffer(VkBuffer buffer, VkDeviceMemory& memory, VkDeviceSize size, VkMemoryPropertyFlags properties) // this relies on the fact that the memory can be mapped
 {
     VkDeviceMemory newMem = VK_NULL_HANDLE;
 

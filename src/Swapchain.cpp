@@ -113,13 +113,14 @@ void Swapchain::CopyImageToSwapchain(VkImage image, VkCommandBuffer commandBuffe
     imageCopy.dstOffset = { 0, 0, 0 };
     imageCopy.extent = { extent.width, extent.height, 1 };
 
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &swapchainMemoryBarrier);
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &copyMemoryBarrier);
+    VkImageMemoryBarrier firstBarriers[]  = { swapchainMemoryBarrier, copyMemoryBarrier };
+    VkImageMemoryBarrier secondBarriers[] = { swapchainPresentBarrier, writeBarrier };
+
+    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 2, firstBarriers);
 
     vkCmdCopyImage(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, images[currentImage], VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
 
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &swapchainPresentBarrier);
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &writeBarrier);
+    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 2, secondBarriers);
 }
 
 void Swapchain::Destroy()
@@ -162,12 +163,9 @@ void Swapchain::Recreate() // hopefully a temporary fix, used for ray tracing
         height = window->GetHeight();
         window->PollMessages();
     }
-    //std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+    
     LockLogicalDevice(logicalDevice);
     vkDeviceWaitIdle(logicalDevice);
-    //lockGuard.~lock_guard();
-    /*vkWaitForFences(logicalDevice, 1, &fence, VK_TRUE, UINT64_MAX);
-    vkResetFences(logicalDevice, 1, &fence);*/
 
     Destroy();
 
@@ -190,11 +188,9 @@ void Swapchain::Recreate(VkRenderPass renderPass)
         height = window->GetHeight();
         window->PollMessages();
     }
-    //std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+    
     LockLogicalDevice(logicalDevice);
     vkDeviceWaitIdle(logicalDevice);
-   /* vkWaitForFences(logicalDevice, 1, &fence, VK_TRUE, UINT64_MAX);
-    vkResetFences(logicalDevice, 1, &fence);*/
 
     Destroy();
 
