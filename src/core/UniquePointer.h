@@ -9,6 +9,7 @@ public:
 	UniquePointer(const UniquePointer<Type>&) = delete; // unique pointers cannot be copied
 
 	Type*& operator->() { return data; }
+	Type* Get()         { return data; }
 
 private:
 	Type* data = nullptr;
