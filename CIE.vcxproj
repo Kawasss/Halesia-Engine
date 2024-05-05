@@ -217,6 +217,7 @@
     <ClInclude Include="src\core\Profiler.h" />
     <ClInclude Include="src\core\Scene.h" />
     <ClInclude Include="src\core\Transform.h" />
+    <ClInclude Include="src\core\UniquePointer.h" />
     <ClInclude Include="src\demo\Calculator.h" />
     <ClInclude Include="src\demo\Topdown.h" />
     <ClInclude Include="src\HalesiaEngine.h" />

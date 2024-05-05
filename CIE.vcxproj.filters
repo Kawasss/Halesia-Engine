@@ -419,6 +419,9 @@
     <ClInclude Include="src\core\ObjectStreamer.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
+    <ClInclude Include="src\core\UniquePointer.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">

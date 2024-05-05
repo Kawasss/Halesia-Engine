@@ -1,6 +1,7 @@
 #include "demo/Topdown.h"
 #include "io/SceneWriter.h"
 
+#include "core/UniquePointer.h"
 #include "core/ObjectStreamer.h"
 
 class Room : public Scene
@@ -27,7 +28,7 @@ class Room : public Scene
 
 class StreamerTest : public Scene
 {
-	ObjectStreamer* streamer;
+	UniquePointer<ObjectStreamer> streamer;
 
 	void Start() override
 	{
@@ -56,7 +57,7 @@ int main(int argc, char** argv)
 	HalesiaEngineCreateInfo createInfo{};
 	createInfo.argsCount = argc;
 	createInfo.args = argv;
-	createInfo.startingScene = new StreamerTest();
+	createInfo.startingScene = new Room();
 	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;
 	createInfo.windowCreateInfo.height = 600;
