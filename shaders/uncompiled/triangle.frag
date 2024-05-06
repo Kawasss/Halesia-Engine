@@ -61,12 +61,12 @@ float GetLinearizedDepth()
 
 uint GetCellIndex()
 {
-    vec2 cellSpace = GetRelativePosition() * vec2(cells.width, cells.height);
-    uint sliceSize = uint(cells.width * cells.height);
-    uint zIndex = uint(GetLinearizedDepth() * cells.depth) * sliceSize;
-	uint cellIndex = uint(cells.height * cellSpace.x + cellSpace.y);
+    vec2 cellSpace = GetRelativePosition() * vec2(cells.width, cells.height); 
+    uint zIndex = uint(GetLinearizedDepth()) * cells.depth;
+	uint cellIndex = uint(cells.height * floor(cellSpace.x) + cellSpace.y);
+    uint sliceSize = cells.width * cells.height;
 
-	return zIndex + cellIndex;
+	return cellIndex;
 }
 
 void main() 
@@ -90,7 +90,7 @@ void main()
 
     vec3 color = vec3(RandomValue(state), RandomValue(state), RandomValue(state));
     //result = vec4((ambient + diffuse + specular) * color, 1);
-    float rel = cells.data[GetCellIndex()].lightCount / (32*32*32);
-
-    result = vec4(rel, 0, 1 - rel, 1);
+    float rel = cells.data[GetCellIndex()].lightCount;
+    
+    result = vec4(rel, 0, 0, 1);
 }

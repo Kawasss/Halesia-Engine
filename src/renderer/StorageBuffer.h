@@ -20,20 +20,20 @@ public:
 	StorageBuffer() {}
 	void Reserve(size_t maxAmountToBeStored, VkBufferUsageFlags usage);
 
-	StorageMemory SubmitNewData(std::vector<T> data);
+	StorageMemory SubmitNewData(const std::vector<T>& data);
 
 	/// <summary>
 	/// Erases all of the data inside the buffer, this also invalidates all memory handles
 	/// </summary>
 	/// <param name="creationObject"></param>
-	void Erase(const VulkanCreationObject& creationObject);
+	void Erase();
 
 	/// <summary>
 	/// Completely erases the given memory from the buffer, replacing the contents with 0
 	/// </summary>
 	/// <param name="creationObject"></param>
 	/// <param name="memory"></param>
-	void EraseData(const VulkanCreationObject& creationObject, StorageMemory memory);
+	void EraseData(StorageMemory memory);
 
 	/// <summary>
 	/// Marks the given memory as unused. The contents won't be erased, but can be overwritten. To completely erase data EraseData must be called
@@ -54,11 +54,14 @@ public:
 	/// <param name="memory"></param>
 	/// <returns></returns>
 	VkDeviceSize GetItemOffset(StorageMemory memory) { return GetMemoryOffset(memory) / sizeof(T); }
-	VkDeviceSize GetBufferEnd() { return (VkDeviceSize)endOfBufferPointer + 1; } // not sure about the + 1
-	VkBuffer GetBufferHandle() { return buffer; }
-	size_t GetSize() { return size; }
+
+	VkDeviceSize GetBufferEnd()    { return (VkDeviceSize)endOfBufferPointer + 1; } // not sure about the + 1
+	VkBuffer     GetBufferHandle() { return buffer; }
+
+	size_t GetSize()    { return size; }
 	size_t GetMaxSize() { return reservedBufferSize / sizeof(T); }
-	bool HasChanged() { bool ret = hasChanged; hasChanged = false; return ret; }
+
+	bool HasChanged()   { bool ret = hasChanged; hasChanged = false; return ret; }
 
 	/// <summary>
 	/// This resets the internal memory pointer to 0. Any existing data won't be erased, but will be overwritten
@@ -128,7 +131,7 @@ void StorageBuffer<T>::Reserve(size_t maxAmountToBeStored, VkBufferUsageFlags us
 }
 
 template<typename T>
-StorageMemory StorageBuffer<T>::SubmitNewData(std::vector<T> data)
+StorageMemory StorageBuffer<T>::SubmitNewData(const std::vector<T>& data)
 {
 	std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 	VkDeviceSize writeSize = sizeof(T) * data.size();
@@ -145,7 +148,7 @@ StorageMemory StorageBuffer<T>::SubmitNewData(std::vector<T> data)
 		memoryData[memoryHandle] = StorageMemory_t{ writeSize, endOfBufferPointer, false };
 	}
 
-	if (endOfBufferPointer + writeSize > reservedBufferSize && !canReuseMemory)				// throw an error if there is an attempt write over the buffers capacity
+	if (endOfBufferPointer + writeSize > reservedBufferSize && !canReuseMemory)				// throw an error if there is an attempt to write past the buffers capacity
 	{
 		VkDeviceSize overflow = endOfBufferPointer + writeSize - reservedBufferSize;
 		throw VulkanAPIError("Failed to submit new storage buffer data, not enough space has been reserved: " + std::to_string(overflow / sizeof(T)) + " items (" + std::to_string(overflow) + " bytes) of overflow", VK_ERROR_OUT_OF_POOL_MEMORY, __FUNCTION__, __FILENAME__, __LINE__);
@@ -165,10 +168,10 @@ StorageMemory StorageBuffer<T>::SubmitNewData(std::vector<T> data)
 }
 
 template<typename T>
-void StorageBuffer<T>::Erase(const VulkanCreationObject& creationObject)
+void StorageBuffer<T>::Erase()
 {
 	std::lock_guard<std::mutex> lockGuard(readWriteMutex);
-	ClearBuffer(creationObject);
+	ClearBuffer();
 	allCreatedMemory.clear();
 	terminatedMemories.clear();
 	memoryData.clear();
@@ -177,12 +180,12 @@ void StorageBuffer<T>::Erase(const VulkanCreationObject& creationObject)
 }
 
 template<typename T>
-void StorageBuffer<T>::EraseData(const VulkanCreationObject& creationObject, StorageMemory memory)
+void StorageBuffer<T>::EraseData(StorageMemory memory)
 {
 	std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 	CheckHandleValidity(memory,);
 
-	ClearBuffer(creationObject, memory);
+	ClearBuffer(memory);
 }
 
 template<typename T>
@@ -219,13 +222,13 @@ bool StorageBuffer<T>::FindReusableMemory(StorageMemory& memory, VkDeviceSize si
 {
 	for (StorageMemory terminatedMemory : terminatedMemories)
 	{
-		if (memoryData[terminatedMemory].size >= size)					// search through all of the terminated memory locations to see if theres enough space in one of them to overwrite without causing overflow
-		{
-			memory = terminatedMemory;
-			memoryData[terminatedMemory].shouldBeTerminated = false;	// mark the memory location is no longer being terminated
-			terminatedMemories.erase(terminatedMemory);
-			return true;
-		}
+		if (memoryData[terminatedMemory].size < size)					// search through all of the terminated memory locations to see if theres enough space in one of them to overwrite without causing overflow
+			continue;
+
+		memory = terminatedMemory;
+		memoryData[terminatedMemory].shouldBeTerminated = false;	// mark the memory location is no longer being terminated
+		terminatedMemories.erase(terminatedMemory);
+		return true;
 	}
 	return false;
 }

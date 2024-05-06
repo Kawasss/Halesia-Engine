@@ -28,19 +28,26 @@ layout (set = 0, binding = 2) uniform Matrices
 	mat4 view;
 } matrices;
 
+float GetLinearizedDepth(float depth)
+{
+    return (2 * 0.01f * 1000.0f) / (1000.0f - depth * (1000.0f - 0.01f)) / 1000.0f;
+}
+
 void main()
 {
-//	vec3 pos = lights.position[gl_GlobalInvocationID.x];
-//	vec4 screenSpace = matrices.proj * matrices.view * vec4(pos, 1);
-//	vec3 cellSpace = screenSpace.xyz * vec3(cells.width, cells.height, cells.depth) * 2.0f - 1.0f;
-//
-//	uint zIndex = uint(cellSpace.z) * cells.width * cells.height;
-//	uint cellIndex = uint(cells.height * cellSpace.x + cellSpace.y);
-//	uint index = zIndex + cellIndex;
-//
-//	cells.data[index].lightIndices[uint(cells.data[index].lightCount++)] = float(gl_GlobalInvocationID.x);
+	vec3 pos = lights.position[gl_GlobalInvocationID.x];
+	vec4 screenSpace = matrices.proj * matrices.view * vec4(pos, 1);
+	screenSpace.xyz /= screenSpace.w;
+	screenSpace.xy = (screenSpace.xy + 1) * 0.5f;
+	screenSpace.z = GetLinearizedDepth(screenSpace.z);
+	vec3 cellSpace = screenSpace.xyz * vec3(cells.width, cells.height, cells.depth);
 
-	uint len = 32*32*32;
-	for (int i = 0; i < len; i++)
-		cells.data[i].lightCount = i;
+	uint sliceSize = cells.width * cells.height;
+
+	uint zIndex = uint(cellSpace.z * sliceSize);
+	uint cellIndex = uint(cells.height * floor(cellSpace.x) + cellSpace.y);
+	uint index = zIndex + cellIndex;
+
+	cells.data[index].lightCount++;
+	//cells.data[index].lightIndices[uint(cells.data[index].lightCount++)] = float(gl_GlobalInvocationID.x);
 }

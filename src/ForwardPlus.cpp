@@ -35,7 +35,7 @@ void ForwardPlusRenderer::Allocate()
 {
 	VkDeviceSize size = cellWidth * cellHeight * cellDepth * sizeof(Cell) + sizeof(uint32_t) * 3;
 
-	Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, cellBuffer, cellMemory);
+	Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, cellBuffer, cellMemory);
 	Vulkan::CreateBuffer(MAX_LIGHTS * sizeof(glm::vec3), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, lightBuffer, lightMemory);
 	Vulkan::CreateBuffer(sizeof(Matrices), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, matricesBuffer, matricesMemory);
 
@@ -62,24 +62,17 @@ void ForwardPlusRenderer::CreateShader()
 	computeShader->WriteToDescriptorBuffer(lightBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 1);
 	computeShader->WriteToDescriptorBuffer(matricesBuffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, 2);
 }
-
+#include <iostream>
 void ForwardPlusRenderer::Draw(VkCommandBuffer commandBuffer, Camera* camera)
 {
-	const Vulkan::Context& context = Vulkan::GetContext();
-
-	void* cells = nullptr;
-	uint64_t size = cellWidth * cellHeight * cellDepth * sizeof(Cell);
-	VkResult result = vkMapMemory(context.logicalDevice, cellMemory, sizeof(uint32_t) * 3, size, 0, &cells);
-	CheckVulkanResult("Failed to map the forward+ cell memory", result, vkMapMemory);
-
-	memset(cells, 0, size); // reset Cell::lightCount for every cell
-	vkUnmapMemory(context.logicalDevice, cellMemory);
-	
 	if (lightCount == 0)
 		return;
 
 	matrices->projection = camera->GetProjectionMatrix();
 	matrices->view = camera->GetViewMatrix();
+
+	VkDeviceSize size = cellWidth * cellHeight * cellDepth * sizeof(Cell);
+	vkCmdFillBuffer(commandBuffer, cellBuffer, sizeof(uint32_t) * 3, size, 0);
 
 	computeShader->Execute(commandBuffer, lightCount, 1, 1);
 }

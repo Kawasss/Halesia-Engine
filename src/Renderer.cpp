@@ -256,7 +256,7 @@ void Renderer::InitVulkan()
 
 	fwdPlus = new ForwardPlusRenderer();
 	for (int i = 0; i < 1; i++)
-		fwdPlus->AddLight(glm::vec3(i / 16.0f, 0, 0)); // test !!
+		fwdPlus->AddLight(glm::vec3(0, 0, 0)); // test !!
 
 	CreateUniformBuffers();
 	CreateModelDataBuffers();
