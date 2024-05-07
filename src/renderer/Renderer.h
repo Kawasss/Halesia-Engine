@@ -22,6 +22,7 @@ class RayTracing;
 class Image;
 class AnimationManager;
 class ForwardPlusRenderer;
+class DescriptorWriter;
 struct Mesh;
 
 typedef void* HANDLE;
@@ -130,6 +131,7 @@ private:
 	
 	RayTracing* rayTracer;
 	ForwardPlusRenderer* fwdPlus;
+	DescriptorWriter* writer;
 
 	static bool initGlobalBuffers;
 

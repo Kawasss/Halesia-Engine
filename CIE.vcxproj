@@ -160,6 +160,7 @@
     <ClCompile Include="src\ComputeShader.cpp" />
     <ClCompile Include="src\Console.cpp" />
     <ClCompile Include="src\Denoiser.cpp" />
+    <ClCompile Include="src\DescriptorWriter.cpp" />
     <ClCompile Include="src\ForwardPlus.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\gui.cpp" />
@@ -232,6 +233,7 @@
     <ClInclude Include="src\renderer\Bone.h" />
     <ClInclude Include="src\renderer\ComputeShader.h" />
     <ClInclude Include="src\renderer\Denoiser.h" />
+    <ClInclude Include="src\renderer\DescriptorWriter.h" />
     <ClInclude Include="src\renderer\ForwardPlus.h" />
     <ClInclude Include="src\renderer\Framebuffer.h" />
     <ClInclude Include="src\renderer\gui.h" />

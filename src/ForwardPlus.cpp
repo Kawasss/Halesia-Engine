@@ -62,7 +62,7 @@ void ForwardPlusRenderer::CreateShader()
 	computeShader->WriteToDescriptorBuffer(lightBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 1);
 	computeShader->WriteToDescriptorBuffer(matricesBuffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, 2);
 }
-#include <iostream>
+
 void ForwardPlusRenderer::Draw(VkCommandBuffer commandBuffer, Camera* camera)
 {
 	if (lightCount == 0)

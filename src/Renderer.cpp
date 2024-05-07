@@ -17,6 +17,7 @@
 #include "renderer/PipelineCreator.h"
 #include "renderer/ForwardPlus.h"
 #include "renderer/ComputeShader.h"
+#include "renderer/DescriptorWriter.h"
 
 #include "system/Window.h"
 
@@ -86,6 +87,7 @@ void Renderer::Destroy()
 {
 	vkDeviceWaitIdle(logicalDevice);
 
+	delete writer;
 	delete fwdPlus;
 
 	animationManager->Destroy();
@@ -258,6 +260,8 @@ void Renderer::InitVulkan()
 	for (int i = 0; i < 1; i++)
 		fwdPlus->AddLight(glm::vec3(0, 0, 0)); // test !!
 
+	writer = new DescriptorWriter;
+
 	CreateUniformBuffers();
 	CreateModelDataBuffers();
 	CreateDescriptorPool();
@@ -428,7 +432,6 @@ void Renderer::CreateDescriptorSets()
 	allocateInfo.descriptorPool = descriptorPool;
 	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
 	allocateInfo.pSetLayouts = layouts.data();
-	allocateInfo.pNext = nullptr;// &countAllocateInfo;
 
 	descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
 
@@ -437,51 +440,9 @@ void Renderer::CreateDescriptorSets()
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		VkDescriptorBufferInfo bufferInfo{};
-		bufferInfo.buffer = uniformBuffers[i];
-		bufferInfo.offset = 0;
-		bufferInfo.range = sizeof(UniformBufferObject);
-
-		VkDescriptorBufferInfo modelBufferInfo{};
-		modelBufferInfo.buffer = modelBuffers[i];
-		modelBufferInfo.offset = 0;
-		modelBufferInfo.range = sizeof(glm::mat4) * MAX_MESHES;
-
-		VkDescriptorBufferInfo cellBufferInfo{};
-		cellBufferInfo.buffer = fwdPlus->GetCellBuffer();
-		cellBufferInfo.offset = 0;
-		cellBufferInfo.range = VK_WHOLE_SIZE;
-
-		VkDescriptorImageInfo imageInfo{};
-		imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfo.imageView = VK_NULL_HANDLE;
-		imageInfo.sampler = defaultSampler;
-
-		std::vector<VkDescriptorImageInfo> imageInfos(Renderer::MAX_BINDLESS_TEXTURES, imageInfo);
-
-		std::array<VkWriteDescriptorSet, 3> writeDescriptorSets{};
-		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSets[0].dstSet = descriptorSets[i];
-		writeDescriptorSets[0].pBufferInfo = &bufferInfo;
-		writeDescriptorSets[0].dstBinding = 0;
-		writeDescriptorSets[0].descriptorCount = 1;
-
-		writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		writeDescriptorSets[1].dstSet = descriptorSets[i];
-		writeDescriptorSets[1].pBufferInfo = &modelBufferInfo;
-		writeDescriptorSets[1].dstBinding = 1;
-		writeDescriptorSets[1].descriptorCount = 1;
-
-		writeDescriptorSets[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[2].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		writeDescriptorSets[2].dstSet = descriptorSets[i];
-		writeDescriptorSets[2].pBufferInfo = &cellBufferInfo;
-		writeDescriptorSets[2].dstBinding = 3;
-		writeDescriptorSets[2].descriptorCount = 1;
-
-		vkUpdateDescriptorSets(logicalDevice, static_cast<uint32_t>(writeDescriptorSets.size()), writeDescriptorSets.data(), 0, nullptr);
+		writer->WriteBuffer(descriptorSets[i], uniformBuffers[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
+		writer->WriteBuffer(descriptorSets[i], modelBuffers[i], VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+		writer->WriteBuffer(descriptorSets[i], fwdPlus->GetCellBuffer(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
 	}
 }
 
@@ -1008,6 +969,8 @@ void Renderer::StartRecording()
 	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 	submittedCount = 0;
 
+	writer->Write();
+
 	ImGui::Render();
 }
 
@@ -1054,7 +1017,7 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	UpdateUniformBuffers(currentFrame, camera);
 	SetModelData(currentFrame, activeObjects);
 	WriteIndirectDrawParameters(activeObjects);
-
+	
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 }
 
@@ -1089,28 +1052,14 @@ void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
 
 void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView)
 {
-	VkDescriptorImageInfo imageInfo{};
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = imageView == VK_NULL_HANDLE && canRayTrace ? rayTracer->gBufferViews[0] : imageView;
-	imageInfo.sampler = defaultSampler;
-
-	VkWriteDescriptorSet writeSet{};
-	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	writeSet.pImageInfo = &imageInfo;
-	writeSet.dstSet = descriptorSets[currentFrame];
-	writeSet.dstBinding = 2;
-	writeSet.descriptorCount = 1;
-	writeSet.dstArrayElement = 0;
-
-	vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
+	VkImageView view = imageView == VK_NULL_HANDLE && canRayTrace ? rayTracer->gBufferViews[0] : imageView;
+	writer->WriteImage(descriptorSets[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, view, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	writer->Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
 }
 
 std::vector<Object*> processedObjects;
 void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects)
 {
-	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * deferredMaterialTextures.size()); // this needs to prematurely create all the image infos, beacause otherwise the pImageInfo for the write sets won't work
-	std::vector<VkWriteDescriptorSet> writeSets;
 	for (int i = 0; i < Mesh::materials.size(); i++)
 	{
 		if (processedMaterials.count(i) > 0 && processedMaterials[i] == Mesh::materials[i].handle)
@@ -1118,27 +1067,10 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 
 		for (int j = 0; j < deferredMaterialTextures.size(); j++)
 		{
-			uint32_t index = static_cast<uint32_t>(deferredMaterialTextures.size()) * i + j;
-
-			VkDescriptorImageInfo& imageInfo = imageInfos[index];
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = Mesh::materials[i][deferredMaterialTextures[j]]->imageView;
-			imageInfo.sampler = defaultSampler;
-
-			VkWriteDescriptorSet writeSet{};
-			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			writeSet.pImageInfo = &imageInfos[index];
-			writeSet.dstSet = descriptorSets[currentFrame];
-			writeSet.dstArrayElement = index;
-			writeSet.dstBinding = 2;
-			writeSet.descriptorCount = 1;
-			writeSets.push_back(writeSet);
+			writer->WriteImage(descriptorSets[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, Mesh::materials[i][deferredMaterialTextures[j]]->imageView, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); // dont have any test to run this on, so I just hope this works
 		}
 		processedMaterials[i] = Mesh::materials[i].handle;
 	}
-	if (!writeSets.empty())
-		vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
 void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage)
