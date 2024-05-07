@@ -37,8 +37,11 @@ void main()
 {
 	vec3 pos = lights.position[gl_GlobalInvocationID.x];
 	vec4 screenSpace = matrices.proj * matrices.view * vec4(pos, 1);
-	screenSpace.xyz /= screenSpace.w;
-	screenSpace.xy = (screenSpace.xy + 1) * 0.5f;
+	screenSpace.xy = (screenSpace.xy / screenSpace.w + 1) * 0.5f;
+
+	if (screenSpace.x > 1.0f || screenSpace.x < 0.0f || screenSpace.y > 1.0f || screenSpace.y < 0.0f)
+		return;
+
 	screenSpace.z = GetLinearizedDepth(screenSpace.z);
 	vec3 cellSpace = screenSpace.xyz * vec3(cells.width, cells.height, cells.depth);
 

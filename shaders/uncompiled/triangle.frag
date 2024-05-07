@@ -76,28 +76,33 @@ uint GetCellIndex()
 
 void main() 
 {
-    vec3 lightPos = camPos;
     vec3 lightColor = vec3(1);
     uint state = ID * gl_PrimitiveID;
-    
-    vec3 lightDir   = normalize(lightPos - position);
-    vec3 viewDir    = normalize(camPos - position);
-    vec3 halfwayDir = normalize(lightDir + viewDir);
 
     float ambientStrength = 0.1;
     vec3 ambient = ambientStrength * lightColor;
 
-    float diff = max(dot(normal, lightDir), 0.0);
-    vec3 diffuse = diff * lightColor;
-
-    float spec = pow(max(dot(normal, halfwayDir), 0.0), 0.3);
-    vec3 specular = lightColor * spec;
-
-    vec3 color = vec3(RandomValue(state), RandomValue(state), RandomValue(state));
-    //result = vec4((ambient + diffuse + specular) * color, 1);
+    vec3 diffuse  = vec3(0);
+    vec3 specular = vec3(0);
     
+    vec3 viewDir = normalize(camPos - position);
+
     uint cellIndex = GetCellIndex();
-    int lightIndex = int(cells.data[cellIndex].lightIndices[0]);
-    vec3 lightPosition = cells.data[cellIndex].lightCount == 0 ? vec3(0, 0, 0) : lights.data[lightIndex];
-    result = vec4(lightPosition, 1);
+    int lightCount = int(cells.data[cellIndex].lightCount);
+    for (int i = 0; i < lightCount; i++)
+    {
+        int lightIndex = int(cells.data[cellIndex].lightIndices[i]);
+        vec3 lightPos = lights.data[lightIndex];
+
+        vec3 lightDir   = normalize(lightPos - position);
+        vec3 halfwayDir = normalize(lightDir + viewDir);
+
+        float diff = max(dot(normal, lightDir), 0.0);
+        diffuse += diff * lightColor;
+
+        float spec = pow(max(dot(normal, halfwayDir), 0.0), 0.3);
+        specular += spec * lightColor;
+    }
+    vec3 color = vec3(RandomValue(state), RandomValue(state), RandomValue(state));
+    result = vec4((ambient + diffuse + specular) * color, 1);
 }
