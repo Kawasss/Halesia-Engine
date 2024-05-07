@@ -16,7 +16,7 @@ public:
 	void AddLight(glm::vec3 pos);
 
 	ComputeShader* GetShader() { return computeShader; }
-	VkBuffer GetCellBuffer() { return cellBuffer; }
+	VkBuffer GetCellBuffer()   { return cellBuffer; }
 
 private:
 	void Allocate();
@@ -26,7 +26,7 @@ private:
 	static constexpr int MAX_LIGHT_INDICES = 7;
 	static constexpr int MAX_LIGHTS = 1024;
 
-	// can't use floats here because GLSL / SPIRV padding for a float array is fucked up
+	// can't use floats here because GLSL / SPIRV padding for a float array is fucked up.
 	//
 	// GLSL pads this struct like this:
 	// - lightCount:       4 bytes
@@ -35,7 +35,8 @@ private:
 	// - lightIndices[^2]: 8 bytes
 	// - lightIndices[^1]: 4 bytes
 	//
-	// which I simply cannot achieve in normal C++, so i give up
+	// which I simply cannot achieve in normal C++, so I give up.
+	// this does waste a lot of memory, because of the padding.
 	struct Cell
 	{
 		alignas(4) float lightCount;
