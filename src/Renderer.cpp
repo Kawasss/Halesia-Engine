@@ -256,11 +256,24 @@ void Renderer::InitVulkan()
 	if (defaultSampler == VK_NULL_HANDLE)
 		CreateTextureSampler();
 
-	fwdPlus = new ForwardPlusRenderer();
+	if (!initGlobalBuffers)
+	{
+		g_defaultVertexBuffer.Reserve(1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+		g_vertexBuffer.Reserve(1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+		g_indexBuffer.Reserve(1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+		initGlobalBuffers = true;
+	}
+
+	fwdPlus = new ForwardPlusRenderer;
+	writer = new DescriptorWriter;
+	animationManager = AnimationManager::Get();
+
+	if (canRayTrace)
+		rayTracer = RayTracing::Create(testWindow, swapchain);
+	else shouldRasterize = true;
+
 	for (int i = 0; i < 1; i++)
 		fwdPlus->AddLight(glm::vec3(0, 0, 0)); // test !!
-
-	writer = new DescriptorWriter;
 
 	CreateUniformBuffers();
 	CreateModelDataBuffers();
@@ -273,19 +286,6 @@ void Renderer::InitVulkan()
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-
-	if (!initGlobalBuffers)
-	{
-		g_defaultVertexBuffer.Reserve(1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-		g_vertexBuffer.Reserve(1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-		g_indexBuffer.Reserve(1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-		initGlobalBuffers = true;
-	}
-	animationManager = AnimationManager::Get();
-
-	if (canRayTrace)
-		rayTracer = RayTracing::Create(testWindow, swapchain);
-	else shouldRasterize = true;
 }
 
 void Renderer::DetectExternalTools()
@@ -443,6 +443,7 @@ void Renderer::CreateDescriptorSets()
 		writer->WriteBuffer(descriptorSets[i], uniformBuffers[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
 		writer->WriteBuffer(descriptorSets[i], modelBuffers[i], VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
 		writer->WriteBuffer(descriptorSets[i], fwdPlus->GetCellBuffer(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
+		writer->WriteImage(descriptorSets[i], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, canRayTrace ? rayTracer->gBufferViews[0] : VK_NULL_HANDLE, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 }
 
@@ -673,8 +674,6 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-	if (canRayTrace)
-		UpdateScreenShaderTexture(currentFrame, imageToCopy);
 
 	WriteTimestamp(commandBuffer);
 

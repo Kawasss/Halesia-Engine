@@ -23,13 +23,13 @@ private:
 	void Destroy();
 	void CreateShader();
 
-	static constexpr int MAX_LIGHT_INDICES = 32;
+	static constexpr int MAX_LIGHT_INDICES = 7;
 	static constexpr int MAX_LIGHTS = 1024;
 
 	struct Cell
 	{
 		float lightCount;
-		//float lightIndices[MAX_LIGHT_INDICES];
+		float lightIndices[MAX_LIGHT_INDICES];
 	};
 
 	struct Matrices

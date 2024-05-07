@@ -25,12 +25,12 @@ float RandomValue(inout uint state)
 	return NextRandom(state) / 4294967295.0;
 }
 
-#define MAX_LIGHT_INDICES 32
+#define MAX_LIGHT_INDICES 7
 
 struct Cell
 {
 	float lightCount;
-	//float lightIndices[MAX_LIGHT_INDICES];
+	float lightIndices[MAX_LIGHT_INDICES];
 };
 
 layout (set = 0, binding = 3) buffer Cells
