@@ -41,6 +41,11 @@ layout (set = 0, binding = 3) buffer Cells
 	Cell data[];
 } cells;
 
+layout (set = 0, binding = 4) readonly buffer Lights
+{
+	vec3 data[];
+} lights;
+
 layout(set = 0, binding = 0) uniform sceneInfo {
     vec3 camPos;
     mat4 view;
@@ -66,7 +71,7 @@ uint GetCellIndex()
 	uint cellIndex = uint(cells.height * floor(cellSpace.x) + cellSpace.y);
     uint sliceSize = cells.width * cells.height;
 
-	return cellIndex;
+	return zIndex + cellIndex;
 }
 
 void main() 
@@ -90,7 +95,9 @@ void main()
 
     vec3 color = vec3(RandomValue(state), RandomValue(state), RandomValue(state));
     //result = vec4((ambient + diffuse + specular) * color, 1);
-    float rel = cells.data[GetCellIndex()].lightCount;
     
-    result = vec4(rel, 0, 0, 1);
+    uint cellIndex = GetCellIndex();
+    int lightIndex = int(cells.data[cellIndex].lightIndices[0]);
+    vec3 lightPosition = cells.data[cellIndex].lightCount == 0 ? vec3(0, 0, 0) : lights.data[lightIndex];
+    result = vec4(lightPosition, 1);
 }

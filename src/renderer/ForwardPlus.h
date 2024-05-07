@@ -17,6 +17,7 @@ public:
 
 	ComputeShader* GetShader() { return computeShader; }
 	VkBuffer GetCellBuffer()   { return cellBuffer; }
+	VkBuffer GetLightBuffer()  { return lightBuffer; }
 
 private:
 	void Allocate();

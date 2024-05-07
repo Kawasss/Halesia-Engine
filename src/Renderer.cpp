@@ -273,7 +273,7 @@ void Renderer::InitVulkan()
 	else shouldRasterize = true;
 
 	for (int i = 0; i < 1; i++)
-		fwdPlus->AddLight(glm::vec3(0, 0, 0)); // test !!
+		fwdPlus->AddLight(glm::vec3(0, 1, 0)); // test !!
 
 	CreateUniformBuffers();
 	CreateModelDataBuffers();
@@ -443,6 +443,7 @@ void Renderer::CreateDescriptorSets()
 		writer->WriteBuffer(descriptorSets[i], uniformBuffers[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
 		writer->WriteBuffer(descriptorSets[i], modelBuffers[i], VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
 		writer->WriteBuffer(descriptorSets[i], fwdPlus->GetCellBuffer(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
+		writer->WriteBuffer(descriptorSets[i], fwdPlus->GetLightBuffer(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4);
 		writer->WriteImage(descriptorSets[i], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, canRayTrace ? rayTracer->gBufferViews[0] : VK_NULL_HANDLE, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 }
@@ -453,7 +454,7 @@ void Renderer::CreateDescriptorPool()
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	poolSizes[0].descriptorCount = MAX_FRAMES_IN_FLIGHT;
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	poolSizes[1].descriptorCount = MAX_FRAMES_IN_FLIGHT * 2;
+	poolSizes[1].descriptorCount = MAX_FRAMES_IN_FLIGHT * 3;
 	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSizes[2].descriptorCount = MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES;
 
@@ -468,7 +469,7 @@ void Renderer::CreateDescriptorPool()
 	CheckVulkanResult("Failed to create the descriptor pool", result, vkCreateDescriptorPool);
 }
 
-void Renderer::CreateDescriptorSetLayout()
+void Renderer::CreateDescriptorSetLayout() // should simplify this with shader reflection
 {
 	VkDescriptorSetLayoutBinding layoutBinding{};
 	layoutBinding.binding = 0;
@@ -498,8 +499,15 @@ void Renderer::CreateDescriptorSetLayout()
 	cellLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 	cellLayoutBinding.pImmutableSamplers = nullptr;
 
-	std::array<VkDescriptorSetLayoutBinding, 4> bindings = { layoutBinding, modelLayoutBinding, samplerLayoutBinding, cellLayoutBinding };
-	std::vector<VkDescriptorBindingFlags> bindingFlags = { 0, 0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, 0 };
+	VkDescriptorSetLayoutBinding lightLayoutBinding{};
+	lightLayoutBinding.binding = 4;
+	lightLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	lightLayoutBinding.descriptorCount = 1;
+	lightLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	lightLayoutBinding.pImmutableSamplers = nullptr;
+
+	std::array<VkDescriptorSetLayoutBinding, 5> bindings = { layoutBinding, modelLayoutBinding, samplerLayoutBinding, cellLayoutBinding, lightLayoutBinding };
+	std::vector<VkDescriptorBindingFlags> bindingFlags = { 0, 0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, 0, 0 };
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo{};
 	bindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
