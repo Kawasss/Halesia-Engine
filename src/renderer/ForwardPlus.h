@@ -26,10 +26,20 @@ private:
 	static constexpr int MAX_LIGHT_INDICES = 7;
 	static constexpr int MAX_LIGHTS = 1024;
 
+	// can't use floats here because GLSL / SPIRV padding for a float array is fucked up
+	//
+	// GLSL pads this struct like this:
+	// - lightCount:       4 bytes
+	// - lightIndices[0]:  8 bytes
+	// ...
+	// - lightIndices[^2]: 8 bytes
+	// - lightIndices[^1]: 4 bytes
+	//
+	// which I simply cannot achieve in normal C++, so i give up
 	struct Cell
 	{
-		float lightCount;
-		float lightIndices[MAX_LIGHT_INDICES];
+		alignas(4) float lightCount;
+		char lightIndices[(MAX_LIGHT_INDICES - 1) * (sizeof(float) * 2) + sizeof(float)];
 	};
 
 	struct Matrices

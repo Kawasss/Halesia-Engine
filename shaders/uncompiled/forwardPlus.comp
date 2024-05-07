@@ -9,7 +9,7 @@ struct Cell
 	float lightIndices[MAX_LIGHT_INDICES]; // this uses floats because the padding for ints is messed up
 };
 
-layout (set = 0, binding = 0) buffer Cells
+layout (std430, set = 0, binding = 0) buffer Cells
 {
 	uint depth;
 	uint width;
@@ -48,6 +48,5 @@ void main()
 	uint cellIndex = uint(cells.height * floor(cellSpace.x) + cellSpace.y);
 	uint index = zIndex + cellIndex;
 
-	cells.data[index].lightCount++;
-	//cells.data[index].lightIndices[uint(cells.data[index].lightCount++)] = float(gl_GlobalInvocationID.x);
+	cells.data[index].lightIndices[uint(cells.data[index].lightCount++)] = 1337;//float(gl_GlobalInvocationID.x);
 }
