@@ -97,11 +97,14 @@ void main()
         vec3 lightDir   = normalize(lightPos - position);
         vec3 halfwayDir = normalize(lightDir + viewDir);
 
+        float dist = length(lightPos - position);
+        float attenuation = 1.0 / (dist * dist);
+
         float diff = max(dot(normal, lightDir), 0.0);
-        diffuse += diff * lightColor;
+        diffuse += diff * lightColor * attenuation;
 
         float spec = pow(max(dot(normal, halfwayDir), 0.0), 0.3);
-        specular += spec * lightColor;
+        specular += spec * lightColor * attenuation;
     }
     vec3 color = vec3(RandomValue(state), RandomValue(state), RandomValue(state));
     result = vec4((ambient + diffuse + specular) * color, 1);
