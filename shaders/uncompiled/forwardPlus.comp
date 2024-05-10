@@ -33,23 +33,40 @@ float GetLinearizedDepth(float depth)
     return (2 * 0.01f * 1000.0f) / (1000.0f - depth * (1000.0f - 0.01f)) / 1000.0f;
 }
 
-void main()
+vec3 GetScreenSpace(vec3 pos)
 {
-	vec3 pos = lights.position[gl_GlobalInvocationID.x];
 	vec4 screenSpace = matrices.proj * matrices.view * vec4(pos, 1);
 	screenSpace.xy = (screenSpace.xy / screenSpace.w + 1) * 0.5f;
 	screenSpace.z = GetLinearizedDepth(screenSpace.z);
 
-	if (screenSpace.x > 1.0f || screenSpace.x < 0.0f || screenSpace.y > 1.0f || screenSpace.y < 0.0f)
-		return;
+	return screenSpace.xyz;
+}
 
-	vec3 cellSpace = screenSpace.xyz * vec3(cells.width, cells.height, cells.depth);
+vec3 ConvertScreenSpaceToCellSpace(vec3 screenSpace)
+{
+	return screenSpace * vec3(cells.width, cells.height, cells.depth);
+}
 
+uint GetCellIndex(vec3 cellSpace)
+{
 	uint sliceSize = cells.width * cells.height;
 
 	uint zIndex = uint(cellSpace.z * sliceSize);
 	uint cellIndex = uint(cells.height * floor(cellSpace.x) + cellSpace.y);
-	uint index = zIndex + cellIndex;
+	return zIndex + cellIndex;
+}
+
+void main()
+{
+	vec3 pos = lights.position[gl_GlobalInvocationID.x];
+	vec3 screenSpace = GetScreenSpace(pos);
+
+	if (screenSpace.x > 1.0f || screenSpace.x < 0.0f || screenSpace.y > 1.0f || screenSpace.y < 0.0f)
+		return;
+
+	vec3 cellSpace = ConvertScreenSpaceToCellSpace(screenSpace);
+
+	uint index = GetCellIndex(cellSpace);
 
 	cells.data[index].lightIndices[uint(cells.data[index].lightCount++)] = float(gl_GlobalInvocationID.x);
 }
