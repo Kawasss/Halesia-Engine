@@ -64,9 +64,6 @@ void main()
 	vec3 screenSpace = GetScreenSpace(pos);
 	vec3 extentScreen = GetScreenSpace(pos + vec3(MAX_ATTENUATION_FAST, 0, 0));
 
-	if (screenSpace.x >= 1.0f || screenSpace.x <= 0.0f || screenSpace.y >= 1.0f || screenSpace.y <= 0.0f)
-		return;
-
 	vec3 cellSpace = ConvertScreenSpaceToCellSpace(screenSpace);
 	vec3 maxReach  = ConvertScreenSpaceToCellSpace(extentScreen);
 
