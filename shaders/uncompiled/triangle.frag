@@ -67,7 +67,7 @@ float GetLinearizedDepth()
 uint GetCellIndex()
 {
     vec2 cellSpace = floor(GetRelativePosition() * vec2(cells.width, cells.height)); 
-    uint zIndex = uint(GetLinearizedDepth()) * cells.depth;
+    uint zIndex = uint(floor(GetLinearizedDepth() * cells.depth));
 	uint cellIndex = uint(cells.height * cellSpace.x + cellSpace.y);
     uint sliceSize = cells.width * cells.height;
 

@@ -41,7 +41,7 @@ float GetLinearizedDepth(float depth)
 vec3 GetScreenSpace(vec3 pos)
 {
 	vec4 screenSpace = matrices.proj * matrices.view * vec4(pos, 1);
-	screenSpace.xy = (screenSpace.xy / (screenSpace.w + 0.0001f) + 1) * 0.5f;
+	screenSpace.xy = (screenSpace.xy / screenSpace.w + 1) * 0.5f;
 	screenSpace.z = clamp(GetLinearizedDepth(screenSpace.z), 0.0, 1.0);
 
 	return screenSpace.xyz;
@@ -49,7 +49,7 @@ vec3 GetScreenSpace(vec3 pos)
 
 vec3 ConvertScreenSpaceToCellSpace(vec3 screenSpace)
 {
-	return screenSpace * vec3(cells.width, cells.height, cells.depth);
+	return floor(screenSpace * vec3(cells.width, cells.height, cells.depth));
 }
 
 uint GetZIndex(float z)
@@ -78,13 +78,13 @@ void main()
 	minimum.x = clamp(minimum.x, 0, int(cells.width)  - 1);
 	minimum.y = clamp(minimum.y, 0, int(cells.height) - 1);
 
-	maximum.x = clamp(maximum.x, 0, int(cells.width)  - 1);
-	maximum.y = clamp(maximum.y, 0, int(cells.height) - 1);
+	maximum.x = clamp(maximum.x, 0, int(cells.width));
+	maximum.y = clamp(maximum.y, 0, int(cells.height));
 
 	// the limiting factor of this method is that it doesnt extent into the z axis
-	for (int x = minimum.x; x <= maximum.x; x++)
+	for (int x = minimum.x; x < maximum.x; x++)
 	{
-		for (int y = minimum.y; y <= maximum.y; y++)
+		for (int y = minimum.y; y < maximum.y; y++)
 		{
 			// the circle equation for the light is (x - cellSpace.x)^2 + (y - cellSpace.y)^2 = reach^2.
 			// the reach is needed, so the equation is rewritten into reach = sqrt( (x - cellSpace.x)^2 + (y - cellSpace.y)^2 ).
