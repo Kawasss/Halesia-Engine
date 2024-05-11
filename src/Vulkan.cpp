@@ -360,31 +360,29 @@ void Vulkan::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryP
     vkBindBufferMemory(context.logicalDevice, buffer, bufferMemory, 0);
 }
 
-void Vulkan::ReallocateBuffer(VkBuffer buffer, VkDeviceMemory& memory, VkDeviceSize size, VkMemoryPropertyFlags properties) // this relies on the fact that the memory can be mapped
+void Vulkan::ReallocateBuffer(VkBuffer buffer, VkDeviceMemory& memory, VkDeviceSize size, VkDeviceSize oldSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) // this relies on the fact that the memory can be mapped
 {
     VkDeviceMemory newMem = VK_NULL_HANDLE;
+    VkBuffer newBuffer    = VK_NULL_HANDLE;
 
-    VkMemoryRequirements memoryRequirements;
-    vkGetBufferMemoryRequirements(context.logicalDevice, buffer, &memoryRequirements);
-    AllocateMemory(newMem, memoryRequirements, properties, optionalMemoryAllocationFlags);
+    CreateBuffer(size, usage, properties, newBuffer, newMem);
 
     void* oldMemData = nullptr, *newMemData = nullptr;
-    VkResult result = vkMapMemory(context.logicalDevice, memory, 0, size, 0, &oldMemData);
+    VkResult result = vkMapMemory(context.logicalDevice, memory, 0, oldSize, 0, &oldMemData);
     CheckVulkanResult("Canot map the memory needed for reallocation", result, vkMapMemory);
 
-    result = vkMapMemory(context.logicalDevice, newMem, 0, size, 0, &newMemData);
+    result = vkMapMemory(context.logicalDevice, newMem, 0, oldSize, 0, &newMemData);
     CheckVulkanResult("Canot map the memory needed for reallocation", result, vkMapMemory);
 
-    memcpy(newMemData, oldMemData, size);
-
-    result = vkBindBufferMemory(context.logicalDevice, buffer, newMem, 0);
-    CheckVulkanResult("Cannot bind the buffer memory for reallocation", result, vkBindBufferMemory);
+    memcpy(newMemData, oldMemData, oldSize);
 
     vkUnmapMemory(context.logicalDevice, memory);
     vkUnmapMemory(context.logicalDevice, newMem);
     vkFreeMemory(context.logicalDevice, memory, nullptr);
+    vkDestroyBuffer(context.logicalDevice, buffer, nullptr);
     
     memory = newMem;
+    buffer = newBuffer;
 }
 
 uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice)
