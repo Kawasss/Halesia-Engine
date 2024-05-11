@@ -33,6 +33,11 @@ float GetLinearizedDepth(float depth)
     return (2 * 0.01f * 1000.0f) / (1000.0f - depth * (1000.0f - 0.01f)) / 1000.0f;
 }
 
+// attenuation: f(x) = 1 / x ^ 2, where attenuation determines the reach of a light
+#define MAX_ATTENUATION_FAST    10.0          // attenuation = 0.01
+#define MAX_ATTENUATION_MEDIUM  31.6227766017 // attenuation = 0.001
+#define MAX_ATTENUATION_PRECISE 100.0         // attenuation = 0.0001
+
 vec3 GetScreenSpace(vec3 pos)
 {
 	vec4 screenSpace = matrices.proj * matrices.view * vec4(pos, 1);
@@ -47,26 +52,69 @@ vec3 ConvertScreenSpaceToCellSpace(vec3 screenSpace)
 	return screenSpace * vec3(cells.width, cells.height, cells.depth);
 }
 
-uint GetCellIndex(vec3 cellSpace)
+uint GetZIndex(float z)
 {
 	uint sliceSize = cells.width * cells.height;
+	return uint(z * sliceSize);
+}
 
-	uint zIndex = uint(cellSpace.z * sliceSize);
-	uint cellIndex = uint(cells.height * floor(cellSpace.x) + cellSpace.y);
-	return zIndex + cellIndex;
+uint Get1DIndex(vec2 coor)
+{
+	return uint(cells.height * coor.x + coor.y);
+}
+
+ivec2 GetCellIndices(vec3 cellSpace) // x is z index, y is 2d index
+{
+	cellSpace = floor(cellSpace);
+	return ivec2(GetZIndex(cellSpace.z), Get1DIndex(cellSpace.xy));
 }
 
 void main()
 {
 	vec3 pos = lights.position[gl_GlobalInvocationID.x];
 	vec3 screenSpace = GetScreenSpace(pos);
+	vec3 extentScreen = GetScreenSpace(pos + vec3(MAX_ATTENUATION_FAST, 0, 0));
 
 	if (screenSpace.x > 1.0f || screenSpace.x < 0.0f || screenSpace.y > 1.0f || screenSpace.y < 0.0f)
 		return;
 
 	vec3 cellSpace = ConvertScreenSpaceToCellSpace(screenSpace);
+	vec3 maxReach  = ConvertScreenSpaceToCellSpace(extentScreen);
 
-	uint index = GetCellIndex(cellSpace);
+	int reach = int(floor(maxReach.x - cellSpace.x)); // ceil can also be used but can increase the range of the light by one cell
+	
+	ivec2 lightIndex = GetCellIndices(cellSpace);
 
-	cells.data[index].lightIndices[uint(cells.data[index].lightCount++)] = float(gl_GlobalInvocationID.x);
+	ivec2 minimum = lightIndex - ivec2(reach);
+	ivec2 maximum = lightIndex + ivec2(reach);
+
+	//minimum.x = clamp(minimum.x, 0, int(cells.width));
+	//minimum.y = clamp(minimum.y, 0, int(cells.height));
+
+	//maximum.x = clamp(maximum.x, 0, int(cells.width));
+	//maximum.y = clamp(maximum.y, 0, int(cells.height));
+
+	// the limiting factor of this method is that it doesnt extent into the z axis
+	for (int x = minimum.x; x < maximum.x; x++)
+	{
+		for (int y = minimum.y; y < maximum.y; y++)
+		{
+			// the circle equation for the light is (x - lightIndex.x)^2 + (y - lightIndex.y)^2 = reach^2.
+			// the reach is needed, so the equation is rewritten into reach = sqrt( (x - lightIndex.x)^2 + (y - lightIndex.y)^2 ).
+			// the point (x, y) is only inside the lights radius if the result is smaller than the reach thats calculated earlier.
+			float dist = sqrt(pow(x - lightIndex.x, 2) + pow(y - lightIndex.y, 2));
+
+			if (dist > reach)
+				continue;
+
+			uint cellImageIndex = cells.height * x + y;
+			uint fullIndex = lightIndex.x + cellImageIndex;
+			uint lightCountIndex = uint(cells.data[fullIndex].lightCount++);
+
+			if (fullIndex >= cells.width * cells.height * cells.depth)
+				continue; // out of bounds failsafe, just in case
+
+			cells.data[fullIndex].lightIndices[lightCountIndex] = float(gl_GlobalInvocationID.x);
+		}
+	}
 }

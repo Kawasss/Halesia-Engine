@@ -66,16 +66,18 @@ float GetLinearizedDepth()
 
 uint GetCellIndex()
 {
-    vec2 cellSpace = GetRelativePosition() * vec2(cells.width, cells.height); 
+    vec2 cellSpace = floor(GetRelativePosition() * vec2(cells.width, cells.height)); 
     uint zIndex = uint(GetLinearizedDepth()) * cells.depth;
-	uint cellIndex = uint(cells.height * floor(cellSpace.x) + cellSpace.y);
+	uint cellIndex = uint(cells.height * cellSpace.x + cellSpace.y);
     uint sliceSize = cells.width * cells.height;
 
 	return zIndex + cellIndex;
 }
-
+#define HEAT_MAP
 void main() 
 {
+    #ifndef HEAT_MAP
+
     vec3 lightColor = vec3(1);
     uint state = ID * gl_PrimitiveID;
 
@@ -108,4 +110,14 @@ void main()
     }
     vec3 color = vec3(RandomValue(state), RandomValue(state), RandomValue(state));
     result = vec4((ambient + diffuse + specular) * color, 1);
+
+    #else
+
+    uint cellIndex = GetCellIndex();
+    int lightCount = int(cells.data[cellIndex].lightCount);
+    float rel = lightCount / 7.0; // 7 is max lights
+
+    result = vec4(rel, 0, 1 - rel, 1);
+
+    #endif
 }
