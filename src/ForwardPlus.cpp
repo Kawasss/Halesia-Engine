@@ -71,10 +71,18 @@ void ForwardPlusRenderer::Draw(VkCommandBuffer commandBuffer, Camera* camera)
 	matrices->projection = camera->GetProjectionMatrix();
 	matrices->view = camera->GetViewMatrix();
 
-	VkDeviceSize size = cellWidth * cellHeight * cellDepth * sizeof(Cell);
-	vkCmdFillBuffer(commandBuffer, cellBuffer, sizeof(uint32_t) * 3, size, 0);
+	vkCmdFillBuffer(commandBuffer, cellBuffer, sizeof(uint32_t) * 3, VK_WHOLE_SIZE, 0);
 
 	computeShader->Execute(commandBuffer, lightCount, 1, 1);
+
+	VkBufferMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+	barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	barrier.buffer = cellBuffer;
+	barrier.size = VK_WHOLE_SIZE;
+
+	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr);
 }
 
 void ForwardPlusRenderer::AddLight(glm::vec3 pos)

@@ -73,7 +73,7 @@ uint GetCellIndex()
 
 	return zIndex + cellIndex;
 }
-#define HEAT_MAP
+//#define HEAT_MAP
 void main() 
 {
     #ifndef HEAT_MAP
