@@ -37,31 +37,24 @@ float GetLinearizedDepth(float depth)
 #define MAX_ATTENUATION_MEDIUM  31.6227766017 // attenuation = 0.001
 #define MAX_ATTENUATION_PRECISE 100.0         // attenuation = 0.0001
 
-vec3 GetScreenSpace(vec3 pos)
+vec2 GetScreenSpace(vec3 pos)
 {
 	vec4 screenSpace = matrices.proj * matrices.view * vec4(pos, 1);
-	screenSpace.xy = (screenSpace.xy / screenSpace.w + 1) * 0.5f;
-	//screenSpace.z = clamp(GetLinearizedDepth(screenSpace.z), 0.0, 1.0);
+	screenSpace.xy   = (screenSpace.xy / screenSpace.w + 1) * 0.5f;
 
-	return screenSpace.xyz;
+	return screenSpace.xy;
 }
 
-vec2 ConvertScreenSpaceToCellSpace(vec3 screenSpace)
+vec2 ConvertScreenSpaceToCellSpace(vec2 screenSpace)
 {
 	return screenSpace.xy * vec2(cells.width, cells.height);
-}
-
-uint GetZIndex(float z)
-{
-	uint sliceSize = cells.width * cells.height;
-	return uint(z * sliceSize);
 }
 
 void main()
 {
 	vec3 pos = lights.position[gl_GlobalInvocationID.x];
-	vec3 screenSpace = GetScreenSpace(pos);
-	vec3 extentScreen = GetScreenSpace(pos + vec3(MAX_ATTENUATION_MEDIUM, 0, 0));
+	vec2 screenSpace = GetScreenSpace(pos);
+	vec2 extentScreen = GetScreenSpace(pos + vec3(MAX_ATTENUATION_MEDIUM, 0, 0));
 
 	vec2 cellSpace = ConvertScreenSpaceToCellSpace(screenSpace);
 	vec2 maxReach  = ConvertScreenSpaceToCellSpace(extentScreen);
@@ -77,7 +70,6 @@ void main()
 	maximum.x = clamp(maximum.x, 0, int(cells.width));
 	maximum.y = clamp(maximum.y, 0, int(cells.height));
 
-	// the limiting factor of this method is that it doesnt extent into the z axis
 	for (int x = minimum.x; x < maximum.x; x++)
 	{
 		for (int y = minimum.y; y < maximum.y; y++)

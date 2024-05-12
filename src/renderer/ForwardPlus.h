@@ -50,7 +50,7 @@ private:
 		glm::mat4 view;
 	};
 
-	uint32_t cellWidth = 32, cellHeight = 32;
+	uint32_t cellWidth = 64, cellHeight = 64;
 
 	VkBuffer cellBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory cellMemory = VK_NULL_HANDLE;

@@ -67,7 +67,6 @@ uint GetCellIndex()
 {
     vec2 cellSpace = GetRelativePosition() * vec2(cells.width, cells.height); 
 	uint cellIndex = uint(cells.height * floor(cellSpace.x) + cellSpace.y);
-    uint sliceSize = cells.width * cells.height;
 
 	return cellIndex;
 }
@@ -113,7 +112,7 @@ void main()
 
     uint cellIndex = GetCellIndex();
     int lightCount = int(cells.data[cellIndex].lightCount);
-    float rel = lightCount / 7.0; // 7 is max lights
+    float rel = lightCount / float(MAX_LIGHT_INDICES);
 
     result = vec4(rel, 0, 1 - rel, 1);
 
