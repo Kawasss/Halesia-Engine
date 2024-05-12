@@ -35,7 +35,6 @@ struct Cell
 
 layout (set = 0, binding = 3) buffer Cells
 {
-	uint depth;
 	uint width;
 	uint height;
 	Cell data[];
@@ -66,14 +65,13 @@ float GetLinearizedDepth()
 
 uint GetCellIndex()
 {
-    vec2 cellSpace = floor(GetRelativePosition() * vec2(cells.width, cells.height)); 
-    uint zIndex = uint(floor(GetLinearizedDepth() * cells.depth));
-	uint cellIndex = uint(cells.height * cellSpace.x + cellSpace.y);
+    vec2 cellSpace = GetRelativePosition() * vec2(cells.width, cells.height); 
+	uint cellIndex = uint(cells.height * floor(cellSpace.x) + cellSpace.y);
     uint sliceSize = cells.width * cells.height;
 
-	return zIndex + cellIndex;
+	return cellIndex;
 }
-//#define HEAT_MAP
+#define HEAT_MAP
 void main() 
 {
     #ifndef HEAT_MAP

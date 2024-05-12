@@ -33,7 +33,7 @@ void ForwardPlusRenderer::Destroy()
 
 void ForwardPlusRenderer::Allocate()
 {
-	VkDeviceSize size = cellWidth * cellHeight * cellDepth * sizeof(Cell) + sizeof(uint32_t) * 3;
+	VkDeviceSize size = cellWidth * cellHeight * sizeof(Cell) + sizeof(uint32_t) * 2;
 
 	Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, cellBuffer, cellMemory);
 	Vulkan::CreateBuffer(MAX_LIGHTS * sizeof(glm::vec3), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, lightBuffer, lightMemory);
@@ -44,12 +44,11 @@ void ForwardPlusRenderer::Allocate()
 	CheckVulkanResult("Failed to map the forward+ matrices memory", result, vkMapMemory);
 
 	uint32_t* dimensions = nullptr;
-	result = vkMapMemory(context.logicalDevice, cellMemory, 0, sizeof(uint32_t) * 3, 0, (void**)&dimensions);
+	result = vkMapMemory(context.logicalDevice, cellMemory, 0, sizeof(uint32_t) * 2, 0, (void**)&dimensions);
 	CheckVulkanResult("Failed to map the forward+ cell memory", result, vkMapMemory);
 
-	dimensions[0] = cellDepth;
-	dimensions[1] = cellWidth;
-	dimensions[2] = cellHeight;
+	dimensions[0] = cellWidth;
+	dimensions[1] = cellHeight;
 
 	vkUnmapMemory(context.logicalDevice, cellMemory);
 }
@@ -71,7 +70,7 @@ void ForwardPlusRenderer::Draw(VkCommandBuffer commandBuffer, Camera* camera)
 	matrices->projection = camera->GetProjectionMatrix();
 	matrices->view = camera->GetViewMatrix();
 
-	vkCmdFillBuffer(commandBuffer, cellBuffer, sizeof(uint32_t) * 3, VK_WHOLE_SIZE, 0);
+	vkCmdFillBuffer(commandBuffer, cellBuffer, sizeof(uint32_t) * 2, VK_WHOLE_SIZE, 0);
 
 	computeShader->Execute(commandBuffer, lightCount, 1, 1);
 

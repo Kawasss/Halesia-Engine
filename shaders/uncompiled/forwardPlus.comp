@@ -11,7 +11,6 @@ struct Cell
 
 layout (std430, set = 0, binding = 0) buffer Cells
 {
-	uint depth;
 	uint width;
 	uint height;
 	Cell data[];
@@ -42,14 +41,14 @@ vec3 GetScreenSpace(vec3 pos)
 {
 	vec4 screenSpace = matrices.proj * matrices.view * vec4(pos, 1);
 	screenSpace.xy = (screenSpace.xy / screenSpace.w + 1) * 0.5f;
-	screenSpace.z = clamp(GetLinearizedDepth(screenSpace.z), 0.0, 1.0);
+	//screenSpace.z = clamp(GetLinearizedDepth(screenSpace.z), 0.0, 1.0);
 
 	return screenSpace.xyz;
 }
 
-vec3 ConvertScreenSpaceToCellSpace(vec3 screenSpace)
+vec2 ConvertScreenSpaceToCellSpace(vec3 screenSpace)
 {
-	return floor(screenSpace * vec3(cells.width, cells.height, cells.depth));
+	return screenSpace.xy * vec2(cells.width, cells.height);
 }
 
 uint GetZIndex(float z)
@@ -62,12 +61,12 @@ void main()
 {
 	vec3 pos = lights.position[gl_GlobalInvocationID.x];
 	vec3 screenSpace = GetScreenSpace(pos);
-	vec3 extentScreen = GetScreenSpace(pos + vec3(MAX_ATTENUATION_FAST, 0, 0));
+	vec3 extentScreen = GetScreenSpace(pos + vec3(MAX_ATTENUATION_MEDIUM, 0, 0));
 
-	vec3 cellSpace = ConvertScreenSpaceToCellSpace(screenSpace);
-	vec3 maxReach  = ConvertScreenSpaceToCellSpace(extentScreen);
+	vec2 cellSpace = ConvertScreenSpaceToCellSpace(screenSpace);
+	vec2 maxReach  = ConvertScreenSpaceToCellSpace(extentScreen);
 
-	int reach = int(ceil(abs(maxReach.x - cellSpace.x)));
+	float reach = abs(maxReach.x - cellSpace.x);
 
 	ivec2 minimum = ivec2(cellSpace.xy) - ivec2(reach);
 	ivec2 maximum = ivec2(cellSpace.xy) + ivec2(reach);
@@ -86,15 +85,15 @@ void main()
 			// the circle equation for the light is (x - cellSpace.x)^2 + (y - cellSpace.y)^2 = reach^2.
 			// the reach is needed, so the equation is rewritten into reach = sqrt( (x - cellSpace.x)^2 + (y - cellSpace.y)^2 ).
 			// the point (x, y) is only inside the lights radius if the result is smaller than the reach thats calculated earlier.
-			float dist = sqrt(pow(x - cellSpace.x, 2) + pow(y - cellSpace.y, 2));
+			float dist = sqrt(pow(x + 0.5f - cellSpace.x, 2) + pow(y + 0.5f - cellSpace.y, 2));
 
-			if (dist > reach)
+			if (floor(dist) > reach)
 				continue;
 
 			uint cellImageIndex = cells.height * x + y;
-			uint fullIndex = GetZIndex(cellSpace.z) + cellImageIndex;
+			uint fullIndex = cellImageIndex;
 
-			if (fullIndex >= cells.width * cells.height * cells.depth)
+			if (fullIndex >= cells.width * cells.height)
 				continue; // out of bounds failsafe, just in case
 
 			uint lightCountIndex = uint(cells.data[fullIndex].lightCount++);
