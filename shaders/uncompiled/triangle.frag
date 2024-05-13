@@ -58,11 +58,6 @@ vec2 GetRelativePosition()
     return gl_FragCoord.xy / vec2(ubo.width, ubo.height);
 }
 
-float GetLinearizedDepth()
-{
-    return (2 * 0.01f * 1000.0f) / (1000.0f - gl_FragCoord.z * (1000.0f - 0.01f)) / 1000.0f;
-}
-
 uint GetCellIndex()
 {
     vec2 cellSpace = GetRelativePosition() * vec2(cells.width, cells.height); 

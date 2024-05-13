@@ -269,6 +269,8 @@
     <ResourceCompile Include="src\Halesia.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cfg\init.cfg" />
+    <None Include="cfg\vars.vvm" />
     <None Include="shaders\uncompiled\anim.comp" />
     <None Include="shaders\uncompiled\forwardPlus.comp" />
     <None Include="shaders\uncompiled\gen.rgen" />

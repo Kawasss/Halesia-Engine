@@ -61,6 +61,9 @@
     <Filter Include="Source Files\core">
       <UniqueIdentifier>{93fc325d-0eef-4e8e-9dbe-7e188430404a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="cfg">
+      <UniqueIdentifier>{f8750108-ce32-43bb-a561-e3e7dbb8323d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\HalesiaEngine.cpp">
@@ -478,6 +481,12 @@
     </None>
     <None Include="shaders\uncompiled\include\layouts.glsl">
       <Filter>Shaders</Filter>
+    </None>
+    <None Include="cfg\init.cfg">
+      <Filter>cfg</Filter>
+    </None>
+    <None Include="cfg\vars.vvm">
+      <Filter>cfg</Filter>
     </None>
   </ItemGroup>
 </Project>

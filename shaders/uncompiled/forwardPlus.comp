@@ -27,11 +27,6 @@ layout (set = 0, binding = 2) uniform Matrices
 	mat4 view;
 } matrices;
 
-float GetLinearizedDepth(float depth)
-{
-    return (2 * 0.01f * 1000.0f) / (1000.0f - depth * (1000.0f - 0.01f)) / 1000.0f;
-}
-
 // attenuation: f(x) = 1 / x ^ 2, where attenuation determines the reach of a light
 #define MAX_ATTENUATION_FAST    10.0          // attenuation = 0.01
 #define MAX_ATTENUATION_MEDIUM  31.6227766017 // attenuation = 0.001
