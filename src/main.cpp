@@ -51,13 +51,44 @@ class StreamerTest : public Scene
 	}
 };
 
+class Shooter : public Scene
+{
+	std::vector<Animation> animations;
+	AnimationManager* animManager = nullptr;
+	void Start() override
+	{
+		animManager = AnimationManager::Get();
+
+		SceneLoader loader("stdObj/pistol.gltf");
+		loader.LoadFBXScene();
+
+		for (auto& objData : loader.objects)
+		{
+			if (objData.meshes.empty())
+				continue;
+
+			objData.scale = glm::vec3(2);
+			AddStaticObject(objData);
+		}
+			
+		animations = std::move(loader.animations);
+		for (Animation& anim : animations)
+			animManager->AddAnimation(&anim);
+	}
+
+	void Update(float delta) override
+	{
+		animManager->ComputeAnimations(delta);
+	}
+};
+
 int main(int argc, char** argv)
 {
 	HalesiaEngine* instance = nullptr;
 	HalesiaEngineCreateInfo createInfo{};
 	createInfo.argsCount = argc;
 	createInfo.args = argv;
-	createInfo.startingScene = new Room();
+	createInfo.startingScene = new Shooter();
 	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;
 	createInfo.windowCreateInfo.height = 600;

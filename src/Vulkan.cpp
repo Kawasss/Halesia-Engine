@@ -182,8 +182,8 @@ void Vulkan::YieldCommandPool(uint32_t index, VkCommandPool commandPool)
 
 void Vulkan::DestroyAllCommandPools()
 {
-    for (std::pair<uint32_t, std::vector<VkCommandPool>> commandPools : queueCommandPools)
-        for (VkCommandPool commandPool : commandPools.second)
+    for (const auto& [index, commandPools] : queueCommandPools)
+        for (VkCommandPool commandPool : commandPools)
             vkDestroyCommandPool(context.logicalDevice, commandPool, nullptr);
     queueCommandPools.clear();
 }

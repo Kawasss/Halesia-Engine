@@ -636,13 +636,13 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	vkCmdResetQueryPool(commandBuffer, queryPool, 0, 10);
 
 	WriteTimestamp(commandBuffer);
-	//animationManager->ApplyAnimations(commandBuffer); // not good
+	animationManager->ApplyAnimations(commandBuffer); // not good
 	WriteTimestamp(commandBuffer);
 
 	WriteTimestamp(commandBuffer);
-	/*for (Object* obj : objects)
+	for (Object* obj : objects)
 		for (Mesh& mesh : obj->meshes)
-			mesh.BLAS->RebuildGeometry(commandBuffer, mesh);*/
+			mesh.BLAS->RebuildGeometry(commandBuffer, mesh);
 	WriteTimestamp(commandBuffer);
 
 	VkImageView imageToCopy = VK_NULL_HANDLE;
@@ -975,6 +975,8 @@ void Renderer::StartRecording()
 
 	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
 	submittedCount = 0;
+	receivedObjects = 0;
+	renderedObjects = 0;
 
 	writer->Write();
 
@@ -997,10 +999,7 @@ inline void GetAllObjectsFromObject(std::vector<Object*>& ret, Object* obj)
 	ret.push_back(obj);
 	for (Object* object : obj->children)
 	{
-		if (ObjectIsValid(object))
-		{
-			GetAllObjectsFromObject(ret, object);
-		}
+		GetAllObjectsFromObject(ret, object);
 	}
 }
 

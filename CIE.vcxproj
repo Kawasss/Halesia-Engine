@@ -106,14 +106,14 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies\spirv-reflect;C:\Users\wveen\source\additionalDependencies\Nsight-Aftermath\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 8.0.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\include;C:\Users\wveen\physx\source;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8\imgui-1.89.8;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies\spirv-reflect;C:\Users\wveen\source\additionalDependencies\Nsight-Aftermath\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 8.0.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\include;C:\Users\wveen\physx\source;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8\imgui-1.89.8;%(AdditionalIncludeDirectories);C:\Users\wveen\source\additionalDependencies\assimp\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\VulkanSDK\1.3.261.1\Lib;C:\Users\wveen\source\additionalDependencies\assimp\x64;C:\Users\wveen\physx\bin\win.x86_64.vc143.mt\debug;C:\Users\wveen\source\additionalDependencies\Nsight-Aftermath\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\lib\x64;C:\ProgramData\NVIDIA Corporation\OptiX SDK 8.0.0\SDK\build\lib\Debug;C:\Users\wveen\source\additionalDependencies\soloud\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;assimp.lib;cuda.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;optixDenoiser.lib;soloud_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.3.261.1\Lib;C:\Users\wveen\source\additionalDependencies\assimp\lib\Release;C:\Users\wveen\physx\bin\win.x86_64.vc143.mt\debug;C:\Users\wveen\source\additionalDependencies\Nsight-Aftermath\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\lib\x64;C:\ProgramData\NVIDIA Corporation\OptiX SDK 8.0.0\SDK\build\lib\Debug;C:\Users\wveen\source\additionalDependencies\soloud\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;assimp-vc143-mt.lib;cuda.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;optixDenoiser.lib;soloud_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -125,7 +125,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies\spirv-reflect;C:\Users\wveen\source\additionalDependencies\Nsight-Aftermath\include;C:\Users\wveen\source\additionalDependencies;C:\ProgramData\NVIDIA Corporation\OptiX SDK 8.0.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\include;C:\Users\wveen\physx\source;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8\imgui-1.89.8;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies\spirv-reflect;C:\Users\wveen\source\additionalDependencies\Nsight-Aftermath\include;C:\Users\wveen\source\additionalDependencies;C:\ProgramData\NVIDIA Corporation\OptiX SDK 8.0.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\include;C:\Users\wveen\physx\source;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8\imgui-1.89.8;%(AdditionalIncludeDirectories);C:\Users\wveen\source\additionalDependencies\assimp\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
@@ -133,8 +133,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\VulkanSDK\1.3.261.1\Lib;C:\Users\wveen\source\additionalDependencies\assimp\x64;C:\Users\wveen\physx\bin\win.x86_64.vc143.mt\release;C:\Users\wveen\physx\bin;C:\Users\wveen\source\additionalDependencies\Nsight-Aftermath\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\lib\x64;C:\ProgramData\NVIDIA Corporation\OptiX SDK 8.0.0\SDK\build\lib\Release;C:\Users\wveen\source\additionalDependencies\soloud\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;assimp.lib;cuda.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;optixDenoiser.lib;soloud_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.3.261.1\Lib;C:\Users\wveen\source\additionalDependencies\assimp\lib\Release;C:\Users\wveen\physx\bin\win.x86_64.vc143.mt\release;C:\Users\wveen\physx\bin;C:\Users\wveen\source\additionalDependencies\Nsight-Aftermath\lib\x64;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\lib\x64;C:\ProgramData\NVIDIA Corporation\OptiX SDK 8.0.0\SDK\build\lib\Release;C:\Users\wveen\source\additionalDependencies\soloud\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;assimp-vc143-mt.lib;cuda.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;optixDenoiser.lib;soloud_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

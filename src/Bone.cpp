@@ -67,7 +67,7 @@ int Bone::GetRotationIndex()
 int Bone::GetScaleIndex()
 {
 	for (int i = 0; i < scales.size(); i++)
-		if (time < rotations[i + 1].timeStamp)
+		if (time < scales[i + 1].timeStamp)
 			return i;
 	throw std::runtime_error("Failed to fetch the scale index of a bone");
 }
@@ -110,6 +110,10 @@ glm::mat4 Bone::InterpolateScale()
 		return glm::scale(glm::mat4(1.0f), scales[0].scale);
 
 	int currentIndex = GetScaleIndex();
+
+	if (currentIndex + 1 >= scales.size())
+		currentIndex = 0;
+
 	int nextIndex = currentIndex + 1;
 
 	float scaleFactor = GetFactor(scales[currentIndex].timeStamp, scales[nextIndex].timeStamp);

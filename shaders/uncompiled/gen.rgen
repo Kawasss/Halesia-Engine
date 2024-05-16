@@ -120,11 +120,11 @@ void main() {
 
   //if (abs(distance(payload.motion, prevMotion)) < 0.1)
   //{
-    vec3 old = imageLoad(prevImage, prevPos).xyz;
+    /*vec3 old = imageLoad(prevImage, prevPos).xyz;
     if (color == vec3(0.0f) && old != vec3(0))
         color = old;
     else if (old != vec3(0))
-        color = (color + old) * 0.5f;
+        color = (color + old) * 0.5f;*/
   //}
 
   imageStore(albedoImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstAlbedo, 1));
