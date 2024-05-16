@@ -6,6 +6,12 @@
 #include <iostream>
 #include "glm.h"
 
+#ifdef _DEBUG
+#define DEBUG_ONLY(val) val
+#else
+#define DEBUG_ONLY(val)
+#endif
+
 typedef std::string* ConsoleGroup;
 
 enum MessageSeverity
@@ -35,6 +41,8 @@ public:
 	static void WriteLine(std::string message, MessageSeverity severity = MESSAGE_SEVERITY_NORMAL);
 	static void InterpretCommand(std::string command = "");
 	static glm::vec3 GetColorFromMessage(std::string message);
+
+	#define HalesiaDebugLog(message) DEBUG_ONLY(Console::WriteLine(message))
 
 	static ConsoleGroup CreateGroup(std::string name);
 	template<typename T> static void AddVariableToGroup(ConsoleGroup group, T* variable, std::string name, ConsoleVariableAccess access = CONSOLE_ACCESS_READ_WRITE);
@@ -154,6 +162,7 @@ private:
 	static void EvaluateToken(TokenContent& token);
 	static void DispatchCommand(std::vector<TokenContent>& lvalues, std::vector<TokenContent>& rvalues, TokenContent& op);
 	static void InsertAliases(std::vector<TokenContent>& tokens);
+	static void WriteConVars();
 
 	static std::unordered_map<std::string, VariableMetadata>          commandVariables;
 	static std::unordered_map<std::string, MessageSeverity>           messageColorBinding;

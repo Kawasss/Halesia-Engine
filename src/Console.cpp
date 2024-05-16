@@ -111,8 +111,20 @@ void Console::Init()
 	InterpretCommand(ReadFile("cfg/init.cfg").data());
 }
 
+void Console::WriteConVars()
+{
+	for (const auto& [name, data] : commandVariables)
+		WriteLine(name + ": [ " + variableTypeToString(data.type) + ", " + ConsoleVariableAccessToString(data.access) + " ]");
+}
+
 void Console::InterpretCommand(std::string command)
 {
+	if (command == "help")
+	{
+		WriteConVars();
+		return;
+	}
+	
 	std::string variableName;
 
 	std::vector<TokenContent> tokens = LexInput(command), lValues, rValues;
