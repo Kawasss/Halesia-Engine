@@ -16,8 +16,8 @@ void Object::AwaitGeneration()
 
 void Object::GenerateObjectWithData(const ObjectCreationData& creationData)
 {
-	if (!creationData.meshes.empty())
-		mesh.Create(creationData.meshes[0]);
+	if (creationData.hasMesh)
+		mesh.Create(creationData.mesh);
 
 	if (creationData.hitBox.shapeType != SHAPE_TYPE_NONE)
 	{
@@ -47,7 +47,7 @@ void Object::Initialize(const ObjectCreationData& creationData, void* customClas
 	scriptClass = customClassPointer;
 	state = (ObjectState)creationData.state;
 
-	if (!creationData.meshes.empty())
+	if (creationData.hasMesh)
 		transform = Transform(creationData.position, creationData.rotation, creationData.scale, mesh.extents, mesh.center); // should determine the extents and center (minmax) of all meshes not just the first one
 	handle = ResourceManager::GenerateHandle();
 	name = creationData.name;

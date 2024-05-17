@@ -93,16 +93,14 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 		RetrieveType(childType, childSize); // mesh
 		break;
 	case NODE_TYPE_MESH:
-		currentObject->meshes.push_back({});
-		currentMesh = currentObject->meshes.begin() + currentObject->meshes.size() - 1;
+		currentObject->hasMesh = true;
+		currentMesh = &currentObject->mesh;
 		reader >> currentMesh->materialIndex;
 		GetNodeHeader(childType, childSize);
 		RetrieveType(childType, childSize); // vertices
 		GetNodeHeader(childType, childSize);
 		RetrieveType(childType, childSize); // indices
 		currentMesh->faceCount = currentMesh->indices.size() / 3;
-		if (currentMesh->vertices.empty())
-			currentObject->meshes.erase(currentMesh);
 		break;
 	case NODE_TYPE_VERTICES:
 		currentMesh->vertices.resize(size / sizeof(Vertex));
@@ -427,10 +425,11 @@ void SceneLoader::RetrieveObject(const aiScene* scene, const aiNode* node, glm::
 			RigidBodyType rigidType = HasStaticRigidFlag(flags) ? RIGID_BODY_STATIC : RIGID_BODY_DYNAMIC;
 			creationData.hitBox = { GetExtentsFromMesh(scene->mMeshes[node->mMeshes[0]]), GetShapeType(flags), rigidType };
 		}
-		else
+		else if (i == 0)
 		{
-			for (int j = 0; j < node->mNumMeshes; j++)
-				creationData.meshes.push_back(RetrieveMeshData(scene->mMeshes[node->mMeshes[j]]));
+			if (!(creationData.hasMesh = node->mNumMeshes > 0))
+				continue;
+			creationData.mesh = RetrieveMeshData(scene->mMeshes[node->mMeshes[i]]);
 		}
 	}
 	for (int i = 0; i < node->mNumChildren; i++)
@@ -439,7 +438,7 @@ void SceneLoader::RetrieveObject(const aiScene* scene, const aiNode* node, glm::
 	objects.push_back(creationData);
 }
 
-ObjectCreationData GenericLoader::LoadObjectFile(std::string path)
+ObjectCreationData GenericLoader::LoadObjectFile(std::string path) // kinda funky now, maybe make the funcion return multiple objects instead of one
 {
 	ObjectCreationData ret{};
 
@@ -452,13 +451,14 @@ ObjectCreationData GenericLoader::LoadObjectFile(std::string path)
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + path);
 
-	ret.amountOfMeshes = scene->mNumMeshes;
-	for (int i = 0; i < scene->mNumMeshes; i++) // convert the assimp resources into the engines resources
-	{
-		aiMesh* pMesh = scene->mMeshes[i];
-		aiMaterial* pMaterial = scene->mMaterials[pMesh->mMaterialIndex];
-		ret.meshes.push_back(GetMeshFromAssimp(pMesh));
-	}
+	ret.hasMesh = scene->mNumMeshes > 0;
+	if (!ret.hasMesh)
+		return ret;
+
+	aiMesh* pMesh = scene->mMeshes[0];
+	aiMaterial* pMaterial = scene->mMaterials[pMesh->mMaterialIndex];
+	ret.mesh = GetMeshFromAssimp(pMesh);
+
 	return ret;
 }
 

@@ -64,7 +64,7 @@ class Shooter : public Scene
 
 		for (auto& objData : loader.objects)
 		{
-			if (objData.meshes.empty())
+			if (!objData.hasMesh)
 				continue;
 
 			objData.scale = glm::vec3(2);

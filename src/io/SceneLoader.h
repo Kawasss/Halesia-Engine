@@ -94,8 +94,8 @@ struct ObjectCreationData
 	RigidCreationData hitBox;
 	uint8_t state = 0;
 	
-	int amountOfMeshes = 0;
-	std::vector<MeshCreationData> meshes;
+	bool hasMesh = false;
+	MeshCreationData mesh;
 };
 
 class BinaryReader
@@ -186,7 +186,7 @@ private:
 	void RetrieveType(NodeType type, NodeSize size);
 	void RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans);
 
-	std::vector<MeshCreationData>::iterator currentMesh;
+	MeshCreationData* currentMesh; // dont know how safe this is
 	std::vector<ObjectCreationData>::iterator currentObject;
 	std::vector<MaterialCreationData>::iterator currentMat;
 };
