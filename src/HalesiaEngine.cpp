@@ -39,10 +39,10 @@ inline float CalculateFrameTime(int fps)
 
 HalesiaEngine* HalesiaEngine::GetInstance()
 {
-	static HalesiaEngine instance;
+	static HalesiaEngine* instance = nullptr;
 	static  bool init = false;
 	if (init)
-		return &instance;
+		return instance;
 
 	std::cout << "Generating Halesia instance:" 
 		<< "\n  createInfo.startingScene = " << ToHexadecimalString((int)createInfo.startingScene) 
@@ -50,7 +50,8 @@ HalesiaEngine* HalesiaEngine::GetInstance()
 		<< "\n  createInfo.playIntro     = " << createInfo.playIntro << "\n\n";
 	try
 	{
-		instance.OnLoad(createInfo);
+		instance = new HalesiaEngine;
+		instance->OnLoad(createInfo);
 
 		const Vulkan::Context& context = Vulkan::GetContext();
 		SystemInformation systemInfo = GetCpuInfo();
@@ -77,7 +78,7 @@ HalesiaEngine* HalesiaEngine::GetInstance()
 	{
 		MessageBoxA(nullptr, "Caught an unknown error, this build is most likely corrupt and can't be used.", "Unknown engine error", MB_OK | MB_ICONERROR);
 	}
-	return &instance;
+	return instance;
 }
 
 void HalesiaEngine::SetCreateInfo(const HalesiaEngineCreateInfo& createInfo)
