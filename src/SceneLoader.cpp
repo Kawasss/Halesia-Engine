@@ -2,6 +2,7 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <unordered_map>
+#include <filesystem>
 
 #include <Windows.h>
 #include <compressapi.h>
@@ -57,6 +58,15 @@ void BinaryReader::DecompressFile()
 SceneLoader::SceneLoader(std::string sceneLocation) : reader(BinaryReader(sceneLocation)), location(sceneLocation) {}
 
 void SceneLoader::LoadScene() 
+{
+	std::filesystem::path path = location;
+	if (path.extension() == ".hsf")
+		LoadHSFFile();
+	else
+		LoadAssimpFile();
+}
+
+void SceneLoader::LoadHSFFile()
 {
 	reader.DecompressFile();
 
@@ -396,7 +406,7 @@ inline ShapeType GetShapeType(ObjectOptions flag)
 	return SHAPE_TYPE_BOX;
 }
 
-void SceneLoader::LoadFBXScene()
+void SceneLoader::LoadAssimpFile()
 {
 	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate);
 	if (scene == nullptr) // check if the file could be read

@@ -152,7 +152,6 @@ public:
 	SceneLoader(std::string sceneLocation);
 
 	void LoadScene();
-	void LoadFBXScene();
 
 	// camera related info
 	glm::vec3 cameraPos;
@@ -176,6 +175,9 @@ private:
 	std::string header;
 	std::string location;
 	BinaryReader reader;
+
+	void LoadHSFFile();
+	void LoadAssimpFile();
 
 	void RetrieveBoneData(MeshCreationData& creationData, const aiMesh* pMesh);
 	MeshCreationData RetrieveMeshData(aiMesh* pMesh);

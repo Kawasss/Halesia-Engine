@@ -60,7 +60,7 @@ class Shooter : public Scene
 		animManager = AnimationManager::Get();
 
 		SceneLoader loader("stdObj/pistol.gltf");
-		loader.LoadFBXScene();
+		loader.LoadScene();
 
 		for (auto& objData : loader.objects)
 		{
