@@ -1,7 +1,7 @@
 #include "renderer/Framebuffer.h"
 #include "renderer/Vulkan.h"
 
-Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, float relativeRes) : renderPass(renderPass), width(width * relativeRes), height(height * relativeRes), relRes(relRes)
+Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, float relativeRes) : renderPass(renderPass), width(static_cast<uint32_t>(width * relativeRes)), height(static_cast<uint32_t>(height * relativeRes)), relRes(relRes)
 {
 	this->images.resize(imageCount);
 	this->imageViews.resize(imageCount);
@@ -32,7 +32,7 @@ void Framebuffer::Allocate()
 	createInfo.width = width;
 	createInfo.height = height;
 	createInfo.renderPass = renderPass;
-	createInfo.attachmentCount = images.size();
+	createInfo.attachmentCount = static_cast<uint32_t>(images.size());
 	createInfo.pAttachments = imageViews.data();
 	createInfo.layers = 1;
 
@@ -42,8 +42,8 @@ void Framebuffer::Allocate()
 
 void Framebuffer::Resize(uint32_t width, uint32_t height)
 {
-	this->width = width * relRes;
-	this->height = height * relRes;
+	this->width  = static_cast<uint32_t>(width * relRes);
+	this->height = static_cast<uint32_t>(height * relRes);
 	Destroy();
 	Allocate();
 }

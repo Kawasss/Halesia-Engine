@@ -58,16 +58,19 @@ HalesiaEngine* HalesiaEngine::GetInstance()
 		VkPhysicalDeviceProperties properties = context.physicalDevice.Properties();
 		uint64_t vram = context.physicalDevice.VRAM();
 
-		std::cout << "\nDetected hardware:" 
-			<< "\n  CPU: " << systemInfo.CPUName 
-			<< "\n  logical processor count: " << systemInfo.processorCount 
-			<< "\n  physical RAM: " << systemInfo.installedRAM / 1024 << " MB\n" 
-			<< "\n  GPU: " << properties.deviceName 
-			<< "\n  type: " << string_VkPhysicalDeviceType(properties.deviceType) 
-			<< "\n  vulkan driver version: " << properties.driverVersion 
-			<< "\n  API version: " << properties.apiVersion 
-			<< "\n  heap 0 total memory (VRAM): " << vram / (1024.0f * 1024.0f) << " MB\n\n";
-
+		std::cout
+			<< "\n----------------------------------------"
+			<< "\nSystem info:"
+			<< "\n  CPU:           " << systemInfo.CPUName
+			<< "\n  thread count:  " << systemInfo.processorCount
+			<< "\n  physical RAM:  " << systemInfo.installedRAM / 1024 << " MB\n"
+			<< "\n  GPU:           " << properties.deviceName
+			<< "\n  type:          " << string_VkPhysicalDeviceType(properties.deviceType)
+			<< "\n  vulkan driver: " << properties.driverVersion
+			<< "\n  API version:   " << properties.apiVersion
+			<< "\n  heap 0 (VRAM): " << vram / (1024ull * 1024ull) << " MB"
+			<< "\n----------------------------------------\n\n";
+		
 		init = true;
 	}
 	catch (const std::exception& e) //catch any normal exception and return

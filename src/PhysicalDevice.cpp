@@ -180,14 +180,12 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
         std::cout << "  " + (std::string)extension << std::endl;
 #endif
 
-    vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
-
     Vulkan::ActivateLogicalDeviceExtensionFunctions(device, Vulkan::requiredLogicalDeviceExtensions);
 
     return device;
 }
 
-VkPhysicalDevice PhysicalDevice::Device()
+VkPhysicalDevice PhysicalDevice::Device() const
 {
     return physicalDevice;
 }

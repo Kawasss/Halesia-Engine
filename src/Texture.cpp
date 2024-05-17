@@ -206,13 +206,9 @@ std::vector<uint8_t> Image::GetImageData()
 	uint8_t* ptr = nullptr;
 	vkMapMemory(logicalDevice, copyMemory, 0, size, 0, (void**)&ptr);
 
-	int pngSize = size;
-	unsigned char* pngPtr = ptr;//stbi_write_png_to_mem(ptr, width * sizeof(uint8_t), width, height, 4, &pngSize); // 4 channels = rgba
-
 	std::vector<uint8_t> ret;
-	ret.resize(pngSize / sizeof(uint8_t));
-	memcpy(ret.data(), pngPtr, pngSize);
-	//STBI_FREE(pngPtr);
+	ret.resize(size / sizeof(uint8_t));
+	memcpy(ret.data(), ptr, size);
 
 	vkUnmapMemory(logicalDevice, copyMemory);
 	vkDestroyBuffer(logicalDevice, copyBuffer, nullptr);
