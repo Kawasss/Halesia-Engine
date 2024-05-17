@@ -122,7 +122,7 @@ void Object::SetScript(T* script)
 template<typename T> 
 T* Object::GetScript() 
 { 
-	static_assert(!std::is_base_of_v<T, Object> || scriptClass == nullptr, "Cannot get the script: the typename does not have Object as a base or the pointer is null");
+	static_assert(!std::is_base_of_v<T, Object>, "Cannot get the script: the typename does not have Object as a base or the pointer is null");
 	return static_cast<T*>(scriptClass); 
 }
 

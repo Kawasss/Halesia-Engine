@@ -22,13 +22,13 @@ public:
 	void SetFlags(ProfilerOptions options);
 	void Update(float delta);
 
-	const std::vector<float>& GetCPU() { return CPUUsage.buffer; }
-	const std::vector<float>& GetGPU() { return GPUUsage.buffer; }
-	const std::vector<float>& GetFrameTime() { return frameTime.buffer; }
-	const std::vector<uint64_t>& GetRAM() { return ramUsed.buffer; }
+	const std::vector<float>& GetCPU()        { return CPUUsage.buffer; }
+	const std::vector<float>& GetGPU()        { return GPUUsage.buffer; }
+	const std::vector<float>& GetFrameTime()  { return frameTime.buffer; }
+	const std::vector<uint64_t>& GetRAM()     { return ramUsed.buffer; }
 	const std::vector<size_t> GetVertexSize() { return vertexBufferUsage.buffer; }
-	const std::vector<size_t> GetIndexSize() { return indexBufferUsage.buffer; }
-	float Get1PercentLowFrameTime() { return frameTime1PLow; }
+	const std::vector<size_t> GetIndexSize()  { return indexBufferUsage.buffer; }
+	float Get1PercentLowFrameTime()           { return frameTime1PLow; }
 
 	static constexpr ProfilerOptions ALL_OPTIONS = UINT32_MAX;
 

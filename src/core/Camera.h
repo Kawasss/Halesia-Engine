@@ -79,6 +79,6 @@ template<typename T> void Camera::SetScript(T* script)
 
 template<typename T> T* Camera::GetScript() 
 { 
-	static_assert(!std::is_base_of_v<T, Camera> || attachedScript == nullptr, "Cannot set the camera script: the given typename does not have Camera as a base or the pointer is null");
+	static_assert(!std::is_base_of_v<T, Camera>, "Cannot set the camera script: the given typename does not have Camera as a base or the pointer is null");
 	return static_cast<T*>(attachedScript); 
 }

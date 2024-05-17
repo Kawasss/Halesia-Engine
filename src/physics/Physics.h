@@ -1,9 +1,11 @@
 #pragma once
-#include "PxPhysicsAPI.h"
-#include "PxShape.h"
-#include "../glm.h"
+#include <PxPhysicsAPI.h>
+#include <PxShape.h>
+
 #include <iostream>
 #include <string>
+
+#include "../glm.h"
 
 struct Mesh;
 class Object;
@@ -24,7 +26,9 @@ public:
 	{
 		std::string error = "PhysX error: " + (std::string)message + " in file " + (std::string)file + " at line " + std::to_string(line);
 		std::cout << error << std::endl;
+		#ifndef PHYSICS_NO_THROWING
 		throw std::runtime_error(error);
+		#endif
 	}
 };
 
