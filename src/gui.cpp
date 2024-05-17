@@ -151,7 +151,7 @@ void GUI::ShowWindowData(Win32Window* window)
 		ImGui::End();
 }
 
-void GUI::ShowObjectMeshes(std::vector<Mesh>& meshes)
+void GUI::ShowObjectMeshes(Mesh& mesh)
 {
 	ImGui::Text
 	(
@@ -164,7 +164,7 @@ void GUI::ShowObjectMeshes(std::vector<Mesh>& meshes)
 		"Material:   %i\n\n"
 		"center:     %.2f, %.2f, %.2f\n"
 		"extents:    %.2f, %.2f, %.2f\n",
-	meshes[0].vertexMemory, meshes[0].defaultVertexMemory, meshes[0].indexMemory, (uint64_t)meshes[0].BLAS.Get(), meshes[0].faceCount, (int)meshes[0].materialIndex, meshes[0].center.x, meshes[0].center.y, meshes[0].center.z, meshes[0].extents.x, meshes[0].extents.y, meshes[0].extents.z);
+	mesh.vertexMemory, mesh.defaultVertexMemory, mesh.indexMemory, (uint64_t)mesh.BLAS.Get(), mesh.faceCount, (int)mesh.materialIndex, mesh.center.x, mesh.center.y, mesh.center.z, mesh.extents.x, mesh.extents.y, mesh.extents.z);
 }
 
 void GUI::ShowObjectData(Object* object)
@@ -238,8 +238,8 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window*
 	if (objectIndex != -1 && ImGui::CollapsingHeader("Rigid body", flags) && objects[objectIndex]->rigid.type != RIGID_BODY_NONE)
 		ShowObjectRigidBody(objects[objectIndex]->rigid);
 
-	if (objectIndex != -1 && ImGui::CollapsingHeader("Meshes", flags) && !objects[objectIndex]->meshes.empty())
-		ShowObjectMeshes(objects[objectIndex]->meshes);
+	if (objectIndex != -1 && ImGui::CollapsingHeader("Meshes", flags) && objects[objectIndex]->mesh.IsValid())
+		ShowObjectMeshes(objects[objectIndex]->mesh);
 
 	ImGui::PopStyleVar(3);
 	ImGui::PopStyleColor(3);
@@ -489,8 +489,6 @@ void GUI::ShowObjectTable(const std::vector<Object*>& objects)
 	ImGui::TableNextColumn();
 	ImGui::Text("state");
 	ImGui::TableNextColumn();
-	ImGui::Text("mesh count");
-	ImGui::TableNextColumn();
 	ImGui::Text("has script");
 	ImGui::TableNextColumn();
 	ImGui::Text("finished loading");
@@ -510,8 +508,6 @@ void GUI::ShowObjectTable(const std::vector<Object*>& objects)
 		ImGui::Text(std::to_string(currentObj->handle).c_str());
 		ImGui::TableNextColumn();
 		ImGui::Text(ObjectStateToString(currentObj->state).c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(std::to_string(currentObj->meshes.size()).c_str());
 		ImGui::TableNextColumn();
 		ImGui::Text(currentObj->HasScript() ? "true" : "false");
 		ImGui::TableNextColumn();

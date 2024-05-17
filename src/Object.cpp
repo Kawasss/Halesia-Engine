@@ -11,19 +11,18 @@ void Object::AwaitGeneration()
 {
 	if (generation.valid())
 		generation.get();
-	for (Mesh& mesh : meshes)
-		mesh.AwaitGeneration();
+	mesh.AwaitGeneration();
 }
 
 void Object::GenerateObjectWithData(const ObjectCreationData& creationData)
 {
-	for (int i = 0; i < creationData.meshes.size(); i++)
-		meshes[i].Create(creationData.meshes[i]);
+	if (!creationData.meshes.empty())
+		mesh.Create(creationData.meshes[0]);
 
 	if (creationData.hitBox.shapeType != SHAPE_TYPE_NONE)
 	{
 		Shape shape = Shape::GetShapeFromType(creationData.hitBox.shapeType, creationData.hitBox.extents);
-		AddRigidBody(creationData.hitBox.rigidType, shape);
+		SetRigidBody(creationData.hitBox.rigidType, shape);
 		transform.position = creationData.position;
 		transform.rotation = creationData.rotation;
 		rigid.ForcePosition(transform);
@@ -46,11 +45,10 @@ void Object::Initialize(const ObjectCreationData& creationData, void* customClas
 {
 	name = creationData.name;
 	scriptClass = customClassPointer;
-	meshes.resize(creationData.meshes.size());
 	state = (ObjectState)creationData.state;
 
 	if (!creationData.meshes.empty())
-		transform = Transform(creationData.position, creationData.rotation, creationData.scale, meshes[0].extents, meshes[0].center); // should determine the extents and center (minmax) of all meshes not just the first one
+		transform = Transform(creationData.position, creationData.rotation, creationData.scale, mesh.extents, mesh.center); // should determine the extents and center (minmax) of all meshes not just the first one
 	handle = ResourceManager::GenerateHandle();
 	name = creationData.name;
 	transform.position = creationData.position;
@@ -61,13 +59,11 @@ void Object::Initialize(const ObjectCreationData& creationData, void* customClas
 	Start();
 }
 
-void Object::AddMesh(const std::vector<MeshCreationData>& creationData)
+void Object::SetMesh(const std::vector<MeshCreationData>& creationData)
 {
-	for (int i = 0; i < creationData.size(); i++)
-	{
-		meshes.push_back({});
-		meshes.back().Create(creationData[i]);
-	}
+	if (creationData.empty())
+		return;
+	mesh.Create(creationData[0]);
 }
 
 void Object::AddChild(Object* object)
@@ -109,7 +105,7 @@ void Object::TransferChild(Object* child, Object* destination)
 
 void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script)
 {
-	newObjPtr->meshes = oldObjPtr->meshes;
+	newObjPtr->mesh = oldObjPtr->mesh;
 	newObjPtr->transform = oldObjPtr->transform;
 	newObjPtr->name = name;
 	newObjPtr->finishedLoading = true;
@@ -117,7 +113,7 @@ void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, v
 	newObjPtr->handle = ResourceManager::GenerateHandle();
 
 	if (oldObjPtr->rigid.type != RIGID_BODY_NONE)
-		newObjPtr->AddRigidBody(oldObjPtr->rigid.type, oldObjPtr->rigid.shape);
+		newObjPtr->SetRigidBody(oldObjPtr->rigid.type, oldObjPtr->rigid.shape);
 
 	newObjPtr->Start();
 	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + oldObjPtr->name + "\" with" + (script == nullptr ? "out a script" : " a script"), MESSAGE_SEVERITY_DEBUG);
@@ -135,7 +131,7 @@ Object* Object::AddChild(const ObjectCreationData& creationData)
 	return obj;
 }
 
-void Object::AddRigidBody(RigidBodyType type, Shape shape)
+void Object::SetRigidBody(RigidBodyType type, Shape shape)
 {
 	rigid = RigidBody(shape, type, transform.position, transform.rotation);
 	rigid.SetUserData(this);
@@ -155,13 +151,11 @@ bool Object::HasFinishedLoading()
 
 void Object::Destroy(bool del)
 {
-	for (Mesh& mesh : meshes)
-		mesh.Destroy();
+	mesh.Destroy();
 	for (Object* obj : children)
 		obj->Destroy();
 	if (parent != nullptr)
 		parent->RemoveChild(this);
-	meshes.clear();
 	rigid.Destroy();
 	rigid.type = RIGID_BODY_NONE;
 	if (del) delete this;

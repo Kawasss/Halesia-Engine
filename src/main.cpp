@@ -40,7 +40,7 @@ class StreamerTest : public Scene
 
 		Object* light = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
 		light->AwaitGeneration();
-		light->meshes[0].SetMaterial(lightMat);
+		light->mesh.SetMaterial(lightMat);
 		light->transform.position.y += 10;
 		light->transform.scale += glm::vec3(5, 0, 5);
 	}

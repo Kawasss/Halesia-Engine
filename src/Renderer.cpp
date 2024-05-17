@@ -392,8 +392,7 @@ void Renderer::SetModelData(uint32_t currentImage, const std::vector<Object*>& o
 			continue;
 
 		ModelData data = { object->transform.GetModelMatrix(), glm::vec4(ResourceManager::ConvertHandleToVec3(object->handle), 1) };
-		for (Mesh& mesh : object->meshes)
-			modelMatrices.push_back(data);
+		modelMatrices.push_back(data);
 	}
 	memcpy(modelBuffersMapped[currentImage], modelMatrices.data(), modelMatrices.size() * sizeof(glm::mat4));
 }
@@ -641,8 +640,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	WriteTimestamp(commandBuffer);
 	for (Object* obj : objects)
-		for (Mesh& mesh : obj->meshes)
-			mesh.BLAS->RebuildGeometry(commandBuffer, mesh);
+		obj->mesh.BLAS->RebuildGeometry(commandBuffer, obj->mesh);
 	WriteTimestamp(commandBuffer);
 
 	VkImageView imageToCopy = VK_NULL_HANDLE;
@@ -945,7 +943,7 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 
 inline bool ObjectIsValid(Object* object)
 {
-	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && !object->meshes.empty() && !object->shouldBeDestroyed;
+	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && object->mesh.IsValid() && !object->shouldBeDestroyed;
 }
 
 inline void ResetImGui()
@@ -1042,16 +1040,13 @@ void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
 	std::vector<VkDrawIndexedIndirectCommand> parameters;
 	for (int i = 0; i < objects.size(); i++)
 	{
-		for (int j = 0; j < objects[i]->meshes.size(); j++)
-		{
-			VkDrawIndexedIndirectCommand parameter{};
-			parameter.indexCount = static_cast<uint32_t>(objects[i]->meshes[j].indices.size());
-			parameter.firstIndex = static_cast<uint32_t>(g_indexBuffer.GetItemOffset(objects[i]->meshes[j].indexMemory));
-			parameter.vertexOffset = static_cast<uint32_t>(g_vertexBuffer.GetItemOffset(objects[i]->meshes[j].vertexMemory));
-			parameter.instanceCount = 1;
+		VkDrawIndexedIndirectCommand parameter{};
+		parameter.indexCount    = static_cast<uint32_t>(objects[i]->mesh.indices.size());
+		parameter.firstIndex    = static_cast<uint32_t>(g_indexBuffer.GetItemOffset(objects[i]->mesh.indexMemory));
+		parameter.vertexOffset  = static_cast<uint32_t>(g_vertexBuffer.GetItemOffset(objects[i]->mesh.vertexMemory));
+		parameter.instanceCount = 1;
 
-			parameters.push_back(parameter);
-		}
+		parameters.push_back(parameter);
 	}
 	indirectDrawParameters.SubmitNewData(parameters);
 }

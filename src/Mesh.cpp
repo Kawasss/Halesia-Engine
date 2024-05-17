@@ -79,6 +79,11 @@ void Mesh::AwaitGeneration()
 	materials[materialIndex].AwaitGeneration();
 }
 
+bool Mesh::IsValid() const
+{
+	return BLAS.Get() != nullptr;
+}
+
 void Mesh::Destroy()
 {
 	// should also delete the material in materials here (if no other meshes are referencing that material)

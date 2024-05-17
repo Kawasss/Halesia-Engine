@@ -73,8 +73,8 @@ public:
 
 	void Initialize(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
 
-	void AddRigidBody(RigidBodyType type, Shape shape);
-	void AddMesh(const std::vector<MeshCreationData>& creationData);
+	void SetRigidBody(RigidBodyType type, Shape shape);
+	void SetMesh(const std::vector<MeshCreationData>& creationData);
 	Object* AddChild(const ObjectCreationData& creationData);
 	void AddChild(Object* object);
 	void RemoveChild(Object* child); // this removes the child from this objects children
@@ -87,7 +87,7 @@ public:
 
 	Transform transform;
 	RigidBody rigid;
-	std::vector<Mesh> meshes;
+	Mesh mesh;
 	std::vector<Object*> children;
 	ObjectState state = OBJECT_STATE_VISIBLE;
 	std::string name;

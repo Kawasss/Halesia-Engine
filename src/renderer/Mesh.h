@@ -39,6 +39,7 @@ struct Mesh
 	void Recreate();
 	bool HasFinishedLoading();
 	void AwaitGeneration();
+	bool IsValid() const;
 
 	/// <summary>
 	/// Sets the material for this mesh, any old mesh will be overridden.

@@ -583,20 +583,17 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
 		glm::vec2 ndc = objects[i]->rigid.type == RIGID_BODY_DYNAMIC ? objects[i]->transform.GetMotionVector(camera->GetProjectionMatrix(), camera->GetViewMatrix()) * glm::vec2(width, height) : staticMotion;
-		for (int32_t j = 0; j < objects[i]->meshes.size(); j++)
-		{
-			Mesh& mesh = objects[i]->meshes[j];
-			instanceMeshDataPointer[i * objects[i]->meshes.size() + j] =
-			{ 
-				objects[i]->transform.GetModelMatrix(), 
-				(uint32_t)Renderer::g_indexBuffer.GetItemOffset(mesh.indexMemory), 
-				(uint32_t)Renderer::g_vertexBuffer.GetItemOffset(mesh.vertexMemory), 
-				mesh.materialIndex, 
-				Mesh::materials[mesh.materialIndex].isLight, 
-				ndc,
-				objects[i]->handle
-			};
-		}
+		Mesh& mesh = objects[i]->mesh;
+		instanceMeshDataPointer[i] =
+		{ 
+			objects[i]->transform.GetModelMatrix(), 
+			(uint32_t)Renderer::g_indexBuffer.GetItemOffset(mesh.indexMemory), 
+			(uint32_t)Renderer::g_vertexBuffer.GetItemOffset(mesh.vertexMemory), 
+			mesh.materialIndex, 
+			Mesh::materials[mesh.materialIndex].isLight, 
+			ndc,
+			objects[i]->handle
+		};
 	}
 }
 

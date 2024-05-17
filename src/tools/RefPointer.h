@@ -11,9 +11,9 @@ public:
 	RefPointer(const RefPointer<Type>& rhs);
 	~RefPointer();
 
-	Type* Get() { return value; }
-	Type* operator->() { return value; }
-	Type& operator*() { return *value; }
+	Type* Get() const  { return value;  }
+	Type* operator->() { return value;  }
+	Type& operator*()  { return *value; }
 	RefPointer<Type>& operator=(Type* ptr);
 
 	template<typename... Args>

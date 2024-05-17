@@ -126,7 +126,7 @@ template<typename Type>
 inline NodeSize GetArrayNodeSize(const std::vector<Type> vec) { return vec.size() * sizeof(Type); }
 inline NodeSize GetNameNodeSize(const std::string& name)      { return name.size() + 1; }
 inline NodeSize GetMeshNodeSize(const Mesh& mesh)             { return GetArrayNodeSize(mesh.vertices) + GetArrayNodeSize(mesh.indices) + sizeof(uint32_t); }
-inline NodeSize GetObjectNodeSize(const Object* object)       { return GetNameNodeSize(object->name) + (object->meshes.empty() ? 0 : GetMeshNodeSize(object->meshes[0])); } // should account for all meshes
+inline NodeSize GetObjectNodeSize(const Object* object)       { return GetNameNodeSize(object->name) + (object->mesh.IsValid() ? GetMeshNodeSize(object->mesh) : 0); } // should account for all meshes
 inline NodeSize GetTransformNodeSize()                        { return sizeof(glm::vec3) * 3; }
 inline NodeSize GetRigidBodyNodeSize()                        { return sizeof(uint8_t) * 2 + sizeof(glm::vec3); }
 
@@ -193,8 +193,8 @@ void HSFWriter::WriteObject(BinaryWriter& writer, Object* object)
 	WriteTransform(writer, object->transform);
 	WriteRigidBody(writer, object->rigid);
 
-	if (object->meshes.empty())
+	if (!object->mesh.IsValid())
 		return;
 
-	WriteMesh(writer, object->meshes[0]);
+	WriteMesh(writer, object->mesh);
 }

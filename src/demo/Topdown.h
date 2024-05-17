@@ -250,7 +250,7 @@ class Topdown : public Scene
 		Object* ship = AddCustomObject<Ship>(GenericLoader::LoadObjectFile("stdObj/ship.obj"));
 		ship->name = "ship";
 		ship->AwaitGeneration();
-		Shape shape = Box(ship->meshes[0].extents);
+		Shape shape = Box(ship->mesh.extents);
 		//ship->AddRigidBody(RIGID_BODY_KINEMATIC, shape);
 		camera->GetScript<FollowCam>()->objToFollow = ship;
 
@@ -261,7 +261,7 @@ class Topdown : public Scene
 		floor->transform.position.y = -3;
 
 		Shape floorShape = Box(glm::vec3(20, 1, 20));
-		floor->AddRigidBody(RIGID_BODY_STATIC, floorShape);
+		floor->SetRigidBody(RIGID_BODY_STATIC, floorShape);
 		floor->rigid.ForcePosition(floor->transform);
 
 		Object* light = DuplicateStaticObject(floor, "light");
@@ -271,7 +271,7 @@ class Topdown : public Scene
 		lightInfo.albedo = "textures/glockAlbedo.png";
 		lightInfo.isLight = true;
 		Material lightMat = Material::Create(lightInfo);
-		light->meshes[0].SetMaterial(lightMat);
+		light->mesh.SetMaterial(lightMat);
 
 		MaterialCreateInfo boxInfo{};
 		boxInfo.albedo = "textures/red.png";
@@ -284,7 +284,7 @@ class Topdown : public Scene
 		box->AwaitGeneration();
 		box->transform.scale = glm::vec3(1, 1, 1);
 		box->transform.position = glm::vec3(5, 0, 0);
-		box->meshes[0].SetMaterial(boxMat);
+		box->mesh.SetMaterial(boxMat);
 
 		MaterialCreateInfo bulletInfo{};
 		bulletInfo.albedo = "textures/uv.png";
@@ -293,17 +293,17 @@ class Topdown : public Scene
 
 		baseBullet = AddCustomObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/bullet.obj"));
 		baseBullet->name = "bullet";
-		baseBullet->AddRigidBody(RIGID_BODY_KINEMATIC, Box(baseBullet->meshes[0].extents));
+		baseBullet->SetRigidBody(RIGID_BODY_KINEMATIC, Box(baseBullet->mesh.extents));
 		baseBullet->state = OBJECT_STATE_DISABLED;
 		baseBullet->transform.position.y = -5;
-		baseBullet->meshes[0].SetMaterial(bulletMat);
+		baseBullet->mesh.SetMaterial(bulletMat);
 		baseBullet->rigid.ForcePosition(baseBullet->transform);
 
 		ship->GetScript<Ship>()->baseBullet = baseBullet;
 		box->GetScript<Enemy>()->baseBullet = baseBullet;
 		box->GetScript<Enemy>()->player = ship;
 
-		box->AddRigidBody(RIGID_BODY_KINEMATIC, Box(box->meshes[0].extents));
+		box->SetRigidBody(RIGID_BODY_KINEMATIC, Box(box->mesh.extents));
 
 		//HSFWriter::WriteHSFScene(this, "scene.hsf");
 	}

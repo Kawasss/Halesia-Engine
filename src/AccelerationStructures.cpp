@@ -215,22 +215,19 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 	for (int i = 0; i < objects.size(); i++)
 	{
 		std::lock_guard<std::mutex> lockGuard(objects[i]->mutex);
-		if (!objects[i]->HasFinishedLoading() || objects[i]->state != OBJECT_STATE_VISIBLE || objects[i]->meshes.empty()) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
+		if (!objects[i]->HasFinishedLoading() || objects[i]->state != OBJECT_STATE_VISIBLE || !objects[i]->mesh.IsValid()) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
 			continue;
 
-		for (int j = 0; j < objects[i]->meshes.size(); j++)																	   // converts every mesh from every object into an acceleration structure instance
-		{
-			VkAccelerationStructureInstanceKHR instance{};
-			instance.instanceCustomIndex = objects[i]->meshes.size() * processedAmount + j;
-			instance.mask = 0xFF;
-			instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
-			instance.accelerationStructureReference = objects[i]->meshes[j].BLAS->GetAccelerationStructureAddress();
+		VkAccelerationStructureInstanceKHR instance{};
+		instance.instanceCustomIndex = processedAmount;
+		instance.mask = 0xFF;
+		instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+		instance.accelerationStructureReference = objects[i]->mesh.BLAS->GetAccelerationStructureAddress();
 			
-			glm::mat4 transform = glm::transpose(objects[i]->transform.GetModelMatrix());
-			memcpy(&instance.transform, &transform, sizeof(VkTransformMatrixKHR));											   // simply copy the contents of the glm matrix to the vulkan matrix since the contents align
+		glm::mat4 transform = glm::transpose(objects[i]->transform.GetModelMatrix());
+		memcpy(&instance.transform, &transform, sizeof(VkTransformMatrixKHR));											   // simply copy the contents of the glm matrix to the vulkan matrix since the contents align
 
-			instances.push_back(instance);
-		}
+		instances.push_back(instance);
 		processedAmount++;
 	}
 	return instances;
