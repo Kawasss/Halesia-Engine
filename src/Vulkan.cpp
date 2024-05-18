@@ -64,7 +64,7 @@ const Vulkan::Context& Vulkan::GetContext()
 
 bool Vulkan::Context::IsValid()
 {
-    return instance == VK_NULL_HANDLE || logicalDevice == VK_NULL_HANDLE || physicalDevice.Device() == VK_NULL_HANDLE;
+    return !(instance == VK_NULL_HANDLE || logicalDevice == VK_NULL_HANDLE || physicalDevice.Device() == VK_NULL_HANDLE);
 }
 
 void Vulkan::DeleteSubmittedObjects()
