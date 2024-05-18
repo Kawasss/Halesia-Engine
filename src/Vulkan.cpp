@@ -45,7 +45,7 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
 {
     std::string vulkanError = result == VK_SUCCESS ? "\n\n" : ":\n\n " + (std::string)string_VkResult(result) + " "; // result can be VK_SUCCESS for functions that dont use a vulkan functions, i.e. looking for a physical device but there are none that fit the bill
     std::string location = functionName == "" ? "" : "from " + functionName;
-    location += line == 0 ? "" : " at line " + line;
+    location += line == 0 ? "" : " at line " + std::to_string(line);
     location += file == "" ? "" : " in " + file;
 
     this->message = message + vulkanError + location;
