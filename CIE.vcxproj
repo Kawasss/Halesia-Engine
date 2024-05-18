@@ -192,6 +192,7 @@
     <ClCompile Include="src\ToString.cpp" />
     <ClCompile Include="src\Transform.cpp" />
     <ClCompile Include="src\Vulkan.cpp" />
+    <ClCompile Include="src\Buffer.cpp" />
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -252,6 +253,7 @@
     <ClInclude Include="src\renderer\Texture.h" />
     <ClInclude Include="src\renderer\Vertex.h" />
     <ClInclude Include="src\renderer\Vulkan.h" />
+    <ClInclude Include="src\renderer\Buffer.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\ResourceManager.h" />
     <ClInclude Include="src\system\Input.h" />

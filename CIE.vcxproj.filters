@@ -231,6 +231,9 @@
     <ClCompile Include="src\DescriptorWriter.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\Buffer.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -429,6 +432,9 @@
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\DescriptorWriter.h">
+      <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\Buffer.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
   </ItemGroup>

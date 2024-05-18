@@ -375,7 +375,7 @@ void Renderer::CreateModelDataBuffers()
 	modelBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 	modelBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
 	modelBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-
+	
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, modelBuffers[i], modelBuffersMemory[i]);
