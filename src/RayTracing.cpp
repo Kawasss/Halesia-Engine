@@ -67,8 +67,8 @@ void RayTracing::Destroy()
 	//vkDestroySemaphore(logicalDevice, semaphore, nullptr);
 	//CloseHandle(semaphoreHandle);
 
-	vkFreeMemory(logicalDevice, uniformBufferMemory, nullptr);
-	vkDestroyBuffer(logicalDevice, uniformBufferBuffer, nullptr);
+	/*vkFreeMemory(logicalDevice, uniformBufferMemory, nullptr);
+	vkDestroyBuffer(logicalDevice, uniformBufferBuffer, nullptr);*/
 
 	TLAS->Destroy();
 	for (BottomLevelAccelerationStructure* pBLAS : BLASs)
@@ -95,7 +95,6 @@ void RayTracing::SetUp(Win32Window* window, Swapchain* swapchain)
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 	this->logicalDevice = context.logicalDevice;
-	this->physicalDevice = context.physicalDevice;
 	this->swapchain = swapchain;
 	this->window = window;
 
@@ -105,7 +104,7 @@ void RayTracing::SetUp(Win32Window* window, Swapchain* swapchain)
 	properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
 	properties2.pNext = &rayTracingProperties;
 
-	vkGetPhysicalDeviceProperties2(physicalDevice.Device(), &properties2);
+	vkGetPhysicalDeviceProperties2(context.physicalDevice.Device(), &properties2);
 
 	denoiser = Denoiser::Create();
 
@@ -249,19 +248,17 @@ void RayTracing::CreateRayTracingPipeline(const std::vector<std::vector<char>> s
 
 void RayTracing::CreateBuffers(const ShaderGroupReflector& groupReflection)
 {
-	Vulkan::CreateBuffer(sizeof(UniformBuffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, uniformBufferBuffer, uniformBufferMemory);
-
-	vkMapMemory(logicalDevice, uniformBufferMemory, 0, sizeof(UniformBuffer), 0, (void**)&uniformBufferMemPtr);
+	uniformBufferBuffer.Init(sizeof(UniformBuffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	uniformBufferMemPtr = uniformBufferBuffer.Map<UniformBuffer>();
 
 	VkDeviceSize instanceDataSize = sizeof(InstanceMeshData) * Renderer::MAX_MESHES;
+	instanceMeshDataBuffer.Init(instanceDataSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	instanceMeshDataPointer = instanceMeshDataBuffer.Map<InstanceMeshData>();
 
-	Vulkan::CreateBuffer(instanceDataSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, instanceMeshDataBuffer, instanceMeshDataMemory);
-	vkMapMemory(logicalDevice, instanceMeshDataMemory, 0, instanceDataSize, 0, (void**)&instanceMeshDataPointer);
+	handleBuffer.Init(sizeof(uint64_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	handleBufferMemPointer = handleBuffer.Map<uint64_t>();
 
 	CreateShaderBindingTable();
-
-	Vulkan::CreateBuffer(sizeof(uint64_t), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, handleBuffer, handleBufferMemory);
-	vkMapMemory(logicalDevice, handleBufferMemory, 0, sizeof(uint64_t), 0, (void**)&handleBufferMemPointer);
 
 	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
 	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
@@ -277,10 +274,10 @@ void RayTracing::CreateBuffers(const ShaderGroupReflector& groupReflection)
 	writeSet.descriptorCount = 1;
 	writeSet.dstBinding = 0;
 
-	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], uniformBufferBuffer, 0, 1);
+	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], uniformBufferBuffer.Get(), 0, 1);
 	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], Renderer::g_indexBuffer.GetBufferHandle(), 0, 2);
 	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], Renderer::g_vertexBuffer.GetBufferHandle(), 0, 3);
-	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], handleBuffer, 0, 7);
+	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], handleBuffer.Get(), 0, 7);
 	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], denoiser->GetMotionBuffer(), 0, 8);
 
 	vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
@@ -290,7 +287,7 @@ void RayTracing::CreateBuffers(const ShaderGroupReflector& groupReflection)
 void RayTracing::CreateMotionBuffer()
 {
 	VkDeviceSize size = width * height * sizeof(glm::vec2);
-	Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, motionBuffer, motionMemory);
+	motionBuffer.Init(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
 void RayTracing::Init(Win32Window* window, Swapchain* swapchain)
@@ -310,12 +307,12 @@ void RayTracing::Init(Win32Window* window, Swapchain* swapchain)
 void RayTracing::UpdateMeshDataDescriptorSets()
 {
 	VkDescriptorBufferInfo materialBufferDescriptorInfo{};
-	materialBufferDescriptorInfo.buffer = materialBuffer;
+	materialBufferDescriptorInfo.buffer = materialBuffer.Get();
 	materialBufferDescriptorInfo.offset = 0;
 	materialBufferDescriptorInfo.range = VK_WHOLE_SIZE;
 
 	VkDescriptorBufferInfo instanceDataBufferDescriptorInfo{};
-	instanceDataBufferDescriptorInfo.buffer = instanceMeshDataBuffer;
+	instanceDataBufferDescriptorInfo.buffer = instanceMeshDataBuffer.Get();
 	instanceDataBufferDescriptorInfo.offset = 0;
 	instanceDataBufferDescriptorInfo.range = VK_WHOLE_SIZE;
 
@@ -362,8 +359,7 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 		vkDestroyImage(logicalDevice, prevImage, nullptr);
 		vkFreeMemory(logicalDevice, prevMemory, nullptr);
 
-		vkDestroyBuffer(context.logicalDevice, motionBuffer, nullptr);
-		vkFreeMemory(context.logicalDevice, motionMemory, nullptr);
+		motionBuffer.Destroy();
 	}
 	
 	for (int i = 0; i < gBuffers.size(); i++)
@@ -521,7 +517,7 @@ void RayTracing::UpdateDescriptorSets()
 	VkDescriptorImageInfo prevImageDescriptorImageInfo = GetImageInfo(prevImageView);
 
 	VkDescriptorBufferInfo motionBufferInfo{};
-	motionBufferInfo.buffer = motionBuffer;
+	motionBufferInfo.buffer = motionBuffer.Get();
 	motionBufferInfo.offset = 0;
 	motionBufferInfo.range = VK_WHOLE_SIZE;
 

@@ -12,6 +12,7 @@
 #include "Surface.h"
 #include "Vertex.h"
 #include "StorageBuffer.h"
+#include "Buffer.h"
 #include "cuda_runtime_api.h"
 
 class Intro;
@@ -105,13 +106,11 @@ private:
 	std::vector<VkFence>			inFlightFences;
 	std::vector<VkDescriptorSet>	descriptorSets;
 
-	std::vector<VkBuffer>			uniformBuffers;
-	std::vector<VkDeviceMemory>		uniformBuffersMemory;
-	std::vector<void*>				uniformBuffersMapped;
+	std::array<Buffer, MAX_FRAMES_IN_FLIGHT> uniformBuffers;
+	std::array<void*, MAX_FRAMES_IN_FLIGHT>	 uniformBuffersMapped;
 
-	std::vector<VkBuffer>			modelBuffers;
-	std::vector<VkDeviceMemory>		modelBuffersMemory;
-	std::vector<void*>				modelBuffersMapped;
+	std::array<Buffer, MAX_FRAMES_IN_FLIGHT> modelBuffers;
+	std::array<void*, MAX_FRAMES_IN_FLIGHT>	 modelBuffersMapped;
 
 	StorageBuffer<VkDrawIndexedIndirectCommand> indirectDrawParameters;
 	std::unordered_map<int, Handle> processedMaterials;

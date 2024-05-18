@@ -100,7 +100,7 @@ void Renderer::Destroy()
 
 	vkDestroySampler(logicalDevice, defaultSampler, nullptr);
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	/*for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		vkDestroyBuffer(logicalDevice, uniformBuffers[i], nullptr);
 		vkFreeMemory(logicalDevice, uniformBuffersMemory[i], nullptr);
@@ -110,7 +110,7 @@ void Renderer::Destroy()
 	{
 		vkDestroyBuffer(logicalDevice, modelBuffers[i], nullptr);
 		vkFreeMemory(logicalDevice, modelBuffersMemory[i], nullptr);
-	}
+	}*/
 
 	Texture::DestroyPlaceholderTextures();
 
@@ -371,15 +371,11 @@ void Renderer::CreateTextureSampler()
 void Renderer::CreateModelDataBuffers()
 {
 	VkDeviceSize size = sizeof(glm::mat4) * MAX_MESHES;
-	
-	modelBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	modelBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-	modelBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-	
+
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, modelBuffers[i], modelBuffersMemory[i]);
-		vkMapMemory(logicalDevice, modelBuffersMemory[i], 0, size, 0, &modelBuffersMapped[i]);
+		modelBuffers[i].Init(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		modelBuffersMapped[i] = modelBuffers[i].Map();
 	}
 }
 
@@ -401,14 +397,10 @@ void Renderer::CreateUniformBuffers()
 {
 	VkDeviceSize size = sizeof(UniformBufferObject);
 
-	uniformBuffers.resize(MAX_FRAMES_IN_FLIGHT);
-	uniformBuffersMemory.resize(MAX_FRAMES_IN_FLIGHT);
-	uniformBuffersMapped.resize(MAX_FRAMES_IN_FLIGHT);
-
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniformBuffers[i], uniformBuffersMemory[i]);
-		vkMapMemory(logicalDevice, uniformBuffersMemory[i], 0, size, 0, &uniformBuffersMapped[i]);
+		uniformBuffers[i].Init(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		uniformBuffersMapped[i] = uniformBuffers[i].Map();
 	}
 }
 
@@ -439,8 +431,8 @@ void Renderer::CreateDescriptorSets()
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		writer->WriteBuffer(descriptorSets[i], uniformBuffers[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
-		writer->WriteBuffer(descriptorSets[i], modelBuffers[i], VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
+		writer->WriteBuffer(descriptorSets[i], uniformBuffers[i].Get(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
+		writer->WriteBuffer(descriptorSets[i], modelBuffers[i].Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
 		writer->WriteBuffer(descriptorSets[i], fwdPlus->GetCellBuffer(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
 		writer->WriteBuffer(descriptorSets[i], fwdPlus->GetLightBuffer(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4);
 		writer->WriteImage(descriptorSets[i], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, canRayTrace ? rayTracer->gBufferViews[0] : VK_NULL_HANDLE, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);

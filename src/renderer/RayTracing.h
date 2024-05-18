@@ -1,9 +1,13 @@
 #pragma once
 #include <unordered_map>
-#include "renderer/PhysicalDevice.h"
-#include "../ResourceManager.h"
-#include "optix.h"
 #include <array>
+
+#include "PhysicalDevice.h"
+#include "Buffer.h"
+
+#include "../ResourceManager.h"
+
+#include "optix.h"
 #include "cuda_runtime_api.h"
 
 typedef void* HANDLE;
@@ -74,20 +78,15 @@ private:
 
 	bool imageHasChanged = false;
 
-	VkDevice logicalDevice					= VK_NULL_HANDLE;
+	VkDevice logicalDevice		  = VK_NULL_HANDLE;
+	VkCommandPool commandPool	  = VK_NULL_HANDLE;
 
-	VkCommandPool commandPool				= VK_NULL_HANDLE;
-	PhysicalDevice physicalDevice			= VK_NULL_HANDLE;
-
-	VkBuffer handleBuffer					= VK_NULL_HANDLE;
-	VkDeviceMemory handleBufferMemory		= VK_NULL_HANDLE;
-
-	VkBuffer materialBuffer					= VK_NULL_HANDLE;
-	VkDeviceMemory materialBufferMemory		= VK_NULL_HANDLE;
-
+	Buffer handleBuffer;
+	Buffer materialBuffer;
+	Buffer uniformBufferBuffer;
+	Buffer motionBuffer;
+	Buffer instanceMeshDataBuffer;
 	InstanceMeshData* instanceMeshDataPointer = nullptr;
-	VkBuffer instanceMeshDataBuffer			= VK_NULL_HANDLE;
-	VkDeviceMemory instanceMeshDataMemory	= VK_NULL_HANDLE;
 
 	VkDescriptorPool descriptorPool;
 	VkDescriptorSetLayout descriptorSetLayout;
@@ -99,15 +98,9 @@ private:
 	VkPipelineLayout pipelineLayout;
 	VkPipeline pipeline;
 
-	VkBuffer uniformBufferBuffer;
-	VkDeviceMemory uniformBufferMemory;
-
 	VkImage prevImage;
 	VkImageView prevImageView;
 	VkDeviceMemory prevMemory;
-
-	VkBuffer motionBuffer;
-	VkDeviceMemory motionMemory;
 
 	std::array<VkDeviceMemory, 4> gBufferMemories;
 	std::unordered_map<int, Handle> processedMaterials;
