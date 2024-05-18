@@ -46,6 +46,8 @@ public:
         uint32_t presentIndex;
         VkQueue computeQueue;
         uint32_t computeIndex;
+
+        bool IsValid();
     };
 
     struct SwapChainSupportDetails

@@ -58,7 +58,13 @@ void Vulkan::InitializeContext(Context context)
 
 const Vulkan::Context& Vulkan::GetContext()
 {
+    assert(context.IsValid() && "Invalid call to Vulkan::GetContext(): the requested context does not exist");
     return context;
+}
+
+bool Vulkan::Context::IsValid()
+{
+    return instance == VK_NULL_HANDLE || logicalDevice == VK_NULL_HANDLE || physicalDevice.Device() == VK_NULL_HANDLE;
 }
 
 void Vulkan::DeleteSubmittedObjects()
