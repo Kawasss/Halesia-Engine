@@ -36,7 +36,7 @@ int GetID(Vertex v, int index)
 	case 3:
 		return v.boneIDs1.w;
 	}
-	return 0;
+	return -1;
 }
 
 float GetWeight(Vertex v, int index)
@@ -73,8 +73,6 @@ void main()
 		vec3 normal = mat3(trans) * currentVertex.normal;
 		finalNormal += normal * GetWeight(currentVertex, i);
 	}
-	if (finalNormal == vec3(0))
-		return;
 
 	vertexBuffer.data[gl_GlobalInvocationID.x].position = finalPos.xyz;
 	vertexBuffer.data[gl_GlobalInvocationID.x].normal = finalNormal;
