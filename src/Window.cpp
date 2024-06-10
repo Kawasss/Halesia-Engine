@@ -111,21 +111,34 @@ void Win32Window::ChangeWindowMode(WindowMode windowMode)
 	if (windowMode == currentWindowMode)
 		return;
 
+	HMONITOR monitor = MonitorFromWindow(window, 0);
+
+	MONITORINFOEXA monitorInfo{};
+	monitorInfo.cbSize = sizeof(monitorInfo);
+	if (!GetMonitorInfoA(monitor, &monitorInfo))
+		throw std::runtime_error("Failed to fetch relevant monitor info");
+
+	int maxWidth =  abs(monitorInfo.rcMonitor.left - monitorInfo.rcMonitor.right);
+	int maxHeight = abs(monitorInfo.rcMonitor.top - monitorInfo.rcMonitor.bottom);
+
+	int baseX = monitorInfo.rcMonitor.left;
+	int baseY = monitorInfo.rcMonitor.top;
+
 	if (currentWindowMode == WINDOW_MODE_BORDERLESS_WINDOWED)
 	{
-		width = monitorWidth / 2;
-		height = monitorHeight / 2;
+		width = maxWidth / 2;
+		height = maxHeight / 2;
 		SetWindowLongPtr(window, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-		if (SetWindowPos(window, NULL, width / 2, height / 2, width, height, SWP_FRAMECHANGED) == 0)
+		if (SetWindowPos(window, NULL, baseX + width / 2, baseY + height / 2, width, height, SWP_FRAMECHANGED) == 0)
 			throw std::runtime_error("Failed to resize the window to windowed mode: " + WinGetLastErrorAsString());
 		currentWindowMode = WINDOW_MODE_WINDOWED;
 	}
 	else if (currentWindowMode == WINDOW_MODE_WINDOWED)
 	{
-		width = monitorWidth;
-		height = monitorHeight;
+		width = maxWidth;
+		height = maxHeight;
 		SetWindowLong(window, GWL_STYLE, BORDERLESS_WINDOWED);
-		if (SetWindowPos(window, NULL, 0, 0, monitorWidth, monitorHeight, SWP_FRAMECHANGED) == 0)
+		if (SetWindowPos(window, NULL, baseX, baseY, width, height, SWP_FRAMECHANGED) == 0)
 			throw std::runtime_error("Failed to resize the window to borderless windowed mode: " + WinGetLastErrorAsString());
 		currentWindowMode = WINDOW_MODE_BORDERLESS_WINDOWED;
 	}
