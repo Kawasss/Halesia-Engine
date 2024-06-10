@@ -121,15 +121,15 @@ void Win32Window::ChangeWindowMode(WindowMode windowMode)
 	int maxWidth =  abs(monitorInfo.rcMonitor.left - monitorInfo.rcMonitor.right);
 	int maxHeight = abs(monitorInfo.rcMonitor.top - monitorInfo.rcMonitor.bottom);
 
-	int baseX = monitorInfo.rcMonitor.left;
-	int baseY = monitorInfo.rcMonitor.top;
+	x = monitorInfo.rcMonitor.left;
+	y = monitorInfo.rcMonitor.top;
 
 	if (currentWindowMode == WINDOW_MODE_BORDERLESS_WINDOWED)
 	{
 		width = maxWidth / 2;
 		height = maxHeight / 2;
 		SetWindowLongPtr(window, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-		if (SetWindowPos(window, NULL, baseX + width / 2, baseY + height / 2, width, height, SWP_FRAMECHANGED) == 0)
+		if (SetWindowPos(window, NULL, x + width / 2, y + height / 2, width, height, SWP_FRAMECHANGED) == 0)
 			throw std::runtime_error("Failed to resize the window to windowed mode: " + WinGetLastErrorAsString());
 		currentWindowMode = WINDOW_MODE_WINDOWED;
 	}
@@ -138,7 +138,7 @@ void Win32Window::ChangeWindowMode(WindowMode windowMode)
 		width = maxWidth;
 		height = maxHeight;
 		SetWindowLong(window, GWL_STYLE, BORDERLESS_WINDOWED);
-		if (SetWindowPos(window, NULL, baseX, baseY, width, height, SWP_FRAMECHANGED) == 0)
+		if (SetWindowPos(window, NULL, x, y, width, height, SWP_FRAMECHANGED) == 0)
 			throw std::runtime_error("Failed to resize the window to borderless windowed mode: " + WinGetLastErrorAsString());
 		currentWindowMode = WINDOW_MODE_BORDERLESS_WINDOWED;
 	}
@@ -290,12 +290,14 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 		case WM_SIZING:
 		case WM_SIZE: // when the window is resized
 		{
-			RECT resizedWindowDimensions;
-			GetWindowRect(hwnd, &resizedWindowDimensions);
-
+			RECT resizedRect;
+			GetWindowRect(hwnd, &resizedRect);
+			
 			windowBinding[hwnd]->resized = true;
-			windowBinding[hwnd]->width = resizedWindowDimensions.right - resizedWindowDimensions.left;
-			windowBinding[hwnd]->height = resizedWindowDimensions.bottom - resizedWindowDimensions.top;
+			windowBinding[hwnd]->width = resizedRect.right - resizedRect.left;
+			windowBinding[hwnd]->height = resizedRect.bottom - resizedRect.top;
+			windowBinding[hwnd]->x = resizedRect.left;
+			windowBinding[hwnd]->y = resizedRect.top;
 			break;
 		}
 
@@ -303,8 +305,8 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 		case WM_WINDOWPOSCHANGED:
 		{
 			WINDOWPOS* ptr = (WINDOWPOS*)lParam;
-			windowBinding[hwnd]->x = ptr->x;
-			windowBinding[hwnd]->y = ptr->y;
+			//windowBinding[hwnd]->x = ptr->x;
+			//windowBinding[hwnd]->y = ptr->y;
 			break;
 		}
 		
