@@ -59,9 +59,9 @@ Physics::Physics()
 	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocator, errorHandler);
 	if (!foundation)
 		throw std::runtime_error("Failed to create a PhysX foundation object");
-
+	
 	bool recordAllocations = true;
-
+	
 	physicsObject = PxCreatePhysics(PX_PHYSICS_VERSION, *foundation, physx::PxTolerancesScale(), recordAllocations);
 	if (!physicsObject)
 		throw std::runtime_error("Failed to create a PxPhysics object");
@@ -125,6 +125,29 @@ bool Physics::CastRay(glm::vec3 pos, glm::vec3 dir, float maxDistance, RayHitInf
 		info.object = static_cast<Object*>(hit.block.actor->userData);
 
 	return hasHit;
+}
+
+physx::PxTriangleMesh* Physics::CreateTriangleMesh(const Mesh& mesh)
+{
+	physx::PxTriangleMeshDesc meshDesc{};
+	meshDesc.points.count = mesh.vertices.size();
+	meshDesc.points.data = mesh.vertices.data();
+	meshDesc.points.stride = sizeof(Vertex);
+	meshDesc.triangles.count = mesh.indices.size() / 3;
+	meshDesc.triangles.data = mesh.indices.data();
+	meshDesc.triangles.stride = sizeof(mesh.indices[0]) * 3;
+
+	physx::PxTolerancesScale scale;
+	physx::PxCookingParams params(scale);
+
+#ifdef _DEBUG
+	// mesh should be validated before cooked without the mesh cleaning
+	bool res = PxValidateTriangleMesh(params, meshDesc);
+	if (!res)
+		throw std::runtime_error("Failed to validate a triangle mesh");
+#endif
+
+	return PxCreateTriangleMesh(params, meshDesc);
 }
 
 void Physics::FetchAndUpdateObjects()
