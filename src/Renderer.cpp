@@ -299,37 +299,6 @@ void Renderer::DetectExternalTools()
 	std::cout << '\n';
 }
 
-void Renderer::SetInternalResolutionScale(float scale)
-{
-	internalScale = scale;
-	OnResize();
-}
-
-float Renderer::GetInternalResolutionScale()
-{
-	return internalScale;
-}
-
-void Renderer::GetQueryResults()
-{
-	queryPool.Fetch();
-
-	animationTime =           (queryPool[1] - queryPool[0]) * 0.000001f; // nanoseconds to milliseconds
-	rebuildingTime =          (queryPool[3] - queryPool[2]) * 0.000001f;
-	rayTracingTime =          (queryPool[5] - queryPool[4]) * 0.000001f;
-	if (denoiseOutput)
-	{
-		denoisingPrepTime =   (queryPool[7] - queryPool[6]) * 0.000001f;
-		finalRenderPassTime = (queryPool[9] - queryPool[8]) * 0.000001f;
-	}
-	else
-	{
-		finalRenderPassTime = (queryPool[7] - queryPool[6]) * 0.000001f;
-		denoisingPrepTime = 0;
-		denoisingTime = 0;
-	}
-}
-
 void Renderer::CreateTextureSampler()
 {
 	VkSamplerCreateInfo createInfo{};
@@ -863,20 +832,6 @@ void Renderer::OnResize()
 	Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
 }
 
-uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
-{
-	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(logicalDevice, swapchain->vkSwapchain, UINT64_MAX, imageAvaibleSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
-
-	if (result == VK_ERROR_OUT_OF_DATE_KHR)
-	{
-		OnResize();
-	}
-	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-		throw VulkanAPIError("Failed to acquire the next swap chain image", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __LINE__);
-	return imageIndex;
-}
-
 void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
 {
 	VkPresentInfoKHR presentInfo{};
@@ -1090,4 +1045,49 @@ void Renderer::SetViewportModifiers(glm::vec2 modifiers)
 		return;
 	viewportTransModifiers = modifiers;
 	OnResize();
+}
+
+void Renderer::SetInternalResolutionScale(float scale)
+{
+	internalScale = scale;
+	OnResize();
+}
+
+float Renderer::GetInternalResolutionScale()
+{
+	return internalScale;
+}
+
+void Renderer::GetQueryResults()
+{
+	queryPool.Fetch();
+
+	animationTime = (queryPool[1] - queryPool[0]) * 0.000001f; // nanoseconds to milliseconds
+	rebuildingTime = (queryPool[3] - queryPool[2]) * 0.000001f;
+	rayTracingTime = (queryPool[5] - queryPool[4]) * 0.000001f;
+	if (denoiseOutput)
+	{
+		denoisingPrepTime = (queryPool[7] - queryPool[6]) * 0.000001f;
+		finalRenderPassTime = (queryPool[9] - queryPool[8]) * 0.000001f;
+	}
+	else
+	{
+		finalRenderPassTime = (queryPool[7] - queryPool[6]) * 0.000001f;
+		denoisingPrepTime = 0;
+		denoisingTime = 0;
+	}
+}
+
+uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
+{
+	uint32_t imageIndex;
+	VkResult result = vkAcquireNextImageKHR(logicalDevice, swapchain->vkSwapchain, UINT64_MAX, imageAvaibleSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
+
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
+	{
+		OnResize();
+	}
+	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+		throw VulkanAPIError("Failed to acquire the next swap chain image", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __LINE__);
+	return imageIndex;
 }
