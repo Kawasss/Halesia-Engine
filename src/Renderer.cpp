@@ -57,22 +57,6 @@ std::vector<VkDynamicState> Renderer::dynamicStates =
 	VK_DYNAMIC_STATE_SCISSOR
 };
 
-struct UniformBufferObject
-{
-	glm::vec3 cameraPos;
-	
-	alignas(16) glm::mat4 view;
-	alignas(16) glm::mat4 projection;
-	uint32_t width;
-	uint32_t height;
-};
-
-struct ModelData
-{
-	glm::mat4 transformation;
-	glm::vec4 IDColor;
-};
-
 VkMemoryAllocateFlagsInfo allocateFlagsInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO, nullptr, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT, 0 };
 
 Renderer::Renderer(Win32Window* window)
@@ -209,24 +193,9 @@ void Renderer::InitVulkan()
 	RecompileShaders();
 	#endif
 
-	instance = Vulkan::GenerateInstance();
-	surface = Surface::GenerateSurface(instance, testWindow);
-	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
-	canRayTrace = Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-	if (!canRayTrace)
-		shouldRasterize = true;//throw VulkanAPIError("Cannot initialize the renderer: a required extension is not supported (Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME))", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
-	else
-	{
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-	}
+	CreateContext();
+	CreateCommandPool();
 
-	SetLogicalDevice();
 	DetectExternalTools();
 	swapchain = new Swapchain(logicalDevice, physicalDevice, surface, testWindow);
 	swapchain->CreateImageViews();
@@ -234,7 +203,6 @@ void Renderer::InitVulkan()
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	
-	CreateCommandPool();
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(renderPass);
 	indirectDrawParameters.Reserve(MAX_MESHES, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
@@ -245,9 +213,10 @@ void Renderer::InitVulkan()
 
 	if (!initGlobalBuffers)
 	{
-		g_defaultVertexBuffer.Reserve(1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-		g_vertexBuffer.Reserve(1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
-		g_indexBuffer.Reserve(1000000, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
+		VkBufferUsageFlags commonFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+		g_defaultVertexBuffer.Reserve(1000000, commonFlags | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		g_vertexBuffer.Reserve(1000000,        commonFlags | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		g_indexBuffer.Reserve(1000000,         commonFlags | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 		initGlobalBuffers = true;
 	}
 
@@ -275,6 +244,34 @@ void Renderer::InitVulkan()
 	ImGui::NewFrame();
 }
 
+void Renderer::CreateContext()
+{
+	instance = Vulkan::GenerateInstance();
+	surface = Surface::GenerateSurface(instance, testWindow);
+	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
+
+	AddExtensions();
+
+	SetLogicalDevice();
+}
+
+void Renderer::AddExtensions()
+{
+	canRayTrace = Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+	if (!canRayTrace)
+		shouldRasterize = true;
+	else
+	{
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+	}
+}
+
 void Renderer::DetectExternalTools()
 {
 	uint32_t numTools = 0;
@@ -294,9 +291,8 @@ void Renderer::DetectExternalTools()
 			"\n  name: " << properties[i].name <<
 			"\n  version: " << properties[i].version <<
 			"\n  purposes: " << string_VkToolPurposeFlags(properties[i].purposes) <<
-			"\n  description: " << properties[i].description << '\n';
+			"\n  description: " << properties[i].description << "\n\n";
 	}
-	std::cout << '\n';
 }
 
 void Renderer::CreateTextureSampler()
@@ -331,22 +327,8 @@ void Renderer::CreateModelDataBuffers()
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		modelBuffers[i].Init(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		modelBuffersMapped[i] = modelBuffers[i].Map();
+		modelBuffersMapped[i] = modelBuffers[i].Map<ModelData>();
 	}
-}
-
-void Renderer::SetModelData(uint32_t currentImage, const std::vector<Object*>& objects)
-{
-	std::vector<ModelData> modelMatrices;
-	for (Object* object : objects)
-	{
-		if (object->state != OBJECT_STATE_VISIBLE || !object->HasFinishedLoading())
-			continue;
-
-		ModelData data = { object->transform.GetModelMatrix(), glm::vec4(ResourceManager::ConvertHandleToVec3(object->handle), 1) };
-		modelMatrices.push_back(data);
-	}
-	memcpy(modelBuffersMapped[currentImage], modelMatrices.data(), modelMatrices.size() * sizeof(glm::mat4));
 }
 
 void Renderer::CreateUniformBuffers()
@@ -356,7 +338,7 @@ void Renderer::CreateUniformBuffers()
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		uniformBuffers[i].Init(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		uniformBuffersMapped[i] = uniformBuffers[i].Map();
+		uniformBuffersMapped[i] = uniformBuffers[i].Map<UniformBufferObject>();
 	}
 }
 
@@ -520,19 +502,6 @@ void Renderer::CreateGraphicsPipeline()
 	vkDestroyShaderModule(logicalDevice, fragmentShaderModule, nullptr);
 }
 
-void Renderer::SetLogicalDevice()
-{
-	logicalDevice = physicalDevice.GetLogicalDevice(surface);
-	QueueFamilyIndices indices = physicalDevice.QueueFamilies(surface);
-	queueIndex = indices.graphicsFamily.value();
-
-	vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
-	vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
-	vkGetDeviceQueue(logicalDevice, indices.computeFamily.value(), 0, &computeQueue);
-	
-	Vulkan::InitializeContext({ instance, logicalDevice, physicalDevice, graphicsQueue, queueIndex, presentQueue, indices.presentFamily.value(), computeQueue, indices.computeFamily.value() });
-}
-
 void Renderer::CreateCommandPool()
 {
 	commandPool = Vulkan::FetchNewCommandPool(queueIndex);
@@ -550,20 +519,6 @@ void Renderer::CreateCommandBuffer()
 
 	VkResult result = vkAllocateCommandBuffers(logicalDevice, &allocationInfo, commandBuffers.data());
 	CheckVulkanResult("Failed to allocate the command buffer", result, vkAllocateCommandBuffers);
-}
-
-void Renderer::SetViewport(VkCommandBuffer commandBuffer)
-{
-	VkViewport viewport{};
-	Vulkan::PopulateDefaultViewport(viewport, swapchain->extent);
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-}
-
-void Renderer::SetScissors(VkCommandBuffer commandBuffer)
-{
-	VkRect2D scissor{};
-	Vulkan::PopulateDefaultScissors(scissor, swapchain->extent);
-	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
 void Renderer::WriteTimestamp(VkCommandBuffer commandBuffer, bool reset)
@@ -1032,6 +987,46 @@ void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
 	ubo.width = testWindow->GetWidth();
 	ubo.height = testWindow->GetHeight();
 	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+}
+
+void Renderer::SetLogicalDevice()
+{
+	logicalDevice = physicalDevice.GetLogicalDevice(surface);
+	QueueFamilyIndices indices = physicalDevice.QueueFamilies(surface);
+	queueIndex = indices.graphicsFamily.value();
+
+	vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
+	vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
+	vkGetDeviceQueue(logicalDevice, indices.computeFamily.value(), 0, &computeQueue);
+
+	Vulkan::InitializeContext({ instance, logicalDevice, physicalDevice, graphicsQueue, queueIndex, presentQueue, indices.presentFamily.value(), computeQueue, indices.computeFamily.value() });
+}
+
+void Renderer::SetModelData(uint32_t currentImage, const std::vector<Object*>& objects)
+{
+	for (int i = 0; i < objects.size(); i++)
+	{
+		if (objects[i]->state != OBJECT_STATE_VISIBLE || !objects[i]->HasFinishedLoading())
+			continue;
+
+		ModelData data = { objects[i]->transform.GetModelMatrix(), glm::vec4(ResourceManager::ConvertHandleToVec3(objects[i]->handle), 1) };
+		modelBuffersMapped[currentImage][i] = data;
+	}
+}
+
+
+void Renderer::SetViewport(VkCommandBuffer commandBuffer)
+{
+	VkViewport viewport{};
+	Vulkan::PopulateDefaultViewport(viewport, swapchain->extent);
+	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+}
+
+void Renderer::SetScissors(VkCommandBuffer commandBuffer)
+{
+	VkRect2D scissor{};
+	Vulkan::PopulateDefaultScissors(scissor, swapchain->extent);
+	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
 void Renderer::SetViewportOffsets(glm::vec2 offsets)

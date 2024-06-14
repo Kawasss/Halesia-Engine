@@ -83,6 +83,22 @@ public:
 	float idleTime = 0;
 
 private:
+	struct UniformBufferObject
+	{
+		glm::vec3 cameraPos;
+
+		alignas(16) glm::mat4 view;
+		alignas(16) glm::mat4 projection;
+		uint32_t width;
+		uint32_t height;
+	};
+
+	struct ModelData
+	{
+		glm::mat4 transformation;
+		glm::vec4 IDColor;
+	};
+
 	VkInstance instance							= VK_NULL_HANDLE;
 	VkDevice logicalDevice						= VK_NULL_HANDLE;
 	VkRenderPass renderPass						= VK_NULL_HANDLE;
@@ -107,11 +123,11 @@ private:
 	std::vector<VkFence>			inFlightFences;
 	std::vector<VkDescriptorSet>	descriptorSets;
 
-	std::array<Buffer, MAX_FRAMES_IN_FLIGHT> uniformBuffers;
-	std::array<void*, MAX_FRAMES_IN_FLIGHT>	 uniformBuffersMapped;
+	std::array<Buffer, MAX_FRAMES_IN_FLIGHT>               uniformBuffers;
+	std::array<UniformBufferObject*, MAX_FRAMES_IN_FLIGHT> uniformBuffersMapped;
 
-	std::array<Buffer, MAX_FRAMES_IN_FLIGHT> modelBuffers;
-	std::array<void*, MAX_FRAMES_IN_FLIGHT>	 modelBuffersMapped;
+	std::array<Buffer, MAX_FRAMES_IN_FLIGHT>     modelBuffers;
+	std::array<ModelData*, MAX_FRAMES_IN_FLIGHT> modelBuffersMapped;
 
 	StorageBuffer<VkDrawIndexedIndirectCommand> indirectDrawParameters;
 	std::unordered_map<int, Handle> processedMaterials;
@@ -160,6 +176,8 @@ private:
 	void ExportSemaphores();
 	void DetectExternalTools();
 	void OnResize();
+	void AddExtensions();
+	void CreateContext();
 
 	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
 	void UpdateUniformBuffers(uint32_t currentImage, Camera* camera);
