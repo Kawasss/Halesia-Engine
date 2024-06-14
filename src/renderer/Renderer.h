@@ -12,6 +12,7 @@
 #include "Surface.h"
 #include "Vertex.h"
 #include "StorageBuffer.h"
+#include "QueryPool.h"
 #include "Buffer.h"
 #include "cuda_runtime_api.h"
 
@@ -96,7 +97,7 @@ private:
 	VkQueue graphicsQueue						= VK_NULL_HANDLE;
 	VkQueue presentQueue						= VK_NULL_HANDLE;
 	VkQueue computeQueue                        = VK_NULL_HANDLE;
-	VkQueryPool queryPool                       = VK_NULL_HANDLE;
+	QueryPool queryPool;
 
 	std::vector<VkCommandBuffer>	commandBuffers;
 	std::vector<VkSemaphore>		imageAvaibleSemaphores;

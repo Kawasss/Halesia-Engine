@@ -100,18 +100,6 @@ void Renderer::Destroy()
 
 	vkDestroySampler(logicalDevice, defaultSampler, nullptr);
 
-	/*for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		vkDestroyBuffer(logicalDevice, uniformBuffers[i], nullptr);
-		vkFreeMemory(logicalDevice, uniformBuffersMemory[i], nullptr);
-	}
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		vkDestroyBuffer(logicalDevice, modelBuffers[i], nullptr);
-		vkFreeMemory(logicalDevice, modelBuffersMemory[i], nullptr);
-	}*/
-
 	Texture::DestroyPlaceholderTextures();
 
 	vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);
@@ -131,7 +119,6 @@ void Renderer::Destroy()
 		vkDestroyFence(logicalDevice, inFlightFences[i], nullptr);
 	}
 
-	vkDestroyQueryPool(logicalDevice, queryPool, nullptr);
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 
 	vkDestroyDevice(logicalDevice, nullptr);
@@ -243,7 +230,7 @@ void Renderer::InitVulkan()
 	DetectExternalTools();
 	swapchain = new Swapchain(logicalDevice, physicalDevice, surface, testWindow);
 	swapchain->CreateImageViews();
-	queryPool = Vulkan::CreateQueryPool(VK_QUERY_TYPE_TIMESTAMP, 10);
+	queryPool.Create(VK_QUERY_TYPE_TIMESTAMP, 10);
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	
@@ -325,19 +312,19 @@ float Renderer::GetInternalResolutionScale()
 
 void Renderer::GetQueryResults()
 {
-	std::vector<uint64_t> results = Vulkan::GetQueryPoolResults(queryPool, 10);
+	queryPool.Fetch();
 
-	animationTime =           (results[1] - results[0]) * 0.000001f; // nanoseconds to milliseconds
-	rebuildingTime =          (results[3] - results[2]) * 0.000001f;
-	rayTracingTime =          (results[5] - results[4]) * 0.000001f;
+	animationTime =           (queryPool[1] - queryPool[0]) * 0.000001f; // nanoseconds to milliseconds
+	rebuildingTime =          (queryPool[3] - queryPool[2]) * 0.000001f;
+	rayTracingTime =          (queryPool[5] - queryPool[4]) * 0.000001f;
 	if (denoiseOutput)
 	{
-		denoisingPrepTime =   (results[7] - results[6]) * 0.000001f;
-		finalRenderPassTime = (results[9] - results[8]) * 0.000001f;
+		denoisingPrepTime =   (queryPool[7] - queryPool[6]) * 0.000001f;
+		finalRenderPassTime = (queryPool[9] - queryPool[8]) * 0.000001f;
 	}
 	else
 	{
-		finalRenderPassTime = (results[7] - results[6]) * 0.000001f;
+		finalRenderPassTime = (queryPool[7] - queryPool[6]) * 0.000001f;
 		denoisingPrepTime = 0;
 		denoisingTime = 0;
 	}
@@ -612,9 +599,7 @@ void Renderer::SetScissors(VkCommandBuffer commandBuffer)
 
 void Renderer::WriteTimestamp(VkCommandBuffer commandBuffer, bool reset)
 {
-	static uint32_t index = 0;
-	vkCmdWriteTimestamp(commandBuffer, index % 2 == 0 ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queryPool, index);
-	index = reset ? 0 : index + 1;
+	queryPool.WriteTimeStamp(commandBuffer);
 }
 
 void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> objects, Camera* camera)
@@ -624,7 +609,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	
 	VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
 	CheckVulkanResult("Failed to begin the given command buffer", result, vkBeginCommandBuffer);
-	vkCmdResetQueryPool(commandBuffer, queryPool, 0, 10);
+	queryPool.Reset(commandBuffer);
 
 	WriteTimestamp(commandBuffer);
 	animationManager->ApplyAnimations(commandBuffer); // not good

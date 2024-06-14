@@ -171,6 +171,7 @@
     <ClCompile Include="src\Physics.cpp" />
     <ClCompile Include="src\PipelineCreator.cpp" />
     <ClCompile Include="src\Profiler.cpp" />
+    <ClCompile Include="src\QueryPool.cpp" />
     <ClCompile Include="src\ShaderReflector.cpp" />
     <ClCompile Include="src\RayTracing.cpp" />
     <ClCompile Include="src\Input.cpp" />
@@ -242,6 +243,7 @@
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
     <ClInclude Include="src\renderer\PipelineCreator.h" />
+    <ClInclude Include="src\renderer\QueryPool.h" />
     <ClInclude Include="src\renderer\ShaderReflector.h" />
     <ClInclude Include="src\renderer\RayTracing.h" />
     <ClInclude Include="src\renderer\Buffers.h" />
