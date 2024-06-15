@@ -284,23 +284,49 @@ HalesiaExitCode HalesiaEngine::Run()
 	}
 }
 
+void HalesiaEngine::InitializeCoreComponents()
+{
+	std::cout 
+		<< "----------------------------------------\n"
+		<< "Initializing core components...\n\nWindow:\n";
+
+	core.window = new Win32Window(createInfo.windowCreateInfo);
+	std::cout << "\nRenderer:\n";
+	core.renderer = new Renderer(core.window);
+	std::cout << "\nProfiler:\n";
+	core.profiler = Profiler::Get();
+	core.profiler->SetFlags(Profiler::ALL_OPTIONS);
+	std::cout << "\nAnimation manager:\n";
+	core.animationManager = AnimationManager::Get();
+
+	std::cout << "----------------------------------------\n\n";
+}
+
+void HalesiaEngine::InitializeSubSystems()
+{
+	std::cout
+		<< "----------------------------------------\n"
+		<< "Initializing sub systems...\n\nAudio engine:\n";
+
+	Audio::Init();
+	std::cout << "\nConsole:\n";
+	Console::Init();
+	std::cout << "\nPhysics engine:\n";
+	Physics::Init();
+
+	std::cout << "----------------------------------------\n\n";
+}
+
 void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
 {
-	Audio::Init();
-	Console::Init();
-	Physics::Init();
-	
 	Behavior::ProcessArguments(createInfo.argsCount, createInfo.args);
 
+	InitializeCoreComponents();
+	InitializeSubSystems();
+	
 	useEditor = createInfo.useEditor;
 	devConsoleKey = createInfo.devConsoleKey;
 	playIntro = createInfo.playIntro;
-
-	core.window = new Win32Window(createInfo.windowCreateInfo);
-	core.renderer = new Renderer(core.window);
-	core.profiler = Profiler::Get();
-	core.profiler->SetFlags(Profiler::ALL_OPTIONS);
-	core.animationManager = AnimationManager::Get();
 
 	if (createInfo.startingScene == nullptr)
 	{

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <iostream>
 
 #include "core/Profiler.h"
 
@@ -16,6 +17,7 @@ Profiler* Profiler::Get()
 void Profiler::SetFlags(ProfilerOptions options)
 {
 	this->options = options;
+	std::cout << "Set profiler flags to " << ProfilerFlagsToString(options) << '\n';
 }
 
 void Profiler::Update(float delta)
@@ -57,4 +59,26 @@ void Profiler::Calculate1PLow()
 		average += frameTime.buffer[frameTime.size - onePercent + i];
 	average /= onePercent;
 	frameTime1PLow = average;
+}
+
+std::string ProfilerFlagsToString(ProfilerOptions options)
+{
+	std::string ret;
+	if (options & PROFILE_FLAG_OBJECT_COUNT)
+		ret += "PROFILE_FLAG_OBJECT_COUNT | ";
+	if (options & PROFILE_FLAG_FRAMETIME)
+		ret += "PROFILE_FLAG_FRAMETIME | ";
+	if (options & PROFILE_FLAG_GPU_USAGE)
+		ret += "PROFILE_FLAG_GPU_USAGE | ";
+	if (options & PROFILE_FLAG_CPU_USAGE)
+		ret += "PROFILE_FLAG_CPU_USAGE | ";
+	if (options & PROFILE_FLAG_RAM_USAGE)
+		ret += "PROFILE_FLAG_RAM_USAGE | ";
+	if (options & PROFILE_FLAG_GPU_BUFFERS)
+		ret += "PROFILE_FLAG_GPU_BUFFERS | ";
+	if (options & PROFILE_FLAG_1P_LOW_FRAMETIME)
+		ret += "PROFILE_FLAG_1P_LOW_FRAMETIME | ";
+	ret.resize(ret.size() - 3);
+
+	return ret.empty() ? "PROFILE_FLAG_NONE" : ret;
 }

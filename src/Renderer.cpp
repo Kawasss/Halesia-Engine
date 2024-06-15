@@ -279,7 +279,7 @@ void Renderer::DetectExternalTools()
 	std::cout << "Detected external tools:\n";
 	if (numTools == 0)
 	{
-		std::cout << "  None\n\n";
+		std::cout << "  None\n";
 		return;
 	}
 
@@ -291,7 +291,7 @@ void Renderer::DetectExternalTools()
 			"\n  name: " << properties[i].name <<
 			"\n  version: " << properties[i].version <<
 			"\n  purposes: " << string_VkToolPurposeFlags(properties[i].purposes) <<
-			"\n  description: " << properties[i].description << "\n\n";
+			"\n  description: " << properties[i].description << "\n";
 	}
 }
 

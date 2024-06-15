@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <vector>
+#include <string>
 
 typedef uint32_t ProfilerOptions;
 
@@ -14,6 +15,7 @@ enum ProfilerFlags : ProfilerOptions
 	PROFILE_FLAG_GPU_BUFFERS = 1 << 5,
 	PROFILE_FLAG_1P_LOW_FRAMETIME = 1 << 6,
 };
+extern std::string ProfilerFlagsToString(ProfilerOptions options);
 
 class Profiler
 {

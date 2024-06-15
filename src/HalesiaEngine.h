@@ -86,6 +86,9 @@ private:
 	void UpdateRenderer(float delta);
 	void UpdateScene(float delta);
 
+	void InitializeCoreComponents();
+	void InitializeSubSystems();
+
 	static HalesiaEngineCreateInfo createInfo;
 	EngineCore core;
 

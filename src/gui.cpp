@@ -140,6 +140,12 @@ void GUI::ShowWindowData(Win32Window* window)
 		, relX, relY, absX, absY
 	);
 
+	ImGui::Text(
+		"dropped file: %i\n"
+		"maximized:    %i\n"
+		"resized:      %i\n"
+		, (int)window->ContainsDroppedFile(), (int)window->maximized, (int)window->resized);
+
 	if (changedCoord)
 		window->SetXAndY(x, y);
 	if (changedDimensions)
@@ -354,38 +360,38 @@ void GUI::ShowDropdownMenu(std::vector<std::string>& items, std::string& current
 
 void GUI::ShowDevConsole()
 {
-	if (Console::isOpen)
+	if (!Console::isOpen)
+		return;
+		
+	if (createWindow)
+		ImGui::Begin("Dev Console", nullptr, ImGuiWindowFlags_NoCollapse);
+	ImGuiStyle& style = ImGui::GetStyle();
+	ImVec4* colors = style.Colors;
+
+	colors[ImGuiCol_WindowBg] = ImVec4(0.01f, 0.01f, 0.01f, 0.9f);
+	colors[ImGuiCol_Border] = ImVec4(0.05f, 0.05f, 0.05f, 1);
+	colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
+	colors[ImGuiCol_ResizeGrip] = ImVec4(0.05f, 0.05f, 0.05f, 1);
+	colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.56f, 0.49f, 0.68f, 1);
+	colors[ImGuiCol_ResizeGripActive] = ImVec4(0.56f, 0.49f, 0.68f, 1);
+
+	style.WindowRounding = 5;
+	style.WindowBorderSize = 2;
+
+	for (std::string message : Console::messages)
 	{
-		if (createWindow)
-			ImGui::Begin("Dev Console", nullptr, ImGuiWindowFlags_NoCollapse);
-		ImGuiStyle& style = ImGui::GetStyle();
-		ImVec4* colors = style.Colors;
-
-		colors[ImGuiCol_WindowBg] = ImVec4(0.01f, 0.01f, 0.01f, 0.9f);
-		colors[ImGuiCol_Border] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-		colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-		colors[ImGuiCol_ResizeGrip] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-		colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.56f, 0.49f, 0.68f, 1);
-		colors[ImGuiCol_ResizeGripActive] = ImVec4(0.56f, 0.49f, 0.68f, 1);
-
-		style.WindowRounding = 5;
-		style.WindowBorderSize = 2;
-
-		for (std::string message : Console::messages)
-		{
-			glm::vec3 color = Console::GetColorFromMessage(message);
-			ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1), message.c_str());
-		}
-
-		std::string result = "";
-		ImGui::InputTextWithHint("##input", "Console commands...", &result);
-
-		if (Input::IsKeyPressed(VirtualKey::Return)) // if enter is pressed place the input value into the optional variable
-			Console::InterpretCommand(result);
-
-		if (createWindow)
-			ImGui::End();
+		glm::vec3 color = Console::GetColorFromMessage(message);
+		ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1), message.c_str());
 	}
+
+	std::string result = "";
+	ImGui::InputTextWithHint("##input", "Console commands...", &result);
+
+	if (Input::IsKeyPressed(VirtualKey::Return)) // if enter is pressed place the input value into the optional variable
+		Console::InterpretCommand(result);
+
+	if (createWindow)
+		ImGui::End();
 }
 
 void GUI::ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGraph, bool& cpuGraph, bool& gpuGraph)
