@@ -409,7 +409,7 @@ inline ShapeType GetShapeType(ObjectOptions flag)
 
 void SceneLoader::LoadAssimpFile()
 {
-	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate);
+	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate | aiProcess_GenNormals);
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + location);
 
