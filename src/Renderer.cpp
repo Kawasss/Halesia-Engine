@@ -197,7 +197,7 @@ void Renderer::InitVulkan()
 	CreateCommandPool();
 
 	DetectExternalTools();
-	swapchain = new Swapchain(logicalDevice, physicalDevice, surface, testWindow);
+	swapchain = new Swapchain(surface, testWindow, false);
 	swapchain->CreateImageViews();
 	queryPool.Create(VK_QUERY_TYPE_TIMESTAMP, 10);
 	CreateDescriptorSetLayout();
@@ -777,7 +777,7 @@ void Renderer::RenderIntro(Intro* intro)
 
 void Renderer::OnResize()
 {
-	swapchain->Recreate(renderPass);
+	swapchain->Recreate(renderPass, false);
 	if (canRayTrace)
 		rayTracer->RecreateImage(testWindow->GetWidth() * internalScale, testWindow->GetHeight() * internalScale);
 	UpdateScreenShaderTexture(currentFrame);

@@ -8,23 +8,24 @@
 #include "renderer/PhysicalDevice.h"
 #include "renderer/Surface.h"
 
-Swapchain::Swapchain(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window)
+Swapchain::Swapchain(Surface surface, Win32Window* window, bool vsync)
 {
-    Generate(logicalDevice, physicalDevice, surface, window);
-    CreateFence();
+    Generate(surface, window, vsync);
 }
 
-void Swapchain::Generate(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window)
+void Swapchain::Generate(Surface surface, Win32Window* window, bool vsync)
 {
-    this->logicalDevice = logicalDevice;
-    this->physicalDevice = physicalDevice;
+    const Vulkan::Context& ctx = Vulkan::GetContext();
+
+    this->logicalDevice = ctx.logicalDevice;
+    this->physicalDevice = ctx.physicalDevice;
     this->surface = surface;
     this->window = window;
 
     Vulkan::SwapChainSupportDetails swapchainSupport = Vulkan::QuerySwapChainSupport(physicalDevice, surface.VkSurface());
 
     VkSurfaceFormatKHR surfaceFormat = Vulkan::ChooseSwapSurfaceFormat(swapchainSupport.formats);
-    VkPresentModeKHR presentMode = Vulkan::ChooseSwapPresentMode(swapchainSupport.presentModes);
+    VkPresentModeKHR presentMode = Vulkan::ChooseSwapPresentMode(swapchainSupport.presentModes, vsync);
     VkExtent2D extent2D = Vulkan::ChooseSwapExtent(swapchainSupport.capabilities, window->GetWidth(), window->GetHeight());
 
     uint32_t imageCount = swapchainSupport.capabilities.minImageCount + 1;
@@ -138,17 +139,7 @@ void Swapchain::Destroy()
     vkDestroySwapchainKHR(logicalDevice, vkSwapchain, nullptr);
 }
 
-void Swapchain::CreateFence()
-{
-    VkFenceCreateInfo fenceCreateInfo{};
-    fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-    VkResult result = vkCreateFence(logicalDevice, &fenceCreateInfo, nullptr, &fence);
-    CheckVulkanResult("Failed to create the fence for the swapchain", result, vkCreateFence);
-}
-
-void Swapchain::Recreate() // hopefully a temporary fix, used for ray tracing
+void Swapchain::Recreate(bool vsync) // hopefully a temporary fix, used for ray tracing
 {
     int width = window->GetWidth(), height = window->GetHeight();
     
@@ -169,11 +160,11 @@ void Swapchain::Recreate() // hopefully a temporary fix, used for ray tracing
 
     Destroy();
 
-    Generate(logicalDevice, physicalDevice, surface, window);
+    Generate(surface, window, vsync);
     CreateImageViews();
 }
 
-void Swapchain::Recreate(VkRenderPass renderPass)
+void Swapchain::Recreate(VkRenderPass renderPass, bool vsync)
 {
     int width = window->GetWidth(), height = window->GetHeight();
 
@@ -194,7 +185,7 @@ void Swapchain::Recreate(VkRenderPass renderPass)
 
     Destroy();
 
-    Generate(logicalDevice, physicalDevice, surface, window);
+    Generate(surface, window, vsync);
     CreateImageViews();
     CreateDepthBuffers();
     CreateFramebuffers(renderPass);

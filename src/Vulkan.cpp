@@ -463,11 +463,15 @@ VkSurfaceFormatKHR Vulkan::ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFo
     return availableFormats[0];
 }
 
-VkPresentModeKHR Vulkan::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& presentModes)
+VkPresentModeKHR Vulkan::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& presentModes, bool vsync)
 {
     for (const VkPresentModeKHR presentMode : presentModes)
-        if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR)
+    {
+        if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR && !vsync)
             return presentMode;
+        else if (presentMode == VK_PRESENT_MODE_FIFO_KHR && vsync)
+            return presentMode;
+    }
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 

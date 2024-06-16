@@ -10,11 +10,11 @@ class Swapchain
 {
 public:
     Swapchain() = default;
-    Swapchain(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window);
+    Swapchain(Surface surface, Win32Window* window, bool vsync);
 
-    void Recreate();
-    void Recreate(VkRenderPass renderPass);
-    void Generate(VkDevice logicalDevice, PhysicalDevice physicalDevice, Surface surface, Win32Window* window);
+    void Recreate(bool vsync);
+    void Recreate(VkRenderPass renderPass, bool vsync);
+    void Generate(Surface surface, Win32Window* window, bool vsync);
 
     void Destroy();
     void CreateDepthBuffers();
@@ -34,10 +34,7 @@ public:
     VkDeviceMemory depthImageMemory;
 
 private:
-    void CreateFence();
-
     VkDevice logicalDevice;
-    VkFence fence;
     PhysicalDevice physicalDevice;
     Surface surface;
     Win32Window* window;
