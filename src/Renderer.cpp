@@ -784,7 +784,7 @@ void Renderer::OnResize()
 	viewportWidth = testWindow->GetWidth() * viewportTransModifiers.x * internalScale;
 	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y * internalScale;
 	testWindow->resized = false;
-	Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px");
+	Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px (" + std::to_string(int(internalScale * 100)) + "%% scale)");
 }
 
 void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
