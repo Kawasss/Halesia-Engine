@@ -64,6 +64,9 @@
     <Filter Include="cfg">
       <UniqueIdentifier>{f8750108-ce32-43bb-a561-e3e7dbb8323d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="external\interpreter">
+      <UniqueIdentifier>{5f25c969-a018-4c7e-b3c4-5ecd59ead00d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\HalesiaEngine.cpp">
@@ -236,6 +239,18 @@
     </ClCompile>
     <ClCompile Include="src\QueryPool.cpp">
       <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ScriptingInterpreter\src\Instruction.cpp">
+      <Filter>external\interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ScriptingInterpreter\src\Interpeter.cpp">
+      <Filter>external\interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ScriptingInterpreter\src\Lexer.cpp">
+      <Filter>external\interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ScriptingInterpreter\src\Parser.cpp">
+      <Filter>external\interpreter</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -442,6 +457,21 @@
     </ClInclude>
     <ClInclude Include="src\renderer\QueryPool.h">
       <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Instruction.hpp">
+      <Filter>external\interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Interpreter.hpp">
+      <Filter>external\interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Lexer.hpp">
+      <Filter>external\interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Parser.hpp">
+      <Filter>external\interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Tools.hpp">
+      <Filter>external\interpreter</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

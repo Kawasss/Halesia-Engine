@@ -4,7 +4,7 @@
 #include <iostream>
 #include <fstream>
 
-inline std::vector<char> ReadFile(const std::string& filePath)
+inline std::vector<char> ReadFile(const std::string& filePath, bool nullTerm = false)
 {
 	std::ifstream file(filePath, std::ios::ate | std::ios::binary);
 	if (!file.is_open())
@@ -15,6 +15,7 @@ inline std::vector<char> ReadFile(const std::string& filePath)
 
 	file.seekg(0);
 	file.read(buffer.data(), fileSize);
+	if (nullTerm) buffer.push_back('\0');
 
 	file.close();
 	return buffer;

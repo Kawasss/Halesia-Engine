@@ -64,31 +64,6 @@ std::string ShapeTypeToString(ShapeType type)
 	return "SHAPE_TYPE_UNKNOWN";
 }
 
-std::string Console::TokenToString(Token token)
-{
-	switch (token)
-	{
-	case LEXER_TOKEN_IDENTIFIER: return "LEXER_TOKEN_IDENTIFIER";
-	case LEXER_TOKEN_KEYWORD:    return "LEXER_TOKEN_KEYWORD";
-	case LEXER_TOKEN_LITERAL:    return "LEXER_TOKEN_LITERAL";
-	case LEXER_TOKEN_OPERATOR:   return "LEXER_TOKEN_OPERATOR";
-	case LEXER_TOKEN_SEPERATOR:  return "LEXER_TOKEN_SEPERATOR";
-	}
-	return "LEXER_TOKEN_UNKNOWN";
-}
-
-std::string Console::variableTypeToString(VariableType type)
-{
-	switch (type)
-	{
-	case VARIABLE_TYPE_BOOL:   return "VARIABLE_TYPE_BOOL";
-	case VARIABLE_TYPE_FLOAT:  return "VARIABLE_TYPE_FLOAT";
-	case VARIABLE_TYPE_INT:    return "VARIABLE_TYPE_INT";
-	case VARIABLE_TYPE_STRING: return "VARIABLE_TYPE_STRING";
-	}
-	return "VARIABLE_TYPE_UNKNOWN";
-}
-
 std::string MessageSeverityToString(MessageSeverity severity)
 {
 	switch (severity)
