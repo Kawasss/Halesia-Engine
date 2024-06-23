@@ -24,7 +24,6 @@
 #include "core/Console.h"
 #include "core/Object.h"
 #include "core/Camera.h"
-#include "core/Behavior.h"
 
 #define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -59,8 +58,9 @@ std::vector<VkDynamicState> Renderer::dynamicStates =
 
 VkMemoryAllocateFlagsInfo allocateFlagsInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO, nullptr, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT, 0 };
 
-Renderer::Renderer(Win32Window* window)
+Renderer::Renderer(Win32Window* window, RendererFlags flags)
 {
+	this->flags = flags;
 	testWindow = window;
 	window->additionalPollCallback = ImGui_ImplWin32_WndProcHandler;
 	Vulkan::optionalMemoryAllocationFlags = &allocateFlagsInfo;
@@ -166,7 +166,7 @@ void Renderer::CreateImGUI()
 
 void Renderer::RecompileShaders()
 {
-	if (Behavior::arguments.find("-no_shader_recompilation") != Behavior::arguments.end())
+	if (flags & NO_SHADER_RECOMPILATION)
 	{
 		Console::WriteLine("Cannot recompile shaders because of the argument \"-no_shader_recompilation\"");
 		return;
@@ -257,7 +257,7 @@ void Renderer::CreateContext()
 
 void Renderer::AddExtensions()
 {
-	canRayTrace = Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+	canRayTrace = Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) && !(flags & NO_RAY_TRACING);
 	if (!canRayTrace)
 		shouldRasterize = true;
 	else

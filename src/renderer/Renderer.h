@@ -25,13 +25,22 @@ class Image;
 class AnimationManager;
 class ForwardPlusRenderer;
 class DescriptorWriter;
+class Win32Window;
 struct Mesh;
 
 typedef void* HANDLE;
+typedef uint32_t RendererFlags;
 
 class Renderer
 {
 public:
+	enum Flags : RendererFlags
+	{
+		NONE = 0,
+		NO_RAY_TRACING = 1 << 0,
+		NO_SHADER_RECOMPILATION = 1 << 1,
+	};
+
 	static constexpr uint32_t MAX_MESHES			= 1000U; //should be more than enough
 	static constexpr uint32_t MAX_BINDLESS_TEXTURES = MAX_MESHES * 5; //amount of pbr textures per mesh
 	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT	= 1;
@@ -45,7 +54,7 @@ public:
 
 	static std::vector<VkDynamicState> dynamicStates;
 
-	Renderer(Win32Window* window);
+	Renderer(Win32Window* window, RendererFlags flags);
 	void Destroy();
 	void RecompileShaders();
 	void DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta);
@@ -144,6 +153,7 @@ private:
 	uint32_t currentFrame = 0;
 	uint32_t imageIndex = 0;
 	uint32_t queueIndex = 0;
+	RendererFlags flags = NONE; 
 	
 	RayTracing* rayTracer;
 	ForwardPlusRenderer* fwdPlus;

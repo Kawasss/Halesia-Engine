@@ -37,6 +37,19 @@ inline float CalculateFrameTime(int fps)
 	return 1000.0f / fps;
 }
 
+inline RendererFlags GetRendererFlagsFromBehavior()
+{
+	RendererFlags ret = Renderer::Flags::NONE;
+	for (const std::string& str : Behavior::arguments)
+	{
+		if (str == "-no_shader_recompilation")
+			ret |= Renderer::Flags::NO_SHADER_RECOMPILATION;
+		else if (str == "-force_no_ray_tracing")
+			ret |= Renderer::Flags::NO_RAY_TRACING;
+	}
+	return ret;
+}
+
 HalesiaEngine* HalesiaEngine::GetInstance()
 {
 	static HalesiaEngine* instance = nullptr;
@@ -292,7 +305,7 @@ void HalesiaEngine::InitializeCoreComponents()
 
 	core.window = new Win32Window(createInfo.windowCreateInfo);
 	std::cout << "\nRenderer:\n";
-	core.renderer = new Renderer(core.window);
+	core.renderer = new Renderer(core.window, GetRendererFlagsFromBehavior());
 	std::cout << "\nProfiler:\n";
 	core.profiler = Profiler::Get();
 	core.profiler->SetFlags(Profiler::ALL_OPTIONS);
