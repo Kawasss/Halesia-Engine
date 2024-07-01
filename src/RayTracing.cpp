@@ -615,6 +615,9 @@ void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Ca
 	int x, y, absX, absY;
 	window->GetRelativeCursorPosition(x, y);
 	window->GetAbsoluteCursorPosition(absX, absY);
+
+	if (Input::IsKeyPressed(VirtualKey::R)) // r for reset
+		frameCount = 0;
 	
 	if (showNormals && showUniquePrimitives) showNormals = false; // can't have 2 variables changing colors at once
 	uniformBufferMemPtr->cameraPosition = { camera->position, 1 };

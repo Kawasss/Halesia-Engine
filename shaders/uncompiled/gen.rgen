@@ -1,6 +1,7 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable
+#extension GL_EXT_control_flow_attributes : enable
 
 #define M_PI 3.1415926535897932384626433832795
 
@@ -67,6 +68,23 @@ float RandomValue(inout uint state)
 	return NextRandom(state) / 4294967295.0; // 2^32 - 1
 }
 
+uint tea(uint val0, uint val1)
+{
+  uint v0 = val0;
+  uint v1 = val1;
+  uint s0 = 0;
+
+  [[unroll]]
+  for(uint n = 0; n < 16; n++)
+  {
+    s0 += 0x9e3779b9;
+    v0 += ((v1 << 4) + 0xa341316c) ^ (v1 + s0) ^ ((v1 >> 5) + 0xc8013ea4);
+    v1 += ((v0 << 4) + 0xad90777d) ^ (v0 + s0) ^ ((v0 >> 5) + 0x7e95761e);
+  }
+
+  return v0;
+}
+
 void main() {
   payload.rayActive = 1;
   if (camera.mouseXY == gl_LaunchIDEXT.xy)
@@ -80,10 +98,14 @@ void main() {
   vec3 firstNormal = vec3(0);
   vec2 firstMotion = vec2(0);
 
-  uint rng = gl_LaunchIDEXT.x * gl_LaunchIDEXT.y * camera.frameCount * 719393;
+  uint rng = tea(gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x, camera.frameCount);//gl_LaunchIDEXT.x * gl_LaunchIDEXT.y * camera.frameCount * 719393;
   for (int j = 0; j < camera.raySamples; j++)
   {
-      vec2 center = vec2(gl_LaunchIDEXT.xy) + vec2(RandomValue(rng), RandomValue(rng));
+      float subX = RandomValue(rng), subY = RandomValue(rng);
+
+      vec2 subpixel = camera.frameCount == 0 ? vec2(.5f, .5f) : vec2(subX, subY);
+       
+      vec2 center = vec2(gl_LaunchIDEXT.xy) + subpixel;
       vec2 inUV = center / vec2(gl_LaunchSizeEXT.xy);
       vec2 uv = inUV * 2.0 - 1.0;
 
@@ -109,7 +131,7 @@ void main() {
                 intersectedObject.handle = payload.intersectedObjectHandle;
         }
       }
-      if (payload.rayDepth == 0) 
+      if (payload.rayDepth == 0)
         payload.rayDepth = 1;
       color += payload.indirectColor / payload.rayDepth;
   }
@@ -127,8 +149,17 @@ void main() {
         color = (color + old) * 0.5f;*/
   //}
 
+  vec4 new = vec4(color, 1);
+  if (camera.frameCount > 0)
+  {
+    float a   = 1.0f / float(camera.frameCount + 1);
+    vec3  old = imageLoad(image, ivec2(gl_LaunchIDEXT.xy)).xyz;
+
+    new = vec4(mix(old, color, a), 1.f);
+  }
+
   imageStore(albedoImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstAlbedo, 1));
   imageStore(normalImage, ivec2(gl_LaunchIDEXT.xy), vec4(firstNormal, 1)); 
-  imageStore(image, ivec2(gl_LaunchIDEXT.xy), vec4(color, 1));
+  imageStore(image, ivec2(gl_LaunchIDEXT.xy), new);
   MotionImage.data[gl_LaunchIDEXT.x * gl_LaunchSizeEXT.y + gl_LaunchIDEXT.y] = firstMotion;
 }

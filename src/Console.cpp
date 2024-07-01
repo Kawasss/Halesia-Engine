@@ -94,6 +94,7 @@ void Console::WriteLine(std::string message, MessageSeverity severity)
 
 void Console::InterpretCommand(std::string command)
 {
+	if (!command.empty() && command.back() != ';') command += ';';
 	const std::vector<Lexer::Token> lexTokens = Lexer::LexInput(command);
 	parser.SetTokens(lexTokens);
 	parser.Parse();
