@@ -536,12 +536,12 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	queryPool.Reset(commandBuffer);
 
 	WriteTimestamp(commandBuffer);
-	animationManager->ApplyAnimations(commandBuffer); // not good
+	//animationManager->ApplyAnimations(commandBuffer); // not good
 	WriteTimestamp(commandBuffer);
 
 	WriteTimestamp(commandBuffer);
-	for (Object* obj : objects)
-		obj->mesh.BLAS->RebuildGeometry(commandBuffer, obj->mesh);
+	//for (Object* obj : objects)
+	//	obj->mesh.BLAS->RebuildGeometry(commandBuffer, obj->mesh);
 	WriteTimestamp(commandBuffer);
 
 	VkImageView imageToCopy = VK_NULL_HANDLE;

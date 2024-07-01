@@ -9,7 +9,7 @@ DescriptorWriter* DescriptorWriter::Get()
 
 	return ptr;
 }
-#include <iostream>
+
 void DescriptorWriter::Write()
 {
 	if (infoSize == 0)

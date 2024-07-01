@@ -88,7 +88,7 @@ int main(int argc, char** argv)
 	HalesiaEngineCreateInfo createInfo{};
 	createInfo.argsCount = argc;
 	createInfo.args = argv;
-	createInfo.startingScene = new Shooter();
+	createInfo.startingScene = new Room();
 	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;
 	createInfo.windowCreateInfo.height = 600;
