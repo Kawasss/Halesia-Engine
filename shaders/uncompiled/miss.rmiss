@@ -57,6 +57,7 @@ void main()
 
 	payload.albedo = skyColor;
 	payload.normal = vec3(0);
+	payload.motion = vec2(0);
 
 	payload.rayActive = 0; 
 }

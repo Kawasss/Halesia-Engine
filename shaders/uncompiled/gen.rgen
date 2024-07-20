@@ -138,8 +138,9 @@ void main() {
   color /= camera.raySamples;
 
   vec2 prevMotion = MotionImage.data[gl_LaunchIDEXT.x * gl_LaunchSizeEXT.y + gl_LaunchIDEXT.y];
-  ivec2 prevPos = ivec2(gl_LaunchIDEXT.xy - payload.motion);
-
+  uvec2 prevPos = ivec2(gl_LaunchIDEXT.xy - payload.motion);
+  prevPos.x = min(gl_LaunchSizeEXT.x, prevPos.x);
+  prevPos.y = min(gl_LaunchSizeEXT.y, prevPos.y);
   //if (abs(distance(payload.motion, prevMotion)) < 0.1)
   //{
     /*vec3 old = imageLoad(prevImage, prevPos).xyz;
@@ -153,7 +154,7 @@ void main() {
   if (camera.frameCount > 0)
   {
     float a   = 1.0f / float(camera.frameCount + 1);
-    vec3  old = imageLoad(image, ivec2(gl_LaunchIDEXT.xy)).xyz;
+    vec3  old = imageLoad(image, ivec2(prevPos)).xyz;
 
     new = vec4(mix(old, color, a), 1.f);
   }

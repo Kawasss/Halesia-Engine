@@ -136,13 +136,17 @@ vec3 RandomDirection(inout uint state)
 }
 
 vec3 CosineSampleHemisphere(vec2 uv) {
-  float radial = sqrt(uv.x);
+  /*float radial = sqrt(uv.x);
   float theta = 2.0 * M_PI * uv.y;
 
   float x = radial * cos(theta);
   float y = radial * sin(theta);
 
-  return vec3(x, y, sqrt(1 - uv.x));
+  return vec3(x, y, sqrt(1 - uv.x));*/
+  float phi = 2 * M_PI * uv.x;
+  float cosTheta = uv.y;
+  float sinTheta = sqrt(max(0.0f, 1.0f - uv.y*uv.y));
+  return vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta) / 0.15915494309;
 }
 
 float GetFresnelReflect(vec3 normal, vec3 incident, float reflectivity)
