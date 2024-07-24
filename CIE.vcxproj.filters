@@ -473,6 +473,9 @@
     <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Tools.hpp">
       <Filter>external\interpreter</Filter>
     </ClInclude>
+    <ClInclude Include="src\renderer\RenderPipeline.h">
+      <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">

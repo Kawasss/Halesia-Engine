@@ -26,6 +26,7 @@ class AnimationManager;
 class ForwardPlusRenderer;
 class DescriptorWriter;
 class Win32Window;
+class RenderPipeline;
 struct Mesh;
 
 typedef void* HANDLE;
@@ -68,6 +69,12 @@ public:
 
 	void SetInternalResolutionScale(float scale);
 	static float GetInternalResolutionScale();
+
+	template<typename Type> void AddRenderPipeline()
+	{
+		RenderPipeline* ptr = dynamic_cast<RenderPipeline*>(new Type());
+		renderPipelines.push_back(ptr); // should check if it derives from RenderPipeline
+	}
 
 	Swapchain* swapchain; // better to keep it private
 	AnimationManager* animationManager;
@@ -142,6 +149,8 @@ private:
 	std::unordered_map<int, Handle> processedMaterials;
 
 	std::mutex drawingMutex;
+
+	std::vector<RenderPipeline*> renderPipelines; // owns the pointers !!
 
 	PhysicalDevice physicalDevice;
 	Surface surface;

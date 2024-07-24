@@ -18,6 +18,7 @@
 #include "renderer/ForwardPlus.h"
 #include "renderer/ComputeShader.h"
 #include "renderer/DescriptorWriter.h"
+#include "renderer/RenderPipeline.h"
 
 #include "system/Window.h"
 
@@ -549,7 +550,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	{
 		WriteTimestamp(commandBuffer);
 		if (!shouldRasterize)
-			rayTracer->DrawFrame(objects, testWindow, camera, viewportWidth, viewportHeight, commandBuffer, imageIndex);
+			rayTracer->DrawFrame(objects, testWindow, camera, commandBuffer, imageIndex);
 
 		WriteTimestamp(commandBuffer);
 		if (denoiseOutput)
@@ -777,12 +778,14 @@ void Renderer::RenderIntro(Intro* intro)
 
 void Renderer::OnResize()
 {
-	swapchain->Recreate(renderPass, false);
-	if (canRayTrace)
-		rayTracer->RecreateImage(testWindow->GetWidth() * internalScale, testWindow->GetHeight() * internalScale);
-	UpdateScreenShaderTexture(currentFrame);
 	viewportWidth = testWindow->GetWidth() * viewportTransModifiers.x * internalScale;
 	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y * internalScale;
+
+	swapchain->Recreate(renderPass, false);
+	if (canRayTrace)
+		rayTracer->RecreateImage(viewportWidth, viewportHeight);
+	UpdateScreenShaderTexture(currentFrame);
+	
 	testWindow->resized = false;
 	Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px (" + std::to_string(int(internalScale * 100)) + "%% scale)");
 }
