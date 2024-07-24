@@ -78,15 +78,15 @@ struct Win32WindowCreateInfo
 const int monitorWidth = GetSystemMetrics(SM_CXSCREEN);
 const int monitorHeight = GetSystemMetrics(SM_CYSCREEN);
 
-class Win32Window
+class Window
 {
 	public:
 		HWND window;
 		HINSTANCE hInstance;
 		LRESULT(*additionalPollCallback)(HWND, UINT, WPARAM, LPARAM) = nullptr;
 
-		Win32Window(const Win32WindowCreateInfo& createInfo);
-		~Win32Window();
+		Window(const Win32WindowCreateInfo& createInfo);
+		~Window();
 
 		static void PollMessages();
 
@@ -124,8 +124,8 @@ class Win32Window
 		static MSG message;
 		HICON icon;
 		HCURSOR cursor;
-		static std::map<HWND, Win32Window*> windowBinding;
-		static std::unordered_set<Win32Window*> windows;
+		static std::map<HWND, Window*> windowBinding;
+		static std::unordered_set<Window*> windows;
 		std::string droppedFile = "";
 		std::wstring className = L"", windowName = L"";
 		int width = 0, height = 0, x = 0, y = 0, cursorX = 0, cursorY = 0, absCursorX = 0, absCursorY = 0, wheelRotation = 0;

@@ -4,17 +4,17 @@
 #include "PhysicalDevice.h"
 #include "surface.h"
 
-class Win32Window;
+class Window;
 
 class Swapchain
 {
 public:
     Swapchain() = default;
-    Swapchain(Surface surface, Win32Window* window, bool vsync);
+    Swapchain(Surface surface, Window* window, bool vsync);
 
     void Recreate(bool vsync);
     void Recreate(VkRenderPass renderPass, bool vsync);
-    void Generate(Surface surface, Win32Window* window, bool vsync);
+    void Generate(Surface surface, Window* window, bool vsync);
 
     void Destroy();
     void CreateDepthBuffers();
@@ -37,5 +37,5 @@ private:
     VkDevice logicalDevice;
     PhysicalDevice physicalDevice;
     Surface surface;
-    Win32Window* window;
+    Window* window;
 };

@@ -59,7 +59,7 @@ std::vector<VkDynamicState> Renderer::dynamicStates =
 
 VkMemoryAllocateFlagsInfo allocateFlagsInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO, nullptr, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT, 0 };
 
-Renderer::Renderer(Win32Window* window, RendererFlags flags)
+Renderer::Renderer(Window* window, RendererFlags flags)
 {
 	this->flags = flags;
 	testWindow = window;
@@ -550,7 +550,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	{
 		WriteTimestamp(commandBuffer);
 		if (!shouldRasterize)
-			rayTracer->DrawFrame(objects, testWindow, camera, commandBuffer, imageIndex);
+			rayTracer->DrawFrame(objects, testWindow, camera, commandBuffer);
 
 		WriteTimestamp(commandBuffer);
 		if (denoiseOutput)
@@ -770,7 +770,7 @@ void Renderer::RenderIntro(Intro* intro)
 		SubmitRenderingCommandBuffer(0, imageIndex);
 		PresentSwapchainImage(0, imageIndex);
 
-		Win32Window::PollMessages();
+		Window::PollMessages();
 
 		currentTime = std::chrono::duration<float, std::chrono::seconds::period>(std::chrono::high_resolution_clock::now() - beginTime).count(); // get the time that elapsed from the beginning till now
 	}

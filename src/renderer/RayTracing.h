@@ -14,7 +14,7 @@ typedef void* HANDLE;
 class Swapchain;
 class BottomLevelAccelerationStructure;
 class TopLevelAccelerationStructure;
-class Win32Window;
+class Window;
 class Object;
 class Camera;
 class Denoiser;
@@ -27,8 +27,8 @@ public:
 	RayTracing() {}
 	void Destroy();
 	
-	static RayTracing* Create(Win32Window* window, Swapchain* swapchain);
-	void DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	static RayTracing* Create(Window* window, Swapchain* swapchain);
+	void DrawFrame(std::vector<Object*> objects, Window* window, Camera* camera, VkCommandBuffer commandBuffer);
 	void RecreateImage(uint32_t width, uint32_t height);
 	void ApplyDenoisedImage(VkCommandBuffer commandBuffer);
 	void PrepareForDenoising(VkCommandBuffer commandBuffer);
@@ -57,8 +57,8 @@ private:
 	void CreateImage(uint32_t width, uint32_t height);
 	void UpdateDescriptorSets();
 
-	void Init(Win32Window* window, Swapchain* swapchain);
-	void SetUp(Win32Window* window, Swapchain* swapchain);
+	void Init(Window* window, Swapchain* swapchain);
+	void SetUp(Window* window, Swapchain* swapchain);
 	void CreateDescriptorPool(const ShaderGroupReflector& groupReflection);
 	void CreateDescriptorSets(const ShaderGroupReflector& groupReflection);
 	void CreateRayTracingPipeline(const std::vector<std::vector<char>> shaderCodes);
@@ -72,7 +72,7 @@ private:
 	std::vector<BottomLevelAccelerationStructure*> BLASs;
 	TopLevelAccelerationStructure* TLAS = nullptr;
 
-	Win32Window* window  = nullptr;
+	Window* window  = nullptr;
 	Swapchain* swapchain = nullptr;
 	Denoiser* denoiser = nullptr;
 

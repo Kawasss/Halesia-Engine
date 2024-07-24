@@ -25,8 +25,8 @@ public:
 	virtual void Start() {}
 	virtual void Destroy() {}
 
-	virtual void Update(Win32Window* window, float delta);
-	void DefaultUpdate(Win32Window* window, float delta);
+	virtual void Update(Window* window, float delta);
+	void DefaultUpdate(Window* window, float delta);
 
 	glm::mat4 GetProjectionMatrix();
 	glm::mat4 GetOrthoProjectionMatrix();
@@ -65,7 +65,7 @@ public:
 	float radius	= 2;
 
 	OrbitCamera() { SetScript(this); }
-	void Update(Win32Window* window, float delta) override;
+	void Update(Window* window, float delta) override;
 
 private:
 	float sumX = 0, sumY = 0;

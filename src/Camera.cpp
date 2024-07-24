@@ -7,12 +7,12 @@
 #include "system/Input.h"
 #include "system/Window.h"
 
-void Camera::Update(Win32Window* window, float delta)
+void Camera::Update(Window* window, float delta)
 {
 	DefaultUpdate(window, delta);
 }
 
-void Camera::DefaultUpdate(Win32Window* window, float delta)
+void Camera::DefaultUpdate(Window* window, float delta)
 {
 	if (Console::isOpen)
 		return;
@@ -126,7 +126,7 @@ glm::vec2 Camera::GetMotionVector()
 
 // orbit camera
 
-void OrbitCamera::Update(Win32Window* window, float delta)
+void OrbitCamera::Update(Window* window, float delta)
 {
 	if (Console::isOpen)
 		return;

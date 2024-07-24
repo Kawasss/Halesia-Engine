@@ -6,10 +6,10 @@
 
 #define BORDERLESS_WINDOWED WS_POPUP
 
-std::map<HWND, Win32Window*> Win32Window::windowBinding;
-std::unordered_set<Win32Window*> Win32Window::windows;
+std::map<HWND, Window*> Window::windowBinding;
+std::unordered_set<Window*> Window::windows;
 
-MSG Win32Window::message;
+MSG Window::message;
 
 //Returns the last Win32 error, in string format. Returns an empty string if there is no error.
 std::string WinGetLastErrorAsString()
@@ -36,7 +36,7 @@ std::string WinGetLastErrorAsString()
 	return message;
 }
 
-Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
+Window::Window(const Win32WindowCreateInfo& createInfo)
 {
 	width = createInfo.width;
 	height = createInfo.height;
@@ -107,7 +107,7 @@ Win32Window::Win32Window(const Win32WindowCreateInfo& createInfo)
 #endif
 }
 
-void Win32Window::ChangeWindowMode(WindowMode windowMode)
+void Window::ChangeWindowMode(WindowMode windowMode)
 {
 	if (windowMode == currentWindowMode)
 		return;
@@ -145,9 +145,9 @@ void Win32Window::ChangeWindowMode(WindowMode windowMode)
 	}
 }
 
-void Win32Window::PollMessages()
+void Window::PollMessages()
 {
-	for (Win32Window* w : windows)
+	for (Window* w : windows)
 	{
 		w->cursorX = 0;
 		w->cursorY = 0;
@@ -162,27 +162,27 @@ void Win32Window::PollMessages()
 	}
 }
 
-WindowMode Win32Window::GetWindowMode() const
+WindowMode Window::GetWindowMode() const
 {
 	return currentWindowMode;
 }
 
-bool Win32Window::ShouldClose() const
+bool Window::ShouldClose() const
 {
 	return shouldClose;
 }
 
-int Win32Window::GetX() const
+int Window::GetX() const
 {
 	return x;
 }
 
-int Win32Window::GetY() const
+int Window::GetY() const
 {
 	return y;
 }
 
-void Win32Window::SetXAndY(int x, int y)
+void Window::SetXAndY(int x, int y)
 {
 	if (this->x == x && this->y == y)
 		return;
@@ -191,29 +191,29 @@ void Win32Window::SetXAndY(int x, int y)
 	SetWindowPos(window, NULL, x, y, 0, 0, SWP_NOSIZE);
 }
 
-int Win32Window::GetWidth() const
+int Window::GetWidth() const
 {
 	return width;
 }
 
-int Win32Window::GetHeight() const
+int Window::GetHeight() const
 {
 	return height;
 }
 
-void Win32Window::SetWidth(int value)
+void Window::SetWidth(int value)
 {
 	width = value;
 	SetWindowPos(window, NULL, 0, 0, width, height, SWP_NOMOVE);
 }
 
-void Win32Window::SetHeight(int value)
+void Window::SetHeight(int value)
 {
 	height = value;
 	SetWindowPos(window, NULL, 0, 0, width, height, SWP_NOMOVE);
 }
 
-void Win32Window::SetWidthAndHeight(int width, int height)
+void Window::SetWidthAndHeight(int width, int height)
 {
 	if (this->width == width && this->height == height)
 		return;
@@ -222,52 +222,52 @@ void Win32Window::SetWidthAndHeight(int width, int height)
 	SetWindowPos(window, NULL, 0, 0, width, height, SWP_NOMOVE);
 }
 
-void Win32Window::GetRelativeCursorPosition(int& x, int& y) const
+void Window::GetRelativeCursorPosition(int& x, int& y) const
 {
 	x = cursorX;
 	y = cursorY;
 }
 
-void Win32Window::GetAbsoluteCursorPosition(int& x, int& y) const
+void Window::GetAbsoluteCursorPosition(int& x, int& y) const
 {
 	x = absCursorX;
 	y = absCursorY;
 }
 
-int Win32Window::GetWheelRotation() const
+int Window::GetWheelRotation() const
 {
 	return wheelRotation;
 }
 
-void Win32Window::LockCursor()
+void Window::LockCursor()
 {
 	ShowCursor(false);
 	lockCursor = true;
 }
 
-void Win32Window::UnlockCursor()
+void Window::UnlockCursor()
 {
 	ShowCursor(true);
 	lockCursor = false;
 }
 
-bool Win32Window::CursorIsLocked() const
+bool Window::CursorIsLocked() const
 {
 	return lockCursor;
 }
 
-bool Win32Window::ContainsDroppedFile() const
+bool Window::ContainsDroppedFile() const
 {
 	return containsDroppedFile;
 }
 
-std::string Win32Window::GetDroppedFile()
+std::string Window::GetDroppedFile()
 {
 	containsDroppedFile = false;
 	return droppedFile;
 }
 
-LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	if (windowBinding.count(hwnd) == 0)
 		return DefWindowProc(hwnd, message, wParam, lParam);
@@ -382,12 +382,12 @@ LRESULT CALLBACK Win32Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LP
 	return 0;
 }
 
-void Win32Window::Destroy()
+void Window::Destroy()
 {
 	delete this;
 }
 
-Win32Window::~Win32Window()
+Window::~Window()
 {
 	DestroyWindow(window);
 	windows.erase(this);

@@ -25,7 +25,7 @@ class Image;
 class AnimationManager;
 class ForwardPlusRenderer;
 class DescriptorWriter;
-class Win32Window;
+class Window;
 class RenderPipeline;
 struct Mesh;
 
@@ -55,7 +55,7 @@ public:
 
 	static std::vector<VkDynamicState> dynamicStates;
 
-	Renderer(Win32Window* window, RendererFlags flags);
+	Renderer(Window* window, RendererFlags flags);
 	void Destroy();
 	void RecompileShaders();
 	void DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta);
@@ -154,7 +154,7 @@ private:
 
 	PhysicalDevice physicalDevice;
 	Surface surface;
-	Win32Window* testWindow;
+	Window* testWindow;
 
 	uint32_t viewportWidth, viewportHeight;
 	glm::vec2 viewportOffsets = glm::vec2(0);

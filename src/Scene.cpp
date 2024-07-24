@@ -157,7 +157,7 @@ void Scene::Free(Object* object)
 	Console::WriteLine("Failed to free an object, because it isn't registered in the scene. Maybe the object is already freed?", MESSAGE_SEVERITY_ERROR);
 }
 
-void Scene::UpdateCamera(Win32Window* window, float delta)
+void Scene::UpdateCamera(Window* window, float delta)
 {
 	camera->Update(window, delta);
 }

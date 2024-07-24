@@ -8,12 +8,12 @@
 #include "renderer/PhysicalDevice.h"
 #include "renderer/Surface.h"
 
-Swapchain::Swapchain(Surface surface, Win32Window* window, bool vsync)
+Swapchain::Swapchain(Surface surface, Window* window, bool vsync)
 {
     Generate(surface, window, vsync);
 }
 
-void Swapchain::Generate(Surface surface, Win32Window* window, bool vsync)
+void Swapchain::Generate(Surface surface, Window* window, bool vsync)
 {
     const Vulkan::Context& ctx = Vulkan::GetContext();
 

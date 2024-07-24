@@ -262,7 +262,7 @@ HalesiaExitCode HalesiaEngine::Run()
 			if (showWindowData)
 				GUI::ShowWindowData(core.window); // only works on main thread, because it calls windows functions for changing the window
 
-			Win32Window::PollMessages();
+			Window::PollMessages();
 
 			asyncScripts.get();
 			core.scene->CollectGarbage();
@@ -303,7 +303,7 @@ void HalesiaEngine::InitializeCoreComponents()
 		<< "----------------------------------------\n"
 		<< "Initializing core components...\n\nWindow:\n";
 
-	core.window = new Win32Window(createInfo.windowCreateInfo);
+	core.window = new Window(createInfo.windowCreateInfo);
 	std::cout << "\nRenderer:\n";
 	core.renderer = new Renderer(core.window, GetRendererFlagsFromBehavior());
 	std::cout << "\nProfiler:\n";

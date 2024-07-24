@@ -74,7 +74,7 @@ inline void ShowInputVector(glm::vec2& vector, const std::vector<const char*>& l
 	ImGui::PopItemWidth();
 }
 
-void GUI::ShowWindowData(Win32Window* window)
+void GUI::ShowWindowData(Window* window)
 {
 	static std::vector<std::string> modes = { "WINDOW_MODE_WINDOWED", "WINDOW_MODE_BORDERLESS_WINDOWED" };
 	static std::unordered_map<std::string, WindowMode> stringToMode = { { "WINDOW_MODE_WINDOWED", WINDOW_MODE_WINDOWED }, { "WINDOW_MODE_BORDERLESS_WINDOWED", WINDOW_MODE_BORDERLESS_WINDOWED } };
@@ -201,7 +201,7 @@ void GUI::ShowObjectData(Object* object)
 	, object->handle, object->GetScript<Object*>(), !object->finishedLoading);
 }
 
-void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Win32Window* window, int index)
+void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* window, int index)
 {
 	static std::string currentItem = "None";
 	static int objectIndex = -1;
@@ -436,7 +436,7 @@ void GUI::ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGrap
 	ImGui::PopStyleColor(3);
 }
 
-void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Win32Window* window)
+void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Window* window)
 {
 	int selectedIndex = -1;
 

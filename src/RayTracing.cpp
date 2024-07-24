@@ -84,14 +84,14 @@ void RayTracing::Destroy()
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
 
-RayTracing* RayTracing::Create(Win32Window* window, Swapchain* swapchain)
+RayTracing* RayTracing::Create(Window* window, Swapchain* swapchain)
 {
 	RayTracing* ret = new RayTracing();
 	ret->Init(window, swapchain);
 	return ret;
 }
 
-void RayTracing::SetUp(Win32Window* window, Swapchain* swapchain)
+void RayTracing::SetUp(Window* window, Swapchain* swapchain)
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 	this->logicalDevice = context.logicalDevice;
@@ -290,7 +290,7 @@ void RayTracing::CreateMotionBuffer()
 	motionBuffer.Init(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
-void RayTracing::Init(Win32Window* window, Swapchain* swapchain)
+void RayTracing::Init(Window* window, Swapchain* swapchain)
 {
 	const std::vector<char> rgenCode = ReadFile("shaders/spirv/gen.rgen.spv"), chitCode = ReadFile("shaders/spirv/hit.rchit.spv");
 	const std::vector<char> rmissCode = ReadFile("shaders/spirv/miss.rmiss.spv"), shadowCode = ReadFile("shaders/spirv/shadow.rmiss.spv");
@@ -594,7 +594,7 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 }
 
 uint32_t frameCount = 0;
-void RayTracing::DrawFrame(std::vector<Object*> objects, Win32Window* window, Camera* camera, VkCommandBuffer commandBuffer, uint32_t imageIndex)
+void RayTracing::DrawFrame(std::vector<Object*> objects, Window* window, Camera* camera, VkCommandBuffer commandBuffer)
 {
 	if (imageHasChanged)
 	{

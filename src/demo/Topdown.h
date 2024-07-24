@@ -29,14 +29,14 @@ class FollowCam : public Camera
 public:
 	Object* objToFollow = nullptr;
 
-	void Update(Win32Window* window, float delta) override;
+	void Update(Window* window, float delta) override;
 };
 
 class Ship : public Object
 {
 public:
 	Object* baseBullet = nullptr;
-	Win32Window* mouse = nullptr;
+	Window* mouse = nullptr;
 
 	float timeSinceLastShot = 999.0f;
 	int health = 3;
@@ -74,7 +74,7 @@ private:
 	void SpawnBullet();
 };
 
-void FollowCam::Update(Win32Window* window, float delta)
+void FollowCam::Update(Window* window, float delta)
 {
 	position = objToFollow->transform.position;
 	position.y = 8;

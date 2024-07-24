@@ -2,7 +2,7 @@
 #include "renderer/Surface.h"
 #include "system/Window.h"
 
-Surface Surface::GenerateSurface(VkInstance instance, Win32Window* window)
+Surface Surface::GenerateSurface(VkInstance instance, Window* window)
 {
 	Surface lSurface{};
 	lSurface.instance = instance;

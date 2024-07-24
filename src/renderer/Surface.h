@@ -1,12 +1,12 @@
 #pragma once
 #include "vulkan/vulkan.h"
 
-class Win32Window;
+class Window;
 
 class Surface
 {
 	public:
-		static Surface	GenerateSurface(VkInstance instance, Win32Window* window);
+		static Surface	GenerateSurface(VkInstance instance, Window* window);
 		VkSurfaceKHR	VkSurface();
 		void			Destroy();
 

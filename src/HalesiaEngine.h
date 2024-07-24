@@ -34,7 +34,7 @@ struct HalesiaEngineCreateInfo
 struct EngineCore
 {
 	Renderer* renderer;
-	Win32Window* window;
+	Window* window;
 	Scene* scene;
 	Profiler* profiler;
 	AnimationManager* animationManager;

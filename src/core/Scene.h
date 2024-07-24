@@ -10,7 +10,7 @@
 
 class Object;
 class Camera;
-class Win32Window;
+class Window;
 
 typedef uint64_t Handle;
 
@@ -39,7 +39,7 @@ public:
 	void LoadScene(std::string path);
 	void LoadUninitializedObjects();
 
-	void UpdateCamera(Win32Window* window, float delta);
+	void UpdateCamera(Window* window, float delta);
 	void UpdateScripts(float delta);
 	void CollectGarbage();
 
