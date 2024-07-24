@@ -11,7 +11,6 @@
 #include "cuda_runtime_api.h"
 
 typedef void* HANDLE;
-class Swapchain;
 class BottomLevelAccelerationStructure;
 class TopLevelAccelerationStructure;
 class Window;
@@ -27,7 +26,7 @@ public:
 	RayTracing() {}
 	void Destroy();
 	
-	static RayTracing* Create(Window* window, Swapchain* swapchain);
+	static RayTracing* Create(Window* window);
 	void DrawFrame(std::vector<Object*> objects, Window* window, Camera* camera, VkCommandBuffer commandBuffer);
 	void RecreateImage(uint32_t width, uint32_t height);
 	void ApplyDenoisedImage(VkCommandBuffer commandBuffer);
@@ -57,8 +56,8 @@ private:
 	void CreateImage(uint32_t width, uint32_t height);
 	void UpdateDescriptorSets();
 
-	void Init(Window* window, Swapchain* swapchain);
-	void SetUp(Window* window, Swapchain* swapchain);
+	void Init(Window* window);
+	void SetUp(Window* window);
 	void CreateDescriptorPool(const ShaderGroupReflector& groupReflection);
 	void CreateDescriptorSets(const ShaderGroupReflector& groupReflection);
 	void CreateRayTracingPipeline(const std::vector<std::vector<char>> shaderCodes);
@@ -73,7 +72,6 @@ private:
 	TopLevelAccelerationStructure* TLAS = nullptr;
 
 	Window* window  = nullptr;
-	Swapchain* swapchain = nullptr;
 	Denoiser* denoiser = nullptr;
 
 	bool imageHasChanged = false;

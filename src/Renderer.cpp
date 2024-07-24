@@ -226,7 +226,7 @@ void Renderer::InitVulkan()
 	animationManager = AnimationManager::Get();
 
 	if (canRayTrace)
-		rayTracer = RayTracing::Create(testWindow, swapchain);
+		rayTracer = RayTracing::Create(testWindow);
 	else shouldRasterize = true;
 
 	for (int i = 0; i < 1; i++)

@@ -12,7 +12,6 @@
 #include "renderer/Vertex.h"
 #include "renderer/RayTracing.h"
 #include "renderer/Vulkan.h"
-#include "renderer/Swapchain.h"
 
 #include "system/Input.h"
 #include "system/Window.h"
@@ -84,18 +83,17 @@ void RayTracing::Destroy()
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
 
-RayTracing* RayTracing::Create(Window* window, Swapchain* swapchain)
+RayTracing* RayTracing::Create(Window* window)
 {
 	RayTracing* ret = new RayTracing();
-	ret->Init(window, swapchain);
+	ret->Init(window);
 	return ret;
 }
 
-void RayTracing::SetUp(Window* window, Swapchain* swapchain)
+void RayTracing::SetUp(Window* window)
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 	this->logicalDevice = context.logicalDevice;
-	this->swapchain = swapchain;
 	this->window = window;
 
 	commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
@@ -290,18 +288,18 @@ void RayTracing::CreateMotionBuffer()
 	motionBuffer.Init(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
-void RayTracing::Init(Window* window, Swapchain* swapchain)
+void RayTracing::Init(Window* window)
 {
 	const std::vector<char> rgenCode = ReadFile("shaders/spirv/gen.rgen.spv"), chitCode = ReadFile("shaders/spirv/hit.rchit.spv");
 	const std::vector<char> rmissCode = ReadFile("shaders/spirv/miss.rmiss.spv"), shadowCode = ReadFile("shaders/spirv/shadow.rmiss.spv");
 	ShaderGroupReflector groupReflection({ rgenCode, chitCode, rmissCode, shadowCode });
 
-	SetUp(window, swapchain);
+	SetUp(window);
 	CreateDescriptorPool(groupReflection);
 	CreateDescriptorSets(groupReflection);
 	CreateRayTracingPipeline({ rgenCode, chitCode, rmissCode, shadowCode });
 	CreateBuffers(groupReflection);
-	CreateImage(swapchain->extent.width, swapchain->extent.height);
+	//CreateImage(swapchain->extent.width, swapchain->extent.height);
 }
 
 void RayTracing::UpdateMeshDataDescriptorSets()
@@ -596,6 +594,9 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 uint32_t frameCount = 0;
 void RayTracing::DrawFrame(std::vector<Object*> objects, Window* window, Camera* camera, VkCommandBuffer commandBuffer)
 {
+	if (gBuffers[0] == VK_NULL_HANDLE)
+		RecreateImage(window->GetWidth(), window->GetHeight());
+
 	if (imageHasChanged)
 	{
 		UpdateDescriptorSets();

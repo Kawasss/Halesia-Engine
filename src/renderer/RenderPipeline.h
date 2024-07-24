@@ -3,16 +3,28 @@
 #include <vector>
 
 class Object;
+class Window;
+class Camera;
 
 class RenderPipeline
 {
 public:
+	struct Payload
+	{
+		VkCommandBuffer commandBuffer;
+		Window* window;
+		Camera* camera;
+		uint32_t width;
+		uint32_t height;
+	};
 
-	virtual void Execute(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects) {}
+	virtual void Execute(const Payload& payload, const std::vector<Object*>& objects) {}
 
 	virtual void Destroy() {}
 
 	~RenderPipeline() { Destroy(); }
+
+	template<typename T> T* GetChild() { return reinterpret_cast<T*>(this); }
 
 private:
 };
