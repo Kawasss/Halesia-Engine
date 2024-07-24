@@ -18,6 +18,7 @@ public:
 		uint32_t height;
 	};
 
+	virtual void Start(const Payload& payload);
 	virtual void Execute(const Payload& payload, const std::vector<Object*>& objects) {}
 
 	virtual void Destroy() {}

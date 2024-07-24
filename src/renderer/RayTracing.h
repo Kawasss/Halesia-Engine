@@ -39,7 +39,7 @@ public:
 
 	static int  raySampleCount;
 	static int  rayDepth;
-	static bool showNormals;
+	static bool showNormals; // replace these 3 with an enum for render mode
 	static bool showUniquePrimitives;
 	static bool showAlbedo;
 	static bool renderProgressive;
