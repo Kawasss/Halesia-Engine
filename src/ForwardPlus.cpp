@@ -4,18 +4,13 @@
 
 #include "core/Camera.h"
 
-ForwardPlusRenderer::ForwardPlusRenderer()
+void ForwardPlusPipeline::Start(const Payload& payload)
 {
 	Allocate();
 	CreateShader();
 }
 
-ForwardPlusRenderer::~ForwardPlusRenderer()
-{
-	Destroy();
-}
-
-void ForwardPlusRenderer::Destroy()
+void ForwardPlusPipeline::Destroy()
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 
@@ -31,7 +26,7 @@ void ForwardPlusRenderer::Destroy()
 	vkFreeMemory(context.logicalDevice, matricesMemory, nullptr);
 }
 
-void ForwardPlusRenderer::Allocate()
+void ForwardPlusPipeline::Allocate()
 {
 	VkDeviceSize size = cellWidth * cellHeight * sizeof(Cell) + sizeof(uint32_t) * 2;
 
@@ -53,7 +48,7 @@ void ForwardPlusRenderer::Allocate()
 	vkUnmapMemory(context.logicalDevice, cellMemory);
 }
 
-void ForwardPlusRenderer::CreateShader()
+void ForwardPlusPipeline::CreateShader()
 {
 	computeShader = new ComputeShader("shaders/spirv/forwardPlus.comp.spv");
 
@@ -62,17 +57,17 @@ void ForwardPlusRenderer::CreateShader()
 	computeShader->WriteToDescriptorBuffer(matricesBuffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, 2);
 }
 
-void ForwardPlusRenderer::Draw(VkCommandBuffer commandBuffer, Camera* camera)
+void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
 {
 	if (lightCount == 0)
 		return;
 
-	matrices->projection = camera->GetProjectionMatrix();
-	matrices->view = camera->GetViewMatrix();
+	matrices->projection = payload.camera->GetProjectionMatrix();
+	matrices->view = payload.camera->GetViewMatrix();
 
-	vkCmdFillBuffer(commandBuffer, cellBuffer, sizeof(uint32_t) * 2, VK_WHOLE_SIZE, 0);
+	vkCmdFillBuffer(payload.commandBuffer, cellBuffer, sizeof(uint32_t) * 2, VK_WHOLE_SIZE, 0);
 
-	computeShader->Execute(commandBuffer, lightCount, 1, 1);
+	computeShader->Execute(payload.commandBuffer, lightCount, 1, 1);
 
 	VkBufferMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -81,10 +76,10 @@ void ForwardPlusRenderer::Draw(VkCommandBuffer commandBuffer, Camera* camera)
 	barrier.buffer = cellBuffer;
 	barrier.size = VK_WHOLE_SIZE;
 
-	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+	vkCmdPipelineBarrier(payload.commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr);
 }
 
-void ForwardPlusRenderer::AddLight(glm::vec3 pos)
+void ForwardPlusPipeline::AddLight(glm::vec3 pos)
 {
 	if (lightCount + 1 >= MAX_LIGHTS)
 		throw std::runtime_error("Fatal error: upper light limit succeeded");

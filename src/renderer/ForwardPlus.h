@@ -3,16 +3,18 @@
 #include <vector>
 #include "../glm.h"
 
+#include "RenderPipeline.h"
+
 class ComputeShader;
 class Camera;
 
-class ForwardPlusRenderer
+class ForwardPlusPipeline : public RenderPipeline
 {
 public:
-	ForwardPlusRenderer();
-	~ForwardPlusRenderer();
+	void Start(const Payload& payload) override;
+	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
+	void Destroy() override;
 
-	void Draw(VkCommandBuffer commandBuffer, Camera* camera);
 	void AddLight(glm::vec3 pos);
 
 	ComputeShader* GetShader() { return computeShader; }
@@ -21,7 +23,6 @@ public:
 
 private:
 	void Allocate();
-	void Destroy();
 	void CreateShader();
 
 	static constexpr int MAX_LIGHT_INDICES = 7;

@@ -14,6 +14,7 @@
 #include "StorageBuffer.h"
 #include "QueryPool.h"
 #include "Buffer.h"
+#include "RenderPipeline.h"
 #include "cuda_runtime_api.h"
 
 class Intro;
@@ -24,6 +25,7 @@ class RayTracing;
 class Image;
 class AnimationManager;
 class ForwardPlusRenderer;
+class ForwardPlusPipeline;
 class DescriptorWriter;
 class Window;
 class RenderPipeline;
@@ -165,7 +167,7 @@ private:
 	RendererFlags flags = NONE; 
 	
 	RayTracing* rayTracer;
-	ForwardPlusRenderer* fwdPlus;
+	ForwardPlusPipeline* fwdPlus;
 	DescriptorWriter* writer;
 
 	static bool initGlobalBuffers;
@@ -207,4 +209,6 @@ private:
 	uint32_t GetNextSwapchainImage(uint32_t frameIndex);
 	void PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex);
 	void SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
+
+	RenderPipeline::Payload GetPipelinePayload(VkCommandBuffer commandBuffer, Camera* camera);
 };

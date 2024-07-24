@@ -221,7 +221,8 @@ void Renderer::InitVulkan()
 		initGlobalBuffers = true;
 	}
 
-	fwdPlus = new ForwardPlusRenderer;
+	fwdPlus = new ForwardPlusPipeline;//ForwardPlusRenderer;
+	fwdPlus->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
 	writer = new DescriptorWriter;
 	animationManager = AnimationManager::Get();
 
@@ -566,7 +567,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	}
 
 	if (shouldRasterize)
-		fwdPlus->Draw(commandBuffer, camera); // should maybe (?) not be here when its fully implemented
+		fwdPlus->Execute(GetPipelinePayload(commandBuffer, camera), objects);//Draw(commandBuffer, camera); // should maybe (?) not be here when its fully implemented
 
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
@@ -1088,4 +1089,16 @@ uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
 		throw VulkanAPIError("Failed to acquire the next swap chain image", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __LINE__);
 	return imageIndex;
+}
+
+RenderPipeline::Payload Renderer::GetPipelinePayload(VkCommandBuffer commandBuffer, Camera* camera)
+{
+	RenderPipeline::Payload ret{};
+	ret.camera = camera;
+	ret.commandBuffer = commandBuffer;
+	ret.width = viewportWidth;
+	ret.height = viewportHeight;
+	ret.window = testWindow;
+	
+	return ret;
 }
