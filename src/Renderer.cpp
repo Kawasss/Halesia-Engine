@@ -485,7 +485,7 @@ void Renderer::CreateGraphicsPipeline()
 	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(vertexShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
 	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(fragmentShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	graphicsPipeline = PipelineCreator::CreatePipeline(pipelineLayout, renderPass, swapchain, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW);
+	graphicsPipeline = PipelineCreator::CreatePipeline(pipelineLayout, renderPass, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW);
 
 	// screen shaders pipeline
 
@@ -495,7 +495,7 @@ void Renderer::CreateGraphicsPipeline()
 	vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderVert, VK_SHADER_STAGE_VERTEX_BIT);
 	fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderFrag, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	screenPipeline = PipelineCreator::CreatePipeline(pipelineLayout, renderPass, swapchain, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX);
+	screenPipeline = PipelineCreator::CreatePipeline(pipelineLayout, renderPass, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX);
 
 	vkDestroyShaderModule(logicalDevice, screenShaderVert, nullptr);
 	vkDestroyShaderModule(logicalDevice, screenShaderFrag, nullptr);

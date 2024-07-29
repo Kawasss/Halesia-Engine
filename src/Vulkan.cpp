@@ -131,6 +131,18 @@ VkPipelineViewportStateCreateInfo  Vulkan::GetDefaultViewportStateCreateInfo(VkV
     return viewportState;
 }
 
+VkPipelineViewportStateCreateInfo Vulkan::GetDynamicViewportStateCreateInfo()
+{
+    VkPipelineViewportStateCreateInfo viewportState{};
+    viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewportState.viewportCount = 1;
+    viewportState.pViewports = nullptr;
+    viewportState.scissorCount = 1;
+    viewportState.pScissors = nullptr;
+
+    return viewportState;
+}
+
 void Vulkan::PopulateDefaultViewport(VkViewport& viewport, VkExtent2D extents)
 {
     viewport.x = 0;

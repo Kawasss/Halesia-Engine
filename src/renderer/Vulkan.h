@@ -110,6 +110,7 @@ public:
     static void                               PopulateDefaultScissors(VkRect2D& scissors, VkExtent2D extents);
 
     static VkPipelineViewportStateCreateInfo  GetDefaultViewportStateCreateInfo(VkViewport& viewport, VkRect2D& scissors, VkExtent2D extents);
+    static VkPipelineViewportStateCreateInfo  GetDynamicViewportStateCreateInfo();
     static VkPipelineDynamicStateCreateInfo   GetDynamicStateCreateInfo(std::vector<VkDynamicState>& dynamicStates);
 
     static void                               InitializeContext(Context context);

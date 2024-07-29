@@ -23,5 +23,5 @@ class PipelineCreator
 {
 public:
 	static VkRenderPass CreateRenderPass(PhysicalDevice physicalDevice, Swapchain* swapchain, PipelineFlags flags, uint32_t attachmentCount);
-	static VkPipeline CreatePipeline(VkPipelineLayout layout, VkRenderPass renderPass, Swapchain* swapchain, const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, PipelineOptions flags);
+	static VkPipeline CreatePipeline(VkPipelineLayout layout, VkRenderPass renderPass, const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, PipelineOptions flags);
 };

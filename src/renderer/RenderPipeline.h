@@ -27,5 +27,7 @@ public:
 
 	template<typename T> T* GetChild() { return reinterpret_cast<T*>(this); }
 
+	VkRenderPass renderPass = VK_NULL_HANDLE;
+
 private:
 };

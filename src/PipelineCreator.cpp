@@ -6,7 +6,7 @@
 #include "renderer/Vertex.h"
 #include "renderer/Renderer.h"
 
-VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass renderPass, Swapchain* swapchain, const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, PipelineOptions flags)
+VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass renderPass, const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, PipelineOptions flags)
 {
 	VkPipelineDynamicStateCreateInfo dynamicState = Vulkan::GetDynamicStateCreateInfo(Renderer::dynamicStates);
 
@@ -28,9 +28,7 @@ VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass
 	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 	inputAssembly.primitiveRestartEnable = false;
 
-	VkViewport viewport;
-	VkRect2D scissor;
-	VkPipelineViewportStateCreateInfo viewportState = Vulkan::GetDefaultViewportStateCreateInfo(viewport, scissor, swapchain->extent);
+	VkPipelineViewportStateCreateInfo viewportState = Vulkan::GetDynamicViewportStateCreateInfo();
 
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;

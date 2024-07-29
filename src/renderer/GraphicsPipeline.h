@@ -11,7 +11,7 @@ class Swapchain;
 class GraphicsPipeline
 {
 public:
-	GraphicsPipeline(const std::string& vertPath, const std::string& fragPath, PipelineFlags flags, Swapchain* swapchain, VkRenderPass renderPass);
+	GraphicsPipeline(const std::string& vertPath, const std::string& fragPath, PipelineOptions flags, VkRenderPass renderPass);
 	~GraphicsPipeline();
 
 	GraphicsPipeline(const GraphicsPipeline&) = delete;
@@ -27,7 +27,7 @@ private:
 	void AllocateDescriptorSets(uint32_t amount);
 
 	void CreatePipelineLayout(const ShaderGroupReflector& reflector);
-	void CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, PipelineFlags flags, Swapchain* swapchain, VkRenderPass renderPass);
+	void CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, PipelineOptions flags, VkRenderPass renderPass);
 
 	VkPipeline pipeline = VK_NULL_HANDLE;
 	VkPipelineLayout layout = VK_NULL_HANDLE;

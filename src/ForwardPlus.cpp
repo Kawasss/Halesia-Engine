@@ -51,7 +51,7 @@ void ForwardPlusPipeline::Allocate()
 void ForwardPlusPipeline::CreateShader()
 {
 	computeShader = new ComputeShader("shaders/spirv/forwardPlus.comp.spv");
-
+	
 	computeShader->WriteToDescriptorBuffer(cellBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 0);
 	computeShader->WriteToDescriptorBuffer(lightBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 1);
 	computeShader->WriteToDescriptorBuffer(matricesBuffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, 2);

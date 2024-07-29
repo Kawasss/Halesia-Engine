@@ -148,14 +148,14 @@ uint32_t ShaderGroupReflector::GetDescriptorSetCount() const
 	return ret;
 }
 
-std::set<uint32_t> ShaderGroupReflector::GetDescriptorSetIndices() const
+std::vector<uint32_t> ShaderGroupReflector::GetDescriptorSetIndices() const
 {
-	std::set<uint32_t> ret;
+	std::vector<uint32_t> ret;
 	for (int i = 0; i < modules.size(); i++)
 	{
 		for (int j = 0; j < modules[i].descriptor_set_count; j++)
 		{
-			ret.insert(modules[i].descriptor_sets[j].set);
+			ret.push_back(modules[i].descriptor_sets[j].set);
 		}
 	}
 	return ret;

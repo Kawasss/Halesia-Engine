@@ -5,7 +5,7 @@
 
 #include "tools/common.h"
 
-GraphicsPipeline::GraphicsPipeline(const std::string& vertPath, const std::string& fragPath, PipelineFlags flags, Swapchain* swapchain, VkRenderPass renderPass)
+GraphicsPipeline::GraphicsPipeline(const std::string& vertPath, const std::string& fragPath, PipelineOptions flags, VkRenderPass renderPass)
 {
 	//std::vector<char> vertCode = ReadFile(vertPath), fragCode = ReadFile(fragPath);
 	std::vector<std::vector<char>> shaderCodes =
@@ -20,7 +20,7 @@ GraphicsPipeline::GraphicsPipeline(const std::string& vertPath, const std::strin
 	AllocateDescriptorSets(reflector.GetDescriptorSetCount());
 
 	CreatePipelineLayout(reflector);
-	CreateGraphicsPipeline(shaderCodes, flags, swapchain, renderPass);
+	CreateGraphicsPipeline(shaderCodes, flags, renderPass);
 }
 
 GraphicsPipeline::~GraphicsPipeline()
@@ -30,7 +30,7 @@ GraphicsPipeline::~GraphicsPipeline()
 	vkDestroyPipeline(ctx.logicalDevice, pipeline, nullptr);
 	vkDestroyPipelineLayout(ctx.logicalDevice, layout, nullptr);
 
-	for (const VkDescriptorSetLayout setLayout : setLayouts)
+	for (const VkDescriptorSetLayout& setLayout : setLayouts)
 		vkDestroyDescriptorSetLayout(ctx.logicalDevice, setLayout, nullptr);
 
 	vkDestroyDescriptorPool(ctx.logicalDevice, descriptorPool, nullptr);
@@ -39,7 +39,7 @@ GraphicsPipeline::~GraphicsPipeline()
 void GraphicsPipeline::Bind(VkCommandBuffer commandBuffer)
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
 }
 
 void GraphicsPipeline::CreateDescriptorPool(const ShaderGroupReflector& reflector)
@@ -50,7 +50,7 @@ void GraphicsPipeline::CreateDescriptorPool(const ShaderGroupReflector& reflecto
 	VkDescriptorPoolCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	createInfo.maxSets = reflector.GetDescriptorSetCount();
-	createInfo.poolSizeCount = poolSizes.size();
+	createInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	createInfo.pPoolSizes = poolSizes.data();
 
 	VkResult result = vkCreateDescriptorPool(ctx.logicalDevice, &createInfo, nullptr, &descriptorPool);
@@ -60,7 +60,7 @@ void GraphicsPipeline::CreateDescriptorPool(const ShaderGroupReflector& reflecto
 void GraphicsPipeline::CreateSetLayout(const ShaderGroupReflector& reflector)
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
-	std::set<uint32_t> indices = reflector.GetDescriptorSetIndices();
+	std::vector<uint32_t> indices = reflector.GetDescriptorSetIndices();
 
 	for (uint32_t index : indices)
 	{
@@ -89,7 +89,8 @@ void GraphicsPipeline::AllocateDescriptorSets(uint32_t amount)
 	allocInfo.descriptorPool = descriptorPool;
 	allocInfo.pSetLayouts = setLayouts.data();
 
-	VkResult result = vkAllocateDescriptorSets(ctx.logicalDevice, nullptr, descriptorSets.data());
+	descriptorSets.resize(amount);
+	VkResult result = vkAllocateDescriptorSets(ctx.logicalDevice, &allocInfo, descriptorSets.data());
 	CheckVulkanResult("Failed to allocate descriptor sets for a graphics pipeline", result, vkAllocateDescriptorSets);
 }
 
@@ -109,7 +110,7 @@ void GraphicsPipeline::CreatePipelineLayout(const ShaderGroupReflector& reflecto
 	CheckVulkanResult("Failed to create a pipeline layout for a graphics pipeline", result, vkCreatePipelineLayout);
 }
 
-void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, PipelineFlags flags, Swapchain* swapchain, VkRenderPass renderPass)
+void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, PipelineOptions flags, VkRenderPass renderPass)
 {
 	VkShaderModule vertModule = Vulkan::CreateShaderModule(shaders[0]);
 	VkShaderModule fragModule = Vulkan::CreateShaderModule(shaders[1]);
@@ -120,5 +121,5 @@ void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char
 		Vulkan::GetGenericShaderStageCreateInfo(fragModule, VK_SHADER_STAGE_FRAGMENT_BIT),
 	};
 
-	pipeline = PipelineCreator::CreatePipeline(layout, renderPass, swapchain, shaderInfos, flags);
+	pipeline = PipelineCreator::CreatePipeline(layout, renderPass, shaderInfos, flags);
 }
