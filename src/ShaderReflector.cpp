@@ -122,11 +122,42 @@ std::vector<VkDescriptorPoolSize> ShaderGroupReflector::GetDescriptorPoolSize() 
 	return ret;
 }
 
+std::vector<VkPushConstantRange> ShaderGroupReflector::GetPushConstants() const
+{
+	std::vector<VkPushConstantRange> ret;
+	for (int i = 0; i < modules.size(); i++)
+	{
+		for (int j = 0; j < modules[i].push_constant_block_count; j++)
+		{
+			VkPushConstantRange range{};
+			range.offset = modules[i].push_constant_blocks[j].offset;
+			range.size = modules[i].push_constant_blocks[j].size;
+			range.stageFlags = modules[i].shader_stage;
+			
+			ret.push_back(range);
+		}
+	}
+	return ret;
+}
+
 uint32_t ShaderGroupReflector::GetDescriptorSetCount() const
 {
 	uint32_t ret = 0;
 	for (int i = 0; i < modules.size(); i++)
 		ret += modules[i].descriptor_set_count;
+	return ret;
+}
+
+std::set<uint32_t> ShaderGroupReflector::GetDescriptorSetIndices() const
+{
+	std::set<uint32_t> ret;
+	for (int i = 0; i < modules.size(); i++)
+	{
+		for (int j = 0; j < modules[i].descriptor_set_count; j++)
+		{
+			ret.insert(modules[i].descriptor_sets[j].set);
+		}
+	}
 	return ret;
 }
 

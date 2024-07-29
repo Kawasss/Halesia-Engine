@@ -252,6 +252,9 @@
     <ClCompile Include="..\ScriptingInterpreter\src\Parser.cpp">
       <Filter>external\interpreter</Filter>
     </ClCompile>
+    <ClCompile Include="src\GraphicsPipeline.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -474,6 +477,9 @@
       <Filter>external\interpreter</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\RenderPipeline.h">
+      <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\GraphicsPipeline.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
