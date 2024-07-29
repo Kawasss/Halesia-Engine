@@ -18,6 +18,8 @@ template<typename T> class StorageBuffer
 {
 public:
 	StorageBuffer() {}
+	~StorageBuffer() { Destroy(); }
+
 	void Reserve(size_t maxAmountToBeStored, VkBufferUsageFlags usage);
 
 	StorageMemory SubmitNewData(const std::vector<T>& data);
@@ -212,9 +214,14 @@ VkDeviceSize StorageBuffer<T>::GetMemoryOffset(StorageMemory memory)
 template<typename T>
 void StorageBuffer<T>::Destroy()
 {
+	if (buffer == VK_NULL_HANDLE)
+		return;
+
 	std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 	vkDestroyBuffer(logicalDevice, buffer, nullptr);
 	vkFreeMemory(logicalDevice, deviceMemory, nullptr);
+
+	buffer = VK_NULL_HANDLE;
 }
 
 template<typename T>

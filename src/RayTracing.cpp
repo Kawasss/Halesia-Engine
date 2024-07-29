@@ -69,9 +69,7 @@ void RayTracing::Destroy()
 	/*vkFreeMemory(logicalDevice, uniformBufferMemory, nullptr);
 	vkDestroyBuffer(logicalDevice, uniformBufferBuffer, nullptr);*/
 
-	TLAS->Destroy();
-	for (BottomLevelAccelerationStructure* pBLAS : BLASs)
-		pBLAS->Destroy();
+	delete TLAS;
 
 	vkDestroyPipeline(logicalDevice, pipeline, nullptr);
 	vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
@@ -79,6 +77,16 @@ void RayTracing::Destroy()
 	vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout(logicalDevice, materialSetLayout, nullptr);
 	vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, nullptr);
+
+	for (int i = 0; i < gBuffers.size(); i++)
+	{
+		vkDestroyImageView(logicalDevice, gBufferViews[i], nullptr);
+		vkDestroyImage(logicalDevice, gBuffers[i], nullptr);
+		vkFreeMemory(logicalDevice, gBufferMemories[i], nullptr);
+	}
+	vkDestroyImageView(logicalDevice, prevImageView, nullptr);
+	vkDestroyImage(logicalDevice, prevImage, nullptr);
+	vkFreeMemory(logicalDevice, prevMemory, nullptr);
 
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }

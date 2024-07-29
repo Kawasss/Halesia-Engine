@@ -11,6 +11,7 @@ class Swapchain
 public:
     Swapchain() = default;
     Swapchain(Surface surface, Window* window, bool vsync);
+    ~Swapchain() { Destroy(); }
 
     void Recreate(bool vsync);
     void Recreate(VkRenderPass renderPass, bool vsync);

@@ -7,6 +7,7 @@
 
 class ComputeShader;
 class Camera;
+class GraphicsPipeline;
 
 class ForwardPlusPipeline : public RenderPipeline
 {
@@ -20,6 +21,8 @@ public:
 	ComputeShader* GetShader() { return computeShader; }
 	VkBuffer GetCellBuffer()   { return cellBuffer; }
 	VkBuffer GetLightBuffer()  { return lightBuffer; }
+
+	~ForwardPlusPipeline() { Destroy(); }
 
 private:
 	void Allocate();
@@ -66,4 +69,5 @@ private:
 
 	Matrices* matrices = nullptr;
 	ComputeShader* computeShader = nullptr;
+	GraphicsPipeline* graphicsPipeline = nullptr;
 };

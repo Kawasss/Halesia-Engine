@@ -68,11 +68,11 @@ void Material::AwaitGeneration()
 
 void Material::Destroy() // only delete the textures if they arent the placeholders
 {
-	if (albedo != Texture::placeholderAlbedo) albedo->Destroy();
-	if (normal != Texture::placeholderNormal) normal->Destroy();
-	if (metallic != Texture::placeholderMetallic) metallic->Destroy();
-	if (roughness != Texture::placeholderRoughness) roughness->Destroy();
-	if (ambientOcclusion != Texture::placeholderAmbientOcclusion) ambientOcclusion->Destroy();
+	if (albedo != Texture::placeholderAlbedo) delete albedo;
+	if (normal != Texture::placeholderNormal) delete normal;
+	if (metallic != Texture::placeholderMetallic) delete metallic;
+	if (roughness != Texture::placeholderRoughness) delete roughness;
+	if (ambientOcclusion != Texture::placeholderAmbientOcclusion) delete ambientOcclusion;
 }
 
 bool operator==(const Material& lMaterial, const Material& rMaterial)

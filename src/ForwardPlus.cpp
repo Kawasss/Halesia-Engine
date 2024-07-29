@@ -1,6 +1,7 @@
 #include "renderer/ForwardPlus.h"
 #include "renderer/Vulkan.h"
 #include "renderer/ComputeShader.h"
+#include "renderer/GraphicsPipeline.h"
 
 #include "core/Camera.h"
 
@@ -15,6 +16,7 @@ void ForwardPlusPipeline::Destroy()
 	const Vulkan::Context& context = Vulkan::GetContext();
 
 	delete computeShader;
+	delete graphicsPipeline;
 
 	vkDestroyBuffer(context.logicalDevice, cellBuffer, nullptr);
 	vkFreeMemory(context.logicalDevice, cellMemory, nullptr);
@@ -51,7 +53,8 @@ void ForwardPlusPipeline::Allocate()
 void ForwardPlusPipeline::CreateShader()
 {
 	computeShader = new ComputeShader("shaders/spirv/forwardPlus.comp.spv");
-	
+	graphicsPipeline = new GraphicsPipeline("shaders/spirv/triangle.vert.spv", "shaders/spirv/triangle.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW, renderPass);
+
 	computeShader->WriteToDescriptorBuffer(cellBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 0);
 	computeShader->WriteToDescriptorBuffer(lightBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 1);
 	computeShader->WriteToDescriptorBuffer(matricesBuffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, 2);

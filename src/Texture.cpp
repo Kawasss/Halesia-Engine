@@ -315,11 +315,11 @@ void Texture::GeneratePlaceholderTextures()
 
 void Texture::DestroyPlaceholderTextures()
 {
-	placeholderAlbedo->Destroy();
-	placeholderNormal->Destroy();
-	placeholderMetallic->Destroy();
-	placeholderRoughness->Destroy();
-	placeholderAmbientOcclusion->Destroy();
+	delete placeholderAlbedo;
+	delete placeholderNormal;
+	delete placeholderMetallic;
+	delete placeholderRoughness;
+	delete placeholderAmbientOcclusion;
 }
 
 void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
@@ -472,7 +472,7 @@ int Image::GetMipLevels()
 void Image::Destroy()
 {
 	this->texturesHaveChanged = true;
-	Vulkan::SubmitObjectForDeletion
+	/*Vulkan::SubmitObjectForDeletion
 	(
 		[device = logicalDevice, view = imageView, image = image, memory = imageMemory]()
 		{
@@ -481,5 +481,9 @@ void Image::Destroy()
 			vkFreeMemory(device, memory, nullptr);
 		}
 	);
-	delete this;
+	delete this;*/
+
+	vkDestroyImageView(logicalDevice, imageView, nullptr);
+	vkDestroyImage(logicalDevice, image, nullptr);
+	vkFreeMemory(logicalDevice, imageMemory, nullptr);
 }

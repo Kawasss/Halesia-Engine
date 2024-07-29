@@ -210,5 +210,4 @@ void Scene::Destroy()
 {
 	for (Object* object : allObjects)
 		object->Destroy();
-	delete this;
 }

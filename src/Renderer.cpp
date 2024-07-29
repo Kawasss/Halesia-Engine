@@ -72,16 +72,34 @@ void Renderer::Destroy()
 {
 	vkDeviceWaitIdle(logicalDevice);
 
+	Vulkan::DeleteSubmittedObjects();
+	Vulkan::DestroyAllCommandPools();
+
+	for (Material& mat : Mesh::materials)
+		mat.Destroy();
+
+	for (auto& buf : modelBuffers)
+		buf.~Buffer();
+	for (auto& buf : uniformBuffers)
+		buf.~Buffer();
+
+	indirectDrawParameters.Destroy();
+	g_defaultVertexBuffer.Destroy();
+	g_vertexBuffer.Destroy();
+	g_indexBuffer.Destroy();
+
+	queryPool.~QueryPool();
+
 	delete writer;
 	delete fwdPlus;
 
-	animationManager->Destroy();
-	rayTracer->Destroy();
+	delete animationManager;
+	delete rayTracer;
 
 	vkDestroyDescriptorPool(logicalDevice, imGUIDescriptorPool, nullptr);
 	ImGui_ImplVulkan_Shutdown();
 
-	swapchain->Destroy();
+	delete swapchain;
 
 	vkDestroySampler(logicalDevice, defaultSampler, nullptr);
 
@@ -92,6 +110,8 @@ void Renderer::Destroy()
 
 	vkDestroyPipeline(logicalDevice, graphicsPipeline, nullptr);
 	vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
+
+	vkDestroyPipeline(logicalDevice, screenPipeline, nullptr);
 
 	vkDestroyRenderPass(logicalDevice, deferredRenderPass, nullptr);
 	vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
@@ -111,7 +131,6 @@ void Renderer::Destroy()
 	surface.Destroy();
 
 	vkDestroyInstance(instance, nullptr);
-	delete this;
 }
 
 void Renderer::CreateImGUI()
@@ -1094,6 +1113,7 @@ uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
 RenderPipeline::Payload Renderer::GetPipelinePayload(VkCommandBuffer commandBuffer, Camera* camera)
 {
 	RenderPipeline::Payload ret{};
+	ret.renderer = this;
 	ret.camera = camera;
 	ret.commandBuffer = commandBuffer;
 	ret.width = viewportWidth;

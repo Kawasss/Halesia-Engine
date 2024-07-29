@@ -16,9 +16,13 @@ void QueryPool::Create(VkQueryType type, uint32_t amount)
 
 void QueryPool::Destroy()
 {
+	if (pool == VK_NULL_HANDLE)
+		return;
+
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	delete[] data;
 	vkDestroyQueryPool(ctx.logicalDevice, pool, nullptr);
+	pool = VK_NULL_HANDLE;
 }
 
 QueryPool::~QueryPool()

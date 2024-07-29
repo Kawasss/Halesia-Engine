@@ -52,6 +52,7 @@ class AnimationManager
 {
 public:
 	static AnimationManager* Get();
+	~AnimationManager() { Destroy(); }
 
 	void ComputeAnimations(float delta);
 	void ApplyAnimations(VkCommandBuffer commandBuffer);

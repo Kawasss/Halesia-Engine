@@ -24,6 +24,7 @@ class RayTracing
 {
 public:
 	RayTracing() {}
+	~RayTracing() { Destroy(); }
 	void Destroy();
 	
 	static RayTracing* Create(Window* window);
@@ -100,6 +101,6 @@ private:
 	VkImageView prevImageView;
 	VkDeviceMemory prevMemory;
 
-	std::array<VkDeviceMemory, 4> gBufferMemories;
+	std::array<VkDeviceMemory, 3> gBufferMemories;
 	std::unordered_map<int, Handle> processedMaterials;
 };

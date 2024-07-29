@@ -58,6 +58,8 @@ public:
 	static std::vector<VkDynamicState> dynamicStates;
 
 	Renderer(Window* window, RendererFlags flags);
+	~Renderer() { Destroy(); }
+
 	void Destroy();
 	void RecompileShaders();
 	void DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta);

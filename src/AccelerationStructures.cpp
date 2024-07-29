@@ -85,7 +85,7 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 
 void AccelerationStructure::Destroy()
 {
-	Vulkan::SubmitObjectForDeletion
+	/*Vulkan::SubmitObjectForDeletion
 	(
 		[device = logicalDevice, structure = accelerationStructure, ASBuf = ASBuffer, ASMem = ASBufferMemory, scratchBuf = scratchBuffer, scratchMem = scratchDeviceMemory]()
 		{
@@ -97,7 +97,15 @@ void AccelerationStructure::Destroy()
 			vkDestroyBuffer(device, scratchBuf, nullptr);
 			vkFreeMemory(device, scratchMem, nullptr);
 		}
-	);
+	);*/
+
+	vkDestroyAccelerationStructureKHR(logicalDevice, accelerationStructure, nullptr);
+
+	vkDestroyBuffer(logicalDevice, ASBuffer, nullptr);
+	vkFreeMemory(logicalDevice, ASBufferMemory, nullptr);
+
+	vkDestroyBuffer(logicalDevice, scratchBuffer, nullptr);
+	vkFreeMemory(logicalDevice, scratchDeviceMemory, nullptr);
 }
 
 BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(Mesh& mesh)
@@ -236,17 +244,4 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 bool TopLevelAccelerationStructure::HasBeenBuilt()
 {
 	return hasBeenBuilt;
-}
-
-void TopLevelAccelerationStructure::Destroy()
-{
-	vkDestroyAccelerationStructureKHR(logicalDevice, accelerationStructure, nullptr);
-
-	vkDestroyBuffer(logicalDevice, ASBuffer, nullptr);
-	vkFreeMemory(logicalDevice, ASBufferMemory, nullptr);
-
-	vkDestroyBuffer(logicalDevice, scratchBuffer, nullptr);
-	vkFreeMemory(logicalDevice, scratchDeviceMemory, nullptr);
-
-	instanceBuffer.Destroy();
 }

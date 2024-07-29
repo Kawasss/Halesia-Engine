@@ -406,6 +406,10 @@ void HalesiaEngine::OnExit()
 
 	VVM::WriteToFile("cfg/vars.vvm");
 	std::cout << "Finished writing to cfg/vars.vvm\n";
+
+	delete core.scene;
+	delete core.renderer;
+	delete core.window;
 }
 
 void HalesiaEngine::RegisterConsoleVars()

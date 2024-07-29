@@ -51,7 +51,9 @@ public:
 
 	virtual void Start() {};
 	virtual void Update(float delta) {};
-			void Destroy();
+
+	~Scene() { Destroy(); }
+	void Destroy();
 
 	std::vector<Object*> allObjects; // this vector owns the objects
 

@@ -202,4 +202,5 @@ void AnimationManager::Destroy()
 
 	vkUnmapMemory(context.logicalDevice, mat4Memory);
 	vkFreeMemory(context.logicalDevice, mat4Memory, nullptr);
+	vkDestroyBuffer(context.logicalDevice, mat4Buffer, nullptr);
 }

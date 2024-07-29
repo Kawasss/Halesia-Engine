@@ -51,8 +51,6 @@ public:
 	void Update(std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer);
 	bool HasBeenBuilt();
 
-	void Destroy() override;
-
 private:
 	static std::vector<VkAccelerationStructureInstanceKHR> GetInstances(std::vector<Object*>& objects);
 	void GetGeometry(VkAccelerationStructureGeometryKHR& geometry);

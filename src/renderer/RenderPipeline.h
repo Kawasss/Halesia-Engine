@@ -5,6 +5,7 @@
 class Object;
 class Window;
 class Camera;
+class Renderer;
 
 class RenderPipeline
 {
@@ -12,6 +13,7 @@ public:
 	struct Payload
 	{
 		VkCommandBuffer commandBuffer;
+		Renderer* renderer;
 		Window* window;
 		Camera* camera;
 		uint32_t width;

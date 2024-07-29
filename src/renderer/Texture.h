@@ -43,6 +43,8 @@ public:
 	VkDeviceMemory imageMemory;
 	VkDeviceSize size = 0; // in bytes!
 
+	~Image() { Destroy(); }
+
 protected:
 	std::future<void> generation;
 

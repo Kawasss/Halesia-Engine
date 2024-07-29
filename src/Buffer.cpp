@@ -14,6 +14,9 @@ void Buffer::Destroy()
 		vkDestroyBuffer(ctx.logicalDevice, buffer, nullptr);
 	if (memory != VK_NULL_HANDLE)
 		vkFreeMemory(ctx.logicalDevice, memory, nullptr);
+
+	buffer = VK_NULL_HANDLE;
+	memory = VK_NULL_HANDLE;
 }
 
 void* Buffer::Map(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags)
