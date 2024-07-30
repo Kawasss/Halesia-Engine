@@ -113,7 +113,6 @@ void Renderer::Destroy()
 
 	vkDestroyPipeline(logicalDevice, screenPipeline, nullptr);
 
-	vkDestroyRenderPass(logicalDevice, deferredRenderPass, nullptr);
 	vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -369,10 +368,6 @@ void Renderer::CreateRenderPass()
 	// swapchain renderpass
 
 	renderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain, PIPELINE_FLAG_NONE, 1);
-
-	// deferred renderpass
-
-	deferredRenderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain, PIPELINE_FLAG_CLEAR_ON_LOAD, 1);
 }
 
 void Renderer::CreateDescriptorSets()
@@ -391,23 +386,15 @@ void Renderer::CreateDescriptorSets()
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		writer->WriteBuffer(descriptorSets[i], uniformBuffers[i].Get(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
-		writer->WriteBuffer(descriptorSets[i], modelBuffers[i].Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
-		writer->WriteBuffer(descriptorSets[i], fwdPlus->GetCellBuffer(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
-		writer->WriteBuffer(descriptorSets[i], fwdPlus->GetLightBuffer(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4);
 		writer->WriteImage(descriptorSets[i], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, canRayTrace ? rayTracer->gBufferViews[0] : VK_NULL_HANDLE, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	}
 }
 
 void Renderer::CreateDescriptorPool()
 {
-	std::array<VkDescriptorPoolSize, 3> poolSizes{};
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	std::array<VkDescriptorPoolSize, 1> poolSizes{};
+	poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	poolSizes[0].descriptorCount = MAX_FRAMES_IN_FLIGHT;
-	poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	poolSizes[1].descriptorCount = MAX_FRAMES_IN_FLIGHT * 3;
-	poolSizes[2].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[2].descriptorCount = MAX_FRAMES_IN_FLIGHT * MAX_BINDLESS_TEXTURES;
 
 	VkDescriptorPoolCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -422,20 +409,6 @@ void Renderer::CreateDescriptorPool()
 
 void Renderer::CreateDescriptorSetLayout() // should simplify this with shader reflection
 {
-	VkDescriptorSetLayoutBinding layoutBinding{};
-	layoutBinding.binding = 0;
-	layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	layoutBinding.descriptorCount = 1;
-	layoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-	layoutBinding.pImmutableSamplers = nullptr;
-
-	VkDescriptorSetLayoutBinding modelLayoutBinding{};
-	modelLayoutBinding.binding = 1;
-	modelLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	modelLayoutBinding.descriptorCount = 1;
-	modelLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	modelLayoutBinding.pImmutableSamplers = nullptr;
-
 	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
 	samplerLayoutBinding.binding = 2;
 	samplerLayoutBinding.descriptorCount = MAX_FRAMES_IN_FLIGHT;//MAX_BINDLESS_TEXTURES;
@@ -443,22 +416,8 @@ void Renderer::CreateDescriptorSetLayout() // should simplify this with shader r
 	samplerLayoutBinding.pImmutableSamplers = nullptr;
 	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
-	VkDescriptorSetLayoutBinding cellLayoutBinding{};
-	cellLayoutBinding.binding = 3;
-	cellLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	cellLayoutBinding.descriptorCount = 1;
-	cellLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	cellLayoutBinding.pImmutableSamplers = nullptr;
-
-	VkDescriptorSetLayoutBinding lightLayoutBinding{};
-	lightLayoutBinding.binding = 4;
-	lightLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-	lightLayoutBinding.descriptorCount = 1;
-	lightLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-	lightLayoutBinding.pImmutableSamplers = nullptr;
-
-	std::array<VkDescriptorSetLayoutBinding, 5> bindings = { layoutBinding, modelLayoutBinding, samplerLayoutBinding, cellLayoutBinding, lightLayoutBinding };
-	std::vector<VkDescriptorBindingFlags> bindingFlags = { 0, 0, VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT, 0, 0 };
+	std::array<VkDescriptorSetLayoutBinding, 1> bindings = { samplerLayoutBinding };
+	std::vector<VkDescriptorBindingFlags> bindingFlags = { VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT };
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo{};
 	bindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
@@ -499,29 +458,18 @@ void Renderer::CreateGraphicsPipeline()
 
 	// world shaders pipeline
 
-	VkShaderModule vertexShaderModule = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/triangle.vert.spv"));
-	VkShaderModule fragmentShaderModule = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/triangle.frag.spv"));
-
-	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(vertexShaderModule, VK_SHADER_STAGE_VERTEX_BIT);
-	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(fragmentShaderModule, VK_SHADER_STAGE_FRAGMENT_BIT);
-
-	graphicsPipeline = PipelineCreator::CreatePipeline(pipelineLayout, renderPass, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW);
-
 	// screen shaders pipeline
 
 	VkShaderModule screenShaderVert = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/screen.vert.spv"));
 	VkShaderModule screenShaderFrag = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/screen.frag.spv"));
 
-	vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderVert, VK_SHADER_STAGE_VERTEX_BIT);
-	fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderFrag, VK_SHADER_STAGE_FRAGMENT_BIT);
+	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderVert, VK_SHADER_STAGE_VERTEX_BIT);
+	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderFrag, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	screenPipeline = PipelineCreator::CreatePipeline(pipelineLayout, renderPass, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX);
 
 	vkDestroyShaderModule(logicalDevice, screenShaderVert, nullptr);
 	vkDestroyShaderModule(logicalDevice, screenShaderFrag, nullptr);
-
-	vkDestroyShaderModule(logicalDevice, vertexShaderModule, nullptr);
-	vkDestroyShaderModule(logicalDevice, fragmentShaderModule, nullptr);
 }
 
 void Renderer::CreateCommandPool()
@@ -635,23 +583,6 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	result = vkEndCommandBuffer(commandBuffer);
 	CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
-}
-
-void Renderer::RasterizeObjects(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects)
-{
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-
-	SetViewport(commandBuffer);
-	SetScissors(commandBuffer);
-
-	VkBuffer vertexBuffers[] = { g_vertexBuffer.GetBufferHandle() };
-	VkDeviceSize offsets[] = { 0 };
-
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-	vkCmdBindIndexBuffer(commandBuffer, g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
-
-	vkCmdDrawIndexedIndirect(commandBuffer, indirectDrawParameters.GetBufferHandle(), 0, (uint32_t)indirectDrawParameters.GetSize(), sizeof(VkDrawIndexedIndirectCommand));
 }
 
 void Renderer::DenoiseSynchronized(VkCommandBuffer commandBuffer)

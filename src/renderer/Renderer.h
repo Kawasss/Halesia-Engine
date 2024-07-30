@@ -127,7 +127,6 @@ private:
 	VkInstance instance							= VK_NULL_HANDLE;
 	VkDevice logicalDevice						= VK_NULL_HANDLE;
 	VkRenderPass renderPass						= VK_NULL_HANDLE;
-	VkRenderPass deferredRenderPass				= VK_NULL_HANDLE;
 	VkDescriptorSetLayout descriptorSetLayout	= VK_NULL_HANDLE;
 	VkPipelineLayout pipelineLayout				= VK_NULL_HANDLE;
 	VkPipeline graphicsPipeline					= VK_NULL_HANDLE;
@@ -212,7 +211,6 @@ private:
 	void UpdateUniformBuffers(uint32_t currentImage, Camera* camera);
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
 	void RenderCollisionBoxes(const std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage);
-	void RasterizeObjects(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects);
 
 	uint32_t GetNextSwapchainImage(uint32_t frameIndex);
 	void PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex);

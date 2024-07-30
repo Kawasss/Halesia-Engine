@@ -56,7 +56,7 @@ void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Obje
 	if (lightCount == 0)
 		return;
 
-	const VkCommandBuffer cmdBuffer = payload.commandBuffer;
+	const VkCommandBuffer& cmdBuffer = payload.commandBuffer;
 
 	matrices->projection = payload.camera->GetProjectionMatrix();
 	matrices->view = payload.camera->GetViewMatrix();
