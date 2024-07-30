@@ -77,7 +77,7 @@ public:
 	template<typename Type> void AddRenderPipeline()
 	{
 		RenderPipeline* ptr = dynamic_cast<RenderPipeline*>(new Type());
-		renderPipelines.push_back(ptr); // should check if it derives from RenderPipeline
+		ProcessRenderPipeline(ptr);  // should check if it derives from RenderPipeline
 	}
 
 	Swapchain* swapchain; // better to keep it private
@@ -196,6 +196,7 @@ private:
 	void SetViewport(VkCommandBuffer commandBuffer);
 	void SetScissors(VkCommandBuffer commandBuffer);
 	void DenoiseSynchronized(VkCommandBuffer commandBuffer);
+	void ProcessRenderPipeline(RenderPipeline* pipeline);
 	void ExportSemaphores();
 	void DetectExternalTools();
 	void OnResize();

@@ -27,6 +27,8 @@ public:
 private:
 	void Allocate();
 	void CreateShader();
+	void PrepareGraphicsPipeline();
+	void UpdateUniformBuffer(Camera* cam);
 
 	static constexpr int MAX_LIGHT_INDICES = 7;
 	static constexpr int MAX_LIGHTS = 1024;
@@ -65,4 +67,24 @@ private:
 	Matrices* matrices = nullptr;
 	ComputeShader* computeShader = nullptr;
 	GraphicsPipeline* graphicsPipeline = nullptr;
+
+	struct UniformBufferObject
+	{
+		glm::vec3 cameraPos;
+
+		alignas(16) glm::mat4 view;
+		alignas(16) glm::mat4 projection;
+	};
+
+	struct ModelData
+	{
+		glm::mat4 transformation;
+		glm::vec4 IDColor;
+	};
+
+	Buffer               uniformBuffer;
+	UniformBufferObject* uniformBufferMapped;
+
+	Buffer     modelBuffer;
+	ModelData* modelBufferMapped;
 };

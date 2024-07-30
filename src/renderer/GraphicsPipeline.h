@@ -21,6 +21,8 @@ public:
 
 	std::vector<VkDescriptorSet>& GetDescriptorSets() { return descriptorSets; }
 
+	VkPipelineLayout GetLayout() { return layout; }
+
 private:
 	void CreateDescriptorPool(const ShaderGroupReflector& reflector);
 	void CreateSetLayout(const ShaderGroupReflector& reflector);

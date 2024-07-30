@@ -241,6 +241,7 @@ void Renderer::InitVulkan()
 	}
 
 	fwdPlus = new ForwardPlusPipeline;//ForwardPlusRenderer;
+	fwdPlus->renderPass = renderPass;
 	fwdPlus->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
 	writer = new DescriptorWriter;
 	animationManager = AnimationManager::Get();
@@ -542,6 +543,13 @@ void Renderer::CreateCommandBuffer()
 	CheckVulkanResult("Failed to allocate the command buffer", result, vkAllocateCommandBuffers);
 }
 
+void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
+{
+	pipeline->renderPass = renderPass;
+	pipeline->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
+	renderPipelines.push_back(pipeline);
+}
+
 void Renderer::WriteTimestamp(VkCommandBuffer commandBuffer, bool reset)
 {
 	queryPool.WriteTimeStamp(commandBuffer);
@@ -585,9 +593,6 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 			imageToCopy = rayTracer->gBufferViews[1];
 	}
 
-	if (shouldRasterize)
-		fwdPlus->Execute(GetPipelinePayload(commandBuffer, camera), objects);//Draw(commandBuffer, camera); // should maybe (?) not be here when its fully implemented
-
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
 	clearColors[1].depthStencil = { 1, 0 };
@@ -616,7 +621,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	}
 
 	if (shouldRasterize)
-		RasterizeObjects(commandBuffer, objects);
+		fwdPlus->Execute(GetPipelinePayload(commandBuffer, camera), objects);//RasterizeObjects(commandBuffer, objects);
 	
 	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, 1, 1);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);

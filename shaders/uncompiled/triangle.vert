@@ -35,8 +35,8 @@ layout (set = 0, binding = 1) buffer ModelBuffer
 
 void main() 
 {
-    position = (modelBuffer.data[gl_DrawID].model * vec4(inPosition, 1.0)).xyz;
-    normal = mat3(transpose(inverse(modelBuffer.data[gl_DrawID].model))) * inNormal;
+    position = (Constant.model * vec4(inPosition, 1.0)).xyz;
+    normal = mat3(transpose(inverse(Constant.model))) * inNormal;
     texCoords = inTexCoords;
     camPos = ubo.camPos;
     ID = gl_DrawID;
