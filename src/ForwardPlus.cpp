@@ -131,9 +131,9 @@ void ForwardPlusPipeline::PrepareGraphicsPipeline()
 
 		writer->WriteBuffer(sets[0], uniformBuffer.Get(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
 		writer->WriteBuffer(sets[0], modelBuffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
-		writer->WriteBuffer(sets[1], uniformBuffer.Get(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
-		writer->WriteBuffer(sets[1], cellBuffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
-		writer->WriteBuffer(sets[1], lightBuffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4);
+		writer->WriteBuffer(sets[0], uniformBuffer.Get(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
+		writer->WriteBuffer(sets[0], cellBuffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
+		writer->WriteBuffer(sets[0], lightBuffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4);
 	}
 }
 

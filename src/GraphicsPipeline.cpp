@@ -60,20 +60,22 @@ void GraphicsPipeline::CreateDescriptorPool(const ShaderGroupReflector& reflecto
 void GraphicsPipeline::CreateSetLayout(const ShaderGroupReflector& reflector)
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
-	std::vector<uint32_t> indices = reflector.GetDescriptorSetIndices();
-	setLayouts.resize(indices.size());
+	std::set<uint32_t> indices = reflector.GetDescriptorSetIndices();
 
-	for (int i = 0; i < indices.size(); i++) 
+	for (uint32_t index : indices) 
 	{
-		std::vector<VkDescriptorSetLayoutBinding> bindings = reflector.GetLayoutBindingsOfSet(indices[i]); // add support for multiple sets
+		std::vector<VkDescriptorSetLayoutBinding> bindings = reflector.GetLayoutBindingsOfSet(index); // add support for multiple sets
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 		createInfo.pBindings = bindings.data();
 
-		VkResult result = vkCreateDescriptorSetLayout(ctx.logicalDevice, &createInfo, nullptr, &setLayouts[i]);
+		VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;
+		VkResult result = vkCreateDescriptorSetLayout(ctx.logicalDevice, &createInfo, nullptr, &setLayout);
 		CheckVulkanResult("Failed to create a set layout for a graphics pipeline", result, vkCreateDescriptorSetLayout);
+
+		setLayouts.push_back(setLayout);
 	}
 }
 

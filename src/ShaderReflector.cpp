@@ -1,5 +1,6 @@
 #include <unordered_set>
 #include <unordered_map>
+#include <algorithm>
 
 #include "renderer/Vulkan.h"
 #include "renderer/ShaderReflector.h"
@@ -48,38 +49,34 @@ ShaderGroupReflector::ShaderGroupReflector(const std::vector<std::vector<char>>&
 		if (result  != SPV_REFLECT_RESULT_SUCCESS)
 			throw VulkanAPIError("Cannot reflect on a given shader (code: " + std::to_string((int)result) + ')', VK_SUCCESS, "spvReflectCreateShaderModule", __FILENAME__, __LINE__);
 	}
+	ProcessLayoutBindings();
 }
 
 inline uint64_t CreateUniqueID(uint32_t set, uint32_t binding)
 {
-	uint64_t ret;
-	memcpy(&ret, &set, sizeof(set));
-	memcpy((unsigned char*)&ret + 4, &binding, sizeof(binding));
-	return ret;
+	return ShaderGroupReflector::Binding(set, binding).full;
 }
 
-std::vector<VkDescriptorSetLayoutBinding> ShaderGroupReflector::GetLayoutBindingsOfSet(uint32_t setIndex) const
+void ShaderGroupReflector::ProcessLayoutBindings()
 {
-	std::vector<VkDescriptorSetLayoutBinding> ret;
-	std::unordered_map<uint64_t, size_t> uniqueBindingIndexMap;
-	for (uint32_t i = 0; i < modules.size(); i++)
+	for (int i = 0; i < modules.size(); i++)
 	{
 		for (uint32_t j = 0; j < modules[i].descriptor_binding_count; j++)
 		{
 			SpvReflectDescriptorBinding& current = modules[i].descriptor_bindings[j];
-			if (current.set != setIndex)
-				continue;
+			Binding bindingID = { current.set, current.binding };
 
-			uint64_t bindingID = CreateUniqueID(current.set, current.binding); // encode 2 uint32_t's into one uint64_t
-			if (removedBindings.find(bindingID) != removedBindings.end())
-				continue;
+			if (setLayoutBindings.find(bindingID.set) == setLayoutBindings.end())
+				setLayoutBindings[bindingID.set] = {};
+			std::vector<VkDescriptorSetLayoutBinding>& layoutBinding = setLayoutBindings[bindingID.set];
 
-			if (uniqueBindingIndexMap.count(bindingID) > 0) // if that binding already exists, then dont create a new one
+			auto it = std::find_if(layoutBinding.begin(), layoutBinding.end(), [&](const VkDescriptorSetLayoutBinding& bind) { return bind.binding == bindingID.binding; }); // do not add duplicates
+			if (it != layoutBinding.end())
 			{
-				ret[uniqueBindingIndexMap[bindingID]].stageFlags |= modules[i].shader_stage; // not a good way if determining the index
+				it->stageFlags |= modules[i].shader_stage;
 				continue;
 			}
-
+				
 			VkDescriptorSetLayoutBinding binding{};
 			binding.descriptorType = (VkDescriptorType)current.descriptor_type;
 			binding.stageFlags = modules[i].shader_stage;
@@ -87,11 +84,14 @@ std::vector<VkDescriptorSetLayoutBinding> ShaderGroupReflector::GetLayoutBinding
 			binding.pImmutableSamplers = nullptr;
 			binding.descriptorCount = 1;
 
-			ret.push_back(binding);
-			uniqueBindingIndexMap[bindingID] = ret.size() - 1;
+			layoutBinding.push_back(binding);
 		}
 	}
-	return ret;
+}
+
+std::vector<VkDescriptorSetLayoutBinding> ShaderGroupReflector::GetLayoutBindingsOfSet(uint32_t setIndex) const
+{
+	return setLayoutBindings.find(setIndex)->second;
 }
 
 std::vector<VkDescriptorPoolSize> ShaderGroupReflector::GetDescriptorPoolSize() const
@@ -127,7 +127,7 @@ std::vector<VkPushConstantRange> ShaderGroupReflector::GetPushConstants() const
 	std::vector<VkPushConstantRange> ret;
 	for (int i = 0; i < modules.size(); i++)
 	{
-		for (int j = 0; j < modules[i].push_constant_block_count; j++)
+		for (uint32_t j = 0; j < modules[i].push_constant_block_count; j++)
 		{
 			VkPushConstantRange range{};
 			range.offset = modules[i].push_constant_blocks[j].offset;
@@ -142,20 +142,17 @@ std::vector<VkPushConstantRange> ShaderGroupReflector::GetPushConstants() const
 
 uint32_t ShaderGroupReflector::GetDescriptorSetCount() const
 {
-	uint32_t ret = 0;
-	for (int i = 0; i < modules.size(); i++)
-		ret += modules[i].descriptor_set_count;
-	return ret;
+	return static_cast<uint32_t>(setLayoutBindings.size());
 }
 
-std::vector<uint32_t> ShaderGroupReflector::GetDescriptorSetIndices() const
+std::set<uint32_t> ShaderGroupReflector::GetDescriptorSetIndices() const
 {
-	std::vector<uint32_t> ret;
+	std::set<uint32_t> ret;
 	for (int i = 0; i < modules.size(); i++)
 	{
-		for (int j = 0; j < modules[i].descriptor_set_count; j++)
+		for (uint32_t j = 0; j < modules[i].descriptor_set_count; j++)
 		{
-			ret.push_back(modules[i].descriptor_sets[j].set);
+			ret.insert(modules[i].descriptor_sets[j].set);
 		}
 	}
 	return ret;
@@ -189,7 +186,7 @@ void ShaderGroupReflector::WriteToDescriptorSet(VkDevice logicalDevice, VkDescri
 
 void ShaderGroupReflector::ExcludeBinding(uint32_t set, uint32_t binding)
 {
-	removedBindings.insert(CreateUniqueID(set, binding));
+	removedBindings.insert({ set, binding });
 }
 
 ShaderGroupReflector::~ShaderGroupReflector()
