@@ -70,6 +70,11 @@ public:
 	void StartRecording();
 	void SubmitRecording();
 	void RenderObjects(const std::vector<Object*>& objects, Camera* camera);
+	void StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass);
+	void EndRenderPass(VkCommandBuffer commandBuffer);
+
+	uint32_t GetInternalWidth()  { return viewportWidth;  }
+	uint32_t GetInternalHeight() { return viewportHeight; }
 
 	void SetInternalResolutionScale(float scale);
 	static float GetInternalResolutionScale();

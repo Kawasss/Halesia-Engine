@@ -39,7 +39,7 @@ void main()
     normal = mat3(transpose(inverse(Constant.model))) * inNormal;
     texCoords = inTexCoords;
     camPos = ubo.camPos;
-    ID = gl_DrawID;
+    ID = gl_VertexIndex;
 
     gl_Position = ubo.proj * ubo.view * vec4(position, 1);
 }

@@ -243,7 +243,7 @@ void Renderer::InitVulkan()
 	fwdPlus = new ForwardPlusPipeline;//ForwardPlusRenderer;
 	fwdPlus->renderPass = renderPass;
 	fwdPlus->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
-	writer = new DescriptorWriter;
+	writer = DescriptorWriter::Get();
 	animationManager = AnimationManager::Get();
 
 	if (canRayTrace)
@@ -368,7 +368,7 @@ void Renderer::CreateRenderPass()
 {
 	// swapchain renderpass
 
-	renderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain, PIPELINE_FLAG_CLEAR_ON_LOAD, 1);
+	renderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain, PIPELINE_FLAG_NONE, 1);
 
 	// deferred renderpass
 
@@ -593,6 +593,12 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 			imageToCopy = rayTracer->gBufferViews[1];
 	}
 
+	SetViewport(commandBuffer);
+	SetScissors(commandBuffer);
+
+	if (shouldRasterize)
+		fwdPlus->Execute(GetPipelinePayload(commandBuffer, camera), objects);//RasterizeObjects(commandBuffer, objects);
+
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
 	clearColors[1].depthStencil = { 1, 0 };
@@ -610,18 +616,12 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	WriteTimestamp(commandBuffer);
 
-	SetViewport(commandBuffer);
-	SetScissors(commandBuffer);
-
 	if (shouldRenderCollisionBoxes)
 	{
 		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
-		RenderCollisionBoxes(objects, commandBuffer, currentFrame);
+		//RenderCollisionBoxes(objects, commandBuffer, currentFrame);
 	}
-
-	if (shouldRasterize)
-		fwdPlus->Execute(GetPipelinePayload(commandBuffer, camera), objects);//RasterizeObjects(commandBuffer, objects);
 	
 	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, 1, 1);
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
@@ -938,6 +938,30 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	WriteIndirectDrawParameters(activeObjects);
 	
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
+}
+
+void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass)
+{
+	std::array<VkClearValue, 2> clearColors{};
+	clearColors[0].color = { 0, 0, 0, 1 };
+	clearColors[1].depthStencil = { 1, 0 };
+
+	VkRenderPassBeginInfo renderPassBeginInfo{};
+	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassBeginInfo.renderPass = renderPass;
+	renderPassBeginInfo.framebuffer = swapchain->framebuffers[imageIndex];
+	renderPassBeginInfo.renderArea.offset = { 0, 0 };
+	renderPassBeginInfo.renderArea.extent = swapchain->extent;
+	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+	renderPassBeginInfo.pClearValues = clearColors.data();
+
+	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+}
+
+void Renderer::EndRenderPass(VkCommandBuffer commandBuffer)
+{
+	vkCmdEndRenderPass(commandBuffer);
 }
 
 void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)

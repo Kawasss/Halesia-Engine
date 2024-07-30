@@ -28,7 +28,7 @@ private:
 	void Allocate();
 	void CreateShader();
 	void PrepareGraphicsPipeline();
-	void UpdateUniformBuffer(Camera* cam);
+	void UpdateUniformBuffer(Camera* cam, uint32_t width, uint32_t height);
 
 	static constexpr int MAX_LIGHT_INDICES = 7;
 	static constexpr int MAX_LIGHTS = 1024;
@@ -74,6 +74,8 @@ private:
 
 		alignas(16) glm::mat4 view;
 		alignas(16) glm::mat4 projection;
+		uint32_t width;
+		uint32_t height;
 	};
 
 	struct ModelData
