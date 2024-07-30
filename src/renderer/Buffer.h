@@ -15,11 +15,13 @@ public:
 	void Destroy();
 
 	VkBuffer Get() { return buffer; }
+	
+	template<typename T> 
+	T* Map(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE, VkMemoryMapFlags flags = 0);
 	void* Map(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE, VkMemoryMapFlags flags = 0);
 	void Unmap();
 
-	template<typename T> 
-	T* Map(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE, VkMemoryMapFlags flags = 0);
+	void Fill(VkCommandBuffer commandBuffer, uint32_t value = 0, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE);
 
 private:
 	VkBuffer buffer       = VK_NULL_HANDLE;

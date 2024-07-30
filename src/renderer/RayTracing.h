@@ -27,7 +27,7 @@ public:
 	~RayTracing() { Destroy(); }
 	void Destroy();
 	
-	static RayTracing* Create(Window* window);
+	static RayTracing* Create();
 	void DrawFrame(std::vector<Object*> objects, Window* window, Camera* camera, VkCommandBuffer commandBuffer);
 	void RecreateImage(uint32_t width, uint32_t height);
 	void ApplyDenoisedImage(VkCommandBuffer commandBuffer);
@@ -57,11 +57,11 @@ private:
 	void CreateImage(uint32_t width, uint32_t height);
 	void UpdateDescriptorSets();
 
-	void Init(Window* window);
-	void SetUp(Window* window);
+	void Init();
+	void SetUp();
 	void CreateDescriptorPool(const ShaderGroupReflector& groupReflection);
 	void CreateDescriptorSets(const ShaderGroupReflector& groupReflection);
-	void CreateRayTracingPipeline(const std::vector<std::vector<char>> shaderCodes);
+	void CreateRayTracingPipeline(const std::vector<std::vector<char>>& shaderCodes);
 	void CreateBuffers(const ShaderGroupReflector& groupReflection);
 	void CopyPreviousResult(VkCommandBuffer commandBuffer);
 	void CreateMotionBuffer();
@@ -72,7 +72,6 @@ private:
 	std::vector<BottomLevelAccelerationStructure*> BLASs;
 	TopLevelAccelerationStructure* TLAS = nullptr;
 
-	Window* window  = nullptr;
 	Denoiser* denoiser = nullptr;
 
 	bool imageHasChanged = false;

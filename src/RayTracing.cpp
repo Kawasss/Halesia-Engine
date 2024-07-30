@@ -1,4 +1,5 @@
 #include <fstream>
+#include <array>
 #include <vulkan/vulkan.h>
 
 #include <assimp/cimport.h>
@@ -91,18 +92,17 @@ void RayTracing::Destroy()
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
 
-RayTracing* RayTracing::Create(Window* window)
+RayTracing* RayTracing::Create()
 {
 	RayTracing* ret = new RayTracing();
-	ret->Init(window);
+	ret->Init();
 	return ret;
 }
 
-void RayTracing::SetUp(Window* window)
+void RayTracing::SetUp()
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 	this->logicalDevice = context.logicalDevice;
-	this->window = window;
 
 	commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
 
@@ -189,7 +189,7 @@ void RayTracing::CreateDescriptorSets(const ShaderGroupReflector& groupReflectio
 	CheckVulkanResult("Failed to allocate the descriptor sets for ray tracing", result, vkAllocateDescriptorSets);
 }
 
-void RayTracing::CreateRayTracingPipeline(const std::vector<std::vector<char>> shaderCodes) // 0 is rgen code, 1 is chit code, 2 is rmiss code, 3 is shadow code
+void RayTracing::CreateRayTracingPipeline(const std::vector<std::vector<char>>& shaderCodes) // 0 is rgen code, 1 is chit code, 2 is rmiss code, 3 is shadow code
 {
 	VkShaderModule genShader = Vulkan::CreateShaderModule(shaderCodes[0]);
 	VkShaderModule hitShader = Vulkan::CreateShaderModule(shaderCodes[1]);
@@ -208,13 +208,13 @@ void RayTracing::CreateRayTracingPipeline(const std::vector<std::vector<char>> s
 	VkResult result = vkCreatePipelineLayout(logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
 	CheckVulkanResult("Failed to create the pipeline layout for ray tracing", result, vkCreatePipelineLayout);
 
-	std::vector<VkPipelineShaderStageCreateInfo> pipelineStageCreateInfos(4);
+	std::array<VkPipelineShaderStageCreateInfo, 4> pipelineStageCreateInfos{};
 	pipelineStageCreateInfos[0] = Vulkan::GetGenericShaderStageCreateInfo(hitShader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
 	pipelineStageCreateInfos[1] = Vulkan::GetGenericShaderStageCreateInfo(genShader, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
 	pipelineStageCreateInfos[2] = Vulkan::GetGenericShaderStageCreateInfo(missShader, VK_SHADER_STAGE_MISS_BIT_KHR);
 	pipelineStageCreateInfos[3] = Vulkan::GetGenericShaderStageCreateInfo(shadowShader, VK_SHADER_STAGE_MISS_BIT_KHR);
 
-	std::vector<VkRayTracingShaderGroupCreateInfoKHR> RTShaderGroupCreateInfos(4);
+	std::array<VkRayTracingShaderGroupCreateInfoKHR, 4> RTShaderGroupCreateInfos{};
 	RTShaderGroupCreateInfos[0].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
 	RTShaderGroupCreateInfos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR;
 	RTShaderGroupCreateInfos[0].generalShader = VK_SHADER_UNUSED_KHR;
@@ -296,16 +296,21 @@ void RayTracing::CreateMotionBuffer()
 	motionBuffer.Init(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
-void RayTracing::Init(Window* window)
+void RayTracing::Init()
 {
-	const std::vector<char> rgenCode = ReadFile("shaders/spirv/gen.rgen.spv"), chitCode = ReadFile("shaders/spirv/hit.rchit.spv");
-	const std::vector<char> rmissCode = ReadFile("shaders/spirv/miss.rmiss.spv"), shadowCode = ReadFile("shaders/spirv/shadow.rmiss.spv");
-	ShaderGroupReflector groupReflection({ rgenCode, chitCode, rmissCode, shadowCode });
+	std::vector<std::vector<char>> shaders =
+	{
+		ReadFile("shaders/spirv/gen.rgen.spv"),     // rgen  = [0]
+		ReadFile("shaders/spirv/hit.rchit.spv"),    // rchit = [1]
+		ReadFile("shaders/spirv/miss.rmiss.spv"),   // rmiss = [2]
+		ReadFile("shaders/spirv/shadow.rmiss.spv"), // rmiss = [3]
+	};
+	ShaderGroupReflector groupReflection(shaders);
 
-	SetUp(window);
+	SetUp();
 	CreateDescriptorPool(groupReflection);
 	CreateDescriptorSets(groupReflection);
-	CreateRayTracingPipeline({ rgenCode, chitCode, rmissCode, shadowCode });
+	CreateRayTracingPipeline(shaders);
 	CreateBuffers(groupReflection);
 	//CreateImage(swapchain->extent.width, swapchain->extent.height);
 }

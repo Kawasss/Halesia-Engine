@@ -61,7 +61,7 @@ void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Obje
 	matrices->projection = payload.camera->GetProjectionMatrix();
 	matrices->view = payload.camera->GetViewMatrix();
 
-	vkCmdFillBuffer(cmdBuffer, cellBuffer.Get(), sizeof(uint32_t) * 2, VK_WHOLE_SIZE, 0);
+	cellBuffer.Fill(cmdBuffer, 0, sizeof(uint32_t) * 2);
 
 	computeShader->Execute(cmdBuffer, lightCount, 1, 1);
 

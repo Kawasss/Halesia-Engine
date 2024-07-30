@@ -35,3 +35,8 @@ void Buffer::Unmap()
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	vkUnmapMemory(ctx.logicalDevice, memory);
 }
+
+void Buffer::Fill(VkCommandBuffer commandBuffer, uint32_t value, VkDeviceSize offset, VkDeviceSize size)
+{
+	vkCmdFillBuffer(commandBuffer, buffer, offset, size, value);
+}
