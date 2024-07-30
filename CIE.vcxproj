@@ -159,7 +159,6 @@
     <ClCompile Include="src\AnimationManager.cpp" />
     <ClCompile Include="src\Audio.cpp" />
     <ClCompile Include="src\Bone.cpp" />
-    <ClCompile Include="src\Buffers.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\ComputeShader.cpp" />
     <ClCompile Include="src\Console.cpp" />
@@ -258,7 +257,6 @@
     <ClInclude Include="src\renderer\RenderPipeline.h" />
     <ClInclude Include="src\renderer\ShaderReflector.h" />
     <ClInclude Include="src\renderer\RayTracing.h" />
-    <ClInclude Include="src\renderer\Buffers.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
     <ClInclude Include="src\renderer\Renderer.h" />
     <ClInclude Include="src\renderer\StorageBuffer.h" />

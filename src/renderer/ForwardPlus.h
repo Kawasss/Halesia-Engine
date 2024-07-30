@@ -1,9 +1,9 @@
 #pragma once
-#include <vulkan/vulkan.h>
 #include <vector>
 #include "../glm.h"
 
 #include "RenderPipeline.h"
+#include "Buffer.h"
 
 class ComputeShader;
 class Camera;
@@ -19,8 +19,8 @@ public:
 	void AddLight(glm::vec3 pos);
 
 	ComputeShader* GetShader() { return computeShader; }
-	VkBuffer GetCellBuffer()   { return cellBuffer; }
-	VkBuffer GetLightBuffer()  { return lightBuffer; }
+	VkBuffer GetCellBuffer()   { return cellBuffer.Get();  }
+	VkBuffer GetLightBuffer()  { return lightBuffer.Get(); }
 
 	~ForwardPlusPipeline() { Destroy(); }
 
@@ -56,14 +56,9 @@ private:
 
 	uint32_t cellWidth = 64, cellHeight = 64;
 
-	VkBuffer cellBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory cellMemory = VK_NULL_HANDLE;
-
-	VkBuffer lightBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory lightMemory = VK_NULL_HANDLE;
-
-	VkBuffer matricesBuffer = VK_NULL_HANDLE;
-	VkDeviceMemory matricesMemory = VK_NULL_HANDLE;
+	Buffer cellBuffer;
+	Buffer lightBuffer;
+	Buffer matricesBuffer;
 
 	uint32_t lightCount = 0;
 

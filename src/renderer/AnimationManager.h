@@ -1,5 +1,4 @@
 #pragma once
-#include <vulkan/vulkan.h>
 #include <vector>
 #include <string>
 #include <map>
@@ -7,6 +6,7 @@
 #include "../glm.h"
 
 #include "Bone.h"
+#include "Buffer.h"
 
 struct aiAnimation;
 struct aiNode;
@@ -70,6 +70,5 @@ private:
 
 	ComputeShader* computeShader;
 	glm::mat4* mat4BufferPtr;
-	VkBuffer mat4Buffer;
-	VkDeviceMemory mat4Memory;
+	Buffer mat4Buffer;
 };

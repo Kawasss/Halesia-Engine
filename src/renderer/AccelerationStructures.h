@@ -1,6 +1,8 @@
 #pragma once
 #include <vulkan/vulkan.h>
+
 #include "StorageBuffer.h"
+#include "Buffer.h"
 
 struct Mesh;
 class Object;
@@ -18,18 +20,15 @@ protected:
 	void CreateAS(const VkAccelerationStructureGeometryKHR* pGeometry, VkAccelerationStructureTypeKHR type, uint32_t maxPrimitiveCount);
 	void BuildAS(const VkAccelerationStructureGeometryKHR* pGeometry, uint32_t primitiveCount, VkBuildAccelerationStructureModeKHR mode, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
 
-	VkBuffer ASBuffer =              VK_NULL_HANDLE;
-	VkDeviceMemory ASBufferMemory =  VK_NULL_HANDLE;
-
-	VkBuffer scratchBuffer =             VK_NULL_HANDLE;
-	VkDeviceMemory scratchDeviceMemory = VK_NULL_HANDLE;
+	Buffer ASBuffer;
+	Buffer scratchBuffer;
 
 	VkDevice logicalDevice = VK_NULL_HANDLE;
 
 	VkDeviceAddress ASAddress = 0;
 
 private:
-	VkAccelerationStructureTypeKHR type;
+	VkAccelerationStructureTypeKHR type = VK_ACCELERATION_STRUCTURE_TYPE_MAX_ENUM_KHR;
 };
 
 class BottomLevelAccelerationStructure : public AccelerationStructure

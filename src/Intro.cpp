@@ -1,10 +1,10 @@
-#include "renderer/Intro.h"
 #include <fstream>
 #include <array>
+
+#include "renderer/Intro.h"
 #include "renderer/Renderer.h"
 #include "renderer/Swapchain.h"
 #include "renderer/Texture.h"
-#include "renderer/Buffers.h"
 #include "renderer/ShaderReflector.h"
 
 #include "tools/common.h"

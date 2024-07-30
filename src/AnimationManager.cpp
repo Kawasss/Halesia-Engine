@@ -180,8 +180,8 @@ void AnimationManager::CreateShader()
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 
-	Vulkan::CreateBuffer(500 * sizeof(glm::mat4), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, mat4Buffer, mat4Memory);
-	vkMapMemory(context.logicalDevice, mat4Memory, 0, VK_WHOLE_SIZE, 0, (void**)&mat4BufferPtr); // should not permanently map this large of a buffer
+	mat4Buffer.Init(500 * sizeof(glm::mat4), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	mat4BufferPtr = mat4Buffer.Map<glm::mat4>(); // should not permanently map this large of a buffer
 
 	std::vector<glm::mat4> defaultValue(500, glm::mat4(1.0f));
 	memcpy(mat4BufferPtr, defaultValue.data(), 500 * sizeof(glm::mat4));
@@ -191,7 +191,7 @@ void AnimationManager::CreateShader()
 	computeShader->WriteToDescriptorBuffer(Renderer::g_indexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 0);
 	computeShader->WriteToDescriptorBuffer(Renderer::g_vertexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 1);
 	computeShader->WriteToDescriptorBuffer(Renderer::g_defaultVertexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 2);
-	computeShader->WriteToDescriptorBuffer(mat4Buffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 3);
+	computeShader->WriteToDescriptorBuffer(mat4Buffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 3);
 }
 
 void AnimationManager::Destroy()
@@ -200,7 +200,5 @@ void AnimationManager::Destroy()
 
 	delete computeShader;
 
-	vkUnmapMemory(context.logicalDevice, mat4Memory);
-	vkFreeMemory(context.logicalDevice, mat4Memory, nullptr);
-	vkDestroyBuffer(context.logicalDevice, mat4Buffer, nullptr);
+	mat4Buffer.Unmap();
 }

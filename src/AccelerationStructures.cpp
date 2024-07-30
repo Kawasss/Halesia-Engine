@@ -27,13 +27,13 @@ void AccelerationStructure::CreateAS(const VkAccelerationStructureGeometryKHR* p
 
 	vkGetAccelerationStructureBuildSizesKHR(context.logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildGeometryInfo, &maxPrimitiveCount, &buildSizesInfo);
 
-	Vulkan::CreateBuffer(buildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, ASBuffer, ASBufferMemory);
+	ASBuffer.Init(buildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	VkAccelerationStructureCreateInfoKHR createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
 	createInfo.type = type;
 	createInfo.size = buildSizesInfo.accelerationStructureSize;
-	createInfo.buffer = ASBuffer;
+	createInfo.buffer = ASBuffer.Get();
 	createInfo.offset = 0;
 
 	VkResult result = vkCreateAccelerationStructureKHR(context.logicalDevice, &createInfo, nullptr, &accelerationStructure);
@@ -41,7 +41,7 @@ void AccelerationStructure::CreateAS(const VkAccelerationStructureGeometryKHR* p
 
 	ASAddress = Vulkan::GetDeviceAddress(accelerationStructure);
 
-	Vulkan::CreateBuffer(buildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, scratchBuffer, scratchDeviceMemory);
+	scratchBuffer.Init(buildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
 void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pGeometry, uint32_t primitiveCount, VkBuildAccelerationStructureModeKHR mode, VkCommandBuffer externalCommandBuffer)
@@ -56,7 +56,7 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 	buildGeometryInfo.dstAccelerationStructure = accelerationStructure;
 	buildGeometryInfo.geometryCount = 1;
 	buildGeometryInfo.pGeometries = pGeometry;
-	buildGeometryInfo.scratchData = { Vulkan::GetDeviceAddress(scratchBuffer) };
+	buildGeometryInfo.scratchData = { Vulkan::GetDeviceAddress(scratchBuffer.Get()) };
 
 	VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo{};
 	buildRangeInfo.primitiveCount = primitiveCount;
@@ -85,27 +85,7 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 
 void AccelerationStructure::Destroy()
 {
-	/*Vulkan::SubmitObjectForDeletion
-	(
-		[device = logicalDevice, structure = accelerationStructure, ASBuf = ASBuffer, ASMem = ASBufferMemory, scratchBuf = scratchBuffer, scratchMem = scratchDeviceMemory]()
-		{
-			vkDestroyAccelerationStructureKHR(device, structure, nullptr);
-
-			vkDestroyBuffer(device, ASBuf, nullptr);
-			vkFreeMemory(device, ASMem, nullptr);
-
-			vkDestroyBuffer(device, scratchBuf, nullptr);
-			vkFreeMemory(device, scratchMem, nullptr);
-		}
-	);*/
-
 	vkDestroyAccelerationStructureKHR(logicalDevice, accelerationStructure, nullptr);
-
-	vkDestroyBuffer(logicalDevice, ASBuffer, nullptr);
-	vkFreeMemory(logicalDevice, ASBufferMemory, nullptr);
-
-	vkDestroyBuffer(logicalDevice, scratchBuffer, nullptr);
-	vkFreeMemory(logicalDevice, scratchDeviceMemory, nullptr);
 }
 
 BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(Mesh& mesh)

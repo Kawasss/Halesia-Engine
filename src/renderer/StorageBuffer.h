@@ -1,5 +1,6 @@
 #pragma once
 #include "Vulkan.h"
+#include "Buffer.h"
 #include "../ResourceManager.h"
 #include "../core/Console.h"
 #include <iostream>
@@ -58,7 +59,7 @@ public:
 	VkDeviceSize GetItemOffset(StorageMemory memory) { return GetMemoryOffset(memory) / sizeof(T); }
 
 	VkDeviceSize GetBufferEnd()    { return (VkDeviceSize)endOfBufferPointer + 1; } // not sure about the + 1
-	VkBuffer     GetBufferHandle() { return buffer; }
+	VkBuffer     GetBufferHandle() { return buffer.Get(); }
 
 	size_t GetSize()    { return size; }
 	size_t GetMaxSize() { return reservedBufferSize / sizeof(T); }
@@ -89,8 +90,7 @@ private:
 	bool CheckIfHandleIsValid(StorageMemory memory);
 
 	VkDevice logicalDevice = VK_NULL_HANDLE;
-	VkBuffer buffer = VK_NULL_HANDLE;
-	VkDeviceMemory deviceMemory = VK_NULL_HANDLE;
+	Buffer buffer;
 
 	VkDeviceSize reservedBufferSize = 0;
 	VkDeviceSize endOfBufferPointer = 0;
@@ -116,18 +116,13 @@ void StorageBuffer<T>::Reserve(size_t maxAmountToBeStored, VkBufferUsageFlags us
 
 	reservedBufferSize = maxAmountToBeStored * sizeof(T);
 
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
 	// create an empty buffer with the specified size
-	Vulkan::CreateBuffer(reservedBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+	Buffer stagingBuffer(reservedBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
 
-	Vulkan::CreateBuffer(reservedBufferSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, buffer, deviceMemory);
-	Vulkan::CopyBuffer(commandPool, context.graphicsQueue, stagingBuffer, buffer, reservedBufferSize);
-
-	vkDestroyBuffer(context.logicalDevice, stagingBuffer, nullptr);
-	vkFreeMemory(context.logicalDevice, stagingBufferMemory, nullptr);
+	buffer.Init(reservedBufferSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	Vulkan::CopyBuffer(commandPool, context.graphicsQueue, stagingBuffer.Get(), buffer.Get(), reservedBufferSize);
 
 	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
 }
@@ -214,14 +209,8 @@ VkDeviceSize StorageBuffer<T>::GetMemoryOffset(StorageMemory memory)
 template<typename T>
 void StorageBuffer<T>::Destroy()
 {
-	if (buffer == VK_NULL_HANDLE)
-		return;
-
 	std::lock_guard<std::mutex> lockGuard(readWriteMutex);
-	vkDestroyBuffer(logicalDevice, buffer, nullptr);
-	vkFreeMemory(logicalDevice, deviceMemory, nullptr);
-
-	buffer = VK_NULL_HANDLE;
+	buffer.~Buffer();
 }
 
 template<typename T>
@@ -245,10 +234,9 @@ void StorageBuffer<T>::WriteToBuffer(const std::vector<T>& data, StorageMemory m
 {
 	StorageMemory_t& memoryInfo = memoryData[memory];
 
-	void* memoryPointer;
-	vkMapMemory(logicalDevice, deviceMemory, memoryInfo.offset, memoryInfo.size, 0, &memoryPointer);
+	void* memoryPointer = buffer.Map(memoryInfo.offset, memoryInfo.size);
 	memcpy(memoryPointer, data.data(), (size_t)memoryInfo.size);
-	vkUnmapMemory(logicalDevice, deviceMemory);
+	buffer.Unmap();
 }
 
 template<typename T>
@@ -273,7 +261,7 @@ void StorageBuffer<T>::ClearBuffer(StorageMemory memory)
 	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
 
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
-	vkCmdFillBuffer(commandBuffer, buffer, offset, size, 0); // fill the specified part of the buffer with 0's
+	vkCmdFillBuffer(commandBuffer, buffer.Get(), offset, size, 0); // fill the specified part of the buffer with 0's
 	Vulkan::EndSingleTimeCommands(logicalDevice, context.graphicsQueue, commandBuffer, commandPool);
 
 	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);

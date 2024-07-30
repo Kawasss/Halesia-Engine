@@ -111,9 +111,6 @@
     <ClCompile Include="src\AccelerationStructures.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\Buffers.cpp">
-      <Filter>Source Files\Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="src\gui.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
@@ -303,9 +300,6 @@
       <Filter>external\imgui</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\AccelerationStructures.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Buffers.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\Intro.h">
