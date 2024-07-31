@@ -42,6 +42,7 @@ public:
 		NONE = 0,
 		NO_RAY_TRACING = 1 << 0,
 		NO_SHADER_RECOMPILATION = 1 << 1,
+		NO_VALIDATION = 1 << 2,
 	};
 
 	static constexpr uint32_t MAX_MESHES			= 1000U; //should be more than enough
@@ -108,22 +109,6 @@ public:
 	float idleTime = 0;
 
 private:
-	struct UniformBufferObject
-	{
-		glm::vec3 cameraPos;
-
-		alignas(16) glm::mat4 view;
-		alignas(16) glm::mat4 projection;
-		uint32_t width;
-		uint32_t height;
-	};
-
-	struct ModelData
-	{
-		glm::mat4 transformation;
-		glm::vec4 IDColor;
-	};
-
 	VkInstance instance							= VK_NULL_HANDLE;
 	VkDevice logicalDevice						= VK_NULL_HANDLE;
 	VkRenderPass renderPass						= VK_NULL_HANDLE;
@@ -146,12 +131,6 @@ private:
 	std::vector<HANDLE>             externalRenderSemaphoreHandles;
 	std::vector<VkFence>			inFlightFences;
 	std::vector<VkDescriptorSet>	descriptorSets;
-
-	std::array<Buffer, MAX_FRAMES_IN_FLIGHT>               uniformBuffers;
-	std::array<UniformBufferObject*, MAX_FRAMES_IN_FLIGHT> uniformBuffersMapped;
-
-	std::array<Buffer, MAX_FRAMES_IN_FLIGHT>     modelBuffers;
-	std::array<ModelData*, MAX_FRAMES_IN_FLIGHT> modelBuffersMapped;
 
 	StorageBuffer<VkDrawIndexedIndirectCommand> indirectDrawParameters;
 	std::unordered_map<int, Handle> processedMaterials;
@@ -184,31 +163,28 @@ private:
 	void CreateGraphicsPipeline();
 	void CreateCommandPool();
 	void CreateTextureSampler();
-	void CreateUniformBuffers();
 	void CreateDescriptorPool();
 	void CreateDescriptorSets();
 	void CreateCommandBuffer();
 	void CreateSyncObjects();
 	void CreateRenderPass();
-	void CreateModelDataBuffers();
 	void CreateImGUI();
 	void GetQueryResults();
 	void WriteTimestamp(VkCommandBuffer commandBuffer, bool reset = false);
 	void WriteIndirectDrawParameters(std::vector<Object*>& objects);
 	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);
-	void SetModelData(uint32_t currentImage, const std::vector<Object*>& objects); //parameter is used for potential culling, this allows for 500 meshes in view rather than in scene
 	void SetViewport(VkCommandBuffer commandBuffer);
 	void SetScissors(VkCommandBuffer commandBuffer);
 	void DenoiseSynchronized(VkCommandBuffer commandBuffer);
 	void ProcessRenderPipeline(RenderPipeline* pipeline);
 	void ExportSemaphores();
-	void DetectExternalTools();
 	void OnResize();
 	void AddExtensions();
 	void CreateContext();
+	void CreatePhysicalDevice();
+	uint32_t DetectExternalTools();
 
 	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
-	void UpdateUniformBuffers(uint32_t currentImage, Camera* camera);
 	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
 	void RenderCollisionBoxes(const std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage);
 

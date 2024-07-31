@@ -78,11 +78,6 @@ void Renderer::Destroy()
 	for (Material& mat : Mesh::materials)
 		mat.Destroy();
 
-	for (auto& buf : modelBuffers)
-		buf.~Buffer();
-	for (auto& buf : uniformBuffers)
-		buf.~Buffer();
-
 	indirectDrawParameters.Destroy();
 	g_defaultVertexBuffer.Destroy();
 	g_vertexBuffer.Destroy();
@@ -187,7 +182,7 @@ void Renderer::RecompileShaders()
 {
 	if (flags & NO_SHADER_RECOMPILATION)
 	{
-		Console::WriteLine("Cannot recompile shaders because of the argument \"-no_shader_recompilation\"");
+		Console::WriteLine("Cannot recompile shaders because the flag NO_SHADER_RECOMPILATION was set");
 		return;
 	}
 
@@ -212,10 +207,19 @@ void Renderer::InitVulkan()
 	RecompileShaders();
 	#endif
 
+	CreatePhysicalDevice();
+	
+	uint32_t numTools = DetectExternalTools();
+	if (flags & NO_VALIDATION || numTools > 0)
+	{
+		const char* reason = numTools > 0 ? " due to possible interference of external tools\n" : ", the flag NO_VALIDATION was set\n";
+		std::cout << "Disabled validation layers" << reason;
+		Vulkan::DisableValidationLayers();
+	}
+
 	CreateContext();
 	CreateCommandPool();
 
-	DetectExternalTools();
 	swapchain = new Swapchain(surface, testWindow, false);
 	swapchain->CreateImageViews();
 	queryPool.Create(VK_QUERY_TYPE_TIMESTAMP, 10);
@@ -252,8 +256,6 @@ void Renderer::InitVulkan()
 	for (int i = 0; i < 1; i++)
 		fwdPlus->AddLight(glm::vec3(0, 1, 0)); // test !!
 
-	CreateUniformBuffers();
-	CreateModelDataBuffers();
 	CreateDescriptorPool();
 	CreateDescriptorSets();
 	CreateCommandBuffer();
@@ -267,13 +269,18 @@ void Renderer::InitVulkan()
 
 void Renderer::CreateContext()
 {
-	instance = Vulkan::GenerateInstance();
-	surface = Surface::GenerateSurface(instance, testWindow);
-	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
+	CreatePhysicalDevice();
 
 	AddExtensions();
 
 	SetLogicalDevice();
+}
+
+void Renderer::CreatePhysicalDevice()
+{
+	instance = Vulkan::GenerateInstance();
+	surface = Surface::GenerateSurface(instance, testWindow);
+	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
 }
 
 void Renderer::AddExtensions()
@@ -293,7 +300,7 @@ void Renderer::AddExtensions()
 	}
 }
 
-void Renderer::DetectExternalTools()
+uint32_t Renderer::DetectExternalTools()
 {
 	uint32_t numTools = 0;
 	vkGetPhysicalDeviceToolProperties(physicalDevice.Device(), &numTools, nullptr);
@@ -301,7 +308,7 @@ void Renderer::DetectExternalTools()
 	if (numTools == 0)
 	{
 		std::cout << "  None\n";
-		return;
+		return numTools;
 	}
 
 	std::vector<VkPhysicalDeviceToolProperties> properties(numTools);
@@ -314,6 +321,7 @@ void Renderer::DetectExternalTools()
 			"\n  purposes: " << string_VkToolPurposeFlags(properties[i].purposes) <<
 			"\n  description: " << properties[i].description << "\n";
 	}
+	return numTools;
 }
 
 void Renderer::CreateTextureSampler()
@@ -341,32 +349,8 @@ void Renderer::CreateTextureSampler()
 	CheckVulkanResult("Failed to create the texture sampler", result, vkCreateSampler);
 }
 
-void Renderer::CreateModelDataBuffers()
-{
-	VkDeviceSize size = sizeof(glm::mat4) * MAX_MESHES;
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		modelBuffers[i].Init(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		modelBuffersMapped[i] = modelBuffers[i].Map<ModelData>();
-	}
-}
-
-void Renderer::CreateUniformBuffers()
-{
-	VkDeviceSize size = sizeof(UniformBufferObject);
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		uniformBuffers[i].Init(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		uniformBuffersMapped[i] = uniformBuffers[i].Map<UniformBufferObject>();
-	}
-}
-
 void Renderer::CreateRenderPass()
 {
-	// swapchain renderpass
-
 	renderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain, PIPELINE_FLAG_NONE, 1);
 }
 
@@ -455,8 +439,6 @@ void Renderer::CreateGraphicsPipeline()
 	CheckVulkanResult("Failed to create a pipeline layout", result, vkCreatePipelineLayout);
 		
 	CreateRenderPass();
-
-	// world shaders pipeline
 
 	// screen shaders pipeline
 
@@ -864,8 +846,6 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	std::lock_guard<std::mutex> lockGuard(drawingMutex);
 
 	//UpdateBindlessTextures(currentFrame, activeObjects);
-	UpdateUniformBuffers(currentFrame, camera);
-	SetModelData(currentFrame, activeObjects);
 	WriteIndirectDrawParameters(activeObjects);
 	
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
@@ -961,17 +941,6 @@ void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkComma
 	}	
 }
 
-void Renderer::UpdateUniformBuffers(uint32_t currentImage, Camera* camera)
-{
-	UniformBufferObject ubo{};
-	ubo.cameraPos = camera->position;
-	ubo.view = camera->GetViewMatrix();
-	ubo.projection = camera->GetProjectionMatrix();
-	ubo.width = testWindow->GetWidth();
-	ubo.height = testWindow->GetHeight();
-	memcpy(uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
-}
-
 void Renderer::SetLogicalDevice()
 {
 	logicalDevice = physicalDevice.GetLogicalDevice(surface);
@@ -984,19 +953,6 @@ void Renderer::SetLogicalDevice()
 
 	Vulkan::InitializeContext({ instance, logicalDevice, physicalDevice, graphicsQueue, queueIndex, presentQueue, indices.presentFamily.value(), computeQueue, indices.computeFamily.value() });
 }
-
-void Renderer::SetModelData(uint32_t currentImage, const std::vector<Object*>& objects)
-{
-	for (int i = 0; i < objects.size(); i++)
-	{
-		if (objects[i]->state != OBJECT_STATE_VISIBLE || !objects[i]->HasFinishedLoading())
-			continue;
-
-		ModelData data = { objects[i]->transform.GetModelMatrix(), glm::vec4(ResourceManager::ConvertHandleToVec3(objects[i]->handle), 1) };
-		modelBuffersMapped[currentImage][i] = data;
-	}
-}
-
 
 void Renderer::SetViewport(VkCommandBuffer commandBuffer)
 {

@@ -1,7 +1,7 @@
 #ifdef NDEBUG
-const bool enableValidationLayers = false;
+bool enableValidationLayers = false;
 #else
-const bool enableValidationLayers = true;
+bool enableValidationLayers = true;
 #endif
 #define NOMINMAX
 #include <iostream>
@@ -49,6 +49,11 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     location += file == "" ? "" : " in " + file;
 
     this->message = message + vulkanError + location;
+}
+
+void Vulkan::DisableValidationLayers()
+{
+    enableValidationLayers = false;
 }
 
 void Vulkan::InitializeContext(Context context)

@@ -64,6 +64,8 @@ public:
     static std::vector<const char*> requiredInstanceExtensions;
     static std::vector<const char*> validationLayers;
 
+    static void                               DisableValidationLayers();
+
     static std::mutex&                        FetchLogicalDeviceMutex(VkDevice logicalDevice);
     static VkCommandPool                      FetchNewCommandPool(uint32_t queueIndex);
     static void                               YieldCommandPool(uint32_t queueFamilyIndex, VkCommandPool commandPool);

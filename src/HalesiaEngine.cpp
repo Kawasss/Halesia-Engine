@@ -46,6 +46,8 @@ inline RendererFlags GetRendererFlagsFromBehavior()
 			ret |= Renderer::Flags::NO_SHADER_RECOMPILATION;
 		else if (str == "-force_no_ray_tracing")
 			ret |= Renderer::Flags::NO_RAY_TRACING;
+		else if (str == "-vulkan_no_validation")
+			ret |= Renderer::Flags::NO_VALIDATION;
 	}
 	return ret;
 }
