@@ -770,9 +770,9 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 	submittedCount++;
 }
 
-inline bool ObjectIsValid(Object* object)
+inline bool ObjectIsValid(Object* object, bool checkBLAS)
 {
-	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && object->mesh.IsValid() && !object->shouldBeDestroyed;
+	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && (checkBLAS ? object->mesh.IsValid() : true) && !object->shouldBeDestroyed;
 }
 
 inline void ResetImGui()
@@ -818,15 +818,15 @@ void Renderer::SubmitRecording()
 	ResetImGui();
 }
 
-inline void GetAllObjectsFromObject(std::vector<Object*>& ret, Object* obj)
+inline void GetAllObjectsFromObject(std::vector<Object*>& ret, Object* obj, bool checkBLAS)
 {
-	if (!ObjectIsValid(obj))
+	if (!ObjectIsValid(obj, checkBLAS))
 		return;
 
 	ret.push_back(obj);
 	for (Object* object : obj->children)
 	{
-		GetAllObjectsFromObject(ret, object);
+		GetAllObjectsFromObject(ret, object, checkBLAS);
 	}
 }
 
@@ -835,7 +835,7 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	std::vector<Object*> activeObjects;
 	for (Object* object : objects)
 	{
-		GetAllObjectsFromObject(activeObjects, object);
+		GetAllObjectsFromObject(activeObjects, object, canRayTrace);
 	}
 
 	receivedObjects += objects.size();
@@ -940,6 +940,12 @@ void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkComma
 		vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &trans);
 		vkCmdDraw(commandBuffer, 36, 1, 0, 0);
 	}	
+}
+
+void Renderer::AddLight(glm::vec3 pos)
+{
+	for (RenderPipeline* renderPipeline : renderPipelines)
+		renderPipeline->AddLight(pos); // this wont add the light to any render pipeline created after this moment
 }
 
 void Renderer::SetLogicalDevice()

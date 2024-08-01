@@ -66,6 +66,7 @@ public:
 	void RenderIntro(Intro* intro);
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
+	void AddLight(glm::vec3 pos);
 
 	void StartRecording();
 	void SubmitRecording();
