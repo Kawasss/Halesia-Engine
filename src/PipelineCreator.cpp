@@ -39,9 +39,18 @@ VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass
 
 	VkPipelineRasterizationStateCreateInfo rasterizer{};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rasterizer.cullMode = flags & PIPELINE_FLAG_CULL_BACK ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_FRONT_BIT;
-	rasterizer.frontFace = flags & PIPELINE_FLAG_FRONT_CCW ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
-	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+
+	if (flags & PIPELINE_FLAG_NO_CULLING)
+	{
+		rasterizer.cullMode = VK_CULL_MODE_NONE;
+	}
+	else
+	{
+		rasterizer.cullMode = flags & PIPELINE_FLAG_CULL_BACK ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_FRONT_BIT;
+		rasterizer.frontFace = flags & PIPELINE_FLAG_FRONT_CCW ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
+	}
+
+	rasterizer.polygonMode = flags & PIPELINE_FLAG_POLYGON_LINE ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
