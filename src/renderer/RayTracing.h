@@ -27,7 +27,9 @@ class RayTracingPipeline : public RenderPipeline
 public:
 	void Start(const Payload& payload) override;
 	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
-	void Destroy() override;
+	void Destroy();
+
+	~RayTracingPipeline() { Destroy(); }
 
 	void RecreateImage(uint32_t width, uint32_t height);
 	void ApplyDenoisedImage(VkCommandBuffer commandBuffer);
