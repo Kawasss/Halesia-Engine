@@ -21,13 +21,12 @@ class Intro;
 class Camera;
 class Object;
 class Swapchain;
-class RayTracing;
 class Image;
 class AnimationManager;
-class ForwardPlusRenderer;
-class ForwardPlusPipeline;
 class DescriptorWriter;
 class Window;
+class RayTracingPipeline;
+class ForwardPlusPipeline;
 class RenderPipeline;
 struct Mesh;
 
@@ -151,7 +150,7 @@ private:
 	uint32_t queueIndex = 0;
 	RendererFlags flags = NONE; 
 	
-	RayTracing* rayTracer;
+	RayTracingPipeline* rayTracer;
 	ForwardPlusPipeline* fwdPlus;
 	DescriptorWriter* writer;
 

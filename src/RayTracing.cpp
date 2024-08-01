@@ -35,14 +35,14 @@ struct InstanceMeshData
 
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
 
-int RayTracing::raySampleCount = 1;
-int RayTracing::rayDepth = 8;
-bool RayTracing::showNormals = false;
-bool RayTracing::showUniquePrimitives = false;
-bool RayTracing::showAlbedo = false;
-bool RayTracing::renderProgressive = false;
-bool RayTracing::useWhiteAsAlbedo = false;
-glm::vec3 RayTracing::directionalLightDir = glm::vec3(-0.5, -0.5, 0);
+int  RayTracingPipeline::raySampleCount = 1;
+int  RayTracingPipeline::rayDepth = 8;
+bool RayTracingPipeline::showNormals = false;
+bool RayTracingPipeline::showUniquePrimitives = false;
+bool RayTracingPipeline::showAlbedo = false;
+bool RayTracingPipeline::renderProgressive = false;
+bool RayTracingPipeline::useWhiteAsAlbedo = false;
+glm::vec3 RayTracingPipeline::directionalLightDir = glm::vec3(-0.5, -0.5, 0);
 
 struct UniformBuffer
 {
@@ -62,7 +62,68 @@ struct UniformBuffer
 };
 UniformBuffer* uniformBufferMemPtr;
 
-void RayTracing::Destroy()
+void RayTracingPipeline::Start(const Payload& payload)
+{
+	Init();
+}
+
+uint32_t frameCount = 0;
+void RayTracingPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
+{
+	const Window* window = payload.window;
+	const Camera* camera = payload.camera;
+	const VkCommandBuffer& cmdBuffer = payload.commandBuffer;
+
+	if (payload.width == 0 || payload.height == 0)
+		return;
+
+	if (gBuffers[0] == VK_NULL_HANDLE)
+		RecreateImage(payload.width, payload.height);
+
+	if (imageHasChanged)
+	{
+		UpdateDescriptorSets();
+		imageHasChanged = false;
+	}
+	if (!TLAS->HasBeenBuilt() && !objects.empty())
+		TLAS->Build(objects);
+
+	UpdateInstanceDataBuffer(objects, payload.camera);
+
+	if (amountOfActiveObjects <= 0)
+		return;
+
+	if (!Mesh::materials.empty())
+		UpdateTextureBuffer();
+
+	int x, y, absX, absY;
+	window->GetRelativeCursorPosition(x, y);
+	window->GetAbsoluteCursorPosition(absX, absY);
+
+	if (Input::IsKeyPressed(VirtualKey::R)) // r for reset
+		frameCount = 0;
+
+	if (showNormals && showUniquePrimitives) showNormals = false; // can't have 2 variables changing colors at once
+	uniformBufferMemPtr->cameraPosition = { camera->position, 1 };
+	uniformBufferMemPtr->viewInverse = glm::inverse(camera->GetViewMatrix());
+	uniformBufferMemPtr->projectionInverse = glm::inverse(camera->GetProjectionMatrix());
+	uniformBufferMemPtr->mouseXY = glm::uvec2((uint32_t)(absX * Renderer::internalScale), (uint32_t)(absY * Renderer::internalScale));
+	uniformBufferMemPtr->frameCount = frameCount;
+	uniformBufferMemPtr->showUnique = showUniquePrimitives;
+	uniformBufferMemPtr->raySamples = raySampleCount;
+	uniformBufferMemPtr->rayDepth = rayDepth;
+	uniformBufferMemPtr->renderProgressive = renderProgressive;
+	uniformBufferMemPtr->directionalLightDir = directionalLightDir;
+
+	TLAS->Update(objects, cmdBuffer);
+	CopyPreviousResult(cmdBuffer);
+	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
+	vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
+	vkCmdTraceRaysKHR(cmdBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, width, height, 1);
+	frameCount++;
+}
+
+void RayTracingPipeline::Destroy()
 {
 	//vkDestroySemaphore(logicalDevice, semaphore, nullptr);
 	//CloseHandle(semaphoreHandle);
@@ -92,14 +153,7 @@ void RayTracing::Destroy()
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
 
-RayTracing* RayTracing::Create()
-{
-	RayTracing* ret = new RayTracing();
-	ret->Init();
-	return ret;
-}
-
-void RayTracing::SetUp()
+void RayTracingPipeline::SetUp()
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 	this->logicalDevice = context.logicalDevice;
@@ -118,7 +172,7 @@ void RayTracing::SetUp()
 	TLAS = TopLevelAccelerationStructure::Create(holder); // second parameter is empty since there are no models to build, not the best way to solve this
 }
 
-void RayTracing::CreateDescriptorPool(const ShaderGroupReflector& groupReflection) // (frames in flight not implemented)
+void RayTracingPipeline::CreateDescriptorPool(const ShaderGroupReflector& groupReflection) // (frames in flight not implemented)
 {
 	std::vector<VkDescriptorPoolSize> descriptorPoolSizes = groupReflection.GetDescriptorPoolSize();
 	for (int i = 0; i < descriptorPoolSizes.size(); i++)
@@ -136,22 +190,15 @@ void RayTracing::CreateDescriptorPool(const ShaderGroupReflector& groupReflectio
 	CheckVulkanResult("Failed to create the descriptor pool for ray tracing", result, vkCreateDescriptorPool);
 }
 
-void RayTracing::CreateDescriptorSets(const ShaderGroupReflector& groupReflection)
+void RayTracingPipeline::CreateDescriptorSets(const ShaderGroupReflector& groupReflection)
 {
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = groupReflection.GetLayoutBindingsOfSet(0);
-
-	std::vector<VkDescriptorBindingFlags> setBindingFlags(setLayoutBindings.size(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT setBindingFlagsCreateInfo{};
-	setBindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-	setBindingFlagsCreateInfo.bindingCount = static_cast<uint32_t>(setBindingFlags.size());
-	setBindingFlagsCreateInfo.pBindingFlags = setBindingFlags.data();
 
 	VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
 	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 	layoutCreateInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
 	layoutCreateInfo.pBindings = setLayoutBindings.data();
-	layoutCreateInfo.pNext = &setBindingFlagsCreateInfo;
 
 	VkResult result = vkCreateDescriptorSetLayout(logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayout);
 	CheckVulkanResult("Failed to create the descriptor set layout for ray tracing", result, vkCreateDescriptorSetLayout);
@@ -189,7 +236,7 @@ void RayTracing::CreateDescriptorSets(const ShaderGroupReflector& groupReflectio
 	CheckVulkanResult("Failed to allocate the descriptor sets for ray tracing", result, vkAllocateDescriptorSets);
 }
 
-void RayTracing::CreateRayTracingPipeline(const std::vector<std::vector<char>>& shaderCodes) // 0 is rgen code, 1 is chit code, 2 is rmiss code, 3 is shadow code
+void RayTracingPipeline::CreateRayTracingPipeline(const std::vector<std::vector<char>>& shaderCodes) // 0 is rgen code, 1 is chit code, 2 is rmiss code, 3 is shadow code
 {
 	VkShaderModule genShader = Vulkan::CreateShaderModule(shaderCodes[0]);
 	VkShaderModule hitShader = Vulkan::CreateShaderModule(shaderCodes[1]);
@@ -252,7 +299,7 @@ void RayTracing::CreateRayTracingPipeline(const std::vector<std::vector<char>>& 
 	vkDestroyShaderModule(logicalDevice, genShader, nullptr);
 }
 
-void RayTracing::CreateBuffers(const ShaderGroupReflector& groupReflection)
+void RayTracingPipeline::CreateBuffers(const ShaderGroupReflector& groupReflection)
 {
 	uniformBufferBuffer.Init(sizeof(UniformBuffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	uniformBufferMemPtr = uniformBufferBuffer.Map<UniformBuffer>();
@@ -290,13 +337,13 @@ void RayTracing::CreateBuffers(const ShaderGroupReflector& groupReflection)
 	UpdateMeshDataDescriptorSets();
 }
 
-void RayTracing::CreateMotionBuffer()
+void RayTracingPipeline::CreateMotionBuffer()
 {
 	VkDeviceSize size = width * height * sizeof(glm::vec2);
 	motionBuffer.Init(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
-void RayTracing::Init()
+void RayTracingPipeline::Init()
 {
 	std::vector<std::vector<char>> shaders =
 	{
@@ -315,7 +362,7 @@ void RayTracing::Init()
 	//CreateImage(swapchain->extent.width, swapchain->extent.height);
 }
 
-void RayTracing::UpdateMeshDataDescriptorSets()
+void RayTracingPipeline::UpdateMeshDataDescriptorSets()
 {
 	VkDescriptorBufferInfo materialBufferDescriptorInfo{};
 	materialBufferDescriptorInfo.buffer = materialBuffer.Get();
@@ -353,7 +400,7 @@ void RayTracing::UpdateMeshDataDescriptorSets()
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)meshDataWriteDescriptorSets.size(), meshDataWriteDescriptorSets.data(), 0, nullptr);
 }
 
-void RayTracing::CreateImage(uint32_t width, uint32_t height)
+void RayTracingPipeline::CreateImage(uint32_t width, uint32_t height)
 {
 	this->width = width;
 	this->height = height;
@@ -381,7 +428,7 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 		VkImageMemoryBarrier RTImageMemoryBarrier{};
 		RTImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		RTImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		RTImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+		RTImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		RTImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		RTImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		RTImageMemoryBarrier.image = gBuffers[i];
@@ -404,17 +451,12 @@ void RayTracing::CreateImage(uint32_t width, uint32_t height)
 }
 
 
-void RayTracing::RecreateImage(uint32_t width, uint32_t height)
+void RayTracingPipeline::RecreateImage(uint32_t width, uint32_t height)
 {
 	CreateImage(width, height);
 }
 
-VkStridedDeviceAddressRegionKHR rchitShaderBindingTable{};
-VkStridedDeviceAddressRegionKHR rgenShaderBindingTable{};
-VkStridedDeviceAddressRegionKHR rmissShaderBindingTable{};
-VkStridedDeviceAddressRegionKHR callableShaderBindingTable{};
-
-void RayTracing::CreateShaderBindingTable()
+void RayTracingPipeline::CreateShaderBindingTable()
 {
 	VkDeviceSize progSize = rayTracingProperties.shaderGroupBaseAlignment;
 	VkDeviceSize shaderBindingTableSize = progSize * 4;
@@ -479,7 +521,7 @@ inline VkWriteDescriptorSet WriteSetImage(VkDescriptorSet dstSet, uint32_t dstBi
 	return ret;
 }
 
-void RayTracing::CopyPreviousResult(VkCommandBuffer commandBuffer)
+void RayTracingPipeline::CopyPreviousResult(VkCommandBuffer commandBuffer)
 {
 	VkImageSubresourceRange subresourceRange{};
 	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -520,7 +562,7 @@ void RayTracing::CopyPreviousResult(VkCommandBuffer commandBuffer)
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 2, barriers);
 }
 
-void RayTracing::UpdateDescriptorSets()
+void RayTracingPipeline::UpdateDescriptorSets()
 {
 	VkDescriptorImageInfo RTImageDescriptorImageInfo = GetImageInfo(gBufferViews[0]);
 	VkDescriptorImageInfo albedoImageDescriptorImageInfo = GetImageInfo(gBufferViews[1]);
@@ -547,7 +589,7 @@ void RayTracing::UpdateDescriptorSets()
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
-void RayTracing::UpdateTextureBuffer()
+void RayTracingPipeline::UpdateTextureBuffer()
 {
 	uint32_t amountOfTexturesPerMaterial = rayTracingMaterialTextures.size();
 	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * amountOfTexturesPerMaterial);
@@ -582,7 +624,7 @@ void RayTracing::UpdateTextureBuffer()
 		vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
-void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera)
+void RayTracingPipeline::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera)
 {
 	amountOfActiveObjects = 1;
 	glm::vec2 staticMotion = camera->GetMotionVector() * glm::vec2(width, height); // this only factors in the rotation of the camera, not the changes in position
@@ -604,66 +646,17 @@ void RayTracing::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, C
 	}
 }
 
-uint32_t frameCount = 0;
-void RayTracing::DrawFrame(std::vector<Object*> objects, Window* window, Camera* camera, VkCommandBuffer commandBuffer)
-{
-	if (gBuffers[0] == VK_NULL_HANDLE)
-		RecreateImage(window->GetWidth(), window->GetHeight());
-
-	if (imageHasChanged)
-	{
-		UpdateDescriptorSets();
-		imageHasChanged = false;
-	}
-	if (!TLAS->HasBeenBuilt() && !objects.empty())
-		TLAS->Build(objects);
-
-	UpdateInstanceDataBuffer(objects, camera);
-
-	if (amountOfActiveObjects <= 0)
-		return;
-
-	if (!Mesh::materials.empty())
-		UpdateTextureBuffer();
-
-	int x, y, absX, absY;
-	window->GetRelativeCursorPosition(x, y);
-	window->GetAbsoluteCursorPosition(absX, absY);
-
-	if (Input::IsKeyPressed(VirtualKey::R)) // r for reset
-		frameCount = 0;
-	
-	if (showNormals && showUniquePrimitives) showNormals = false; // can't have 2 variables changing colors at once
-	uniformBufferMemPtr->cameraPosition = { camera->position, 1 };
-	uniformBufferMemPtr->viewInverse = glm::inverse(camera->GetViewMatrix());
-	uniformBufferMemPtr->projectionInverse = glm::inverse(camera->GetProjectionMatrix());
-	uniformBufferMemPtr->mouseXY = glm::uvec2((uint32_t)(absX * Renderer::internalScale), (uint32_t)(absY * Renderer::internalScale));
-	uniformBufferMemPtr->frameCount = frameCount;
-	uniformBufferMemPtr->showUnique = showUniquePrimitives;
-	uniformBufferMemPtr->raySamples = raySampleCount;
-	uniformBufferMemPtr->rayDepth = rayDepth;
-	uniformBufferMemPtr->renderProgressive = renderProgressive;
-	uniformBufferMemPtr->directionalLightDir = directionalLightDir;
-
-	TLAS->Update(objects, commandBuffer);
-	CopyPreviousResult(commandBuffer);
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
-	vkCmdTraceRaysKHR(commandBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, width, height, 1);
-	frameCount++;
-}
-
-void RayTracing::DenoiseImage()
+void RayTracingPipeline::DenoiseImage()
 {
 	denoiser->DenoiseImage();
 }
 
-void RayTracing::ApplyDenoisedImage(VkCommandBuffer commandBuffer)
+void RayTracingPipeline::ApplyDenoisedImage(VkCommandBuffer commandBuffer)
 {
 	denoiser->CopyDenoisedBufferToImage(commandBuffer, gBuffers[0]);
 }
 
-void RayTracing::PrepareForDenoising(VkCommandBuffer commandBuffer)
+void RayTracingPipeline::PrepareForDenoising(VkCommandBuffer commandBuffer)
 {
 	denoiser->CopyImagesToDenoisingBuffers(commandBuffer, gBuffers);
 }

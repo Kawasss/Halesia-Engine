@@ -41,17 +41,17 @@ public:
 class TopLevelAccelerationStructure : public AccelerationStructure
 {
 public:
-	static TopLevelAccelerationStructure* Create(std::vector<Object*>& objects);
+	static TopLevelAccelerationStructure* Create(const std::vector<Object*>& objects);
 
 	/// <summary>
 	/// Builds the top level acceleration structure. It uses single time commands per default, but can use an external command buffer. An external command buffer is recommended if it's being rebuild with performance in mind
 	/// </summary>
-	void Build(std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
-	void Update(std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer);
+	void Build(const std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
+	void Update(const std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer);
 	bool HasBeenBuilt();
 
 private:
-	static std::vector<VkAccelerationStructureInstanceKHR> GetInstances(std::vector<Object*>& objects);
+	static std::vector<VkAccelerationStructureInstanceKHR> GetInstances(const std::vector<Object*>& objects);
 	void GetGeometry(VkAccelerationStructureGeometryKHR& geometry);
 
 	StorageBuffer<VkAccelerationStructureInstanceKHR> instanceBuffer;

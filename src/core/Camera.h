@@ -28,12 +28,12 @@ public:
 	virtual void Update(Window* window, float delta);
 	void DefaultUpdate(Window* window, float delta);
 
-	glm::mat4 GetProjectionMatrix();
-	glm::mat4 GetOrthoProjectionMatrix();
-	glm::mat4 GetViewMatrix();
+	glm::mat4 GetProjectionMatrix() const;
+	glm::mat4 GetOrthoProjectionMatrix() const;
+	glm::mat4 GetViewMatrix() const;
 	glm::vec2 GetMotionVector();
 
-	template<typename T> T* GetScript();
+	template<typename T> T* GetScript() const;
 	
 	/// <summary>
 	/// This function sets the script for the base class. This makes it so that GetScript can be used.
@@ -77,7 +77,7 @@ template<typename T> void Camera::SetScript(T* script)
 	attachedScript = script; 
 }
 
-template<typename T> T* Camera::GetScript() 
+template<typename T> T* Camera::GetScript() const
 { 
 	static_assert(!std::is_base_of_v<T, Camera>, "Cannot set the camera script: the given typename does not have Camera as a base or the pointer is null");
 	return static_cast<T*>(attachedScript); 

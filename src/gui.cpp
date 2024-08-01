@@ -422,9 +422,9 @@ void GUI::ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGrap
 	}
 	if (ImGui::BeginMenu("renderer"))
 	{
-		if (ImGui::Button("show albedo"))  RayTracing::showAlbedo = !RayTracing::showAlbedo;
-		if (ImGui::Button("show normals")) RayTracing::showNormals = !RayTracing::showNormals;
-		if (ImGui::Button("show unique"))  RayTracing::showUniquePrimitives = !RayTracing::showUniquePrimitives;
+		if (ImGui::Button("show albedo"))  RayTracingPipeline::showAlbedo = !RayTracingPipeline::showAlbedo;
+		if (ImGui::Button("show normals")) RayTracingPipeline::showNormals = !RayTracingPipeline::showNormals;
+		if (ImGui::Button("show unique"))  RayTracingPipeline::showUniquePrimitives = !RayTracingPipeline::showUniquePrimitives;
 		ImGui::Separator();
 		if (ImGui::Button("show collision boxes")) Renderer::shouldRenderCollisionBoxes = !Renderer::shouldRenderCollisionBoxes;
 		ImGui::Separator();

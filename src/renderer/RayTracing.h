@@ -10,6 +10,8 @@
 #include "optix.h"
 #include "cuda_runtime_api.h"
 
+#include "renderer/RenderPipeline.h"
+
 typedef void* HANDLE;
 class BottomLevelAccelerationStructure;
 class TopLevelAccelerationStructure;
@@ -20,15 +22,13 @@ class Denoiser;
 class ShaderGroupReflector;
 struct InstanceMeshData;
 
-class RayTracing
+class RayTracingPipeline : public RenderPipeline
 {
 public:
-	RayTracing() {}
-	~RayTracing() { Destroy(); }
-	void Destroy();
-	
-	static RayTracing* Create();
-	void DrawFrame(std::vector<Object*> objects, Window* window, Camera* camera, VkCommandBuffer commandBuffer);
+	void Start(const Payload& payload) override;
+	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
+	void Destroy() override;
+
 	void RecreateImage(uint32_t width, uint32_t height);
 	void ApplyDenoisedImage(VkCommandBuffer commandBuffer);
 	void PrepareForDenoising(VkCommandBuffer commandBuffer);
@@ -48,7 +48,7 @@ public:
 	static glm::vec3 directionalLightDir;
 
 	VkSemaphore externSemaphore;
-	
+
 private:
 	void UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera);
 	void UpdateTextureBuffer();
@@ -65,10 +65,10 @@ private:
 	void CreateBuffers(const ShaderGroupReflector& groupReflection);
 	void CopyPreviousResult(VkCommandBuffer commandBuffer);
 	void CreateMotionBuffer();
-		
+
 	uint32_t amountOfActiveObjects = 0;
 	uint32_t width = 0, height = 0;
-	
+
 	std::vector<BottomLevelAccelerationStructure*> BLASs;
 	TopLevelAccelerationStructure* TLAS = nullptr;
 
@@ -76,8 +76,8 @@ private:
 
 	bool imageHasChanged = false;
 
-	VkDevice logicalDevice		  = VK_NULL_HANDLE;
-	VkCommandPool commandPool	  = VK_NULL_HANDLE;
+	VkDevice logicalDevice = VK_NULL_HANDLE;
+	VkCommandPool commandPool = VK_NULL_HANDLE;
 
 	Buffer handleBuffer;
 	Buffer materialBuffer;
@@ -91,7 +91,12 @@ private:
 	VkDescriptorSetLayout materialSetLayout;
 	std::vector<VkDescriptorSet> descriptorSets;
 
-	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR  };
+	VkStridedDeviceAddressRegionKHR rchitShaderBindingTable{};
+	VkStridedDeviceAddressRegionKHR rgenShaderBindingTable{};
+	VkStridedDeviceAddressRegionKHR rmissShaderBindingTable{};
+	VkStridedDeviceAddressRegionKHR callableShaderBindingTable{};
+
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rayTracingProperties{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR };
 
 	VkPipelineLayout pipelineLayout;
 	VkPipeline pipeline;

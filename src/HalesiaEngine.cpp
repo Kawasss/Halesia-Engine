@@ -370,12 +370,12 @@ void HalesiaEngine::LoadVars()
 	core.renderer->internalScale =         VVM::FindVariable("renderer.internalRes", groups).As<float>();
 	Renderer::shouldRenderCollisionBoxes = VVM::FindVariable("renderer.renderCollision", groups).As<bool>();
 	Renderer::denoiseOutput =              VVM::FindVariable("renderer.denoiseOutput", groups).As<bool>();
-	RayTracing::raySampleCount =           VVM::FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
-	RayTracing::rayDepth =                 VVM::FindVariable("renderer.ray-tracing.rayDepth", groups).As<int>();
-	RayTracing::showNormals =              VVM::FindVariable("renderer.ray-tracing.showNormals", groups).As<bool>();
-	RayTracing::showUniquePrimitives =     VVM::FindVariable("renderer.ray-tracing.showUnique", groups).As<bool>();
-	RayTracing::showAlbedo =               VVM::FindVariable("renderer.ray-tracing.showAlbedo", groups).As<bool>();
-	RayTracing::renderProgressive =        VVM::FindVariable("renderer.ray-tracing.renderProgressive", groups).As<bool>();
+	RayTracingPipeline::raySampleCount =           VVM::FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
+	RayTracingPipeline::rayDepth =                 VVM::FindVariable("renderer.ray-tracing.rayDepth", groups).As<int>();
+	RayTracingPipeline::showNormals =              VVM::FindVariable("renderer.ray-tracing.showNormals", groups).As<bool>();
+	RayTracingPipeline::showUniquePrimitives =     VVM::FindVariable("renderer.ray-tracing.showUnique", groups).As<bool>();
+	RayTracingPipeline::showAlbedo =               VVM::FindVariable("renderer.ray-tracing.showAlbedo", groups).As<bool>();
+	RayTracingPipeline::renderProgressive =        VVM::FindVariable("renderer.ray-tracing.renderProgressive", groups).As<bool>();
 
 	std::cout << "Finished loading from cfg/vars.vvm\n";
 }
@@ -397,12 +397,12 @@ void HalesiaEngine::OnExit()
 	VVM::AddVariable("denoiseOutput", Renderer::denoiseOutput);
 
 	VVM::PushGroup("ray-tracing");
-	VVM::AddVariable("raySamples", RayTracing::raySampleCount);
-	VVM::AddVariable("rayDepth", RayTracing::rayDepth);
-	VVM::AddVariable("showNormals", RayTracing::showNormals);
-	VVM::AddVariable("showUnique", RayTracing::showUniquePrimitives);
-	VVM::AddVariable("showAlbedo", RayTracing::showAlbedo);
-	VVM::AddVariable("renderProgressive", RayTracing::renderProgressive);
+	VVM::AddVariable("raySamples", RayTracingPipeline::raySampleCount);
+	VVM::AddVariable("rayDepth", RayTracingPipeline::rayDepth);
+	VVM::AddVariable("showNormals", RayTracingPipeline::showNormals);
+	VVM::AddVariable("showUnique", RayTracingPipeline::showUniquePrimitives);
+	VVM::AddVariable("showAlbedo", RayTracingPipeline::showAlbedo);
+	VVM::AddVariable("renderProgressive", RayTracingPipeline::renderProgressive);
 	VVM::PopGroup();
 	VVM::PopGroup();
 
@@ -418,9 +418,9 @@ void HalesiaEngine::RegisterConsoleVars()
 {
 	Console::AddConsoleVariables<bool>(
 		{ "pauseGame", "showFPS", "playOneFrame", "showRAM", "showCPU", "showGPU", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "useEditorUI", "denoiseOutput", "disableAnimations" },
-		{ &pauseGame, &showFPS, &playOneFrame, &showRAM, &showCPU, &showGPU, &showAsyncTimes, &showObjectData, &RayTracing::showNormals, &RayTracing::showAlbedo, &RayTracing::showUniquePrimitives, &RayTracing::renderProgressive, &core.renderer->shouldRasterize, &useEditor, &Renderer::denoiseOutput, &core.animationManager->disable }
+		{ &pauseGame, &showFPS, &playOneFrame, &showRAM, &showCPU, &showGPU, &showAsyncTimes, &showObjectData, &RayTracingPipeline::showNormals, &RayTracingPipeline::showAlbedo, &RayTracingPipeline::showUniquePrimitives, &RayTracingPipeline::renderProgressive, &core.renderer->shouldRasterize, &useEditor, &Renderer::denoiseOutput, &core.animationManager->disable }
 	);
-	Console::AddConsoleVariable("raySamples", &RayTracing::raySampleCount);
-	Console::AddConsoleVariable("rayDepth", &RayTracing::rayDepth);
+	Console::AddConsoleVariable("raySamples", &RayTracingPipeline::raySampleCount);
+	Console::AddConsoleVariable("rayDepth", &RayTracingPipeline::rayDepth);
 	Console::AddConsoleVariable("internalResScale", &Renderer::internalScale);
 }

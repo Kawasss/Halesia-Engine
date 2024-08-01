@@ -250,7 +250,11 @@ void Renderer::InitVulkan()
 	animationManager = AnimationManager::Get();
 
 	if (canRayTrace)
-		rayTracer = RayTracing::Create();
+	{
+		rayTracer = new RayTracingPipeline;
+		rayTracer->renderPass = renderPass;
+		rayTracer->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
+	}
 	else shouldRasterize = true;
 
 	for (int i = 0; i < 1; i++)
@@ -508,7 +512,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	{
 		WriteTimestamp(commandBuffer);
 		if (!shouldRasterize)
-			rayTracer->DrawFrame(objects, testWindow, camera, commandBuffer);
+			rayTracer->Execute(GetPipelinePayload(commandBuffer, camera), objects);
 
 		WriteTimestamp(commandBuffer);
 		if (denoiseOutput)
@@ -517,9 +521,9 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		}
 
 		imageToCopy = rayTracer->gBufferViews[0];
-		if (RayTracing::showNormals)
+		if (RayTracingPipeline::showNormals)
 			imageToCopy = rayTracer->gBufferViews[2];
-		else if (RayTracing::showAlbedo)
+		else if (RayTracingPipeline::showAlbedo)
 			imageToCopy = rayTracer->gBufferViews[1];
 	}
 
@@ -527,7 +531,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	SetScissors(commandBuffer);
 
 	if (shouldRasterize)
-		fwdPlus->Execute(GetPipelinePayload(commandBuffer, camera), objects);//RasterizeObjects(commandBuffer, objects);
+		fwdPlus->Execute(GetPipelinePayload(commandBuffer, camera), objects);
 
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };

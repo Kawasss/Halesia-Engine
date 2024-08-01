@@ -77,21 +77,21 @@ void Camera::SetFOV(float value)
 	fov = glm::radians(angle);
 }
 
-glm::mat4 Camera::GetProjectionMatrix()
+glm::mat4 Camera::GetProjectionMatrix() const
 {
 	glm::mat4 projection = glm::perspective(fov, aspectRatio, nearPlane, farPlane);
 	projection[1][1] *= -1;
 	return projection;
 }
 
-glm::mat4 Camera::GetOrthoProjectionMatrix()
+glm::mat4 Camera::GetOrthoProjectionMatrix() const
 {
 	glm::mat4 projection = glm::ortho(-1, 1, -1, 1); //unsure of parameters
 	projection[1][1] *= -1;
 	return projection;
 }
 
-glm::mat4 Camera::GetViewMatrix()
+glm::mat4 Camera::GetViewMatrix() const
 {
 	return glm::lookAt(position, position + front, up);
 }

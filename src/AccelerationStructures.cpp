@@ -138,7 +138,7 @@ void BottomLevelAccelerationStructure::RebuildGeometry(VkCommandBuffer commandBu
 	BuildAS(&geometry, mesh.faceCount, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR, commandBuffer);
 }
 
-TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(std::vector<Object*>& objects)
+TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(const std::vector<Object*>& objects)
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 	TopLevelAccelerationStructure* TLAS = new TopLevelAccelerationStructure();
@@ -161,7 +161,7 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(std::vector
 	return TLAS;
 }
 
-void TopLevelAccelerationStructure::Build(std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer)
+void TopLevelAccelerationStructure::Build(const std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer)
 {
 	instanceBuffer.ResetAddressPointer();
 	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects); // write all of the BLAS instances to a single buffer so that vulkan can easily read all of the instances in one go
@@ -174,7 +174,7 @@ void TopLevelAccelerationStructure::Build(std::vector<Object*>& objects, VkComma
 	hasBeenBuilt = true;
 }
 
-void TopLevelAccelerationStructure::Update(std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer)
+void TopLevelAccelerationStructure::Update(const std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer)
 {
 	instanceBuffer.ResetAddressPointer();
 	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects);
@@ -196,7 +196,7 @@ void TopLevelAccelerationStructure::GetGeometry(VkAccelerationStructureGeometryK
 	geometry.geometry.instances.data = { Vulkan::GetDeviceAddress(instanceBuffer.GetBufferHandle()) };
 }
 
-std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(std::vector<Object*>& objects)
+std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(const std::vector<Object*>& objects)
 {
 	uint32_t processedAmount = 0; // add a second counter for each processed mesh. if an object is checked, but it doesnt have a mesh it will leave an empty instance custom index, which results in data missalignment
 	std::vector<VkAccelerationStructureInstanceKHR> instances;
