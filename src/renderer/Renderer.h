@@ -112,9 +112,9 @@ private:
 	VkInstance instance							= VK_NULL_HANDLE;
 	VkDevice logicalDevice						= VK_NULL_HANDLE;
 	VkRenderPass renderPass						= VK_NULL_HANDLE;
+	VkRenderPass GUIRenderPass                  = VK_NULL_HANDLE;
 	VkDescriptorSetLayout descriptorSetLayout	= VK_NULL_HANDLE;
 	VkPipelineLayout pipelineLayout				= VK_NULL_HANDLE;
-	VkPipeline graphicsPipeline					= VK_NULL_HANDLE;
 	VkPipeline screenPipeline                   = VK_NULL_HANDLE;
 	VkCommandPool commandPool					= VK_NULL_HANDLE;
 	VkDescriptorPool descriptorPool				= VK_NULL_HANDLE;
