@@ -81,7 +81,8 @@ public:
 
 	template<typename Type> void AddRenderPipeline()
 	{
-		RenderPipeline* ptr = dynamic_cast<RenderPipeline*>(new Type());
+		Type* actualPtr = new Type();
+		RenderPipeline* ptr = dynamic_cast<RenderPipeline*>(actualPtr);
 		ProcessRenderPipeline(ptr);  // should check if it derives from RenderPipeline
 	}
 

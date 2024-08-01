@@ -1,6 +1,9 @@
 #include "demo/Topdown.h"
 #include "io/SceneWriter.h"
 
+#include "renderer/Renderer.h"
+#include "renderer/ForwardPlus.h"
+
 #include "core/UniquePointer.h"
 #include "core/ObjectStreamer.h"
 
@@ -103,6 +106,9 @@ int main(int argc, char** argv)
 
 	HalesiaEngine::SetCreateInfo(createInfo);
 	instance = HalesiaEngine::GetInstance();
+
+	instance->GetEngineCore().renderer->AddRenderPipeline<ForwardPlusPipeline>();
+
 	instance->Run();
 
 	return EXIT_SUCCESS;

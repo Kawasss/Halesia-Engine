@@ -14,11 +14,11 @@ class ForwardPlusPipeline : public RenderPipeline
 public:
 	void Start(const Payload& payload) override;
 	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
-	void Destroy();
+	void Destroy() override;
 
 	~ForwardPlusPipeline() { Destroy(); }
 
-	void AddLight(glm::vec3 pos);
+	void AddLight(glm::vec3 pos) override;
 
 	ComputeShader* GetShader() { return computeShader; }
 	VkBuffer GetCellBuffer()   { return cellBuffer.Get();  }

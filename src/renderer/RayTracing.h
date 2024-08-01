@@ -27,7 +27,7 @@ class RayTracingPipeline : public RenderPipeline
 public:
 	void Start(const Payload& payload) override;
 	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
-	void Destroy();
+	void Destroy() override;
 
 	~RayTracingPipeline() { Destroy(); }
 

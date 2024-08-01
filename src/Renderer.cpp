@@ -85,8 +85,13 @@ void Renderer::Destroy()
 
 	queryPool.~QueryPool();
 
+	for (RenderPipeline* renderPipeline : renderPipelines)
+	{
+		renderPipeline->Destroy();
+		delete renderPipeline;
+	}
+
 	delete writer;
-	delete fwdPlus;
 
 	delete animationManager;
 	delete rayTracer;
@@ -243,9 +248,6 @@ void Renderer::InitVulkan()
 		initGlobalBuffers = true;
 	}
 
-	fwdPlus = new ForwardPlusPipeline;//ForwardPlusRenderer;
-	fwdPlus->renderPass = renderPass;
-	fwdPlus->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
 	writer = DescriptorWriter::Get();
 	animationManager = AnimationManager::Get();
 
@@ -256,9 +258,6 @@ void Renderer::InitVulkan()
 		rayTracer->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
 	}
 	else shouldRasterize = true;
-
-	for (int i = 0; i < 1; i++)
-		fwdPlus->AddLight(glm::vec3(0, 1, 0)); // test !!
 
 	CreateDescriptorPool();
 	CreateDescriptorSets();
@@ -531,7 +530,11 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	SetScissors(commandBuffer);
 
 	if (shouldRasterize)
-		fwdPlus->Execute(GetPipelinePayload(commandBuffer, camera), objects);
+	{
+		RenderPipeline::Payload payload = GetPipelinePayload(commandBuffer, camera);
+		for (RenderPipeline* renderPipeline : renderPipelines)
+			renderPipeline->Execute(payload, objects);
+	}
 
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };

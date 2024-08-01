@@ -17,10 +17,14 @@ void ForwardPlusPipeline::Start(const Payload& payload)
 
 void ForwardPlusPipeline::Destroy()
 {
-	const Vulkan::Context& context = Vulkan::GetContext();
-
 	delete computeShader;
 	delete graphicsPipeline;
+
+	uniformBuffer.Destroy();
+	modelBuffer.Destroy();
+	matricesBuffer.Destroy();
+	cellBuffer.Destroy();
+	lightBuffer.Destroy();
 }
 
 void ForwardPlusPipeline::Allocate()
@@ -53,27 +57,27 @@ void ForwardPlusPipeline::CreateShader()
 
 void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
 {
-	if (lightCount == 0)
-		return;
-
 	const VkCommandBuffer& cmdBuffer = payload.commandBuffer;
 
-	matrices->projection = payload.camera->GetProjectionMatrix();
-	matrices->view = payload.camera->GetViewMatrix();
+	if (lightCount > 0)
+	{
+		matrices->projection = payload.camera->GetProjectionMatrix();
+		matrices->view = payload.camera->GetViewMatrix();
 
-	cellBuffer.Fill(cmdBuffer, 0, sizeof(uint32_t) * 2);
+		cellBuffer.Fill(cmdBuffer, 0, sizeof(uint32_t) * 2);
 
-	computeShader->Execute(cmdBuffer, lightCount, 1, 1);
+		computeShader->Execute(cmdBuffer, lightCount, 1, 1);
 
-	VkBufferMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-	barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-	barrier.buffer = cellBuffer.Get();
-	barrier.size = VK_WHOLE_SIZE;
+		VkBufferMemoryBarrier barrier{};
+		barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+		barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		barrier.buffer = cellBuffer.Get();
+		barrier.size = VK_WHOLE_SIZE;
 
-	vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr);
-	
+		vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+	}
+
 	payload.renderer->StartRenderPass(cmdBuffer, renderPass);
 
 	{
