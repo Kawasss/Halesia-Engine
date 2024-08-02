@@ -128,7 +128,7 @@ VkRenderPass PipelineCreator::CreateRenderPass(PhysicalDevice physicalDevice, Sw
 		VkAttachmentDescription depthAttachment{};
 		depthAttachment.format = physicalDevice.GetDepthFormat();
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.loadOp = flags & PIPELINE_FLAG_DONT_CLEAR_DEPTH ? VK_ATTACHMENT_LOAD_OP_DONT_CARE : VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;

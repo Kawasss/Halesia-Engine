@@ -61,49 +61,58 @@ void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Obje
 
 	if (lightCount > 0)
 	{
-		matrices->projection = payload.camera->GetProjectionMatrix();
-		matrices->view = payload.camera->GetViewMatrix();
-
-		cellBuffer.Fill(cmdBuffer, 0, sizeof(uint32_t) * 2);
-
-		computeShader->Execute(cmdBuffer, lightCount, 1, 1);
-
-		VkBufferMemoryBarrier barrier{};
-		barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-		barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-		barrier.buffer = cellBuffer.Get();
-		barrier.size = VK_WHOLE_SIZE;
-
-		vkCmdPipelineBarrier(cmdBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+		ComputeCells(cmdBuffer, payload.camera);
 	}
 
 	payload.renderer->StartRenderPass(cmdBuffer, renderPass);
 
-	{
-		UpdateUniformBuffer(payload.camera, payload.renderer->GetInternalWidth(), payload.renderer->GetInternalHeight());
+	DrawObjects(cmdBuffer, objects, payload.camera, payload.renderer->GetInternalWidth(), payload.renderer->GetInternalHeight());
 
-		VkBuffer vertexBuffer = Renderer::g_vertexBuffer.GetBufferHandle();
-		VkDeviceSize offset = 0;
-
-		graphicsPipeline->Bind(cmdBuffer);
-
-		vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer, &offset);
-		vkCmdBindIndexBuffer(cmdBuffer, Renderer::g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
-
-		for (Object* obj : objects)
-		{
-			glm::mat4 model = obj->transform.GetModelMatrix();
-			vkCmdPushConstants(cmdBuffer, graphicsPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(model), &model);
-
-			uint32_t indexCount = static_cast<uint32_t>(obj->mesh.indices.size());
-			uint32_t firstIndex = static_cast<uint32_t>(Renderer::g_indexBuffer.GetItemOffset(obj->mesh.indexMemory));
-			uint32_t vertexOffset = static_cast<uint32_t>(Renderer::g_vertexBuffer.GetItemOffset(obj->mesh.vertexMemory));
-
-			vkCmdDrawIndexed(cmdBuffer, indexCount, 1, firstIndex, vertexOffset, 0);
-		}
-	}
 	payload.renderer->EndRenderPass(cmdBuffer);
+}
+
+void ForwardPlusPipeline::ComputeCells(VkCommandBuffer commandBuffer, Camera* camera)
+{
+	matrices->projection = camera->GetProjectionMatrix();
+	matrices->view = camera->GetViewMatrix();
+
+	cellBuffer.Fill(commandBuffer, 0, sizeof(uint32_t) * 2);
+
+	computeShader->Execute(commandBuffer, lightCount, 1, 1);
+
+	VkBufferMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+	barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+	barrier.buffer = cellBuffer.Get();
+	barrier.size = VK_WHOLE_SIZE;
+
+	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+}
+
+void ForwardPlusPipeline::DrawObjects(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height)
+{
+	UpdateUniformBuffer(camera, width, height);
+
+	VkBuffer vertexBuffer = Renderer::g_vertexBuffer.GetBufferHandle();
+	VkDeviceSize offset = 0;
+
+	graphicsPipeline->Bind(commandBuffer);
+
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &offset);
+	vkCmdBindIndexBuffer(commandBuffer, Renderer::g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
+
+	for (Object* obj : objects)
+	{
+		glm::mat4 model = obj->transform.GetModelMatrix();
+		vkCmdPushConstants(commandBuffer, graphicsPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(model), &model);
+
+		uint32_t indexCount = static_cast<uint32_t>(obj->mesh.indices.size());
+		uint32_t firstIndex = static_cast<uint32_t>(Renderer::g_indexBuffer.GetItemOffset(obj->mesh.indexMemory));
+		uint32_t vertexOffset = static_cast<uint32_t>(Renderer::g_vertexBuffer.GetItemOffset(obj->mesh.vertexMemory));
+
+		vkCmdDrawIndexed(commandBuffer, indexCount, 1, firstIndex, vertexOffset, 0);
+	}
 }
 
 void ForwardPlusPipeline::AddLight(glm::vec3 pos)

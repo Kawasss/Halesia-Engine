@@ -74,6 +74,9 @@ public:
 	void StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass);
 	void EndRenderPass(VkCommandBuffer commandBuffer);
 
+	VkRenderPass GetDefault3DRenderPass()   { return renderPass; }
+	VkRenderPass GetNonClearingRenderPass() { return GUIRenderPass; }
+
 	uint32_t GetInternalWidth()  { return viewportWidth;  }
 	uint32_t GetInternalHeight() { return viewportHeight; }
 

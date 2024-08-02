@@ -20,6 +20,10 @@ public:
 
 	void AddLight(glm::vec3 pos) override;
 
+	// these functions can be used if the default render pipeline functions dont cut it (Execute( ... ) will call these functions)
+	void ComputeCells(VkCommandBuffer commandBuffer, Camera* camera);
+	void DrawObjects(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height);
+
 	ComputeShader* GetShader() { return computeShader; }
 	VkBuffer GetCellBuffer()   { return cellBuffer.Get();  }
 	VkBuffer GetLightBuffer()  { return lightBuffer.Get(); }

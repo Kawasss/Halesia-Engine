@@ -19,6 +19,7 @@ enum PipelineFlags : PipelineOptions
 	PIPELINE_FLAG_FRONT_CCW = 1 << 6,
 	PIPELINE_FLAG_NO_CULLING = 1 << 7,
 	PIPELINE_FLAG_POLYGON_LINE = 1 << 8,
+	PIPELINE_FLAG_DONT_CLEAR_DEPTH = 1 << 9,
 }; // also one with polygon mode
 
 class PipelineCreator
