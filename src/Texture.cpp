@@ -30,7 +30,7 @@ bool Image::TexturesHaveChanged()
 	return ret;
 }
 
-void Image::GenerateImages(std::vector<std::vector<char>>& textureData, bool useMipMaps, TextureFormat format)
+void Image::GenerateImages(std::vector<std::vector<char>>& textureData, bool useMipMaps, TextureFormat format, TextureUseCase useCase)
 {
 	const Vulkan::Context context = Vulkan::GetContext();
 	this->logicalDevice = context.logicalDevice;
@@ -49,7 +49,7 @@ void Image::GenerateImages(std::vector<std::vector<char>>& textureData, bool use
 	for (uint32_t i = 0; i < layerCount; i++)
 		pixels[i] = stbi_load_from_memory((unsigned char*)textureData[i].data(), (int)textureData[i].size(), &width, &height, &textureChannels, STBI_rgb_alpha);
 
-	WritePixelsToBuffer(pixels, useMipMaps, format);
+	WritePixelsToBuffer(pixels, useMipMaps, format, (VkImageLayout)useCase);
 
 	for (uint32_t i = 0; i < layerCount; i++)
 		stbi_image_free(pixels[i]);
@@ -91,7 +91,7 @@ void Image::GenerateEmptyImages(int width, int height, int amount)
 	this->texturesHaveChanged = true;
 }
 
-void Image::WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMipMaps, TextureFormat format)
+void Image::WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMipMaps, TextureFormat format, VkImageLayout layout)
 {
 	const Vulkan::Context context = Vulkan::GetContext();
 
@@ -125,7 +125,10 @@ void Image::WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMip
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 	imageView = Vulkan::CreateImageView(image, viewType, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_ASPECT_COLOR_BIT);
-	if (useMipMaps) GenerateMipMaps((VkFormat)format);
+	if (useMipMaps) 
+		GenerateMipMaps((VkFormat)format);
+	else
+		TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout);
 
 	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
 
@@ -251,17 +254,17 @@ Cubemap::Cubemap(std::vector<std::string> filePath, bool useMipMaps)
 		}, this, filePath, useMipMaps);
 }
 
-Texture::Texture(std::string filePath, bool useMipMaps, TextureFormat format)
+Texture::Texture(std::string filePath, bool useMipMaps, TextureFormat format, TextureUseCase useCase)
 {
 	// this async can't use the capture list ( [&] ), because then filePath gets wiped clean (??)
-	generation = std::async([](Texture* texture, std::string filePath, bool useMipMaps, TextureFormat format)
+	generation = std::async([](Texture* texture, std::string filePath, bool useMipMaps, TextureFormat format, TextureUseCase useCase)
 		{
 			std::vector<std::vector<char>> data = GetAllImageData({ filePath });
-			texture->GenerateImages(data, useMipMaps, format);
-		}, this, filePath, useMipMaps, format);
+			texture->GenerateImages(data, useMipMaps, format, useCase);
+		}, this, filePath, useMipMaps, format, useCase);
 }
 
-Texture::Texture(std::vector<char> imageData, uint32_t width, uint32_t height, bool useMipMaps, TextureFormat format)
+Texture::Texture(std::vector<char> imageData, uint32_t width, uint32_t height, bool useMipMaps, TextureFormat format, TextureUseCase useCase)
 {
 	if (imageData.empty())
 		throw std::runtime_error("Invalid texture size: imageData.empty()");
@@ -278,12 +281,12 @@ Texture::Texture(std::vector<char> imageData, uint32_t width, uint32_t height, b
 	//generation = std::async([](Texture* texture, std::vector<char> imageData, bool useMipMaps, TextureFormat format) 
 		//{
 			std::vector<uint8_t*> data{ (uint8_t*)imageData.data() };
-			WritePixelsToBuffer(data, useMipMaps, format);
+			WritePixelsToBuffer(data, useMipMaps, format, (VkImageLayout)useCase);
 			texturesHaveChanged = true;
 		//}, this, imageData, useMipMaps, format);
 }
 
-Texture::Texture(const Color& color, TextureFormat format)
+Texture::Texture(const Color& color, TextureFormat format, TextureUseCase useCase)
 {
 	const Vulkan::Context context = Vulkan::GetContext();
 	logicalDevice = context.logicalDevice;
@@ -292,10 +295,10 @@ Texture::Texture(const Color& color, TextureFormat format)
 	physicalDevice = context.physicalDevice;
 	width = 1, height = 1, layerCount = 1;
 
-	generation = std::async([](Texture* texture, const Color& color, TextureFormat format)
+	generation = std::async([](Texture* texture, const Color& color, TextureFormat format, TextureUseCase useCase)
 		{
-			texture->WritePixelsToBuffer({ color.GetData() }, false, format);
-		}, this, color, format);
+			texture->WritePixelsToBuffer({ color.GetData() }, false, format, (VkImageLayout)useCase);
+		}, this, color, format, useCase);
 }
 
 void Texture::GeneratePlaceholderTextures()

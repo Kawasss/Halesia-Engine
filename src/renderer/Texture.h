@@ -10,6 +10,12 @@ enum TextureFormat
 	TEXTURE_FORMAT_UNORM = VK_FORMAT_R8G8B8A8_UNORM,
 };
 
+enum TextureUseCase
+{
+	TEXTURE_USE_CASE_READ_ONLY = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+	TEXTURE_USE_CASE_GENERAL = VK_IMAGE_LAYOUT_GENERAL,
+};
+
 struct Color
 {
 	explicit Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) : r(r), g(g), b(b), a(a) {}
@@ -23,7 +29,7 @@ private:
 class Image
 {
 public:
-	void GenerateImages(std::vector<std::vector<char>>& textureData, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
+	void GenerateImages(std::vector<std::vector<char>>& textureData, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
 	void GenerateEmptyImages(int width, int height, int amount);
 	void ChangeData(uint8_t* data, uint32_t size, TextureFormat format);
 	void AwaitGeneration();
@@ -58,7 +64,7 @@ protected:
 	void TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
 	void CopyBufferToImage(VkBuffer buffer);
 	void GenerateMipMaps(VkFormat imageFormat);
-	void WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMipMaps, TextureFormat format);
+	void WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMipMaps, TextureFormat format, VkImageLayout layout);
 
 	static bool texturesHaveChanged;
 };
@@ -81,7 +87,7 @@ public:
 	static void GeneratePlaceholderTextures();
 	static void DestroyPlaceholderTextures();
 
-	Texture(std::string filePath, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB);
-	Texture(std::vector<char> imageData, uint32_t width, uint32_t height, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB); // uncompressed image !!
-	Texture(const Color& color, TextureFormat format = TEXTURE_FORMAT_SRGB); // solid color textures cannot use mip maps because theyre already 1x1
+	Texture(std::string filePath, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
+	Texture(std::vector<char> imageData, uint32_t width, uint32_t height, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY); // uncompressed image !!
+	Texture(const Color& color, TextureFormat format = TEXTURE_FORMAT_SRGB, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY); // solid color textures cannot use mip maps because theyre already 1x1
 };
