@@ -307,7 +307,7 @@ void HalesiaEngine::InitializeCoreComponents()
 
 	core.window = new Window(createInfo.windowCreateInfo);
 	std::cout << "\nRenderer:\n";
-	core.renderer = new Renderer(core.window, GetRendererFlagsFromBehavior());
+	core.renderer = new Renderer(core.window, createInfo.renderFlags | GetRendererFlagsFromBehavior());
 	std::cout << "\nProfiler:\n";
 	core.profiler = Profiler::Get();
 	core.profiler->SetFlags(Profiler::ALL_OPTIONS);

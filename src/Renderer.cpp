@@ -43,7 +43,8 @@ StorageBuffer<Vertex>   Renderer::g_vertexBuffer;
 StorageBuffer<uint16_t> Renderer::g_indexBuffer;
 StorageBuffer<Vertex>   Renderer::g_defaultVertexBuffer;
 
-VkSampler Renderer::defaultSampler = VK_NULL_HANDLE;
+VkSampler Renderer::defaultSampler  = VK_NULL_HANDLE;
+VkSampler Renderer::noFilterSampler = VK_NULL_HANDLE;
 Handle    Renderer::selectedHandle = 0;
 bool      Renderer::initGlobalBuffers = false;
 bool      Renderer::shouldRenderCollisionBoxes = false;
@@ -102,6 +103,7 @@ void Renderer::Destroy()
 	delete swapchain;
 
 	vkDestroySampler(logicalDevice, defaultSampler, nullptr);
+	vkDestroySampler(logicalDevice, noFilterSampler, nullptr);
 
 	Texture::DestroyPlaceholderTextures();
 
@@ -329,6 +331,8 @@ uint32_t Renderer::DetectExternalTools()
 
 void Renderer::CreateTextureSampler()
 {
+	VkPhysicalDeviceProperties deviceProperties = physicalDevice.Properties();
+
 	VkSamplerCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
 	createInfo.magFilter = VK_FILTER_LINEAR;
@@ -336,10 +340,8 @@ void Renderer::CreateTextureSampler()
 	createInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	createInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	createInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	createInfo.anisotropyEnable = VK_TRUE;
-
-	VkPhysicalDeviceProperties deviceProperties = physicalDevice.Properties();
 	createInfo.maxAnisotropy = deviceProperties.limits.maxSamplerAnisotropy;
+	createInfo.anisotropyEnable = VK_TRUE;
 	createInfo.unnormalizedCoordinates = VK_FALSE;
 	createInfo.compareEnable = VK_FALSE;
 	createInfo.compareOp = VK_COMPARE_OP_ALWAYS;
@@ -350,6 +352,14 @@ void Renderer::CreateTextureSampler()
 
 	VkResult result = vkCreateSampler(logicalDevice, &createInfo, nullptr, &defaultSampler);
 	CheckVulkanResult("Failed to create the texture sampler", result, vkCreateSampler);
+
+	createInfo.magFilter = createInfo.minFilter = VK_FILTER_NEAREST;
+	createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+
+	result = vkCreateSampler(logicalDevice, &createInfo, nullptr, &noFilterSampler);
+	CheckVulkanResult("Failed to create the texture sampler", result, vkCreateSampler);
+
+	resultSampler = flags & NO_FILTERING_ON_RESULT ? noFilterSampler : defaultSampler;
 }
 
 void Renderer::CreateRenderPass()
@@ -905,7 +915,7 @@ void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
 void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView)
 {
 	VkImageView view = imageView == VK_NULL_HANDLE && canRayTrace ? rayTracer->gBufferViews[0] : imageView;
-	writer->WriteImage(descriptorSets[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, view, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	writer->WriteImage(descriptorSets[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, view, resultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	writer->Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
 }
 

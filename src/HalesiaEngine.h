@@ -3,6 +3,7 @@
 #include <future>
 #include "system/Window.h"
 #include "system/Input.h"
+#include "renderer/Renderer.h"
 
 class Renderer;
 class Scene;
@@ -26,6 +27,7 @@ struct HalesiaEngineCreateInfo
 	bool enableDevConsole = true;
 	bool useEditor = false;
 	bool playIntro = true;
+	RendererFlags renderFlags;
 
 	int argsCount = 0;
 	char** args;

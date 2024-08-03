@@ -42,6 +42,7 @@ public:
 		NO_RAY_TRACING = 1 << 0,
 		NO_SHADER_RECOMPILATION = 1 << 1,
 		NO_VALIDATION = 1 << 2,
+		NO_FILTERING_ON_RESULT = 1 << 3,
 	};
 
 	static constexpr uint32_t MAX_MESHES			= 1000U; //should be more than enough
@@ -54,6 +55,7 @@ public:
 	static StorageBuffer<Vertex>    g_defaultVertexBuffer;
 
 	static VkSampler defaultSampler;
+	static VkSampler noFilterSampler;
 
 	static std::vector<VkDynamicState> dynamicStates;
 
@@ -126,6 +128,7 @@ private:
 	VkQueue graphicsQueue						= VK_NULL_HANDLE;
 	VkQueue presentQueue						= VK_NULL_HANDLE;
 	VkQueue computeQueue                        = VK_NULL_HANDLE;
+	VkSampler resultSampler                     = VK_NULL_HANDLE; // does not need to be destroyed
 	QueryPool queryPool;
 
 	std::vector<VkCommandBuffer>	commandBuffers;

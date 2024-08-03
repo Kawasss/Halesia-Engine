@@ -92,6 +92,7 @@ int main(int argc, char** argv)
 	createInfo.argsCount = argc;
 	createInfo.args = argv;
 	createInfo.startingScene = new Room();
+	createInfo.renderFlags = Renderer::Flags::NO_FILTERING_ON_RESULT;
 	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;
 	createInfo.windowCreateInfo.height = 600;
