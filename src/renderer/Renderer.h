@@ -131,6 +131,19 @@ private:
 	VkSampler resultSampler                     = VK_NULL_HANDLE; // does not need to be destroyed
 	QueryPool queryPool;
 
+	VkImage resultImage = VK_NULL_HANDLE;
+	VkImageView resultView = VK_NULL_HANDLE;
+	VkDeviceMemory resultMemory = VK_NULL_HANDLE;
+
+	VkImage resultDepth = VK_NULL_HANDLE;
+	VkImageView depthView = VK_NULL_HANDLE;
+	VkDeviceMemory depthMemory = VK_NULL_HANDLE;
+
+	VkFramebuffer resultFramebuffer = VK_NULL_HANDLE;
+
+	uint32_t framebufferWidth  = 0;
+	uint32_t framebufferHeight = 0;
+
 	std::vector<VkCommandBuffer>	commandBuffers;
 	std::vector<VkSemaphore>		imageAvaibleSemaphores;
 	std::vector<VkSemaphore>		renderFinishedSemaphores;
@@ -180,8 +193,8 @@ private:
 	void WriteTimestamp(VkCommandBuffer commandBuffer, bool reset = false);
 	void WriteIndirectDrawParameters(std::vector<Object*>& objects);
 	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);
-	void SetViewport(VkCommandBuffer commandBuffer);
-	void SetScissors(VkCommandBuffer commandBuffer);
+	void SetViewport(VkCommandBuffer commandBuffer, VkExtent2D extent);
+	void SetScissors(VkCommandBuffer commandBuffer, VkExtent2D extent);
 	void DenoiseSynchronized(VkCommandBuffer commandBuffer);
 	void ProcessRenderPipeline(RenderPipeline* pipeline);
 	void ExportSemaphores();

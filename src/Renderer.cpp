@@ -105,6 +105,16 @@ void Renderer::Destroy()
 	vkDestroySampler(logicalDevice, defaultSampler, nullptr);
 	vkDestroySampler(logicalDevice, noFilterSampler, nullptr);
 
+	vkDestroyImage(logicalDevice, resultImage, nullptr);
+	vkDestroyImageView(logicalDevice, resultView, nullptr);
+	vkFreeMemory(logicalDevice, resultMemory, nullptr);
+
+	vkDestroyImage(logicalDevice, resultDepth, nullptr);
+	vkDestroyImageView(logicalDevice, depthView, nullptr);
+	vkFreeMemory(logicalDevice, depthMemory, nullptr);
+
+	vkDestroyFramebuffer(logicalDevice, resultFramebuffer, nullptr);
+
 	Texture::DestroyPlaceholderTextures();
 
 	vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);
@@ -270,6 +280,11 @@ void Renderer::InitVulkan()
 	ImGui_ImplVulkan_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
+
+	viewportWidth = testWindow->GetWidth() * internalScale;
+	viewportHeight = testWindow->GetHeight() * internalScale;
+
+	UpdateScreenShaderTexture(0);
 }
 
 void Renderer::CreateContext()
@@ -537,8 +552,9 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 			imageToCopy = rayTracer->gBufferViews[1];
 	}
 
-	SetViewport(commandBuffer);
-	SetScissors(commandBuffer);
+	VkExtent2D viewportExtent = { viewportWidth, viewportHeight };
+	SetViewport(commandBuffer, viewportExtent);
+	SetScissors(commandBuffer, viewportExtent);
 
 	if (shouldRasterize)
 	{
@@ -546,6 +562,9 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		for (RenderPipeline* renderPipeline : renderPipelines)
 			renderPipeline->Execute(payload, objects);
 	}
+
+	SetViewport(commandBuffer, swapchain->extent);
+	SetScissors(commandBuffer, swapchain->extent);
 
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
@@ -568,7 +587,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, screenPipeline);
 	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &offsets);
-	if (!shouldRasterize) vkCmdDraw(commandBuffer, 6, 1, 0, 0);
+	vkCmdDraw(commandBuffer, 6, 1, 0, 0);
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 	vkCmdEndRenderPass(commandBuffer);
 
@@ -727,12 +746,13 @@ void Renderer::RenderIntro(Intro* intro)
 
 void Renderer::OnResize()
 {
-	viewportWidth = testWindow->GetWidth() * viewportTransModifiers.x * internalScale;
-	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y * internalScale;
+	viewportWidth = testWindow->GetWidth() * internalScale;
+	viewportHeight = testWindow->GetHeight() * internalScale;
 
 	swapchain->Recreate(renderPass, false);
 	if (canRayTrace)
 		rayTracer->RecreateImage(viewportWidth, viewportHeight);
+
 	UpdateScreenShaderTexture(currentFrame);
 	
 	testWindow->resized = false;
@@ -782,7 +802,7 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 
 inline bool ObjectIsValid(Object* object, bool checkBLAS)
 {
-	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && (checkBLAS ? object->mesh.IsValid() : true) && !object->shouldBeDestroyed;
+	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && (checkBLAS ? object->mesh.IsValid() : true) && object->mesh.HasFinishedLoading() && !object->shouldBeDestroyed;
 }
 
 inline void ResetImGui()
@@ -871,14 +891,13 @@ void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass rende
 	VkRenderPassBeginInfo renderPassBeginInfo{};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassBeginInfo.renderPass = renderPass;
-	renderPassBeginInfo.framebuffer = swapchain->framebuffers[imageIndex];
+	renderPassBeginInfo.framebuffer = resultFramebuffer;
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
-	renderPassBeginInfo.renderArea.extent = swapchain->extent;
+	renderPassBeginInfo.renderArea.extent = { framebufferWidth, framebufferHeight};
 	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
 }
 
 void Renderer::EndRenderPass(VkCommandBuffer commandBuffer)
@@ -914,8 +933,49 @@ void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
 
 void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView)
 {
-	VkImageView view = imageView == VK_NULL_HANDLE && canRayTrace ? rayTracer->gBufferViews[0] : imageView;
-	writer->WriteImage(descriptorSets[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, view, resultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	if (resultImage != VK_NULL_HANDLE)
+	{
+		vkDestroyImage(logicalDevice, resultImage, nullptr);
+		vkDestroyImageView(logicalDevice, resultView, nullptr);
+		vkFreeMemory(logicalDevice, resultMemory, nullptr);
+
+		vkDestroyImage(logicalDevice, resultDepth, nullptr);
+		vkDestroyImageView(logicalDevice, depthView, nullptr);
+		vkFreeMemory(logicalDevice, depthMemory, nullptr);
+
+		vkDestroyFramebuffer(logicalDevice, resultFramebuffer, nullptr);
+	}
+
+	Vulkan::CreateImage(viewportWidth, viewportHeight, 1, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, resultImage, resultMemory);
+	resultView = Vulkan::CreateImageView(resultImage, VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	VkFormat depthFormat = physicalDevice.GetDepthFormat();
+	Vulkan::CreateImage(viewportWidth, viewportHeight, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, resultDepth, depthMemory);
+	depthView = Vulkan::CreateImageView(resultDepth, VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+	std::array<VkImageView, 2> attachments =
+	{
+		resultView,
+		depthView
+	};
+
+	VkFramebufferCreateInfo framebufferCreateInfo{};
+	framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	framebufferCreateInfo.renderPass = renderPass;
+	framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+	framebufferCreateInfo.pAttachments = attachments.data();
+	framebufferCreateInfo.width = viewportWidth;
+	framebufferCreateInfo.height = viewportHeight;
+	framebufferCreateInfo.layers = 1;
+
+	framebufferWidth  = framebufferCreateInfo.width;
+	framebufferHeight = framebufferCreateInfo.height;
+
+	VkResult result = vkCreateFramebuffer(logicalDevice, &framebufferCreateInfo, nullptr, &resultFramebuffer);
+	CheckVulkanResult("Failed to create the result framebuffer", result, vkCreateFramebuffer);
+
+	imageView = (shouldRasterize || !canRayTrace) ? resultView : rayTracer->gBufferViews[0];
+	writer->WriteImage(descriptorSets[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, imageView, resultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	writer->Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
 }
 
@@ -971,17 +1031,17 @@ void Renderer::SetLogicalDevice()
 	Vulkan::InitializeContext({ instance, logicalDevice, physicalDevice, graphicsQueue, queueIndex, presentQueue, indices.presentFamily.value(), computeQueue, indices.computeFamily.value() });
 }
 
-void Renderer::SetViewport(VkCommandBuffer commandBuffer)
+void Renderer::SetViewport(VkCommandBuffer commandBuffer, VkExtent2D extent)
 {
 	VkViewport viewport{};
-	Vulkan::PopulateDefaultViewport(viewport, swapchain->extent);
+	Vulkan::PopulateDefaultViewport(viewport, extent);
 	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
 }
 
-void Renderer::SetScissors(VkCommandBuffer commandBuffer)
+void Renderer::SetScissors(VkCommandBuffer commandBuffer, VkExtent2D extent)
 {
 	VkRect2D scissor{};
-	Vulkan::PopulateDefaultScissors(scissor, swapchain->extent);
+	Vulkan::PopulateDefaultScissors(scissor, extent);
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }
 
