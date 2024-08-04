@@ -379,8 +379,8 @@ void Renderer::CreateTextureSampler()
 
 void Renderer::CreateRenderPass()
 {
-	renderPass    = PipelineCreator::CreateRenderPass(physicalDevice, swapchain, PIPELINE_FLAG_CLEAR_ON_LOAD, 1);
-	GUIRenderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain, PIPELINE_FLAG_NONE, 1);
+	renderPass    = PipelineCreator::CreateRenderPass(physicalDevice, swapchain->format, PIPELINE_FLAG_CLEAR_ON_LOAD, 1);
+	GUIRenderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain->format, PIPELINE_FLAG_NONE, 1);
 }
 
 void Renderer::CreateDescriptorSets()

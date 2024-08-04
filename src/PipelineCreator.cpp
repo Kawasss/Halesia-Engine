@@ -105,14 +105,14 @@ VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass
 	return pipeline;
 }
 
-VkRenderPass PipelineCreator::CreateRenderPass(PhysicalDevice physicalDevice, Swapchain* swapchain, PipelineFlags flags, uint32_t attachmentCount)
+VkRenderPass PipelineCreator::CreateRenderPass(PhysicalDevice physicalDevice, VkFormat attachmentFormat, PipelineFlags flags, uint32_t attachmentCount)
 {
 	std::vector<VkAttachmentDescription> attachments(attachmentCount);
 	std::vector<VkAttachmentReference> colorReferences(attachmentCount);
 
 	for (uint32_t i = 0; i < attachmentCount; i++)
 	{
-		attachments[i].format = swapchain->format;
+		attachments[i].format = attachmentFormat;
 		attachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
 		attachments[i].loadOp = flags & PIPELINE_FLAG_CLEAR_ON_LOAD ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;

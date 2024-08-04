@@ -99,12 +99,12 @@ private:
 	bool hasChanged = false;
 };
 
-#define CheckHandleValidity(memory, ret)                                                                                                    \
-if (!CheckIfHandleIsValid(memory))                                                                                                          \
-{                                                                                                                                           \
-	Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found, returning", MESSAGE_SEVERITY_ERROR); \
-	return ret;                                                                                                                             \
-}                                                                                                                                           \
+#define CheckHandleValidity(memory, ret)                                                                                                                         \
+if (!CheckIfHandleIsValid(memory))                                                                                                                               \
+{                                                                                                                                                                \
+	Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found, returning from " + __FUNCTION__, MESSAGE_SEVERITY_ERROR); \
+	return ret;                                                                                                                                                  \
+}                                                                                                                                                                \
 
 template<typename T>
 void StorageBuffer<T>::Reserve(size_t maxAmountToBeStored, VkBufferUsageFlags usage)
