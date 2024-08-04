@@ -29,7 +29,7 @@ public:
 	void DefaultUpdate(Window* window, float delta);
 
 	glm::mat4 GetProjectionMatrix() const;
-	glm::mat4 GetOrthoProjectionMatrix() const;
+	glm::mat4 GetOrthoProjectionMatrix(unsigned int width, unsigned int height) const;
 	glm::mat4 GetViewMatrix() const;
 	glm::vec2 GetMotionVector();
 

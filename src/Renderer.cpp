@@ -882,10 +882,10 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 }
 
-void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass)
+void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor)
 {
 	std::array<VkClearValue, 2> clearColors{};
-	clearColors[0].color = { 0, 0, 0, 1 };
+	clearColors[0].color = { clearColor.x, clearColor.y, clearColor.z, 1 };
 	clearColors[1].depthStencil = { 1, 0 };
 
 	VkRenderPassBeginInfo renderPassBeginInfo{};

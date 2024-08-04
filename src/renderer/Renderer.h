@@ -73,10 +73,10 @@ public:
 	void StartRecording();
 	void SubmitRecording();
 	void RenderObjects(const std::vector<Object*>& objects, Camera* camera);
-	void StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass);
+	void StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor = glm::vec3(0));
 	void EndRenderPass(VkCommandBuffer commandBuffer);
 
-	VkRenderPass GetDefault3DRenderPass()   { return renderPass; }
+	VkRenderPass GetDefault3DRenderPass()   { return renderPass;    }
 	VkRenderPass GetNonClearingRenderPass() { return GUIRenderPass; }
 
 	uint32_t GetInternalWidth()  { return viewportWidth;  }

@@ -84,9 +84,12 @@ glm::mat4 Camera::GetProjectionMatrix() const
 	return projection;
 }
 
-glm::mat4 Camera::GetOrthoProjectionMatrix() const
+glm::mat4 Camera::GetOrthoProjectionMatrix(unsigned int width, unsigned int height) const
 {
-	glm::mat4 projection = glm::ortho(-1, 1, -1, 1); //unsure of parameters
+	float halfWidth  = width * 0.5f;
+	float halfHeight = height * 0.5f;
+
+	glm::mat4 projection = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, -farPlane, farPlane); //unsure of parameters
 	projection[1][1] *= -1;
 	return projection;
 }
