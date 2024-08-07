@@ -8,6 +8,9 @@ void Buffer::Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyF
 
 void Buffer::Destroy()
 {
+	if (buffer == VK_NULL_HANDLE && memory == VK_NULL_HANDLE)
+		return;
+
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	if (buffer != VK_NULL_HANDLE)

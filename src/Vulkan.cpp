@@ -3,7 +3,6 @@ bool enableValidationLayers = false;
 #else
 bool enableValidationLayers = true;
 #endif
-#define NOMINMAX
 #include <iostream>
 #include <algorithm>
 
@@ -11,7 +10,8 @@ bool enableValidationLayers = true;
 #include "renderer/Vulkan.h"
 #include "renderer/Surface.h"
 
-#define ATTACH_FUNCTION(function) p##function = (PFN_##function##)vkGetDeviceProcAddr(logicalDevice, #function) // relies on the fact that a VkDevice named logicalDevice and the function pointer already exists with DEFINE_VULKAN_FUNCTION_POINTER
+#define ATTACH_INSTANCE_FUNCTION(function) p##function = (PFN_##function##)vkGetInstanceProcAddr(instance, #function)
+#define ATTACH_DEVICE_FUNCTION(function) p##function = (PFN_##function##)vkGetDeviceProcAddr(logicalDevice, #function) // relies on the fact that a VkDevice named logicalDevice and the function pointer already exists with DEFINE_VULKAN_FUNCTION_POINTER
 #define DEFINE_FUNCTION_POINTER(function) PFN_##function p##function = nullptr 
 
 VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
@@ -49,6 +49,15 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     location += file == "" ? "" : " in " + file;
 
     this->message = message + vulkanError + location;
+}
+
+void Vulkan::StartDebugLabel(VkCommandBuffer commandBuffer, const std::string& label)
+{
+    VkDebugUtilsLabelEXT labelInfo{};
+    labelInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+    labelInfo.pLabelName = label.c_str();
+
+    vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &labelInfo);
 }
 
 void Vulkan::DisableValidationLayers()
@@ -716,7 +725,7 @@ bool Vulkan::CheckLogicalDeviceExtensionSupport(PhysicalDevice physicalDevice, c
 
     for (const VkExtensionProperties& property : allExtensions)
         unsupportedExtensions.erase(property.extensionName);
-
+        
     return unsupportedExtensions.empty();
 }
 
@@ -777,11 +786,13 @@ DEFINE_FUNCTION_POINTER(vkGetRayTracingShaderGroupHandlesKHR);
 DEFINE_FUNCTION_POINTER(vkCmdTraceRaysKHR);
 DEFINE_FUNCTION_POINTER(vkGetMemoryWin32HandleKHR);
 DEFINE_FUNCTION_POINTER(vkGetSemaphoreWin32HandleKHR);
+DEFINE_FUNCTION_POINTER(vkCmdBeginDebugUtilsLabelEXT);
+DEFINE_FUNCTION_POINTER(vkCmdEndDebugUtilsLabelEXT);
 #pragma endregion VulkanPointerFunctions
 
 void Vulkan::ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, const std::vector<const char*>& logicalDeviceExtensions)
 {
-    for (const std::string logicalDeviceExtension : logicalDeviceExtensions) // no switch case because c++ cant handle strings in switch cases
+    for (const std::string_view logicalDeviceExtension : logicalDeviceExtensions) // no switch case because c++ cant handle strings in switch cases
     {
         if (logicalDeviceExtension == VK_KHR_SWAPCHAIN_EXTENSION_NAME) continue;
         else if (logicalDeviceExtension == VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) continue;
@@ -789,33 +800,45 @@ void Vulkan::ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, con
 
         else if (logicalDeviceExtension == VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)
         {
-            ATTACH_FUNCTION(vkCmdBuildAccelerationStructuresKHR);
-            ATTACH_FUNCTION(vkCreateAccelerationStructureKHR);
-            ATTACH_FUNCTION(vkDestroyAccelerationStructureKHR);
-            ATTACH_FUNCTION(vkGetAccelerationStructureBuildSizesKHR);
-            ATTACH_FUNCTION(vkGetAccelerationStructureDeviceAddressKHR);
+            ATTACH_DEVICE_FUNCTION(vkCmdBuildAccelerationStructuresKHR);
+            ATTACH_DEVICE_FUNCTION(vkCreateAccelerationStructureKHR);
+            ATTACH_DEVICE_FUNCTION(vkDestroyAccelerationStructureKHR);
+            ATTACH_DEVICE_FUNCTION(vkGetAccelerationStructureBuildSizesKHR);
+            ATTACH_DEVICE_FUNCTION(vkGetAccelerationStructureDeviceAddressKHR);
         }
 
         else if (logicalDeviceExtension == VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)
         {
-            ATTACH_FUNCTION(vkCmdTraceRaysKHR);
-            ATTACH_FUNCTION(vkCreateRayTracingPipelinesKHR);
-            ATTACH_FUNCTION(vkGetRayTracingShaderGroupHandlesKHR);
+            ATTACH_DEVICE_FUNCTION(vkCmdTraceRaysKHR);
+            ATTACH_DEVICE_FUNCTION(vkCreateRayTracingPipelinesKHR);
+            ATTACH_DEVICE_FUNCTION(vkGetRayTracingShaderGroupHandlesKHR);
         }
 
         else if (logicalDeviceExtension == VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
-            ATTACH_FUNCTION(vkGetBufferDeviceAddressKHR);
+            ATTACH_DEVICE_FUNCTION(vkGetBufferDeviceAddressKHR);
 
         else if (logicalDeviceExtension == VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME)
         {
-            ATTACH_FUNCTION(vkGetMemoryWin32HandleKHR);
+            ATTACH_DEVICE_FUNCTION(vkGetMemoryWin32HandleKHR);
         }
 
         else if (logicalDeviceExtension == VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME)
-            ATTACH_FUNCTION(vkGetSemaphoreWin32HandleKHR);
+            ATTACH_DEVICE_FUNCTION(vkGetSemaphoreWin32HandleKHR);
 
         else
-            Console::WriteLine("Given logical device extension " + logicalDeviceExtension + " has no activatable functions", MESSAGE_SEVERITY_WARNING);
+            Console::WriteLine("Given logical device extension " + (std::string)logicalDeviceExtension.data() + " has no activatable functions", MESSAGE_SEVERITY_WARNING);
+    }
+}
+
+void Vulkan::ActiveInstanceExtensions(VkInstance instance, const std::vector<const char*>& extensions)
+{
+    for (const std::string_view extension : extensions)
+    {
+        if (extension == VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
+        {
+            ATTACH_INSTANCE_FUNCTION(vkCmdBeginDebugUtilsLabelEXT);
+            ATTACH_INSTANCE_FUNCTION(vkCmdEndDebugUtilsLabelEXT);
+        }
     }
 }
 
@@ -900,5 +923,17 @@ void vkCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddre
 {
     CHECK_VALIDITY_DEBUG(pvkCmdTraceRaysKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
+}
+
+void vkCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo)
+{
+    CHECK_VALIDITY_DEBUG(pvkCmdBeginDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    pvkCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+}
+
+void vkCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer)
+{
+    CHECK_VALIDITY_DEBUG(pvkCmdEndDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    pvkCmdEndDebugUtilsLabelEXT(commandBuffer);
 }
 #pragma endregion VulkanExtensionFunctionDefinitions

@@ -79,6 +79,7 @@ public:
     static std::vector<VkExtensionProperties> GetInstanceExtensions();
     static std::vector<VkExtensionProperties> GetLogicalDeviceExtensions(PhysicalDevice physicalDevice);
     static void                               ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, const std::vector<const char*>& logicalDeviceExtensions);
+    static void                               ActiveInstanceExtensions(VkInstance instance, const std::vector<const char*>& extensions);
 
     static SwapChainSupportDetails            QuerySwapChainSupport(PhysicalDevice device, VkSurfaceKHR surface);
     static VkSurfaceFormatKHR                 ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -123,6 +124,8 @@ public:
 
     static void                               SubmitObjectForDeletion(std::function<void()>&& func);
     static void                               DeleteSubmittedObjects();
+
+    static void                               StartDebugLabel(VkCommandBuffer commandBuffer, const std::string& label);
 
     static VkFence                            CreateFence(VkFenceCreateFlags flags = 0, void* pNext = nullptr);
     static VkSemaphore                        CreateSemaphore(void* pNext = nullptr);

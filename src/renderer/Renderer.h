@@ -73,7 +73,7 @@ public:
 	void StartRecording();
 	void SubmitRecording();
 	void RenderObjects(const std::vector<Object*>& objects, Camera* camera);
-	void StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor = glm::vec3(0));
+	void StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor = glm::vec3(0), VkFramebuffer framebuffer = VK_NULL_HANDLE);
 	void EndRenderPass(VkCommandBuffer commandBuffer);
 
 	VkRenderPass GetDefault3DRenderPass()   { return renderPass;    }
@@ -89,6 +89,7 @@ public:
 	{
 		Type* actualPtr = new Type();
 		RenderPipeline* ptr = dynamic_cast<RenderPipeline*>(actualPtr);
+		dbgPipelineNames[ptr] = typeid(Type).name();
 		ProcessRenderPipeline(ptr);  // should check if it derives from RenderPipeline
 	}
 
@@ -143,6 +144,8 @@ private:
 
 	uint32_t framebufferWidth  = 0;
 	uint32_t framebufferHeight = 0;
+
+	std::unordered_map<RenderPipeline*, std::string> dbgPipelineNames;
 
 	std::vector<VkCommandBuffer>	commandBuffers;
 	std::vector<VkSemaphore>		imageAvaibleSemaphores;

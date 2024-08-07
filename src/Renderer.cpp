@@ -298,7 +298,12 @@ void Renderer::CreateContext()
 
 void Renderer::CreatePhysicalDevice()
 {
+	Vulkan::requiredInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+
 	instance = Vulkan::GenerateInstance();
+
+	Vulkan::ActiveInstanceExtensions(instance, Vulkan::requiredInstanceExtensions);
+
 	surface = Surface::GenerateSurface(instance, testWindow);
 	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
 }
@@ -535,6 +540,8 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	VkImageView imageToCopy = VK_NULL_HANDLE;
 	if (canRayTrace)
 	{
+		Vulkan::StartDebugLabel(commandBuffer, "ray tracing");
+
 		WriteTimestamp(commandBuffer);
 		if (!shouldRasterize)
 			rayTracer->Execute(GetPipelinePayload(commandBuffer, camera), objects);
@@ -550,6 +557,8 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 			imageToCopy = rayTracer->gBufferViews[2];
 		else if (RayTracingPipeline::showAlbedo)
 			imageToCopy = rayTracer->gBufferViews[1];
+
+		vkCmdEndDebugUtilsLabelEXT(commandBuffer);
 	}
 
 	VkExtent2D viewportExtent = { viewportWidth, viewportHeight };
@@ -560,8 +569,14 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	{
 		RenderPipeline::Payload payload = GetPipelinePayload(commandBuffer, camera);
 		for (RenderPipeline* renderPipeline : renderPipelines)
+		{
+			Vulkan::StartDebugLabel(commandBuffer, dbgPipelineNames[renderPipeline] + "::Execute");
 			renderPipeline->Execute(payload, objects);
+			vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+		}
 	}
+
+	Vulkan::StartDebugLabel(commandBuffer, "UI");
 
 	SetViewport(commandBuffer, swapchain->extent);
 	SetScissors(commandBuffer, swapchain->extent);
@@ -592,6 +607,8 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	vkCmdEndRenderPass(commandBuffer);
 
 	WriteTimestamp(commandBuffer, true);
+
+	vkCmdEndDebugUtilsLabelEXT(commandBuffer);
 
 	result = vkEndCommandBuffer(commandBuffer);
 	CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
@@ -882,8 +899,11 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 }
 
-void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor)
+void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor, VkFramebuffer framebuffer)
 {
+	if (framebuffer == VK_NULL_HANDLE)
+		framebuffer = resultFramebuffer;
+
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { clearColor.x, clearColor.y, clearColor.z, 1 };
 	clearColors[1].depthStencil = { 1, 0 };
@@ -891,7 +911,7 @@ void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass rende
 	VkRenderPassBeginInfo renderPassBeginInfo{};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassBeginInfo.renderPass = renderPass;
-	renderPassBeginInfo.framebuffer = resultFramebuffer;
+	renderPassBeginInfo.framebuffer = framebuffer;
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = { framebufferWidth, framebufferHeight};
 	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());

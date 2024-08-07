@@ -22,7 +22,7 @@ public:
 
 	// these functions can be used if the default render pipeline functions dont cut it (Execute( ... ) will call these functions)
 	void ComputeCells(VkCommandBuffer commandBuffer, Camera* camera);
-	void DrawObjects(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height);
+	void DrawObjects(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj = glm::mat4(0));
 
 	ComputeShader* GetShader() { return computeShader; }
 	VkBuffer GetCellBuffer()   { return cellBuffer.Get();  }
@@ -32,7 +32,7 @@ private:
 	void Allocate();
 	void CreateShader();
 	void PrepareGraphicsPipeline();
-	void UpdateUniformBuffer(Camera* cam, uint32_t width, uint32_t height);
+	void UpdateUniformBuffer(Camera* cam, glm::mat4 proj, uint32_t width, uint32_t height);
 
 	static constexpr int MAX_LIGHT_INDICES = 7;
 	static constexpr int MAX_LIGHTS = 1024;

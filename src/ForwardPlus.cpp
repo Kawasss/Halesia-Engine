@@ -76,6 +76,8 @@ void ForwardPlusPipeline::ComputeCells(VkCommandBuffer commandBuffer, Camera* ca
 	matrices->projection = camera->GetProjectionMatrix();
 	matrices->view = camera->GetViewMatrix();
 
+	Vulkan::StartDebugLabel(commandBuffer, __FUNCTION__);
+
 	cellBuffer.Fill(commandBuffer, 0, sizeof(uint32_t) * 2);
 
 	computeShader->Execute(commandBuffer, lightCount, 1, 1);
@@ -88,14 +90,18 @@ void ForwardPlusPipeline::ComputeCells(VkCommandBuffer commandBuffer, Camera* ca
 	barrier.size = VK_WHOLE_SIZE;
 
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+
+	vkCmdEndDebugUtilsLabelEXT(commandBuffer);
 }
 
-void ForwardPlusPipeline::DrawObjects(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height)
+void ForwardPlusPipeline::DrawObjects(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj)
 {
-	UpdateUniformBuffer(camera, width, height);
+	UpdateUniformBuffer(camera, customProj, width, height);
 
 	VkBuffer vertexBuffer = Renderer::g_vertexBuffer.GetBufferHandle();
 	VkDeviceSize offset = 0;
+
+	Vulkan::StartDebugLabel(commandBuffer, __FUNCTION__);
 
 	graphicsPipeline->Bind(commandBuffer);
 
@@ -113,6 +119,8 @@ void ForwardPlusPipeline::DrawObjects(VkCommandBuffer commandBuffer, const std::
 
 		vkCmdDrawIndexed(commandBuffer, indexCount, 1, firstIndex, vertexOffset, 0);
 	}
+
+	vkCmdEndDebugUtilsLabelEXT(commandBuffer);
 }
 
 void ForwardPlusPipeline::AddLight(glm::vec3 pos)
@@ -152,10 +160,10 @@ void ForwardPlusPipeline::PrepareGraphicsPipeline()
 	}
 }
 
-void ForwardPlusPipeline::UpdateUniformBuffer(Camera* cam, uint32_t width, uint32_t height)
+void ForwardPlusPipeline::UpdateUniformBuffer(Camera* cam, glm::mat4 proj, uint32_t width, uint32_t height)
 {
 	uniformBufferMapped->cameraPos = cam->position;
-	uniformBufferMapped->projection = cam->GetProjectionMatrix();
+	uniformBufferMapped->projection = proj == glm::mat4(0) ? cam->GetProjectionMatrix() : proj;
 	uniformBufferMapped->view = cam->GetViewMatrix();
 	uniformBufferMapped->width = width;
 	uniformBufferMapped->height = height;
