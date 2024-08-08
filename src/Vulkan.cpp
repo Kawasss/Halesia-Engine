@@ -60,6 +60,15 @@ void Vulkan::StartDebugLabel(VkCommandBuffer commandBuffer, const std::string& l
     vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &labelInfo);
 }
 
+void Vulkan::InsertDebugLabel(VkCommandBuffer commandBuffer, const std::string& label)
+{
+    VkDebugUtilsLabelEXT labelInfo{};
+    labelInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+    labelInfo.pLabelName = label.c_str();
+
+    vkCmdInsertDebugUtilsLabelEXT(commandBuffer, &labelInfo);
+}
+
 void Vulkan::DisableValidationLayers()
 {
     enableValidationLayers = false;
@@ -788,6 +797,7 @@ DEFINE_FUNCTION_POINTER(vkGetMemoryWin32HandleKHR);
 DEFINE_FUNCTION_POINTER(vkGetSemaphoreWin32HandleKHR);
 DEFINE_FUNCTION_POINTER(vkCmdBeginDebugUtilsLabelEXT);
 DEFINE_FUNCTION_POINTER(vkCmdEndDebugUtilsLabelEXT);
+DEFINE_FUNCTION_POINTER(vkCmdInsertDebugUtilsLabelEXT);
 #pragma endregion VulkanPointerFunctions
 
 void Vulkan::ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, const std::vector<const char*>& logicalDeviceExtensions)
@@ -838,6 +848,7 @@ void Vulkan::ActiveInstanceExtensions(VkInstance instance, const std::vector<con
         {
             ATTACH_INSTANCE_FUNCTION(vkCmdBeginDebugUtilsLabelEXT);
             ATTACH_INSTANCE_FUNCTION(vkCmdEndDebugUtilsLabelEXT);
+            ATTACH_INSTANCE_FUNCTION(vkCmdInsertDebugUtilsLabelEXT);
         }
     }
 }
@@ -925,15 +936,28 @@ void vkCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddre
     pvkCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
 }
 
+
 void vkCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo)
 {
-    CHECK_VALIDITY_DEBUG(pvkCmdBeginDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    pvkCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+    DEBUG_ONLY(
+        CHECK_VALIDITY_DEBUG(pvkCmdBeginDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        pvkCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+    );
 }
 
 void vkCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer)
 {
-    CHECK_VALIDITY_DEBUG(pvkCmdEndDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-    pvkCmdEndDebugUtilsLabelEXT(commandBuffer);
+    DEBUG_ONLY(
+        CHECK_VALIDITY_DEBUG(pvkCmdEndDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        pvkCmdEndDebugUtilsLabelEXT(commandBuffer);
+    );
+}
+
+void vkCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo)
+{
+    DEBUG_ONLY(
+        CHECK_VALIDITY_DEBUG(pvkCmdInsertDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        pvkCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+    );
 }
 #pragma endregion VulkanExtensionFunctionDefinitions

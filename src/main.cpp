@@ -109,6 +109,7 @@ int main(int argc, char** argv)
 	instance = HalesiaEngine::GetInstance();
 
 	instance->GetEngineCore().renderer->AddRenderPipeline<ForwardPlusPipeline>();
+	instance->GetEngineCore().renderer->AddLight(glm::vec3(0, 1, 0));
 
 	instance->Run();
 

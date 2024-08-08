@@ -298,7 +298,9 @@ void Renderer::CreateContext()
 
 void Renderer::CreatePhysicalDevice()
 {
+	#ifdef _DEBUG
 	Vulkan::requiredInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+	#endif
 
 	instance = Vulkan::GenerateInstance();
 
@@ -526,6 +528,9 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	
 	VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
 	CheckVulkanResult("Failed to begin the given command buffer", result, vkBeginCommandBuffer);
+
+	Vulkan::InsertDebugLabel(commandBuffer, "drawing buffer");
+
 	queryPool.Reset(commandBuffer);
 
 	WriteTimestamp(commandBuffer);

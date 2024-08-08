@@ -126,6 +126,7 @@ public:
     static void                               DeleteSubmittedObjects();
 
     static void                               StartDebugLabel(VkCommandBuffer commandBuffer, const std::string& label);
+    static void                               InsertDebugLabel(VkCommandBuffer commandBuffer, const std::string& label);
 
     static VkFence                            CreateFence(VkFenceCreateFlags flags = 0, void* pNext = nullptr);
     static VkSemaphore                        CreateSemaphore(void* pNext = nullptr);
