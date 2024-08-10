@@ -37,7 +37,8 @@ void Image::GenerateImages(std::vector<std::vector<char>>& textureData, bool use
 	this->commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
 	this->queue = context.graphicsQueue;
 	this->physicalDevice = context.physicalDevice;
-	
+	this->format = format;
+
 	layerCount = static_cast<uint32_t>(textureData.size());
 	int textureChannels = 0;
 
@@ -325,9 +326,11 @@ void Texture::DestroyPlaceholderTextures()
 	delete placeholderAmbientOcclusion;
 }
 
-void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
+void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer)
 {
-	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
+	bool isSingleTime = commandBuffer == VK_NULL_HANDLE;
+	if (isSingleTime)
+		commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
 
 	VkImageMemoryBarrier memoryBarrier{};
 	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -361,11 +364,38 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		memoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		destinationStage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+	{
+		memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		memoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	}
 	else throw std::invalid_argument("Invalid layout transition: " + (std::string)string_VkImageLayout(newLayout));
 
 	vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
 
-	Vulkan::EndSingleTimeCommands(queue, commandBuffer, commandPool);
+	if (isSingleTime)
+		Vulkan::EndSingleTimeCommands(queue, commandBuffer, commandPool);
+}
+
+void Image::TransitionForShaderRead(VkCommandBuffer commandBuffer)
+{
+	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandBuffer);
+}
+
+void Image::TransitionForShaderWrite(VkCommandBuffer commandBuffer)
+{
+	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, commandBuffer);
 }
 
 void Image::CopyBufferToImage(VkBuffer buffer)

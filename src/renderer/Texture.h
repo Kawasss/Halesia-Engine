@@ -40,6 +40,9 @@ public:
 	int GetHeight();
 	int GetMipLevels();
 
+	void TransitionForShaderWrite(VkCommandBuffer commandBuffer);
+	void TransitionForShaderRead(VkCommandBuffer commandBuffer);
+
 	std::vector<uint8_t> GetImageData();
 
 	static bool TexturesHaveChanged();
@@ -60,8 +63,9 @@ protected:
 	VkCommandPool	commandPool;
 	VkQueue			queue;
 	PhysicalDevice	physicalDevice;
+	TextureFormat   format;
 
-	void TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+	void TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 	void CopyBufferToImage(VkBuffer buffer);
 	void GenerateMipMaps(VkFormat imageFormat);
 	void WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMipMaps, TextureFormat format, VkImageLayout layout);
