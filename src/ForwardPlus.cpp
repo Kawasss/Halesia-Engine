@@ -160,6 +160,19 @@ void ForwardPlusPipeline::PrepareGraphicsPipeline()
 	}
 }
 
+void ForwardPlusPipeline::UpdateBindlessTextures()
+{
+	for (const Material& mat : Mesh::materials)
+	{
+		if (processedMaterials.find(mat.handle) == processedMaterials.end())
+			continue;
+
+		uint32_t index = static_cast<uint32_t>(processedMaterials.size());
+
+		processedMaterials.insert(mat.handle);
+	}
+}
+
 void ForwardPlusPipeline::UpdateUniformBuffer(Camera* cam, glm::mat4 proj, uint32_t width, uint32_t height)
 {
 	uniformBufferMapped->cameraPos = cam->position;

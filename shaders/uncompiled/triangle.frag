@@ -4,6 +4,8 @@
 #define PI 3.14159265359
 #define TEXTURES_PER_MATERIAL 2
 
+#include "include/layouts.glsl"
+
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 texCoords;
@@ -52,6 +54,8 @@ layout(set = 0, binding = 0) uniform sceneInfo {
     uint width;
     uint height;
 } ubo;
+
+layout(set = 0, binding = 5) uniform sampler2D[500] textures;
 
 vec2 GetRelativePosition()
 {

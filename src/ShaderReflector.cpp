@@ -116,7 +116,7 @@ std::vector<VkDescriptorPoolSize> ShaderGroupReflector::GetDescriptorPoolSize() 
 				ret.push_back({ (VkDescriptorType)current.descriptor_type, 0 });
 				typeIndex[current.descriptor_type] = static_cast<uint32_t>(ret.size() - 1);
 			}
-			ret[typeIndex[current.descriptor_type]].descriptorCount++;
+			ret[typeIndex[current.descriptor_type]].descriptorCount += current.count;
 		}
 	}
 	return ret;

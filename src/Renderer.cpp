@@ -576,6 +576,10 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		for (RenderPipeline* renderPipeline : renderPipelines)
 		{
 			Vulkan::StartDebugLabel(commandBuffer, dbgPipelineNames[renderPipeline] + "::Execute");
+
+			SetViewport(commandBuffer, viewportExtent);
+			SetScissors(commandBuffer, viewportExtent);
+
 			renderPipeline->Execute(payload, objects);
 			vkCmdEndDebugUtilsLabelEXT(commandBuffer);
 		}
