@@ -19,6 +19,7 @@
 #include "renderer/ComputeShader.h"
 #include "renderer/DescriptorWriter.h"
 #include "renderer/RenderPipeline.h"
+#include "renderer/GraphicsPipeline.h"
 
 #include "system/Window.h"
 
@@ -117,12 +118,7 @@ void Renderer::Destroy()
 
 	Texture::DestroyPlaceholderTextures();
 
-	vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);
-	vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, nullptr);
-
-	vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
-
-	vkDestroyPipeline(logicalDevice, screenPipeline, nullptr);
+	delete screenPipeline;
 
 	vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
 	vkDestroyRenderPass(logicalDevice, GUIRenderPass, nullptr);
@@ -240,7 +236,6 @@ void Renderer::InitVulkan()
 	swapchain = new Swapchain(surface, testWindow, false);
 	swapchain->CreateImageViews();
 	queryPool.Create(VK_QUERY_TYPE_TIMESTAMP, 10);
-	CreateDescriptorSetLayout();
 	CreateGraphicsPipeline();
 	
 	swapchain->CreateDepthBuffers();
@@ -271,8 +266,6 @@ void Renderer::InitVulkan()
 	}
 	else shouldRasterize = true;
 
-	CreateDescriptorPool();
-	CreateDescriptorSets();
 	CreateCommandBuffer();
 	CreateSyncObjects();
 	CreateImGUI();
@@ -390,90 +383,8 @@ void Renderer::CreateRenderPass()
 	GUIRenderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain->format, PIPELINE_FLAG_NONE, 1);
 }
 
-void Renderer::CreateDescriptorSets()
-{
-	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptorSetLayout);
-	VkDescriptorSetAllocateInfo allocateInfo{};
-	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateInfo.descriptorPool = descriptorPool;
-	allocateInfo.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
-	allocateInfo.pSetLayouts = layouts.data();
-
-	descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
-
-	VkResult result = vkAllocateDescriptorSets(logicalDevice, &allocateInfo, descriptorSets.data());
-	CheckVulkanResult("Failed to allocate the descriptor sets", result, vkAllocateDescriptorSets);
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		writer->WriteImage(descriptorSets[i], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, canRayTrace ? rayTracer->gBufferViews[0] : VK_NULL_HANDLE, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	}
-}
-
-void Renderer::CreateDescriptorPool()
-{
-	std::array<VkDescriptorPoolSize, 1> poolSizes{};
-	poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	poolSizes[0].descriptorCount = MAX_FRAMES_IN_FLIGHT;
-
-	VkDescriptorPoolCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	createInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-	createInfo.pPoolSizes = poolSizes.data();
-	createInfo.maxSets = MAX_FRAMES_IN_FLIGHT;
-	createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT_EXT;
-
-	VkResult result = vkCreateDescriptorPool(logicalDevice, &createInfo, nullptr, &descriptorPool);
-	CheckVulkanResult("Failed to create the descriptor pool", result, vkCreateDescriptorPool);
-}
-
-void Renderer::CreateDescriptorSetLayout() // should simplify this with shader reflection
-{
-	VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 2;
-	samplerLayoutBinding.descriptorCount = MAX_FRAMES_IN_FLIGHT;//MAX_BINDLESS_TEXTURES;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerLayoutBinding.pImmutableSamplers = nullptr;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	std::array<VkDescriptorSetLayoutBinding, 1> bindings = { samplerLayoutBinding };
-	std::vector<VkDescriptorBindingFlags> bindingFlags = { VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT };
-
-	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT bindingFlagsCreateInfo{};
-	bindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-	bindingFlagsCreateInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-	bindingFlagsCreateInfo.pBindingFlags = bindingFlags.data();
-
-	VkDescriptorSetLayoutCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
-	createInfo.pBindings = bindings.data();
-	createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-	createInfo.pNext = &bindingFlagsCreateInfo;
-
-	VkResult result = vkCreateDescriptorSetLayout(logicalDevice, &createInfo, nullptr, &descriptorSetLayout);
-	CheckVulkanResult("Failed to create the descriptor set layout", result, vkCreateDescriptorSetLayout);
-}
-
 void Renderer::CreateGraphicsPipeline()
 {
-	//create pipeline layout
-	
-	VkPushConstantRange pushConstant{};
-	pushConstant.offset = 0;
-	pushConstant.size = sizeof(glm::mat4);
-	pushConstant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-	VkPipelineLayoutCreateInfo layoutInfo{};
-	layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	layoutInfo.setLayoutCount = 1;
-	layoutInfo.pSetLayouts = &descriptorSetLayout;
-	layoutInfo.pushConstantRangeCount = 1;
-	layoutInfo.pPushConstantRanges = &pushConstant;
-
-	VkResult result = vkCreatePipelineLayout(logicalDevice, &layoutInfo, nullptr, &pipelineLayout);
-	CheckVulkanResult("Failed to create a pipeline layout", result, vkCreatePipelineLayout);
-		
 	CreateRenderPass();
 
 	// screen shaders pipeline
@@ -484,7 +395,7 @@ void Renderer::CreateGraphicsPipeline()
 	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderVert, VK_SHADER_STAGE_VERTEX_BIT);
 	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderFrag, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	screenPipeline = PipelineCreator::CreatePipeline(pipelineLayout, renderPass, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX);
+	screenPipeline = new GraphicsPipeline("shaders/spirv/screen.vert.spv", "shaders/spirv/screen.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX, renderPass);//PipelineCreator::CreatePipeline(pipelineLayout, renderPass, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX);
 
 	vkDestroyShaderModule(logicalDevice, screenShaderVert, nullptr);
 	vkDestroyShaderModule(logicalDevice, screenShaderFrag, nullptr);
@@ -542,6 +453,12 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	//	obj->mesh.BLAS->RebuildGeometry(commandBuffer, obj->mesh);
 	WriteTimestamp(commandBuffer);
 
+	if (!preparedScreen)
+	{
+		PrepareScreenForReadWrite(commandBuffer);
+		preparedScreen = true;
+	}
+
 	VkImageView imageToCopy = VK_NULL_HANDLE;
 	if (canRayTrace)
 	{
@@ -570,6 +487,8 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	SetViewport(commandBuffer, viewportExtent);
 	SetScissors(commandBuffer, viewportExtent);
 
+	TransitionScreenToWrite(commandBuffer);
+
 	if (shouldRasterize)
 	{
 		RenderPipeline::Payload payload = GetPipelinePayload(commandBuffer, camera);
@@ -590,6 +509,8 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	SetViewport(commandBuffer, swapchain->extent);
 	SetScissors(commandBuffer, swapchain->extent);
 
+	TransitionScreenToRead(commandBuffer);
+
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
 	clearColors[1].depthStencil = { 1, 0 };
@@ -608,9 +529,10 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	WriteTimestamp(commandBuffer);
 
 	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, 1, 1);
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout, 0, 1, &descriptorSets[currentFrame], 0, nullptr);
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, screenPipeline);
-	vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &offsets);
+	
+	screenPipeline->Bind(commandBuffer);
+	vkCmdPushConstants(commandBuffer, screenPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &offsets);
+
 	vkCmdDraw(commandBuffer, 6, 1, 0, 0);
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 	vkCmdEndRenderPass(commandBuffer);
@@ -1004,8 +926,49 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 	CheckVulkanResult("Failed to create the result framebuffer", result, vkCreateFramebuffer);
 
 	imageView = (shouldRasterize || !canRayTrace) ? resultView : rayTracer->gBufferViews[0];
-	writer->WriteImage(descriptorSets[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, imageView, resultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	writer->WriteImage(screenPipeline->GetDescriptorSets()[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, imageView, resultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	writer->Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
+
+	preparedScreen = false;
+}
+
+void Renderer::TransitionScreenToRead(VkCommandBuffer commandBuffer) // maybe abstract away ??
+{
+	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	constexpr VkAccessFlags srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	constexpr VkAccessFlags dstAccess = VK_ACCESS_SHADER_READ_BIT;
+
+	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+	Vulkan::TransitionColorImage(commandBuffer, resultImage, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+}
+
+void Renderer::TransitionScreenToWrite(VkCommandBuffer commandBuffer)
+{
+	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	constexpr VkAccessFlags srcAccess = VK_ACCESS_SHADER_READ_BIT;
+	constexpr VkAccessFlags dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+	Vulkan::TransitionColorImage(commandBuffer, resultImage, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+}
+
+void Renderer::PrepareScreenForReadWrite(VkCommandBuffer commandBuffer)
+{
+	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	constexpr VkAccessFlags srcAccess = 0;
+	constexpr VkAccessFlags dstAccess = VK_ACCESS_SHADER_READ_BIT;
+
+	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+	Vulkan::TransitionColorImage(commandBuffer, resultImage, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
 std::vector<Object*> processedObjects;
@@ -1018,7 +981,7 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 
 		for (int j = 0; j < deferredMaterialTextures.size(); j++)
 		{
-			writer->WriteImage(descriptorSets[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, Mesh::materials[i][deferredMaterialTextures[j]]->imageView, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); // dont have any test to run this on, so I just hope this works
+			writer->WriteImage(screenPipeline->GetDescriptorSets()[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, Mesh::materials[i][deferredMaterialTextures[j]]->imageView, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); // dont have any test to run this on, so I just hope this works
 		}
 		processedMaterials[i] = Mesh::materials[i].handle;
 	}
@@ -1036,7 +999,7 @@ void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkComma
 		glm::mat4 translationModel = glm::translate(glm::identity<glm::mat4>(), object->transform.position);
 		glm::mat4 trans = translationModel * localRotationModel * scaleModel;
 		
-		vkCmdPushConstants(commandBuffer, pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &trans);
+		vkCmdPushConstants(commandBuffer, screenPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &trans);
 		vkCmdDraw(commandBuffer, 36, 1, 0, 0);
 	}	
 }

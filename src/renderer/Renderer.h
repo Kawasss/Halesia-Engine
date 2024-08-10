@@ -27,6 +27,7 @@ class DescriptorWriter;
 class Window;
 class RayTracingPipeline;
 class ForwardPlusPipeline;
+class GraphicsPipeline;
 class RenderPipeline;
 struct Mesh;
 
@@ -120,11 +121,8 @@ private:
 	VkDevice logicalDevice						= VK_NULL_HANDLE;
 	VkRenderPass renderPass						= VK_NULL_HANDLE;
 	VkRenderPass GUIRenderPass                  = VK_NULL_HANDLE;
-	VkDescriptorSetLayout descriptorSetLayout	= VK_NULL_HANDLE;
-	VkPipelineLayout pipelineLayout				= VK_NULL_HANDLE;
-	VkPipeline screenPipeline                   = VK_NULL_HANDLE;
+	GraphicsPipeline* screenPipeline                   = VK_NULL_HANDLE;
 	VkCommandPool commandPool					= VK_NULL_HANDLE;
-	VkDescriptorPool descriptorPool				= VK_NULL_HANDLE;
 	VkDescriptorPool imGUIDescriptorPool		= VK_NULL_HANDLE;
 	VkQueue graphicsQueue						= VK_NULL_HANDLE;
 	VkQueue presentQueue						= VK_NULL_HANDLE;
@@ -153,7 +151,6 @@ private:
 	std::vector<cudaExternalSemaphore_t> externalRenderSemaphores;
 	std::vector<HANDLE>             externalRenderSemaphoreHandles;
 	std::vector<VkFence>			inFlightFences;
-	std::vector<VkDescriptorSet>	descriptorSets;
 
 	StorageBuffer<VkDrawIndexedIndirectCommand> indirectDrawParameters;
 	std::unordered_map<int, Handle> processedMaterials;
@@ -180,19 +177,21 @@ private:
 
 	static bool initGlobalBuffers;
 
+	bool preparedScreen = false; // hacky
+
 	void InitVulkan();
 	void SetLogicalDevice();
-	void CreateDescriptorSetLayout();
 	void CreateGraphicsPipeline();
 	void CreateCommandPool();
 	void CreateTextureSampler();
-	void CreateDescriptorPool();
-	void CreateDescriptorSets();
 	void CreateCommandBuffer();
 	void CreateSyncObjects();
 	void CreateRenderPass();
 	void CreateImGUI();
 	void GetQueryResults();
+	void TransitionScreenToWrite(VkCommandBuffer commandBuffer);
+	void TransitionScreenToRead(VkCommandBuffer commandBuffer);
+	void PrepareScreenForReadWrite(VkCommandBuffer commandBuffer);
 	void WriteTimestamp(VkCommandBuffer commandBuffer, bool reset = false);
 	void WriteIndirectDrawParameters(std::vector<Object*>& objects);
 	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);

@@ -51,6 +51,26 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     this->message = message + vulkanError + location;
 }
 
+void Vulkan::TransitionColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags src, VkAccessFlags dst, VkPipelineStageFlags srcPipe, VkPipelineStageFlags dstPipe)
+{
+    VkImageMemoryBarrier memoryBarrier{};
+    memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    memoryBarrier.oldLayout = oldLayout;
+    memoryBarrier.newLayout = newLayout;
+    memoryBarrier.srcAccessMask = src;
+    memoryBarrier.dstAccessMask = dst;
+    memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    memoryBarrier.image = image;
+    memoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    memoryBarrier.subresourceRange.baseMipLevel = 0;
+    memoryBarrier.subresourceRange.levelCount = 1;
+    memoryBarrier.subresourceRange.baseArrayLayer = 0;
+    memoryBarrier.subresourceRange.layerCount = 1;
+
+    vkCmdPipelineBarrier(commandBuffer, srcPipe, dstPipe, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+}
+
 void Vulkan::StartDebugLabel(VkCommandBuffer commandBuffer, const std::string& label)
 {
     VkDebugUtilsLabelEXT labelInfo{};
