@@ -8,6 +8,12 @@
 #include "core/Camera.h"
 #include "core/Object.h"
 
+struct PushConstant
+{
+	glm::mat4 model;
+	int materialID;
+};
+
 void ForwardPlusPipeline::Start(const Payload& payload)
 {
 	Allocate();
@@ -64,6 +70,8 @@ void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Obje
 		ComputeCells(cmdBuffer, payload.camera);
 	}
 
+	UpdateBindlessTextures();
+
 	payload.renderer->StartRenderPass(cmdBuffer, renderPass);
 
 	DrawObjects(cmdBuffer, objects, payload.camera, payload.renderer->GetInternalWidth(), payload.renderer->GetInternalHeight());
@@ -108,13 +116,16 @@ void ForwardPlusPipeline::DrawObjects(VkCommandBuffer commandBuffer, const std::
 	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &offset);
 	vkCmdBindIndexBuffer(commandBuffer, Renderer::g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
 
+	PushConstant pushConstant{};
 	for (Object* obj : objects)
 	{
-		glm::mat4 model = obj->transform.GetModelMatrix();
-		vkCmdPushConstants(commandBuffer, graphicsPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(model), &model);
+		pushConstant.model      = obj->transform.GetModelMatrix();
+		pushConstant.materialID = obj->mesh.materialIndex;
 
-		uint32_t indexCount = static_cast<uint32_t>(obj->mesh.indices.size());
-		uint32_t firstIndex = static_cast<uint32_t>(Renderer::g_indexBuffer.GetItemOffset(obj->mesh.indexMemory));
+		vkCmdPushConstants(commandBuffer, graphicsPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstant), &pushConstant);
+
+		uint32_t indexCount   = static_cast<uint32_t>(obj->mesh.indices.size());
+		uint32_t firstIndex   = static_cast<uint32_t>(Renderer::g_indexBuffer.GetItemOffset(obj->mesh.indexMemory));
 		uint32_t vertexOffset = static_cast<uint32_t>(Renderer::g_vertexBuffer.GetItemOffset(obj->mesh.vertexMemory));
 
 		vkCmdDrawIndexed(commandBuffer, indexCount, 1, firstIndex, vertexOffset, 0);
@@ -158,19 +169,73 @@ void ForwardPlusPipeline::PrepareGraphicsPipeline()
 		writer->WriteBuffer(sets[0], cellBuffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
 		writer->WriteBuffer(sets[0], lightBuffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4);
 	}
+
+	VkDescriptorImageInfo imageInfo{}; // prepare the texture buffer
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = VK_NULL_HANDLE;
+	imageInfo.sampler = Renderer::defaultSampler;
+
+	std::vector<VkDescriptorImageInfo> imageInfos(500, imageInfo);
+
+	VkWriteDescriptorSet writeSet{};
+	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writeSet.dstSet = graphicsPipeline->GetDescriptorSets()[0];
+	writeSet.pImageInfo = imageInfos.data();
+	writeSet.descriptorCount = 500;
+	writeSet.dstArrayElement = 0;
+	writeSet.dstBinding = 5;
+
+	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
 }
 
 void ForwardPlusPipeline::UpdateBindlessTextures()
 {
-	for (const Material& mat : Mesh::materials)
+	constexpr size_t MAX_PROCESSED_COUNT = 5;
+
+	const size_t pbrSize = PBRMaterialTextures.size();
+	const size_t maxSize = pbrSize * MAX_PROCESSED_COUNT;
+
+	std::vector<VkDescriptorImageInfo> imageInfos(maxSize);
+	std::vector<VkWriteDescriptorSet>  writeSets(maxSize);
+
+	int processedCount = 0;
+
+	if (processedMats.size() < Mesh::materials.size())
+		processedMats.resize(Mesh::materials.size());
+
+	for (int i = 0; i < Mesh::materials.size(); i++)
 	{
-		if (processedMaterials.find(mat.handle) == processedMaterials.end())
+		if (processedCount >= MAX_PROCESSED_COUNT)
+			break;
+
+		if (processedMats[i] == Mesh::materials[i].handle)
 			continue;
 
-		uint32_t index = static_cast<uint32_t>(processedMaterials.size());
+		for (int j = 0; j < pbrSize; j++)
+		{
+			size_t index = i * pbrSize + j;
 
-		processedMaterials.insert(mat.handle);
+			VkDescriptorImageInfo& imageInfo = imageInfos[index];
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfo.imageView = Mesh::materials[i][PBRMaterialTextures[j]]->imageView;
+			imageInfo.sampler = Renderer::defaultSampler;
+
+			VkWriteDescriptorSet& writeSet = writeSets[index];
+			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			writeSet.descriptorCount = 1;
+			writeSet.dstArrayElement = index;
+			writeSet.dstBinding = 5;
+			writeSet.dstSet = graphicsPipeline->GetDescriptorSets()[0];
+			writeSet.pImageInfo = &imageInfos[index];
+		}
+		processedMats.push_back(Mesh::materials[i].handle);
+		processedCount++;
 	}
+
+	if (processedCount > 0)
+		vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, static_cast<uint32_t>(processedCount * pbrSize), writeSets.data(), 0, nullptr);
 }
 
 void ForwardPlusPipeline::UpdateUniformBuffer(Camera* cam, glm::mat4 proj, uint32_t width, uint32_t height)

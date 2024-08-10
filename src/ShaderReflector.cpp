@@ -82,7 +82,7 @@ void ShaderGroupReflector::ProcessLayoutBindings()
 			binding.stageFlags = modules[i].shader_stage;
 			binding.binding = current.binding;
 			binding.pImmutableSamplers = nullptr;
-			binding.descriptorCount = 1;
+			binding.descriptorCount = current.count;
 
 			layoutBinding.push_back(binding);
 		}
@@ -129,12 +129,19 @@ std::vector<VkPushConstantRange> ShaderGroupReflector::GetPushConstants() const
 	{
 		for (uint32_t j = 0; j < modules[i].push_constant_block_count; j++)
 		{
-			VkPushConstantRange range{};
-			range.offset = modules[i].push_constant_blocks[j].offset;
-			range.size = modules[i].push_constant_blocks[j].size;
-			range.stageFlags = modules[i].shader_stage;
-			
-			ret.push_back(range);
+			if (ret.empty())
+			{
+				VkPushConstantRange range{};
+				range.offset = modules[i].push_constant_blocks[j].offset;
+				range.size = modules[i].push_constant_blocks[j].size;
+				range.stageFlags = modules[i].shader_stage;
+
+				ret.push_back(range);
+			}
+			else
+			{
+				ret[0].stageFlags |= modules[i].shader_stage;
+			}
 		}
 	}
 	return ret;

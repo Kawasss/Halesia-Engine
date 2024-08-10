@@ -97,4 +97,5 @@ private:
 	ModelData* modelBufferMapped;
 
 	std::unordered_set<uint64_t> processedMaterials;
+	std::vector<uint64_t> processedMats;
 };

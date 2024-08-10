@@ -55,6 +55,12 @@ layout(set = 0, binding = 0) uniform sceneInfo {
     uint height;
 } ubo;
 
+layout(push_constant) uniform constant
+{
+    mat4 model;
+    int materialID;
+} Constant;
+
 layout(set = 0, binding = 5) uniform sampler2D[500] textures;
 
 vec2 GetRelativePosition()
@@ -104,7 +110,7 @@ void main()
         float spec = pow(max(dot(normal, halfwayDir), 0.0), 0.3);
         specular += spec * lightColor * attenuation;
     }
-    vec3 color = vec3(RandomValue(state), RandomValue(state), RandomValue(state));
+    vec3 color = texture(textures[Constant.materialID * 5], texCoords).xyz;
     result = vec4((ambient + diffuse + specular) * color, 1);
 
     #else
