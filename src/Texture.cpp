@@ -76,7 +76,7 @@ void Image::GenerateEmptyImages(int width, int height, int amount)
 	Vulkan::CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-	Vulkan::CreateImage(width, height, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
+	Vulkan::CreateImage(width, height, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
 
 	TransitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	CopyBufferToImage(stagingBuffer);
@@ -88,6 +88,8 @@ void Image::GenerateEmptyImages(int width, int height, int amount)
 	imageView = Vulkan::CreateImageView(image, viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
+
+	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 	this->texturesHaveChanged = true;
 }
@@ -302,6 +304,14 @@ Texture::Texture(const Color& color, TextureFormat format, TextureUseCase useCas
 		}, this, color, format, useCase);
 }
 
+Texture::Texture(int width, int height)
+{
+	this->width  = width;
+	this->height = height;
+
+	GenerateEmptyImages(width, height, 1);
+}
+
 void Texture::GeneratePlaceholderTextures()
 {
 	placeholderAlbedo = new Texture("textures/placeholderAlbedo.png", false);
@@ -370,15 +380,23 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 		memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
 		sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		destinationStage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
 	else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
 	{
 		memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
 		memoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-		sourceStage = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+		sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+	{
+		memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
 	else throw std::invalid_argument("Invalid layout transition: " + (std::string)string_VkImageLayout(newLayout));
 
@@ -390,12 +408,42 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 
 void Image::TransitionForShaderRead(VkCommandBuffer commandBuffer)
 {
-	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandBuffer);
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	bool useSingleTime = commandBuffer == VK_NULL_HANDLE;
+	if (useSingleTime)
+	{
+		commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
+		commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
+	}
+		
+	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandBuffer);
+
+	if (useSingleTime)
+	{
+		Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
+		Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
+	}
 }
 
 void Image::TransitionForShaderWrite(VkCommandBuffer commandBuffer)
 {
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	bool useSingleTime = commandBuffer == VK_NULL_HANDLE;
+	if (useSingleTime)
+	{
+		commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
+		commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
+	}
+
 	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, commandBuffer);
+
+	if (useSingleTime)
+	{
+		Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
+		Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
+	}
 }
 
 void Image::CopyBufferToImage(VkBuffer buffer)

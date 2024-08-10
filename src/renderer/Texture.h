@@ -40,8 +40,8 @@ public:
 	int GetHeight();
 	int GetMipLevels();
 
-	void TransitionForShaderWrite(VkCommandBuffer commandBuffer);
-	void TransitionForShaderRead(VkCommandBuffer commandBuffer);
+	void TransitionForShaderWrite(VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
+	void TransitionForShaderRead(VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
 	std::vector<uint8_t> GetImageData();
 
@@ -91,6 +91,7 @@ public:
 	static void GeneratePlaceholderTextures();
 	static void DestroyPlaceholderTextures();
 
+	Texture(int width, int height);
 	Texture(std::string filePath, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
 	Texture(std::vector<char> imageData, uint32_t width, uint32_t height, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY); // uncompressed image !!
 	Texture(const Color& color, TextureFormat format = TEXTURE_FORMAT_SRGB, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY); // solid color textures cannot use mip maps because theyre already 1x1
