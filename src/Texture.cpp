@@ -9,7 +9,7 @@
 #include "renderer/Texture.h"
 #include "core/Console.h"
 
-#include "tools/common.h"
+#include "io/IO.h"
 
 bool Image::texturesHaveChanged = false;
 Texture* Texture::placeholderAlbedo = nullptr;
@@ -240,7 +240,7 @@ std::vector<std::vector<char>> GetAllImageData(std::vector<std::string> filePath
 {
 	std::vector<std::vector<char>> fileDatas;
 	for (int i = 0; i < filePaths.size(); i++)
-		fileDatas.push_back(ReadFile(filePaths[i]));
+		fileDatas.push_back(IO::ReadFile(filePaths[i]));
 	return fileDatas;
 }
 

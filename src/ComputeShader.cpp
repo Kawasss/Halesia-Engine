@@ -2,11 +2,11 @@
 #include "renderer/ComputeShader.h"
 #include "renderer/ShaderReflector.h"
 
-#include "tools/common.h"
+#include "io/IO.h"
 
 ComputeShader::ComputeShader(std::string path)
 {
-	std::vector<char> code = ReadFile(path);
+	std::vector<char> code = IO::ReadFile(path);
 	ShaderGroupReflector reflector({ code });
 	VkShaderModule module = Vulkan::CreateShaderModule(code);
 

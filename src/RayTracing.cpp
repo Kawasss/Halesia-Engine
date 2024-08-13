@@ -20,7 +20,7 @@
 #include "core/Camera.h"
 #include "core/Object.h"
 
-#include "tools/common.h"
+#include "io/IO.h"
 
 struct InstanceMeshData
 {
@@ -354,10 +354,10 @@ void RayTracingPipeline::Init()
 {
 	std::vector<std::vector<char>> shaders =
 	{
-		ReadFile("shaders/spirv/gen.rgen.spv"),     // rgen  = [0]
-		ReadFile("shaders/spirv/hit.rchit.spv"),    // rchit = [1]
-		ReadFile("shaders/spirv/miss.rmiss.spv"),   // rmiss = [2]
-		ReadFile("shaders/spirv/shadow.rmiss.spv"), // rmiss = [3]
+		IO::ReadFile("shaders/spirv/gen.rgen.spv"),     // rgen  = [0]
+		IO::ReadFile("shaders/spirv/hit.rchit.spv"),    // rchit = [1]
+		IO::ReadFile("shaders/spirv/miss.rmiss.spv"),   // rmiss = [2]
+		IO::ReadFile("shaders/spirv/shadow.rmiss.spv"), // rmiss = [3]
 	};
 	ShaderGroupReflector groupReflection(shaders);
 

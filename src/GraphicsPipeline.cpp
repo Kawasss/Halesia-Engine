@@ -3,15 +3,15 @@
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/ShaderReflector.h"
 
-#include "tools/common.h"
+#include "io/IO.h"
 
 GraphicsPipeline::GraphicsPipeline(const std::string& vertPath, const std::string& fragPath, PipelineOptions flags, VkRenderPass renderPass)
 {
 	//std::vector<char> vertCode = ReadFile(vertPath), fragCode = ReadFile(fragPath);
 	std::vector<std::vector<char>> shaderCodes =
 	{
-		ReadFile(vertPath), // vert is [0]
-		ReadFile(fragPath), // frag is [1]
+		IO::ReadFile(vertPath), // vert is [0]
+		IO::ReadFile(fragPath), // frag is [1]
 	};
 	ShaderGroupReflector reflector(shaderCodes);
 

@@ -8,7 +8,7 @@
 
 #include "core/Console.h"
 #include "system/Input.h"
-#include "tools/common.h"
+#include "io/IO.h"
 
 #include "interpreter/Lexer.hpp"
 #include "interpreter/Parser.hpp"
@@ -69,7 +69,7 @@ void Console::Init()
 
 	interpreter.SetInstructions({ Instruction(INSTRUCTION_TYPE_PUSH_SCOPE) }, {});
 	interpreter.Execute();
-	InterpretCommand(ReadFile("cfg/init.cfg", true).data());
+	InterpretCommand(IO::ReadFile("cfg/init.cfg", true).data());
 	init = true;
 }
 

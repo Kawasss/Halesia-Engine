@@ -7,7 +7,7 @@
 #include "renderer/Texture.h"
 #include "renderer/ShaderReflector.h"
 
-#include "tools/common.h"
+#include "io/IO.h"
 
 struct Intro::Timer
 {
@@ -22,8 +22,8 @@ void Intro::Create(Swapchain* swapchain, std::string imagePath)
 	this->texture = new Texture(imagePath);
 	this->texture->AwaitGeneration();
 
-	std::vector<char> vertCode = ReadFile("shaders/spirv/intro.vert.spv");
-	std::vector<char> fragCode = ReadFile("shaders/spirv/intro.frag.spv");
+	std::vector<char> vertCode = IO::ReadFile("shaders/spirv/intro.vert.spv");
+	std::vector<char> fragCode = IO::ReadFile("shaders/spirv/intro.frag.spv");
 
 	ShaderGroupReflector reflector({ vertCode, fragCode });
 

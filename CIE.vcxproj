@@ -170,6 +170,7 @@
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\HalesiaEngine.cpp" />
     <ClCompile Include="src\Intro.cpp" />
+    <ClCompile Include="src\IO.cpp" />
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\Physics.cpp" />
@@ -234,6 +235,7 @@
     <ClInclude Include="src\demo\Topdown.h" />
     <ClInclude Include="src\HalesiaEngine.h" />
     <ClInclude Include="src\io\FileFormat.h" />
+    <ClInclude Include="src\io\IO.h" />
     <ClInclude Include="src\io\SceneLoader.h" />
     <ClInclude Include="src\io\SceneWriter.h" />
     <ClInclude Include="src\physics\RigidBody.h" />

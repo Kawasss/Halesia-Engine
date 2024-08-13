@@ -36,7 +36,7 @@
 
 #include "renderer/Renderer.h"
 
-#include "tools/common.h"
+#include "io/IO.h"
 
 #define CheckCudaResult(result) if (result != cudaSuccess) throw std::runtime_error(std::to_string(result) + " at line " + std::to_string(__LINE__) + " in " + (std::string)__FILENAME__);
 
@@ -379,18 +379,7 @@ void Renderer::CreateGraphicsPipeline()
 {
 	CreateRenderPass();
 
-	// screen shaders pipeline
-
-	VkShaderModule screenShaderVert = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/screen.vert.spv"));
-	VkShaderModule screenShaderFrag = Vulkan::CreateShaderModule(ReadFile("shaders/spirv/screen.frag.spv"));
-
-	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderVert, VK_SHADER_STAGE_VERTEX_BIT);
-	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderFrag, VK_SHADER_STAGE_FRAGMENT_BIT);
-
 	screenPipeline = new GraphicsPipeline("shaders/spirv/screen.vert.spv", "shaders/spirv/screen.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX, renderPass);
-
-	vkDestroyShaderModule(logicalDevice, screenShaderVert, nullptr);
-	vkDestroyShaderModule(logicalDevice, screenShaderFrag, nullptr);
 }
 
 void Renderer::CreateCommandPool()
