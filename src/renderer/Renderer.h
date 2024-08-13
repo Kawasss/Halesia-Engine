@@ -15,6 +15,7 @@
 #include "QueryPool.h"
 #include "Buffer.h"
 #include "RenderPipeline.h"
+#include "Framebuffer.h"
 #include "cuda_runtime_api.h"
 
 class Intro;
@@ -117,31 +118,20 @@ public:
 	float idleTime = 0;
 
 private:
-	VkInstance instance							= VK_NULL_HANDLE;
-	VkDevice logicalDevice						= VK_NULL_HANDLE;
-	VkRenderPass renderPass						= VK_NULL_HANDLE;
-	VkRenderPass GUIRenderPass                  = VK_NULL_HANDLE;
-	GraphicsPipeline* screenPipeline                   = VK_NULL_HANDLE;
-	VkCommandPool commandPool					= VK_NULL_HANDLE;
-	VkDescriptorPool imGUIDescriptorPool		= VK_NULL_HANDLE;
-	VkQueue graphicsQueue						= VK_NULL_HANDLE;
-	VkQueue presentQueue						= VK_NULL_HANDLE;
-	VkQueue computeQueue                        = VK_NULL_HANDLE;
-	VkSampler resultSampler                     = VK_NULL_HANDLE; // does not need to be destroyed
+	VkInstance instance					 = VK_NULL_HANDLE;
+	VkDevice logicalDevice				 = VK_NULL_HANDLE;
+	VkRenderPass renderPass				 = VK_NULL_HANDLE;
+	VkRenderPass GUIRenderPass           = VK_NULL_HANDLE;
+	GraphicsPipeline* screenPipeline     = VK_NULL_HANDLE;
+	VkCommandPool commandPool			 = VK_NULL_HANDLE;
+	VkDescriptorPool imGUIDescriptorPool = VK_NULL_HANDLE;
+	VkQueue graphicsQueue				 = VK_NULL_HANDLE;
+	VkQueue presentQueue				 = VK_NULL_HANDLE;
+	VkQueue computeQueue                 = VK_NULL_HANDLE;
+	VkSampler resultSampler              = VK_NULL_HANDLE; // does not need to be destroyed
 	QueryPool queryPool;
 
-	VkImage resultImage = VK_NULL_HANDLE;
-	VkImageView resultView = VK_NULL_HANDLE;
-	VkDeviceMemory resultMemory = VK_NULL_HANDLE;
-
-	VkImage resultDepth = VK_NULL_HANDLE;
-	VkImageView depthView = VK_NULL_HANDLE;
-	VkDeviceMemory depthMemory = VK_NULL_HANDLE;
-
-	VkFramebuffer resultFramebuffer = VK_NULL_HANDLE;
-
-	uint32_t framebufferWidth  = 0;
-	uint32_t framebufferHeight = 0;
+	Framebuffer framebuffer;
 
 	std::unordered_map<RenderPipeline*, std::string> dbgPipelineNames;
 

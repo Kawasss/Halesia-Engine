@@ -1,31 +1,44 @@
 #include "renderer/Framebuffer.h"
 #include "renderer/Vulkan.h"
 
-Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, float relativeRes) : renderPass(renderPass), width(static_cast<uint32_t>(width * relativeRes)), height(static_cast<uint32_t>(height * relativeRes)), relRes(relRes)
+Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkImageUsageFlags imageUsage, float relativeRes)
 {
-	this->images.resize(imageCount);
-	this->imageViews.resize(imageCount);
-	this->memories.resize(imageCount);
-	Allocate();
+	Init(renderPass, imageCount, width, height, imageUsage, relativeRes);
 }
 
 Framebuffer::~Framebuffer()
 {
 	Destroy();
-	images.clear();
-	imageViews.clear();
-	memories.clear();
+}
+
+void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkImageUsageFlags imageUsage, float relativeRes)
+{
+	this->renderPass = renderPass;
+	this->width  = static_cast<uint32_t>(width * relativeRes);
+	this->height = static_cast<uint32_t>(height * relativeRes);
+	this->usageFlags = imageUsage;
+	this->relRes = relRes;
+
+	this->images.resize(imageCount + 1); // the depth buffer is stored as the last image in the vector
+	this->imageViews.resize(imageCount + 1);
+	this->memories.resize(imageCount + 1);
+	
+	Allocate();
 }
 
 void Framebuffer::Allocate()
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 
-	for (int i = 0; i < images.size(); i++)
+	for (int i = 0; i < images.size() - 1; i++)
 	{
-		Vulkan::CreateImage(width, height, 1, 1, VK_FORMAT_R8G8B8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, images[i], memories[i]);
-		Vulkan::CreateImageView(images[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+		Vulkan::CreateImage(width, height, 1, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, usageFlags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, images[i], memories[i]);
+		imageViews[i] = Vulkan::CreateImageView(images[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
+
+	VkFormat depthFormat = context.physicalDevice.GetDepthFormat();
+	Vulkan::CreateImage(width, height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, images.back(), memories.back());
+	imageViews.back() = Vulkan::CreateImageView(images.back(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 	VkFramebufferCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -52,6 +65,9 @@ void Framebuffer::Destroy()
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 
+	if (framebuffer == VK_NULL_HANDLE)
+		return;
+
 	for (int i = 0; i < images.size(); i++)
 	{
 		vkDestroyImage(context.logicalDevice, images[i], nullptr);
@@ -60,4 +76,6 @@ void Framebuffer::Destroy()
 	}
 
 	vkDestroyFramebuffer(context.logicalDevice, framebuffer, nullptr);
+
+	framebuffer = VK_NULL_HANDLE;
 }

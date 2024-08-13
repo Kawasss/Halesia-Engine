@@ -106,15 +106,7 @@ void Renderer::Destroy()
 	vkDestroySampler(logicalDevice, defaultSampler, nullptr);
 	vkDestroySampler(logicalDevice, noFilterSampler, nullptr);
 
-	vkDestroyImage(logicalDevice, resultImage, nullptr);
-	vkDestroyImageView(logicalDevice, resultView, nullptr);
-	vkFreeMemory(logicalDevice, resultMemory, nullptr);
-
-	vkDestroyImage(logicalDevice, resultDepth, nullptr);
-	vkDestroyImageView(logicalDevice, depthView, nullptr);
-	vkFreeMemory(logicalDevice, depthMemory, nullptr);
-
-	vkDestroyFramebuffer(logicalDevice, resultFramebuffer, nullptr);
+	framebuffer.~Framebuffer();
 
 	Texture::DestroyPlaceholderTextures();
 
@@ -395,7 +387,7 @@ void Renderer::CreateGraphicsPipeline()
 	VkPipelineShaderStageCreateInfo vertexCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderVert, VK_SHADER_STAGE_VERTEX_BIT);
 	VkPipelineShaderStageCreateInfo fragmentCreateInfo = Vulkan::GetGenericShaderStageCreateInfo(screenShaderFrag, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	screenPipeline = new GraphicsPipeline("shaders/spirv/screen.vert.spv", "shaders/spirv/screen.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX, renderPass);//PipelineCreator::CreatePipeline(pipelineLayout, renderPass, { vertexCreateInfo, fragmentCreateInfo }, PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX);
+	screenPipeline = new GraphicsPipeline("shaders/spirv/screen.vert.spv", "shaders/spirv/screen.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX, renderPass);
 
 	vkDestroyShaderModule(logicalDevice, screenShaderVert, nullptr);
 	vkDestroyShaderModule(logicalDevice, screenShaderFrag, nullptr);
@@ -833,7 +825,7 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor, VkFramebuffer framebuffer)
 {
 	if (framebuffer == VK_NULL_HANDLE)
-		framebuffer = resultFramebuffer;
+		framebuffer = this->framebuffer.Get();
 
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { clearColor.x, clearColor.y, clearColor.z, 1 };
@@ -844,7 +836,7 @@ void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass rende
 	renderPassBeginInfo.renderPass = renderPass;
 	renderPassBeginInfo.framebuffer = framebuffer;
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
-	renderPassBeginInfo.renderArea.extent = { framebufferWidth, framebufferHeight};
+	renderPassBeginInfo.renderArea.extent = { this->framebuffer.GetWidth(), this->framebuffer.GetHeight() };
 	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
@@ -884,7 +876,7 @@ void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
 
 void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView)
 {
-	if (resultImage != VK_NULL_HANDLE)
+	/*if (resultImage != VK_NULL_HANDLE)
 	{
 		vkDestroyImage(logicalDevice, resultImage, nullptr);
 		vkDestroyImageView(logicalDevice, resultView, nullptr);
@@ -919,13 +911,19 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 	framebufferCreateInfo.height = viewportHeight;
 	framebufferCreateInfo.layers = 1;
 
-	framebufferWidth  = framebufferCreateInfo.width;
-	framebufferHeight = framebufferCreateInfo.height;
-
 	VkResult result = vkCreateFramebuffer(logicalDevice, &framebufferCreateInfo, nullptr, &resultFramebuffer);
-	CheckVulkanResult("Failed to create the result framebuffer", result, vkCreateFramebuffer);
+	CheckVulkanResult("Failed to create the result framebuffer", result, vkCreateFramebuffer);*/
 
-	imageView = (shouldRasterize || !canRayTrace) ? resultView : rayTracer->gBufferViews[0];
+	if (framebuffer.Get() == VK_NULL_HANDLE)
+	{
+		framebuffer.Init(renderPass, 1, viewportWidth, viewportHeight, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+	}
+	else
+	{
+		framebuffer.Resize(viewportWidth, viewportHeight);
+	}
+
+	imageView = (shouldRasterize || !canRayTrace) ? framebuffer.GetViews()[0] : rayTracer->gBufferViews[0];
 	writer->WriteImage(screenPipeline->GetDescriptorSets()[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, imageView, resultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	writer->Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
 
@@ -942,7 +940,9 @@ void Renderer::TransitionScreenToRead(VkCommandBuffer commandBuffer) // maybe ab
 	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
-	Vulkan::TransitionColorImage(commandBuffer, resultImage, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+	const VkImage& image = framebuffer.GetImages()[0];
+
+	Vulkan::TransitionColorImage(commandBuffer, image, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
 void Renderer::TransitionScreenToWrite(VkCommandBuffer commandBuffer)
@@ -955,7 +955,9 @@ void Renderer::TransitionScreenToWrite(VkCommandBuffer commandBuffer)
 	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-	Vulkan::TransitionColorImage(commandBuffer, resultImage, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+	const VkImage& image = framebuffer.GetImages()[0];
+
+	Vulkan::TransitionColorImage(commandBuffer, image, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
 void Renderer::PrepareScreenForReadWrite(VkCommandBuffer commandBuffer)
@@ -968,7 +970,9 @@ void Renderer::PrepareScreenForReadWrite(VkCommandBuffer commandBuffer)
 	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
-	Vulkan::TransitionColorImage(commandBuffer, resultImage, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+	const VkImage& image = framebuffer.GetImages()[0];
+
+	Vulkan::TransitionColorImage(commandBuffer, image, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
 std::vector<Object*> processedObjects;

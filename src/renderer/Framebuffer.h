@@ -5,12 +5,21 @@
 class Framebuffer
 {
 public:
-	Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, float relativeRes = 1.0f);
+	Framebuffer() = default;
+	Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkImageUsageFlags imageUsage, float relativeRes = 1.0f);
 	~Framebuffer();
+
+	void Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkImageUsageFlags imageUsage, float relativeRes = 1.0f);
 
 	void Resize(uint32_t width, uint32_t height);
 
-	operator VkFramebuffer() { return framebuffer; }
+	VkFramebuffer Get() { return framebuffer; }
+
+	std::vector<VkImage>& GetImages()    { return images; }
+	std::vector<VkImageView>& GetViews() { return imageViews; }
+
+	uint32_t GetWidth()  { return width; }
+	uint32_t GetHeight() { return height; }
 
 private:
 	void Destroy();
@@ -19,6 +28,7 @@ private:
 	VkFramebuffer framebuffer = VK_NULL_HANDLE;
 	VkRenderPass renderPass = VK_NULL_HANDLE;
 	uint32_t width = 0, height = 0;
+	VkImageUsageFlags usageFlags = 0;
 	float relRes = 1.0f;
 
 	std::vector<VkImage> images;
