@@ -7,6 +7,8 @@
 #include "renderer/Vulkan.h"
 #include "renderer/physicalDevice.h"
 #include "renderer/Texture.h"
+#include "renderer/Buffer.h"
+
 #include "core/Console.h"
 
 #include "io/IO.h"
@@ -32,11 +34,6 @@ bool Image::TexturesHaveChanged()
 
 void Image::GenerateImages(std::vector<std::vector<char>>& textureData, bool useMipMaps, TextureFormat format, TextureUseCase useCase)
 {
-	const Vulkan::Context context = Vulkan::GetContext();
-	this->logicalDevice = context.logicalDevice;
-	this->commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
-	this->queue = context.graphicsQueue;
-	this->physicalDevice = context.physicalDevice;
 	this->format = format;
 
 	layerCount = static_cast<uint32_t>(textureData.size());
@@ -58,11 +55,7 @@ void Image::GenerateImages(std::vector<std::vector<char>>& textureData, bool use
 
 void Image::GenerateEmptyImages(int width, int height, int amount)
 {
-	const Vulkan::Context context = Vulkan::GetContext();
-	this->logicalDevice = context.logicalDevice;
-	this->commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
-	this->queue = context.graphicsQueue;
-	this->physicalDevice = context.physicalDevice;
+	const Vulkan::Context ctx = Vulkan::GetContext();
 	this->width = width;
 	this->height = height;
 	this->layerCount = static_cast<uint32_t>(amount);
@@ -70,24 +63,22 @@ void Image::GenerateEmptyImages(int width, int height, int amount)
 	VkDeviceSize layerSize = width * height * 4;
 	VkDeviceSize imageSize = layerSize * amount;
 
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
+	Buffer stagingBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-	Vulkan::CreateBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
+	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
 
 	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 	Vulkan::CreateImage(width, height, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
 
 	TransitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	CopyBufferToImage(stagingBuffer);
+	CopyBufferToImage(stagingBuffer.Get());
 
-	vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
-	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
+	stagingBuffer.~Buffer();
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 	imageView = Vulkan::CreateImageView(image, viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 
-	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
+	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 
 	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
@@ -96,7 +87,9 @@ void Image::GenerateEmptyImages(int width, int height, int amount)
 
 void Image::WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMipMaps, TextureFormat format, VkImageLayout layout)
 {
-	const Vulkan::Context context = Vulkan::GetContext();
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
 
 	VkDeviceSize layerSize = width * height * 4;
 	size = layerSize * layerCount;
@@ -104,27 +97,23 @@ void Image::WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMip
 	if (layerSize == 0)
 		throw std::runtime_error("Invalid image found: layer size is 0");
 
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
+	Buffer stagingBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
-	Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
 	// copy all of the different sides of the cubemap into a single buffer
-	void* data;
-	vkMapMemory(logicalDevice, stagingBufferMemory, 0, size, 0, &data);
+	void* data = stagingBuffer.Map();
 	for (uint32_t i = 0; i < layerCount; i++)
 		memcpy((char*)data + (layerSize * i), pixels[i], static_cast<size_t>(size)); // cast the void* to char for working arithmetic
-	vkUnmapMemory(logicalDevice, stagingBufferMemory);
+	stagingBuffer.Unmap();
 
 	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 	Vulkan::CreateImage(width, height, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
 
 	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	CopyBufferToImage(stagingBuffer);
+	CopyBufferToImage(stagingBuffer.Get());
 
-	vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
-	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
+	stagingBuffer.~Buffer();
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 	imageView = Vulkan::CreateImageView(image, viewType, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -133,41 +122,35 @@ void Image::WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMip
 	else
 		TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout);
 
-	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
+	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 
 	this->texturesHaveChanged = true;
 }
 
 void Image::ChangeData(uint8_t* data, uint32_t size, TextureFormat format)
 {
-	VkBuffer stagingBuffer;
-	VkDeviceMemory stagingBufferMemory;
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	Buffer stagingBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
-	Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stagingBuffer, stagingBufferMemory);
 
-	void* ptr;
-	vkMapMemory(logicalDevice, stagingBufferMemory, 0, size, 0, &ptr);
+	void* ptr = stagingBuffer.Map();
 	memcpy(ptr, data, size);
-	vkUnmapMemory(logicalDevice, stagingBufferMemory);
+	stagingBuffer.Unmap();
 
 	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	CopyBufferToImage(stagingBuffer);
-
-	vkDestroyBuffer(logicalDevice, stagingBuffer, nullptr);
-	vkFreeMemory(logicalDevice, stagingBufferMemory, nullptr);
+	CopyBufferToImage(stagingBuffer.Get());
 }
 
 std::vector<uint8_t> Image::GetImageData()
 {
 	AwaitGeneration();
 
-	const Vulkan::Context& context = Vulkan::GetContext();
-	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
 
-	VkBuffer copyBuffer;
-	VkDeviceMemory copyMemory;
-	Vulkan::CreateBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, copyBuffer, copyMemory);
+	Buffer copyBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 	VkBufferImageCopy imageCopy{};
 	imageCopy.imageExtent = { (uint32_t)width, (uint32_t)height, 1 };
@@ -194,31 +177,28 @@ std::vector<uint8_t> Image::GetImageData()
 	
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool); // messy
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
-	Vulkan::EndSingleTimeCommands(context.graphicsQueue, commandBuffer, commandPool);
+	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
 
 	commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
-	vkCmdCopyImageToBuffer(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, copyBuffer, 1, &imageCopy);
-	Vulkan::EndSingleTimeCommands(context.graphicsQueue, commandBuffer, commandPool);
+	vkCmdCopyImageToBuffer(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, copyBuffer.Get(), 1, &imageCopy);
+	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
 
 	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 
 	commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool); // still messy
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
-	Vulkan::EndSingleTimeCommands(context.graphicsQueue, commandBuffer, commandPool);
+	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
 
-	Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
+	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 
-	uint8_t* ptr = nullptr;
-	vkMapMemory(logicalDevice, copyMemory, 0, size, 0, (void**)&ptr);
+	uint8_t* ptr = copyBuffer.Map<uint8_t>();
 
 	std::vector<uint8_t> ret;
 	ret.resize(size / sizeof(uint8_t));
 	memcpy(ret.data(), ptr, size);
 
-	vkUnmapMemory(logicalDevice, copyMemory);
-	vkDestroyBuffer(logicalDevice, copyBuffer, nullptr);
-	vkFreeMemory(logicalDevice, copyMemory, nullptr);
+	copyBuffer.Unmap();
 
 	return ret;
 }
@@ -272,11 +252,6 @@ Texture::Texture(std::vector<char> imageData, uint32_t width, uint32_t height, b
 	if (imageData.empty())
 		throw std::runtime_error("Invalid texture size: imageData.empty()");
 
-	const Vulkan::Context context = Vulkan::GetContext();
-	this->logicalDevice = context.logicalDevice;
-	this->commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
-	this->queue = context.graphicsQueue;
-	this->physicalDevice = context.physicalDevice;
 	this->width = width;
 	this->height = height;
 	this->layerCount = 1;
@@ -291,11 +266,6 @@ Texture::Texture(std::vector<char> imageData, uint32_t width, uint32_t height, b
 
 Texture::Texture(const Color& color, TextureFormat format, TextureUseCase useCase)
 {
-	const Vulkan::Context context = Vulkan::GetContext();
-	logicalDevice = context.logicalDevice;
-	commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
-	queue = context.graphicsQueue;
-	physicalDevice = context.physicalDevice;
 	width = 1, height = 1, layerCount = 1;
 
 	generation = std::async([](Texture* texture, const Color& color, TextureFormat format, TextureUseCase useCase)
@@ -338,7 +308,11 @@ void Texture::DestroyPlaceholderTextures()
 
 void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer)
 {
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
 	bool isSingleTime = commandBuffer == VK_NULL_HANDLE;
+
+	VkCommandPool commandPool = isSingleTime ? Vulkan::FetchNewCommandPool(ctx.graphicsIndex) : VK_NULL_HANDLE;
 	if (isSingleTime)
 		commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
 
@@ -403,7 +377,10 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 	vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
 
 	if (isSingleTime)
-		Vulkan::EndSingleTimeCommands(queue, commandBuffer, commandPool);
+	{
+		Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
+		Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
+	}
 }
 
 void Image::TransitionForShaderRead(VkCommandBuffer commandBuffer)
@@ -411,6 +388,7 @@ void Image::TransitionForShaderRead(VkCommandBuffer commandBuffer)
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	bool useSingleTime = commandBuffer == VK_NULL_HANDLE;
+	VkCommandPool commandPool = VK_NULL_HANDLE;
 	if (useSingleTime)
 	{
 		commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
@@ -431,6 +409,7 @@ void Image::TransitionForShaderWrite(VkCommandBuffer commandBuffer)
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	bool useSingleTime = commandBuffer == VK_NULL_HANDLE;
+	VkCommandPool commandPool = VK_NULL_HANDLE;
 	if (useSingleTime)
 	{
 		commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
@@ -448,6 +427,8 @@ void Image::TransitionForShaderWrite(VkCommandBuffer commandBuffer)
 
 void Image::CopyBufferToImage(VkBuffer buffer)
 {
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
 
 	VkBufferImageCopy region{};
@@ -463,16 +444,20 @@ void Image::CopyBufferToImage(VkBuffer buffer)
 
 	vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-	Vulkan::EndSingleTimeCommands(queue, commandBuffer, commandPool);
+	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
+	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 }
 
 void Image::GenerateMipMaps(VkFormat imageFormat)
 {
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
 	VkFormatProperties formatProperties;
-	vkGetPhysicalDeviceFormatProperties(physicalDevice.Device(), imageFormat, &formatProperties);
+	vkGetPhysicalDeviceFormatProperties(ctx.physicalDevice.Device(), imageFormat, &formatProperties);
 	if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
 		throw std::runtime_error("Failed to find support for optimal tiling with the given format");
 
+	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
 
 	VkImageMemoryBarrier memoryBarrier{};
@@ -532,7 +517,8 @@ void Image::GenerateMipMaps(VkFormat imageFormat)
 
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
 
-	Vulkan::EndSingleTimeCommands(queue, commandBuffer, commandPool);
+	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
+	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 }
 
 int Image::GetWidth()
@@ -552,6 +538,8 @@ int Image::GetMipLevels()
 
 void Image::Destroy()
 {
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
 	this->texturesHaveChanged = true;
 	/*Vulkan::SubmitObjectForDeletion
 	(
@@ -564,7 +552,7 @@ void Image::Destroy()
 	);
 	delete this;*/
 
-	vkDestroyImageView(logicalDevice, imageView, nullptr);
-	vkDestroyImage(logicalDevice, image, nullptr);
-	vkFreeMemory(logicalDevice, imageMemory, nullptr);
+	vkDestroyImageView(ctx.logicalDevice, imageView, nullptr);
+	vkDestroyImage(ctx.logicalDevice, image, nullptr);
+	vkFreeMemory(ctx.logicalDevice, imageMemory, nullptr);
 }

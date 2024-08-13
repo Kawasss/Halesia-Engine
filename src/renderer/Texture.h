@@ -59,10 +59,6 @@ protected:
 
 	int				width = 0, height = 0;
 	uint32_t		mipLevels = 1, layerCount = 0;
-	VkDevice		logicalDevice;
-	VkCommandPool	commandPool;
-	VkQueue			queue;
-	PhysicalDevice	physicalDevice;
 	TextureFormat   format;
 
 	void TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
