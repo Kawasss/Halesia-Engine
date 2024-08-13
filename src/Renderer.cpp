@@ -600,6 +600,25 @@ void Renderer::DenoiseSynchronized(VkCommandBuffer commandBuffer)
 	rayTracer->ApplyDenoisedImage(commandBuffer);
 }
 
+void Renderer::BindBuffersForRendering(VkCommandBuffer commandBuffer)
+{
+	VkBuffer vertexBuffer = g_vertexBuffer.GetBufferHandle();
+	VkDeviceSize vertexOffset = 0;
+	
+	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &vertexOffset);
+	vkCmdBindIndexBuffer(commandBuffer, g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
+}
+
+void Renderer::RenderMesh(VkCommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount)
+{
+	uint32_t indexCount  = mesh.indices.size();
+	uint32_t firstIndex  = static_cast<uint32_t>(g_indexBuffer.GetMemoryOffset(mesh.indexMemory));
+	int32_t vertexOffset = static_cast<uint32_t>(g_vertexBuffer.GetMemoryOffset(mesh.vertexMemory));
+	uint32_t firstInstance = 0;
+
+	vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+}
+
 void Renderer::CreateSyncObjects()
 {
 	imageAvaibleSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
@@ -876,44 +895,6 @@ void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
 
 void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView)
 {
-	/*if (resultImage != VK_NULL_HANDLE)
-	{
-		vkDestroyImage(logicalDevice, resultImage, nullptr);
-		vkDestroyImageView(logicalDevice, resultView, nullptr);
-		vkFreeMemory(logicalDevice, resultMemory, nullptr);
-
-		vkDestroyImage(logicalDevice, resultDepth, nullptr);
-		vkDestroyImageView(logicalDevice, depthView, nullptr);
-		vkFreeMemory(logicalDevice, depthMemory, nullptr);
-
-		vkDestroyFramebuffer(logicalDevice, resultFramebuffer, nullptr);
-	}
-
-	Vulkan::CreateImage(viewportWidth, viewportHeight, 1, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, resultImage, resultMemory);
-	resultView = Vulkan::CreateImageView(resultImage, VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
-
-	VkFormat depthFormat = physicalDevice.GetDepthFormat();
-	Vulkan::CreateImage(viewportWidth, viewportHeight, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, resultDepth, depthMemory);
-	depthView = Vulkan::CreateImageView(resultDepth, VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
-
-	std::array<VkImageView, 2> attachments =
-	{
-		resultView,
-		depthView
-	};
-
-	VkFramebufferCreateInfo framebufferCreateInfo{};
-	framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-	framebufferCreateInfo.renderPass = renderPass;
-	framebufferCreateInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-	framebufferCreateInfo.pAttachments = attachments.data();
-	framebufferCreateInfo.width = viewportWidth;
-	framebufferCreateInfo.height = viewportHeight;
-	framebufferCreateInfo.layers = 1;
-
-	VkResult result = vkCreateFramebuffer(logicalDevice, &framebufferCreateInfo, nullptr, &resultFramebuffer);
-	CheckVulkanResult("Failed to create the result framebuffer", result, vkCreateFramebuffer);*/
-
 	if (framebuffer.Get() == VK_NULL_HANDLE)
 	{
 		framebuffer.Init(renderPass, 1, viewportWidth, viewportHeight, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);

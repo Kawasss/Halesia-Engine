@@ -87,6 +87,9 @@ public:
 	void SetInternalResolutionScale(float scale);
 	static float GetInternalResolutionScale();
 
+	static void BindBuffersForRendering(VkCommandBuffer commandBuffer);
+	static void RenderMesh(VkCommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount = 0);
+
 	template<typename Type> void AddRenderPipeline()
 	{
 		Type* actualPtr = new Type();
