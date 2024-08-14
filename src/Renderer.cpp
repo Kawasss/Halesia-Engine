@@ -374,22 +374,8 @@ void Renderer::CreateRenderPass()
 	renderPass    = PipelineCreator::CreateRenderPass(physicalDevice, VK_FORMAT_R8G8B8A8_UNORM, PIPELINE_FLAG_CLEAR_ON_LOAD, 1);
 	GUIRenderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain->format, PIPELINE_FLAG_NONE, 1);
 
-	VkDebugUtilsObjectNameInfoEXT nameInfo{};
-	nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-	nameInfo.objectHandle = reinterpret_cast<uint64_t>(renderPass);
-	nameInfo.objectType = VK_OBJECT_TYPE_RENDER_PASS;
-	nameInfo.pObjectName = "default 3D render pass";
-	
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-
-	VkResult result = vkSetDebugUtilsObjectNameEXT(ctx.logicalDevice, &nameInfo);
-	CheckVulkanResult("Failed to set the name for a render pass", result, vkSetDebugUtilsObjectNameEXT);
-
-	nameInfo.pObjectName = "default GUI render pass";
-	nameInfo.objectHandle = reinterpret_cast<uint64_t>(GUIRenderPass);
-
-	result = vkSetDebugUtilsObjectNameEXT(ctx.logicalDevice, &nameInfo);
-	CheckVulkanResult("Failed to set the name for a render pass", result, vkSetDebugUtilsObjectNameEXT);
+	Vulkan::SetDebugName(renderPass, "Default 3D render pass");
+	Vulkan::SetDebugName(renderPass, "Default GUI render pass");
 }
 
 void Renderer::CreateGraphicsPipeline()
@@ -719,7 +705,7 @@ void Renderer::OnResize()
 		rayTracer->RecreateImage(viewportWidth, viewportHeight);
 
 	UpdateScreenShaderTexture(currentFrame);
-	
+
 	testWindow->resized = false;
 	Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px (" + std::to_string(int(internalScale * 100)) + "%% scale)");
 }

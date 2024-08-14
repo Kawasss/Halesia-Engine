@@ -22,6 +22,8 @@ public:
 	uint32_t GetWidth()  { return width; }
 	uint32_t GetHeight() { return height; }
 
+	void SetDebugName(const char* name);
+
 private:
 	void Destroy();
 	void Allocate();

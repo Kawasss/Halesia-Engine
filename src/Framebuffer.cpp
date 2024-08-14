@@ -60,6 +60,11 @@ void Framebuffer::Resize(uint32_t width, uint32_t height)
 	Allocate();
 }
 
+void Framebuffer::SetDebugName(const char* name)
+{
+	Vulkan::SetDebugName(framebuffer, name);
+}
+
 void Framebuffer::Destroy()
 {
 	const Vulkan::Context& context = Vulkan::GetContext();

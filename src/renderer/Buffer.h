@@ -23,6 +23,8 @@ public:
 
 	void Fill(VkCommandBuffer commandBuffer, uint32_t value = 0, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE);
 
+	void SetDebugName(const char* name);
+
 private:
 	VkBuffer buffer       = VK_NULL_HANDLE;
 	VkDeviceMemory memory = VK_NULL_HANDLE;

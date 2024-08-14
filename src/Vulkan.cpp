@@ -51,6 +51,18 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     this->message = message + vulkanError + location;
 }
 
+void Vulkan::DebugNameObject(uint64_t object, VkObjectType type, const char* name)
+{
+    VkDebugUtilsObjectNameInfoEXT nameInfo{};
+    nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+    nameInfo.objectHandle = object;
+    nameInfo.objectType = type;
+    nameInfo.pObjectName = name;
+
+    VkResult result = vkSetDebugUtilsObjectNameEXT(context.logicalDevice, &nameInfo);
+    CheckVulkanResult("Failed to name an object", result, vkSetDebugUtilsObjectNameEXT);
+}
+
 void Vulkan::TransitionColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags src, VkAccessFlags dst, VkPipelineStageFlags srcPipe, VkPipelineStageFlags dstPipe)
 {
     VkImageMemoryBarrier memoryBarrier{};

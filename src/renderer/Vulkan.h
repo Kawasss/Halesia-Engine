@@ -132,6 +132,8 @@ public:
     static VkFence                            CreateFence(VkFenceCreateFlags flags = 0, void* pNext = nullptr);
     static VkSemaphore                        CreateSemaphore(void* pNext = nullptr);
 
+    template<typename Type> static void       SetDebugName(Type object, const char* name);
+
 private:
     static Context context;
 
@@ -150,4 +152,30 @@ private:
     static bool                               CheckInstanceExtensionSupport(std::vector<const char*> extensions);
     static bool                               CheckLogicalDeviceExtensionSupport(PhysicalDevice physicalDevice, const std::vector<const char*> extensions, std::set<std::string>& unsupportedExtensions);
     static bool                               CheckValidationSupport();
+
+    static void                               DebugNameObject(uint64_t object, VkObjectType type, const char* name);
 };
+
+template<typename Type>
+void Vulkan::SetDebugName(Type object, const char* name)
+{
+    throw VulkanAPIError((std::string)"Cannot set the name of object: unsupported type " + typeid(Type).name());
+}
+
+template<>
+inline void Vulkan::SetDebugName<VkRenderPass>(VkRenderPass object, const char* name)
+{
+    DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_RENDER_PASS, name);
+}
+
+template<>
+inline void Vulkan::SetDebugName<VkFramebuffer>(VkFramebuffer object, const char* name)
+{
+    DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_FRAMEBUFFER, name);
+}
+
+template<>
+inline void Vulkan::SetDebugName<VkBuffer>(VkBuffer object, const char* name)
+{
+    DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_BUFFER, name);
+}

@@ -39,6 +39,11 @@ void Buffer::Unmap()
 	vkUnmapMemory(ctx.logicalDevice, memory);
 }
 
+void Buffer::SetDebugName(const char* name)
+{
+	Vulkan::SetDebugName(buffer, name);
+}
+
 void Buffer::Fill(VkCommandBuffer commandBuffer, uint32_t value, VkDeviceSize offset, VkDeviceSize size)
 {
 	vkCmdFillBuffer(commandBuffer, buffer, offset, size, value);
