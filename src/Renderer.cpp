@@ -174,7 +174,7 @@ void Renderer::CreateImGUI()
 	imGUICreateInfo.ImageCount = 3;
 	imGUICreateInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
-	ImGui_ImplVulkan_Init(&imGUICreateInfo, renderPass);
+	ImGui_ImplVulkan_Init(&imGUICreateInfo, GUIRenderPass);
 
 	VkCommandBuffer imGUICommandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
 	ImGui_ImplVulkan_CreateFontsTexture(imGUICommandBuffer);
@@ -231,7 +231,7 @@ void Renderer::InitVulkan()
 	CreateGraphicsPipeline();
 	
 	swapchain->CreateDepthBuffers();
-	swapchain->CreateFramebuffers(renderPass);
+	swapchain->CreateFramebuffers(GUIRenderPass);
 	indirectDrawParameters.Reserve(MAX_MESHES, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
 	Texture::GeneratePlaceholderTextures();
 	Mesh::materials.push_back({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
@@ -355,7 +355,7 @@ void Renderer::CreateTextureSampler()
 	createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 	createInfo.mipLodBias = 0;
 	createInfo.minLod = 0;
-	createInfo.maxLod = VK_LOD_CLAMP_NONE;//static_cast<uint32_t>(textureImage->GetMipLevels());
+	createInfo.maxLod = VK_LOD_CLAMP_NONE;
 
 	VkResult result = vkCreateSampler(logicalDevice, &createInfo, nullptr, &defaultSampler);
 	CheckVulkanResult("Failed to create the texture sampler", result, vkCreateSampler);
@@ -371,8 +371,25 @@ void Renderer::CreateTextureSampler()
 
 void Renderer::CreateRenderPass()
 {
-	renderPass    = PipelineCreator::CreateRenderPass(physicalDevice, swapchain->format, PIPELINE_FLAG_CLEAR_ON_LOAD, 1);
+	renderPass    = PipelineCreator::CreateRenderPass(physicalDevice, VK_FORMAT_R8G8B8A8_UNORM, PIPELINE_FLAG_CLEAR_ON_LOAD, 1);
 	GUIRenderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain->format, PIPELINE_FLAG_NONE, 1);
+
+	VkDebugUtilsObjectNameInfoEXT nameInfo{};
+	nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+	nameInfo.objectHandle = reinterpret_cast<uint64_t>(renderPass);
+	nameInfo.objectType = VK_OBJECT_TYPE_RENDER_PASS;
+	nameInfo.pObjectName = "default 3D render pass";
+	
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	VkResult result = vkSetDebugUtilsObjectNameEXT(ctx.logicalDevice, &nameInfo);
+	CheckVulkanResult("Failed to set the name for a render pass", result, vkSetDebugUtilsObjectNameEXT);
+
+	nameInfo.pObjectName = "default GUI render pass";
+	nameInfo.objectHandle = reinterpret_cast<uint64_t>(GUIRenderPass);
+
+	result = vkSetDebugUtilsObjectNameEXT(ctx.logicalDevice, &nameInfo);
+	CheckVulkanResult("Failed to set the name for a render pass", result, vkSetDebugUtilsObjectNameEXT);
 }
 
 void Renderer::CreateGraphicsPipeline()
@@ -697,7 +714,7 @@ void Renderer::OnResize()
 	viewportWidth = testWindow->GetWidth() * internalScale;
 	viewportHeight = testWindow->GetHeight() * internalScale;
 
-	swapchain->Recreate(renderPass, false);
+	swapchain->Recreate(GUIRenderPass, false);
 	if (canRayTrace)
 		rayTracer->RecreateImage(viewportWidth, viewportHeight);
 
@@ -841,7 +858,7 @@ void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass rende
 
 	VkRenderPassBeginInfo renderPassBeginInfo{};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassBeginInfo.renderPass = this->framebuffer.GetRenderPass();
+	renderPassBeginInfo.renderPass = renderPass;
 	renderPassBeginInfo.framebuffer = framebuffer;
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = { this->framebuffer.GetWidth(), this->framebuffer.GetHeight() };

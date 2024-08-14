@@ -818,6 +818,7 @@ DEFINE_FUNCTION_POINTER(vkGetSemaphoreWin32HandleKHR);
 DEFINE_FUNCTION_POINTER(vkCmdBeginDebugUtilsLabelEXT);
 DEFINE_FUNCTION_POINTER(vkCmdEndDebugUtilsLabelEXT);
 DEFINE_FUNCTION_POINTER(vkCmdInsertDebugUtilsLabelEXT);
+DEFINE_FUNCTION_POINTER(vkSetDebugUtilsObjectNameEXT);
 #pragma endregion VulkanPointerFunctions
 
 void Vulkan::ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, const std::vector<const char*>& logicalDeviceExtensions)
@@ -869,6 +870,7 @@ void Vulkan::ActiveInstanceExtensions(VkInstance instance, const std::vector<con
             ATTACH_INSTANCE_FUNCTION(vkCmdBeginDebugUtilsLabelEXT);
             ATTACH_INSTANCE_FUNCTION(vkCmdEndDebugUtilsLabelEXT);
             ATTACH_INSTANCE_FUNCTION(vkCmdInsertDebugUtilsLabelEXT);
+            ATTACH_INSTANCE_FUNCTION(vkSetDebugUtilsObjectNameEXT);
         }
     }
 }
@@ -956,7 +958,6 @@ void vkCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddre
     pvkCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
 }
 
-
 void vkCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo)
 {
     DEBUG_ONLY(
@@ -978,6 +979,14 @@ void vkCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugU
     DEBUG_ONLY(
         CHECK_VALIDITY_DEBUG(pvkCmdInsertDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         pvkCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
+    );
+}
+
+VkResult vkSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo)
+{
+    DEBUG_ONLY(
+        CHECK_VALIDITY_DEBUG(pvkSetDebugUtilsObjectNameEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        return pvkSetDebugUtilsObjectNameEXT(device, pNameInfo);
     );
 }
 #pragma endregion VulkanExtensionFunctionDefinitions
