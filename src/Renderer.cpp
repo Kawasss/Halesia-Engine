@@ -379,7 +379,7 @@ void Renderer::CreateGraphicsPipeline()
 {
 	CreateRenderPass();
 
-	screenPipeline = new GraphicsPipeline("shaders/spirv/screen.vert.spv", "shaders/spirv/screen.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX, renderPass);
+	screenPipeline = new GraphicsPipeline("shaders/spirv/screen.vert.spv", "shaders/spirv/screen.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX, GUIRenderPass);
 }
 
 void Renderer::CreateCommandPool()
@@ -841,7 +841,7 @@ void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass rende
 
 	VkRenderPassBeginInfo renderPassBeginInfo{};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassBeginInfo.renderPass = renderPass;
+	renderPassBeginInfo.renderPass = this->framebuffer.GetRenderPass();
 	renderPassBeginInfo.framebuffer = framebuffer;
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = { this->framebuffer.GetWidth(), this->framebuffer.GetHeight() };
