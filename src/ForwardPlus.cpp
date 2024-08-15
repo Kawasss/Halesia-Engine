@@ -161,14 +161,10 @@ void ForwardPlusPipeline::PrepareGraphicsPipeline()
 	modelBufferMapped = modelBuffer.Map<ModelData>();
 	uniformBufferMapped = uniformBuffer.Map<UniformBufferObject>();
 
-	{
-		const std::vector<VkDescriptorSet>& sets = graphicsPipeline->GetDescriptorSets();
-
-		writer->WriteBuffer(sets[0], uniformBuffer.Get(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0);
-		writer->WriteBuffer(sets[0], modelBuffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1);
-		writer->WriteBuffer(sets[0], cellBuffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
-		writer->WriteBuffer(sets[0], lightBuffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 4);
-	}
+	graphicsPipeline->BindBufferToName("ubo", uniformBuffer.Get());
+	graphicsPipeline->BindBufferToName("modelBuffer", modelBuffer.Get());
+	graphicsPipeline->BindBufferToName("cells", cellBuffer.Get());
+	graphicsPipeline->BindBufferToName("lights", lightBuffer.Get());
 
 	VkDescriptorImageInfo imageInfo{}; // prepare the texture buffer
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

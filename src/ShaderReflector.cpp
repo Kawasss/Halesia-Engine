@@ -165,6 +165,38 @@ std::set<uint32_t> ShaderGroupReflector::GetDescriptorSetIndices() const
 	return ret;
 }
 
+const char* ShaderGroupReflector::GetNameOfBinding(const Binding& binding) const
+{
+	for (uint32_t i = 0; i < modules.size(); i++)
+	{
+		for (uint32_t j = 0; j < modules[i].descriptor_binding_count; j++)
+		{
+			SpvReflectDescriptorBinding& descriptorBinding = modules[i].descriptor_bindings[j];
+			Binding currBinding(descriptorBinding.set, descriptorBinding.binding);
+
+			if (currBinding == binding)
+				return descriptorBinding.name;
+		}
+	}
+	return nullptr;
+}
+
+SpvReflectDescriptorBinding ShaderGroupReflector::GetDescriptorBindingFromBinding(const Binding& binding) const
+{
+	for (uint32_t i = 0; i < modules.size(); i++)
+	{
+		for (uint32_t j = 0; j < modules[i].descriptor_binding_count; j++)
+		{
+			SpvReflectDescriptorBinding& descriptorBinding = modules[i].descriptor_bindings[j];
+			Binding currBinding(descriptorBinding.set, descriptorBinding.binding);
+
+			if (currBinding == binding)
+				return descriptorBinding;
+		}
+	}
+	return {};
+}
+
 void ShaderGroupReflector::WriteToDescriptorSet(VkDevice logicalDevice, VkDescriptorSet set, VkBuffer buffer, uint32_t setIndex, uint32_t binding) const
 {
 	std::vector<VkDescriptorSetLayoutBinding> bindings = GetLayoutBindingsOfSet(setIndex); // not the fastest way, but cleaner

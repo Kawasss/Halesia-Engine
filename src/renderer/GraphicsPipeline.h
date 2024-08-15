@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 #include <vulkan/vulkan.h>
 
 #include "PipelineCreator.h"
@@ -19,11 +20,20 @@ public:
 
 	void Bind(VkCommandBuffer commandBuffer);
 
+	void BindBufferToName(const std::string& name, VkBuffer buffer);
+	void BindImageToName(const std::string& name, VkImageView view, VkSampler sampler, VkImageLayout layout);
+
 	std::vector<VkDescriptorSet>& GetDescriptorSets() { return descriptorSets; }
 
 	VkPipelineLayout GetLayout() { return layout; }
 
 private:
+	struct BindingLayout
+	{
+		uint32_t set;
+		VkDescriptorSetLayoutBinding binding;
+	};
+
 	void CreateDescriptorPool(const ShaderGroupReflector& reflector);
 	void CreateSetLayout(const ShaderGroupReflector& reflector);
 	void AllocateDescriptorSets(uint32_t amount);
@@ -34,7 +44,8 @@ private:
 	VkPipeline pipeline = VK_NULL_HANDLE;
 	VkPipelineLayout layout = VK_NULL_HANDLE;
 
-	//VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;
+	std::map<std::string, BindingLayout> nameToLayout;
+
 	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 	std::vector<VkDescriptorSetLayout> setLayouts;
 	std::vector<VkDescriptorSet> descriptorSets;

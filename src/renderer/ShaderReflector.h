@@ -27,8 +27,9 @@ public:
 			uint32_t set;
 			uint32_t binding;
 		};
-		uint64_t full;
+		uint64_t full = 0;
 
+		Binding() = default;
 		Binding(uint32_t set, uint32_t binding) : set(set), binding(binding) {}
 
 		bool operator==(const Binding& other) const { return full == other.full; }
@@ -45,6 +46,9 @@ public:
 	std::vector<VkPushConstantRange> GetPushConstants() const;
 	std::set<uint32_t> GetDescriptorSetIndices() const;
 	uint32_t GetDescriptorSetCount() const;
+
+	const char* GetNameOfBinding(const Binding& binding) const;
+	SpvReflectDescriptorBinding GetDescriptorBindingFromBinding(const Binding& binding) const;
 
 	void WriteToDescriptorSet(VkDevice logicalDevice, VkDescriptorSet set, VkBuffer buffer, uint32_t setIndex, uint32_t binding) const;
 

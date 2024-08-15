@@ -1,7 +1,10 @@
+#include <map>
+
 #include "renderer/Vulkan.h"
 
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/ShaderReflector.h"
+#include "renderer/DescriptorWriter.h"
 
 #include "io/IO.h"
 
@@ -76,6 +79,14 @@ void GraphicsPipeline::CreateSetLayout(const ShaderGroupReflector& reflector)
 		CheckVulkanResult("Failed to create a set layout for a graphics pipeline", result, vkCreateDescriptorSetLayout);
 
 		setLayouts.push_back(setLayout);
+
+		for (const VkDescriptorSetLayoutBinding& binding : bindings)
+		{
+			ShaderGroupReflector::Binding bind(index, binding.binding);
+			BindingLayout& bindingLayout = nameToLayout[reflector.GetNameOfBinding(bind)];
+			bindingLayout.set = index;
+			bindingLayout.binding = binding;
+		}
 	}
 }
 
@@ -126,4 +137,20 @@ void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	vkDestroyShaderModule(ctx.logicalDevice, vertModule, nullptr);
 	vkDestroyShaderModule(ctx.logicalDevice, fragModule, nullptr);
+}
+
+void GraphicsPipeline::BindBufferToName(const std::string& name, VkBuffer buffer)
+{
+	const BindingLayout& binding = nameToLayout[name];
+	
+	DescriptorWriter* writer = DescriptorWriter::Get();
+	writer->WriteBuffer(descriptorSets[binding.set], buffer, binding.binding.descriptorType, binding.binding.binding);
+}
+
+void GraphicsPipeline::BindImageToName(const std::string& name, VkImageView view, VkSampler sampler, VkImageLayout layout)
+{
+	const BindingLayout& binding = nameToLayout[name];
+
+	DescriptorWriter* writer = DescriptorWriter::Get();
+	writer->WriteImage(descriptorSets[binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout);
 }
