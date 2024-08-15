@@ -27,7 +27,7 @@ void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t wi
 
 void Framebuffer::Allocate()
 {
-	const Vulkan::Context& context = Vulkan::GetContext();
+	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	for (int i = 0; i < images.size() - 1; i++)
 	{
@@ -35,7 +35,7 @@ void Framebuffer::Allocate()
 		imageViews[i] = Vulkan::CreateImageView(images[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
-	VkFormat depthFormat = context.physicalDevice.GetDepthFormat();
+	VkFormat depthFormat = ctx.physicalDevice.GetDepthFormat();
 	Vulkan::CreateImage(width, height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, images.back(), memories.back());
 	imageViews.back() = Vulkan::CreateImageView(images.back(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
@@ -48,8 +48,16 @@ void Framebuffer::Allocate()
 	createInfo.pAttachments = imageViews.data();
 	createInfo.layers = 1;
 
-	VkResult result = vkCreateFramebuffer(context.logicalDevice, &createInfo, nullptr, &framebuffer);
+	VkResult result = vkCreateFramebuffer(ctx.logicalDevice, &createInfo, nullptr, &framebuffer);
 	CheckVulkanResult("Failed to create a framebuffer", result, vkCreateFramebuffer);
+
+	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
+	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
+
+	TransitionFromUndefinedToWrite(commandBuffer);
+
+	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
+	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 }
 
 void Framebuffer::Resize(uint32_t width, uint32_t height)
@@ -63,6 +71,48 @@ void Framebuffer::Resize(uint32_t width, uint32_t height)
 void Framebuffer::SetDebugName(const char* name)
 {
 	Vulkan::SetDebugName(framebuffer, name);
+}
+
+void Framebuffer::TransitionFromUndefinedToWrite(VkCommandBuffer commandBuffer)
+{
+	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	constexpr VkAccessFlags srcAccess = 0;
+	constexpr VkAccessFlags dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+	for (int i = 0; i < images.size() - 1; i++) // skip the depth buffer !!
+		Vulkan::TransitionColorImage(commandBuffer, images[i], oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+}
+
+void Framebuffer::TransitionFromReadToWrite(VkCommandBuffer commandBuffer)
+{
+	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	constexpr VkAccessFlags srcAccess = VK_ACCESS_SHADER_READ_BIT;
+	constexpr VkAccessFlags dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+	for (int i = 0; i < images.size() - 1; i++)
+		Vulkan::TransitionColorImage(commandBuffer, images[i], oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+}
+
+void Framebuffer::TransitionFromWriteToRead(VkCommandBuffer commandBuffer)
+{
+	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	constexpr VkAccessFlags srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	constexpr VkAccessFlags dstAccess = VK_ACCESS_SHADER_READ_BIT;
+
+	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+	for (int i = 0; i < images.size() - 1; i++)
+		Vulkan::TransitionColorImage(commandBuffer, images[i], oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
 void Framebuffer::Destroy()

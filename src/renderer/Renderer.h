@@ -182,9 +182,6 @@ private:
 	void CreateRenderPass();
 	void CreateImGUI();
 	void GetQueryResults();
-	void TransitionScreenToWrite(VkCommandBuffer commandBuffer);
-	void TransitionScreenToRead(VkCommandBuffer commandBuffer);
-	void PrepareScreenForReadWrite(VkCommandBuffer commandBuffer);
 	void WriteTimestamp(VkCommandBuffer commandBuffer, bool reset = false);
 	void WriteIndirectDrawParameters(std::vector<Object*>& objects);
 	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);

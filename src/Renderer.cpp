@@ -371,11 +371,11 @@ void Renderer::CreateTextureSampler()
 
 void Renderer::CreateRenderPass()
 {
-	renderPass    = PipelineCreator::CreateRenderPass(physicalDevice, VK_FORMAT_R8G8B8A8_UNORM, PIPELINE_FLAG_CLEAR_ON_LOAD, 1);
-	GUIRenderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain->format, PIPELINE_FLAG_NONE, 1);
+	renderPass    = PipelineCreator::CreateRenderPass(physicalDevice, VK_FORMAT_R8G8B8A8_UNORM, PIPELINE_FLAG_CLEAR_ON_LOAD, 1, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	GUIRenderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain->format, PIPELINE_FLAG_NONE, 1, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 	Vulkan::SetDebugName(renderPass, "Default 3D render pass");
-	Vulkan::SetDebugName(renderPass, "Default GUI render pass");
+	Vulkan::SetDebugName(GUIRenderPass, "Default GUI render pass");
 }
 
 void Renderer::CreateGraphicsPipeline()
@@ -437,12 +437,6 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	//	obj->mesh.BLAS->RebuildGeometry(commandBuffer, obj->mesh);
 	WriteTimestamp(commandBuffer);
 
-	if (!preparedScreen)
-	{
-		PrepareScreenForReadWrite(commandBuffer);
-		preparedScreen = true;
-	}
-
 	VkImageView imageToCopy = VK_NULL_HANDLE;
 	if (canRayTrace)
 	{
@@ -471,8 +465,6 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	SetViewport(commandBuffer, viewportExtent);
 	SetScissors(commandBuffer, viewportExtent);
 
-	TransitionScreenToWrite(commandBuffer);
-
 	if (shouldRasterize)
 	{
 		RenderPipeline::Payload payload = GetPipelinePayload(commandBuffer, camera);
@@ -492,8 +484,6 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	SetViewport(commandBuffer, swapchain->extent);
 	SetScissors(commandBuffer, swapchain->extent);
-
-	TransitionScreenToRead(commandBuffer);
 
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
@@ -518,8 +508,11 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	vkCmdPushConstants(commandBuffer, screenPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &offsets);
 
 	vkCmdDraw(commandBuffer, 6, 1, 0, 0);
+
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 	vkCmdEndRenderPass(commandBuffer);
+
+	framebuffer.TransitionFromReadToWrite(commandBuffer);
 
 	WriteTimestamp(commandBuffer, true);
 
@@ -893,59 +886,12 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 	}
 	else
 	{
-		framebuffer.Resize(viewportWidth, viewportHeight);
+		framebuffer.Resize(viewportWidth, viewportHeight); // recreating the framebuffer will use single time commands, even if it is resized inside a render loop, causing wasted time (fix !!)
 	}
 
 	imageView = (shouldRasterize || !canRayTrace) ? framebuffer.GetViews()[0] : rayTracer->gBufferViews[0];
 	writer->WriteImage(screenPipeline->GetDescriptorSets()[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, imageView, resultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	writer->Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
-
-	preparedScreen = false;
-}
-
-void Renderer::TransitionScreenToRead(VkCommandBuffer commandBuffer) // maybe abstract away ??
-{
-	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	constexpr VkAccessFlags srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	constexpr VkAccessFlags dstAccess = VK_ACCESS_SHADER_READ_BIT;
-
-	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-	const VkImage& image = framebuffer.GetImages()[0];
-
-	Vulkan::TransitionColorImage(commandBuffer, image, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
-}
-
-void Renderer::TransitionScreenToWrite(VkCommandBuffer commandBuffer)
-{
-	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	constexpr VkAccessFlags srcAccess = VK_ACCESS_SHADER_READ_BIT;
-	constexpr VkAccessFlags dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-	const VkImage& image = framebuffer.GetImages()[0];
-
-	Vulkan::TransitionColorImage(commandBuffer, image, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
-}
-
-void Renderer::PrepareScreenForReadWrite(VkCommandBuffer commandBuffer)
-{
-	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	constexpr VkAccessFlags srcAccess = 0;
-	constexpr VkAccessFlags dstAccess = VK_ACCESS_SHADER_READ_BIT;
-
-	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-	const VkImage& image = framebuffer.GetImages()[0];
-
-	Vulkan::TransitionColorImage(commandBuffer, image, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
 std::vector<Object*> processedObjects;

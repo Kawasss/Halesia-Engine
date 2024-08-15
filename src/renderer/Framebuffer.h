@@ -24,7 +24,12 @@ public:
 
 	void SetDebugName(const char* name);
 
+	void TransitionFromReadToWrite(VkCommandBuffer commandBuffer);
+	void TransitionFromWriteToRead(VkCommandBuffer commandBuffer);
+
 private:
+	void TransitionFromUndefinedToWrite(VkCommandBuffer commandBuffer);
+
 	void Destroy();
 	void Allocate();
 
