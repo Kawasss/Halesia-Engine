@@ -56,9 +56,9 @@ void ForwardPlusPipeline::CreateShader()
 {
 	computeShader = new ComputeShader("shaders/spirv/forwardPlus.comp.spv");
 
-	computeShader->WriteToDescriptorBuffer(cellBuffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 0);
-	computeShader->WriteToDescriptorBuffer(lightBuffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 1);
-	computeShader->WriteToDescriptorBuffer(matricesBuffer.Get(), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 0, 2);
+	computeShader->BindBufferToName("cells", cellBuffer.Get());
+	computeShader->BindBufferToName("lights", lightBuffer.Get());
+	computeShader->BindBufferToName("matrices", matricesBuffer.Get());
 }
 
 void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)

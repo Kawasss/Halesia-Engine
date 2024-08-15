@@ -41,10 +41,10 @@ private:
 	void CreatePipelineLayout(const ShaderGroupReflector& reflector);
 	void CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, PipelineOptions flags, VkRenderPass renderPass);
 
+	std::map<std::string, BindingLayout> nameToLayout;
+
 	VkPipeline pipeline = VK_NULL_HANDLE;
 	VkPipelineLayout layout = VK_NULL_HANDLE;
-
-	std::map<std::string, BindingLayout> nameToLayout;
 
 	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 	std::vector<VkDescriptorSetLayout> setLayouts;

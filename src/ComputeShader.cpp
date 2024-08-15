@@ -1,6 +1,7 @@
 #include "renderer/Vulkan.h"
 #include "renderer/ComputeShader.h"
 #include "renderer/ShaderReflector.h"
+#include "renderer/DescriptorWriter.h"
 
 #include "io/IO.h"
 
@@ -24,7 +25,8 @@ ComputeShader::~ComputeShader()
 	vkDestroyPipelineLayout(context.logicalDevice, pipelineLayout, nullptr);
 	vkDestroyPipeline(context.logicalDevice, pipeline, nullptr);
 
-	vkDestroyDescriptorSetLayout(context.logicalDevice, setLayout, nullptr);
+	for (const VkDescriptorSetLayout& setLayout : setLayouts)
+		vkDestroyDescriptorSetLayout(context.logicalDevice, setLayout, nullptr);
 	vkDestroyDescriptorPool(context.logicalDevice, descriptorPool, nullptr);
 }
 
@@ -47,23 +49,32 @@ void ComputeShader::CreateDescriptorPool(const ShaderGroupReflector& reflector)
 void ComputeShader::CreateSetLayout(const ShaderGroupReflector& reflector)
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
-	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = reflector.GetLayoutBindingsOfSet(0);
+	std::set<uint32_t> indices = reflector.GetDescriptorSetIndices();
 
-	std::vector<VkDescriptorBindingFlags> setBindingFlags(setLayoutBindings.size(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
-	VkDescriptorSetLayoutBindingFlagsCreateInfoEXT setBindingFlagsCreateInfo{};
-	setBindingFlagsCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO_EXT;
-	setBindingFlagsCreateInfo.bindingCount = static_cast<uint32_t>(setBindingFlags.size());
-	setBindingFlagsCreateInfo.pBindingFlags = setBindingFlags.data();
+	for (uint32_t index : indices)
+	{
+		std::vector<VkDescriptorSetLayoutBinding> bindings = reflector.GetLayoutBindingsOfSet(index);
 
-	VkDescriptorSetLayoutCreateInfo setLayoutCreateInfo{};
-	setLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	setLayoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-	setLayoutCreateInfo.bindingCount = static_cast<uint32_t>(setLayoutBindings.size());
-	setLayoutCreateInfo.pBindings = setLayoutBindings.data();
-	setLayoutCreateInfo.pNext = &setBindingFlagsCreateInfo;
+		VkDescriptorSetLayoutCreateInfo setLayoutCreateInfo{};
+		setLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		setLayoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+		setLayoutCreateInfo.bindingCount = static_cast<uint32_t>(bindings.size());
+		setLayoutCreateInfo.pBindings = bindings.data();
 
-	VkResult result = vkCreateDescriptorSetLayout(context.logicalDevice, &setLayoutCreateInfo, nullptr, &setLayout);
-	CheckVulkanResult("Failed to create the descriptor set layout", result, vkCreateDescriptorSetLayout);
+		VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;
+		VkResult result = vkCreateDescriptorSetLayout(context.logicalDevice, &setLayoutCreateInfo, nullptr, &setLayout);
+		CheckVulkanResult("Failed to create the descriptor set layout", result, vkCreateDescriptorSetLayout);
+
+		setLayouts.push_back(setLayout);
+
+		for (const VkDescriptorSetLayoutBinding& binding : bindings)
+		{
+			ShaderGroupReflector::Binding bind(index, binding.binding);
+			BindingLayout& bindingLayout = nameToLayout[reflector.GetNameOfBinding(bind)];
+			bindingLayout.set = index;
+			bindingLayout.binding = binding;
+		}
+	}
 }
 
 void ComputeShader::AllocateDescriptorSets(uint32_t amount)
@@ -72,7 +83,7 @@ void ComputeShader::AllocateDescriptorSets(uint32_t amount)
 
 	VkDescriptorSetAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateInfo.pSetLayouts = &setLayout;
+	allocateInfo.pSetLayouts = setLayouts.data();
 	allocateInfo.descriptorPool = descriptorPool;
 	allocateInfo.descriptorSetCount = amount;
 
@@ -87,8 +98,8 @@ void ComputeShader::CreatePipelineLayout()
 
 	VkPipelineLayoutCreateInfo layoutCreateInfo{};
 	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	layoutCreateInfo.pSetLayouts = &setLayout;
-	layoutCreateInfo.setLayoutCount = 1;
+	layoutCreateInfo.pSetLayouts = setLayouts.data();
+	layoutCreateInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
 
 	VkResult result = vkCreatePipelineLayout(context.logicalDevice, &layoutCreateInfo, nullptr, &pipelineLayout);
 	CheckVulkanResult("Failed to create a pipeline layout", result, vkCreatePipelineLayout);
@@ -122,22 +133,18 @@ void ComputeShader::Execute(VkCommandBuffer commandBuffer, uint32_t x, uint32_t 
 	vkCmdDispatch(commandBuffer, x, y, z);
 }
 
-void ComputeShader::WriteToDescriptorBuffer(VkBuffer buffer, VkDescriptorType type, uint32_t setIndex, uint32_t binding, VkDeviceSize range)
+void ComputeShader::BindBufferToName(const std::string& name, VkBuffer buffer)
 {
-	const Vulkan::Context& context = Vulkan::GetContext();
+	const BindingLayout& binding = nameToLayout[name];
 
-	VkDescriptorBufferInfo bufferInfo{};
-	bufferInfo.buffer = buffer;
-	bufferInfo.offset = 0;
-	bufferInfo.range = range;
+	DescriptorWriter* writer = DescriptorWriter::Get();
+	writer->WriteBuffer(sets[binding.set], buffer, binding.binding.descriptorType, binding.binding.binding);
+}
 
-	VkWriteDescriptorSet writeSet{};
-	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeSet.descriptorType = type;
-	writeSet.dstBinding = binding;
-	writeSet.dstSet = sets[setIndex];
-	writeSet.descriptorCount = 1;
-	writeSet.pBufferInfo = &bufferInfo;
+void ComputeShader::BindImageToName(const std::string& name, VkImageView view, VkSampler sampler, VkImageLayout layout)
+{
+	const BindingLayout& binding = nameToLayout[name];
 
-	vkUpdateDescriptorSets(context.logicalDevice, 1, &writeSet, 0, nullptr);
+	DescriptorWriter* writer = DescriptorWriter::Get();
+	writer->WriteImage(sets[binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout);
 }

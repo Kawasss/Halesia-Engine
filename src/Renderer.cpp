@@ -890,7 +890,7 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 	}
 
 	imageView = (shouldRasterize || !canRayTrace) ? framebuffer.GetViews()[0] : rayTracer->gBufferViews[0];
-	screenPipeline->BindImageToName("image", imageView, resultSampler, VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL);
+	screenPipeline->BindImageToName("image", imageView, resultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	writer->Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
 }
 

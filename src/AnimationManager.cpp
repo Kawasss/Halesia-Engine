@@ -188,10 +188,10 @@ void AnimationManager::CreateShader()
 
 	computeShader = new ComputeShader("shaders/spirv/anim.comp.spv");
 
-	computeShader->WriteToDescriptorBuffer(Renderer::g_indexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 0);
-	computeShader->WriteToDescriptorBuffer(Renderer::g_vertexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 1);
-	computeShader->WriteToDescriptorBuffer(Renderer::g_defaultVertexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 2);
-	computeShader->WriteToDescriptorBuffer(mat4Buffer.Get(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 0, 3);
+	computeShader->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
+	computeShader->BindBufferToName("vertexBuffer", Renderer::g_vertexBuffer.GetBufferHandle());
+	computeShader->BindBufferToName("sourceBuffer", Renderer::g_defaultVertexBuffer.GetBufferHandle());
+	computeShader->BindBufferToName("animMatrices", mat4Buffer.Get());
 }
 
 void AnimationManager::Destroy()
