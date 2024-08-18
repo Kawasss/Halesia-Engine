@@ -416,7 +416,7 @@ void Image::TransitionForShaderWrite(VkCommandBuffer commandBuffer)
 		commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
 	}
 
-	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL, commandBuffer);
+	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, commandBuffer);
 
 	if (useSingleTime)
 	{

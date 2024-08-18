@@ -14,7 +14,6 @@
 #include "system/Input.h"
 #include "system/Window.h"
 
-#include "physics/RigidBody.h"
 #include "physics/Shapes.h"
 
 #include "core/Console.h"
@@ -671,9 +670,8 @@ void GUI::ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePerce
 }
 
 void GUI::ShowDebugWindow(Profiler* profiler)
-{
-	static std::vector<float> values(4);
-	EngineCore core = HalesiaEngine::GetInstance()->GetEngineCore();
+{	
+	EngineCore& core = HalesiaEngine::GetInstance()->GetEngineCore();
 
 	ImGui::SetNextWindowSize({ 0, 0 });
 	CreateGUIWindow("debug");
@@ -701,17 +699,33 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 		VkPhysicalDeviceProperties properties = context.physicalDevice.Properties();
 		ImGui::Text("GPU: %s   VRAM: %i MB", properties.deviceName, context.physicalDevice.VRAM() / 1024ULL / 1024ULL);
 
-		static int times = 0;
-		const char* labels[] = { "ray-tracing", "denoising prep", "denoising", "final pass", "animation", "rebuilding" };
-		if (times > 10)
+		
+		std::map<std::string, uint64_t> timestamps = core.renderer->GetTimestamps();
+
+		std::vector<float> values(timestamps.size());
+		std::vector<const char*> labels(timestamps.size() + 1);
+
+		values.resize(timestamps.size());
+		labels.resize(timestamps.size() + 1);
+
+		int i = 0;
+		for (auto it = timestamps.begin(); it != timestamps.end(); it++)
 		{
-			values = { core.renderer->rayTracingTime, core.renderer->denoisingPrepTime, core.renderer->denoisingTime, core.renderer->finalRenderPassTime, core.renderer->animationTime, core.renderer->rebuildingTime };
-			times = 0;
+			labels[i] = it->first.c_str();
+			values[i] = it->second * 0.000001f; // nanoseconds to milliseconds
+			i++;
 		}
+		labels.back() = "none";
+
+		float sum = 0.0f;
+		for (float val : values)
+			sum += val;
+		if (sum < 1.0f)
+			values.push_back(1.0f - sum);
+
 		ImPlot::BeginPlot("timestap queries", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);
-		ImPlot::PlotPieChart(labels, values.data(), values.size(), 0.5, 0.5, 0.5, "%.3f", 180);
+		ImPlot::PlotPieChart(labels.data(), values.data(), values.size(), 0.5, 0.5, 0.5, "%.3f", 180);
 		ImPlot::EndPlot();
-		times++;
 	}
 
 	if (ImGui::CollapsingHeader("scene"))

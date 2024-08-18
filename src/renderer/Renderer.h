@@ -77,6 +77,9 @@ public:
 	void RenderObjects(const std::vector<Object*>& objects, Camera* camera);
 	void StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor = glm::vec3(0), VkFramebuffer framebuffer = VK_NULL_HANDLE);
 	void EndRenderPass(VkCommandBuffer commandBuffer);
+	void RenderImGUI(VkCommandBuffer commandBuffer);
+
+	std::map<std::string, uint64_t> GetTimestamps() { return queryPool.GetTimestamps(); }
 
 	VkRenderPass GetDefault3DRenderPass()   { return renderPass;    }
 	VkRenderPass GetNonClearingRenderPass() { return GUIRenderPass; }

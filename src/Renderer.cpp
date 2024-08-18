@@ -85,7 +85,7 @@ void Renderer::Destroy()
 	g_vertexBuffer.Destroy();
 	g_indexBuffer.Destroy();
 
-	queryPool.~QueryPool();
+	queryPool.Destroy();
 
 	for (RenderPipeline* renderPipeline : renderPipelines)
 	{
@@ -428,25 +428,23 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	queryPool.Reset(commandBuffer);
 
-	WriteTimestamp(commandBuffer);
 	//animationManager->ApplyAnimations(commandBuffer); // not good
-	WriteTimestamp(commandBuffer);
-
-	WriteTimestamp(commandBuffer);
+	
 	//for (Object* obj : objects)
 	//	obj->mesh.BLAS->RebuildGeometry(commandBuffer, obj->mesh);
-	WriteTimestamp(commandBuffer);
 
 	VkImageView imageToCopy = VK_NULL_HANDLE;
 	if (canRayTrace)
 	{
 		Vulkan::StartDebugLabel(commandBuffer, "ray tracing");
 
-		WriteTimestamp(commandBuffer);
+		queryPool.BeginTimestamp(commandBuffer, "ray-tracing");
+
 		if (!shouldRasterize)
 			rayTracer->Execute(GetPipelinePayload(commandBuffer, camera), objects);
 
-		WriteTimestamp(commandBuffer);
+		queryPool.BeginTimestamp(commandBuffer, "ray-tracing");
+
 		if (denoiseOutput)
 		{
 			DenoiseSynchronized(commandBuffer);
@@ -472,11 +470,15 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		{
 			Vulkan::StartDebugLabel(commandBuffer, dbgPipelineNames[renderPipeline] + "::Execute");
 
+			queryPool.BeginTimestamp(commandBuffer, dbgPipelineNames[renderPipeline]);
+
 			SetViewport(commandBuffer, viewportExtent);
 			SetScissors(commandBuffer, viewportExtent);
 
 			renderPipeline->Execute(payload, objects);
 			vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+
+			queryPool.EndTimestamp(commandBuffer, dbgPipelineNames[renderPipeline]);
 		}
 	}
 
@@ -500,7 +502,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	WriteTimestamp(commandBuffer);
+	queryPool.BeginTimestamp(commandBuffer, "final pass");
 
 	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, 1, 1);
 	
@@ -509,17 +511,22 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	vkCmdDraw(commandBuffer, 6, 1, 0, 0);
 
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+	RenderImGUI(commandBuffer);
 	vkCmdEndRenderPass(commandBuffer);
 
 	framebuffer.TransitionFromReadToWrite(commandBuffer);
 
-	WriteTimestamp(commandBuffer, true);
+	queryPool.EndTimestamp(commandBuffer, "final pass");
 
 	vkCmdEndDebugUtilsLabelEXT(commandBuffer);
 
 	result = vkEndCommandBuffer(commandBuffer);
 	CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
+}
+
+void Renderer::RenderImGUI(VkCommandBuffer commandBuffer)
+{
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 }
 
 void Renderer::DenoiseSynchronized(VkCommandBuffer commandBuffer)
