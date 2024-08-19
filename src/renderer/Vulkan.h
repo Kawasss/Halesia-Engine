@@ -60,6 +60,8 @@ public:
     static VkMemoryAllocateFlagsInfo*         optionalMemoryAllocationFlags;
     static std::mutex                         graphicsQueueMutex;
 
+    static VkDeviceSize allocatedMemory;
+
     static std::vector<const char*> requiredLogicalDeviceExtensions;
     static std::vector<const char*> requiredInstanceExtensions;
     static std::vector<const char*> validationLayers;
@@ -185,3 +187,32 @@ inline void Vulkan::SetDebugName<VkImage>(VkImage object, const char* name)
 {
     DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_IMAGE, name);
 }
+
+#define VULKAN_TRACK_MEMORY
+#ifdef VULKAN_TRACK_MEMORY
+
+inline std::unordered_map<VkDeviceMemory, VkDeviceSize> memoryToSize;
+
+inline VkResult vkAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo, const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory)
+{
+    static PFN_vkAllocateMemory fnPtr = (PFN_vkAllocateMemory)vkGetDeviceProcAddr(device, "vkAllocateMemory");
+
+    VkResult result = fnPtr(device, pAllocateInfo, pAllocator, pMemory);
+    memoryToSize[*pMemory] = pAllocateInfo->allocationSize;
+
+    Vulkan::allocatedMemory += pAllocateInfo->allocationSize;
+
+    return result;
+}
+
+inline void vkFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator)
+{
+    static PFN_vkFreeMemory fnPtr = (PFN_vkFreeMemory)vkGetDeviceProcAddr(device, "vkFreeMemory");
+
+    fnPtr(device, memory, pAllocator);
+
+    Vulkan::allocatedMemory -= memoryToSize[memory];
+    memoryToSize.erase(memory);
+}
+
+#endif

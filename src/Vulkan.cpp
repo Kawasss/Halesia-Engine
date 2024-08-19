@@ -24,6 +24,8 @@ std::deque<std::function<void()>> Vulkan::deletionQueue;
 std::mutex Vulkan::graphicsQueueMutex;
 std::mutex Vulkan::commandPoolMutex;
 
+VkDeviceSize Vulkan::allocatedMemory = 0;
+
 std::vector<const char*> Vulkan::requiredLogicalDeviceExtensions =
 {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
