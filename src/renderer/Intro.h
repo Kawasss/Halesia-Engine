@@ -1,10 +1,12 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include <string>
-#include <vector>
+
+#include "Buffer.h"
 
 class Swapchain;
 class Texture;
+class GraphicsPipeline;
 
 class Intro
 {
@@ -21,20 +23,12 @@ public:
 private:
 	Texture* texture;
 	Swapchain* swapchain;
-	VkDevice logicalDevice;
-
-	// maybe better to create all of these statically, so that every intro uses the same resources instead of pointlessly making new isntances for everything
 
 	struct Timer;
 	Timer* pTimer;
-	VkBuffer uniformBuffer;
-	VkDeviceMemory uniformBufferMemory;
+	Buffer uniformBuffer;
 
-	VkDescriptorSet descriptorSet;
-	VkDescriptorPool descriptorPool;
-	VkDescriptorSetLayout setLayout;
+	GraphicsPipeline* pipeline;
 
-	VkPipelineLayout pipelineLayout;
-	VkPipeline pipeline;
 	VkRenderPass renderPass;
 };

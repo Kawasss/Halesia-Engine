@@ -240,11 +240,13 @@ HalesiaExitCode HalesiaEngine::Run()
 		core.window->maximized = true;
 		if (playIntro)
 		{
-			Intro intro{};
-			intro.Create(core.renderer->swapchain, "textures/floor.png");
+			Intro* intro = new Intro();
+			intro->Create(core.renderer->swapchain, "textures/floor.png");
 
-			core.renderer->RenderIntro(&intro);
-			intro.Destroy();
+			core.renderer->RenderIntro(intro);
+			intro->Destroy();
+
+			delete intro;
 		}
 		
 		core.scene->Start();
