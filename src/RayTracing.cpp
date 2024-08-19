@@ -121,6 +121,10 @@ void RayTracingPipeline::Execute(const Payload& payload, const std::vector<Objec
 	vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
 	vkCmdTraceRaysKHR(cmdBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, width, height, 1);
 	frameCount++;
+
+	Vulkan::TransitionColorImage(cmdBuffer, gBuffers[0], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+
+	payload.renderer->GetFramebuffer().TransitionFromWriteToRead(cmdBuffer); // normally this would transition with a render pass, but ray tracing doesnt use a render pass
 }
 
 void RayTracingPipeline::Destroy()
@@ -132,6 +136,7 @@ void RayTracingPipeline::Destroy()
 	vkDestroyBuffer(logicalDevice, uniformBufferBuffer, nullptr);*/
 
 	delete TLAS;
+	delete denoiser;
 
 	vkDestroyPipeline(logicalDevice, pipeline, nullptr);
 	vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
@@ -371,11 +376,6 @@ void RayTracingPipeline::Init()
 
 void RayTracingPipeline::UpdateMeshDataDescriptorSets()
 {
-	VkDescriptorBufferInfo materialBufferDescriptorInfo{};
-	materialBufferDescriptorInfo.buffer = materialBuffer.Get();
-	materialBufferDescriptorInfo.offset = 0;
-	materialBufferDescriptorInfo.range = VK_WHOLE_SIZE;
-
 	VkDescriptorBufferInfo instanceDataBufferDescriptorInfo{};
 	instanceDataBufferDescriptorInfo.buffer = instanceMeshDataBuffer.Get();
 	instanceDataBufferDescriptorInfo.offset = 0;
@@ -435,7 +435,7 @@ void RayTracingPipeline::CreateImage(uint32_t width, uint32_t height)
 		VkImageMemoryBarrier RTImageMemoryBarrier{};
 		RTImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		RTImageMemoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		RTImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		RTImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 		RTImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		RTImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		RTImageMemoryBarrier.image = gBuffers[i];

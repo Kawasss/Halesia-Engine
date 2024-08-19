@@ -336,9 +336,11 @@ void Denoiser::DestroyBuffers()
 
 void Denoiser::Destroy()
 {
+#ifdef USE_CUDA
 	DestroyBuffers();
 	optixDenoiserDestroy(denoiser);
 	optixDeviceContextDestroy(optixContext);
+#endif
 }
 
 Denoiser* Denoiser::Create()

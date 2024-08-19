@@ -84,6 +84,8 @@ public:
 	VkRenderPass GetDefault3DRenderPass()   { return renderPass;    }
 	VkRenderPass GetNonClearingRenderPass() { return GUIRenderPass; }
 
+	Framebuffer& GetFramebuffer() { return framebuffer; }
+
 	uint32_t GetInternalWidth()  { return viewportWidth;  }
 	uint32_t GetInternalHeight() { return viewportHeight; }
 

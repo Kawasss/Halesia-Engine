@@ -81,7 +81,7 @@ void Mesh::AwaitGeneration()
 
 bool Mesh::IsValid() const
 {
-	return BLAS.Get() != nullptr;
+	return !vertices.empty() && !indices.empty();
 }
 
 void Mesh::Destroy()

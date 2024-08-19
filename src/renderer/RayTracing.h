@@ -82,7 +82,6 @@ private:
 	VkCommandPool commandPool = VK_NULL_HANDLE;
 
 	Buffer handleBuffer;
-	Buffer materialBuffer;
 	Buffer uniformBufferBuffer;
 	Buffer motionBuffer;
 	Buffer instanceMeshDataBuffer;

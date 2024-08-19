@@ -402,6 +402,13 @@ void Renderer::CreateCommandBuffer()
 
 	VkResult result = vkAllocateCommandBuffers(logicalDevice, &allocationInfo, commandBuffers.data());
 	CheckVulkanResult("Failed to allocate the command buffer", result, vkAllocateCommandBuffers);
+
+	#ifdef _DEBUG
+
+	for (VkCommandBuffer commandBuffer : commandBuffers)
+		Vulkan::SetDebugName(commandBuffer, "drawing command buffer");
+
+	#endif
 }
 
 void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
