@@ -468,27 +468,22 @@ void RayTracingPipeline::CreateShaderBindingTable()
 	VkDeviceSize progSize = rayTracingProperties.shaderGroupBaseAlignment;
 	VkDeviceSize shaderBindingTableSize = progSize * 4;
 
-	VkBuffer shaderBindingTableBuffer;
-	VkDeviceMemory shaderBindingTableMemory;
-
-	Vulkan::CreateBuffer(shaderBindingTableSize, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, shaderBindingTableBuffer, shaderBindingTableMemory);
+	shaderBindingTableBuffer.Init(shaderBindingTableSize, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
 	std::vector<char> shaderBuffer(shaderBindingTableSize);
 	VkResult result = vkGetRayTracingShaderGroupHandlesKHR(logicalDevice, pipeline, 0, 4, shaderBindingTableSize, shaderBuffer.data());
 	CheckVulkanResult("Failed to get the ray tracing shader group handles", result, vkGetRayTracingShaderGroupHandlesKHR);
 
-	void* shaderBindingTableMemPtr;
-	result = vkMapMemory(logicalDevice, shaderBindingTableMemory, 0, shaderBindingTableSize, 0, &shaderBindingTableMemPtr);
-	CheckVulkanResult("Failed to map the shader binding table memory", result, vkMapMemory);
+	void* shaderBindingTableMemPtr = shaderBindingTableBuffer.Map(0, shaderBindingTableSize);
 
 	for (uint32_t i = 0; i < 4; i++) // 4 = amount of shaders
 	{
 		memcpy(shaderBindingTableMemPtr, shaderBuffer.data() + i * rayTracingProperties.shaderGroupHandleSize, rayTracingProperties.shaderGroupHandleSize);
 		shaderBindingTableMemPtr = static_cast<char*>(shaderBindingTableMemPtr) + rayTracingProperties.shaderGroupBaseAlignment;
 	}
-	vkUnmapMemory(logicalDevice, shaderBindingTableMemory);
+	shaderBindingTableBuffer.Unmap();
 
-	VkDeviceAddress shaderBindingTableBufferAddress = Vulkan::GetDeviceAddress(shaderBindingTableBuffer);
+	VkDeviceAddress shaderBindingTableBufferAddress = Vulkan::GetDeviceAddress(shaderBindingTableBuffer.Get());
 
 	VkDeviceSize hitGroupOffset = 0;
 	VkDeviceSize rayGenOffset = progSize;

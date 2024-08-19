@@ -81,6 +81,7 @@ private:
 	VkDevice logicalDevice = VK_NULL_HANDLE;
 	VkCommandPool commandPool = VK_NULL_HANDLE;
 
+	Buffer shaderBindingTableBuffer;
 	Buffer handleBuffer;
 	Buffer uniformBufferBuffer;
 	Buffer motionBuffer;
