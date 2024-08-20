@@ -5,7 +5,8 @@
 
 struct Light
 {
-	vec3 pos;
-	vec3 color;
-	LightType type;
+	vec4 pos; // z is padding
+	vec4 color; // z is padding
+	vec4 data; // z is padding
+	ivec4 type; // z is padding
 };

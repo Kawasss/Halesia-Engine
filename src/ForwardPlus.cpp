@@ -3,6 +3,7 @@
 #include "renderer/ComputeShader.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/Renderer.h"
+#include "renderer/Light.h"
 
 #include "core/Camera.h"
 #include "core/Object.h"
@@ -37,7 +38,7 @@ void ForwardPlusPipeline::Allocate()
 
 	VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 	cellBuffer.Init(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	lightBuffer.Init(MAX_LIGHTS * sizeof(glm::vec3), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, flags);
+	lightBuffer.Init(MAX_LIGHTS * sizeof(Light), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, flags);
 	matricesBuffer.Init(sizeof(Matrices), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, flags);
 
 	matrices = matricesBuffer.Map<Matrices>();
@@ -132,7 +133,7 @@ void ForwardPlusPipeline::DrawObjects(VkCommandBuffer commandBuffer, const std::
 	vkCmdEndDebugUtilsLabelEXT(commandBuffer);
 }
 
-void ForwardPlusPipeline::AddLight(glm::vec3 pos)
+void ForwardPlusPipeline::AddLight(const Light& light)
 {
 	if (lightCount + 1 >= MAX_LIGHTS)
 		throw std::runtime_error("Fatal error: upper light limit succeeded");
@@ -140,9 +141,9 @@ void ForwardPlusPipeline::AddLight(glm::vec3 pos)
 	const Vulkan::Context& context = Vulkan::GetContext();
 
 	VkDeviceSize offset = lightCount == 0 ? 0 : (lightCount - 1) * sizeof(glm::vec3);
-	glm::vec3* lights = lightBuffer.Map<glm::vec3>(offset, sizeof(glm::vec3));
+	Light* lights = lightBuffer.Map<Light>(offset, sizeof(Light));
 
-	lights[lightCount++] = pos;
+	lights[lightCount++] = light;
 
 	lightBuffer.Unmap();
 }

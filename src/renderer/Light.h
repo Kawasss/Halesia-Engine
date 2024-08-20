@@ -1,6 +1,7 @@
 #pragma once
 #include "../glm.h"
 
+#pragma pack(push, 1)
 struct Light
 {
 	enum class Type : int
@@ -10,8 +11,9 @@ struct Light
 		Spot = 2,
 	};
 
-	glm::vec3 pos;
-	glm::vec3 color;
-	Type type;
+	alignas(16) glm::vec3 pos;
+	alignas(16) glm::vec3 color = glm::vec3(1.0f);
+	alignas(16) glm::vec3 data; // the data can vary between light types
+	alignas(16) Type type;
 };
-
+#pragma pack(pop)

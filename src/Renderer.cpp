@@ -15,6 +15,7 @@
 #include "renderer/DescriptorWriter.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
+#include "renderer/Light.h"
 
 #include "system/Window.h"
 
@@ -936,10 +937,10 @@ void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkComma
 	}	
 }
 
-void Renderer::AddLight(glm::vec3 pos)
+void Renderer::AddLight(const Light& light)
 {
 	for (RenderPipeline* renderPipeline : renderPipelines)
-		renderPipeline->AddLight(pos); // this wont add the light to any render pipeline created after this moment
+		renderPipeline->AddLight(light); // this wont add the light to any render pipeline created after this moment
 }
 
 void Renderer::SetLogicalDevice()

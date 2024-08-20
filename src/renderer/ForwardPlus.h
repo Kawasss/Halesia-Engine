@@ -9,6 +9,7 @@
 class ComputeShader;
 class Camera;
 class GraphicsPipeline;
+struct Light;
 
 class ForwardPlusPipeline : public RenderPipeline
 {
@@ -19,7 +20,7 @@ public:
 
 	~ForwardPlusPipeline() { Destroy(); }
 
-	void AddLight(glm::vec3 pos) override;
+	void AddLight(const Light& light) override;
 
 	// these functions can be used if the default render pipeline functions dont cut it (Execute( ... ) will call these functions)
 	void ComputeCells(VkCommandBuffer commandBuffer, Camera* camera);

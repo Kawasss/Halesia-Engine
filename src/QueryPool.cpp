@@ -65,8 +65,12 @@ std::map<std::string, uint64_t> QueryPool::GetTimestamps()
 {
 	std::map<std::string, uint64_t> ret;
 	for (const auto& [label, timestamp] : timestamps)
-		ret[label] = *timestamp.end - *timestamp.begin;
+	{
+		if (timestamp.begin == nullptr || timestamp.end == nullptr) // this defines an inactive timestamp
+			continue;
 
+		ret[label] = *timestamp.end - *timestamp.begin;
+	}
 	return ret;
 }
 

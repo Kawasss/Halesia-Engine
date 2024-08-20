@@ -5,6 +5,7 @@
 #define TEXTURES_PER_MATERIAL 2
 
 #include "include/layouts.glsl"
+#include "include/light.glsl"
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
@@ -44,7 +45,7 @@ layout (set = 0, binding = 3) buffer Cells
 
 layout (set = 0, binding = 4) readonly buffer Lights
 {
-	vec3 data[];
+	Light data[];
 } lights;
 
 layout(set = 0, binding = 0) uniform sceneInfo {
@@ -80,11 +81,9 @@ void main()
 {
     #ifndef HEAT_MAP
 
-    vec3 lightColor = vec3(1);
     uint state = ID * gl_PrimitiveID;
 
     float ambientStrength = 0.1;
-    vec3 ambient = ambientStrength * lightColor;
 
     vec3 diffuse  = vec3(0);
     vec3 specular = vec3(0);
@@ -96,21 +95,23 @@ void main()
     for (int i = 0; i < lightCount; i++)
     {
         int lightIndex = int(cells.data[cellIndex].lightIndices[i]);
-        vec3 lightPos = lights.data[lightIndex];
+        Light light = lights.data[lightIndex];
 
-        vec3 lightDir   = normalize(lightPos - position);
+        vec3 lightDir   = normalize(light.pos.xyz - position);
         vec3 halfwayDir = normalize(lightDir + viewDir);
 
-        float dist = length(lightPos - position);
+        float dist = length(light.pos.xyz - position);
         float attenuation = 1.0 / (dist * dist);
 
         float diff = max(dot(normal, lightDir), 0.0);
-        diffuse += diff * lightColor * attenuation;
+        diffuse += diff * light.color.xyz * attenuation;
 
         float spec = pow(max(dot(normal, halfwayDir), 0.0), 0.3);
-        specular += spec * lightColor * attenuation;
+        specular += spec * light.color.xyz * attenuation;
     }
     vec3 color = texture(textures[Constant.materialID * 5], texCoords).xyz;
+    vec3 ambient = ambientStrength * color;
+
     result = vec4((ambient + diffuse + specular) * color, 1);
 
     #else

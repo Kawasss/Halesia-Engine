@@ -3,6 +3,7 @@
 
 #include "renderer/Renderer.h"
 #include "renderer/ForwardPlus.h"
+#include "renderer/Light.h"
 
 #include "core/UniquePointer.h"
 #include "core/ObjectStreamer.h"
@@ -108,8 +109,18 @@ int main(int argc, char** argv)
 	HalesiaEngine::SetCreateInfo(createInfo);
 	instance = HalesiaEngine::GetInstance();
 
+	Light light{};
+	light.pos   = glm::vec3(0, 1, 0);
+	light.color = glm::vec3(1, 0, 0);
+
+	Light light2{};
+	light2.pos = glm::vec3(0, 1, 3);
+	light2.color = glm::vec3(0, 1, 0);
+	light2.type = Light::Type::Point;
+	std::cout << sizeof(Light) << "\n\n";
 	instance->GetEngineCore().renderer->AddRenderPipeline<ForwardPlusPipeline>();
-	instance->GetEngineCore().renderer->AddLight(glm::vec3(0, 1, 0));
+	instance->GetEngineCore().renderer->AddLight(light);
+	instance->GetEngineCore().renderer->AddLight(light2);
 
 	instance->Run();
 

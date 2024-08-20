@@ -31,6 +31,7 @@ class ForwardPlusPipeline;
 class GraphicsPipeline;
 class RenderPipeline;
 struct Mesh;
+struct Light;
 
 typedef void* HANDLE;
 typedef uint32_t RendererFlags;
@@ -70,7 +71,7 @@ public:
 	void RenderIntro(Intro* intro);
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
-	void AddLight(glm::vec3 pos);
+	void AddLight(const Light& light);
 
 	void StartRecording();
 	void SubmitRecording();

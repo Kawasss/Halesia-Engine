@@ -1,6 +1,8 @@
 #version 460
 #define MAX_LIGHT_INDICES 7
 
+#include "include/light.glsl"
+
 layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 struct Cell
@@ -18,7 +20,7 @@ layout (std430, set = 0, binding = 0) buffer Cells
 
 layout (set = 0, binding = 1) readonly buffer Lights
 {
-	vec3 position[];
+	Light data[];
 } lights;
 
 layout (set = 0, binding = 2) uniform Matrices
@@ -47,7 +49,7 @@ vec2 ConvertScreenSpaceToCellSpace(vec2 screenSpace)
 
 void main()
 {
-	vec3 pos = lights.position[gl_GlobalInvocationID.x];
+	vec3 pos = lights.data[gl_GlobalInvocationID.x].pos.xyz;
 	vec2 screenSpace = GetScreenSpace(pos);
 	vec2 extentScreen = GetScreenSpace(pos + vec3(MAX_ATTENUATION_MEDIUM, 0, 0));
 

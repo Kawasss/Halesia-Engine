@@ -8,6 +8,7 @@ class Object;
 class Window;
 class Camera;
 class Renderer;
+struct Light;
 
 class RenderPipeline
 {
@@ -26,7 +27,7 @@ public:
 	virtual void Execute(const Payload& payload, const std::vector<Object*>& objects) = 0;
 	virtual void Destroy() = 0;
 
-	virtual void AddLight(glm::vec3 pos) {}
+	virtual void AddLight(const Light& light) {}
 
 	template<typename T> T* GetChild() { return reinterpret_cast<T*>(this); }
 
