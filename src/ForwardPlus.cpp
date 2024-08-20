@@ -27,7 +27,6 @@ void ForwardPlusPipeline::Destroy()
 	delete graphicsPipeline;
 
 	uniformBuffer.Destroy();
-	modelBuffer.Destroy();
 	matricesBuffer.Destroy();
 	cellBuffer.Destroy();
 	lightBuffer.Destroy();
@@ -154,15 +153,10 @@ void ForwardPlusPipeline::PrepareGraphicsPipeline()
 	DescriptorWriter* writer = DescriptorWriter::Get();
 	graphicsPipeline = new GraphicsPipeline("shaders/spirv/triangle.vert.spv", "shaders/spirv/triangle.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW, renderPass);
 
-	constexpr VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-	modelBuffer.Init(sizeof(glm::mat4) * Renderer::MAX_MESHES, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, flags);
-	uniformBuffer.Init(sizeof(UniformBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, flags);
-
-	modelBufferMapped = modelBuffer.Map<ModelData>();
+	uniformBuffer.Init(sizeof(UniformBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	uniformBufferMapped = uniformBuffer.Map<UniformBufferObject>();
 
 	graphicsPipeline->BindBufferToName("ubo", uniformBuffer.Get());
-	graphicsPipeline->BindBufferToName("modelBuffer", modelBuffer.Get());
 	graphicsPipeline->BindBufferToName("cells", cellBuffer.Get());
 	graphicsPipeline->BindBufferToName("lights", lightBuffer.Get());
 

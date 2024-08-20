@@ -139,8 +139,6 @@ void main() {
 
   vec2 prevMotion = MotionImage.data[gl_LaunchIDEXT.x * gl_LaunchSizeEXT.y + gl_LaunchIDEXT.y];
   uvec2 prevPos = ivec2(gl_LaunchIDEXT.xy - payload.motion);
-  prevPos.x = min(gl_LaunchSizeEXT.x, prevPos.x);
-  prevPos.y = min(gl_LaunchSizeEXT.y, prevPos.y);
   //if (abs(distance(payload.motion, prevMotion)) < 0.1)
   //{
     /*vec3 old = imageLoad(prevImage, prevPos).xyz;

@@ -343,7 +343,7 @@ void RayTracingPipeline::CreateBuffers(const ShaderGroupReflector& groupReflecti
 	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], Renderer::g_indexBuffer.GetBufferHandle(), 0, 2);
 	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], Renderer::g_vertexBuffer.GetBufferHandle(), 0, 3);
 	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], handleBuffer.Get(), 0, 7);
-	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], denoiser->GetMotionBuffer(), 0, 8);
+	groupReflection.WriteToDescriptorSet(logicalDevice, descriptorSets[0], motionBuffer.Get(), 0, 8);
 
 	vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
 	UpdateMeshDataDescriptorSets();

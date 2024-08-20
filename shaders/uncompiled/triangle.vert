@@ -23,17 +23,6 @@ layout(push_constant) uniform constant
     int materialID;
 } Constant;
 
-struct ModelData
-{
-    mat4 model;
-    vec4 IDColor;
-};
-
-layout (set = 0, binding = 1) buffer ModelBuffer
-{
-    ModelData data[];
-} modelBuffer;
-
 void main() 
 {
     position = (Constant.model * vec4(inPosition, 1.0)).xyz;
