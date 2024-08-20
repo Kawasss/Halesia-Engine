@@ -2,7 +2,6 @@
 #include "renderer/Vulkan.h"
 #include "renderer/ComputeShader.h"
 #include "renderer/GraphicsPipeline.h"
-#include "renderer/DescriptorWriter.h"
 #include "renderer/Renderer.h"
 
 #include "core/Camera.h"
@@ -150,7 +149,6 @@ void ForwardPlusPipeline::AddLight(glm::vec3 pos)
 
 void ForwardPlusPipeline::PrepareGraphicsPipeline()
 {
-	DescriptorWriter* writer = DescriptorWriter::Get();
 	graphicsPipeline = new GraphicsPipeline("shaders/spirv/triangle.vert.spv", "shaders/spirv/triangle.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW, renderPass);
 
 	uniformBuffer.Init(sizeof(UniformBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);

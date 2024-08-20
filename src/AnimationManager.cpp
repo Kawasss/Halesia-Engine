@@ -6,14 +6,8 @@
 #include <assimp/scene.h>
 
 #include "renderer/AnimationManager.h"
-#include "renderer/ShaderReflector.h"
 #include "renderer/Renderer.h"
-#include "renderer/Vulkan.h"
 #include "renderer/ComputeShader.h"
-
-#include "io/SceneLoader.h"
-
-#include "tools/common.h"
 
 inline glm::mat4 GetMat4(const aiMatrix4x4& from)
 {
@@ -26,7 +20,7 @@ inline glm::mat4 GetMat4(const aiMatrix4x4& from)
 	return to;
 }
 
-Animation::Animation(const aiAnimation* animation, const aiNode* root, std::map<std::string, BoneInfo> boneInfoMap) : duration(animation->mDuration), ticksPerSecond(animation->mTicksPerSecond), time(0), transforms(animation->mNumChannels, glm::mat4(1.0f)), boneInfo(boneInfoMap)
+Animation::Animation(const aiAnimation* animation, const aiNode* root, std::map<std::string, BoneInfo> boneInfoMap) : duration((float)animation->mDuration), ticksPerSecond((float)animation->mTicksPerSecond), time(0), transforms(animation->mNumChannels, glm::mat4(1.0f)), boneInfo(boneInfoMap)
 {
 	ReadHierarchy(this->root, root);
 	ReadBones(animation);
@@ -36,7 +30,7 @@ void Animation::ReadHierarchy(HierarchyNode& node, const aiNode* source)
 {
 	node.name = source->mName.C_Str();
 	node.transformation = GetMat4(source->mTransformation);
-	for (int i = 0; i < source->mNumChildren; i++)
+	for (unsigned int i = 0; i < source->mNumChildren; i++)
 	{
 		HierarchyNode child{};
 		ReadHierarchy(child, source->mChildren[i]);
@@ -46,7 +40,7 @@ void Animation::ReadHierarchy(HierarchyNode& node, const aiNode* source)
 
 void Animation::ReadBones(const aiAnimation* animation)
 {
-	for (int i = 0; i < animation->mNumChannels; i++)
+	for (unsigned int i = 0; i < animation->mNumChannels; i++)
 		bones.push_back(Bone(animation->mChannels[i]));
 }
 
@@ -143,7 +137,7 @@ void AnimationManager::RemoveAnimation(Animation* animation)
 
 void AnimationManager::ComputeAnimations(float delta)
 {
-	int offset = 0;
+	size_t offset = 0;
 	for (int i = 0; i < animations.size(); i++) // should be multithreaded
 	{
 		animations[i]->Update(delta);
@@ -164,7 +158,7 @@ void AnimationManager::ApplyAnimations(VkCommandBuffer commandBuffer)
 		return;
 	}
 
-	computeShader->Execute(commandBuffer, Renderer::g_defaultVertexBuffer.GetSize() / 16 + 1, 1, 1);
+	computeShader->Execute(commandBuffer, static_cast<uint32_t>(Renderer::g_defaultVertexBuffer.GetSize() / 16) + 1, 1, 1);
 
 	VkBufferMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -178,8 +172,6 @@ void AnimationManager::ApplyAnimations(VkCommandBuffer commandBuffer)
 
 void AnimationManager::CreateShader()
 {
-	const Vulkan::Context& context = Vulkan::GetContext();
-
 	mat4Buffer.Init(500 * sizeof(glm::mat4), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	mat4BufferPtr = mat4Buffer.Map<glm::mat4>(); // should not permanently map this large of a buffer
 
@@ -196,8 +188,6 @@ void AnimationManager::CreateShader()
 
 void AnimationManager::Destroy()
 {
-	const Vulkan::Context& context = Vulkan::GetContext();
-
 	delete computeShader;
 
 	mat4Buffer.Unmap();

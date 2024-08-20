@@ -2,7 +2,6 @@
 #include <unordered_map>
 #include <array>
 
-#include "PhysicalDevice.h"
 #include "Buffer.h"
 
 #include "../ResourceManager.h"

@@ -1,4 +1,5 @@
 #include <algorithm>
+
 #include "renderer/Mesh.h"
 #include "renderer/Renderer.h"
 #include "renderer/AccelerationStructures.h"

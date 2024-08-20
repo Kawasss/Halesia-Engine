@@ -1,22 +1,17 @@
 #include <stdexcept>
 #include <vector>
 #include <array>
-#include <chrono>
 #include <filesystem>
 
 #include "renderer/Vulkan.h"
 #include "renderer/Swapchain.h"
 #include "renderer/Surface.h"
-#include "renderer/ShaderReflector.h"
 #include "renderer/Texture.h"
 #include "renderer/Intro.h"
 #include "renderer/Mesh.h"
 #include "renderer/RayTracing.h"
 #include "renderer/AnimationManager.h"
-#include "renderer/AccelerationStructures.h"
 #include "renderer/PipelineCreator.h"
-#include "renderer/ForwardPlus.h"
-#include "renderer/ComputeShader.h"
 #include "renderer/DescriptorWriter.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"

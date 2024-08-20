@@ -252,6 +252,7 @@
     <ClInclude Include="src\renderer\GraphicsPipeline.h" />
     <ClInclude Include="src\renderer\gui.h" />
     <ClInclude Include="src\renderer\Intro.h" />
+    <ClInclude Include="src\renderer\Light.h" />
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
     <ClInclude Include="src\renderer\PipelineCreator.h" />
@@ -292,6 +293,7 @@
     <None Include="shaders\uncompiled\gen.rgen" />
     <None Include="shaders\uncompiled\hit.rchit" />
     <None Include="shaders\uncompiled\include\layouts.glsl" />
+    <None Include="shaders\uncompiled\include\light.glsl" />
     <None Include="shaders\uncompiled\intro.frag" />
     <None Include="shaders\uncompiled\intro.vert" />
     <None Include="shaders\uncompiled\miss.rmiss" />

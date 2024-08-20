@@ -9,7 +9,6 @@
 #include <unordered_map>
 #include <functional>
 #include <deque>
-#include <stdint.h>
 
 #include "PhysicalDevice.h"
 

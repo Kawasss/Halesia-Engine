@@ -84,12 +84,6 @@ private:
 		uint32_t height;
 	};
 
-	struct ModelData
-	{
-		glm::mat4 transformation;
-		glm::vec4 IDColor;
-	};
-
 	Buffer               uniformBuffer;
 	UniformBufferObject* uniformBufferMapped;
 

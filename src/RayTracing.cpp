@@ -1,16 +1,9 @@
-#include <fstream>
 #include <array>
-#include <vulkan/vulkan.h>
 
-#include <assimp/cimport.h>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
-
-#include "renderer/renderer.h"
+#include "renderer/Renderer.h"
 #include "renderer/AccelerationStructures.h"
 #include "renderer/Denoiser.h"
 #include "renderer/ShaderReflector.h"
-#include "renderer/Vertex.h"
 #include "renderer/RayTracing.h"
 #include "renderer/Vulkan.h"
 
