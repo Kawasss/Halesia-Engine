@@ -110,14 +110,15 @@ int main(int argc, char** argv)
 	instance = HalesiaEngine::GetInstance();
 
 	Light light{};
-	light.pos   = glm::vec3(0, 1, 0);
+	light.pos   = glm::vec4(0, 1, 0, 0);
 	light.color = glm::vec3(1, 0, 0);
 	light.type  = Light::Type::Point;
 
 	Light light2{};
-	light2.pos   = glm::vec3(0, 1, 3);
+	light2.pos   = glm::vec4(0, 1, 3, glm::radians(17.5f));
 	light2.color = glm::vec3(0, 1, 0);
-	light2.type  = Light::Type::Point;
+	light2.direction = glm::vec4(0, -1, 0, glm::radians(12.5f));
+	light2.type  = Light::Type::Spot;
 
 	instance->GetEngineCore().renderer->AddRenderPipeline<ForwardPlusPipeline>();
 	instance->GetEngineCore().renderer->AddLight(light);
