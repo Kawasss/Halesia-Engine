@@ -7,7 +7,7 @@ struct Light
 {
 	vec4 pos; // w is padding
 	vec4 color; // w is padding
-	vec4 direction; // only for spot lights (if type is LIGHT_TYPE_SPOT the w is for the cutoff)
+	vec4 direction; // only for spot lights (if type is LIGHT_TYPE_SPOT the w is for the cutoff, the outer cutoff is placed inside pos.w)
 	ivec4 type; // w is padding
 };
 
@@ -45,4 +45,17 @@ bool LightIsOutOfRange(Light light, vec3 lightDir)
 
 	float theta = dot(lightDir, -light.direction.xyz);
 	return theta <= light.direction.w;
+}
+
+float GetIntensity(Light light, vec3 lightDir)
+{
+	if (light.type.x != LIGHT_TYPE_SPOT)
+	{
+		return 1.0;
+	}
+
+	float theta   = dot(lightDir, -light.direction.xyz);
+	float epsilon = light.direction.w - light.pos.w;
+
+	return clamp((theta - light.pos.w) / epsilon, 0.0, 1.0);
 }

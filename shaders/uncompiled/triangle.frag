@@ -106,12 +106,13 @@ void main()
         }
 
         float attenuation = GetAttenuation(light, position);
+        float intensity   = GetIntensity(light, lightDir);
 
         float diff = max(dot(normal, lightDir), 0.0);
-        diffuse += diff * light.color.xyz * attenuation;
+        diffuse += diff * light.color.xyz * attenuation * intensity;
 
         float spec = pow(max(dot(normal, halfwayDir), 0.0), 0.3);
-        specular += spec * light.color.xyz * attenuation;
+        specular += spec * light.color.xyz * attenuation * intensity;
     }
     vec3 color = texture(textures[Constant.materialID * 5], texCoords).xyz;
     vec3 ambient = ambientStrength * color;
