@@ -112,12 +112,13 @@ int main(int argc, char** argv)
 	Light light{};
 	light.pos   = glm::vec3(0, 1, 0);
 	light.color = glm::vec3(1, 0, 0);
+	light.type  = Light::Type::Point;
 
 	Light light2{};
-	light2.pos = glm::vec3(0, 1, 3);
+	light2.pos   = glm::vec3(0, 1, 3);
 	light2.color = glm::vec3(0, 1, 0);
-	light2.type = Light::Type::Point;
-	
+	light2.type  = Light::Type::Point;
+
 	instance->GetEngineCore().renderer->AddRenderPipeline<ForwardPlusPipeline>();
 	instance->GetEngineCore().renderer->AddLight(light);
 	instance->GetEngineCore().renderer->AddLight(light2);

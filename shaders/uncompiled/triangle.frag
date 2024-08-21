@@ -91,17 +91,21 @@ void main()
     vec3 viewDir = normalize(camPos - position);
 
     uint cellIndex = GetCellIndex();
-    int lightCount = int(cells.data[cellIndex].lightCount);
+    int lightCount = cells.data[cellIndex].lightCount;
     for (int i = 0; i < lightCount; i++)
     {
         int lightIndex = int(cells.data[cellIndex].lightIndices[i]);
         Light light = lights.data[lightIndex];
 
-        vec3 lightDir   = normalize(light.pos.xyz - position);
+        vec3 lightDir   = GetLightDir(light, position);
         vec3 halfwayDir = normalize(lightDir + viewDir);
 
-        float dist = length(light.pos.xyz - position);
-        float attenuation = 1.0 / (dist * dist);
+        if (LightIsOutOfRange(light, lightDir))
+        {
+            continue;
+        }
+
+        float attenuation = GetAttenuation(light, position);
 
         float diff = max(dot(normal, lightDir), 0.0);
         diffuse += diff * light.color.xyz * attenuation;

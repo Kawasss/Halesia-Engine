@@ -5,8 +5,44 @@
 
 struct Light
 {
-	vec4 pos; // z is padding
-	vec4 color; // z is padding
-	vec4 data; // z is padding
-	ivec4 type; // z is padding
+	vec4 pos; // w is padding
+	vec4 color; // w is padding
+	vec4 direction; // only for spot lights (if type is LIGHT_TYPE_SPOT the w is for the cutoff)
+	ivec4 type; // w is padding
 };
+
+vec3 GetLightDir(Light light, vec3 pos)
+{
+	if (light.type.x == LIGHT_TYPE_DIRECTIONAL)
+	{
+		return normalize(-light.pos.xyz);
+	}
+	else
+	{
+		return normalize(light.pos.xyz - pos);
+	}
+}
+
+float GetAttenuation(Light light, vec3 pos)
+{
+	if (light.type.x == LIGHT_TYPE_DIRECTIONAL)
+	{
+		return 1.0;
+	}
+	else
+	{
+		float dist = length(light.pos.xyz - pos);
+		return 1.0 / (dist * dist);
+	}
+}
+
+bool LightIsOutOfRange(Light light, vec3 lightDir)
+{
+	if (light.type.x != LIGHT_TYPE_SPOT)
+	{
+		return false;
+	}
+
+	float theta = dot(lightDir, -light.direction.xyz);
+	return theta <= light.direction.w;
+}

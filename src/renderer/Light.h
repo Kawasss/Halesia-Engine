@@ -13,7 +13,7 @@ struct Light
 
 	alignas(16) glm::vec3 pos;
 	alignas(16) glm::vec3 color = glm::vec3(1.0f);
-	alignas(16) glm::vec3 data; // the data can vary between light types
+	alignas(16) glm::vec4 direction; // only for spot lights (kinda bad to use so much space for 1 light type ??)
 	alignas(16) Type type;
 };
 #pragma pack(pop)
