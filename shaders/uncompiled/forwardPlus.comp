@@ -29,7 +29,7 @@ layout (set = 0, binding = 2) uniform Matrices
 	mat4 view;
 } matrices;
 
-// attenuation: f(x) = 1 / x ^ 2, where attenuation determines the reach of a light
+// attenuation: f(x) = 1 / x ^ 2, where attenuation determines the radius of a light
 #define MAX_ATTENUATION_FAST    10.0          // attenuation = 0.01
 #define MAX_ATTENUATION_MEDIUM  31.6227766017 // attenuation = 0.001
 #define MAX_ATTENUATION_PRECISE 100.0         // attenuation = 0.0001
@@ -71,27 +71,24 @@ void main()
 	{
 		for (int y = minimum.y; y < maximum.y; y++)
 		{
-			// the circle equation for the light is (x - cellSpace.x)^2 + (y - cellSpace.y)^2 = reach^2.
-			// the reach is needed, so the equation is rewritten into reach = sqrt( (x - cellSpace.x)^2 + (y - cellSpace.y)^2 ).
-			// the point (x, y) is only inside the lights radius if the result is smaller than the reach thats calculated earlier.
+			// the circle equation for the light is (x - cellSpace.x)^2 + (y - cellSpace.y)^2 = radius^2.
+			// the radius is needed, so the equation is rewritten into radius = sqrt( (x - cellSpace.x)^2 + (y - cellSpace.y)^2 ).
+			// the point (x, y) is only inside the lights radius if the result is smaller than the radius thats calculated earlier.
 			float dist = sqrt(pow(x + 0.5f - cellSpace.x, 2) + pow(y + 0.5f - cellSpace.y, 2));
 
 			if (floor(dist) > reach)
 				continue;
 
-			uint cellImageIndex = cells.height * x + y;
-			uint fullIndex = cellImageIndex;
+			uint index = cells.height * x + y;
 
-			if (fullIndex >= cells.width * cells.height)
+			if (index >= cells.width * cells.height)
 				continue; // out of bounds failsafe, just in case
 
-			uint lightCountIndex = uint(cells.data[fullIndex].lightCount);
+			int lightCountIndex = min(cells.data[index].lightCount, MAX_LIGHT_INDICES);
 
-			atomicAdd(cells.data[fullIndex].lightCount, 1);
+			atomicAdd(cells.data[index].lightCount, 1); // this ++ is atomic, because it otherwise creates a race condition if multiple lights affect the same cell
 
-			lightCountIndex = min(lightCountIndex, MAX_LIGHT_INDICES);
-
-			cells.data[fullIndex].lightIndices[lightCountIndex] = float(gl_GlobalInvocationID.x);
+			cells.data[index].lightIndices[lightCountIndex] = float(gl_GlobalInvocationID.x);
 		}
 	}
 }
