@@ -54,7 +54,7 @@ private:
 	struct Cell
 	{
 		alignas(4) float lightCount;
-		char lightIndices[(MAX_LIGHT_INDICES - 1) * (sizeof(float) * 2) + sizeof(float)];
+		char lightIndices[(MAX_LIGHT_INDICES - 1) * (sizeof(float) * 2) + sizeof(float) * 2];
 	};
 
 	struct Matrices

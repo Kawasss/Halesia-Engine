@@ -7,7 +7,7 @@ layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 struct Cell
 {
-	float lightCount;
+	int lightCount;
 	float lightIndices[MAX_LIGHT_INDICES]; // this uses floats because the padding for ints is messed up
 };
 
@@ -85,7 +85,10 @@ void main()
 			if (fullIndex >= cells.width * cells.height)
 				continue; // out of bounds failsafe, just in case
 
-			uint lightCountIndex = uint(cells.data[fullIndex].lightCount++);
+			uint lightCountIndex = uint(cells.data[fullIndex].lightCount);
+
+			atomicAdd(cells.data[fullIndex].lightCount, 1);
+
 			lightCountIndex = min(lightCountIndex, MAX_LIGHT_INDICES);
 
 			cells.data[fullIndex].lightIndices[lightCountIndex] = float(gl_GlobalInvocationID.x);

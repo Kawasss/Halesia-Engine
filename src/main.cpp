@@ -117,7 +117,7 @@ int main(int argc, char** argv)
 	light2.pos = glm::vec3(0, 1, 3);
 	light2.color = glm::vec3(0, 1, 0);
 	light2.type = Light::Type::Point;
-	std::cout << sizeof(Light) << "\n\n";
+	
 	instance->GetEngineCore().renderer->AddRenderPipeline<ForwardPlusPipeline>();
 	instance->GetEngineCore().renderer->AddLight(light);
 	instance->GetEngineCore().renderer->AddLight(light2);

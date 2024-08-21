@@ -32,7 +32,7 @@ float RandomValue(inout uint state)
 
 struct Cell
 {
-	float lightCount;
+	int lightCount;
 	float lightIndices[MAX_LIGHT_INDICES];
 };
 
