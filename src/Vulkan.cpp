@@ -1002,5 +1002,6 @@ VkResult vkSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectN
         CHECK_VALIDITY_DEBUG(pvkSetDebugUtilsObjectNameEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         return pvkSetDebugUtilsObjectNameEXT(device, pNameInfo);
     );
+    return VK_SUCCESS;
 }
 #pragma endregion VulkanExtensionFunctionDefinitions

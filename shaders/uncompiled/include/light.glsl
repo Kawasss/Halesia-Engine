@@ -15,7 +15,7 @@ vec3 GetLightDir(Light light, vec3 pos)
 {
 	if (light.type.x == LIGHT_TYPE_DIRECTIONAL)
 	{
-		return normalize(-light.pos.xyz);
+		return normalize(-light.direction.xyz);
 	}
 	else
 	{
