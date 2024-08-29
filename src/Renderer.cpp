@@ -236,7 +236,7 @@ void Renderer::InitVulkan()
 
 	if (!initGlobalBuffers)
 	{
-		VkBufferUsageFlags commonFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+		constexpr VkBufferUsageFlags commonFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 		g_defaultVertexBuffer.Reserve(1000000, commonFlags | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 		g_vertexBuffer.Reserve(1000000,        commonFlags | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 		g_indexBuffer.Reserve(1000000,         commonFlags | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
@@ -262,7 +262,7 @@ void Renderer::InitVulkan()
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	viewportWidth = testWindow->GetWidth() * internalScale;
+	viewportWidth  = testWindow->GetWidth() * internalScale;
 	viewportHeight = testWindow->GetHeight() * internalScale;
 
 	UpdateScreenShaderTexture(0);
@@ -436,6 +436,8 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	//for (Object* obj : objects)
 	//	obj->mesh.BLAS->RebuildGeometry(commandBuffer, obj->mesh);
 
+	camera->SetAspectRatio((float)viewportWidth / (float)viewportHeight);
+
 	VkImageView imageToCopy = VK_NULL_HANDLE;
 	if (canRayTrace)
 	{
@@ -507,7 +509,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	queryPool.BeginTimestamp(commandBuffer, "final pass");
 
-	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, 1, 1);
+	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, viewportTransModifiers.x, viewportTransModifiers.y);
 	
 	screenPipeline->Bind(commandBuffer);
 	vkCmdPushConstants(commandBuffer, screenPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &offsets);
@@ -700,8 +702,8 @@ void Renderer::RenderIntro(Intro* intro)
 
 void Renderer::OnResize()
 {
-	viewportWidth = testWindow->GetWidth() * internalScale;
-	viewportHeight = testWindow->GetHeight() * internalScale;
+	viewportWidth  = testWindow->GetWidth()  * viewportTransModifiers.x;
+	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y;
 
 	swapchain->Recreate(GUIRenderPass, false);
 	if (canRayTrace)

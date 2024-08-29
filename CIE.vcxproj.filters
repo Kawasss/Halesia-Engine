@@ -67,6 +67,9 @@
     <Filter Include="external\interpreter">
       <UniqueIdentifier>{5f25c969-a018-4c7e-b3c4-5ecd59ead00d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\math">
+      <UniqueIdentifier>{9040f3d0-3211-4f93-aed1-c50ee71e7b7f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\HalesiaEngine.cpp">
@@ -254,6 +257,9 @@
     </ClCompile>
     <ClCompile Include="src\IO.cpp">
       <Filter>Source Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Deferred.cpp">
+      <Filter>Source Files\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -483,6 +489,12 @@
       <Filter>Header Files\io</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\Light.h">
+      <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\math\vectors.h">
+      <Filter>Header Files\math</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\Deferred.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
   </ItemGroup>

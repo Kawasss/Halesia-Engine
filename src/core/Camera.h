@@ -21,7 +21,8 @@ public:
 	void SetPitch(float newPitch);
 	void SetYaw(float newYaw);
 	void SetFOV(float newFov);
-
+	void SetAspectRatio(float val) { aspectRatio = val; }
+		 
 	virtual void Start() {}
 	virtual void Destroy() {}
 

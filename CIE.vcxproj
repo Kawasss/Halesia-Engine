@@ -164,6 +164,7 @@
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\ComputeShader.cpp" />
     <ClCompile Include="src\Console.cpp" />
+    <ClCompile Include="src\Deferred.cpp" />
     <ClCompile Include="src\Denoiser.cpp" />
     <ClCompile Include="src\DescriptorWriter.cpp" />
     <ClCompile Include="src\ForwardPlus.cpp" />
@@ -240,6 +241,7 @@
     <ClInclude Include="src\io\IO.h" />
     <ClInclude Include="src\io\SceneLoader.h" />
     <ClInclude Include="src\io\SceneWriter.h" />
+    <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\physics\RigidBody.h" />
     <ClInclude Include="src\physics\Shapes.h" />
     <ClInclude Include="src\physics\Physics.h" />
@@ -247,6 +249,7 @@
     <ClInclude Include="src\renderer\AnimationManager.h" />
     <ClInclude Include="src\renderer\Bone.h" />
     <ClInclude Include="src\renderer\ComputeShader.h" />
+    <ClInclude Include="src\renderer\Deferred.h" />
     <ClInclude Include="src\renderer\Denoiser.h" />
     <ClInclude Include="src\renderer\DescriptorWriter.h" />
     <ClInclude Include="src\renderer\ForwardPlus.h" />
