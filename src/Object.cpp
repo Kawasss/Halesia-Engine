@@ -141,9 +141,6 @@ void Object::SetRigidBody(RigidBodyType type, Shape shape)
 
 bool Object::HasFinishedLoading()
 {
-	/*for (Mesh& mesh : meshes)
-		if (!mesh.HasFinishedLoading())
-			return false;*/
 	if (generation.valid() && generation.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		generation.get(); // change the status of the image if it it done loading
 	return finishedLoading || !generation.valid();

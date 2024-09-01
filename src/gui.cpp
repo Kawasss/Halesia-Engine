@@ -197,7 +197,7 @@ void GUI::ShowObjectData(Object* object)
 		"Script:  %I64u\n"
 		"\n"
 		"loading: %i\n"
-	, object->handle, object->GetScript<Object*>(), !object->finishedLoading);
+	, object->handle, object->GetScript<Object*>(), !object->FinishedLoading());
 }
 
 void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* window, int index)
@@ -452,7 +452,7 @@ void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Window* window)
 	ImGui::BeginChild(1, ImVec2(0, (window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y) / 2));
 	for (int i = 0; i < objects.size(); i++)
 	{
-		if (objects[i]->children.empty())
+		if (objects[i]->HasChildren())
 		{
 			if (ImGui::Selectable(objects[i]->name.c_str()))
 				selectedIndex = i;
@@ -463,9 +463,10 @@ void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Window* window)
 			continue;
 		selectedIndex = i;
 
-		for (int j = 0; j < objects[i]->children.size(); j++)
+		const std::vector<Object*>& children = objects[i]->GetChildren();
+		for (int j = 0; j < children.size(); j++)
 		{
-			ImGui::Text(objects[i]->children[j]->name.c_str());
+			ImGui::Text(children[j]->name.c_str());
 		}
 		ImGui::TreePop();
 	}

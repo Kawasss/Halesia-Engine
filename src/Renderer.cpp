@@ -762,7 +762,7 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 
 inline bool ObjectIsValid(Object* object, bool checkBLAS)
 {
-	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && (checkBLAS ? object->mesh.IsValid() : true) && object->mesh.HasFinishedLoading() && !object->shouldBeDestroyed;
+	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && (checkBLAS ? object->mesh.IsValid() : true) && object->mesh.HasFinishedLoading() && !object->ShouldBeDestroyed();
 }
 
 inline void ResetImGui()
@@ -814,7 +814,9 @@ inline void GetAllObjectsFromObject(std::vector<Object*>& ret, Object* obj, bool
 		return;
 
 	ret.push_back(obj);
-	for (Object* object : obj->children)
+
+	const std::vector<Object*>& children = obj->GetChildren();
+	for (Object* object : children)
 	{
 		GetAllObjectsFromObject(ret, object, checkBLAS);
 	}

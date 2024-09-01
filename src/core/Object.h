@@ -55,46 +55,49 @@ public:
 	virtual void OnCollisionExit(Object* object)  {}
 
 	bool HasFinishedLoading();
-	bool HasScript()    { return scriptClass != nullptr; }
-	bool HasRigidBody() { return rigid.type != RIGID_BODY_NONE; }
+	bool HasScript()    const { return scriptClass != nullptr; }
+	bool HasRigidBody() const { return rigid.type != RIGID_BODY_NONE; }
 
-	/// <summary>
-	/// Awaits the async generation process of the object and meshes
-	/// </summary>
-	void AwaitGeneration();
+	void AwaitGeneration(); // Awaits the async generation process of the object and meshes
 
-	/// <summary>
-	/// Gets the script attached to the object, if no script is attached it will return an invalid pointer
-	/// </summary>
-	/// <typeparam name="T">: The name of the script's class as a pointer</typeparam>
-	/// <returns>Pointer to the given class</returns>
-	template<typename T> T* GetScript();
-	template<typename T> Object* AddCustomChild(const ObjectCreationData& creationData);
+	template<typename T> 
+	T* GetScript(); // Gets the script attached to the object, if no script is attached it will return an invalid pointer
 
 	void Initialize(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
 
 	void SetRigidBody(RigidBodyType type, Shape shape);
 	void SetMesh(const std::vector<MeshCreationData>& creationData);
+
+	template<typename T> 
+	Object* AddCustomChild(const ObjectCreationData& creationData);
+
 	Object* AddChild(const ObjectCreationData& creationData);
-	void AddChild(Object* object);
+	void    AddChild(Object* object);
+
 	void RemoveChild(Object* child); // this removes the child from this objects children
 	void DeleteChild(Object* child); // this does the same as RemoveChild, but also deletes the object
+
 	void TransferChild(Object* child, Object* destination); // this removes the child from this objects children and adds to the destinations children
 
 	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script);
 
-	Scene* scene;
+	void SetParentScene(Scene* parent) { scene = parent; }
 
+	const std::vector<Object*>& GetChildren() const { return children; }
+	std::mutex&                 GetMutex() { return mutex; }
+	
 	Transform transform;
 	RigidBody rigid;
 	Mesh mesh;
-	std::vector<Object*> children;
+	
 	ObjectState state = OBJECT_STATE_VISIBLE;
 	std::string name;
-	std::mutex mutex;
 	Handle handle;
-	bool finishedLoading = false;
-	bool shouldBeDestroyed = false;
+
+	bool FinishedLoading()   const { return finishedLoading;   }
+	bool ShouldBeDestroyed() const { return shouldBeDestroyed; }
+
+	bool HasChildren() const { return !children.empty(); }
 
 private:
 	template<typename T> void SetScript(T* script);
@@ -103,6 +106,13 @@ private:
 	void* scriptClass = nullptr;
 	std::future<void> generation;
 	
+	Scene* scene;
+	std::mutex mutex;
+	std::vector<Object*> children;
+
+	bool finishedLoading = false;
+	bool shouldBeDestroyed = false;
+
 protected:
 	Object* parent = nullptr;
 
@@ -110,6 +120,10 @@ protected:
 	{
 		objPtr->shouldBeDestroyed = true;
 	}
+
+	void Free() { shouldBeDestroyed = true; }
+
+	Scene* GetParentScene() { return scene; }
 };
 
 template<typename T> 

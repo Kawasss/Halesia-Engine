@@ -88,7 +88,9 @@ void Enemy::Update(float delta)
 	if (player == nullptr)
 		return;
 
-	shouldBeDestroyed = !health;
+	if (!health)
+		this->Free();
+
 	if (Input::IsKeyPressed(VirtualKey::LeftMouseButton) && Input::IsKeyPressed(VirtualKey::LeftControl) && timeSinceLastShot > fireRate)
 	{
 		SpawnBullet();
@@ -99,7 +101,7 @@ void Enemy::Update(float delta)
 
 void Enemy::SpawnBullet()
 {
-	Object* newBullet = scene->DuplicateCustomObject<Bullet>(baseBullet, "bullet");
+	Object* newBullet = GetParentScene()->DuplicateCustomObject<Bullet>(baseBullet, "bullet");
 	newBullet->name = std::to_string(newBullet->handle);
 	Bullet* script = newBullet->GetScript<Bullet>();
 	script->forward = glm::normalize(player->transform.position - transform.position);
@@ -113,7 +115,7 @@ void Bullet::Update(float delta)
 	timeAlive += delta;
 	if (timeAlive > 3000)
 	{
-		shouldBeDestroyed = true;
+		Free();
 		return;
 	}
 
@@ -132,7 +134,7 @@ void Bullet::OnCollisionEnter(Object* object)
 {
 	if (object->name != "box") return;
 	object->GetScript<Enemy>()->health--;
-	shouldBeDestroyed = true;
+	Free();
 }
 
 void Ship::Start()
@@ -175,7 +177,7 @@ void Ship::Update(float delta)
 
 void Ship::SpawnBullet()
 {
-	Object* newBullet = scene->DuplicateCustomObject<Bullet>(baseBullet, "bullet");
+	Object* newBullet = GetParentScene()->DuplicateCustomObject<Bullet>(baseBullet, "bullet");
 	newBullet->name = std::to_string(newBullet->handle);
 	Bullet* script = newBullet->GetScript<Bullet>();
 	script->forward = transform.GetForward();
@@ -191,8 +193,8 @@ glm::vec3 Ship::GetMousePosIn3D()
 	glm::vec2 inUv = glm::vec2(x, y) / glm::vec2((float)mouse->GetWidth(), (float)mouse->GetHeight());
 	glm::vec2 uv = inUv * 2.0f - 1.0f;
 
-	glm::mat4 invView = glm::inverse(scene->camera->GetViewMatrix());
-	glm::vec4 target = glm::inverse(scene->camera->GetProjectionMatrix()) * glm::vec4(uv.x, uv.y, 1, 1);
+	glm::mat4 invView = glm::inverse(GetParentScene()->camera->GetViewMatrix());
+	glm::vec4 target = glm::inverse(GetParentScene()->camera->GetProjectionMatrix()) * glm::vec4(uv.x, uv.y, 1, 1);
 	glm::vec3 origin = invView * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	glm::vec3 dir = invView * glm::vec4(glm::normalize(glm::vec3(target.x, target.y, target.z)), 0);
 

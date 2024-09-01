@@ -113,7 +113,7 @@ void Scene::RegisterObjectPointer(Object* objPtr, bool isCustom)
 {
 	objectHandles[objPtr->handle] = objPtr;
 	allObjects.push_back(objPtr);
-	objPtr->scene = this;
+	objPtr->SetParentScene(this);
 }
 
  inline void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberToErase)
@@ -178,7 +178,7 @@ void Scene::UpdateScripts(float delta)
 	
 	for (int i = 0; i < allObjects.size(); i++)
 	{
-		if (!allObjects[i]->HasScript() || allObjects[i]->shouldBeDestroyed || allObjects[i]->state == OBJECT_STATE_DISABLED)
+		if (!allObjects[i]->HasScript() || allObjects[i]->ShouldBeDestroyed() || allObjects[i]->state == OBJECT_STATE_DISABLED)
 			continue;
 		allObjects[i]->Update(delta);
 	}
@@ -189,7 +189,7 @@ void Scene::CollectGarbage()
 	for (auto iter = allObjects.begin(); iter < allObjects.end(); iter++)
 	{
 		Object* obj = *iter;
-		if (!obj->shouldBeDestroyed)
+		if (!obj->ShouldBeDestroyed())
 			continue;
 		allObjects.erase(iter);
 		obj->Destroy();
