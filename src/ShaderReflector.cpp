@@ -152,6 +152,11 @@ uint32_t ShaderGroupReflector::GetDescriptorSetCount() const
 	return static_cast<uint32_t>(setLayoutBindings.size());
 }
 
+uint32_t ShaderGroupReflector::GetOutputVariableCount(uint32_t index) const
+{
+	return modules[index].output_variable_count;
+}
+
 std::set<uint32_t> ShaderGroupReflector::GetDescriptorSetIndices() const
 {
 	std::set<uint32_t> ret;

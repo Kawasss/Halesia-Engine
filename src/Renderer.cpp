@@ -608,9 +608,9 @@ void Renderer::BindBuffersForRendering(VkCommandBuffer commandBuffer)
 
 void Renderer::RenderMesh(VkCommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount)
 {
-	uint32_t indexCount  = mesh.indices.size();
-	uint32_t firstIndex  = static_cast<uint32_t>(g_indexBuffer.GetMemoryOffset(mesh.indexMemory));
-	int32_t vertexOffset = static_cast<uint32_t>(g_vertexBuffer.GetMemoryOffset(mesh.vertexMemory));
+	uint32_t indexCount =   static_cast<uint32_t>(mesh.indices.size());
+	uint32_t firstIndex =   static_cast<uint32_t>(g_indexBuffer.GetItemOffset(mesh.indexMemory));
+	int32_t vertexOffset = static_cast<int32_t>(g_vertexBuffer.GetItemOffset(mesh.vertexMemory));
 	uint32_t firstInstance = 0;
 
 	vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
@@ -708,6 +708,10 @@ void Renderer::OnResize()
 	swapchain->Recreate(GUIRenderPass, false);
 	if (canRayTrace)
 		rayTracer->RecreateImage(viewportWidth, viewportHeight);
+
+	RenderPipeline::Payload payload = GetPipelinePayload(VK_NULL_HANDLE, nullptr);
+	for (RenderPipeline* renderPipeline : renderPipelines)
+		renderPipeline->Resize(payload);
 
 	UpdateScreenShaderTexture(currentFrame);
 
@@ -894,7 +898,7 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 {
 	if (framebuffer.Get() == VK_NULL_HANDLE)
 	{
-		framebuffer.Init(renderPass, 1, viewportWidth, viewportHeight, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+		framebuffer.Init(renderPass, 1, viewportWidth, viewportHeight, VK_FORMAT_R8G8B8A8_UNORM); // maybe 32 bit float instead of 8 bit ??
 	}
 	else
 	{

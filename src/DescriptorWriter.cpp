@@ -41,7 +41,7 @@ void DescriptorWriter::WriteBuffer(VkDescriptorSet set, VkBuffer buffer, VkDescr
 		Write();
 }
 
-void DescriptorWriter::WriteImage(VkDescriptorSet set, VkDescriptorType type, uint32_t binding, VkImageView imageView, VkSampler sampler, VkImageLayout layout, uint32_t descriptorCount)
+void DescriptorWriter::WriteImage(VkDescriptorSet set, VkDescriptorType type, uint32_t binding, VkImageView imageView, VkSampler sampler, VkImageLayout layout, uint32_t descriptorCount, uint32_t index)
 {
 	VkDescriptorImageInfo& info = infos[infoSize].image;
 	info.imageLayout = layout;
@@ -55,6 +55,7 @@ void DescriptorWriter::WriteImage(VkDescriptorSet set, VkDescriptorType type, ui
 	writeSet.dstBinding = binding;
 	writeSet.descriptorCount = descriptorCount;
 	writeSet.pImageInfo = &info;
+	writeSet.dstArrayElement = index;
 
 	infoSize++;
 	if (infoSize >= MAX_INFO_COUNT)

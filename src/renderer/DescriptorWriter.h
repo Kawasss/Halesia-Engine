@@ -9,7 +9,7 @@ public:
 	void Write();
 
 	void WriteBuffer(VkDescriptorSet set, VkBuffer buffer, VkDescriptorType type, uint32_t binding, uint32_t descriptorCount = 1, VkDeviceSize range = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-	void WriteImage(VkDescriptorSet set, VkDescriptorType type, uint32_t binding, VkImageView imageView, VkSampler sampler, VkImageLayout layout, uint32_t descriptorCount = 1);
+	void WriteImage(VkDescriptorSet set, VkDescriptorType type, uint32_t binding, VkImageView imageView, VkSampler sampler, VkImageLayout layout, uint32_t descriptorCount = 1, uint32_t index = 0);
 
 private:
 	union GenericDescriptorInfo // this union stores the different types of descriptor writes to reduce memory footprint

@@ -5,7 +5,7 @@
 #include "renderer/Vertex.h"
 #include "renderer/Renderer.h"
 
-VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass renderPass, const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, PipelineOptions flags)
+VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass renderPass, const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, PipelineOptions flags, uint32_t attachmentCount)
 {
 	VkPipelineDynamicStateCreateInfo dynamicState = Vulkan::GetDynamicStateCreateInfo(Renderer::dynamicStates);
 
@@ -73,13 +73,14 @@ VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass
 		blendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
 		blendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
 	}
+	std::vector<VkPipelineColorBlendAttachmentState> blendAttachments(attachmentCount, blendAttachment);
 
 	VkPipelineColorBlendStateCreateInfo blendCreateInfo{};
 	blendCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
 	blendCreateInfo.logicOp = VK_LOGIC_OP_COPY;
 	blendCreateInfo.logicOpEnable = VK_FALSE;
-	blendCreateInfo.pAttachments = &blendAttachment;
-	blendCreateInfo.attachmentCount = 1;
+	blendCreateInfo.pAttachments = blendAttachments.data();
+	blendCreateInfo.attachmentCount = attachmentCount;
 
 	VkGraphicsPipelineCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -138,12 +139,12 @@ VkRenderPass PipelineCreator::CreateRenderPass(PhysicalDevice physicalDevice, Vk
 	}
 
 	VkAttachmentReference depthReference{};
-	depthReference.attachment = 1;
+	depthReference.attachment = attachmentCount;
 	depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkSubpassDescription subpass{};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpass.colorAttachmentCount = 1;
+	subpass.colorAttachmentCount = attachmentCount;
 	subpass.pColorAttachments = colorReferences.data();
 	subpass.pDepthStencilAttachment = flags & PIPELINE_FLAG_NO_DEPTH ? nullptr : &depthReference;
 

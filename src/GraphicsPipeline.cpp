@@ -23,7 +23,7 @@ GraphicsPipeline::GraphicsPipeline(const std::string& vertPath, const std::strin
 	AllocateDescriptorSets(reflector.GetDescriptorSetCount());
 
 	CreatePipelineLayout(reflector);
-	CreateGraphicsPipeline(shaderCodes, flags, renderPass);
+	CreateGraphicsPipeline(shaderCodes, flags, renderPass, reflector.GetOutputVariableCount(1));
 }
 
 GraphicsPipeline::~GraphicsPipeline()
@@ -121,7 +121,7 @@ void GraphicsPipeline::CreatePipelineLayout(const ShaderGroupReflector& reflecto
 	CheckVulkanResult("Failed to create a pipeline layout for a graphics pipeline", result, vkCreatePipelineLayout);
 }
 
-void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, PipelineOptions flags, VkRenderPass renderPass)
+void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, PipelineOptions flags, VkRenderPass renderPass, uint32_t attachmentCount)
 {
 	VkShaderModule vertModule = Vulkan::CreateShaderModule(shaders[0]);
 	VkShaderModule fragModule = Vulkan::CreateShaderModule(shaders[1]);
@@ -132,7 +132,7 @@ void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char
 		Vulkan::GetGenericShaderStageCreateInfo(fragModule, VK_SHADER_STAGE_FRAGMENT_BIT),
 	};
 
-	pipeline = PipelineCreator::CreatePipeline(layout, renderPass, shaderInfos, flags);
+	pipeline = PipelineCreator::CreatePipeline(layout, renderPass, shaderInfos, flags, attachmentCount);
 
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	vkDestroyShaderModule(ctx.logicalDevice, vertModule, nullptr);
@@ -153,4 +153,12 @@ void GraphicsPipeline::BindImageToName(const std::string& name, VkImageView view
 
 	DescriptorWriter* writer = DescriptorWriter::Get();
 	writer->WriteImage(descriptorSets[binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout);
+}
+
+void GraphicsPipeline::BindImageToName(const std::string& name, uint32_t index, VkImageView view, VkSampler sampler, VkImageLayout layout)
+{
+	const BindingLayout& binding = nameToLayout[name];
+
+	DescriptorWriter* writer = DescriptorWriter::Get();
+	writer->WriteImage(descriptorSets[binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout, 1, index);
 }

@@ -46,6 +46,7 @@ public:
 	std::vector<VkPushConstantRange> GetPushConstants() const;
 	std::set<uint32_t> GetDescriptorSetIndices() const;
 	uint32_t GetDescriptorSetCount() const;
+	uint32_t GetOutputVariableCount(uint32_t index) const; // gets the amount of output variables of sourceCodes[index]
 
 	const char* GetNameOfBinding(const Binding& binding) const;
 	SpvReflectDescriptorBinding GetDescriptorBindingFromBinding(const Binding& binding) const;

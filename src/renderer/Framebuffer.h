@@ -6,12 +6,14 @@ class Framebuffer
 {
 public:
 	Framebuffer() = default;
-	Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, float relativeRes = 1.0f);
+	Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes = 1.0f);
 	~Framebuffer();
 
-	void Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, float relativeRes = 1.0f);
+	void Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes = 1.0f);
 
 	void Resize(uint32_t width, uint32_t height);
+
+	void StartRenderPass(VkCommandBuffer commandBuffer);
 
 	VkFramebuffer Get() { return framebuffer; }
 	VkRenderPass GetRenderPass() { return renderPass; }
@@ -29,12 +31,13 @@ public:
 
 private:
 	void TransitionFromUndefinedToWrite(VkCommandBuffer commandBuffer);
-
+	 
 	void Destroy();
 	void Allocate();
 
 	VkFramebuffer framebuffer = VK_NULL_HANDLE;
 	VkRenderPass renderPass = VK_NULL_HANDLE;
+	VkFormat format = VK_FORMAT_MAX_ENUM;
 	uint32_t width = 0, height = 0;
 	float relRes = 1.0f;
 

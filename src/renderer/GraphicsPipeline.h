@@ -22,6 +22,7 @@ public:
 
 	void BindBufferToName(const std::string& name, VkBuffer buffer);
 	void BindImageToName(const std::string& name, VkImageView view, VkSampler sampler, VkImageLayout layout);
+	void BindImageToName(const std::string& name, uint32_t index, VkImageView view, VkSampler sampler, VkImageLayout layout);
 
 	std::vector<VkDescriptorSet>& GetDescriptorSets() { return descriptorSets; }
 
@@ -39,7 +40,7 @@ private:
 	void AllocateDescriptorSets(uint32_t amount);
 
 	void CreatePipelineLayout(const ShaderGroupReflector& reflector);
-	void CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, PipelineOptions flags, VkRenderPass renderPass);
+	void CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, PipelineOptions flags, VkRenderPass renderPass, uint32_t attachmentCount);
 
 	std::map<std::string, BindingLayout> nameToLayout;
 

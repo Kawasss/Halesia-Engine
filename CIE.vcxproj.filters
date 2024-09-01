@@ -557,5 +557,17 @@
     <None Include="shaders\uncompiled\include\light.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="shaders\uncompiled\deferredSecond.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\uncompiled\deferredSecond.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\uncompiled\deferredFirst.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\uncompiled\deferredFirst.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -88,6 +88,5 @@ private:
 	Buffer               uniformBuffer;
 	UniformBufferObject* uniformBufferMapped;
 
-	std::unordered_set<uint64_t> processedMaterials;
 	std::vector<uint64_t> processedMats;
 };

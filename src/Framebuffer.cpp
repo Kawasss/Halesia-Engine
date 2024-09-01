@@ -1,9 +1,9 @@
 #include "renderer/Framebuffer.h"
 #include "renderer/Vulkan.h"
 
-Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, float relativeRes)
+Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes)
 {
-	Init(renderPass, imageCount, width, height, relativeRes);
+	Init(renderPass, imageCount, width, height, format, relativeRes);
 }
 
 Framebuffer::~Framebuffer()
@@ -11,11 +11,12 @@ Framebuffer::~Framebuffer()
 	Destroy();
 }
 
-void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, float relativeRes)
+void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes)
 {
 	this->renderPass = renderPass;
 	this->width  = static_cast<uint32_t>(width * relativeRes);
 	this->height = static_cast<uint32_t>(height * relativeRes);
+	this->format = format;
 	this->relRes = relRes;
 
 	this->images.resize(imageCount + 1); // the depth buffer is stored as the last image in the vector
@@ -31,8 +32,8 @@ void Framebuffer::Allocate()
 
 	for (int i = 0; i < images.size() - 1; i++)
 	{
-		Vulkan::CreateImage(width, height, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, images[i], memories[i]);
-		imageViews[i] = Vulkan::CreateImageView(images[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_ASPECT_COLOR_BIT);
+		Vulkan::CreateImage(width, height, 1, 1, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, images[i], memories[i]);
+		imageViews[i] = Vulkan::CreateImageView(images[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, format, VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
 	VkFormat depthFormat = ctx.physicalDevice.GetDepthFormat();
@@ -64,8 +65,28 @@ void Framebuffer::Resize(uint32_t width, uint32_t height)
 {
 	this->width  = static_cast<uint32_t>(width * relRes);
 	this->height = static_cast<uint32_t>(height * relRes);
+
 	Destroy();
 	Allocate();
+}
+
+void Framebuffer::StartRenderPass(VkCommandBuffer commandBuffer)
+{
+	constexpr VkClearValue baseClear = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+
+	std::vector<VkClearValue> clearValues(images.size(), baseClear);
+	clearValues.back().depthStencil = { 1, 0 };
+
+	VkRenderPassBeginInfo info{};
+	info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	info.framebuffer = framebuffer;
+	info.renderPass = renderPass;
+	info.renderArea.offset = { 0, 0 }; // maybe make this modifiable
+	info.renderArea.extent = { width, height };
+	info.clearValueCount = static_cast<uint32_t>(clearValues.size());
+	info.pClearValues = clearValues.data();
+
+	vkCmdBeginRenderPass(commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void Framebuffer::SetDebugName(const char* name)

@@ -3,6 +3,7 @@
 
 #include "renderer/Renderer.h"
 #include "renderer/ForwardPlus.h"
+#include "renderer/Deferred.h"
 #include "renderer/Light.h"
 
 #include "core/UniquePointer.h"
@@ -109,6 +110,8 @@ int main(int argc, char** argv)
 	HalesiaEngine::SetCreateInfo(createInfo);
 	instance = HalesiaEngine::GetInstance();
 
+	Renderer* renderer = instance->GetEngineCore().renderer;
+
 	Light light{};
 	light.pos   = glm::vec4(0, 1, 0, 0);
 	light.color = glm::vec3(1, 0, 0);
@@ -120,9 +123,9 @@ int main(int argc, char** argv)
 	light2.direction = glm::vec4(0, -1, 0, glm::radians(12.5f));
 	light2.type  = Light::Type::Spot;
 
-	instance->GetEngineCore().renderer->AddRenderPipeline<ForwardPlusPipeline>();
-	instance->GetEngineCore().renderer->AddLight(light);
-	instance->GetEngineCore().renderer->AddLight(light2);
+	renderer->AddRenderPipeline<DeferredPipeline>();
+	renderer->AddLight(light);
+	renderer->AddLight(light2);
 
 	instance->Run();
 
