@@ -10,6 +10,7 @@ public:
 	~Framebuffer();
 
 	void Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes = 1.0f);
+	void Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::vector<VkFormat>& formats, float relativeRes = 1.0f);
 
 	void Resize(uint32_t width, uint32_t height);
 
@@ -37,7 +38,7 @@ private:
 
 	VkFramebuffer framebuffer = VK_NULL_HANDLE;
 	VkRenderPass renderPass = VK_NULL_HANDLE;
-	VkFormat format = VK_FORMAT_MAX_ENUM;
+	std::vector<VkFormat> formats;
 	uint32_t width = 0, height = 0;
 	float relRes = 1.0f;
 

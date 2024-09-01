@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include "renderer/Framebuffer.h"
 #include "renderer/Vulkan.h"
 
@@ -16,13 +18,32 @@ void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t wi
 	this->renderPass = renderPass;
 	this->width  = static_cast<uint32_t>(width * relativeRes);
 	this->height = static_cast<uint32_t>(height * relativeRes);
-	this->format = format;
 	this->relRes = relRes;
+
+	formats.resize(imageCount);
+	std::fill(formats.begin(), formats.end(), format);
 
 	this->images.resize(imageCount + 1); // the depth buffer is stored as the last image in the vector
 	this->imageViews.resize(imageCount + 1);
 	this->memories.resize(imageCount + 1);
 	
+	Allocate();
+}
+
+void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::vector<VkFormat>& formats, float relativeRes)
+{
+	this->renderPass = renderPass;
+	this->width   = static_cast<uint32_t>(width * relativeRes);
+	this->height  = static_cast<uint32_t>(height * relativeRes);
+	this->formats = formats;
+	this->relRes  = relRes;
+
+	const size_t imageCount = formats.size();
+
+	this->images.resize(imageCount + 1); // the depth buffer is stored as the last image in the vector
+	this->imageViews.resize(imageCount + 1);
+	this->memories.resize(imageCount + 1);
+
 	Allocate();
 }
 
@@ -32,8 +53,8 @@ void Framebuffer::Allocate()
 
 	for (int i = 0; i < images.size() - 1; i++)
 	{
-		Vulkan::CreateImage(width, height, 1, 1, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, images[i], memories[i]);
-		imageViews[i] = Vulkan::CreateImageView(images[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, format, VK_IMAGE_ASPECT_COLOR_BIT);
+		Vulkan::CreateImage(width, height, 1, 1, formats[i], VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, images[i], memories[i]);
+		imageViews[i] = Vulkan::CreateImageView(images[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, formats[i], VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
 	VkFormat depthFormat = ctx.physicalDevice.GetDepthFormat();
