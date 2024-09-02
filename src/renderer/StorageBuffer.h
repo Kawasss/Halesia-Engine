@@ -6,12 +6,12 @@
 #include <iostream>
 #include <mutex>
 
-#define CheckHandleValidity(memory, ret)                                                                                                                         \
-if (!CheckIfHandleIsValid(memory))                                                                                                                               \
-{                                                                                                                                                                \
-	Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found, returning from " + __FUNCTION__, MESSAGE_SEVERITY_ERROR); \
-	return ret;                                                                                                                                                  \
-}                                                                                                                                                                \
+#define CheckHandleValidity(memory, ret)                                                                                                            \
+if (!CheckIfHandleIsValid(memory))                                                                                                                  \
+{                                                                                                                                                   \
+	Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found in " + __FUNCTION__, MESSAGE_SEVERITY_ERROR); \
+	return ret;                                                                                                                                     \
+}                                                                                                                                                   \
 
 
 struct StorageMemory_t // not a fan of this being visible

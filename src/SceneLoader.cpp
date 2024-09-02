@@ -145,31 +145,26 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 		RetrieveType(childType, childSize);
 		break;
 	case NODE_TYPE_ALBEDO:
-		currentMat->albedoIsDefault = false;
 		currentMat->albedoData.resize(size - sizeof(uint32_t) * 2);
 		reader >> currentMat->aWidth >> currentMat->aHeight;
 		reader >> currentMat->albedoData;
 		break;
 	case NODE_TYPE_NORMAL:
-		currentMat->normalIsDefault = false;
 		currentMat->normalData.resize(size - sizeof(uint32_t) * 2);
 		reader >> currentMat->nWidth >> currentMat->nHeight;
 		reader >> currentMat->normalData;
 		break;
 	case NODE_TYPE_ROUGHNESS:
-		currentMat->roughnessIsDefault = false;
 		currentMat->roughnessData.resize(size - sizeof(uint32_t) * 2);
 		reader >> currentMat->rWidth >> currentMat->rHeight;
 		reader >> currentMat->roughnessData;
 		break;
 	case NODE_TYPE_METALLIC:
-		currentMat->metallicIsDefault = false;
 		currentMat->metallicData.resize(size - sizeof(uint32_t) * 2);
 		reader >> currentMat->mWidth >> currentMat->mHeight;
 		reader >> currentMat->metallicData;
 		break;
 	case NODE_TYPE_AMBIENT_OCCLUSION:
-		currentMat->ambientOcclusionIsDefault = false;
 		currentMat->ambientOcclusionData.resize(size - sizeof(uint32_t) * 2);
 		reader >> currentMat->aoWidth >> currentMat->aoHeight;
 		reader >> currentMat->ambientOcclusionData;

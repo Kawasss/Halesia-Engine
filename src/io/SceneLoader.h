@@ -27,12 +27,12 @@ struct aiScene;
 typedef uint32_t ObjectOptions;
 enum ObjectFlags : ObjectOptions
 {
-	OBJECT_FLAG_HITBOX = 1 << 0,
-	OBJECT_FLAG_NO_RIGID = 1 << 1,
-	OBJECT_FLAG_RIGID_STATIC = 1 << 2,
+	OBJECT_FLAG_HITBOX        = 1 << 0,
+	OBJECT_FLAG_NO_RIGID      = 1 << 1,
+	OBJECT_FLAG_RIGID_STATIC  = 1 << 2,
 	OBJECT_FLAG_RIGID_DYNAMIC = 1 << 3,
-	OBJECT_FLAG_SHAPE_SPHERE = 1 << 4,
-	OBJECT_FLAG_SHAPE_BOX = 1 << 5,
+	OBJECT_FLAG_SHAPE_SPHERE  = 1 << 4,
+	OBJECT_FLAG_SHAPE_BOX     = 1 << 5,
 	OBJECT_FLAG_SHAPE_CAPSULE = 1 << 6,
 };
 
@@ -40,19 +40,13 @@ struct MaterialCreationData // dont know how smart it is to copy around possible
 {
 	std::string name;
 
-	bool isLight = false;
-	bool albedoIsDefault = true;
-	bool normalIsDefault = true;
-	bool metallicIsDefault = true;
-	bool roughnessIsDefault = true;
-	bool ambientOcclusionIsDefault = true;
-	bool heightIsDefault = true;
+	uint32_t aWidth, aHeight, // albedo
+		nWidth, nHeight,      // normal
+		mWidth, mHeight,      // metallic
+		rWidth, rHeight,      // roughness
+		aoWidth, aoHeight;    // ambient occlusion
 
-	uint32_t aWidth, aHeight,
-		nWidth, nHeight,
-		mWidth, mHeight,
-		rWidth, rHeight,
-		aoWidth, aoHeight;
+	bool isLight;
 
 	std::vector<char> albedoData;
 	std::vector<char> normalData;
@@ -67,30 +61,35 @@ struct MeshCreationData
 	std::string name;
 	uint32_t materialIndex;
 
-	bool hasBones = false;
+	bool hasBones    = false;
 	bool hasMaterial = false;
 	
-	glm::vec3 center = glm::vec3(0), extents = glm::vec3(0);
+	glm::vec3 center  = glm::vec3(0);
+	glm::vec3 extents = glm::vec3(0);
 
 	int faceCount = 0;
 	int amountOfVertices = 0;
-	std::vector<Vertex> vertices;
+
+	std::vector<Vertex>   vertices;
 	std::vector<uint16_t> indices;
 };
 
 struct RigidCreationData
 {
 	glm::vec3 extents = glm::vec3(0);
-	ShapeType shapeType = SHAPE_TYPE_NONE;
+
+	ShapeType     shapeType = SHAPE_TYPE_NONE;
 	RigidBodyType rigidType = RIGID_BODY_NONE;
 };
 
 struct ObjectCreationData
 {
 	std::string name = "NO_NAME";
+
 	glm::vec3 position = glm::vec3(0);
 	glm::vec3 rotation = glm::vec3(0);
-	glm::vec3 scale = glm::vec3(1);
+	glm::vec3 scale    = glm::vec3(1);
+
 	RigidCreationData hitBox;
 	uint8_t state = 0;
 	

@@ -13,27 +13,24 @@ void Mesh::ProcessMaterial(const MaterialCreationData& creationData)
 	if (materialIndex != 0) // if this mesh already has a material, then dont replace that with this one
 		return;
 
-	Texture* albedo = !creationData.albedoIsDefault ? new Texture(creationData.albedoData, creationData.aWidth, creationData.aHeight) : Texture::placeholderAlbedo;
-	Texture* normal = !creationData.normalIsDefault ? new Texture(creationData.normalData, creationData.nWidth, creationData.nHeight) : Texture::placeholderNormal;
-	Texture* metallic = !creationData.metallicIsDefault ? new Texture(creationData.metallicData, creationData.mWidth, creationData.mHeight) : Texture::placeholderMetallic;
-	Texture* roughness = !creationData.roughnessIsDefault ? new Texture(creationData.roughnessData, creationData.rWidth, creationData.rHeight) : Texture::placeholderRoughness;
-	Texture* ambientOcclusion = !creationData.ambientOcclusionIsDefault ? new Texture(creationData.ambientOcclusionData, creationData.aoWidth, creationData.aoHeight) : Texture::placeholderAmbientOcclusion;
+	Texture* albedo = !creationData.albedoData.empty() ? new Texture(creationData.albedoData, creationData.aWidth, creationData.aHeight) : Texture::placeholderAlbedo;
+	Texture* normal = !creationData.normalData.empty() ? new Texture(creationData.normalData, creationData.nWidth, creationData.nHeight) : Texture::placeholderNormal;
+	Texture* metallic = !creationData.metallicData.empty() ? new Texture(creationData.metallicData, creationData.mWidth, creationData.mHeight) : Texture::placeholderMetallic;
+	Texture* roughness = !creationData.roughnessData.empty() ? new Texture(creationData.roughnessData, creationData.rWidth, creationData.rHeight) : Texture::placeholderRoughness;
+	Texture* ambientOcclusion = !creationData.ambientOcclusionData.empty() ? new Texture(creationData.ambientOcclusionData, creationData.aoWidth, creationData.aoHeight) : Texture::placeholderAmbientOcclusion;
 	SetMaterial({ albedo, normal, metallic, roughness, ambientOcclusion });
 }
 
 void Mesh::Create(const MeshCreationData& creationData)
 {
-	if (materials.size() == 0)
-		materials.push_back({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
-
-	name = creationData.name;
-	vertices = creationData.vertices;
-	indices = creationData.indices;
+	name      = creationData.name;
+	vertices  = creationData.vertices;
+	indices   = creationData.indices;
 	faceCount = creationData.faceCount;
-	center = creationData.center;
-	extents = creationData.extents;
-	max = extents + center;
-	min = center * 2.f - max;
+	center    = creationData.center;
+	extents   = creationData.extents;
+	max       = extents + center;
+	min       = center * 2.f - max;
 	materialIndex = creationData.materialIndex;
 
 	Recreate();
@@ -42,6 +39,13 @@ void Mesh::Create(const MeshCreationData& creationData)
 
 void Mesh::Recreate()
 {
+	if (vertexMemory != 0)
+	{
+		Renderer::g_vertexBuffer.DestroyData(vertexMemory);
+		Renderer::g_defaultVertexBuffer.DestroyData(defaultVertexMemory);
+		Renderer::g_indexBuffer.DestroyData(indexMemory);
+	}
+
 	vertexMemory = Renderer::g_vertexBuffer.SubmitNewData(vertices);
 	indexMemory = Renderer::g_indexBuffer.SubmitNewData(indices);
 	defaultVertexMemory = Renderer::g_defaultVertexBuffer.SubmitNewData(vertices);
