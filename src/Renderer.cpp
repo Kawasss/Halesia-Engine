@@ -237,9 +237,9 @@ void Renderer::InitVulkan()
 	if (!initGlobalBuffers)
 	{
 		constexpr VkBufferUsageFlags commonFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-		g_defaultVertexBuffer.Reserve(1000000, commonFlags | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-		g_vertexBuffer.Reserve(1000000,        commonFlags | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-		g_indexBuffer.Reserve(1000000,         commonFlags | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+		g_defaultVertexBuffer.Reserve(1024, commonFlags | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		g_vertexBuffer.Reserve(1024,        commonFlags | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		g_indexBuffer.Reserve(1024,         commonFlags | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 		initGlobalBuffers = true;
 	}
 
@@ -421,6 +421,8 @@ void Renderer::WriteTimestamp(VkCommandBuffer commandBuffer, bool reset)
 
 void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> objects, Camera* camera)
 {
+	CheckForBufferResizes();
+
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	
@@ -527,6 +529,22 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 
 	result = vkEndCommandBuffer(commandBuffer);
 	CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
+}
+
+void Renderer::CheckForBufferResizes()
+{
+	RenderPipeline::Payload payload = GetPipelinePayload(VK_NULL_HANDLE, nullptr); // maybe move this inside the main render recording to allow pipelines to use that command buffer ??
+
+	if (g_vertexBuffer.HasResized() || g_defaultVertexBuffer.HasResized() || g_indexBuffer.HasResized())
+	{
+		for (RenderPipeline* pipeline : renderPipelines)
+			pipeline->OnRenderingBufferResize(payload);
+
+		if (!shouldRasterize)
+			rayTracer->OnRenderingBufferResize(payload); // ray tracing is still handled seperately from the other pipelines !!
+
+		writer->Write(); // force a write, because rendering will immediately start over this check
+	}
 }
 
 void Renderer::RenderImGUI(VkCommandBuffer commandBuffer)

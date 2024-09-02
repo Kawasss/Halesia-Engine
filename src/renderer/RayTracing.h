@@ -30,6 +30,8 @@ public:
 
 	~RayTracingPipeline() { Destroy(); }
 
+	void OnRenderingBufferResize(const Payload& payload) override;
+
 	void RecreateImage(uint32_t width, uint32_t height);
 	void ApplyDenoisedImage(VkCommandBuffer commandBuffer);
 	void PrepareForDenoising(VkCommandBuffer commandBuffer);

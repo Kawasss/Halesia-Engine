@@ -3,7 +3,7 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
-#include <iostream>
+
 #include "glm.h"
 
 #ifdef _DEBUG

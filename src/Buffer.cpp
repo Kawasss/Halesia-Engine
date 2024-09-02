@@ -39,6 +39,18 @@ void Buffer::Unmap()
 	vkUnmapMemory(ctx.logicalDevice, memory);
 }
 
+void Buffer::InheritFrom(Buffer& other)
+{
+	Destroy();
+
+	this->buffer = other.buffer;
+	this->memory = other.memory;
+
+	// setting all buffer members to a null handle disables the Destroy function
+	other.buffer = VK_NULL_HANDLE;
+	other.memory = VK_NULL_HANDLE;
+}
+
 void Buffer::SetDebugName(const char* name)
 {
 	Vulkan::SetDebugName(buffer, name);

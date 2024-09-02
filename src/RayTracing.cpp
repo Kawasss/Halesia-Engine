@@ -6,6 +6,7 @@
 #include "renderer/ShaderReflector.h"
 #include "renderer/RayTracing.h"
 #include "renderer/Vulkan.h"
+#include "renderer/DescriptorWriter.h"
 
 #include "system/Input.h"
 #include "system/Window.h"
@@ -582,6 +583,14 @@ void RayTracingPipeline::UpdateDescriptorSets()
 	writeSets[4].pBufferInfo = &motionBufferInfo;
 	
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
+}
+
+void RayTracingPipeline::OnRenderingBufferResize(const Payload& payload)
+{
+	DescriptorWriter* writer = DescriptorWriter::Get();
+
+	writer->WriteBuffer(descriptorSets[0], Renderer::g_indexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2);
+	writer->WriteBuffer(descriptorSets[0], Renderer::g_vertexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
 }
 
 void RayTracingPipeline::UpdateTextureBuffer()

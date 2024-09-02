@@ -1,10 +1,11 @@
 #pragma once
+#include <mutex>
+
 #include "Vulkan.h"
 #include "Buffer.h"
+
 #include "../ResourceManager.h"
 #include "../core/Console.h"
-#include <iostream>
-#include <mutex>
 
 #define CheckHandleValidity(memory, ret)                                                                                                            \
 if (!CheckIfHandleIsValid(memory))                                                                                                                  \
@@ -12,7 +13,6 @@ if (!CheckIfHandleIsValid(memory))                                              
 	Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found in " + __FUNCTION__, MESSAGE_SEVERITY_ERROR); \
 	return ret;                                                                                                                                     \
 }                                                                                                                                                   \
-
 
 struct StorageMemory_t // not a fan of this being visible
 {
@@ -39,15 +39,15 @@ public:
 		this->logicalDevice = context.logicalDevice;
 		this->usage = usage;
 
-		reservedBufferSize = maxAmountToBeStored * sizeof(T);
+		reservedSize = maxAmountToBeStored * sizeof(T);
 
 		// create an empty buffer with the specified size
-		Buffer stagingBuffer(reservedBufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		Buffer stagingBuffer(reservedSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
 
-		buffer.Init(reservedBufferSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-		Vulkan::CopyBuffer(commandPool, context.graphicsQueue, stagingBuffer.Get(), buffer.Get(), reservedBufferSize);
+		buffer.Init(reservedSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		Vulkan::CopyBuffer(commandPool, context.graphicsQueue, stagingBuffer.Get(), buffer.Get(), reservedSize);
 
 		Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
 	}
@@ -69,9 +69,11 @@ public:
 			memoryData[memoryHandle] = StorageMemory_t{ writeSize, endOfBufferPointer, false };
 		}
 
-		if (endOfBufferPointer + writeSize > reservedBufferSize && !canReuseMemory)				// throw an error if there is an attempt to write past the buffers capacity
+		CheckForResize(data.size());                                                        // this check should make sure that the next check for an 'out of bounds' error never succeeds, making it redundant
+
+		if (endOfBufferPointer + writeSize > reservedSize && !canReuseMemory)				// throw an error if there is an attempt to write past the buffers capacity
 		{
-			VkDeviceSize overflow = endOfBufferPointer + writeSize - reservedBufferSize;
+			VkDeviceSize overflow = endOfBufferPointer + writeSize - reservedSize;
 			throw VulkanAPIError("Failed to submit new storage buffer data, not enough space has been reserved: " + std::to_string(overflow / sizeof(T)) + " items (" + std::to_string(overflow) + " bytes) of overflow", VK_ERROR_OUT_OF_POOL_MEMORY, __FUNCTION__, __FILENAME__, __LINE__);
 		}
 
@@ -143,7 +145,7 @@ public:
 
 		return memoryData[memory].offset;
 	}
-	
+
 	/// <summary>
 	/// Gives the distance between the beginning of the buffer and the location of the memory in the size of the item (offset in bytes / sizeof(item))
 	/// </summary>
@@ -155,9 +157,10 @@ public:
 	VkBuffer     GetBufferHandle() { return buffer.Get(); }
 
 	size_t GetSize()    { return size; }
-	size_t GetMaxSize() { return reservedBufferSize / sizeof(T); }
+	size_t GetMaxSize() { return reservedSize / sizeof(T); }
 
 	bool HasChanged()   { bool ret = hasChanged; hasChanged = false; return ret; }
+	bool HasResized()   { bool ret = hasResized; hasResized = false; return ret; }
 
 	/// <summary>
 	/// This resets the internal memory pointer to 0. Any existing data won't be erased, but will be overwritten
@@ -171,11 +174,40 @@ public:
 	}
 
 private:
-	std::unordered_map<StorageMemory, StorageMemory_t> memoryData;
-	std::unordered_set<StorageMemory> terminatedMemories;
-	std::unordered_set<StorageMemory> allCreatedMemory;
-	std::mutex readWriteMutex;
-	size_t size = 0;
+	void Resize(size_t newSize)
+	{
+		std::string message = "StorageBuffer resize from " + std::to_string(reservedSize / 1024ull) + " kb to " + std::to_string(newSize / 1024ull) + " kb";
+		Console::WriteLine(message, MESSAGE_SEVERITY_DEBUG);
+
+		Buffer newBuffer(newSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+		T* oldPtr = buffer.Map<T>();
+		T* newPtr = newBuffer.Map<T>(0, reservedSize); // it is better to copy the buffers via vulkan, but that takes more time to implement
+
+		std::memcpy(newPtr, oldPtr, reservedSize);
+
+		buffer.Unmap();
+		newBuffer.Unmap();
+
+		buffer.InheritFrom(newBuffer);
+
+		reservedSize = newSize;
+		hasResized = true;
+	}
+
+	void CheckForResize(size_t extraSize)
+	{
+		int multiplier = 2;
+		size_t sizeBytes = (size + extraSize) * sizeof(T);
+
+		if (sizeBytes < reservedSize)
+			return;
+
+		while (reservedSize * multiplier < sizeBytes)
+			multiplier *= 2;
+
+		Resize(reservedSize * multiplier);
+	}
 
 	/// <summary>
 	/// This looks for for any free space within used memories, reducing the need to create a bigger buffer since terminated spots can be reused
@@ -214,7 +246,7 @@ private:
 		if (memory == 0)	// if no specific memory has been given the entire buffer gets cleared
 		{
 			offset = 0;
-			size = reservedBufferSize;
+			size = reservedSize;
 		}
 		else				// if a specific memory is given, then only clear that part of the buffer
 		{
@@ -237,13 +269,22 @@ private:
 		return allCreatedMemory.count(memory) > 0;
 	}
 
+	std::unordered_map<StorageMemory, StorageMemory_t> memoryData;
+
+	std::unordered_set<StorageMemory> terminatedMemories;
+	std::unordered_set<StorageMemory> allCreatedMemory;
+
+	std::mutex readWriteMutex;
+	size_t size = 0;
+
 	VkDevice logicalDevice = VK_NULL_HANDLE;
 	Buffer buffer;
 
-	VkDeviceSize reservedBufferSize = 0;
+	VkDeviceSize reservedSize = 0;
 	VkDeviceSize endOfBufferPointer = 0;
 	VkBufferUsageFlags usage = 0;
 
+	bool hasResized = false;
 	bool hasChanged = false;
 };
 

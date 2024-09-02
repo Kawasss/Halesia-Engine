@@ -28,7 +28,9 @@ public:
 	virtual void Destroy() = 0;
 
 	virtual void Resize(const Payload& payload) {}
-	virtual void AddLight(const Light& light) {}
+	virtual void AddLight(const Light& light)   {}
+
+	virtual void OnRenderingBufferResize(const Payload& payload) {}
 
 	template<typename T> T* GetChild() { return reinterpret_cast<T*>(this); }
 
