@@ -823,6 +823,7 @@ void Renderer::SubmitRecording()
 	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
 	PresentSwapchainImage(currentFrame, imageIndex);
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+	FIF::frameIndex = currentFrame;
 	ResetImGui();
 }
 

@@ -1,7 +1,8 @@
 #pragma once
-#include <unordered_set>
+#include <array>
 
 #include "RenderPipeline.h"
+#include "FramesInFlight.h"
 #include "Framebuffer.h"
 #include "Buffer.h"
 #include "Light.h"
@@ -38,14 +39,11 @@ private:
 
 	Framebuffer framebuffer;
 
-	Buffer uboBuffer;
-	UBO* ubo;
-
-	Buffer lightBuffer;
-	LightBuffer* lights; // maybe shouldnt permanently map this big a buffer ??
+	FIF::Buffer uboBuffer;
+	FIF::Buffer lightBuffer;
 
 	GraphicsPipeline* firstPipeline  = nullptr;
 	GraphicsPipeline* secondPipeline = nullptr;
 
-	std::vector<uint64_t> processedMats;
+	std::array<std::vector<uint64_t>, FIF::FRAME_COUNT> processedMats;
 };

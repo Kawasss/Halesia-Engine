@@ -2,9 +2,16 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <array>
 #include <vulkan/vulkan.h>
 
 #include "PipelineCreator.h"
+#include "FramesInFlight.h"
+
+namespace FIF
+{
+	class Buffer;
+}
 
 class ShaderGroupReflector;
 class Swapchain;
@@ -21,10 +28,13 @@ public:
 	void Bind(VkCommandBuffer commandBuffer);
 
 	void BindBufferToName(const std::string& name, VkBuffer buffer);
+	void BindBufferToName(const std::string& name, const FIF::Buffer& buffer);
 	void BindImageToName(const std::string& name, VkImageView view, VkSampler sampler, VkImageLayout layout);
 	void BindImageToName(const std::string& name, uint32_t index, VkImageView view, VkSampler sampler, VkImageLayout layout);
 
-	std::vector<VkDescriptorSet>& GetDescriptorSets() { return descriptorSets; }
+	std::vector<VkDescriptorSet>& GetDescriptorSets() { return descriptorSets[FIF::frameIndex]; }
+	
+	std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT>& GetAllDescriptorSets() { return descriptorSets; }
 
 	VkPipelineLayout GetLayout() { return layout; }
 
@@ -49,5 +59,5 @@ private:
 
 	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 	std::vector<VkDescriptorSetLayout> setLayouts;
-	std::vector<VkDescriptorSet> descriptorSets;
+	std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT> descriptorSets;
 };

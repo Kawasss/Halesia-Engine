@@ -25,10 +25,12 @@ void DeferredPipeline::Start(const Payload& payload)
 	framebuffer.Init(renderPass, payload.width, payload.height, formats); // 32 bit format takes a lot of performance compared to an 8 bit format
 
 	uboBuffer.Init(sizeof(UBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	ubo = uboBuffer.Map<UBO>();
+	uboBuffer.MapPermanently();
+	//ubo = uboBuffer.Map<UBO>();
 
 	lightBuffer.Init(sizeof(LightBuffer), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	lights = lightBuffer.Map<LightBuffer>();
+	lightBuffer.MapPermanently();
+	//lights = lightBuffer.Map<LightBuffer>();
 
 	const Material& mat = Mesh::materials[0];
 
@@ -57,20 +59,9 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 	const VkCommandBuffer cmdBuffer = payload.commandBuffer;
 	Renderer* renderer = payload.renderer;
 
-	//Renderer::BindBuffersForRendering(cmdBuffer);
-
 	framebuffer.StartRenderPass(cmdBuffer);
 
 	firstPipeline->Bind(cmdBuffer);
-
-	/*for (Object* obj : objects)
-	{
-		pushConstant.model = obj->transform.GetModelMatrix();
-		pushConstant.materialID = obj->mesh.materialIndex;
-
-		vkCmdPushConstants(cmdBuffer, firstPipeline->GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstant), &push);
-		Renderer::RenderMesh(cmdBuffer, obj->mesh);
-	}*/
 
 	VkBuffer vertexBuffer = Renderer::g_vertexBuffer.GetBufferHandle();
 	VkDeviceSize offset = 0;
@@ -132,20 +123,22 @@ void DeferredPipeline::UpdateTextureBuffer()
 	const size_t pbrSize = PBRMaterialTextures.size();
 	const size_t maxSize = pbrSize * MAX_PROCESSED_COUNT;
 
+	std::vector<uint64_t>& processedMaterials = processedMats[FIF::frameIndex];
+
 	std::vector<VkDescriptorImageInfo> imageInfos(maxSize);
 	std::vector<VkWriteDescriptorSet>  writeSets(maxSize);
 
 	int processedCount = 0;
 
-	if (processedMats.size() < Mesh::materials.size())
-		processedMats.resize(Mesh::materials.size());
+	if (processedMaterials.size() < Mesh::materials.size())
+		processedMaterials.resize(Mesh::materials.size());
 
 	for (int i = 0; i < Mesh::materials.size(); i++)
 	{
 		if (processedCount >= MAX_PROCESSED_COUNT)
 			break;
 
-		if (processedMats[i] == Mesh::materials[i].handle)
+		if (processedMaterials[i] == Mesh::materials[i].handle)
 			continue;
 
 		for (int j = 0; j < pbrSize; j++)
@@ -166,7 +159,7 @@ void DeferredPipeline::UpdateTextureBuffer()
 			writeSet.dstSet = firstPipeline->GetDescriptorSets()[0];
 			writeSet.pImageInfo = &imageInfos[index];
 		}
-		processedMats.push_back(Mesh::materials[i].handle);
+		processedMaterials.push_back(Mesh::materials[i].handle);
 		processedCount++;
 	}
 
@@ -183,20 +176,27 @@ void DeferredPipeline::SetTextureBuffer()
 
 	std::vector<VkDescriptorImageInfo> imageInfos(500, imageInfo);
 
-	VkWriteDescriptorSet writeSet{};
-	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	writeSet.dstSet = firstPipeline->GetDescriptorSets()[0];
-	writeSet.pImageInfo = imageInfos.data();
-	writeSet.descriptorCount = 500;
-	writeSet.dstArrayElement = 0;
-	writeSet.dstBinding = 2;
+	std::array<VkWriteDescriptorSet, FIF::FRAME_COUNT> writeSets{};
 
-	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+	{
+		VkWriteDescriptorSet& writeSet = writeSets[i];
+		writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		writeSet.dstSet = firstPipeline->GetAllDescriptorSets()[i][0];
+		writeSet.pImageInfo = imageInfos.data();
+		writeSet.descriptorCount = 500;
+		writeSet.dstArrayElement = 0;
+		writeSet.dstBinding = 2;
+	}
+
+	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, FIF::FRAME_COUNT, writeSets.data(), 0, nullptr);
 }
 
 void DeferredPipeline::UpdateUBO(Camera* cam)
 {
+	UBO* ubo = uboBuffer.GetMappedPointer<UBO>();
+
 	ubo->camPos = glm::vec4(cam->position, 1.0f);
 	ubo->proj = cam->GetProjectionMatrix();
 	ubo->view = cam->GetViewMatrix();
@@ -204,6 +204,7 @@ void DeferredPipeline::UpdateUBO(Camera* cam)
 
 void DeferredPipeline::AddLight(const Light& light)
 {
+	LightBuffer* lights = lightBuffer.GetMappedPointer<LightBuffer>();
 	lights->lights[lights->count++] = light;
 }
 

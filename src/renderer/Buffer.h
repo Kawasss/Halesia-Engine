@@ -1,5 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include <array>
 
 #include "FramesInFlight.h"
 
@@ -52,6 +53,10 @@ namespace FIF
 		Buffer(const Buffer&) = delete;
 		Buffer& operator=(Buffer&&) = delete;
 
+		VkBuffer operator[](size_t index) const { return buffers[index]; }
+
+		VkBuffer Get() { return buffers[FIF::frameIndex]; }
+
 		void Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 		void Destroy();
 
@@ -67,9 +72,9 @@ namespace FIF
 		void SetDebugName(const char* name);
 
 	private:
-		VkBuffer buffers[FIF::FRAME_COUNT]{}; // should initialize all values to VK_NULL_HANDLE
-		VkDeviceMemory memories[FIF::FRAME_COUNT]{};
+		std::array<VkBuffer, FIF::FRAME_COUNT> buffers; // should initialize all values to VK_NULL_HANDLE
+		std::array<VkDeviceMemory, FIF::FRAME_COUNT> memories;
 
-		void* pointers[FIF::FRAME_COUNT]{};
+		std::array<void*, FIF::FRAME_COUNT> pointers;
 	};
 }

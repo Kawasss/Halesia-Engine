@@ -5,6 +5,7 @@
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/DescriptorWriter.h"
+#include "renderer/Buffer.h"
 
 #include "io/IO.h"
 
@@ -42,7 +43,7 @@ GraphicsPipeline::~GraphicsPipeline()
 void GraphicsPipeline::Bind(VkCommandBuffer commandBuffer)
 {
 	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, static_cast<uint32_t>(descriptorSets.size()), descriptorSets.data(), 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, static_cast<uint32_t>(descriptorSets[FIF::frameIndex].size()), descriptorSets[FIF::frameIndex].data(), 0, nullptr);
 }
 
 void GraphicsPipeline::CreateDescriptorPool(const ShaderGroupReflector& reflector)
@@ -50,9 +51,12 @@ void GraphicsPipeline::CreateDescriptorPool(const ShaderGroupReflector& reflecto
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	std::vector<VkDescriptorPoolSize> poolSizes = reflector.GetDescriptorPoolSize();
 
+	for (VkDescriptorPoolSize& size : poolSizes)
+		size.descriptorCount *= FIF::FRAME_COUNT;
+
 	VkDescriptorPoolCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	createInfo.maxSets = reflector.GetDescriptorSetCount();
+	createInfo.maxSets = reflector.GetDescriptorSetCount() * FIF::FRAME_COUNT;
 	createInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	createInfo.pPoolSizes = poolSizes.data();
 
@@ -100,9 +104,12 @@ void GraphicsPipeline::AllocateDescriptorSets(uint32_t amount)
 	allocInfo.descriptorPool = descriptorPool;
 	allocInfo.pSetLayouts = setLayouts.data();
 
-	descriptorSets.resize(amount);
-	VkResult result = vkAllocateDescriptorSets(ctx.logicalDevice, &allocInfo, descriptorSets.data());
-	CheckVulkanResult("Failed to allocate descriptor sets for a graphics pipeline", result, vkAllocateDescriptorSets);
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+	{
+		descriptorSets[i].resize(amount);
+		VkResult result = vkAllocateDescriptorSets(ctx.logicalDevice, &allocInfo, descriptorSets[i].data());
+		CheckVulkanResult("Failed to allocate descriptor sets for a graphics pipeline", result, vkAllocateDescriptorSets);
+	}
 }
 
 void GraphicsPipeline::CreatePipelineLayout(const ShaderGroupReflector& reflector)
@@ -144,7 +151,19 @@ void GraphicsPipeline::BindBufferToName(const std::string& name, VkBuffer buffer
 	const BindingLayout& binding = nameToLayout[name];
 	
 	DescriptorWriter* writer = DescriptorWriter::Get();
-	writer->WriteBuffer(descriptorSets[binding.set], buffer, binding.binding.descriptorType, binding.binding.binding);
+	
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+		writer->WriteBuffer(descriptorSets[i][binding.set], buffer, binding.binding.descriptorType, binding.binding.binding);
+}
+
+void GraphicsPipeline::BindBufferToName(const std::string& name, const FIF::Buffer& buffer)
+{
+	const BindingLayout& binding = nameToLayout[name];
+
+	DescriptorWriter* writer = DescriptorWriter::Get();
+
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+		writer->WriteBuffer(descriptorSets[i][binding.set], buffer[i], binding.binding.descriptorType, binding.binding.binding);
 }
 
 void GraphicsPipeline::BindImageToName(const std::string& name, VkImageView view, VkSampler sampler, VkImageLayout layout)
@@ -152,7 +171,9 @@ void GraphicsPipeline::BindImageToName(const std::string& name, VkImageView view
 	const BindingLayout& binding = nameToLayout[name];
 
 	DescriptorWriter* writer = DescriptorWriter::Get();
-	writer->WriteImage(descriptorSets[binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout);
+
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+		writer->WriteImage(descriptorSets[i][binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout);
 }
 
 void GraphicsPipeline::BindImageToName(const std::string& name, uint32_t index, VkImageView view, VkSampler sampler, VkImageLayout layout)
@@ -160,5 +181,7 @@ void GraphicsPipeline::BindImageToName(const std::string& name, uint32_t index, 
 	const BindingLayout& binding = nameToLayout[name];
 
 	DescriptorWriter* writer = DescriptorWriter::Get();
-	writer->WriteImage(descriptorSets[binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout, 1, index);
+
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+		writer->WriteImage(descriptorSets[i][binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout, 1, index);
 }
