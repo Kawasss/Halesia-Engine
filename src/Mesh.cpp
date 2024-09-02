@@ -92,9 +92,12 @@ bool Mesh::IsValid() const
 void Mesh::Destroy()
 {
 	// should also delete the material in materials here (if no other meshes are referencing that material)
-	Renderer::g_vertexBuffer.DestroyData(vertexMemory);
-	Renderer::g_indexBuffer.DestroyData(indexMemory);
-	Renderer::g_defaultVertexBuffer.DestroyData(defaultVertexMemory);
+	if (vertexMemory != 0)
+		Renderer::g_vertexBuffer.DestroyData(vertexMemory);
+	if (indexMemory != 0)
+		Renderer::g_indexBuffer.DestroyData(indexMemory);
+	if (defaultVertexMemory != 0)
+		Renderer::g_defaultVertexBuffer.DestroyData(defaultVertexMemory);
 	indices.clear();
 	vertices.clear();
 	//delete this;

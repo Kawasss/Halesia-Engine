@@ -59,7 +59,8 @@ public:
 
 	~CameraInjector()
 	{
-		Eject();
+		if (cameraHeldInStasis != nullptr)
+			Eject();
 	}
 
 private:
