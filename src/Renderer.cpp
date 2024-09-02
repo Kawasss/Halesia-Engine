@@ -293,7 +293,7 @@ void Renderer::CreatePhysicalDevice()
 
 void Renderer::AddExtensions()
 {
-	canRayTrace = Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) && !(flags & NO_RAY_TRACING);
+	canRayTrace = Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) && !(flags & NO_RAY_TRACING) && MAX_FRAMES_IN_FLIGHT == 1; // the ray tracer can only handle 1 frame in flight
 	if (!canRayTrace)
 		shouldRasterize = true;
 	else

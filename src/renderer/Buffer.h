@@ -1,6 +1,8 @@
 #pragma once
 #include <vulkan/vulkan.h>
 
+#include "FramesInFlight.h"
+
 class Buffer
 {
 public:
@@ -36,4 +38,38 @@ template<typename T>
 T* Buffer::Map(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags) 
 { 
 	return static_cast<T*>(Map(offset, size, flags)); 
+}
+
+namespace FIF
+{
+	class Buffer
+	{
+	public:
+		Buffer() = default;
+		Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) { Init(size, usage, properties); }
+		~Buffer() { Destroy(); }
+
+		Buffer(const Buffer&) = delete;
+		Buffer& operator=(Buffer&&) = delete;
+
+		void Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+		void Destroy();
+
+		void MapPermanently();
+		void Unmap();
+
+		template<typename T>
+		T*    GetMappedPointer() { return static_cast<T*>(GetMappedPointer()); }
+		void* GetMappedPointer() { return pointers[FIF::frameIndex]; }
+
+		void InheritFrom(FIF::Buffer& parent); // inherits the members from the parent and tells the parent to not destroy its members upon destruction (the buffer will destroy the current members first)
+
+		void SetDebugName(const char* name);
+
+	private:
+		VkBuffer buffers[FIF::FRAME_COUNT]{}; // should initialize all values to VK_NULL_HANDLE
+		VkDeviceMemory memories[FIF::FRAME_COUNT]{};
+
+		void* pointers[FIF::FRAME_COUNT]{};
+	};
 }

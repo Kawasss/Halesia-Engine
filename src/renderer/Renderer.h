@@ -16,6 +16,7 @@
 #include "Buffer.h"
 #include "RenderPipeline.h"
 #include "Framebuffer.h"
+#include "FramesInFlight.h"
 #include "cuda_runtime_api.h"
 
 class Intro;
@@ -50,7 +51,7 @@ public:
 
 	static constexpr uint32_t MAX_MESHES			= 1000U; //should be more than enough
 	static constexpr uint32_t MAX_BINDLESS_TEXTURES = MAX_MESHES * 5; //amount of pbr textures per mesh
-	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT	= 1;
+	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT	= FIF::FRAME_COUNT;
 	static constexpr uint32_t MAX_TLAS_INSTANCES	= MAX_MESHES;
 
 	static StorageBuffer<Vertex>	g_vertexBuffer;

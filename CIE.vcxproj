@@ -254,6 +254,7 @@
     <ClInclude Include="src\renderer\DescriptorWriter.h" />
     <ClInclude Include="src\renderer\ForwardPlus.h" />
     <ClInclude Include="src\renderer\Framebuffer.h" />
+    <ClInclude Include="src\renderer\FramesInFlight.h" />
     <ClInclude Include="src\renderer\GraphicsPipeline.h" />
     <ClInclude Include="src\renderer\gui.h" />
     <ClInclude Include="src\renderer\Intro.h" />

@@ -497,6 +497,9 @@
     <ClInclude Include="src\renderer\Deferred.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\renderer\FramesInFlight.h">
+      <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">
