@@ -185,3 +185,8 @@ void GraphicsPipeline::BindImageToName(const std::string& name, uint32_t index, 
 	for (int i = 0; i < FIF::FRAME_COUNT; i++)
 		writer->WriteImage(descriptorSets[i][binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout, 1, index);
 }
+
+void GraphicsPipeline::PushConstant(VkCommandBuffer commandBuffer, const void* value, VkShaderStageFlags stages, uint32_t size, uint32_t offset)
+{
+	vkCmdPushConstants(commandBuffer, layout, stages, offset, size, value);
+}

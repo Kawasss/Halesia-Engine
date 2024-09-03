@@ -32,6 +32,17 @@ public:
 	void BindImageToName(const std::string& name, VkImageView view, VkSampler sampler, VkImageLayout layout);
 	void BindImageToName(const std::string& name, uint32_t index, VkImageView view, VkSampler sampler, VkImageLayout layout);
 
+	template<typename T>
+	void PushConstant(VkCommandBuffer commandBuffer, const T& value, VkShaderStageFlags stages) 
+	{
+		const void* val = static_cast<const void*>(&value);
+		uint32_t size = static_cast<uint32_t>(sizeof(T));
+
+		PushConstant(commandBuffer, val, stages, size, 0); 
+	}
+
+	void PushConstant(VkCommandBuffer commandBuffer, const void* value, VkShaderStageFlags stages, uint32_t size, uint32_t offset = 0);
+
 	std::vector<VkDescriptorSet>& GetDescriptorSets() { return descriptorSets[FIF::frameIndex]; }
 	
 	std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT>& GetAllDescriptorSets() { return descriptorSets; }

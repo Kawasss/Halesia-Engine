@@ -626,9 +626,9 @@ void Renderer::BindBuffersForRendering(VkCommandBuffer commandBuffer)
 
 void Renderer::RenderMesh(VkCommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount)
 {
-	uint32_t indexCount =   static_cast<uint32_t>(mesh.indices.size());
-	uint32_t firstIndex =   static_cast<uint32_t>(g_indexBuffer.GetItemOffset(mesh.indexMemory));
-	int32_t vertexOffset = static_cast<int32_t>(g_vertexBuffer.GetItemOffset(mesh.vertexMemory));
+	uint32_t indexCount    = static_cast<uint32_t>(mesh.indices.size());
+	uint32_t firstIndex    = static_cast<uint32_t>(g_indexBuffer.GetItemOffset(mesh.indexMemory));
+	int32_t  vertexOffset  = static_cast<int32_t>(g_vertexBuffer.GetItemOffset(mesh.vertexMemory));
 	uint32_t firstInstance = 0;
 
 	vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);

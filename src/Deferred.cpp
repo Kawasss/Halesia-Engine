@@ -66,8 +66,7 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 	VkBuffer vertexBuffer = Renderer::g_vertexBuffer.GetBufferHandle();
 	VkDeviceSize offset = 0;
 
-	vkCmdBindVertexBuffers(cmdBuffer, 0, 1, &vertexBuffer, &offset);
-	vkCmdBindIndexBuffer(cmdBuffer, Renderer::g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
+	Renderer::BindBuffersForRendering(cmdBuffer);
 
 	PushConstant pushConstant{};
 	for (Object* obj : objects)
@@ -75,13 +74,9 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 		pushConstant.model = obj->transform.GetModelMatrix();
 		pushConstant.materialID = obj->mesh.materialIndex;
 
-		vkCmdPushConstants(cmdBuffer, firstPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstant), &pushConstant);
+		firstPipeline->PushConstant(cmdBuffer, pushConstant, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		uint32_t indexCount = static_cast<uint32_t>(obj->mesh.indices.size());
-		uint32_t firstIndex = static_cast<uint32_t>(Renderer::g_indexBuffer.GetItemOffset(obj->mesh.indexMemory));
-		uint32_t vertexOffset = static_cast<uint32_t>(Renderer::g_vertexBuffer.GetItemOffset(obj->mesh.vertexMemory));
-
-		vkCmdDrawIndexed(cmdBuffer, indexCount, 1, firstIndex, vertexOffset, 0);
+		Renderer::RenderMesh(cmdBuffer, obj->mesh);
 	}
 
 	vkCmdEndRenderPass(cmdBuffer);
@@ -92,7 +87,7 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 
 	glm::vec3 camPos = payload.camera->position;
 
-	vkCmdPushConstants(cmdBuffer, secondPipeline->GetLayout(), VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(camPos), &camPos);
+	secondPipeline->PushConstant(cmdBuffer, camPos, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
 

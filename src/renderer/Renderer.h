@@ -95,7 +95,7 @@ public:
 	static float GetInternalResolutionScale();
 
 	static void BindBuffersForRendering(VkCommandBuffer commandBuffer);
-	static void RenderMesh(VkCommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount = 0);
+	static void RenderMesh(VkCommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount = 1);
 
 	template<typename Type> void AddRenderPipeline()
 	{
