@@ -19,7 +19,7 @@ public:
 
 	static void ShowDebugWindow(Profiler* profiler);
 	static void ShowDevConsole();
-	static void ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGraph, bool& cpuGraph, bool& gpuGraph);
+	static void ShowMainMenuBar(bool& showWindowData, bool& showObjMeta);
 	static void ShowSceneGraph(const std::vector<Object*>& objects, Window* window);
 	static void ShowObjectTable(const std::vector<Object*>& objects);
 	static void ShowFPS(int fps);

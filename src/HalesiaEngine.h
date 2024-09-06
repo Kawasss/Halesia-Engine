@@ -55,9 +55,6 @@ public:
 	bool pauseGame = false; //these bools dont reallyy need to be here
 	bool playOneFrame = false;
 	bool showFPS = false;
-	bool showRAM = false;
-	bool showCPU = false;
-	bool showGPU = false;
 	bool showAsyncTimes = false;
 	bool showObjectData = false;
 	bool showWindowData = false;
@@ -70,6 +67,8 @@ private:
 	void OnLoad(HalesiaEngineCreateInfo& createInfo);
 	void LoadVars();
 	void OnExit();
+
+	void PlayIntro();
 
 	void UpdateRenderer(float delta);
 	void UpdateScene(float delta);

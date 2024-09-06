@@ -7,4 +7,7 @@ public:
 	void Start() override;
 	void Update(float delta) override;
 	void UpdateGUI(float delta) override;
+
+private:
+	void ShowMenuBar();
 };

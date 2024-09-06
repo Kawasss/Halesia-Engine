@@ -28,7 +28,8 @@ void Editor::Update(float delta)
 
 void Editor::UpdateGUI(float delta)
 {
-	EngineCore& core = HalesiaEngine::GetInstance()->GetEngineCore();
+	HalesiaEngine* engine = HalesiaEngine::GetInstance();
+	EngineCore& core = engine->GetEngineCore();
 
 	int selectedIndex = -1;
 
@@ -69,7 +70,5 @@ void Editor::UpdateGUI(float delta)
 
 	GUI::ShowObjectComponents(allObjects, core.window, selectedIndex);
 
-	bool _ = false; // temp fix
-
-	GUI::ShowMainMenuBar(_, _, _, _, _);
+	GUI::ShowMainMenuBar(engine->showWindowData, engine->showObjectData);
 }

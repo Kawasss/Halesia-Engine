@@ -168,12 +168,6 @@ void HalesiaEngine::UpdateRenderer(float delta)
 	if (showFPS)
 		GUI::ShowFPS((int)(1 / delta * 1000));
 
-	if (showRAM)
-		GUI::ShowGraph(core.profiler->GetRAM(), "RAM in MB");
-	if (showCPU)
-		GUI::ShowGraph(core.profiler->GetCPU(), "CPU %");
-	if (showGPU)
-		GUI::ShowGraph(core.profiler->GetGPU(), "GPU %");
 	if (showAsyncTimes)
 		GUI::ShowPieGraph(asyncTimes, "Async Times (µs)");
 	if (showObjectData)
@@ -212,6 +206,20 @@ void HalesiaEngine::UpdateAsyncCompletionTimes(float frameDelta)
 	asyncTimes.push_back(asyncRendererCompletionTime * 1000);
 }
 
+void HalesiaEngine::PlayIntro()
+{
+	if (!playIntro)
+		return;
+
+	Intro* intro = new Intro();
+	intro->Create(core.renderer->swapchain, "textures/floor.png");
+
+	core.renderer->RenderIntro(intro);
+	intro->Destroy();
+
+	delete intro;
+}
+
 HalesiaExitCode HalesiaEngine::Run()
 {
 	std::string lastCommand;
@@ -228,16 +236,8 @@ HalesiaExitCode HalesiaEngine::Run()
 		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
 		core.window->maximized = true;
-		if (playIntro)
-		{
-			Intro* intro = new Intro();
-			intro->Create(core.renderer->swapchain, "textures/floor.png");
 
-			core.renderer->RenderIntro(intro);
-			intro->Destroy();
-
-			delete intro;
-		}
+		PlayIntro();
 		
 		core.scene->Start();
 		while (!core.window->ShouldClose())
@@ -360,12 +360,12 @@ void HalesiaEngine::LoadVars()
 	core.renderer->internalScale =         VVM::FindVariable("renderer.internalRes", groups).As<float>();
 	Renderer::shouldRenderCollisionBoxes = VVM::FindVariable("renderer.renderCollision", groups).As<bool>();
 	Renderer::denoiseOutput =              VVM::FindVariable("renderer.denoiseOutput", groups).As<bool>();
-	RayTracingPipeline::raySampleCount =           VVM::FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
-	RayTracingPipeline::rayDepth =                 VVM::FindVariable("renderer.ray-tracing.rayDepth", groups).As<int>();
-	RayTracingPipeline::showNormals =              VVM::FindVariable("renderer.ray-tracing.showNormals", groups).As<bool>();
-	RayTracingPipeline::showUniquePrimitives =     VVM::FindVariable("renderer.ray-tracing.showUnique", groups).As<bool>();
-	RayTracingPipeline::showAlbedo =               VVM::FindVariable("renderer.ray-tracing.showAlbedo", groups).As<bool>();
-	RayTracingPipeline::renderProgressive =        VVM::FindVariable("renderer.ray-tracing.renderProgressive", groups).As<bool>();
+	RayTracingPipeline::raySampleCount =       VVM::FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
+	RayTracingPipeline::rayDepth =             VVM::FindVariable("renderer.ray-tracing.rayDepth", groups).As<int>();
+	RayTracingPipeline::showNormals =          VVM::FindVariable("renderer.ray-tracing.showNormals", groups).As<bool>();
+	RayTracingPipeline::showUniquePrimitives = VVM::FindVariable("renderer.ray-tracing.showUnique", groups).As<bool>();
+	RayTracingPipeline::showAlbedo =           VVM::FindVariable("renderer.ray-tracing.showAlbedo", groups).As<bool>();
+	RayTracingPipeline::renderProgressive =    VVM::FindVariable("renderer.ray-tracing.renderProgressive", groups).As<bool>();
 
 	std::cout << "Finished loading from cfg/vars.vvm\n";
 }
@@ -406,8 +406,8 @@ void HalesiaEngine::OnExit()
 void HalesiaEngine::RegisterConsoleVars()
 {
 	Console::AddConsoleVariables<bool>(
-		{ "pauseGame", "showFPS", "playOneFrame", "showRAM", "showCPU", "showGPU", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "denoiseOutput", "disableAnimations" },
-		{ &pauseGame, &showFPS, &playOneFrame, &showRAM, &showCPU, &showGPU, &showAsyncTimes, &showObjectData, &RayTracingPipeline::showNormals, &RayTracingPipeline::showAlbedo, &RayTracingPipeline::showUniquePrimitives, &RayTracingPipeline::renderProgressive, &core.renderer->shouldRasterize, &Renderer::denoiseOutput, &core.animationManager->disable }
+		{ "pauseGame", "showFPS", "playOneFrame", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "denoiseOutput", "disableAnimations" },
+		{ &pauseGame, &showFPS, &playOneFrame, &showAsyncTimes, &showObjectData, &RayTracingPipeline::showNormals, &RayTracingPipeline::showAlbedo, &RayTracingPipeline::showUniquePrimitives, &RayTracingPipeline::renderProgressive, &core.renderer->shouldRasterize, &Renderer::denoiseOutput, &core.animationManager->disable }
 	);
 	Console::AddConsoleVariable("raySamples", &RayTracingPipeline::raySampleCount);
 	Console::AddConsoleVariable("rayDepth", &RayTracingPipeline::rayDepth);

@@ -393,7 +393,7 @@ void GUI::ShowDevConsole()
 		ImGui::End();
 }
 
-void GUI::ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGraph, bool& cpuGraph, bool& gpuGraph)
+void GUI::ShowMainMenuBar(bool& showWindowData, bool& showObjMeta)
 {
 	ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.02f, 0.02f, 0.02f, 1));
@@ -413,10 +413,6 @@ void GUI::ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGrap
 	{
 		if (ImGui::Button("object metadata")) showObjMeta = !showObjMeta;
 		if (ImGui::Button("window data")) showWindowData = !showWindowData;
-		ImGui::Separator();
-		if (ImGui::Button("RAM graph")) ramGraph = !ramGraph;
-		if (ImGui::Button("CPU graph")) cpuGraph = !cpuGraph;
-		if (ImGui::Button("GPU graph")) gpuGraph = !gpuGraph;
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("renderer"))
@@ -541,7 +537,9 @@ void GUI::ShowGraph(const std::vector<uint64_t>& buffer, const char* label, floa
 		ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
 	SetImGuiColors();
 
-	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);
+	std::string uid = '#' + (std::string)label;
+
+	ImPlot::BeginPlot(uid.c_str(), ImVec2(-1, 0), ImPlotFlags_NoFrame);
 	ImPlot::SetupAxisLimits(ImAxis_X1, 0, buffer.size());
 	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, max);
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
@@ -557,7 +555,9 @@ void GUI::ShowGraph(const std::vector<float>& buffer, const char* label, float m
 		ImGui::Begin(label, nullptr, ImGuiWindowFlags_NoScrollbar);
 	SetImGuiColors();
 
-	ImPlot::BeginPlot("##Ram Usage Over Time", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);
+	std::string uid = '#' + (std::string)label;
+
+	ImPlot::BeginPlot(uid.c_str(), ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);
 	ImPlot::SetupAxisLimits(ImAxis_X1, 0, buffer.size());
 	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, max);
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
@@ -705,6 +705,7 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 	{
 		ShowGraph(profiler->GetCPU(), "CPU usage %");
 		ShowGraph(profiler->GetGPU(), "GPU usage %");
+		ShowGraph(profiler->GetRAM(), "RAM usage (MB)", profiler->GetRAM()[0] * 1.2f);
 	}
 
 	createWindow = true;
