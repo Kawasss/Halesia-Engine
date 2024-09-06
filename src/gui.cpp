@@ -212,6 +212,7 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* wind
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
+
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 5);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
 	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5);
@@ -233,18 +234,21 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* wind
 		items.push_back(object->name);
 	ShowDropdownMenu(items, currentItem, objectIndex, "##ObjectComponents");
 
-	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
-	if (objectIndex != -1 && ImGui::CollapsingHeader("Metadata", flags))
-		ShowObjectData(objects[objectIndex]);
+	if (objectIndex != -1)
+	{
+		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
+		if (ImGui::CollapsingHeader("Metadata", flags))
+			ShowObjectData(objects[objectIndex]);
 
-	if (objectIndex != -1 && ImGui::CollapsingHeader("Transform", flags))
-		ShowObjectTransform(objects[objectIndex]->transform);
+		if (ImGui::CollapsingHeader("Transform", flags))
+			ShowObjectTransform(objects[objectIndex]->transform);
 
-	if (objectIndex != -1 && ImGui::CollapsingHeader("Rigid body", flags) && objects[objectIndex]->rigid.type != RIGID_BODY_NONE)
-		ShowObjectRigidBody(objects[objectIndex]->rigid);
+		if (ImGui::CollapsingHeader("Rigid body", flags) && objects[objectIndex]->rigid.type != RIGID_BODY_NONE)
+			ShowObjectRigidBody(objects[objectIndex]->rigid);
 
-	if (objectIndex != -1 && ImGui::CollapsingHeader("Meshes", flags) && objects[objectIndex]->mesh.IsValid())
-		ShowObjectMeshes(objects[objectIndex]->mesh);
+		if (ImGui::CollapsingHeader("Meshes", flags) && objects[objectIndex]->mesh.IsValid())
+			ShowObjectMeshes(objects[objectIndex]->mesh);
+	}
 
 	ImGui::PopStyleVar(3);
 	ImGui::PopStyleColor(3);
@@ -391,49 +395,6 @@ void GUI::ShowDevConsole()
 
 	if (createWindow)
 		ImGui::End();
-}
-
-void GUI::ShowMainMenuBar(bool& showWindowData, bool& showObjMeta)
-{
-	ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
-	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.02f, 0.02f, 0.02f, 1));
-	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 5);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 2);
-	ImGui::BeginMainMenuBar();
-	if (ImGui::BeginMenu("file"))
-	{
-		ImGui::Text("Load object");
-		ImGui::Separator();
-		if (ImGui::Button("Exit"))
-			exit(0);
-		ImGui::EndMenu();
-	}
-	if (ImGui::BeginMenu("view"))
-	{
-		if (ImGui::Button("object metadata")) showObjMeta = !showObjMeta;
-		if (ImGui::Button("window data")) showWindowData = !showWindowData;
-		ImGui::EndMenu();
-	}
-	if (ImGui::BeginMenu("renderer"))
-	{
-		if (ImGui::Button("show albedo"))  RayTracingPipeline::showAlbedo = !RayTracingPipeline::showAlbedo;
-		if (ImGui::Button("show normals")) RayTracingPipeline::showNormals = !RayTracingPipeline::showNormals;
-		if (ImGui::Button("show unique"))  RayTracingPipeline::showUniquePrimitives = !RayTracingPipeline::showUniquePrimitives;
-		ImGui::Separator();
-		if (ImGui::Button("show collision boxes")) Renderer::shouldRenderCollisionBoxes = !Renderer::shouldRenderCollisionBoxes;
-		ImGui::Separator();
-		ImGui::Button("view statistics");
-		ImGui::EndMenu();
-	}
-	ImGui::EndMainMenuBar();
-	ImGui::PopStyleVar(2);
-	ImGui::PopStyleColor(3);
-}
-
-void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Window* window)
-{
-	
 }
 
 void GUI::ShowObjectTable(const std::vector<Object*>& objects)

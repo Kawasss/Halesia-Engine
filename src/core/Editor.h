@@ -1,6 +1,8 @@
 #pragma once
 #include "Scene.h"
 
+class Window;
+
 class Editor : public Scene
 {
 public:
@@ -10,4 +12,6 @@ public:
 
 private:
 	void ShowMenuBar();
+	void ShowSideBars();
+	void ShowObjectComponents(int index, Window* window);
 };
