@@ -1,5 +1,4 @@
 engineCore: 
-	useEditorUI: 0
 	showFPS: 1
 	maxFPS: -1
 	consoleKey: 192
@@ -10,7 +9,7 @@ renderer:
 	ray-tracing: 
 		raySamples: 2
 		rayDepth: 8
-		showNormals: 0
+		showNormals: 1
 		showUnique: 0
 		showAlbedo: 0
 		renderProgressive: 1

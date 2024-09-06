@@ -25,7 +25,6 @@ struct HalesiaEngineCreateInfo
 	Win32WindowCreateInfo windowCreateInfo{};
 	VirtualKey devConsoleKey = VirtualKey::Tilde;
 	bool enableDevConsole = true;
-	bool useEditor = false;
 	bool playIntro = true;
 	RendererFlags renderFlags;
 
@@ -35,11 +34,11 @@ struct HalesiaEngineCreateInfo
 
 struct EngineCore
 {
-	Renderer* renderer;
-	Window* window;
-	Scene* scene;
-	Profiler* profiler;
-	AnimationManager* animationManager;
+	Renderer* renderer = nullptr;
+	Window* window = nullptr;
+	Scene* scene = nullptr;
+	Profiler* profiler = nullptr;
+	AnimationManager* animationManager = nullptr;
 	int maxFPS = -1;
 };
 
@@ -62,21 +61,8 @@ public:
 	bool showAsyncTimes = false;
 	bool showObjectData = false;
 	bool showWindowData = false;
-	bool useEditor = false;
 
 private:
-	struct UpdateRendererData
-	{
-		float delta;
-	};
-
-	struct UpdateSceneData
-	{
-		float delta;
-		bool pauseGame;
-		bool& playOneFrame;
-	};
-
 	void CheckInput();
 	void UpdateAsyncCompletionTimes(float frameDelta);
 	void RegisterConsoleVars();

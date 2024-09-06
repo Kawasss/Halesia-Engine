@@ -105,7 +105,6 @@ int main(int argc, char** argv)
 	createInfo.windowCreateInfo.extendedWindowStyle = ExtendedWindowStyle::DragAndDropFiles;
 	createInfo.windowCreateInfo.startMaximized = false;
 #ifdef _DEBUG
-	createInfo.useEditor = true;
 	createInfo.playIntro = false;
 #endif
 

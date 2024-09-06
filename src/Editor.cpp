@@ -23,11 +23,16 @@ void Editor::Start()
 
 void Editor::Update(float delta)
 {
+
+}
+
+void Editor::UpdateGUI(float delta)
+{
 	EngineCore& core = HalesiaEngine::GetInstance()->GetEngineCore();
 
 	int selectedIndex = -1;
 
-	/*ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
+	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 5);
@@ -62,5 +67,9 @@ void Editor::Update(float delta)
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
 
-	GUI::ShowObjectComponents(allObjects, core.window, selectedIndex);*/
+	GUI::ShowObjectComponents(allObjects, core.window, selectedIndex);
+
+	bool _ = false; // temp fix
+
+	GUI::ShowMainMenuBar(_, _, _, _, _);
 }

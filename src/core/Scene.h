@@ -51,6 +51,7 @@ public:
 
 	virtual void Start() {};
 	virtual void Update(float delta) {};
+	virtual void UpdateGUI(float delta) {};
 
 	~Scene() { Destroy(); }
 	void Destroy();

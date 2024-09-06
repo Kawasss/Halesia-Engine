@@ -114,6 +114,7 @@ void HalesiaEngine::Destroy()
 void HalesiaEngine::LoadScene(Scene* newScene)
 {
 	core.scene->Destroy();
+	delete core.scene;
 	core.scene = newScene;
 }
 
@@ -178,18 +179,7 @@ void HalesiaEngine::UpdateRenderer(float delta)
 	if (showObjectData)
 		GUI::ShowObjectTable(core.scene->allObjects);
 	
-	if (useEditor)
-	{
-		core.renderer->SetViewportOffsets({ 0.125f, 0 });
-		core.renderer->SetViewportModifiers({ 0.75f, 1 }); // doesnt have to be set every frame
-		GUI::ShowSceneGraph(core.scene->allObjects, core.window);
-		GUI::ShowMainMenuBar(showWindowData, showObjectData, showRAM, showCPU, showGPU);
-	}
-	else
-	{
-		core.renderer->SetViewportOffsets({ 0, 0 });
-		core.renderer->SetViewportModifiers({ 1, 1 }); // doesnt have to be set every frame
-	}
+	core.scene->UpdateGUI(delta);
 
 	core.renderer->DrawFrame(core.scene->allObjects, core.scene->camera, delta);
 
@@ -341,7 +331,6 @@ void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
 	InitializeCoreComponents();
 	InitializeSubSystems();
 	
-	useEditor = createInfo.useEditor;
 	devConsoleKey = createInfo.devConsoleKey;
 	playIntro = createInfo.playIntro;
 
@@ -364,7 +353,6 @@ void HalesiaEngine::LoadVars()
 	if (VVM::ReadFromFile("cfg/vars.vvm", groups) != VVM_SUCCESS)
 		return;
 
-	useEditor =   VVM::FindVariable("engineCore.useEditorUI", groups).As<bool>();
 	showFPS =     VVM::FindVariable("engineCore.showFPS", groups).As<bool>();
 	core.maxFPS = VVM::FindVariable("engineCore.maxFPS", groups).As<int>();
 	devConsoleKey = (VirtualKey)VVM::FindVariable("engineCore.consoleKey", groups).As<int>();
@@ -387,7 +375,6 @@ void HalesiaEngine::OnExit()
 	Audio::Destroy();
 
 	VVM::PushGroup("engineCore");
-	VVM::AddVariable("useEditorUI", useEditor);
 	VVM::AddVariable("showFPS", showFPS);
 	VVM::AddVariable("maxFPS", core.maxFPS);
 	VVM::AddVariable("consoleKey", (int)devConsoleKey);
@@ -419,8 +406,8 @@ void HalesiaEngine::OnExit()
 void HalesiaEngine::RegisterConsoleVars()
 {
 	Console::AddConsoleVariables<bool>(
-		{ "pauseGame", "showFPS", "playOneFrame", "showRAM", "showCPU", "showGPU", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "useEditorUI", "denoiseOutput", "disableAnimations" },
-		{ &pauseGame, &showFPS, &playOneFrame, &showRAM, &showCPU, &showGPU, &showAsyncTimes, &showObjectData, &RayTracingPipeline::showNormals, &RayTracingPipeline::showAlbedo, &RayTracingPipeline::showUniquePrimitives, &RayTracingPipeline::renderProgressive, &core.renderer->shouldRasterize, &useEditor, &Renderer::denoiseOutput, &core.animationManager->disable }
+		{ "pauseGame", "showFPS", "playOneFrame", "showRAM", "showCPU", "showGPU", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "denoiseOutput", "disableAnimations" },
+		{ &pauseGame, &showFPS, &playOneFrame, &showRAM, &showCPU, &showGPU, &showAsyncTimes, &showObjectData, &RayTracingPipeline::showNormals, &RayTracingPipeline::showAlbedo, &RayTracingPipeline::showUniquePrimitives, &RayTracingPipeline::renderProgressive, &core.renderer->shouldRasterize, &Renderer::denoiseOutput, &core.animationManager->disable }
 	);
 	Console::AddConsoleVariable("raySamples", &RayTracingPipeline::raySampleCount);
 	Console::AddConsoleVariable("rayDepth", &RayTracingPipeline::rayDepth);
