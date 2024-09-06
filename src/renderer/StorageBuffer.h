@@ -54,6 +54,9 @@ public:
 
 	StorageMemory SubmitNewData(const std::vector<T>& data)
 	{
+		if (data.empty())
+			return 0;
+
 		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
 		VkDeviceSize writeSize = sizeof(T) * data.size();
 

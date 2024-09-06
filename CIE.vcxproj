@@ -167,6 +167,7 @@
     <ClCompile Include="src\Deferred.cpp" />
     <ClCompile Include="src\Denoiser.cpp" />
     <ClCompile Include="src\DescriptorWriter.cpp" />
+    <ClCompile Include="src\Editor.cpp" />
     <ClCompile Include="src\ForwardPlus.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
@@ -228,6 +229,7 @@
     <ClInclude Include="src\core\Behavior.h" />
     <ClInclude Include="src\core\Camera.h" />
     <ClInclude Include="src\core\Console.h" />
+    <ClInclude Include="src\core\Editor.h" />
     <ClInclude Include="src\core\Object.h" />
     <ClInclude Include="src\core\ObjectStreamer.h" />
     <ClInclude Include="src\core\Profiler.h" />

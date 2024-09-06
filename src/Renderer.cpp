@@ -734,6 +734,8 @@ void Renderer::OnResize()
 	UpdateScreenShaderTexture(currentFrame);
 
 	testWindow->resized = false;
+	shouldResize = false;
+
 	Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px (" + std::to_string(int(internalScale * 100)) + "%% scale)");
 }
 
@@ -749,7 +751,7 @@ void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
 	presentInfo.pImageIndices = &imageIndex;
 
 	VkResult result = vkQueuePresentKHR(presentQueue, &presentInfo);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || testWindow->resized)
+	if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || testWindow->resized || shouldResize)
 	{
 		OnResize();
 	}
@@ -852,8 +854,8 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	receivedObjects += objects.size();
 	renderedObjects += activeObjects.size();
 	
-	if (activeObjects.empty())
-		return;
+	//if (activeObjects.empty())
+	//	return;
 
 	std::lock_guard<std::mutex> lockGuard(drawingMutex);
 
@@ -926,7 +928,7 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 		framebuffer.Resize(viewportWidth, viewportHeight); // recreating the framebuffer will use single time commands, even if it is resized inside a render loop, causing wasted time (fix !!)
 	}
 
-	imageView = (shouldRasterize || !canRayTrace) ? framebuffer.GetViews()[0] : rayTracer->gBufferViews[0];
+	imageView = (shouldRasterize || !canRayTrace || rayTracer == nullptr) ? framebuffer.GetViews()[0] : rayTracer->gBufferViews[0];
 	screenPipeline->BindImageToName("image", imageView, resultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	writer->Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
 }
@@ -1007,13 +1009,13 @@ void Renderer::SetViewportModifiers(glm::vec2 modifiers)
 	if (viewportTransModifiers == modifiers)
 		return;
 	viewportTransModifiers = modifiers;
-	OnResize();
+	shouldResize = true;
 }
 
 void Renderer::SetInternalResolutionScale(float scale)
 {
 	internalScale = scale;
-	OnResize();
+	shouldResize = true;
 }
 
 float Renderer::GetInternalResolutionScale()

@@ -9,6 +9,8 @@
 #include "core/UniquePointer.h"
 #include "core/ObjectStreamer.h"
 
+#include "core/Editor.h"
+
 class Room : public Scene
 {
 	void Start() override
@@ -93,7 +95,7 @@ int main(int argc, char** argv)
 	HalesiaEngineCreateInfo createInfo{};
 	createInfo.argsCount = argc;
 	createInfo.args = argv;
-	createInfo.startingScene = new Room();
+	createInfo.startingScene = new Editor();
 	createInfo.renderFlags = Renderer::Flags::NO_FILTERING_ON_RESULT;
 	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;

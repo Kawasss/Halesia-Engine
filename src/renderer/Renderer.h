@@ -177,7 +177,7 @@ private:
 
 	static bool initGlobalBuffers;
 
-	bool preparedScreen = false; // hacky
+	bool shouldResize = false; // this uses a bool so that other threads can request the renderer to resize
 
 	void InitVulkan();
 	void SetLogicalDevice();

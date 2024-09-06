@@ -437,46 +437,7 @@ void GUI::ShowMainMenuBar(bool& showWindowData, bool& showObjMeta, bool& ramGrap
 
 void GUI::ShowSceneGraph(const std::vector<Object*>& objects, Window* window)
 {
-	int selectedIndex = -1;
-
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
-	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.03f, 0.03f, 0.03f, 1));
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 5);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-	ImGuiStyle& style = ImGui::GetStyle();
-	ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetFrameHeight() + style.FramePadding.y));
-	ImGui::SetNextWindowSize(ImVec2(window->GetWidth() / 8, window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
-	if (createWindow)
-		ImGui::Begin("scene graph", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
-	ImGui::BeginChild(1, ImVec2(0, (window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y) / 2));
-	for (int i = 0; i < objects.size(); i++)
-	{
-		if (objects[i]->HasChildren())
-		{
-			if (ImGui::Selectable(objects[i]->name.c_str()))
-				selectedIndex = i;
-			continue;
-		}
-
-		if (!ImGui::TreeNode(objects[i]->name.c_str()))
-			continue;
-		selectedIndex = i;
-
-		const std::vector<Object*>& children = objects[i]->GetChildren();
-		for (int j = 0; j < children.size(); j++)
-		{
-			ImGui::Text(children[j]->name.c_str());
-		}
-		ImGui::TreePop();
-	}
-	ImGui::EndChild();
-	if (createWindow)
-		ImGui::End();
-	ImGui::PopStyleVar(2);
-	ImGui::PopStyleColor(3);
-
-	ShowObjectComponents(objects, window, selectedIndex);
+	
 }
 
 void GUI::ShowObjectTable(const std::vector<Object*>& objects)
