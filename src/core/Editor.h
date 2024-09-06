@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+
 #include "Scene.h"
 
 class Window;
@@ -14,4 +16,16 @@ private:
 	void ShowMenuBar();
 	void ShowSideBars();
 	void ShowObjectComponents(int index, Window* window);
+
+	void DestroyCurrentScene();
+
+	std::string GetFile();
+	void LoadFile();
+	void SaveToFile();
+
+	bool addObject = false;
+	bool loadFile = false;
+	bool save = false;
+
+	std::string src;
 };

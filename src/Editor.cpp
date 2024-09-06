@@ -1,8 +1,14 @@
+#include <Windows.h>
+#include <commdlg.h>
+
 #include "core/Editor.h"
 #include "core/Object.h"
 
 #include "renderer/gui.h"
 #include "renderer/RayTracing.h"
+
+#include "io/SceneLoader.h"
+#include "io/SceneWriter.h"
 
 #include "HalesiaEngine.h"
 
@@ -19,12 +25,23 @@ void Editor::Start()
 	EngineCore& core = HalesiaEngine::GetInstance()->GetEngineCore();
 
 	core.renderer->SetViewportOffsets({ 0.125f, 0 });
-	core.renderer->SetViewportModifiers({ 0.75f, 1 }); // doesnt have to be set every frame
+	core.renderer->SetViewportModifiers({ 0.75f, 1 });
+
+	src = GetFile();
+	LoadFile();
 }
 
 void Editor::Update(float delta)
 {
+	if (loadFile)
+	{
+		src = GetFile();
+		DestroyCurrentScene();
+		LoadFile();
+	}
 
+	if (save)
+		SaveToFile();
 }
 
 void Editor::UpdateGUI(float delta)
@@ -101,9 +118,16 @@ void Editor::ShowMenuBar()
 	if (ImGui::BeginMenu("file"))
 	{
 		ImGui::Text("Load object");
+
 		ImGui::Separator();
+
+		if (ImGui::Button("Load file")) loadFile = true;
+		if (ImGui::Button("Save file")) save = true;
+
+		ImGui::Separator();
+
 		if (ImGui::Button("Exit"))
-			exit(0);
+			throw std::exception("Exit requested via UI");
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("view"))
@@ -123,6 +147,12 @@ void Editor::ShowMenuBar()
 		ImGui::Button("view statistics");
 		ImGui::EndMenu();
 	}
+	if (ImGui::BeginMenu("Add"))
+	{
+		if (ImGui::Button("object")) addObject = true;
+		ImGui::EndMenu();
+	}
+
 	ImGui::EndMainMenuBar();
 
 	ImGui::PopStyleVar(2);
@@ -187,4 +217,57 @@ void Editor::ShowObjectComponents(int index, Window* window)
 	ImGui::PopStyleColor(3);
 
 	ImGui::End();
+}
+
+void Editor::DestroyCurrentScene()
+{
+	for (Object* obj : allObjects)
+		delete obj;
+
+	for (int i = 1; i < Mesh::materials.size(); i++)
+	{
+		auto it = Mesh::materials.begin() + i;
+
+		Mesh::materials[i].Destroy();
+		Mesh::materials.erase(it);
+	}
+}
+
+void Editor::LoadFile()
+{
+	SceneLoader loader(src);
+	loader.LoadScene();
+
+	for (const ObjectCreationData& data : loader.objects)
+		AddStaticObject(data);
+
+	for (const MaterialCreationData& data : loader.materials)
+		Mesh::materials.push_back(Material::Create(data));
+}
+
+void Editor::SaveToFile()
+{
+	std::async(&HSFWriter::WriteHSFScene, this, src);
+}
+
+std::string Editor::GetFile()
+{
+	Window* window = HalesiaEngine::GetInstance()->GetEngineCore().window;
+
+	OPENFILENAMEA ofn;
+	char szFile[260] = { 0 };
+
+	ZeroMemory(&ofn, sizeof(ofn));
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = window->window;
+	ofn.lpstrFile = szFile;
+	ofn.nMaxFile = sizeof(szFile);
+	ofn.lpstrFilter = "Halesia Scene File(.hsf)\0*.hsf\0";
+	ofn.nFilterIndex = 1;
+	ofn.lpstrFileTitle = NULL;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = NULL;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+
+	return GetOpenFileNameA(&ofn) == TRUE ? ofn.lpstrFile : "";
 }
