@@ -10,6 +10,9 @@ class EditorCamera : public Camera
 {
 public:
 	void Update(Window* window, float delta) override;
+
+private:
+	bool active = false;
 };
 
 class Editor : public Scene

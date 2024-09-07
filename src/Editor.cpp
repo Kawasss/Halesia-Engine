@@ -10,6 +10,8 @@
 #include "io/SceneLoader.h"
 #include "io/SceneWriter.h"
 
+#include "system/Input.h"
+
 #include "HalesiaEngine.h"
 
 #define IMGUI_IMPLEMENTATION
@@ -20,9 +22,39 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include <imgui-1.89.8/imgui-1.89.8/imspinner.h>	
 
+void EditorCamera::Update(Window* window, float delta)
+{
+	int viewportWidth  = window->GetWidth() * 0.75f;
+	int viewportHeight = window->GetHeight();
+
+	int viewportX = window->GetWidth() * 0.125f;
+	int viewportY = 0;
+
+	int mouseX = 0;
+	int mouseY = 0;
+
+	window->GetAbsoluteCursorPosition(mouseX, mouseY);
+
+	bool isInViewport    = (mouseX > viewportX && mouseX < (viewportX + viewportWidth)) && (mouseY > viewportY && mouseY < (viewportY + viewportHeight));
+	bool buttonIsPressed = Input::IsKeyPressed(VirtualKey::MiddleMouseButton);
+
+	Console::WriteLine(std::to_string(isInViewport));
+
+	if (isInViewport && buttonIsPressed)
+		active = true;
+
+	else if (!buttonIsPressed)
+		active = false;
+
+	if (active)
+		DefaultUpdate(window, delta);
+}
+
 void Editor::Start()
 {
 	EngineCore& core = HalesiaEngine::GetInstance()->GetEngineCore();
+
+	camera = AddCustomCamera<EditorCamera>();
 
 	core.renderer->SetViewportOffsets({ 0.125f, 0 });
 	core.renderer->SetViewportModifiers({ 0.75f, 1 });
