@@ -28,6 +28,9 @@ void Editor::Start()
 	core.renderer->SetViewportModifiers({ 0.75f, 1 });
 
 	src = GetFile();
+	if (src == "")
+		return;
+
 	LoadFile();
 }
 
@@ -36,12 +39,33 @@ void Editor::Update(float delta)
 	if (loadFile)
 	{
 		src = GetFile();
-		DestroyCurrentScene();
-		LoadFile();
+		if (src != "")
+		{
+			DestroyCurrentScene();
+			LoadFile();
+		}
 	}
 
 	if (save)
 		SaveToFile();
+
+	if (addObject) // AddStaticObject is NOT safe enough to use with the gui loop checking the 'allObjects' vector with async generation
+	{
+		Object* obj = AddStaticObject({ "new object" });
+
+		addObject = false;
+	}
+
+	if (allObjects.size() == 0)
+	{
+		UIObjects.clear();
+		return;
+	}
+		
+	if (UIObjects.size() != allObjects.size())
+		UIObjects.resize(allObjects.size());
+
+	memcpy(UIObjects.data(), allObjects.data(), sizeof(Object*) * allObjects.size());
 }
 
 void Editor::UpdateGUI(float delta)
@@ -74,20 +98,20 @@ void Editor::ShowSideBars()
 	ImGui::Begin("scene graph", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 	ImGui::BeginChild(1, ImVec2(0, (core.window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y) / 2));
 
-	for (int i = 0; i < allObjects.size(); i++)
+	for (int i = 0; i < UIObjects.size(); i++)
 	{
-		if (allObjects[i]->HasChildren())
+		if (UIObjects[i]->HasChildren())
 		{
-			if (ImGui::Selectable(allObjects[i]->name.c_str()))
+			if (ImGui::Selectable(UIObjects[i]->name.c_str()))
 				selectedIndex = i;
 			continue;
 		}
 
-		if (!ImGui::TreeNode(allObjects[i]->name.c_str()))
+		if (!ImGui::TreeNode(UIObjects[i]->name.c_str()))
 			continue;
 		selectedIndex = i;
 
-		const std::vector<Object*>& children = allObjects[i]->GetChildren();
+		const std::vector<Object*>& children = UIObjects[i]->GetChildren();
 		for (int j = 0; j < children.size(); j++)
 		{
 			ImGui::Text(children[j]->name.c_str());
@@ -149,7 +173,7 @@ void Editor::ShowMenuBar()
 	}
 	if (ImGui::BeginMenu("Add"))
 	{
-		if (ImGui::Button("object")) addObject = true;
+		if (ImGui::Button("Object")) addObject = true;
 		ImGui::EndMenu();
 	}
 
@@ -163,7 +187,7 @@ void Editor::ShowObjectComponents(int index, Window* window)
 {
 	static std::string currentItem = "None";
 	static int objectIndex = -1;
-	if (objectIndex >= allObjects.size())
+	if (objectIndex >= UIObjects.size())
 		objectIndex = -1;
 	if (index != -1)
 		objectIndex = index;
@@ -187,8 +211,9 @@ void Editor::ShowObjectComponents(int index, Window* window)
 	ImGui::SetNextWindowSize(ImVec2(window->GetWidth() / 8, window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
 
 	std::vector<std::string> items; // not the most optimal way
-	for (Object* object : allObjects)
-		items.push_back(object->name);
+	for (Object* object : UIObjects)
+		if (object->HasFinishedLoading())
+			items.push_back(object->name);
 
 	ImGui::SetNextWindowPos(ImVec2(window->GetWidth() * 7 / 8, ImGui::GetFrameHeight() + style.FramePadding.y));
 	ImGui::SetNextWindowSize(ImVec2(window->GetWidth() / 8, window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
@@ -201,16 +226,16 @@ void Editor::ShowObjectComponents(int index, Window* window)
 	{
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
 		if (ImGui::CollapsingHeader("Metadata", flags))
-			GUI::ShowObjectData(allObjects[objectIndex]);
+			GUI::ShowObjectData(UIObjects[objectIndex]);
 
 		if (ImGui::CollapsingHeader("Transform", flags))
-			GUI::ShowObjectTransform(allObjects[objectIndex]->transform);
+			GUI::ShowObjectTransform(UIObjects[objectIndex]->transform);
 
-		if (ImGui::CollapsingHeader("Rigid body", flags) && allObjects[objectIndex]->rigid.type != RIGID_BODY_NONE)
-			GUI::ShowObjectRigidBody(allObjects[objectIndex]->rigid);
+		if (ImGui::CollapsingHeader("Rigid body", flags) && UIObjects[objectIndex]->rigid.type != RIGID_BODY_NONE)
+			GUI::ShowObjectRigidBody(UIObjects[objectIndex]->rigid);
 
-		if (ImGui::CollapsingHeader("Meshes", flags) && allObjects[objectIndex]->mesh.IsValid())
-			GUI::ShowObjectMeshes(allObjects[objectIndex]->mesh);
+		if (ImGui::CollapsingHeader("Meshes", flags) && UIObjects[objectIndex]->mesh.IsValid())
+			GUI::ShowObjectMeshes(UIObjects[objectIndex]->mesh);
 	}
 
 	ImGui::PopStyleVar(3);

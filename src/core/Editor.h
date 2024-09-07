@@ -28,4 +28,6 @@ private:
 	bool save = false;
 
 	std::string src;
+
+	std::vector<Object*> UIObjects; // the objects in the UI are seperate from the actual objects, because UpdateGUI and Update run at the same time and can clash
 };
