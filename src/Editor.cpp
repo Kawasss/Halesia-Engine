@@ -27,7 +27,7 @@ void Editor::Start()
 	core.renderer->SetViewportOffsets({ 0.125f, 0 });
 	core.renderer->SetViewportModifiers({ 0.75f, 1 });
 
-	src = GetFile();
+	src = GetFile("Halesia Scene File (.hsf)\0*.hsf\0");
 	if (src == "")
 		return;
 
@@ -38,7 +38,7 @@ void Editor::Update(float delta)
 {
 	if (loadFile)
 	{
-		src = GetFile();
+		src = GetFile("Halesia Scene File (.hsf)\0*.hsf\0");
 		if (src != "")
 		{
 			DestroyCurrentScene();
@@ -77,6 +77,31 @@ void Editor::UpdateGUI(float delta)
 	ShowMenuBar();
 }
 
+void Editor::MainThreadUpdate(float delta)
+{
+	if (!queuedMeshChange.isApplied)
+		queuedMeshChange.path = GetFile("Object file (.obj)\0*.obj\0");
+	else return;
+
+	if (queuedMeshChange.path.empty())
+	{
+		queuedMeshChange.isApplied = true;
+		return;
+	}
+
+	Object* obj = queuedMeshChange.object;
+	
+	ObjectCreationData creationData = GenericLoader::LoadObjectFile(queuedMeshChange.path);
+
+	uint32_t matIndex = obj->mesh.materialIndex;
+
+	obj->mesh.Destroy();
+	obj->mesh.Create(creationData.mesh);
+	obj->mesh.materialIndex = matIndex;
+
+	queuedMeshChange.isApplied = true;
+}
+
 void Editor::ShowSideBars()
 {
 	HalesiaEngine* engine = HalesiaEngine::GetInstance();
@@ -87,6 +112,7 @@ void Editor::ShowSideBars()
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
+
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 5);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
 
@@ -96,7 +122,7 @@ void Editor::ShowSideBars()
 	ImGui::SetNextWindowSize(ImVec2(core.window->GetWidth() / 8, core.window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
 
 	ImGui::Begin("scene graph", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
-	ImGui::BeginChild(1, ImVec2(0, (core.window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y) / 2));
+	ImGui::BeginChild(1);
 
 	for (int i = 0; i < UIObjects.size(); i++)
 	{
@@ -222,9 +248,12 @@ void Editor::ShowObjectComponents(int index, Window* window)
 
 	GUI::ShowDropdownMenu(items, currentItem, objectIndex, "##ObjectComponents");
 
+	ImGui::BeginChild(2);
+
 	if (objectIndex != -1)
 	{
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
+
 		if (ImGui::CollapsingHeader("Metadata", flags))
 			GUI::ShowObjectData(UIObjects[objectIndex]);
 
@@ -236,12 +265,22 @@ void Editor::ShowObjectComponents(int index, Window* window)
 
 		if (ImGui::CollapsingHeader("Meshes", flags) && UIObjects[objectIndex]->mesh.IsValid())
 			GUI::ShowObjectMeshes(UIObjects[objectIndex]->mesh);
+
+		if (ImGui::Button("Change mesh"))
+			QueueMeshChange(UIObjects[objectIndex]);
 	}
 
 	ImGui::PopStyleVar(3);
 	ImGui::PopStyleColor(3);
 
+	ImGui::EndChild();
 	ImGui::End();
+}
+
+void Editor::QueueMeshChange(Object* object)
+{
+	queuedMeshChange.isApplied = false;
+	queuedMeshChange.object = object;
 }
 
 void Editor::DestroyCurrentScene()
@@ -275,7 +314,7 @@ void Editor::SaveToFile()
 	std::async(&HSFWriter::WriteHSFScene, this, src);
 }
 
-std::string Editor::GetFile()
+std::string Editor::GetFile(const char* filter)
 {
 	Window* window = HalesiaEngine::GetInstance()->GetEngineCore().window;
 
@@ -287,7 +326,7 @@ std::string Editor::GetFile()
 	ofn.hwndOwner = window->window;
 	ofn.lpstrFile = szFile;
 	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = "Halesia Scene File(.hsf)\0*.hsf\0";
+	ofn.lpstrFilter = filter;
 	ofn.nFilterIndex = 1;
 	ofn.lpstrFileTitle = NULL;
 	ofn.nMaxFileTitle = 0;
