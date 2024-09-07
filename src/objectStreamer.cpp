@@ -54,7 +54,7 @@ void FileStreamer::GetTime()
 ObjectStreamer::ObjectStreamer(Scene* scene, std::string path) : FileStreamer(path)
 {
 	ObjectCreationData creationData = GenericLoader::LoadObjectFile(path);
-	obj = scene->AddStaticObject(creationData); // only static objects!
+	obj = scene->AddObject(creationData); // only static objects!
 }
 
 void ObjectStreamer::Poll()

@@ -22,12 +22,12 @@ public:
 	Camera* camera = defaultCamera;
 
 	template<typename T> 
-	Object* AddCustomObject(const ObjectCreationData& creationData);
-	Object* AddStaticObject(const ObjectCreationData& creationData);
+	Object* AddObject(const ObjectCreationData& creationData);
+	Object* AddObject(const ObjectCreationData& creationData);
 	
 	template<typename T> 
-	Object* DuplicateCustomObject(Object* objPtr, std::string name);
-	Object* DuplicateStaticObject(Object* objPtr, std::string name);
+	Object* DuplicateObject(Object* objPtr, std::string name);
+	Object* DuplicateObject(Object* objPtr, std::string name);
 
 	template<typename T>
 	Camera* AddCustomCamera();
@@ -53,6 +53,8 @@ public:
 	virtual void Update(float delta) {};
 	virtual void UpdateGUI(float delta) {};
 
+	virtual void MainThreadUpdate(float delta) {}; // this is only called from the main thread and after the renderer completes a frames in flight cycle
+
 	~Scene() { Destroy(); }
 	void Destroy();
 
@@ -60,7 +62,7 @@ public:
 
 private:
 	void LoadFileIntoScene(std::string path);
-	void RegisterObjectPointer(Object* objPtr, bool isCustom);
+	void RegisterObjectPointer(Object* objPtr);
 	bool GetInternalObjectCreationData(std::string name, ObjectCreationData& creationData);
 
 	std::future<void> loadingProcess;
@@ -88,22 +90,22 @@ template<typename T> Camera* Scene::AddCustomCamera()
 	return ret;
 }
 
-template<typename T> Object* Scene::AddCustomObject(const ObjectCreationData& creationData)
+template<typename T> Object* Scene::AddObject(const ObjectCreationData& creationData)
 {
 	T* customPointer = new T();
 	Object* objPtr = customPointer;
-	RegisterObjectPointer(objPtr, true);
+	RegisterObjectPointer(objPtr);
 	objPtr->Initialize(creationData, customPointer);
 
 	return objPtr;
 }
 
-template<typename T> Object* Scene::DuplicateCustomObject(Object* objPtr, std::string name)
+template<typename T> Object* Scene::DuplicateObject(Object* objPtr, std::string name)
 {
 	T* tPtr = new T();
 	Object* newObjPtr = tPtr;
 	Object::Duplicate(objPtr, newObjPtr, name, tPtr);
-	RegisterObjectPointer(newObjPtr, true);
+	RegisterObjectPointer(newObjPtr);
 	newObjPtr->Start();
 	
 	return newObjPtr;

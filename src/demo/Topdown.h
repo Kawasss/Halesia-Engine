@@ -101,7 +101,7 @@ void Enemy::Update(float delta)
 
 void Enemy::SpawnBullet()
 {
-	Object* newBullet = GetParentScene()->DuplicateCustomObject<Bullet>(baseBullet, "bullet");
+	Object* newBullet = GetParentScene()->DuplicateObject<Bullet>(baseBullet, "bullet");
 	newBullet->name = std::to_string(newBullet->handle);
 	Bullet* script = newBullet->GetScript<Bullet>();
 	script->forward = glm::normalize(player->transform.position - transform.position);
@@ -177,7 +177,7 @@ void Ship::Update(float delta)
 
 void Ship::SpawnBullet()
 {
-	Object* newBullet = GetParentScene()->DuplicateCustomObject<Bullet>(baseBullet, "bullet");
+	Object* newBullet = GetParentScene()->DuplicateObject<Bullet>(baseBullet, "bullet");
 	newBullet->name = std::to_string(newBullet->handle);
 	Bullet* script = newBullet->GetScript<Bullet>();
 	script->forward = transform.GetForward();
@@ -249,14 +249,14 @@ class Topdown : public Scene
 	{
 		camera = AddCustomCamera<FollowCam>();
 
-		Object* ship = AddCustomObject<Ship>(GenericLoader::LoadObjectFile("stdObj/ship.obj"));
+		Object* ship = AddObject<Ship>(GenericLoader::LoadObjectFile("stdObj/ship.obj"));
 		ship->name = "ship";
 		ship->AwaitGeneration();
 		Shape shape = Box(ship->mesh.extents);
 		//ship->AddRigidBody(RIGID_BODY_KINEMATIC, shape);
 		camera->GetScript<FollowCam>()->objToFollow = ship;
 
-		Object* floor = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		Object* floor = AddObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
 		floor->AwaitGeneration();
 		floor->name = "floor";
 		floor->transform.scale = glm::vec3(20, 1, 20);
@@ -266,7 +266,7 @@ class Topdown : public Scene
 		floor->SetRigidBody(RIGID_BODY_STATIC, floorShape);
 		floor->rigid.ForcePosition(floor->transform);
 
-		Object* light = DuplicateStaticObject(floor, "light");
+		Object* light = DuplicateObject(floor, "light");
 		light->transform.position.y = 10;
 
 		MaterialCreateInfo lightInfo{};
@@ -282,7 +282,7 @@ class Topdown : public Scene
 		Material boxMat = Material::Create(boxInfo);
 		boxMat.AwaitGeneration();
 
-		Object* box = DuplicateCustomObject<Enemy>(floor, "box");
+		Object* box = DuplicateObject<Enemy>(floor, "box");
 		box->AwaitGeneration();
 		box->transform.scale = glm::vec3(1, 1, 1);
 		box->transform.position = glm::vec3(5, 0, 0);
@@ -293,7 +293,7 @@ class Topdown : public Scene
 		bulletInfo.isLight = true;
 		Material bulletMat = Material::Create(bulletInfo);
 
-		baseBullet = AddCustomObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/bullet.obj"));
+		baseBullet = AddObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/bullet.obj"));
 		baseBullet->name = "bullet";
 		baseBullet->SetRigidBody(RIGID_BODY_KINEMATIC, Box(baseBullet->mesh.extents));
 		baseBullet->state = OBJECT_STATE_DISABLED;

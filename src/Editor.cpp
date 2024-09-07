@@ -51,7 +51,7 @@ void Editor::Update(float delta)
 
 	if (addObject) // AddStaticObject is NOT safe enough to use with the gui loop checking the 'allObjects' vector with async generation
 	{
-		Object* obj = AddStaticObject({ "new object" });
+		Object* obj = AddObject({ "new object" });
 
 		addObject = false;
 	}
@@ -264,7 +264,7 @@ void Editor::LoadFile()
 	loader.LoadScene();
 
 	for (const ObjectCreationData& data : loader.objects)
-		AddStaticObject(data);
+		AddObject(data);
 
 	for (const MaterialCreationData& data : loader.materials)
 		Mesh::materials.push_back(Material::Create(data));

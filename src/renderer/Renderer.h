@@ -97,6 +97,8 @@ public:
 	static void BindBuffersForRendering(VkCommandBuffer commandBuffer);
 	static void RenderMesh(VkCommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount = 1);
 
+	static bool CompletedFIFCyle() { return FIF::frameIndex == 0; }
+
 	template<typename Type> void AddRenderPipeline()
 	{
 		Type* actualPtr = new Type();

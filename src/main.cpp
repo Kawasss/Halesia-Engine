@@ -28,7 +28,7 @@ class Room : public Scene
 
 		for (const auto& data : loader.objects)
 		{
-			AddStaticObject(data);
+			AddObject(data);
 		}
 	}
 };
@@ -45,7 +45,7 @@ class StreamerTest : public Scene
 		createInfo.isLight = true;
 		Material lightMat = Material::Create(createInfo);
 
-		Object* light = AddStaticObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		Object* light = AddObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
 		light->AwaitGeneration();
 		light->mesh.SetMaterial(lightMat);
 		light->transform.position.y += 10;
@@ -75,7 +75,7 @@ class Shooter : public Scene
 				continue;
 
 			objData.scale = glm::vec3(2);
-			AddStaticObject(objData);
+			AddObject(objData);
 		}
 			
 		animations = std::move(loader.animations);

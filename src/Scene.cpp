@@ -75,16 +75,6 @@ std::string GetNameFromPath(std::string path)
 	return fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 }
 
-Object* Scene::AddStaticObject(const ObjectCreationData& creationData)
-{
-	Object* objPtr = Object::Create(creationData);
-
-	objectHandles[objPtr->handle] = objPtr;
-	allObjects.push_back(objPtr);
-
-	return objPtr;
-}
-
 bool Scene::IsObjectHandleValid(Handle handle) 
 { 
 	return objectHandles.count(handle) > 0; 
@@ -109,7 +99,7 @@ bool Scene::GetInternalObjectCreationData(std::string name, ObjectCreationData& 
 	return false;
 }
 
-void Scene::RegisterObjectPointer(Object* objPtr, bool isCustom)
+void Scene::RegisterObjectPointer(Object* objPtr)
 {
 	objectHandles[objPtr->handle] = objPtr;
 	allObjects.push_back(objPtr);
@@ -126,14 +116,23 @@ void Scene::RegisterObjectPointer(Object* objPtr, bool isCustom)
 		}
 }
 
- Object* Scene::DuplicateStaticObject(Object* objPtr, std::string name)
+ Object* Scene::AddObject(const ObjectCreationData& creationData)
+ {
+	 Object* objPtr = Object::Create(creationData);
+
+	 RegisterObjectPointer(objPtr);
+
+	 return objPtr;
+ }
+
+ Object* Scene::DuplicateObject(Object* objPtr, std::string name)
  {
 	 Object* newPtr = new Object();
 	 Object::Duplicate(objPtr, newPtr, name, nullptr);
-	 RegisterObjectPointer(newPtr, false);
+	 RegisterObjectPointer(newPtr);
 
 	 return newPtr;
-}
+ }
 
 void Scene::Free(Object* object)
 {
