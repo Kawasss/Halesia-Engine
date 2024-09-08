@@ -10,6 +10,18 @@ class Camera;
 class Renderer;
 struct Light;
 
+enum class RenderMode : uint8_t // this enum is used as a suggestion
+{
+	DontCare,
+	Albedo,
+	Normal,
+	Metallic,
+	Roughness,
+	AmbientOcclusion,
+	Polygon,
+	UV,
+};
+
 class RenderPipeline
 {
 public:
@@ -30,6 +42,8 @@ public:
 	virtual void Resize(const Payload& payload) {}
 	virtual void AddLight(const Light& light)   {}
 
+	virtual void SetRenderMode(RenderMode mode) { renderMode = mode; }
+
 	virtual void OnRenderingBufferResize(const Payload& payload) {}
 
 	template<typename T> T* GetChild() { return reinterpret_cast<T*>(this); }
@@ -37,4 +51,7 @@ public:
 	VkRenderPass renderPass = VK_NULL_HANDLE;
 
 private:
+
+protected:
+	RenderMode renderMode = RenderMode::DontCare;
 };

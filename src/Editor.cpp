@@ -72,19 +72,6 @@ void Editor::Start()
 
 void Editor::Update(float delta)
 {
-	if (loadFile)
-	{
-		src = GetFile("Halesia Scene File (.hsf)\0*.hsf\0");
-		if (src != "")
-		{
-			DestroyCurrentScene();
-			LoadFile();
-		}
-	}
-
-	if (save)
-		SaveToFile();
-
 	if (addObject)
 	{
 		Object* obj = AddObject({ "new object" });
@@ -139,6 +126,24 @@ void Editor::MainThreadUpdate(float delta)
 	obj->mesh.materialIndex = matIndex;
 
 	queuedMeshChange.isApplied = true;
+
+	if (loadFile)
+	{
+		src = GetFile("Halesia Scene File (.hsf)\0*.hsf\0");
+		if (src != "")
+		{
+			DestroyCurrentScene();
+			LoadFile();
+		}
+		loadFile = false;
+	}
+
+	if (save)
+	{
+		SaveToFile();
+		save = false;
+	}
+
 }
 
 void Editor::ShowSideBars()
@@ -272,7 +277,6 @@ void Editor::ShowObjectComponents(int index)
 	colors[ImGuiCol_Button] = ImVec4(0.05f, 0.05f, 0.05f, 1);
 
 	ImGui::SetNextWindowPos(ImVec2(width * (1.0f - BAR_WIDTH), ImGui::GetFrameHeight() + style.FramePadding.y));
-	ImGui::SetNextWindowSize(ImVec2(width * BAR_WIDTH, height - ImGui::GetFrameHeight() - style.FramePadding.y));
 
 	std::vector<std::string> items; // not the most optimal way
 	for (Object* object : UIObjects)
