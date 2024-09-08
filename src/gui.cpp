@@ -381,6 +381,14 @@ void GUI::ShowDevConsole()
 	style.WindowRounding = 5;
 	style.WindowBorderSize = 2;
 
+	ShowDevConsoleContent();
+
+	if (createWindow)
+		ImGui::End();
+}
+
+void GUI::ShowDevConsoleContent()
+{
 	for (std::string message : Console::messages)
 	{
 		glm::vec3 color = Console::GetColorFromMessage(message);
@@ -392,9 +400,6 @@ void GUI::ShowDevConsole()
 
 	if (Input::IsKeyPressed(VirtualKey::Return)) // if enter is pressed place the input value into the optional variable
 		Console::InterpretCommand(result);
-
-	if (createWindow)
-		ImGui::End();
 }
 
 void GUI::ShowObjectTable(const std::vector<Object*>& objects)

@@ -33,7 +33,8 @@ private:
 
 	void ShowMenuBar();
 	void ShowSideBars();
-	void ShowObjectComponents(int index, Window* window);
+	void ShowLowerBar();
+	void ShowObjectComponents(int index);
 
 	void DestroyCurrentScene();
 
@@ -52,4 +53,6 @@ private:
 	std::vector<Object*> UIObjects; // the objects in the UI are seperate from the actual objects, because UpdateGUI and Update run at the same time and can clash
 
 	MeshChangeData queuedMeshChange;
+
+	int width = 0, height = 0;
 };

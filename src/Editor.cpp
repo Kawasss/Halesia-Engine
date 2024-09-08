@@ -22,13 +22,19 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include <imgui-1.89.8/imgui-1.89.8/imspinner.h>	
 
+constexpr float BAR_WIDTH = 0.15f;
+constexpr float LOWER_BAR_HEIGHT = 0.2f;
+
+constexpr float VIEWPORT_WIDTH = 1.0f - BAR_WIDTH * 2.0f;
+constexpr float VIEWPORT_HEIGHT = 1.0f - LOWER_BAR_HEIGHT;
+
 void EditorCamera::Update(Window* window, float delta)
 {
-	int viewportWidth  = window->GetWidth() * 0.75f;
-	int viewportHeight = window->GetHeight();
+	int viewportWidth  = window->GetWidth()  * VIEWPORT_WIDTH;
+	int viewportHeight = window->GetHeight() * VIEWPORT_HEIGHT;
 
-	int viewportX = window->GetWidth() * 0.125f;
-	int viewportY = 0;
+	int viewportX = window->GetWidth()  * BAR_WIDTH;
+	int viewportY = window->GetHeight() * LOWER_BAR_HEIGHT;
 
 	int mouseX = 0;
 	int mouseY = 0;
@@ -37,8 +43,6 @@ void EditorCamera::Update(Window* window, float delta)
 
 	bool isInViewport    = (mouseX > viewportX && mouseX < (viewportX + viewportWidth)) && (mouseY > viewportY && mouseY < (viewportY + viewportHeight));
 	bool buttonIsPressed = Input::IsKeyPressed(VirtualKey::MiddleMouseButton);
-
-	Console::WriteLine(std::to_string(isInViewport));
 
 	if (isInViewport && buttonIsPressed)
 		active = true;
@@ -56,8 +60,8 @@ void Editor::Start()
 
 	camera = AddCustomCamera<EditorCamera>();
 
-	core.renderer->SetViewportOffsets({ 0.125f, 0 });
-	core.renderer->SetViewportModifiers({ 0.75f, 1 });
+	core.renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
+	core.renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
 
 	src = GetFile("Halesia Scene File (.hsf)\0*.hsf\0");
 	if (src == "")
@@ -81,7 +85,7 @@ void Editor::Update(float delta)
 	if (save)
 		SaveToFile();
 
-	if (addObject) // AddStaticObject is NOT safe enough to use with the gui loop checking the 'allObjects' vector with async generation
+	if (addObject)
 	{
 		Object* obj = AddObject({ "new object" });
 
@@ -104,6 +108,9 @@ void Editor::UpdateGUI(float delta)
 {
 	HalesiaEngine* engine = HalesiaEngine::GetInstance();
 	EngineCore& core = engine->GetEngineCore();
+
+	width = core.window->GetWidth();
+	height = core.window->GetHeight();
 
 	ShowSideBars();
 	ShowMenuBar();
@@ -136,9 +143,6 @@ void Editor::MainThreadUpdate(float delta)
 
 void Editor::ShowSideBars()
 {
-	HalesiaEngine* engine = HalesiaEngine::GetInstance();
-	EngineCore& core = engine->GetEngineCore();
-
 	int selectedIndex = -1;
 
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
@@ -151,7 +155,7 @@ void Editor::ShowSideBars()
 	ImGuiStyle& style = ImGui::GetStyle();
 
 	ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetFrameHeight() + style.FramePadding.y));
-	ImGui::SetNextWindowSize(ImVec2(core.window->GetWidth() / 8, core.window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
+	ImGui::SetNextWindowSize(ImVec2(width * BAR_WIDTH, height - ImGui::GetFrameHeight() - style.FramePadding.y));
 
 	ImGui::Begin("scene graph", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 	ImGui::BeginChild(1);
@@ -179,10 +183,12 @@ void Editor::ShowSideBars()
 	ImGui::EndChild();
 	ImGui::End();
 
+	ShowLowerBar();
+
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
 
-	ShowObjectComponents(selectedIndex, core.window);
+	ShowObjectComponents(selectedIndex);
 }
 
 void Editor::ShowMenuBar()
@@ -241,7 +247,7 @@ void Editor::ShowMenuBar()
 	ImGui::PopStyleColor(3);
 }
 
-void Editor::ShowObjectComponents(int index, Window* window)
+void Editor::ShowObjectComponents(int index)
 {
 	static std::string currentItem = "None";
 	static int objectIndex = -1;
@@ -265,16 +271,16 @@ void Editor::ShowObjectComponents(int index, Window* window)
 	colors[ImGuiCol_FrameBg] = ImVec4(0.06f, 0.06f, 0.06f, 1);
 	colors[ImGuiCol_Button] = ImVec4(0.05f, 0.05f, 0.05f, 1);
 
-	ImGui::SetNextWindowPos(ImVec2(window->GetWidth() * 7 / 8, ImGui::GetFrameHeight() + style.FramePadding.y));
-	ImGui::SetNextWindowSize(ImVec2(window->GetWidth() / 8, window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
+	ImGui::SetNextWindowPos(ImVec2(width * (1.0f - BAR_WIDTH), ImGui::GetFrameHeight() + style.FramePadding.y));
+	ImGui::SetNextWindowSize(ImVec2(width * BAR_WIDTH, height - ImGui::GetFrameHeight() - style.FramePadding.y));
 
 	std::vector<std::string> items; // not the most optimal way
 	for (Object* object : UIObjects)
 		if (object->HasFinishedLoading())
 			items.push_back(object->name);
 
-	ImGui::SetNextWindowPos(ImVec2(window->GetWidth() * 7 / 8, ImGui::GetFrameHeight() + style.FramePadding.y));
-	ImGui::SetNextWindowSize(ImVec2(window->GetWidth() / 8, window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
+	ImGui::SetNextWindowPos(ImVec2(width * (1.0f - BAR_WIDTH), ImGui::GetFrameHeight() + style.FramePadding.y));
+	ImGui::SetNextWindowSize(ImVec2(width * BAR_WIDTH, height - ImGui::GetFrameHeight() - style.FramePadding.y));
 
 	ImGui::Begin("components", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 
@@ -304,6 +310,25 @@ void Editor::ShowObjectComponents(int index, Window* window)
 
 	ImGui::PopStyleVar(3);
 	ImGui::PopStyleColor(3);
+
+	ImGui::EndChild();
+	ImGui::End();
+}
+
+void Editor::ShowLowerBar()
+{
+	HalesiaEngine* engine = HalesiaEngine::GetInstance();
+	EngineCore& core = engine->GetEngineCore();
+
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	ImGui::SetNextWindowPos(ImVec2(width * BAR_WIDTH, height * (1.0f - LOWER_BAR_HEIGHT)));
+	ImGui::SetNextWindowSize(ImVec2(width * VIEWPORT_WIDTH, height * LOWER_BAR_HEIGHT));
+
+	ImGui::Begin("##LowerBar", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
+	ImGui::BeginChild(3);
+
+	GUI::ShowDevConsoleContent();
 
 	ImGui::EndChild();
 	ImGui::End();
