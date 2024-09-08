@@ -179,7 +179,13 @@ void HalesiaEngine::UpdateRenderer(float delta)
 	
 	core.scene->UpdateGUI(delta);
 
-	core.renderer->DrawFrame(core.scene->allObjects, core.scene->camera, delta);
+	core.renderer->StartRecording();
+
+	
+
+	core.renderer->RenderObjects(core.scene->allObjects, core.scene->camera);
+
+	core.renderer->SubmitRecording();
 
 	asyncRendererCompletionTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
 }

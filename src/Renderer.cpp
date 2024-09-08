@@ -76,7 +76,6 @@ void Renderer::Destroy()
 	for (Material& mat : Mesh::materials)
 		mat.Destroy();
 
-	indirectDrawParameters.Destroy();
 	g_defaultVertexBuffer.Destroy();
 	g_vertexBuffer.Destroy();
 	g_indexBuffer.Destroy();
@@ -228,9 +227,10 @@ void Renderer::InitVulkan()
 	
 	swapchain->CreateDepthBuffers();
 	swapchain->CreateFramebuffers(GUIRenderPass);
-	indirectDrawParameters.Reserve(MAX_MESHES, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT);
+
 	Texture::GeneratePlaceholderTextures();
 	Mesh::materials.push_back({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
+
 	if (defaultSampler == VK_NULL_HANDLE)
 		CreateTextureSampler();
 
@@ -549,6 +549,7 @@ void Renderer::CheckForBufferResizes()
 
 void Renderer::RenderImGUI(VkCommandBuffer commandBuffer)
 {
+	ImGui::Render();
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 }
 
@@ -816,8 +817,6 @@ void Renderer::StartRecording()
 	renderedObjects = 0;
 
 	writer->Write();
-
-	ImGui::Render();
 }
 
 void Renderer::SubmitRecording()
@@ -860,7 +859,7 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	std::lock_guard<std::mutex> lockGuard(drawingMutex);
 
 	//UpdateBindlessTextures(currentFrame, activeObjects);
-	WriteIndirectDrawParameters(activeObjects);
+	//WriteIndirectDrawParameters(activeObjects);
 	
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 }
@@ -889,32 +888,6 @@ void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass rende
 void Renderer::EndRenderPass(VkCommandBuffer commandBuffer)
 {
 	vkCmdEndRenderPass(commandBuffer);
-}
-
-void Renderer::DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta)
-{
-	StartRecording();
-
-	RenderObjects(objects, camera);
-
-	SubmitRecording();
-}
-
-void Renderer::WriteIndirectDrawParameters(std::vector<Object*>& objects)
-{
-	indirectDrawParameters.ResetAddressPointer();
-	std::vector<VkDrawIndexedIndirectCommand> parameters;
-	for (int i = 0; i < objects.size(); i++)
-	{
-		VkDrawIndexedIndirectCommand parameter{};
-		parameter.indexCount    = static_cast<uint32_t>(objects[i]->mesh.indices.size());
-		parameter.firstIndex    = static_cast<uint32_t>(g_indexBuffer.GetItemOffset(objects[i]->mesh.indexMemory));
-		parameter.vertexOffset  = static_cast<uint32_t>(g_vertexBuffer.GetItemOffset(objects[i]->mesh.vertexMemory));
-		parameter.instanceCount = 1;
-
-		parameters.push_back(parameter);
-	}
-	indirectDrawParameters.SubmitNewData(parameters);
 }
 
 void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView)

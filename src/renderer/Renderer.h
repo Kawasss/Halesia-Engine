@@ -68,7 +68,6 @@ public:
 
 	void Destroy();
 	void RecompileShaders();
-	void DrawFrame(const std::vector<Object*>& objects, Camera* camera, float delta);
 	void RenderIntro(Intro* intro);
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
@@ -154,7 +153,6 @@ private:
 	std::vector<HANDLE>             externalRenderSemaphoreHandles;
 	std::vector<VkFence>			inFlightFences;
 
-	StorageBuffer<VkDrawIndexedIndirectCommand> indirectDrawParameters;
 	std::unordered_map<int, Handle> processedMaterials;
 
 	std::mutex drawingMutex;
@@ -192,7 +190,6 @@ private:
 	void CreateImGUI();
 	void GetQueryResults();
 	void WriteTimestamp(VkCommandBuffer commandBuffer, bool reset = false);
-	void WriteIndirectDrawParameters(std::vector<Object*>& objects);
 	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);
 	void SetViewport(VkCommandBuffer commandBuffer, VkExtent2D extent);
 	void SetScissors(VkCommandBuffer commandBuffer, VkExtent2D extent);
