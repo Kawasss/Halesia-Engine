@@ -138,7 +138,7 @@ void Scene::Free(Object* object)
 {
 	if (object == nullptr)
 	{
-		Console::WriteLine("Failed to delete the given object since it is a null pointer", MESSAGE_SEVERITY_ERROR);
+		Console::WriteLine("Failed to delete the given object since it is a null pointer", Console::Severity::Debug);
 		return;
 	}
 
@@ -150,10 +150,10 @@ void Scene::Free(Object* object)
 		allObjects.erase(allObjects.begin() + i);
 		object->Destroy();
 		
-		Console::WriteLine("Freed " + (std::string)(object->HasScript() ? "static" : "scripted") + " object "/* + object->name*/, MESSAGE_SEVERITY_DEBUG);
+		Console::WriteLine("Freed " + (std::string)(object->HasScript() ? "static" : "scripted") + " object "/* + object->name*/, Console::Severity::Debug);
 		return;
 	}
-	Console::WriteLine("Failed to free an object, because it isn't registered in the scene. Maybe the object is already freed?", MESSAGE_SEVERITY_ERROR);
+	Console::WriteLine("Failed to free an object, because it isn't registered in the scene. Maybe the object is already freed?", Console::Severity::Debug);
 }
 
 void Scene::UpdateCamera(Window* window, float delta)

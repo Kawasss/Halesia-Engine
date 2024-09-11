@@ -7,12 +7,12 @@
 #include "../ResourceManager.h"
 #include "../core/Console.h"
 
-#define CheckHandleValidity(memory, ret)                                                                                                            \
-if (!CheckIfHandleIsValid(memory))                                                                                                                  \
-{                                                                                                                                                   \
-	Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found in " + __FUNCTION__, MESSAGE_SEVERITY_ERROR); \
-	return ret;                                                                                                                                     \
-}                                                                                                                                                   \
+#define CheckHandleValidity(memory, ret)                                                                                                              \
+if (!CheckIfHandleIsValid(memory))                                                                                                                    \
+{                                                                                                                                                     \
+	Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found in " + __FUNCTION__, Console::Severity::Error); \
+	return ret;                                                                                                                                       \
+}                                                                                                                                                     \
 
 struct StorageMemory_t // not a fan of this being visible
 {
@@ -180,7 +180,7 @@ private:
 	void Resize(size_t newSize)
 	{
 		std::string message = "StorageBuffer resize from " + std::to_string(reservedSize / 1024ull) + " kb to " + std::to_string(newSize / 1024ull) + " kb";
-		Console::WriteLine(message, MESSAGE_SEVERITY_DEBUG);
+		Console::WriteLine(message, Console::Severity::Debug);
 
 		Buffer newBuffer(newSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 

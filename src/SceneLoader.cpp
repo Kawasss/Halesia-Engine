@@ -209,7 +209,7 @@ uint8_t SceneLoader::RetrieveFlagsFromName(std::string string, std::string& name
 		else if (stringToFlag.count(lexingString) > 0)
 			ret |= stringToFlag[lexingString];
 		else
-			Console::WriteLine("Unrecognized object flag found: " + lexingString, MESSAGE_SEVERITY_WARNING);
+			Console::WriteLine("Unrecognized object flag found: " + lexingString, Console::Severity::Warning);
 		lexingString = "";
 	}
 	return ret;

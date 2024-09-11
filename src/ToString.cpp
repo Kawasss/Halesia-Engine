@@ -64,25 +64,25 @@ std::string ShapeTypeToString(ShapeType type)
 	return "SHAPE_TYPE_UNKNOWN";
 }
 
-std::string MessageSeverityToString(MessageSeverity severity)
+std::string Console::SeverityToString(Severity severity)
 {
 	switch (severity)
 	{
-	case MESSAGE_SEVERITY_NORMAL:  return "MESSAGE_SEVERITY_NORMAL";
-	case MESSAGE_SEVERITY_WARNING: return "MESSAGE_SEVERITY_WARNING";
-	case MESSAGE_SEVERITY_ERROR:   return "MESSAGE_SEVERITY_ERROR";
-	case MESSAGE_SEVERITY_DEBUG:   return "MESSAGE_SEVERITY_DEBUG";
+	case Severity::Normal:  return "MESSAGE_SEVERITY_NORMAL";
+	case Severity::Warning: return "MESSAGE_SEVERITY_WARNING";
+	case Severity::Error:   return "MESSAGE_SEVERITY_ERROR";
+	case Severity::Debug:   return "MESSAGE_SEVERITY_DEBUG";
 	}
 	return "MESSAGE_SEVERITY_UNKNOWN";
 }
 
-std::string ConsoleVariableAccessToString(ConsoleVariableAccess access)
+std::string Console::VariableAccessToString(Access access)
 {
 	switch (access)
 	{
-	case CONSOLE_ACCESS_READ_ONLY:  return "CONSOLE_ACCESS_READ_ONLY";
-	case CONSOLE_ACCESS_READ_WRITE: return "CONSOLE_ACCESS_READ_WRITE";
-	case CONSOLE_ACCESS_WRITE_ONLY: return "CONSOLE_ACCESS_WRITE_ONLY";
+	case Access::ReadOnly:  return "CONSOLE_ACCESS_READ_ONLY";
+	case Access::ReadWrite: return "CONSOLE_ACCESS_READ_WRITE";
+	case Access::WriteOnly: return "CONSOLE_ACCESS_WRITE_ONLY";
 	}
 	return "CONSOLE_ACCESS_UNKNOWN";
 }

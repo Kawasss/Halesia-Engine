@@ -389,10 +389,10 @@ void GUI::ShowDevConsole()
 
 void GUI::ShowDevConsoleContent()
 {
-	for (std::string message : Console::messages)
+	for (const Console::Message& message : Console::messages)
 	{
 		glm::vec3 color = Console::GetColorFromMessage(message);
-		ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1), message.c_str());
+		ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1), message.text.c_str());
 	}
 
 	std::string result = "";

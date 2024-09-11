@@ -1,4 +1,3 @@
-#include <regex>
 #include <iostream>
 #include <vector>
 #include <fstream>
@@ -8,23 +7,23 @@
 
 #include "core/Console.h"
 
-#include "system/Input.h"
 #include "system/CriticalSection.h"
 
 #include "io/IO.h"
 
-#include "interpreter/Lexer.hpp"
-#include "interpreter/Parser.hpp"
-#include "interpreter/Interpreter.hpp"
+#include <interpreter/Lexer.hpp>
+#include <interpreter/Parser.hpp>
+#include <interpreter/Interpreter.hpp>
 
-std::vector<std::string>                         Console::messages{};
-std::unordered_map<std::string, MessageSeverity> Console::messageColorBinding{};
+std::vector<Console::Message> Console::messages{};
 
 bool Console::isOpen = false;
 bool Console::init   = false;
 
 Parser parser;
 Interpreter interpreter;
+
+win32::CriticalSection writingLinesCritSection;
 
 inline void writeline(FunctionBody* body)
 {
@@ -34,7 +33,6 @@ inline void writeline(FunctionBody* body)
 
 inline std::string GetTimeAsString()
 {
-	
 	std::time_t t = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	std::stringstream stream;
 	std::tm ltime;
@@ -44,20 +42,20 @@ inline std::string GetTimeAsString()
 	return stream.str();
 }
 
-inline void WriteMessageWithColor(const std::string& message, MessageSeverity severity)
+inline void WriteMessageWithColor(const std::string& message, Console::Severity severity)
 {
 	switch (severity)
 	{
-	case MESSAGE_SEVERITY_DEBUG:
+	case Console::Severity::Debug:
 		std::cout << "\x1B[34m" << message << "\033[0m\n";
 		break;
-	case MESSAGE_SEVERITY_ERROR:
+	case Console::Severity::Error:
 		std::cout << "\x1B[31m" << message << "\033[0m\n";
 		break;
-	case MESSAGE_SEVERITY_NORMAL:
+	case Console::Severity::Normal:
 		std::cout << message << '\n';
 		break;
-	case MESSAGE_SEVERITY_WARNING:
+	case Console::Severity::Warning:
 		std::cout << "\x1B[33m" << message << "\033[0m\n";
 		break;
 	}
@@ -81,14 +79,12 @@ void Console::BindExternFunctions()
 	interpreter.ConnectExternalFunction(parser.GetOperandByName("writeline").id, &writeline);
 }
 
-win32::CriticalSection writingLinesCritSection;
-void Console::WriteLine(std::string message, MessageSeverity severity)
+void Console::WriteLine(std::string message, Console::Severity severity)
 {
 	win32::CriticalLockGuard guard(writingLinesCritSection);
 	message = GetTimeAsString() + message;
 
-	messages.push_back(message);
-	messageColorBinding[message] = severity;
+	messages.push_back({ message, severity });
 
 	#ifdef _DEBUG
 	WriteMessageWithColor(message, severity);
@@ -117,17 +113,17 @@ void Console::BindVariableToExternVariable(std::string externalVariable, void* v
 	interpreter.ConnectExternalVariable(op.id, variable, ByteSizeOf(op.type));
 }
 
-glm::vec3 Console::GetColorFromMessage(std::string message)
+glm::vec3 Console::GetColorFromMessage(const Message& message)
 {
-	switch (messageColorBinding[message])
+	switch (message.severity)
 	{
-	case MESSAGE_SEVERITY_NORMAL:
+	case Console::Severity::Normal:
 		return glm::vec3(1);
-	case MESSAGE_SEVERITY_WARNING:
+	case Console::Severity::Warning:
 		return glm::vec3(1, 1, 0);
-	case MESSAGE_SEVERITY_ERROR:
+	case Console::Severity::Error:
 		return glm::vec3(1, 0, 0);
-	case MESSAGE_SEVERITY_DEBUG:
+	case Console::Severity::Debug:
 		return glm::vec3(.1f, .1f, 1);
 	default:
 		return glm::vec3(1);

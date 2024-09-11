@@ -30,7 +30,7 @@ void Object::GenerateObjectWithData(const ObjectCreationData& creationData)
 	finishedLoading = true; //maybe use mutex here or just find better solution
 
 	#ifdef _DEBUG
-	Console::WriteLine("Created new object \"" + name + "\" with unique id \"" + ToHexadecimalString(handle) + '\"', MESSAGE_SEVERITY_DEBUG);
+	Console::WriteLine("Created new object \"" + name + "\" with unique id \"" + ToHexadecimalString(handle) + '\"', Console::Severity::Debug);
 	#endif
 }
 
@@ -116,7 +116,7 @@ void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, v
 		newObjPtr->SetRigidBody(oldObjPtr->rigid.type, oldObjPtr->rigid.shape);
 
 	newObjPtr->Start();
-	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + oldObjPtr->name + "\" with" + (script == nullptr ? "out a script" : " a script"), MESSAGE_SEVERITY_DEBUG);
+	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + oldObjPtr->name + "\" with" + (script == nullptr ? "out a script" : " a script"), Console::Severity::Debug);
 }
 
 void Object::Update(float delta)
@@ -136,7 +136,7 @@ void Object::SetRigidBody(RigidBodyType type, Shape shape)
 	rigid = RigidBody(shape, type, transform.position, transform.rotation);
 	rigid.SetUserData(this);
 
-	Console::WriteLine("Created " + RigidBodyTypeToString(type) + " with " + ShapeTypeToString(shape.type) + " for object \"" + name + "\"", MESSAGE_SEVERITY_DEBUG);
+	Console::WriteLine("Created " + RigidBodyTypeToString(type) + " with " + ShapeTypeToString(shape.type) + " for object \"" + name + "\"", Console::Severity::Debug);
 }
 
 bool Object::HasFinishedLoading()

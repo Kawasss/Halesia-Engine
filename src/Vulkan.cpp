@@ -874,7 +874,7 @@ void Vulkan::ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, con
             ATTACH_DEVICE_FUNCTION(vkGetSemaphoreWin32HandleKHR);
 
         else
-            Console::WriteLine("Given logical device extension " + (std::string)logicalDeviceExtension.data() + " has no activatable functions", MESSAGE_SEVERITY_WARNING);
+            Console::WriteLine("Given logical device extension " + (std::string)logicalDeviceExtension.data() + " has no activatable functions", Console::Severity::Warning);
     }
 }
 

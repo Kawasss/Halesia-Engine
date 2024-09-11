@@ -350,7 +350,7 @@ void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
 
 	if (createInfo.startingScene == nullptr)
 	{
-		Console::WriteLine("The given HalesiaInstanceCreateInfo doesn't contain a valid starting scene", MESSAGE_SEVERITY_WARNING);
+		Console::WriteLine("The given HalesiaInstanceCreateInfo doesn't contain a valid starting scene", Console::Severity::Error);
 		core.scene = new Scene();
 	}
 	else

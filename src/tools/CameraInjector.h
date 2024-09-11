@@ -16,7 +16,7 @@ public:
 	{
 		if (sceneToInjectInto == nullptr || newCamera == nullptr)
 		{
-			Console::WriteLine("Failed to inject a camera: the scene or camera is invalid.", MESSAGE_SEVERITY_ERROR);
+			Console::WriteLine("Failed to inject a camera: the scene or camera is invalid.", Console::Severity::Error);
 			return;
 		}
 		if (inheritTransformProperties)
@@ -34,7 +34,7 @@ public:
 	{
 		if (cameraHeldInStasis == nullptr)
 		{
-			Console::WriteLine("Failed to eject the camera: no camera has been injected.", MESSAGE_SEVERITY_ERROR);
+			Console::WriteLine("Failed to eject the camera: no camera has been injected.", Console::Severity::Error);
 			return;
 		}
 		sceneToInjectInto->camera = cameraHeldInStasis;
@@ -50,7 +50,7 @@ public:
 	{
 		if (cameraHeldInStasis == nullptr)
 		{
-			Console::WriteLine("The stored camera has been requested, but can't given since no camera has been injected, returning a nullptr.", MESSAGE_SEVERITY_ERROR);
+			Console::WriteLine("The stored camera has been requested, but can't given since no camera has been injected, returning a nullptr.", Console::Severity::Error);
 			return nullptr;
 		}
 
