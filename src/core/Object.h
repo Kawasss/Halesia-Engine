@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <future>
-#include <mutex>
 
 #include "Transform.h"
 
@@ -10,6 +9,8 @@
 
 #include "physics/RigidBody.h"
 #include "physics/Shapes.h"
+
+#include "../system/CriticalSection.h"
 
 class Scene;
 struct ObjectCreationData;
@@ -83,8 +84,8 @@ public:
 
 	void SetParentScene(Scene* parent) { scene = parent; }
 
-	const std::vector<Object*>& GetChildren() const { return children; }
-	std::mutex&                 GetMutex() { return mutex; }
+	const std::vector<Object*>& GetChildren() const  { return children;    }
+	win32::CriticalSection&     GetCriticalSection() { return critSection; }
 	
 	Transform transform;
 	RigidBody rigid;
@@ -107,7 +108,7 @@ private:
 	std::future<void> generation;
 	
 	Scene* scene;
-	std::mutex mutex;
+	win32::CriticalSection critSection;
 	std::vector<Object*> children;
 
 	bool finishedLoading = false;

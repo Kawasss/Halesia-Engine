@@ -202,7 +202,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 	std::vector<VkAccelerationStructureInstanceKHR> instances;
 	for (int i = 0; i < objects.size(); i++)
 	{
-		std::lock_guard<std::mutex> lockGuard(objects[i]->GetMutex());
+		win32::CriticalLockGuard lockGuard(objects[i]->GetCriticalSection());
 		if (!objects[i]->HasFinishedLoading() || objects[i]->state != OBJECT_STATE_VISIBLE || !objects[i]->mesh.IsValid()) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
 			continue;
 

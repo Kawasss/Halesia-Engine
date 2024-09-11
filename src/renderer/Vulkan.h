@@ -12,6 +12,8 @@
 
 #include "PhysicalDevice.h"
 
+#include "../system/CriticalSection.h"
+
 #define nameof(s) #s
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
 #define CheckVulkanResult(message, result, function) if (result != VK_SUCCESS) throw VulkanAPIError(message, result, nameof(function), __FILENAME__, __LINE__)
@@ -56,8 +58,9 @@ public:
         std::vector<VkPresentModeKHR>   presentModes;
     };
 
-    static VkMemoryAllocateFlagsInfo*         optionalMemoryAllocationFlags;
-    static std::mutex                         graphicsQueueMutex;
+    static VkMemoryAllocateFlagsInfo* optionalMemoryAllocationFlags;
+
+    static win32::CriticalSection graphicsQueueSection;
 
     static VkDeviceSize allocatedMemory;
 
@@ -138,7 +141,6 @@ public:
 private:
     static Context context;
 
-    static std::mutex                                               commandPoolMutex;
     static std::unordered_map<uint32_t, std::vector<VkCommandPool>> queueCommandPools;
     static std::unordered_map<VkDevice, std::mutex>                 logicalDeviceMutexes;
     static std::deque<std::function<void()>>                        deletionQueue;

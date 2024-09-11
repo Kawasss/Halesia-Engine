@@ -155,7 +155,7 @@ private:
 
 	std::unordered_map<int, Handle> processedMaterials;
 
-	std::mutex drawingMutex;
+	win32::CriticalSection drawingSection;
 
 	std::vector<RenderPipeline*> renderPipelines; // owns the pointers !!
 

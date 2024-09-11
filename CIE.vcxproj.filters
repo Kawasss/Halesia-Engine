@@ -506,6 +506,9 @@
     <ClInclude Include="src\core\Editor.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
+    <ClInclude Include="src\system\CriticalSection.h">
+      <Filter>Header Files\system</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">

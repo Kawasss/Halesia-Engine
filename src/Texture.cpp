@@ -98,7 +98,7 @@ void Image::WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMip
 
 	Buffer stagingBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+	win32::CriticalLockGuard lockGuard(Vulkan::graphicsQueueSection);
 
 	// copy all of the different sides of the cubemap into a single buffer
 	void* data = stagingBuffer.Map();
@@ -132,7 +132,7 @@ void Image::ChangeData(uint8_t* data, uint32_t size, TextureFormat format)
 
 	Buffer stagingBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+	win32::CriticalLockGuard lockGuard(Vulkan::graphicsQueueSection);
 
 	void* ptr = stagingBuffer.Map();
 	memcpy(ptr, data, size);

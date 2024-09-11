@@ -1,13 +1,16 @@
 #include <regex>
 #include <iostream>
 #include <vector>
-#include <mutex>
 #include <fstream>
 #include <sstream>
 #include <time.h>
+#include <chrono>
 
 #include "core/Console.h"
+
 #include "system/Input.h"
+#include "system/CriticalSection.h"
+
 #include "io/IO.h"
 
 #include "interpreter/Lexer.hpp"
@@ -78,10 +81,10 @@ void Console::BindExternFunctions()
 	interpreter.ConnectExternalFunction(parser.GetOperandByName("writeline").id, &writeline);
 }
 
-std::mutex writingLinesMutex;
+win32::CriticalSection writingLinesCritSection;
 void Console::WriteLine(std::string message, MessageSeverity severity)
 {
-	std::lock_guard<std::mutex> guard(writingLinesMutex);
+	win32::CriticalLockGuard guard(writingLinesCritSection);
 	message = GetTimeAsString() + message;
 
 	messages.push_back(message);

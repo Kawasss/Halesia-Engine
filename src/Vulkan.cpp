@@ -7,6 +7,7 @@ bool enableValidationLayers = true;
 #include <algorithm>
 
 #include "core/Console.h"
+
 #include "renderer/Vulkan.h"
 #include "renderer/Surface.h"
 
@@ -21,8 +22,8 @@ std::unordered_map<VkDevice, std::mutex>                 Vulkan::logicalDeviceMu
 
 std::deque<std::function<void()>> Vulkan::deletionQueue;
 
-std::mutex Vulkan::graphicsQueueMutex;
-std::mutex Vulkan::commandPoolMutex;
+win32::CriticalSection Vulkan::graphicsQueueSection;
+win32::CriticalSection commandPoolSection;
 
 VkDeviceSize Vulkan::allocatedMemory = 0;
 
@@ -225,9 +226,10 @@ std::mutex& Vulkan::FetchLogicalDeviceMutex(VkDevice logicalDevice)
 
 VkCommandPool Vulkan::FetchNewCommandPool(uint32_t queueIndex)
 {
-    std::lock_guard<std::mutex> lockGuard(commandPoolMutex);
+    win32::CriticalLockGuard lockGuard(commandPoolSection);
+
     std::vector<VkCommandPool>& commandPools = queueCommandPools[queueIndex];
-    VkCommandPool commandPool;
+    VkCommandPool commandPool = VK_NULL_HANDLE;
 
     if (commandPools.empty()) // if there are no idle command pools, create a new one
     {
@@ -249,7 +251,8 @@ VkCommandPool Vulkan::FetchNewCommandPool(uint32_t queueIndex)
 
 void Vulkan::YieldCommandPool(uint32_t index, VkCommandPool commandPool)
 {
-    std::lock_guard<std::mutex> lockGuard(commandPoolMutex);
+    win32::CriticalLockGuard lockGuard(commandPoolSection);
+
     if (queueCommandPools.count(index) == 0)
         throw VulkanAPIError("Failed to yield a command pool, no matching queue family index could be found", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
     queueCommandPools[index].push_back(commandPool);
@@ -337,7 +340,7 @@ void Vulkan::CopyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffer sourc
     Vulkan::EndSingleTimeCommands(context.graphicsQueue, localCommandBuffer, commandPool);
 }
 
-std::mutex endCommandMutex;
+win32::CriticalSection endCommandCritSection;
 void Vulkan::EndSingleTimeCommands(VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool)
 {
     VkResult result = vkEndCommandBuffer(commandBuffer);
@@ -348,7 +351,7 @@ void Vulkan::EndSingleTimeCommands(VkQueue queue, VkCommandBuffer commandBuffer,
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    std::lock_guard<std::mutex> lockGuard(endCommandMutex);
+    win32::CriticalLockGuard guard(endCommandCritSection);
     result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
     CheckVulkanResult("Failed to submit the single time commands queue", result, vkQueueSubmit);
     

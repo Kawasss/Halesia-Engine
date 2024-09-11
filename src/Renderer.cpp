@@ -773,8 +773,7 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[frameIndex];
 
-	LockLogicalDevice(logicalDevice);
-	std::lock_guard<std::mutex> lockGuard(Vulkan::graphicsQueueMutex);
+	win32::CriticalLockGuard lockGuard(Vulkan::graphicsQueueSection);
 	VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]);
 	CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
 
@@ -856,7 +855,7 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	//if (activeObjects.empty())
 	//	return;
 
-	std::lock_guard<std::mutex> lockGuard(drawingMutex);
+	win32::CriticalLockGuard lockGuard(drawingSection);
 
 	//UpdateBindlessTextures(currentFrame, activeObjects);
 	//WriteIndirectDrawParameters(activeObjects);
