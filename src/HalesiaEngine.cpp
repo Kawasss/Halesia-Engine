@@ -362,8 +362,6 @@ void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
 	}
 	else
 		core.scene = createInfo.startingScene;
-	if (createInfo.sceneFile != "")
-		core.scene->LoadScene(createInfo.sceneFile);
 
 	LoadVars();
 }

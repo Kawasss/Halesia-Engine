@@ -21,7 +21,6 @@ inline extern std::string HalesiaExitCodeToString(HalesiaExitCode exitCode);
 struct HalesiaEngineCreateInfo
 {
 	Scene* startingScene = nullptr;
-	std::string sceneFile = "";
 	Win32WindowCreateInfo windowCreateInfo{};
 	VirtualKey devConsoleKey = VirtualKey::Tilde;
 	bool enableDevConsole = true;

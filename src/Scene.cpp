@@ -12,54 +12,9 @@
 
 Camera* Scene::defaultCamera = new Camera();
 
-template<typename Class, typename Type>
-inline Type* GetPointerToClassMember(const Class* parent, Type Class::* member)
-{
-	return reinterpret_cast<Type*>((char*)parent + reinterpret_cast<size_t>(&(reinterpret_cast<Class*>(0)->*member))); // calculates the offset of the member relative to the class
-}
-
-template<typename Type, typename Class>
-inline Class* GetItemByMember(Type Class::* member, Type comp, const std::vector<Class*>& vector)
-{
-	for (size_t index = 0; index < vector.size(); index++)
-		if (*GetPointerToClassMember(vector[index], member) == comp)
-			return vector[index];
-	return nullptr; // unsafe
-}
-
-SceneLoader loader;
-void Scene::LoadScene(std::string path)
-{
-	sceneIsLoading = true;
-	loadingProcess = std::async(&Scene::LoadFileIntoScene, this, path);
-}
-
-void Scene::LoadFileIntoScene(std::string path)
-{
-	loader = SceneLoader(path);
-	loader.LoadScene();
-	
-	objectCreationDatas = loader.objects;
-	Start();
-	LoadUninitializedObjects();
-	sceneIsLoading = false;
-}
-
-void Scene::LoadUninitializedObjects()
-{
-	camera->position = loader.cameraPos;
-	camera->yaw = loader.cameraYaw;
-	camera->pitch = loader.cameraPitch;
-	for (const ObjectCreationData& creationData : objectCreationDatas)
-	{
-		Object* objPtr = Object::Create(creationData);
-		allObjects.push_back(objPtr);
-	}
-}
-
 Object* Scene::GetObjectByName(std::string name)
 {
-	return GetItemByMember(&Object::name, name, allObjects);
+	return *std::find_if(allObjects.begin(), allObjects.end(), [&](Object* obj) { return obj->name == name; });
 }
 
 Object* Scene::GetObjectByHandle(Handle handle)
@@ -67,12 +22,6 @@ Object* Scene::GetObjectByHandle(Handle handle)
 	if (objectHandles.count(handle) == 0)
 		throw std::runtime_error("Failed to get the object related with handle \"" + std::to_string(handle) + "\"");
 	return objectHandles[handle];
-}
-
-std::string GetNameFromPath(std::string path)
-{
-	std::string fileNameWithExtension = path.substr(path.find_last_of("/\\") + 1);
-	return fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
 }
 
 bool Scene::IsObjectHandleValid(Handle handle) 
@@ -85,20 +34,6 @@ bool Scene::HasFinishedLoading()
 	return loadingProcess._Is_ready() || !sceneIsLoading;
 }
 
-bool Scene::GetInternalObjectCreationData(std::string name, ObjectCreationData& creationData)
-{
-	for (auto i = objectCreationDatas.begin(); i != objectCreationDatas.end(); i++)
-	{
-		if (i->name != name)
-			continue;
-
-		creationData = *i;
-		objectCreationDatas.erase(i);
-		return true;
-	}
-	return false;
-}
-
 void Scene::RegisterObjectPointer(Object* objPtr)
 {
 	objectHandles[objPtr->handle] = objPtr;
@@ -108,12 +43,9 @@ void Scene::RegisterObjectPointer(Object* objPtr)
 
  inline void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberToErase)
 {
-	for (auto i = vector.begin(); i < vector.end(); i++)
-		if (*i == memberToErase)
-		{
-			vector.erase(i);
-			return;
-		}
+	 auto it = std::find(vector.begin(), vector.end(), memberToErase);
+	 if (it != vector.end())
+		 vector.erase(it);
 }
 
  Object* Scene::AddObject(const ObjectCreationData& creationData)
@@ -136,24 +68,16 @@ void Scene::RegisterObjectPointer(Object* objPtr)
 
 void Scene::Free(Object* object)
 {
-	if (object == nullptr)
+	auto it = std::find(allObjects.begin(), allObjects.end(), object);
+
+	if (it == allObjects.end())
 	{
-		Console::WriteLine("Failed to delete the given object since it is a null pointer", Console::Severity::Debug);
+		Console::WriteLine("Failed to free an object, because it isn't registered in the scene. The given object has not been freed.", Console::Severity::Error);
 		return;
 	}
 
-	for (int i = 0; i < allObjects.size(); i++)
-	{
-		if (allObjects[i] != object)
-			continue;
-
-		allObjects.erase(allObjects.begin() + i);
-		object->Destroy();
-		
-		Console::WriteLine("Freed " + (std::string)(object->HasScript() ? "static" : "scripted") + " object "/* + object->name*/, Console::Severity::Debug);
-		return;
-	}
-	Console::WriteLine("Failed to free an object, because it isn't registered in the scene. Maybe the object is already freed?", Console::Severity::Debug);
+	allObjects.erase(it);
+	object->Destroy();
 }
 
 void Scene::UpdateCamera(Window* window, float delta)
@@ -165,16 +89,7 @@ void Scene::UpdateScripts(float delta)
 {
 	if (!HasFinishedLoading())
 		return;
-	
-	//std::for_each(std::execution::par, objectsWithScripts.begin(), objectsWithScripts.end(), [&](Object* object) // update all of the scripts in parallel
-	//	{
-	//		std::lock_guard<std::mutex> lockGuard(object->mutex);
-	//		if (object->shouldBeDestroyed)
-	//			Free(object);
-	//		else if (object->state != OBJECT_STATE_DISABLED)
-	//			object->Update(delta);
-	//	});
-	
+
 	for (int i = 0; i < allObjects.size(); i++)
 	{
 		if (!allObjects[i]->HasScript() || allObjects[i]->ShouldBeDestroyed() || allObjects[i]->state == OBJECT_STATE_DISABLED)
@@ -190,6 +105,7 @@ void Scene::CollectGarbage()
 		Object* obj = *iter;
 		if (!obj->ShouldBeDestroyed())
 			continue;
+
 		allObjects.erase(iter);
 		obj->Destroy();
 		iter = allObjects.begin();

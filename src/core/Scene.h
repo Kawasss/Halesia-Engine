@@ -1,5 +1,4 @@
 #pragma once
-#include <map>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -35,9 +34,6 @@ public:
 	Object* GetObjectByHandle(Handle handle);
 	bool IsObjectHandleValid(Handle handle);
 	bool HasFinishedLoading();
-	
-	void LoadScene(std::string path);
-	void LoadUninitializedObjects();
 
 	void UpdateCamera(Window* window, float delta);
 	void UpdateScripts(float delta);
@@ -61,9 +57,7 @@ public:
 	std::vector<Object*> allObjects; // this vector owns the objects
 
 private:
-	void LoadFileIntoScene(std::string path);
 	void RegisterObjectPointer(Object* objPtr);
-	bool GetInternalObjectCreationData(std::string name, ObjectCreationData& creationData);
 
 	std::future<void> loadingProcess;
 	std::unordered_map<Handle, Object*> objectHandles;
