@@ -243,7 +243,7 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* wind
 		if (ImGui::CollapsingHeader("Transform", flags))
 			ShowObjectTransform(objects[objectIndex]->transform);
 
-		if (ImGui::CollapsingHeader("Rigid body", flags) && objects[objectIndex]->rigid.type != RIGID_BODY_NONE)
+		if (ImGui::CollapsingHeader("Rigid body", flags) && objects[objectIndex]->rigid.type != RigidBody::Type::None)
 			ShowObjectRigidBody(objects[objectIndex]->rigid);
 
 		if (ImGui::CollapsingHeader("Meshes", flags) && objects[objectIndex]->mesh.IsValid())
@@ -258,25 +258,25 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* wind
 
 void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
 {
-	static std::unordered_map<std::string, ShapeType> stringToShape =
+	static std::unordered_map<std::string, Shape::Type> stringToShape =
 	{
-		{ "SHAPE_TYPE_BOX", SHAPE_TYPE_BOX },
-		{ "SHAPE_TYPE_SPHERE", SHAPE_TYPE_SPHERE },
-		{ "SHAPE_TYPE_CAPSULE", SHAPE_TYPE_CAPSULE }
+		{ "SHAPE_TYPE_BOX",     Shape::Type::Box },
+		{ "SHAPE_TYPE_SPHERE",  Shape::Type::Sphere },
+		{ "SHAPE_TYPE_CAPSULE", Shape::Type::Capsule }
 	};
-	static std::unordered_map<std::string, RigidBodyType> stringToRigid =
+	static std::unordered_map<std::string, RigidBody::Type> stringToRigid =
 	{
-		{ "RIGID_BODY_STATIC", RIGID_BODY_STATIC},
-		{ "RIGID_BODY_DYNAMIC", RIGID_BODY_DYNAMIC },
-		{ "RIGID_BODY_KINEMATIC", RIGID_BODY_KINEMATIC }
+		{ "RIGID_BODY_STATIC",    RigidBody::Type::Static },
+		{ "RIGID_BODY_DYNAMIC",   RigidBody::Type::Dynamic },
+		{ "RIGID_BODY_KINEMATIC", RigidBody::Type::Kinematic }
 	};
 
 	static int rigidIndex = -1;
 	static int shapeIndex = -1;
 	static std::vector<std::string> allShapeTypes = { "SHAPE_TYPE_BOX", "SHAPE_TYPE_SPHERE", "SHAPE_TYPE_CAPSULE" };
 	static std::vector<std::string> allRigidTypes = { "RIGID_BODY_DYNAMIC", "RIGID_BODY_STATIC", "RIGID_BODY_KINEMATIC" };
-	std::string currentRigid = RigidBodyTypeToString(rigidBody.type);
-	std::string currentShape = ShapeTypeToString(rigidBody.shape.type);
+	std::string currentRigid = RigidBody::TypeToString(rigidBody.type);
+	std::string currentShape = Shape::TypeToString(rigidBody.shape.type);
 	glm::vec3 holderExtents = rigidBody.shape.data;
 
 	ImGui::Text("type:   ");
@@ -289,12 +289,12 @@ void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
 
 	switch (rigidBody.shape.type)
 	{
-	case SHAPE_TYPE_BOX:
+	case Shape::Type::Box:
 		ImGui::Text("Extents:");
 		ImGui::SameLine();
 		ShowInputVector(holderExtents, { "##extentsx", "##extentsy", "##extentsz" });
 		break;
-	case SHAPE_TYPE_CAPSULE:
+	case Shape::Type::Capsule:
 		ImGui::Text("Height: ");
 		ImGui::SameLine();
 		ImGui::InputFloat("##height", &holderExtents.y);
@@ -303,7 +303,7 @@ void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
 		if (ImGui::InputFloat("##radius", &holderExtents.x))
 			holderExtents.y += holderExtents.x; // add radius on top of the half height
 		break;
-	case SHAPE_TYPE_SPHERE:
+	case Shape::Type::Sphere:
 		ImGui::Text("radius: ");
 		ImGui::SameLine();
 		ImGui::InputFloat("##radius", &holderExtents.x);

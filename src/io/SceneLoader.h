@@ -78,8 +78,8 @@ struct RigidCreationData
 {
 	glm::vec3 extents = glm::vec3(0);
 
-	ShapeType     shapeType = SHAPE_TYPE_NONE;
-	RigidBodyType rigidType = RIGID_BODY_NONE;
+	Shape::Type     shapeType = Shape::Type::None;
+	RigidBody::Type rigidType = RigidBody::Type::None;
 };
 
 struct ObjectCreationData

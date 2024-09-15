@@ -925,7 +925,7 @@ void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkComma
 {
 	for (Object* object : objects)
 	{
-		if (object->rigid.shape.type != SHAPE_TYPE_BOX)
+		if (object->rigid.shape.type != Shape::Type::Box)
 			continue;
 
 		glm::mat4 localRotationModel = glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.x), glm::vec3(1, 0, 0)) * glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.y), glm::vec3(0, 1, 0)) * glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.z), glm::vec3(0, 0, 1));

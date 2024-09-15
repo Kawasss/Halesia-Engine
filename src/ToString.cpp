@@ -39,27 +39,27 @@ std::string HalesiaExitCodeToString(HalesiaExitCode exitCode)
 	return "";
 }
 
-std::string RigidBodyTypeToString(RigidBodyType type)
+std::string RigidBody::TypeToString(Type type)
 {
 	switch (type)
 	{
-	case RIGID_BODY_DYNAMIC:   return "RIGID_BODY_DYNAMIC";
-	case RIGID_BODY_KINEMATIC: return "RIGID_BODY_KINEMATIC";
-	case RIGID_BODY_STATIC:    return "RIGID_BODY_STATIC";
-	case RIGID_BODY_NONE:      return "RIGID_BODY_NONE";
+	case Type::Dynamic:   return "RigidBody::Type::Dynamic";
+	case Type::Kinematic: return "RigidBody::Type::Kinematic";
+	case Type::Static:    return "RigidBody::Type::Static";
+	case Type::None:      return "RigidBody::Type::None";
 	}
-	return "RIGID_BODY_UNKNOWN";
+	return "RigidBody::Type::Unknown";
 }
 
-std::string ShapeTypeToString(ShapeType type)
+std::string Shape::TypeToString(Shape::Type type)
 {
 	switch (type)
 	{
-	case SHAPE_TYPE_BOX:     return "SHAPE_TYPE_BOX";
-	case SHAPE_TYPE_CAPSULE: return "SHAPE_TYPE_CAPSULE";
-	case SHAPE_TYPE_NONE:    return "SHAPE_TYPE_NONE";
-	case SHAPE_TYPE_PLANE:   return "SHAPE_TYPE_PLANE";
-	case SHAPE_TYPE_SPHERE:  return "SHAPE_TYPE_SPHERE";
+	case Shape::Type::Box:     return "SHAPE_TYPE_BOX";
+	case Shape::Type::Capsule: return "SHAPE_TYPE_CAPSULE";
+	case Shape::Type::None:    return "SHAPE_TYPE_NONE";
+	case Shape::Type::Plane:   return "SHAPE_TYPE_PLANE";
+	case Shape::Type::Sphere:  return "SHAPE_TYPE_SPHERE";
 	}
 	return "SHAPE_TYPE_UNKNOWN";
 }
@@ -68,23 +68,23 @@ std::string Console::SeverityToString(Severity severity)
 {
 	switch (severity)
 	{
-	case Severity::Normal:  return "MESSAGE_SEVERITY_NORMAL";
-	case Severity::Warning: return "MESSAGE_SEVERITY_WARNING";
-	case Severity::Error:   return "MESSAGE_SEVERITY_ERROR";
-	case Severity::Debug:   return "MESSAGE_SEVERITY_DEBUG";
+	case Severity::Normal:  return "Console::Severity::Normal";
+	case Severity::Warning: return "Console::Severity::Warning";
+	case Severity::Error:   return "Console::Severity::Error";
+	case Severity::Debug:   return "Console::Severity::Debug";
 	}
-	return "MESSAGE_SEVERITY_UNKNOWN";
+	return "Console::Severity::Unknown";
 }
 
 std::string Console::VariableAccessToString(Access access)
 {
 	switch (access)
 	{
-	case Access::ReadOnly:  return "CONSOLE_ACCESS_READ_ONLY";
-	case Access::ReadWrite: return "CONSOLE_ACCESS_READ_WRITE";
-	case Access::WriteOnly: return "CONSOLE_ACCESS_WRITE_ONLY";
+	case Access::ReadOnly:  return "Console::Access::ReadOnly";
+	case Access::ReadWrite: return "Console::Access::ReadWrite";
+	case Access::WriteOnly: return "Console::Access::WriteOnly";
 	}
-	return "CONSOLE_ACCESS_UNKNOWN";
+	return "Console::Access::Unknown";
 }
 
 std::string ObjectStateToString(ObjectState state)

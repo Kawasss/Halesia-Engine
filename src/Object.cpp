@@ -19,7 +19,7 @@ void Object::GenerateObjectWithData(const ObjectCreationData& creationData)
 	if (creationData.hasMesh)
 		mesh.Create(creationData.mesh);
 
-	if (creationData.hitBox.shapeType != SHAPE_TYPE_NONE)
+	if (creationData.hitBox.shapeType != Shape::Type::None)
 	{
 		Shape shape = Shape::GetShapeFromType(creationData.hitBox.shapeType, creationData.hitBox.extents);
 		SetRigidBody(creationData.hitBox.rigidType, shape);
@@ -112,7 +112,7 @@ void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, v
 	newObjPtr->scriptClass = script;
 	newObjPtr->handle = ResourceManager::GenerateHandle();
 
-	if (oldObjPtr->rigid.type != RIGID_BODY_NONE)
+	if (oldObjPtr->rigid.type != RigidBody::Type::None)
 		newObjPtr->SetRigidBody(oldObjPtr->rigid.type, oldObjPtr->rigid.shape);
 
 	newObjPtr->Start();
@@ -131,18 +131,18 @@ Object* Object::AddChild(const ObjectCreationData& creationData)
 	return obj;
 }
 
-void Object::SetRigidBody(RigidBodyType type, Shape shape)
+void Object::SetRigidBody(RigidBody::Type type, Shape shape)
 {
 	rigid = RigidBody(shape, type, transform.position, transform.rotation);
 	rigid.SetUserData(this);
 
-	Console::WriteLine("Created " + RigidBodyTypeToString(type) + " with " + ShapeTypeToString(shape.type) + " for object \"" + name + "\"", Console::Severity::Debug);
+	Console::WriteLine("Created " + RigidBody::TypeToString(type) + " with " + Shape::TypeToString(shape.type) + " for object \"" + name + "\"", Console::Severity::Debug);
 }
 
 bool Object::HasFinishedLoading()
 {
 	if (generation.valid() && generation.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-		generation.get(); // change the status of the image if it it done loading
+		generation.get(); // change the status of the image if it is done loading
 	return finishedLoading || !generation.valid();
 }
 
@@ -154,6 +154,6 @@ void Object::Destroy(bool del)
 	if (parent != nullptr)
 		parent->RemoveChild(this);
 	rigid.Destroy();
-	rigid.type = RIGID_BODY_NONE;
+	rigid.type = RigidBody::Type::None;
 	if (del) delete this;
 }

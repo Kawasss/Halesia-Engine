@@ -1,16 +1,6 @@
 #pragma once
 #include "../glm.h"
 
-enum ShapeType : uint8_t
-{
-	SHAPE_TYPE_NONE,
-	SHAPE_TYPE_SPHERE,
-	SHAPE_TYPE_BOX,
-	SHAPE_TYPE_CAPSULE,
-	SHAPE_TYPE_PLANE
-};
-extern inline std::string ShapeTypeToString(ShapeType type);
-
 namespace physx
 {
 	class PxShape;
@@ -19,9 +9,19 @@ namespace physx
 class Shape
 {
 public:
-	static Shape GetShapeFromType(ShapeType type, glm::vec3 extents);
+	enum class Type : uint8_t
+	{
+		None,
+		Sphere,
+		Box,
+		Capsule,
+		Plane,
+	};
+	static std::string TypeToString(Type type);
+
+	static Shape GetShapeFromType(Type type, glm::vec3 extents);
 	physx::PxShape* GetShape();
-	ShapeType type;
+	Type type;
 	glm::vec3 data; // optional data that a shape can use as it wants
 
 protected:

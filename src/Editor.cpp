@@ -302,7 +302,7 @@ void Editor::ShowObjectComponents(int index)
 		if (ImGui::CollapsingHeader("Transform", flags))
 			GUI::ShowObjectTransform(UIObjects[objectIndex]->transform);
 
-		if (ImGui::CollapsingHeader("Rigid body", flags) && UIObjects[objectIndex]->rigid.type != RIGID_BODY_NONE)
+		if (ImGui::CollapsingHeader("Rigid body", flags) && UIObjects[objectIndex]->rigid.type != RigidBody::Type::None)
 			GUI::ShowObjectRigidBody(UIObjects[objectIndex]->rigid);
 
 		if (ImGui::CollapsingHeader("Meshes", flags) && UIObjects[objectIndex]->mesh.IsValid())

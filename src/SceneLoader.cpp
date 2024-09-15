@@ -394,12 +394,12 @@ inline bool HasHitBoxFlag(ObjectOptions flag)
 	return flag & OBJECT_FLAG_HITBOX;
 }
 
-inline ShapeType GetShapeType(ObjectOptions flag)
+inline Shape::Type GetShapeType(ObjectOptions flag)
 {
-	if (flag & OBJECT_FLAG_SHAPE_BOX)     return SHAPE_TYPE_BOX;
-	if (flag & OBJECT_FLAG_SHAPE_CAPSULE) return SHAPE_TYPE_CAPSULE;
-	if (flag & OBJECT_FLAG_SHAPE_SPHERE)  return SHAPE_TYPE_SPHERE;
-	return SHAPE_TYPE_BOX;
+	if (flag & OBJECT_FLAG_SHAPE_BOX)     return Shape::Type::Box;
+	if (flag & OBJECT_FLAG_SHAPE_CAPSULE) return Shape::Type::Capsule;
+	if (flag & OBJECT_FLAG_SHAPE_SPHERE)  return Shape::Type::Sphere;
+	return Shape::Type::Box;
 }
 
 void SceneLoader::LoadAssimpFile()
@@ -428,7 +428,7 @@ void SceneLoader::RetrieveObject(const aiScene* scene, const aiNode* node, glm::
 		uint8_t flags = RetrieveFlagsFromName(mesh->mName.C_Str(), creationData.name);
 		if (HasHitBoxFlag(flags))
 		{
-			RigidBodyType rigidType = HasStaticRigidFlag(flags) ? RIGID_BODY_STATIC : RIGID_BODY_DYNAMIC;
+			RigidBody::Type rigidType = HasStaticRigidFlag(flags) ? RigidBody::Type::Static : RigidBody::Type::Dynamic;
 			creationData.hitBox = { GetExtentsFromMesh(scene->mMeshes[node->mMeshes[0]]), GetShapeType(flags), rigidType };
 		}
 		else if (i == 0)

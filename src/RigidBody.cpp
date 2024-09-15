@@ -2,7 +2,7 @@
 #include "core/Transform.h"
 #include "core/Object.h"
 
-RigidBody::RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos, glm::vec3 rot)
+RigidBody::RigidBody(Shape shape, Type type, glm::vec3 pos, glm::vec3 rot)
 {
 	this->shape = shape;
 	this->type = type;
@@ -11,20 +11,20 @@ RigidBody::RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos, glm::vec3 r
 
 	switch (type)
 	{
-	case RIGID_BODY_DYNAMIC:
+	case Type::Dynamic:
 		rigidDynamic = physx::PxCreateDynamic(*Physics::GetPhysicsObject(), transform, *shape.GetShape(), 1);
 		Physics::AddActor(*rigidDynamic);
 		break;
-	case RIGID_BODY_STATIC:
+	case Type::Static:
 		rigidStatic = physx::PxCreateStatic(*Physics::GetPhysicsObject(), transform, *shape.GetShape());
 		Physics::AddActor(*rigidStatic);
 		break;
-	case RIGID_BODY_KINEMATIC:
+	case Type::Kinematic:
 		rigidDynamic = physx::PxCreateDynamic(*Physics::GetPhysicsObject(), transform, *shape.GetShape(), 1);
 		Physics::AddActor(*rigidDynamic);
 		rigidDynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::eKINEMATIC, true);
 		break;
-	case RIGID_BODY_NONE:
+	case Type::None:
 		throw std::invalid_argument("Failed to create a rigidbody: invalid rigidbody type argument (RIGID_BODY_NONE)");
 	}
 }
@@ -63,7 +63,7 @@ void RigidBody::ChangeShape(Shape& shape)
 
 void RigidBody::Destroy()
 {
-	if (type == RIGID_BODY_NONE)
+	if (type == Type::None)
 		return;
 	physx::PxActor* actor = rigidDynamic == nullptr ? rigidStatic->is<physx::PxActor>() : rigidDynamic->is<physx::PxActor>();
 	Physics::RemoveActor(*actor);

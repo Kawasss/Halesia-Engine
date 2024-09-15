@@ -5,20 +5,20 @@
 
 class Transform;
 
-enum RigidBodyType : uint8_t
-{
-	RIGID_BODY_NONE,
-	RIGID_BODY_STATIC,
-	RIGID_BODY_DYNAMIC,
-	RIGID_BODY_KINEMATIC,
-};
-inline extern std::string RigidBodyTypeToString(RigidBodyType type);
-
 class RigidBody
 {
 public:
+	enum class Type : uint8_t
+	{
+		None,
+		Static,
+		Dynamic,
+		Kinematic,
+	};
+	static std::string TypeToString(Type type);
+
 	RigidBody() {}
-	RigidBody(Shape shape, RigidBodyType type, glm::vec3 pos = glm::vec3(0), glm::vec3 rot = glm::vec3(0));
+	RigidBody(Shape shape, Type type, glm::vec3 pos = glm::vec3(0), glm::vec3 rot = glm::vec3(0));
 	~RigidBody();
 	void Destroy();
 
@@ -29,13 +29,13 @@ public:
 	void AddForce(glm::vec3 force);
 	void SetForce();
 	void SetUserData(void* data);
-	void ChangeType(RigidBodyType type);
+	void ChangeType(Type type);
 	void* GetUserData();
 
 	glm::vec3 GetPosition();
 	glm::vec3 GetRotation();
 
-	RigidBodyType type = RIGID_BODY_NONE;
+	Type type = Type::None;
 	Shape shape;
 	glm::vec3 queuedUpForce = glm::vec3(0);
 

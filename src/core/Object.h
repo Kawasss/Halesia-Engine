@@ -57,7 +57,7 @@ public:
 
 	bool HasFinishedLoading();
 	bool HasScript()    const { return scriptClass != nullptr; }
-	bool HasRigidBody() const { return rigid.type != RIGID_BODY_NONE; }
+	bool HasRigidBody() const { return rigid.type != RigidBody::Type::None; }
 
 	void AwaitGeneration(); // Awaits the async generation process of the object and meshes
 
@@ -66,7 +66,7 @@ public:
 
 	void Initialize(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
 
-	void SetRigidBody(RigidBodyType type, Shape shape);
+	void SetRigidBody(RigidBody::Type type, Shape shape);
 	void SetMesh(const std::vector<MeshCreationData>& creationData);
 
 	template<typename T> 

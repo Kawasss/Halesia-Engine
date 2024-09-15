@@ -198,7 +198,7 @@ glm::vec3 Ship::GetMousePosIn3D()
 	glm::vec3 origin = invView * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	glm::vec3 dir = invView * glm::vec4(glm::normalize(glm::vec3(target.x, target.y, target.z)), 0);
 
-	RayHitInfo hitInfo;
+	Physics::RayHitInfo hitInfo;
 	Physics::CastRay(origin, dir, 100000.0f, hitInfo);
 
 	return origin + dir * hitInfo.distance;
@@ -263,7 +263,7 @@ class Topdown : public Scene
 		floor->transform.position.y = -3;
 
 		Shape floorShape = Box(glm::vec3(20, 1, 20));
-		floor->SetRigidBody(RIGID_BODY_STATIC, floorShape);
+		floor->SetRigidBody(RigidBody::Type::Static, floorShape);
 		floor->rigid.ForcePosition(floor->transform);
 
 		Object* light = DuplicateObject(floor, "light");
@@ -295,7 +295,7 @@ class Topdown : public Scene
 
 		baseBullet = AddObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/bullet.obj"));
 		baseBullet->name = "bullet";
-		baseBullet->SetRigidBody(RIGID_BODY_KINEMATIC, Box(baseBullet->mesh.extents));
+		baseBullet->SetRigidBody(RigidBody::Type::Kinematic, Box(baseBullet->mesh.extents));
 		baseBullet->state = OBJECT_STATE_DISABLED;
 		baseBullet->transform.position.y = -5;
 		baseBullet->mesh.SetMaterial(bulletMat);
@@ -305,7 +305,7 @@ class Topdown : public Scene
 		box->GetScript<Enemy>()->baseBullet = baseBullet;
 		box->GetScript<Enemy>()->player = ship;
 
-		box->SetRigidBody(RIGID_BODY_KINEMATIC, Box(box->mesh.extents));
+		box->SetRigidBody(RigidBody::Type::Kinematic, Box(box->mesh.extents));
 
 		//HSFWriter::WriteHSFScene(this, "scene.hsf");
 	}
