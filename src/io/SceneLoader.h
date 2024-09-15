@@ -1,17 +1,15 @@
 #pragma once
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <fstream>
-#include <iomanip>
 #include <vector>
-#include <algorithm>
-#include <execution>
 #include <map>
+
 #include "glm.h"
+
 #include "renderer/Vertex.h"
 #include "renderer/Bone.h"
 #include "renderer/AnimationManager.h"
+
 #include "physics/Shapes.h"
 #include "physics/RigidBody.h"
 
@@ -139,6 +137,9 @@ public:
 	bool IsAtEndOfFile() { return pointer >= stream.size() - 1; }
 
 private:
+	void ReadCompressedData(char* src, size_t size);
+	size_t DecompressData(char* src, char* dst, uint32_t mode, size_t size, size_t expectedSize);
+
 	size_t pointer = 0;
 	std::vector<char> stream;
 	std::ifstream input;
@@ -153,15 +154,15 @@ public:
 	void LoadScene();
 
 	// camera related info
-	glm::vec3 cameraPos;
-	float cameraPitch, cameraYaw;
+	glm::vec3 cameraPos = glm::vec3(0.0f);
+	float cameraPitch = 0.0f, cameraYaw = 0.0f;
 
 	// light related info
 	// int amountOfLights; not impelemented yet
-	glm::vec3 lightPos;
+	glm::vec3 lightPos = glm::vec3(0.0f);
 
 	// model related info
-	int amountOfObjects;
+	int amountOfObjects = 0;
 	std::vector<ObjectCreationData> objects;
 	std::vector<MaterialCreationData> materials;
 
@@ -187,12 +188,12 @@ private:
 	void RetrieveType(NodeType type, NodeSize size);
 	void RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans);
 
-	MeshCreationData* currentMesh; // dont know how safe this is
-	std::vector<ObjectCreationData>::iterator currentObject;
-	std::vector<MaterialCreationData>::iterator currentMat;
+	MeshCreationData* currentMesh = nullptr; // dont know how safe this is
+	std::vector<ObjectCreationData>::iterator currentObject{};
+	std::vector<MaterialCreationData>::iterator currentMat{};
 };
 
-inline namespace GenericLoader
+namespace GenericLoader
 {
 	glm::vec3 LoadHitBox(std::string path);
 	ObjectCreationData LoadObjectFile(std::string path);
