@@ -794,6 +794,8 @@ inline void ResetImGui()
 
 void Renderer::StartRecording()
 {
+	CheckForVRAMOverflow();
+
 	VkResult result = vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
 	CheckVulkanResult("Failed to wait for fences", result, vkWaitForFences);
 	result = vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
@@ -942,6 +944,13 @@ void Renderer::AddLight(const Light& light)
 {
 	for (RenderPipeline* renderPipeline : renderPipelines)
 		renderPipeline->AddLight(light); // this wont add the light to any render pipeline created after this moment
+}
+
+void Renderer::CheckForVRAMOverflow()
+{
+	static uint64_t max = physicalDevice.VRAM();
+	if (Vulkan::allocatedMemory > max)
+		throw VulkanAPIError("Critical error: out of VRAM");
 }
 
 void Renderer::SetLogicalDevice()

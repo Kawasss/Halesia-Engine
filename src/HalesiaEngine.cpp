@@ -22,6 +22,8 @@
 
 #include "Audio.h"
 
+class ExitRequest : public std::exception {}; // not that great to request an exit via errors
+
 HalesiaEngineCreateInfo HalesiaEngine::createInfo{};
 
 inline void ProcessError(const std::exception& e)
@@ -292,6 +294,11 @@ HalesiaExitCode HalesiaEngine::Run()
 		OnExit();
 		return HALESIA_EXIT_CODE_SUCESS;
 	}
+	catch (const ExitRequest& exit)
+	{
+		OnExit();
+		return HALESIA_EXIT_CODE_SUCESS;
+	}
 	catch (const std::exception& e) //catch any normal exception and return
 	{
 		std::string fullError = e.what();
@@ -426,4 +433,9 @@ void HalesiaEngine::RegisterConsoleVars()
 	Console::AddConsoleVariable("raySamples", &RayTracingPipeline::raySampleCount);
 	Console::AddConsoleVariable("rayDepth", &RayTracingPipeline::rayDepth);
 	Console::AddConsoleVariable("internalResScale", &Renderer::internalScale);
+}
+
+void HalesiaEngine::Exit()
+{
+	throw ExitRequest();
 }

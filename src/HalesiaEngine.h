@@ -45,6 +45,8 @@ struct EngineCore
 class HalesiaEngine
 {
 public:
+	static void Exit();
+
 	static void SetCreateInfo(const HalesiaEngineCreateInfo& createInfo);
 	static HalesiaEngine* GetInstance(); //dont know if its better to return a pointer or the whole class or write to a reference
 	EngineCore& GetEngineCore();

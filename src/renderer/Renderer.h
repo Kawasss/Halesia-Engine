@@ -200,6 +200,7 @@ private:
 	void AddExtensions();
 	void CreateContext();
 	void CreatePhysicalDevice();
+	void CheckForVRAMOverflow();
 	uint32_t DetectExternalTools();
 
 	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
