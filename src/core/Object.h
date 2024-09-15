@@ -49,7 +49,7 @@ public:
 	virtual		~Object() {}
 	virtual void Start()  {}
 	virtual void Destroy(bool del = true);
-	virtual void Update(float delta);
+	virtual void Update(float delta) {}
 
 	virtual void OnCollisionEnter(Object* object) {}
 	virtual void OnCollisionStay(Object* object)  {}
@@ -67,11 +67,10 @@ public:
 	void Initialize(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
 
 	void SetRigidBody(RigidBody::Type type, Shape shape);
-	void SetMesh(const std::vector<MeshCreationData>& creationData);
+	void SetMesh(const MeshCreationData& creationData);
 
 	template<typename T> 
-	Object* AddCustomChild(const ObjectCreationData& creationData);
-
+	Object* AddChild(const ObjectCreationData& creationData);
 	Object* AddChild(const ObjectCreationData& creationData);
 	void    AddChild(Object* object);
 
@@ -93,7 +92,7 @@ public:
 	
 	ObjectState state = OBJECT_STATE_VISIBLE;
 	std::string name;
-	Handle handle;
+	Handle handle = 0;
 
 	bool FinishedLoading()   const { return finishedLoading;   }
 	bool ShouldBeDestroyed() const { return shouldBeDestroyed; }
@@ -107,7 +106,7 @@ private:
 	void* scriptClass = nullptr;
 	std::future<void> generation;
 	
-	Scene* scene;
+	Scene* scene = nullptr;
 	win32::CriticalSection critSection;
 	std::vector<Object*> children;
 
@@ -130,19 +129,19 @@ protected:
 template<typename T> 
 void Object::SetScript(T* script)
 {
-	static_assert(!std::is_base_of_v<T, Object>, "Cannot set the script: the typename does not have Object as a base or the pointer is null");
+	static_assert(!std::is_base_of_v<T, Object>, "Cannot set the script: the typename does not have Object as a base");
 	scriptClass = script;
 }
 
 template<typename T> 
 T* Object::GetScript() 
 { 
-	static_assert(!std::is_base_of_v<T, Object>, "Cannot get the script: the typename does not have Object as a base or the pointer is null");
+	static_assert(!std::is_base_of_v<T, Object>, "Cannot get the script: the typename does not have Object as a base");
 	return static_cast<T*>(scriptClass); 
 }
 
 template<typename T> 
-Object* Object::AddCustomChild(const ObjectCreationData& creationData)
+Object* Object::AddChild(const ObjectCreationData& creationData)
 {
 	static_assert(!std::is_base_of_v<T, Object>, "Cannot Create a custom object: the typename does not have Object as a base");
 	T* custom = new T();

@@ -23,8 +23,6 @@ void Object::GenerateObjectWithData(const ObjectCreationData& creationData)
 	{
 		Shape shape = Shape::GetShapeFromType(creationData.hitBox.shapeType, creationData.hitBox.extents);
 		SetRigidBody(creationData.hitBox.rigidType, shape);
-		transform.position = creationData.position;
-		transform.rotation = creationData.rotation;
 		rigid.ForcePosition(transform);
 	}
 	finishedLoading = true; //maybe use mutex here or just find better solution
@@ -43,27 +41,26 @@ Object* Object::Create(const ObjectCreationData& creationData, void* customClass
 
 void Object::Initialize(const ObjectCreationData& creationData, void* customClassPointer)
 {
+	handle = ResourceManager::GenerateHandle();
+
 	name = creationData.name;
 	scriptClass = customClassPointer;
 	state = (ObjectState)creationData.state;
 
-	if (creationData.hasMesh)
-		transform = Transform(creationData.position, creationData.rotation, creationData.scale, mesh.extents, mesh.center); // should determine the extents and center (minmax) of all meshes not just the first one
-	handle = ResourceManager::GenerateHandle();
-	name = creationData.name;
 	transform.position = creationData.position;
 	transform.rotation = creationData.rotation;
-	transform.scale = creationData.scale;
+	transform.scale    = creationData.scale;
+
+	if (creationData.hasMesh)
+		transform = Transform(creationData.position, creationData.rotation, creationData.scale, mesh.extents, mesh.center);
 
 	GenerateObjectWithData(creationData); // maybe async??
 	Start();
 }
 
-void Object::SetMesh(const std::vector<MeshCreationData>& creationData)
+void Object::SetMesh(const MeshCreationData& creationData)
 {
-	if (creationData.empty())
-		return;
-	mesh.Create(creationData[0]);
+	mesh.Create(creationData); // Create will automatically destroy old resources
 }
 
 void Object::AddChild(Object* object)
@@ -117,11 +114,6 @@ void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, v
 
 	newObjPtr->Start();
 	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + oldObjPtr->name + "\" with" + (script == nullptr ? "out a script" : " a script"), Console::Severity::Debug);
-}
-
-void Object::Update(float delta)
-{
-	
 }
 
 Object* Object::AddChild(const ObjectCreationData& creationData)
