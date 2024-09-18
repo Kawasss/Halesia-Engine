@@ -70,6 +70,9 @@
     <Filter Include="Header Files\math">
       <UniqueIdentifier>{9040f3d0-3211-4f93-aed1-c50ee71e7b7f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\tools">
+      <UniqueIdentifier>{dde5520d-93a6-4ef6-b113-00774ad2cf7b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\HalesiaEngine.cpp">
@@ -263,6 +266,9 @@
     </ClCompile>
     <ClCompile Include="src\Editor.cpp">
       <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\CameraInjector.cpp">
+      <Filter>Source Files\tools</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -14,9 +14,11 @@
 #include "tools/CameraInjector.h"
 #include "physics/Physics.h"
 
+#include "core/Camera.h"
 #include "core/Console.h"
 #include "core/Profiler.h"
 #include "core/Behavior.h"
+#include "core/Scene.h"
 
 #include "vvm/VVM.hpp"
 
@@ -112,8 +114,8 @@ void HalesiaEngine::SetCreateInfo(const HalesiaEngineCreateInfo& createInfo)
 
 void HalesiaEngine::Destroy()
 {
-	core.renderer->Destroy();
-	core.scene->Destroy();
+	delete core.renderer;
+	delete core.scene;
 	delete core.window;
 }
 
@@ -182,8 +184,6 @@ void HalesiaEngine::UpdateRenderer(float delta)
 	core.scene->UpdateGUI(delta);
 
 	core.renderer->StartRecording();
-
-	
 
 	core.renderer->RenderObjects(core.scene->allObjects, core.scene->camera);
 
