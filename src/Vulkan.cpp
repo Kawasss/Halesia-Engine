@@ -11,10 +11,6 @@ bool enableValidationLayers = true;
 #include "renderer/Vulkan.h"
 #include "renderer/Surface.h"
 
-#define ATTACH_INSTANCE_FUNCTION(function) p##function = (PFN_##function##)vkGetInstanceProcAddr(instance, #function)
-#define ATTACH_DEVICE_FUNCTION(function) p##function = (PFN_##function##)vkGetDeviceProcAddr(logicalDevice, #function) // relies on the fact that a VkDevice named logicalDevice and the function pointer already exists with DEFINE_VULKAN_FUNCTION_POINTER
-#define DEFINE_FUNCTION_POINTER(function) PFN_##function p##function = nullptr 
-
 VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 
 std::unordered_map<uint32_t, std::vector<VkCommandPool>> Vulkan::queueCommandPools;
@@ -438,31 +434,6 @@ void Vulkan::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryP
     vkBindBufferMemory(context.logicalDevice, buffer, bufferMemory, 0);
 }
 
-void Vulkan::ReallocateBuffer(VkBuffer buffer, VkDeviceMemory& memory, VkDeviceSize size, VkDeviceSize oldSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) // this relies on the fact that the memory can be mapped
-{
-    VkDeviceMemory newMem = VK_NULL_HANDLE;
-    VkBuffer newBuffer    = VK_NULL_HANDLE;
-
-    CreateBuffer(size, usage, properties, newBuffer, newMem);
-
-    void* oldMemData = nullptr, *newMemData = nullptr;
-    VkResult result = vkMapMemory(context.logicalDevice, memory, 0, oldSize, 0, &oldMemData);
-    CheckVulkanResult("Canot map the memory needed for reallocation", result, vkMapMemory);
-
-    result = vkMapMemory(context.logicalDevice, newMem, 0, oldSize, 0, &newMemData);
-    CheckVulkanResult("Canot map the memory needed for reallocation", result, vkMapMemory);
-
-    memcpy(newMemData, oldMemData, oldSize);
-
-    vkUnmapMemory(context.logicalDevice, memory);
-    vkUnmapMemory(context.logicalDevice, newMem);
-    vkFreeMemory(context.logicalDevice, memory, nullptr);
-    vkDestroyBuffer(context.logicalDevice, buffer, nullptr);
-    
-    memory = newMem;
-    buffer = newBuffer;
-}
-
 uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice)
 {
     VkPhysicalDeviceMemoryProperties physicalMemoryProperties = physicalDevice.MemoryProperties();
@@ -820,78 +791,6 @@ std::vector<VkExtensionProperties> Vulkan::GetLogicalDeviceExtensions(PhysicalDe
     return extensions;
 }
 
-#pragma region VulkanPointerFunctions
-DEFINE_FUNCTION_POINTER(vkGetBufferDeviceAddressKHR);
-DEFINE_FUNCTION_POINTER(vkCreateRayTracingPipelinesKHR);
-DEFINE_FUNCTION_POINTER(vkGetAccelerationStructureBuildSizesKHR);
-DEFINE_FUNCTION_POINTER(vkCreateAccelerationStructureKHR);
-DEFINE_FUNCTION_POINTER(vkDestroyAccelerationStructureKHR);
-DEFINE_FUNCTION_POINTER(vkGetAccelerationStructureDeviceAddressKHR);
-DEFINE_FUNCTION_POINTER(vkCmdBuildAccelerationStructuresKHR);
-DEFINE_FUNCTION_POINTER(vkGetRayTracingShaderGroupHandlesKHR);
-DEFINE_FUNCTION_POINTER(vkCmdTraceRaysKHR);
-DEFINE_FUNCTION_POINTER(vkGetMemoryWin32HandleKHR);
-DEFINE_FUNCTION_POINTER(vkGetSemaphoreWin32HandleKHR);
-DEFINE_FUNCTION_POINTER(vkCmdBeginDebugUtilsLabelEXT);
-DEFINE_FUNCTION_POINTER(vkCmdEndDebugUtilsLabelEXT);
-DEFINE_FUNCTION_POINTER(vkCmdInsertDebugUtilsLabelEXT);
-DEFINE_FUNCTION_POINTER(vkSetDebugUtilsObjectNameEXT);
-#pragma endregion VulkanPointerFunctions
-
-void Vulkan::ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, const std::vector<const char*>& logicalDeviceExtensions)
-{
-    for (const std::string_view logicalDeviceExtension : logicalDeviceExtensions) // no switch case because c++ cant handle strings in switch cases
-    {
-        if (logicalDeviceExtension == VK_KHR_SWAPCHAIN_EXTENSION_NAME) continue;
-        else if (logicalDeviceExtension == VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME) continue;
-        else if (logicalDeviceExtension == VK_EXT_DESCRIPTOR_INDEXING_EXTENSION_NAME) continue;
-
-        else if (logicalDeviceExtension == VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME)
-        {
-            ATTACH_DEVICE_FUNCTION(vkCmdBuildAccelerationStructuresKHR);
-            ATTACH_DEVICE_FUNCTION(vkCreateAccelerationStructureKHR);
-            ATTACH_DEVICE_FUNCTION(vkDestroyAccelerationStructureKHR);
-            ATTACH_DEVICE_FUNCTION(vkGetAccelerationStructureBuildSizesKHR);
-            ATTACH_DEVICE_FUNCTION(vkGetAccelerationStructureDeviceAddressKHR);
-        }
-
-        else if (logicalDeviceExtension == VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME)
-        {
-            ATTACH_DEVICE_FUNCTION(vkCmdTraceRaysKHR);
-            ATTACH_DEVICE_FUNCTION(vkCreateRayTracingPipelinesKHR);
-            ATTACH_DEVICE_FUNCTION(vkGetRayTracingShaderGroupHandlesKHR);
-        }
-
-        else if (logicalDeviceExtension == VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME)
-            ATTACH_DEVICE_FUNCTION(vkGetBufferDeviceAddressKHR);
-
-        else if (logicalDeviceExtension == VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME)
-        {
-            ATTACH_DEVICE_FUNCTION(vkGetMemoryWin32HandleKHR);
-        }
-
-        else if (logicalDeviceExtension == VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME)
-            ATTACH_DEVICE_FUNCTION(vkGetSemaphoreWin32HandleKHR);
-
-        else
-            Console::WriteLine("Given logical device extension " + (std::string)logicalDeviceExtension.data() + " has no activatable functions", Console::Severity::Warning);
-    }
-}
-
-void Vulkan::ActiveInstanceExtensions(VkInstance instance, const std::vector<const char*>& extensions)
-{
-    for (const std::string_view extension : extensions)
-    {
-        if (extension == VK_EXT_DEBUG_UTILS_EXTENSION_NAME)
-        {
-            ATTACH_INSTANCE_FUNCTION(vkCmdBeginDebugUtilsLabelEXT);
-            ATTACH_INSTANCE_FUNCTION(vkCmdEndDebugUtilsLabelEXT);
-            ATTACH_INSTANCE_FUNCTION(vkCmdInsertDebugUtilsLabelEXT);
-            ATTACH_INSTANCE_FUNCTION(vkSetDebugUtilsObjectNameEXT);
-        }
-    }
-}
-
 std::string CreateFunctionNotActivatedError(std::string functionName, std::string extensionName)
 {
     return "Function \"" + functionName + "\" was called, but is invalid.\nIts extension \"" + extensionName + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"";
@@ -903,74 +802,88 @@ std::string CreateFunctionNotActivatedError(std::string functionName, std::strin
 #define DEBUG_ONLY(cont)
 #endif
 
+#define DEFINE_DEVICE_FUNCTION(function)   static PFN_##function p##function = (PFN_##function##)vkGetDeviceProcAddr(Vulkan::GetContext().logicalDevice, #function)
+#define DEFINE_INSTANCE_FUNCTION(function) static PFN_##function p##function = (PFN_##function##)vkGetInstanceProcAddr(instance, #function)
+
 #define CHECK_VALIDITY_DEBUG(ptr, ext) \
 DEBUG_ONLY(                            \
 if (ptr == nullptr)                    \
     throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, ext), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__));
 
 #pragma region VulkanExtensionFunctionDefinitions
-VkResult vkGetSemaphoreWin32HandleKHR(VkDevice logicalDevice, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle)
+VkResult vkGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle)
 {
+    DEFINE_DEVICE_FUNCTION(vkGetSemaphoreWin32HandleKHR);
     CHECK_VALIDITY_DEBUG(pvkGetSemaphoreWin32HandleKHR, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
-    return pvkGetSemaphoreWin32HandleKHR(logicalDevice, pGetWin32HandleInfo, pHandle);
+    return pvkGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
 }
 
 VkResult vkGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle)
 {
-    CHECK_VALIDITY_DEBUG(pvkGetSemaphoreWin32HandleKHR, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME)
+    DEFINE_DEVICE_FUNCTION(vkGetMemoryWin32HandleKHR);
+    CHECK_VALIDITY_DEBUG(pvkGetMemoryWin32HandleKHR, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME)
     return pvkGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
 }
 
 VkDeviceAddress vkGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) 
 { 
+    DEFINE_DEVICE_FUNCTION(vkGetBufferDeviceAddressKHR);
     CHECK_VALIDITY_DEBUG(pvkGetBufferDeviceAddressKHR, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     return pvkGetBufferDeviceAddressKHR(device, pInfo); 
 }
 
 VkDeviceAddress vkGetAccelerationStructureDeviceAddressKHR(VkDevice device, const VkAccelerationStructureDeviceAddressInfoKHR* pInfo)
 {
+    DEFINE_DEVICE_FUNCTION(vkGetAccelerationStructureDeviceAddressKHR);
     CHECK_VALIDITY_DEBUG(pvkGetAccelerationStructureDeviceAddressKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     return pvkGetAccelerationStructureDeviceAddressKHR(device, pInfo);
 }
 
 VkResult vkCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoKHR* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) 
 { 
+    DEFINE_DEVICE_FUNCTION(vkCreateRayTracingPipelinesKHR);
     CHECK_VALIDITY_DEBUG(pvkCreateRayTracingPipelinesKHR, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     return pvkCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines); 
 }
 
 VkResult vkCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkAccelerationStructureKHR* pAccelerationStructure)
 {
+    DEFINE_DEVICE_FUNCTION(vkCreateAccelerationStructureKHR);
     CHECK_VALIDITY_DEBUG(pvkCreateAccelerationStructureKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     return pvkCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
 }
 
 VkResult vkGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount, size_t dataSize, void* pData)
 {
+    DEFINE_DEVICE_FUNCTION(vkGetRayTracingShaderGroupHandlesKHR);
     CHECK_VALIDITY_DEBUG(pvkGetRayTracingShaderGroupHandlesKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     return pvkGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
 }
 
 void vkGetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType, const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo, const uint32_t* pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo)
 {
+    DEFINE_DEVICE_FUNCTION(vkGetAccelerationStructureBuildSizesKHR);
     CHECK_VALIDITY_DEBUG(pvkGetAccelerationStructureBuildSizesKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
 }
 
 void vkDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure, const VkAllocationCallbacks* pAllocator)
 {
+    DEFINE_DEVICE_FUNCTION(vkDestroyAccelerationStructureKHR);
     CHECK_VALIDITY_DEBUG(pvkDestroyAccelerationStructureKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
 }
 
 void vkCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
 {
+    DEFINE_DEVICE_FUNCTION(vkCmdBuildAccelerationStructuresKHR);
     CHECK_VALIDITY_DEBUG(pvkCmdBuildAccelerationStructuresKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
 }
 
 void vkCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height, uint32_t depth)
 {
+    DEFINE_DEVICE_FUNCTION(vkCmdTraceRaysKHR);
     CHECK_VALIDITY_DEBUG(pvkCmdTraceRaysKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
 }
@@ -978,6 +891,7 @@ void vkCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddre
 void vkCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo)
 {
     DEBUG_ONLY(
+        DEFINE_DEVICE_FUNCTION(vkCmdBeginDebugUtilsLabelEXT);
         CHECK_VALIDITY_DEBUG(pvkCmdBeginDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         pvkCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
     );
@@ -986,6 +900,7 @@ void vkCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUt
 void vkCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer)
 {
     DEBUG_ONLY(
+        DEFINE_DEVICE_FUNCTION(vkCmdEndDebugUtilsLabelEXT);
         CHECK_VALIDITY_DEBUG(pvkCmdEndDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         pvkCmdEndDebugUtilsLabelEXT(commandBuffer);
     );
@@ -994,6 +909,7 @@ void vkCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer)
 void vkCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo)
 {
     DEBUG_ONLY(
+        DEFINE_DEVICE_FUNCTION(vkCmdInsertDebugUtilsLabelEXT);
         CHECK_VALIDITY_DEBUG(pvkCmdInsertDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         pvkCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
     );
@@ -1002,6 +918,7 @@ void vkCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugU
 VkResult vkSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo)
 {
     DEBUG_ONLY(
+        DEFINE_DEVICE_FUNCTION(vkSetDebugUtilsObjectNameEXT);
         CHECK_VALIDITY_DEBUG(pvkSetDebugUtilsObjectNameEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         return pvkSetDebugUtilsObjectNameEXT(device, pNameInfo);
     );

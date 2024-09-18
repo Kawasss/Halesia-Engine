@@ -82,8 +82,6 @@ public:
     static VkInstance                         GenerateInstance();
     static std::vector<VkExtensionProperties> GetInstanceExtensions();
     static std::vector<VkExtensionProperties> GetLogicalDeviceExtensions(PhysicalDevice physicalDevice);
-    static void                               ActivateLogicalDeviceExtensionFunctions(VkDevice logicalDevice, const std::vector<const char*>& logicalDeviceExtensions);
-    static void                               ActiveInstanceExtensions(VkInstance instance, const std::vector<const char*>& extensions);
 
     static SwapChainSupportDetails            QuerySwapChainSupport(PhysicalDevice device, VkSurfaceKHR surface);
     static VkSurfaceFormatKHR                 ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -112,7 +110,6 @@ public:
     static void                               CreateExternalBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     static void                               CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
     static void                               CopyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffer sourceBuffer, VkBuffer destinationBuffer, VkDeviceSize size);
-    static void                               ReallocateBuffer(VkBuffer buffer, VkDeviceMemory& memory, VkDeviceSize size, VkDeviceSize oldSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 
     static void                               PopulateDefaultViewport(VkViewport& viewport, VkExtent2D extents);
     static void                               PopulateDefaultScissors(VkRect2D& scissors, VkExtent2D extents);
@@ -196,7 +193,7 @@ inline void Vulkan::SetDebugName<VkCommandBuffer>(VkCommandBuffer object, const 
 }
 
 #define VULKAN_TRACK_MEMORY
-#ifdef VULKAN_TRACK_MEMORY
+#ifdef  VULKAN_TRACK_MEMORY
 
 inline std::unordered_map<VkDeviceMemory, VkDeviceSize> memoryToSize;
 

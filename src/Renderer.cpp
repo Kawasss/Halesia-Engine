@@ -285,8 +285,6 @@ void Renderer::CreatePhysicalDevice()
 
 	instance = Vulkan::GenerateInstance();
 
-	Vulkan::ActiveInstanceExtensions(instance, Vulkan::requiredInstanceExtensions);
-
 	surface = Surface::GenerateSurface(instance, testWindow);
 	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
 }

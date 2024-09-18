@@ -181,8 +181,6 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
         std::cout << "  " + (std::string)extension << std::endl;
 #endif
 
-    Vulkan::ActivateLogicalDeviceExtensionFunctions(device, Vulkan::requiredLogicalDeviceExtensions);
-
     return device;
 }
 
