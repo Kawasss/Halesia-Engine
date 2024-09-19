@@ -31,25 +31,24 @@ bool Image::TexturesHaveChanged()
 	return ret;
 }
 
-void Image::GenerateImages(std::vector<std::vector<char>>& textureData, bool useMipMaps, TextureFormat format, TextureUseCase useCase)
+void Image::GenerateImages(const std::vector<char>& textureData, bool useMipMaps, int amount, TextureFormat format, TextureUseCase useCase)
 {
 	this->format = format;
 
-	layerCount = static_cast<uint32_t>(textureData.size());
+	layerCount = static_cast<uint32_t>(amount);
 	int textureChannels = 0;
 
 	if (useMipMaps)
-		mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+		CalculateMipLevels();
+
 	stbi_set_flip_vertically_on_load(1);
 	// read every side of the cubemap
-	std::vector<stbi_uc*> pixels(layerCount);
-	for (uint32_t i = 0; i < layerCount; i++)
-		pixels[i] = stbi_load_from_memory((unsigned char*)textureData[i].data(), (int)textureData[i].size(), &width, &height, &textureChannels, STBI_rgb_alpha);
+	stbi_uc* pixels = nullptr;
+	pixels = stbi_load_from_memory((unsigned char*)textureData.data(), (int)textureData.size(), &width, &height, &textureChannels, STBI_rgb_alpha);
 
 	WritePixelsToBuffer(pixels, useMipMaps, format, (VkImageLayout)useCase);
 
-	for (uint32_t i = 0; i < layerCount; i++)
-		stbi_image_free(pixels[i]);
+	stbi_image_free(pixels);
 }
 
 void Image::GenerateEmptyImages(int width, int height, int amount)
@@ -84,16 +83,15 @@ void Image::GenerateEmptyImages(int width, int height, int amount)
 	this->texturesHaveChanged = true;
 }
 
-void Image::WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMipMaps, TextureFormat format, VkImageLayout layout)
+void Image::WritePixelsToBuffer(uint8_t* pixels, bool useMipMaps, TextureFormat format, VkImageLayout layout)
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
 
-	VkDeviceSize layerSize = width * height * 4;
-	size = layerSize * layerCount;
+	size = width * height * 4;
 
-	if (layerSize == 0)
+	if (size == 0)
 		throw std::runtime_error("Invalid image found: layer size is 0");
 
 	Buffer stagingBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -101,9 +99,10 @@ void Image::WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMip
 	win32::CriticalLockGuard lockGuard(Vulkan::graphicsQueueSection);
 
 	// copy all of the different sides of the cubemap into a single buffer
-	void* data = stagingBuffer.Map();
-	for (uint32_t i = 0; i < layerCount; i++)
-		memcpy((char*)data + (layerSize * i), pixels[i], static_cast<size_t>(size)); // cast the void* to char for working arithmetic
+	uint8_t* data = stagingBuffer.Map<uint8_t>();
+
+	memcpy(data, pixels, static_cast<size_t>(size));
+
 	stagingBuffer.Unmap();
 
 	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
@@ -116,10 +115,8 @@ void Image::WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMip
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 	imageView = Vulkan::CreateImageView(image, viewType, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_ASPECT_COLOR_BIT);
-	if (useMipMaps) 
-		GenerateMipMaps((VkFormat)format);
-	else
-		TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout);
+
+	useMipMaps ? GenerateMipMaps((VkFormat)format) : TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout);
 
 	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 
@@ -215,35 +212,30 @@ bool Image::HasFinishedLoading()
 	return !generation.valid();
 }
 
-std::vector<std::vector<char>> GetAllImageData(std::vector<std::string> filePaths) // dont know if the copy speed is a concern
+void Image::CalculateMipLevels()
 {
-	std::vector<std::vector<char>> fileDatas;
-	for (int i = 0; i < filePaths.size(); i++)
-		fileDatas.push_back(IO::ReadFile(filePaths[i]));
-	return fileDatas;
+	assert(width != 0 && height != 0);
+	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 }
 
-Cubemap::Cubemap(std::vector<std::string> filePath, bool useMipMaps)
+Cubemap::Cubemap(const std::string& filePath, bool useMipMaps)
 {
-	if (filePath.size() != 6) 
-		throw new std::runtime_error("Invalid amount of images given for a cubemap: expected 6, but got " + std::to_string(filePath.size()));
-
 	// this async can't use the capture list ( [&] ), because then filePath gets wiped clean (??)
-	generation = std::async([](Cubemap* cubemap, std::vector<std::string> filePath, bool useMipMaps)
+	generation = std::async([=]()
 		{
-			std::vector<std::vector<char>> data = GetAllImageData(filePath);
-			cubemap->GenerateImages(data, useMipMaps);
-		}, this, filePath, useMipMaps);
+			std::vector<char> data = IO::ReadFile(filePath);
+			this->GenerateImages(data, useMipMaps);
+		});
 }
 
 Texture::Texture(std::string filePath, bool useMipMaps, TextureFormat format, TextureUseCase useCase)
 {
 	// this async can't use the capture list ( [&] ), because then filePath gets wiped clean (??)
-	generation = std::async([](Texture* texture, std::string filePath, bool useMipMaps, TextureFormat format, TextureUseCase useCase)
+	generation = std::async([=]()
 		{
-			std::vector<std::vector<char>> data = GetAllImageData({ filePath });
-			texture->GenerateImages(data, useMipMaps, format, useCase);
-		}, this, filePath, useMipMaps, format, useCase);
+			std::vector<char> data = IO::ReadFile(filePath);
+			this->GenerateImages(data, useMipMaps, 1, format, useCase);
+		});
 }
 
 Texture::Texture(std::vector<char> imageData, uint32_t width, uint32_t height, bool useMipMaps, TextureFormat format, TextureUseCase useCase)
@@ -257,7 +249,7 @@ Texture::Texture(std::vector<char> imageData, uint32_t width, uint32_t height, b
 
 	//generation = std::async([](Texture* texture, std::vector<char> imageData, bool useMipMaps, TextureFormat format) 
 		//{
-			std::vector<uint8_t*> data{ (uint8_t*)imageData.data() };
+			uint8_t* data = (uint8_t*)imageData.data();
 			WritePixelsToBuffer(data, useMipMaps, format, (VkImageLayout)useCase);
 			texturesHaveChanged = true;
 		//}, this, imageData, useMipMaps, format);
@@ -267,10 +259,10 @@ Texture::Texture(const Color& color, TextureFormat format, TextureUseCase useCas
 {
 	width = 1, height = 1, layerCount = 1;
 
-	generation = std::async([](Texture* texture, const Color& color, TextureFormat format, TextureUseCase useCase)
+	generation = std::async([=]()
 		{
-			texture->WritePixelsToBuffer({ color.GetData() }, false, format, (VkImageLayout)useCase);
-		}, this, color, format, useCase);
+			this->WritePixelsToBuffer({ color.GetData() }, false, format, (VkImageLayout)useCase);
+		});
 }
 
 Texture::Texture(int width, int height)

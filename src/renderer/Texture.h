@@ -29,7 +29,10 @@ private:
 class Image
 {
 public:
-	void GenerateImages(std::vector<std::vector<char>>& textureData, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
+	void GenerateImages(const std::vector<char>& textureData, bool useMipMaps = true, int amount = 1, TextureFormat format = TEXTURE_FORMAT_SRGB, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
+	void GenerateImage(const char* data, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
+	void GenerateCubemap(const char* data, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
+
 	void GenerateEmptyImages(int width, int height, int amount);
 	void ChangeData(uint8_t* data, uint32_t size, TextureFormat format);
 	void AwaitGeneration();
@@ -64,7 +67,8 @@ protected:
 	void TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 	void CopyBufferToImage(VkBuffer buffer);
 	void GenerateMipMaps(VkFormat imageFormat);
-	void WritePixelsToBuffer(const std::vector<uint8_t*>& pixels, bool useMipMaps, TextureFormat format, VkImageLayout layout);
+	void WritePixelsToBuffer(uint8_t* pixels, bool useMipMaps, TextureFormat format, VkImageLayout layout);
+	void CalculateMipLevels();
 
 	static bool texturesHaveChanged;
 };
@@ -72,7 +76,7 @@ protected:
 class Cubemap : public Image
 {
 public:
-	Cubemap(std::vector<std::string> filePath, bool useMipMaps = true);
+	Cubemap(const std::string& filePath, bool useMipMaps = true);
 	Cubemap(std::vector<std::vector<char>> filePath, bool useMipMaps = true);
 };
 
