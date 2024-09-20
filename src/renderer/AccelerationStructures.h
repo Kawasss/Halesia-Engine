@@ -23,8 +23,6 @@ protected:
 	Buffer ASBuffer;
 	Buffer scratchBuffer;
 
-	VkDevice logicalDevice = VK_NULL_HANDLE;
-
 	VkDeviceAddress ASAddress = 0;
 
 private:

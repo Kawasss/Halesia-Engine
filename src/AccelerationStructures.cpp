@@ -5,10 +5,30 @@
 
 #include "core/Object.h"
 
+inline VkAccelerationStructureGeometryTrianglesDataKHR GetTrianglesData(const Mesh& mesh)
+{
+	VkDeviceAddress vertexBufferAddress = Vulkan::GetDeviceAddress(Renderer::g_vertexBuffer.GetBufferHandle());
+	VkDeviceAddress indexBufferAddress = Vulkan::GetDeviceAddress(Renderer::g_indexBuffer.GetBufferHandle());
+
+	VkAccelerationStructureGeometryTrianglesDataKHR data{};
+	data.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
+
+	data.vertexData = { vertexBufferAddress + Renderer::g_vertexBuffer.GetMemoryOffset(mesh.vertexMemory) };
+	data.indexData  = { indexBufferAddress  + Renderer::g_indexBuffer.GetMemoryOffset(mesh.indexMemory)   };
+
+	data.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
+	data.vertexStride = sizeof(Vertex);
+	data.maxVertex = static_cast<uint32_t>(mesh.vertices.size());
+	data.indexType = VK_INDEX_TYPE_UINT16;
+	
+	data.transformData = { 0 };
+
+	return data;
+}
+
 void AccelerationStructure::CreateAS(const VkAccelerationStructureGeometryKHR* pGeometry, VkAccelerationStructureTypeKHR type, uint32_t maxPrimitiveCount)
 {
-	const Vulkan::Context& context = Vulkan::GetContext();
-	this->logicalDevice = context.logicalDevice;
+	const Vulkan::Context& ctx = Vulkan::GetContext();
 	this->type = type;
 
 	VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
@@ -25,7 +45,7 @@ void AccelerationStructure::CreateAS(const VkAccelerationStructureGeometryKHR* p
 	VkAccelerationStructureBuildSizesInfoKHR buildSizesInfo{};
 	buildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
 
-	vkGetAccelerationStructureBuildSizesKHR(context.logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildGeometryInfo, &maxPrimitiveCount, &buildSizesInfo);
+	vkGetAccelerationStructureBuildSizesKHR(ctx.logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildGeometryInfo, &maxPrimitiveCount, &buildSizesInfo);
 
 	ASBuffer.Init(buildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
@@ -36,7 +56,7 @@ void AccelerationStructure::CreateAS(const VkAccelerationStructureGeometryKHR* p
 	createInfo.buffer = ASBuffer.Get();
 	createInfo.offset = 0;
 
-	VkResult result = vkCreateAccelerationStructureKHR(context.logicalDevice, &createInfo, nullptr, &accelerationStructure);
+	VkResult result = vkCreateAccelerationStructureKHR(ctx.logicalDevice, &createInfo, nullptr, &accelerationStructure);
 	CheckVulkanResult((std::string)"Failed to create an acceleration structure (" + string_VkAccelerationStructureTypeKHR(type) + ")", result, nameof(vkCreateAccelerationStructureKHR));
 
 	ASAddress = Vulkan::GetDeviceAddress(accelerationStructure);
@@ -46,7 +66,7 @@ void AccelerationStructure::CreateAS(const VkAccelerationStructureGeometryKHR* p
 
 void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pGeometry, uint32_t primitiveCount, VkBuildAccelerationStructureModeKHR mode, VkCommandBuffer externalCommandBuffer)
 {
-	const Vulkan::Context& context = Vulkan::GetContext();
+	const Vulkan::Context& ctx = Vulkan::GetContext();
 	VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
 	buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 	buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
@@ -64,12 +84,13 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 
 	if (externalCommandBuffer == VK_NULL_HANDLE)
 	{
-		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
+		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
 		VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
+
 		vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &buildGeometryInfo, &pBuildRangeInfo);
-		Vulkan::EndSingleTimeCommands(context.graphicsQueue, commandBuffer, commandPool);
+		Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
 		
-		Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
+		Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 	}
 	else // this option is faster for runtime building since it doesn't wait for the queue to go idle (which can be a long time)
 	{
@@ -85,30 +106,19 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 
 void AccelerationStructure::Destroy()
 {
-	vkDestroyAccelerationStructureKHR(logicalDevice, accelerationStructure, nullptr);
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+	vkDestroyAccelerationStructureKHR(ctx.logicalDevice, accelerationStructure, nullptr);
 }
 
 BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(Mesh& mesh)
 {
-	const Vulkan::Context& context = Vulkan::GetContext();
 	BottomLevelAccelerationStructure* BLAS = new BottomLevelAccelerationStructure();
-	BLAS->logicalDevice = context.logicalDevice;
-
-	VkDeviceAddress vertexBufferAddress = Vulkan::GetDeviceAddress(Renderer::g_vertexBuffer.GetBufferHandle());
-	VkDeviceAddress indexBufferAddress = Vulkan::GetDeviceAddress(Renderer::g_indexBuffer.GetBufferHandle());
 
 	VkAccelerationStructureGeometryKHR geometry{};
 	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 	geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
 	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-	geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-	geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-	geometry.geometry.triangles.vertexData = { vertexBufferAddress + Renderer::g_vertexBuffer.GetMemoryOffset(mesh.vertexMemory) };
-	geometry.geometry.triangles.vertexStride = sizeof(Vertex);
-	geometry.geometry.triangles.maxVertex = static_cast<uint32_t>(mesh.vertices.size());
-	geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT16;
-	geometry.geometry.triangles.indexData = { indexBufferAddress + Renderer::g_indexBuffer.GetMemoryOffset(mesh.indexMemory) };
-	geometry.geometry.triangles.transformData = { 0 };
+	geometry.geometry.triangles = GetTrianglesData(mesh);
 
 	BLAS->CreateAS(&geometry, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, mesh.faceCount);
 
@@ -119,30 +129,18 @@ BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(Mesh&
 
 void BottomLevelAccelerationStructure::RebuildGeometry(VkCommandBuffer commandBuffer, Mesh& mesh)
 {
-	VkDeviceAddress vertexBufferAddress = Vulkan::GetDeviceAddress(Renderer::g_vertexBuffer.GetBufferHandle());
-	VkDeviceAddress indexBufferAddress = Vulkan::GetDeviceAddress(Renderer::g_indexBuffer.GetBufferHandle());
-
 	VkAccelerationStructureGeometryKHR geometry{};
 	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 	geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
 	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
-	geometry.geometry.triangles.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_TRIANGLES_DATA_KHR;
-	geometry.geometry.triangles.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
-	geometry.geometry.triangles.vertexData = { vertexBufferAddress + Renderer::g_vertexBuffer.GetMemoryOffset(mesh.vertexMemory) };
-	geometry.geometry.triangles.vertexStride = sizeof(Vertex);
-	geometry.geometry.triangles.maxVertex = static_cast<uint32_t>(mesh.vertices.size());
-	geometry.geometry.triangles.indexType = VK_INDEX_TYPE_UINT16;
-	geometry.geometry.triangles.indexData = { indexBufferAddress + Renderer::g_indexBuffer.GetMemoryOffset(mesh.indexMemory) };
-	geometry.geometry.triangles.transformData = { 0 };
+	geometry.geometry.triangles = GetTrianglesData(mesh);
 
 	BuildAS(&geometry, mesh.faceCount, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR, commandBuffer);
 }
 
 TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(const std::vector<Object*>& objects)
 {
-	const Vulkan::Context& context = Vulkan::GetContext();
 	TopLevelAccelerationStructure* TLAS = new TopLevelAccelerationStructure();
-	TLAS->logicalDevice = context.logicalDevice;
 	TLAS->instanceBuffer.Reserve(Renderer::MAX_TLAS_INSTANCES, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
 	VkAccelerationStructureGeometryKHR geometry{};
