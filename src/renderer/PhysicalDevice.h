@@ -37,7 +37,9 @@ class PhysicalDevice
 		VkDevice GetLogicalDevice(Surface& surface);
 		VkPhysicalDevice Device() const;
 
+		bool IsValid() { return physicalDevice != VK_NULL_HANDLE; }
+
 	private:
 		VkFormat GetSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
-		VkPhysicalDevice physicalDevice{};
+		VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 };

@@ -532,11 +532,24 @@ VkExtent2D Vulkan::ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabitilies
 
 PhysicalDevice Vulkan::GetBestPhysicalDevice(std::vector<PhysicalDevice> devices, Surface surface)
 {
+    PhysicalDevice curr;
+    VkPhysicalDeviceProperties currProperties{};
+
     for (size_t i = 0; i < devices.size(); i++)
-        if (IsDeviceCompatible(devices[i], surface))
-        {
-            return devices[i];
-        }    
+    {
+        VkPhysicalDeviceProperties properties = devices[i].Properties();
+
+        bool capable = IsDeviceCompatible(devices[i], surface);
+        bool gpuTypeIsBetterThanCurr = (curr.IsValid() && currProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU); // prefer a discrete gpu over an integrated gpu
+
+        if (curr.IsValid() && !gpuTypeIsBetterThanCurr)
+            continue;
+
+        curr = devices[i];
+        currProperties = curr.Properties();
+    }
+    if (curr.IsValid())
+        return curr;
 
     std::string message = "There is no compatible vulkan GPU for this engine present: iterated through " + std::to_string(devices.size()) + " physical devices: \n";
     for (PhysicalDevice physicalDevice : devices)
