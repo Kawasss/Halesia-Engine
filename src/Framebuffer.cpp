@@ -159,10 +159,10 @@ void Framebuffer::TransitionFromWriteToRead(VkCommandBuffer commandBuffer)
 
 void Framebuffer::Destroy()
 {
-	const Vulkan::Context& context = Vulkan::GetContext();
-
 	if (framebuffer == VK_NULL_HANDLE)
 		return;
+
+	const Vulkan::Context& context = Vulkan::GetContext();
 
 	for (int i = 0; i < images.size(); i++)
 	{

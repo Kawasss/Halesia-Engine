@@ -39,6 +39,7 @@ std::vector<const char*> Vulkan::validationLayers =
 };
 
 Vulkan::Context Vulkan::context{};
+std::string forcedGPU;
 
 VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string functionName, std::string file, int line)
 {
@@ -48,6 +49,11 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     location += file == "" ? "" : " in " + file;
 
     this->message = message + vulkanError + location;
+}
+
+void Vulkan::ForcePhysicalDevice(const std::string& name)
+{
+    forcedGPU = name;
 }
 
 void Vulkan::DebugNameObject(uint64_t object, VkObjectType type, const char* name)
@@ -116,7 +122,7 @@ const Vulkan::Context& Vulkan::GetContext()
     return context;
 }
 
-bool Vulkan::Context::IsValid()
+bool Vulkan::Context::IsValid() const
 {
     return !(instance == VK_NULL_HANDLE || logicalDevice == VK_NULL_HANDLE || physicalDevice.Device() == VK_NULL_HANDLE);
 }
@@ -542,19 +548,29 @@ PhysicalDevice Vulkan::GetBestPhysicalDevice(std::vector<PhysicalDevice> devices
         bool capable = IsDeviceCompatible(devices[i], surface);
         bool gpuTypeIsBetterThanCurr = (curr.IsValid() && currProperties.deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU); // prefer a discrete gpu over an integrated gpu
 
+        if (properties.deviceName == forcedGPU)
+        {
+            if (!capable) 
+                throw VulkanAPIError("Cannot force GPU to " + forcedGPU + ": it isn't compatible", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
+            return devices[i];
+        }
+
         if (curr.IsValid() && !gpuTypeIsBetterThanCurr)
             continue;
 
         curr = devices[i];
         currProperties = curr.Properties();
     }
+    if (!forcedGPU.empty())
+        throw VulkanAPIError("Cannot find forced GPU \"" + forcedGPU + '"', VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
+
     if (curr.IsValid())
         return curr;
 
     std::string message = "There is no compatible vulkan GPU for this engine present: iterated through " + std::to_string(devices.size()) + " physical devices: \n";
     for (PhysicalDevice physicalDevice : devices)
         message += (std::string)physicalDevice.Properties().deviceName + "\n";
-    throw VulkanAPIError(message, VK_SUCCESS, nameof(GetBestPhysicalDevice), __FILENAME__, __LINE__);
+    throw VulkanAPIError(message, VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
 }
 
 Vulkan::SwapChainSupportDetails Vulkan::QuerySwapChainSupport(PhysicalDevice device, VkSurfaceKHR surface)

@@ -48,7 +48,7 @@ public:
         VkQueue computeQueue;
         uint32_t computeIndex;
 
-        bool IsValid();
+        bool IsValid() const;
     };
 
     struct SwapChainSupportDetails
@@ -78,6 +78,7 @@ public:
     static std::vector<PhysicalDevice>        GetPhysicalDevices(VkInstance instance);
     static PhysicalDevice                     GetBestPhysicalDevice(std::vector<PhysicalDevice> devices, Surface surface);
     static PhysicalDevice                     GetBestPhysicalDevice(VkInstance instance, Surface surface);
+    static void                               ForcePhysicalDevice(const std::string& name); // forces 'GetBestPhysicalDevice' to return the GPU with the given name
   
     static VkInstance                         GenerateInstance();
     static std::vector<VkExtensionProperties> GetInstanceExtensions();

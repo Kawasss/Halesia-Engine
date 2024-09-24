@@ -57,6 +57,25 @@ inline RendererFlags GetRendererFlagsFromBehavior()
 		else if (str == "-vulkan_no_validation")
 			ret |= Renderer::Flags::NO_VALIDATION;
 	}
+	for (int i = 0; i < Behavior::arguments.size(); i++)
+	{
+		const std::string& str = Behavior::arguments[i];
+		if (str == "-no_shader_recompilation")
+			ret |= Renderer::Flags::NO_SHADER_RECOMPILATION;
+		else if (str == "-force_no_ray_tracing")
+			ret |= Renderer::Flags::NO_RAY_TRACING;
+		else if (str == "-vulkan_no_validation")
+			ret |= Renderer::Flags::NO_VALIDATION;
+		else if (str == "-force_gpu" && Behavior::arguments.size() > i + 1)
+		{
+			std::string name = Behavior::arguments[++i];
+			while (i < Behavior::arguments.size() - 1 && Behavior::arguments[i][0] != '-') // assemble the full name since the command args are split by spaces
+				name += ' ' + Behavior::arguments[++i];
+
+			Vulkan::ForcePhysicalDevice(name);
+		}
+	}
+
 	return ret;
 }
 

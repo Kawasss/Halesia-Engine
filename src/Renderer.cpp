@@ -73,6 +73,9 @@ void Renderer::Destroy()
 	Vulkan::DeleteSubmittedObjects();
 	Vulkan::DestroyAllCommandPools();
 
+	if (!Vulkan::GetContext().IsValid()) // cannot destroy anything if vulkan isnt initialized yet
+		return;
+
 	for (Material& mat : Mesh::materials)
 		mat.Destroy();
 
