@@ -722,6 +722,12 @@ void Renderer::RenderIntro(Intro* intro)
 
 void Renderer::OnResize()
 {
+	if (!testWindow->CanBeRenderedTo()) // the renderer handles invalid window dimensions by basically ignoring the resize and acting like nothing happened
+	{
+		Console::WriteLine("Ignored a resize (width or height is 0)");
+		return;
+	}
+
 	viewportWidth  = testWindow->GetWidth()  * viewportTransModifiers.x;
 	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y;
 
@@ -795,6 +801,9 @@ inline void ResetImGui()
 
 void Renderer::StartRecording()
 {
+	if (!testWindow->CanBeRenderedTo())
+		return;
+
 	CheckForVRAMOverflow();
 
 	VkResult result = vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
@@ -823,6 +832,9 @@ void Renderer::StartRecording()
 
 void Renderer::SubmitRecording()
 {
+	if (!testWindow->CanBeRenderedTo())
+		return;
+
 	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
 	PresentSwapchainImage(currentFrame, imageIndex);
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -846,6 +858,9 @@ inline void GetAllObjectsFromObject(std::vector<Object*>& ret, Object* obj, bool
 
 void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera)
 {
+	if (!testWindow->CanBeRenderedTo())
+		return;
+
 	std::vector<Object*> activeObjects;
 	for (Object* object : objects)
 	{

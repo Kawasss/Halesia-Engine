@@ -139,22 +139,14 @@ void Swapchain::Destroy()
     vkDestroySwapchainKHR(logicalDevice, vkSwapchain, nullptr);
 }
 
-void Swapchain::Recreate(bool vsync) // hopefully a temporary fix, used for ray tracing
+void Swapchain::Recreate(bool vsync)
 {
-    int width = window->GetWidth(), height = window->GetHeight();
-    
-#ifndef NDEBUG
-    if (width == 0 || height == 0)
-        std::cout << "Window is minimized, waiting until it is maximized" << std::endl;
-#endif
-
-    while (width == 0 || height == 0)
+    if (!window->CanBeRenderedTo())
     {
-        width = window->GetWidth();
-        height = window->GetHeight();
-        window->PollMessages();
+        std::cout << "Window is minimized, ignoring the resize" << '\n';
+        return;
     }
-    
+
     LockLogicalDevice(logicalDevice);
     vkDeviceWaitIdle(logicalDevice);
 
@@ -168,18 +160,12 @@ void Swapchain::Recreate(VkRenderPass renderPass, bool vsync)
 {
     int width = window->GetWidth(), height = window->GetHeight();
 
-    #ifndef NDEBUG
     if (width == 0 || height == 0)
-        std::cout << "Window is minimized, waiting until it is maximized" << std::endl;
-    #endif
-
-    while (width == 0 || height == 0)
     {
-        width = window->GetWidth();
-        height = window->GetHeight();
-        window->PollMessages();
+        std::cout << "Window is minimized, ignoring the resize" << '\n';
+        return;
     }
-    
+
     LockLogicalDevice(logicalDevice);
     vkDeviceWaitIdle(logicalDevice);
 

@@ -107,6 +107,7 @@ class Window
 		int GetHeight()        const { return size.y;        }
 		int GetWheelRotation() const { return wheelRotation; }
 		bool IsMaximized()     const { return maximized;     }
+		bool CanBeRenderedTo() const { return size.x != 0 && size.y != 0; }
 
 		void SetWidth(int value);
 		void SetHeight(int value);

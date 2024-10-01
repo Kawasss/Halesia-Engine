@@ -257,18 +257,22 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 	case WM_SIZE: // when the window is resized
 		window->resized = true;
 
-		window->size.x = LOWORD(lParam);
-		window->size.y = HIWORD(lParam);
+		if (wParam == SIZE_MINIMIZED)
+		{
+			window->size.x = 0;
+			window->size.y = 0;
+		}
+		else
+		{
+			window->size.x = LOWORD(lParam);
+			window->size.y = HIWORD(lParam);
+		}
 		break;
 
-	case WM_WINDOWPOSCHANGING:
-	case WM_WINDOWPOSCHANGED:
-	{
-		WINDOWPOS* ptr = (WINDOWPOS*)lParam;
-		window->coordinates.x = ptr->x;
-		window->coordinates.y = ptr->y;
+	case WM_MOVE:
+		window->coordinates.x = LOWORD(lParam);
+		window->coordinates.y = HIWORD(lParam);
 		break;
-	}
 
 	case WM_MOUSEMOVE: // when the cursor has moved
 		if (window->lockCursor) // if the cursor is locked it has to stay inside the window, so this locks resets it to the center of the screen
