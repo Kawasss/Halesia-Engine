@@ -143,14 +143,14 @@ void GUI::ShowWindowData(Window* window)
 		"dropped file: %i\n"
 		"maximized:    %i\n"
 		"resized:      %i\n"
-		, (int)window->ContainsDroppedFile(), (int)window->maximized, (int)window->resized);
+		, (int)window->ContainsDroppedFile(), (int)window->IsMaximized(), (int)window->resized);
 
 	if (changedCoord)
 		window->SetXAndY(x, y);
 	if (changedDimensions)
 		window->SetWidthAndHeight(width, height); // should only be called if the width and / or height has changed
 	if (stringToMode[currentMode] != window->GetWindowMode())
-		window->ChangeWindowMode(stringToMode[currentMode]);
+		window->SetWindowMode(stringToMode[currentMode]);
 
 	if (createWindow)
 		ImGui::End();

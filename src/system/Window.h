@@ -2,8 +2,7 @@
 #include <Windows.h>
 #include <string>
 #include <map>
-#include <unordered_set>
-#include <mutex>
+#include <set>
 
 enum WindowMode // enum for scalability
 {
@@ -37,6 +36,7 @@ enum class ExtendedWindowStyle : uint32_t // uint32_t as underlying type to comb
 	LeftAlignedProperties = WS_EX_LEFT,
 	PalleteWindow = WS_EX_PALETTEWINDOW,
 	StaticEdge = WS_EX_STATICEDGE,
+	AppWindow = WS_EX_APPWINDOW,
 };
 
 enum class WindowStyle : uint32_t // redundant
@@ -59,7 +59,7 @@ enum class WindowStyle : uint32_t // redundant
 
 struct Win32WindowCreateInfo
 {
-	std::wstring windowName = L"", className = L"GenericWindow";
+	std::string windowName, className = "GenericWindow";
 
 	int width = CW_USEDEFAULT, height = CW_USEDEFAULT, x = CW_USEDEFAULT, y = CW_USEDEFAULT;
 
@@ -91,48 +91,81 @@ class Window
 		static void PollMessages();
 
 		bool resized = false;
-		bool maximized = true; // if this is false the window should be minimized
+		
 		bool cursorHasMoved = false;
 
 		std::string GetDroppedFile();
-		WindowMode GetWindowMode()   const;
+		WindowMode GetWindowMode() const { return mode; }
 
-		bool ContainsDroppedFile() const;
-		bool ShouldClose()         const;
-		bool CursorIsLocked()      const;
+		bool ContainsDroppedFile() const { return containsDroppedFile; }
+		bool ShouldClose()         const { return shouldClose;         }
+		bool CursorIsLocked()      const { return lockCursor;          }
 
-		int GetX()             const;
-		int GetY()             const;
-		int GetWidth()         const;
-		int GetHeight()        const;
-		int GetWheelRotation() const;
+		int GetX()             const { return coordinates.x; }
+		int GetY()             const { return coordinates.y; }
+		int GetWidth()         const { return size.x;        }
+		int GetHeight()        const { return size.y;        }
+		int GetWheelRotation() const { return wheelRotation; }
+		bool IsMaximized()     const { return maximized;     }
 
 		void SetWidth(int value);
 		void SetHeight(int value);
 		void SetWidthAndHeight(int width, int height); // more efficient since it only issues one windows api call
 		void SetXAndY(int x, int y);
+		void SetMaximized(bool val);
 
-		void GetRelativeCursorPosition(int& x, int& y) const;
-		void GetAbsoluteCursorPosition(int& x, int& y) const;
+		void GetRelativeCursorPosition(int& x, int& y) const { x = cursor.x; y = cursor.y;       }
+		void GetAbsoluteCursorPosition(int& x, int& y) const { x = absCursor.x; y = absCursor.y; }
 		void LockCursor();
 		void UnlockCursor();
-		void ChangeWindowMode(WindowMode windowMode);
+		void SetWindowMode(WindowMode windowMode);
 
 		void Destroy();
 
 	private:
-		static MSG message;
-		HICON icon;
-		HCURSOR cursor;
+		struct Point
+		{
+			Point() = default;
+			Point(int v1, int v2) : x(v1), y(v2) {}
+
+			int x = 0, y = 0;
+
+			void Clear() { x = y = 0; }
+			bool operator==(const Point& other) { return x == other.x && y == other.y; }
+		};
+
+		enum Event : uint8_t
+		{
+			EVENT_RESIZE = 1 << 0,
+			EVENT_CURSOR_CHANGE = 1 << 1,
+			EVENT_VISIBILITY_CHANGE = 1 << 2,
+			EVENT_MODE_CHANGE = 1 << 3,
+		};
+		uint8_t events;
+
+		void HandleEvents();
+		void ApplyWindowMode();
+
 		static std::map<HWND, Window*> windowBinding;
-		static std::unordered_set<Window*> windows;
-		std::string droppedFile = "";
-		std::wstring className = L"", windowName = L"";
-		int width = 0, height = 0, x = 0, y = 0, cursorX = 0, cursorY = 0, absCursorX = 0, absCursorY = 0, wheelRotation = 0;
-		bool shouldClose = false, lockCursor = false, containsDroppedFile = false;
-		WindowMode currentWindowMode;
-		ExtendedWindowStyle extendedWindowStyle;
-		std::mutex mutex;
-		
+
+		static MSG message;
+
+		HICON   hIcon;
+		HCURSOR hCursor;
+
+		std::string droppedFile, className;
+
+		Point size;
+		Point coordinates;
+		Point cursor;
+		Point absCursor;
+		WindowMode mode;
+
+		bool lockCursor = false;
+		bool maximized  = true; // if this is false the window should be minimized
+
+		int wheelRotation = 0;
+		bool shouldClose = false, containsDroppedFile = false;
+
 		static LRESULT CALLBACK WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 };

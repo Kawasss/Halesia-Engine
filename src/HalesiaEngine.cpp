@@ -266,7 +266,7 @@ HalesiaExitCode HalesiaEngine::Run()
 		float frameDelta = 0;
 		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
-		core.window->maximized = true;
+		core.window->SetMaximized(true);
 
 		PlayIntro();
 		

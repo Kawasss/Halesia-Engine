@@ -97,11 +97,11 @@ int main(int argc, char** argv)
 	createInfo.args = argv;
 	createInfo.startingScene = new Editor();
 	createInfo.renderFlags = Renderer::Flags::NO_FILTERING_ON_RESULT;
-	createInfo.windowCreateInfo.windowName = L"Halesia Test Scene";
+	createInfo.windowCreateInfo.windowName = "Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;
 	createInfo.windowCreateInfo.height = 600;
 	createInfo.windowCreateInfo.windowMode = WINDOW_MODE_WINDOWED;
-	createInfo.windowCreateInfo.icon = (HICON)LoadImageW(NULL, L"logo4.ico", IMAGE_ICON, 128, 128, LR_LOADFROMFILE);
+	createInfo.windowCreateInfo.icon = (HICON)LoadImageA(NULL, "logo4.ico", IMAGE_ICON, 128, 128, LR_LOADFROMFILE);
 	createInfo.windowCreateInfo.extendedWindowStyle = ExtendedWindowStyle::DragAndDropFiles;
 	createInfo.windowCreateInfo.startMaximized = false;
 #ifdef _DEBUG
