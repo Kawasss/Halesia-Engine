@@ -30,18 +30,17 @@ void Animation::ReadHierarchy(HierarchyNode& node, const aiNode* source)
 {
 	node.name = source->mName.C_Str();
 	node.transformation = GetMat4(source->mTransformation);
+	node.children.resize(source->mNumChildren);
+
 	for (unsigned int i = 0; i < source->mNumChildren; i++)
-	{
-		HierarchyNode child{};
-		ReadHierarchy(child, source->mChildren[i]);
-		node.children.push_back(child);
-	}
+		ReadHierarchy(node.children[i], source->mChildren[i]);
 }
 
 void Animation::ReadBones(const aiAnimation* animation)
 {
+	bones.resize(animation->mNumChannels);
 	for (unsigned int i = 0; i < animation->mNumChannels; i++)
-		bones.push_back(Bone(animation->mChannels[i]));
+		bones.emplace_back(animation->mChannels[i]);
 }
 
 Bone* Animation::GetBone(std::string name)

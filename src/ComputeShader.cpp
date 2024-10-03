@@ -51,6 +51,8 @@ void ComputeShader::CreateSetLayout(const ShaderGroupReflector& reflector)
 	const Vulkan::Context& context = Vulkan::GetContext();
 	std::set<uint32_t> indices = reflector.GetDescriptorSetIndices();
 
+	setLayouts.reserve(indices.size());
+
 	for (uint32_t index : indices)
 	{
 		std::vector<VkDescriptorSetLayoutBinding> bindings = reflector.GetLayoutBindingsOfSet(index);

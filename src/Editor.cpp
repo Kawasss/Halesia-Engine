@@ -254,7 +254,6 @@ void Editor::ShowMenuBar()
 
 void Editor::ShowObjectComponents(int index)
 {
-	static std::string currentItem = "None";
 	static int objectIndex = -1;
 	if (objectIndex >= UIObjects.size())
 		objectIndex = -1;
@@ -278,17 +277,12 @@ void Editor::ShowObjectComponents(int index)
 
 	ImGui::SetNextWindowPos(ImVec2(width * (1.0f - BAR_WIDTH), ImGui::GetFrameHeight() + style.FramePadding.y));
 
-	std::vector<std::string> items; // not the most optimal way
-	for (Object* object : UIObjects)
-		if (object->HasFinishedLoading())
-			items.push_back(object->name);
-
 	ImGui::SetNextWindowPos(ImVec2(width * (1.0f - BAR_WIDTH), ImGui::GetFrameHeight() + style.FramePadding.y));
 	ImGui::SetNextWindowSize(ImVec2(width * BAR_WIDTH, height - ImGui::GetFrameHeight() - style.FramePadding.y));
 
 	ImGui::Begin("components", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 
-	GUI::ShowDropdownMenu(items, currentItem, objectIndex, "##ObjectComponents");
+	GUI::ShowObjectSelectMenu(UIObjects, objectIndex, "##ObjectComponents");
 
 	ImGui::BeginChild(2);
 

@@ -8,18 +8,24 @@ struct aiNodeAnim;
 
 struct KeyPosition
 {
+    KeyPosition(glm::vec3 pos, float time) : position(pos), timeStamp(time) {}
+
     glm::vec3 position;
     float timeStamp;
 };
 
 struct KeyRotation
 {
+    KeyRotation(glm::quat rotation, float time) : orientation(rotation), timeStamp(time) {}
+
     glm::quat orientation;
     float timeStamp;
 };
 
 struct KeyScale
 {
+    KeyScale(glm::vec3 vec, float time) : scale(vec), timeStamp(time) {}
+
     glm::vec3 scale;
     float timeStamp;
 };
@@ -33,6 +39,7 @@ struct BoneInfo
 class Bone
 {
 public:
+    Bone() = default;
     Bone(const aiNodeAnim* animNode);
     void Update(float time);
 

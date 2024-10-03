@@ -198,6 +198,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 {
 	uint32_t processedAmount = 0; // add a second counter for each processed mesh. if an object is checked, but it doesnt have a mesh it will leave an empty instance custom index, which results in data missalignment
 	std::vector<VkAccelerationStructureInstanceKHR> instances;
+	instances.reserve(objects.size()); // can over allocate
 	for (int i = 0; i < objects.size(); i++)
 	{
 		win32::CriticalLockGuard lockGuard(objects[i]->GetCriticalSection());

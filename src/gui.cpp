@@ -75,7 +75,7 @@ inline void ShowInputVector(glm::vec2& vector, const std::vector<const char*>& l
 
 void GUI::ShowWindowData(Window* window)
 {
-	static std::vector<std::string> modes = { "WINDOW_MODE_WINDOWED", "WINDOW_MODE_BORDERLESS_WINDOWED" };
+	static std::array<std::string, 2> modes = { "WINDOW_MODE_WINDOWED", "WINDOW_MODE_BORDERLESS_WINDOWED" };
 	static std::unordered_map<std::string, WindowMode> stringToMode = { { "WINDOW_MODE_WINDOWED", WINDOW_MODE_WINDOWED }, { "WINDOW_MODE_BORDERLESS_WINDOWED", WINDOW_MODE_BORDERLESS_WINDOWED } };
 	static std::string currentMode;
 	static int modeIndex = -1;
@@ -99,7 +99,7 @@ void GUI::ShowWindowData(Window* window)
 
 	ImGui::Text("mode:       ");
 	ImGui::SameLine();
-	ShowDropdownMenu(modes, currentMode, modeIndex, "##modeSelect");
+	ShowDropdownMenu(modes.data(), modes.size(), currentMode, modeIndex, "##modeSelect");
 
 	ImGui::Text("width:      ");
 	ImGui::SameLine();
@@ -174,7 +174,7 @@ void GUI::ShowObjectMeshes(Mesh& mesh)
 
 void GUI::ShowObjectData(Object* object)
 {
-	static std::vector<std::string> allStates = { "OBJECT_STATE_VISIBLE", "OBJECT_STATE_INVISIBLE", "OBJECT_STATE_DISABLED" };
+	static std::array<std::string, 3> allStates = { "OBJECT_STATE_VISIBLE", "OBJECT_STATE_INVISIBLE", "OBJECT_STATE_DISABLED" };
 	static std::unordered_map<std::string, ObjectState> stringToState = { { "OBJECT_STATE_VISIBLE", OBJECT_STATE_VISIBLE }, { "OBJECT_STATE_INVISIBLE", OBJECT_STATE_INVISIBLE }, { "OBJECT_STATE_DISABLED", OBJECT_STATE_DISABLED } };
 
 	std::string currentState = ObjectStateToString(object->state);
@@ -188,7 +188,7 @@ void GUI::ShowObjectData(Object* object)
 
 	ImGui::Text("state:  ");
 	ImGui::SameLine();
-	ShowDropdownMenu(allStates, currentState, currentIndex, "##objectstate");
+	ShowDropdownMenu(allStates.data(), allStates.size(), currentState, currentIndex, "##objectstate");
 	object->state = stringToState[currentState];
 
 	ImGui::Text
@@ -232,7 +232,7 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* wind
 	std::vector<std::string> items; // not the most optimal way
 	for (Object* object : objects)
 		items.push_back(object->name);
-	ShowDropdownMenu(items, currentItem, objectIndex, "##ObjectComponents");
+	ShowDropdownMenu(items.data(), items.size(), currentItem, objectIndex, "##ObjectComponents");
 
 	if (objectIndex != -1)
 	{
@@ -273,19 +273,19 @@ void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
 
 	static int rigidIndex = -1;
 	static int shapeIndex = -1;
-	static std::vector<std::string> allShapeTypes = { "SHAPE_TYPE_BOX", "SHAPE_TYPE_SPHERE", "SHAPE_TYPE_CAPSULE" };
-	static std::vector<std::string> allRigidTypes = { "RIGID_BODY_DYNAMIC", "RIGID_BODY_STATIC", "RIGID_BODY_KINEMATIC" };
+	static std::array<std::string, 3> allShapeTypes = { "SHAPE_TYPE_BOX", "SHAPE_TYPE_SPHERE", "SHAPE_TYPE_CAPSULE" };
+	static std::array<std::string, 3> allRigidTypes = { "RIGID_BODY_DYNAMIC", "RIGID_BODY_STATIC", "RIGID_BODY_KINEMATIC" };
 	std::string currentRigid = RigidBody::TypeToString(rigidBody.type);
 	std::string currentShape = Shape::TypeToString(rigidBody.shape.type);
 	glm::vec3 holderExtents = rigidBody.shape.data;
 
 	ImGui::Text("type:   ");
 	ImGui::SameLine();
-	ShowDropdownMenu(allRigidTypes, currentRigid, rigidIndex, "##RigidType");
+	ShowDropdownMenu(allRigidTypes.data(), allRigidTypes.size(), currentRigid, rigidIndex, "##RigidType");
 
 	ImGui::Text("shape:  ");
 	ImGui::SameLine();
-	ShowDropdownMenu(allShapeTypes, currentShape, shapeIndex, "##rigidShapeMenu");
+	ShowDropdownMenu(allShapeTypes.data(), allShapeTypes.size(), currentShape, shapeIndex, "##rigidShapeMenu");
 
 	switch (rigidBody.shape.type)
 	{
@@ -342,18 +342,37 @@ void GUI::ShowObjectTransform(Transform& transform)
 	ShowInputVector(transform.scale, { "##scalex", "##scaley", "##scalez" });
 }
 
-void GUI::ShowDropdownMenu(std::vector<std::string>& items, std::string& currentItem, int& currentIndex, const char* label)
+void GUI::ShowDropdownMenu(std::string* items, size_t size, std::string& currentItem, int& currentIndex, const char* label)
 {
 	if (!ImGui::BeginCombo(label, currentItem.c_str()))
 		return;
 
-	for (int i = 0; i < items.size(); i++)
+	for (int i = 0; i < size; i++)
 	{
 		bool isSelected = items[i] == currentItem;
 		if (ImGui::Selectable(items[i].c_str(), &isSelected))
 		{
 			currentItem = items[i];
 			currentIndex = i;
+		}
+		if (isSelected)
+			ImGui::SetItemDefaultFocus();
+	}
+	ImGui::EndCombo();
+}
+
+void GUI::ShowObjectSelectMenu(const std::vector<Object*>& objects, int& currIndex, const char* label)
+{
+	const char* name = currIndex == -1 || currIndex >= objects.size() ? "None" : objects[currIndex]->name.c_str();
+	if (!ImGui::BeginCombo(label, name))
+		return;
+
+	for (int i = 0; i < objects.size(); i++)
+	{
+		bool isSelected = currIndex == 0;
+		if (ImGui::Selectable(objects[i]->name.c_str(), &isSelected))
+		{
+			currIndex = i;
 		}
 		if (isSelected)
 			ImGui::SetItemDefaultFocus();

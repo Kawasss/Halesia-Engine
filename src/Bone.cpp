@@ -12,20 +12,24 @@ inline glm::quat GetQuat(aiQuaternion quat) { return { quat.w, quat.x, quat.y, q
 
 Bone::Bone(const aiNodeAnim* animNode) : time(0), transform(glm::mat4(1.0f)), name(animNode->mNodeName.C_Str())
 {
+	positions.reserve(animNode->mNumPositionKeys);
+	rotations.reserve(animNode->mNumRotationKeys);
+	scales.reserve(animNode->mNumScalingKeys);
+
 	for (int i = 0; i < animNode->mNumPositionKeys; i++)
 	{
-		aiVectorKey& key = animNode->mPositionKeys[i];
-		positions.push_back(KeyPosition{ GetVec3(key.mValue), (float)key.mTime });
+		const aiVectorKey& key = animNode->mPositionKeys[i];
+		positions.emplace_back(GetVec3(key.mValue), (float)key.mTime);
 	}
 	for (int i = 0; i < animNode->mNumRotationKeys; i++)
 	{
 		aiQuatKey& key = animNode->mRotationKeys[i];
-		rotations.push_back(KeyRotation{ GetQuat(key.mValue), (float)key.mTime });
+		rotations.emplace_back(GetQuat(key.mValue), (float)key.mTime);
 	}
 	for (int i = 0; i < animNode->mNumScalingKeys; i++)
 	{
 		aiVectorKey& key = animNode->mScalingKeys[i];
-		scales.push_back(KeyScale{ GetVec3(key.mValue), (float)key.mTime });
+		scales.emplace_back(GetVec3(key.mValue), (float)key.mTime);
 	}
 }
 

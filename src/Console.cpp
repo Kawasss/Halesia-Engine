@@ -70,7 +70,7 @@ void Console::Init()
 
 	interpreter.SetInstructions({ Instruction(INSTRUCTION_TYPE_PUSH_SCOPE) }, {});
 	interpreter.Execute();
-	InterpretCommand(IO::ReadFile("cfg/init.cfg", true).data());
+	//InterpretCommand(IO::ReadFile("cfg/init.cfg", true).data());
 	init = true;
 }
 

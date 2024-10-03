@@ -26,7 +26,8 @@ public:
 	static void ShowGraph(const std::vector<float>& buffer, const char* label, float max = 100.0f);
 	static void ShowPieGraph(std::vector<float>& data, const char* label = nullptr);
 	static void ShowChartGraph(size_t item, size_t max, const char* label);
-	static void ShowDropdownMenu(std::vector<std::string>& items, std::string& currentItem, int& currentIndex, const char* label);
+	static void ShowDropdownMenu(std::string* items, size_t size, std::string& currentItem, int& currentIndex, const char* label);
+	static void ShowObjectSelectMenu(const std::vector<Object*>& objects, int& currIndex, const char* label);
 	
 	static void ShowObjectComponents(const std::vector<Object*>& objects, Window* window, int index);
 	static void ShowObjectTransform(Transform& transform);

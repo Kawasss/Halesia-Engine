@@ -1,5 +1,5 @@
 engineCore: 
-	showFPS: 1
+	showFPS: 0
 	maxFPS: -1
 	consoleKey: 192
 renderer: 
