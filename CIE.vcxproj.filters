@@ -515,6 +515,9 @@
     <ClInclude Include="src\system\CriticalSection.h">
       <Filter>Header Files\system</Filter>
     </ClInclude>
+    <ClInclude Include="src\BufferView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">

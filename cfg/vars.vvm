@@ -7,9 +7,9 @@ renderer:
 	renderCollision: 0
 	denoiseOutput: 0
 	ray-tracing: 
-		raySamples: 2
+		raySamples: 1
 		rayDepth: 8
-		showNormals: 1
+		showNormals: 0
 		showUnique: 0
 		showAlbedo: 0
-		renderProgressive: 1
+		renderProgressive: 0

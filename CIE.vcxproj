@@ -116,6 +116,15 @@
       <AdditionalLibraryDirectories>C:\Users\wveen\source\repos\Halesia\lib;C:\Users\wveen\source\repos\Halesia\lib\debug-lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;assimp-vc143-mt.lib;cuda.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;optixDenoiser.lib;soloud_static.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Lib>
+      <AdditionalDependencies>optixDenoiser.lib;PhysX_static_64.lib;PhysXCommon_static_64.lib;PhysXCooking_static_64.lib;PhysXExtensions_static_64.lib;PhysXFoundation_static_64.lib;PhysXPvdSDK_static_64.lib;assimp-vc143-mt.lib;cuda.lib;cudart_static.lib;soloud_static.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+    <Lib>
+      <AdditionalLibraryDirectories>C:\Users\wveen\source\repos\Halesia\lib;C:\Users\wveen\source\repos\Halesia\lib\debug-lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -227,6 +236,7 @@
     <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Parser.hpp" />
     <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Tools.hpp" />
     <ClInclude Include="src\Audio.h" />
+    <ClInclude Include="src\BufferView.h" />
     <ClInclude Include="src\core\Behavior.h" />
     <ClInclude Include="src\core\Camera.h" />
     <ClInclude Include="src\core\Console.h" />
