@@ -270,6 +270,9 @@
     <ClCompile Include="src\CameraInjector.cpp">
       <Filter>Source Files\tools</Filter>
     </ClCompile>
+    <ClCompile Include="src\Skybox.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -518,6 +521,9 @@
     <ClInclude Include="src\BufferView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\renderer\Skybox.h">
+      <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">
@@ -588,6 +594,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\uncompiled\deferredFirst.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\uncompiled\skybox.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\uncompiled\skybox.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

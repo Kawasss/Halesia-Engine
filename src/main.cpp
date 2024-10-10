@@ -4,6 +4,7 @@
 #include "renderer/Renderer.h"
 #include "renderer/ForwardPlus.h"
 #include "renderer/Deferred.h"
+#include "renderer/Skybox.h"
 #include "renderer/Light.h"
 
 #include "core/UniquePointer.h"
@@ -124,9 +125,11 @@ int main(int argc, char** argv)
 	light2.direction = glm::vec4(0, -1, 0, glm::radians(12.5f));
 	light2.type  = Light::Type::Spot;
 
-	renderer->AddRenderPipeline<DeferredPipeline>();
+	//renderer->AddRenderPipeline<DeferredPipeline>();
 	renderer->AddLight(light);
 	renderer->AddLight(light2);
+
+	renderer->AddRenderPipeline<SkyboxPipeline>();
 
 	instance->Run();
 

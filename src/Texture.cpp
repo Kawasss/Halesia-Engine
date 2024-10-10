@@ -38,14 +38,14 @@ void Image::GenerateImages(const std::vector<char>& textureData, bool useMipMaps
 	layerCount = static_cast<uint32_t>(amount);
 	int textureChannels = 0;
 
-	if (useMipMaps)
-		CalculateMipLevels();
-
 	stbi_set_flip_vertically_on_load(1);
 	// read every side of the cubemap
 	stbi_uc* pixels = nullptr;
 	pixels = stbi_load_from_memory((unsigned char*)textureData.data(), (int)textureData.size(), &width, &height, &textureChannels, STBI_rgb_alpha);
 
+	if (useMipMaps)
+		CalculateMipLevels();
+	
 	WritePixelsToBuffer(pixels, useMipMaps, format, (VkImageLayout)useCase);
 
 	stbi_image_free(pixels);
@@ -61,24 +61,15 @@ void Image::GenerateEmptyImages(int width, int height, int amount)
 	VkDeviceSize layerSize = width * height * 4;
 	VkDeviceSize imageSize = layerSize * amount;
 
-	Buffer stagingBuffer(imageSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
-
 	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 	Vulkan::CreateImage(width, height, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
-
-	TransitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	CopyBufferToImage(stagingBuffer.Get());
-
-	stagingBuffer.~Buffer();
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 	imageView = Vulkan::CreateImageView(image, viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 
-	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
-
-	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	// this transition seems like a waste of resources
+	TransitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	this->texturesHaveChanged = true;
 }
@@ -226,6 +217,12 @@ Cubemap::Cubemap(const std::string& filePath, bool useMipMaps)
 			std::vector<char> data = IO::ReadFile(filePath);
 			this->GenerateImages(data, useMipMaps);
 		});
+}
+
+Cubemap::Cubemap(int width, int height)
+{
+	GenerateEmptyImages(width, height, 6);
+	Vulkan::SetDebugName(image, "cubemap");
 }
 
 Texture::Texture(std::string filePath, bool useMipMaps, TextureFormat format, TextureUseCase useCase)

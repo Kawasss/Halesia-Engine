@@ -78,6 +78,7 @@ class Cubemap : public Image
 public:
 	Cubemap(const std::string& filePath, bool useMipMaps = true);
 	Cubemap(std::vector<std::vector<char>> filePath, bool useMipMaps = true);
+	Cubemap(int width, int height);
 };
 
 class Texture : public Image
