@@ -293,6 +293,7 @@
     <ClInclude Include="src\renderer\Buffer.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\ResourceManager.h" />
+    <ClInclude Include="src\StackMap.h" />
     <ClInclude Include="src\system\CriticalSection.h" />
     <ClInclude Include="src\system\Input.h" />
     <ClInclude Include="src\system\SystemMetrics.h" />

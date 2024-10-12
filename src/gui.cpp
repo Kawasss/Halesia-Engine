@@ -22,7 +22,9 @@
 #include "core/Profiler.h"
 #include "core/Scene.h"
 #include "core/Camera.h"
+
 #include "HalesiaEngine.h"
+#include "StackMap.h"
 
 inline void InputFloat(std::string name, float& value, float width)
 {
@@ -76,7 +78,7 @@ inline void ShowInputVector(glm::vec2& vector, const std::vector<const char*>& l
 void GUI::ShowWindowData(Window* window)
 {
 	static std::array<std::string, 2> modes = { "WINDOW_MODE_WINDOWED", "WINDOW_MODE_BORDERLESS_WINDOWED" };
-	static std::unordered_map<std::string, WindowMode> stringToMode = { { "WINDOW_MODE_WINDOWED", WINDOW_MODE_WINDOWED }, { "WINDOW_MODE_BORDERLESS_WINDOWED", WINDOW_MODE_BORDERLESS_WINDOWED } };
+	static hstd::StackMap<std::string, WindowMode, 2> stringToMode = { { "WINDOW_MODE_WINDOWED", WINDOW_MODE_WINDOWED }, { "WINDOW_MODE_BORDERLESS_WINDOWED", WINDOW_MODE_BORDERLESS_WINDOWED } };
 	static std::string currentMode;
 	static int modeIndex = -1;
 	static bool lockCursor = false;
@@ -175,7 +177,7 @@ void GUI::ShowObjectMeshes(Mesh& mesh)
 void GUI::ShowObjectData(Object* object)
 {
 	static std::array<std::string, 3> allStates = { "OBJECT_STATE_VISIBLE", "OBJECT_STATE_INVISIBLE", "OBJECT_STATE_DISABLED" };
-	static std::unordered_map<std::string, ObjectState> stringToState = { { "OBJECT_STATE_VISIBLE", OBJECT_STATE_VISIBLE }, { "OBJECT_STATE_INVISIBLE", OBJECT_STATE_INVISIBLE }, { "OBJECT_STATE_DISABLED", OBJECT_STATE_DISABLED } };
+	static hstd::StackMap<std::string, ObjectState, 3> stringToState = { { "OBJECT_STATE_VISIBLE", OBJECT_STATE_VISIBLE }, { "OBJECT_STATE_INVISIBLE", OBJECT_STATE_INVISIBLE }, { "OBJECT_STATE_DISABLED", OBJECT_STATE_DISABLED } };
 
 	std::string currentState = ObjectStateToString(object->state);
 	int currentIndex = -1;
@@ -258,13 +260,13 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* wind
 
 void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
 {
-	static std::unordered_map<std::string, Shape::Type> stringToShape =
+	static hstd::StackMap<std::string, Shape::Type, 3> stringToShape =
 	{
 		{ "SHAPE_TYPE_BOX",     Shape::Type::Box },
 		{ "SHAPE_TYPE_SPHERE",  Shape::Type::Sphere },
 		{ "SHAPE_TYPE_CAPSULE", Shape::Type::Capsule }
 	};
-	static std::unordered_map<std::string, RigidBody::Type> stringToRigid =
+	static hstd::StackMap<std::string, RigidBody::Type, 3> stringToRigid =
 	{
 		{ "RIGID_BODY_STATIC",    RigidBody::Type::Static },
 		{ "RIGID_BODY_DYNAMIC",   RigidBody::Type::Dynamic },
@@ -275,6 +277,7 @@ void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
 	static int shapeIndex = -1;
 	static std::array<std::string, 3> allShapeTypes = { "SHAPE_TYPE_BOX", "SHAPE_TYPE_SPHERE", "SHAPE_TYPE_CAPSULE" };
 	static std::array<std::string, 3> allRigidTypes = { "RIGID_BODY_DYNAMIC", "RIGID_BODY_STATIC", "RIGID_BODY_KINEMATIC" };
+
 	std::string currentRigid = RigidBody::TypeToString(rigidBody.type);
 	std::string currentShape = Shape::TypeToString(rigidBody.shape.type);
 	glm::vec3 holderExtents = rigidBody.shape.data;
