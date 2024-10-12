@@ -82,7 +82,7 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 
 	UpdateUBO(payload.camera);
 
-	const VkCommandBuffer cmdBuffer = payload.commandBuffer;
+	const CommandBuffer cmdBuffer = payload.commandBuffer;
 	Renderer* renderer = payload.renderer;
 
 	framebuffer.StartRenderPass(cmdBuffer);
@@ -105,7 +105,7 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 		Renderer::RenderMesh(cmdBuffer, obj->mesh);
 	}
 
-	vkCmdEndRenderPass(cmdBuffer);
+	cmdBuffer.EndRenderPass();
 
 	renderer->StartRenderPass(cmdBuffer, renderer->GetDefault3DRenderPass());
 
@@ -115,9 +115,9 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 
 	secondPipeline->PushConstant(cmdBuffer, camPos, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-	vkCmdDraw(cmdBuffer, 6, 1, 0, 0);
+	cmdBuffer.Draw(6, 1, 0, 0);
 
-	vkCmdEndRenderPass(cmdBuffer);
+	cmdBuffer.EndRenderPass();
 
 	framebuffer.TransitionFromReadToWrite(cmdBuffer);
 }

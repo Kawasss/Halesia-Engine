@@ -1,0 +1,132 @@
+#include "renderer/CommandBuffer.h"
+#include "renderer/Vulkan.h"
+
+void CommandBuffer::Reset(VkCommandBufferResetFlags flags) const
+{
+    ::vkResetCommandBuffer(commandBuffer, flags);
+}
+
+void CommandBuffer::Begin() const
+{
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+    VkResult result = ::vkBeginCommandBuffer(commandBuffer, &beginInfo);
+    CheckVulkanResult("Failed to begin the given command buffer", result, vkBeginCommandBuffer);
+}
+
+void CommandBuffer::End() const
+{
+    VkResult result = ::vkEndCommandBuffer(commandBuffer);
+    CheckVulkanResult("Failed to record / end the command buffer", result, vkEndCommandBuffer);
+}
+
+void CommandBuffer::SetViewport(const VkViewport& viewport) const
+{
+    ::vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+}
+
+void CommandBuffer::SetScissor(const VkRect2D& scissor) const
+{
+    ::vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+}
+
+void CommandBuffer::SetViewport(uint32_t firstViewport, uint32_t viewportCount, const VkViewport* pViewports) const
+{
+    ::vkCmdSetViewport(commandBuffer, firstViewport, viewportCount, pViewports);
+}
+
+void CommandBuffer::SetScissor(uint32_t firstScissor, uint32_t scissorCount, const VkRect2D* pScissors) const
+{
+    ::vkCmdSetScissor(commandBuffer, firstScissor, scissorCount, pScissors);
+}
+
+void CommandBuffer::BeginRenderPass(const VkRenderPassBeginInfo& renderPassBegin, VkSubpassContents contents) const
+{
+    ::vkCmdBeginRenderPass(commandBuffer, &renderPassBegin, contents);
+}
+
+void CommandBuffer::EndRenderPass() const
+{
+    ::vkCmdEndRenderPass(commandBuffer);
+}
+
+void CommandBuffer::PushConstants(VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void* pValues) const
+{
+    ::vkCmdPushConstants(commandBuffer, layout, stageFlags, offset, size, pValues);
+}
+
+void CommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) const
+{
+    ::vkCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+}
+
+void CommandBuffer::EndDebugUtilsLabelEXT() const
+{
+    ::vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+}
+
+void CommandBuffer::WriteTimestamp(VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t query) const
+{
+    ::vkCmdWriteTimestamp(commandBuffer, pipelineStage, queryPool, query);
+}
+
+void CommandBuffer::ResetQueryPool(VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount) const
+{
+    ::vkCmdResetQueryPool(commandBuffer, queryPool, firstQuery, queryCount);
+}
+
+void CommandBuffer::BindPipeline(VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline) const
+{
+    ::vkCmdBindPipeline(commandBuffer, pipelineBindPoint, pipeline);
+}
+
+void CommandBuffer::BindDescriptorSets(VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, const VkDescriptorSet* pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t* pDynamicOffsets) const
+{
+    ::vkCmdBindDescriptorSets(commandBuffer, pipelineBindPoint, layout, firstSet, descriptorSetCount, pDescriptorSets, dynamicOffsetCount, pDynamicOffsets);
+}
+
+void CommandBuffer::Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) const
+{
+    ::vkCmdDispatch(commandBuffer, groupCountX, groupCountY, groupCountZ);
+}
+
+void CommandBuffer::DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const
+{
+    ::vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+}
+
+void CommandBuffer::BindVertexBuffers(uint32_t firstBinding, uint32_t bindingCount, const VkBuffer* pBuffers, const VkDeviceSize* pOffsets) const
+{
+    ::vkCmdBindVertexBuffers(commandBuffer, firstBinding, bindingCount, pBuffers, pOffsets);
+}
+
+void CommandBuffer::BindVertexBuffer(VkBuffer buffer, VkDeviceSize offset) const
+{
+    ::vkCmdBindVertexBuffers(commandBuffer, 0, 1, &buffer, &offset);
+}
+
+void CommandBuffer::BindIndexBuffer(VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType) const
+{
+    ::vkCmdBindIndexBuffer(commandBuffer, buffer, offset, indexType);
+}
+
+void CommandBuffer::PipelineBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers, uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) const
+{
+    ::vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, bufferMemoryBarrierCount, pBufferMemoryBarriers, imageMemoryBarrierCount, pImageMemoryBarriers);
+}
+
+void CommandBuffer::MemoryBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier* pMemoryBarriers) const
+{
+    ::vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, memoryBarrierCount, pMemoryBarriers, 0, nullptr, 0, nullptr);
+}
+
+void CommandBuffer::BufferMemoryBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier* pBufferMemoryBarriers) const
+{
+    ::vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, 0, nullptr, bufferMemoryBarrierCount, pBufferMemoryBarriers, 0, nullptr);
+}
+
+void CommandBuffer::ImageMemoryBarrier(VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier* pImageMemoryBarriers) const
+{
+    ::vkCmdPipelineBarrier(commandBuffer, srcStageMask, dstStageMask, dependencyFlags, 0, nullptr, 0, nullptr, imageMemoryBarrierCount, pImageMemoryBarriers);
+}

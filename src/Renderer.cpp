@@ -402,17 +402,16 @@ void Renderer::CreateCommandBuffer()
 
 	VkCommandBufferAllocateInfo allocationInfo{};
 	allocationInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocationInfo.commandPool = commandPool;
 	allocationInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocationInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+	allocationInfo.commandPool = commandPool;
+	allocationInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 
-	VkResult result = vkAllocateCommandBuffers(logicalDevice, &allocationInfo, commandBuffers.data());
-	CheckVulkanResult("Failed to allocate the command buffer", result, vkAllocateCommandBuffers);
+	Vulkan::AllocateCommandBuffers(allocationInfo, commandBuffers);
 
 	#ifdef _DEBUG
 
-	for (VkCommandBuffer commandBuffer : commandBuffers)
-		Vulkan::SetDebugName(commandBuffer, "drawing command buffer");
+	for (CommandBuffer commandBuffer : commandBuffers)
+		Vulkan::SetDebugName(commandBuffer.Get(), "drawing command buffer");
 
 	#endif
 }
@@ -429,17 +428,13 @@ void Renderer::WriteTimestamp(VkCommandBuffer commandBuffer, bool reset)
 	queryPool.WriteTimeStamp(commandBuffer);
 }
 
-void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> objects, Camera* camera)
+void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> objects, Camera* camera)
 {
 	CheckForBufferResizes();
 
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	
-	VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
-	CheckVulkanResult("Failed to begin the given command buffer", result, vkBeginCommandBuffer);
+	commandBuffer.Begin();
 
-	Vulkan::InsertDebugLabel(commandBuffer, "drawing buffer");
+	Vulkan::InsertDebugLabel(commandBuffer.Get(), "drawing buffer");
 
 	queryPool.Reset(commandBuffer);
 
@@ -453,7 +448,7 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	VkImageView imageToCopy = VK_NULL_HANDLE;
 	if (canRayTrace)
 	{
-		Vulkan::StartDebugLabel(commandBuffer, "ray tracing");
+		Vulkan::StartDebugLabel(commandBuffer.Get(), "ray tracing");
 
 		queryPool.BeginTimestamp(commandBuffer, "ray-tracing");
 
@@ -473,36 +468,18 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 		else if (RayTracingPipeline::showAlbedo)
 			imageToCopy = rayTracer->gBufferViews[1];
 
-		vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+		commandBuffer.EndDebugUtilsLabelEXT();
 	}
-
-	VkExtent2D viewportExtent = { viewportWidth, viewportHeight };
-	SetViewport(commandBuffer, viewportExtent);
-	SetScissors(commandBuffer, viewportExtent);
 
 	if (shouldRasterize)
 	{
-		RenderPipeline::Payload payload = GetPipelinePayload(commandBuffer, camera);
-		for (RenderPipeline* renderPipeline : renderPipelines)
-		{
-			Vulkan::StartDebugLabel(commandBuffer, dbgPipelineNames[renderPipeline] + "::Execute");
-
-			queryPool.BeginTimestamp(commandBuffer, dbgPipelineNames[renderPipeline]);
-
-			SetViewport(commandBuffer, viewportExtent);
-			SetScissors(commandBuffer, viewportExtent);
-
-			renderPipeline->Execute(payload, objects);
-			vkCmdEndDebugUtilsLabelEXT(commandBuffer);
-
-			queryPool.EndTimestamp(commandBuffer, dbgPipelineNames[renderPipeline]);
-		}
+		RunRenderPipelines(commandBuffer, camera, objects);
 	}
 
-	Vulkan::StartDebugLabel(commandBuffer, "UI");
+	Vulkan::StartDebugLabel(commandBuffer.Get(), "UI");
 
-	SetViewport(commandBuffer, swapchain->extent);
-	SetScissors(commandBuffer, swapchain->extent);
+	SetViewport(commandBuffer.Get(), swapchain->extent);
+	SetScissors(commandBuffer.Get(), swapchain->extent);
 
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
@@ -517,28 +494,50 @@ void Renderer::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t image
 	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
-	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	commandBuffer.BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 	queryPool.BeginTimestamp(commandBuffer, "final pass");
 
 	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, viewportTransModifiers.x, viewportTransModifiers.y);
 	
-	screenPipeline->Bind(commandBuffer);
-	vkCmdPushConstants(commandBuffer, screenPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::vec4), &offsets);
+	screenPipeline->Bind(commandBuffer.Get());
+	screenPipeline->PushConstant(commandBuffer, offsets, VK_SHADER_STAGE_VERTEX_BIT);
 
-	vkCmdDraw(commandBuffer, 6, 1, 0, 0);
+	commandBuffer.Draw(6, 1, 0, 0);
 
 	RenderImGUI(commandBuffer);
-	vkCmdEndRenderPass(commandBuffer);
+	commandBuffer.EndRenderPass();
 
 	framebuffer.TransitionFromReadToWrite(commandBuffer);
 
 	queryPool.EndTimestamp(commandBuffer, "final pass");
 
-	vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+	commandBuffer.EndDebugUtilsLabelEXT();
 
-	result = vkEndCommandBuffer(commandBuffer);
-	CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
+	commandBuffer.End();
+}
+
+void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects)
+{
+	VkExtent2D viewportExtent = { viewportWidth, viewportHeight };
+	SetViewport(commandBuffer, viewportExtent);
+	SetScissors(commandBuffer, viewportExtent);
+
+	RenderPipeline::Payload payload = GetPipelinePayload(commandBuffer, camera);
+	for (RenderPipeline* renderPipeline : renderPipelines)
+	{
+		Vulkan::StartDebugLabel(commandBuffer.Get(), dbgPipelineNames[renderPipeline] + "::Execute");
+
+		queryPool.BeginTimestamp(commandBuffer, dbgPipelineNames[renderPipeline]);
+
+		SetViewport(commandBuffer, viewportExtent);
+		SetScissors(commandBuffer, viewportExtent);
+
+		renderPipeline->Execute(payload, objects);
+		commandBuffer.EndDebugUtilsLabelEXT();
+
+		queryPool.EndTimestamp(commandBuffer, dbgPipelineNames[renderPipeline]);
+	}
 }
 
 void Renderer::CheckForBufferResizes()
@@ -557,92 +556,31 @@ void Renderer::CheckForBufferResizes()
 	}
 }
 
-void Renderer::RenderImGUI(VkCommandBuffer commandBuffer)
+void Renderer::RenderImGUI(CommandBuffer commandBuffer)
 {
 	ImGui::Render();
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.Get());
 }
 
-void Renderer::DenoiseSynchronized(VkCommandBuffer commandBuffer)
+void Renderer::DenoiseSynchronized(CommandBuffer commandBuffer)
 {
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-	WriteTimestamp(commandBuffer);
-	rayTracer->PrepareForDenoising(commandBuffer);
-	WriteTimestamp(commandBuffer);
-
-	VkResult result = vkEndCommandBuffer(commandBuffer);
-	CheckVulkanResult("Failed to end the given command buffer", result, vkEndCommandBuffer);
-
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer;
-
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = &renderFinishedSemaphores[currentFrame];
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffers[currentFrame];
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[currentFrame];
-
-	result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]);
-	CheckVulkanResult("Failed to submit the queue", result, vkQueueSubmit);
-
-	submittedCount++;
-
-	auto start = std::chrono::high_resolution_clock::now();
-#ifdef USE_CUDA
-	cudaExternalSemaphoreWaitParams waitParams{};
-	memset(&waitParams, 0, sizeof(waitParams));
-	waitParams.flags = 0;
-	waitParams.params.fence.value = 1;
-
-	CheckCudaResult(cudaWaitExternalSemaphoresAsync(&externalRenderSemaphores[currentFrame], &waitParams, 1, nullptr));
-
-	cudaExternalSemaphoreSignalParams signalParams{};
-	memset(&signalParams, 0, sizeof(signalParams));
-	signalParams.flags = 0;
-	signalParams.params.fence.value = 0;
-
-	CheckCudaResult(cudaSignalExternalSemaphoresAsync(&externalRenderSemaphores[currentFrame], &signalParams, 1, nullptr));
-
-	rayTracer->DenoiseImage();
-
-	cuStreamSynchronize(nullptr);
-#endif
-	vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], VK_TRUE, UINT64_MAX);
-	vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
-
-	denoisingTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - start).count();
-
-	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
-	result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
-	CheckVulkanResult("Failed to begin the given command buffer", result, vkBeginCommandBuffer);
-
-	rayTracer->ApplyDenoisedImage(commandBuffer);
-}
-
-void Renderer::BindBuffersForRendering(VkCommandBuffer commandBuffer)
-{
-	VkBuffer vertexBuffer = g_vertexBuffer.GetBufferHandle();
-	VkDeviceSize vertexOffset = 0;
 	
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &vertexOffset);
-	vkCmdBindIndexBuffer(commandBuffer, g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
 }
 
-void Renderer::RenderMesh(VkCommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount)
+void Renderer::BindBuffersForRendering(CommandBuffer commandBuffer)
+{
+	commandBuffer.BindVertexBuffer(g_vertexBuffer.GetBufferHandle(), 0);
+	commandBuffer.BindIndexBuffer(g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
+}
+
+void Renderer::RenderMesh(CommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount)
 {
 	uint32_t indexCount    = static_cast<uint32_t>(mesh.indices.size());
 	uint32_t firstIndex    = static_cast<uint32_t>(g_indexBuffer.GetItemOffset(mesh.indexMemory));
 	int32_t  vertexOffset  = static_cast<int32_t>(g_vertexBuffer.GetItemOffset(mesh.vertexMemory));
 	uint32_t firstInstance = 0;
 
-	vkCmdDrawIndexed(commandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+	commandBuffer.DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
 
 void Renderer::CreateSyncObjects()
@@ -706,19 +644,14 @@ void Renderer::RenderIntro(Intro* intro)
 		uint32_t imageIndex = GetNextSwapchainImage(0);
 
 		vkResetFences(logicalDevice, 1, &inFlightFences[0]);
-		vkResetCommandBuffer(commandBuffers[0], 0);
 
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-		VkResult result = vkBeginCommandBuffer(commandBuffers[0], &beginInfo);
-		CheckVulkanResult("Failed to begin the given command buffer", result, nameof(vkBeginCommandBuffer));
+		commandBuffers[0].Reset();
+		commandBuffers[0].Begin();
 
 		intro->WriteDataToBuffer(currentTime);
 		intro->RecordCommandBuffer(commandBuffers[0], imageIndex);
 
-		result = vkEndCommandBuffer(commandBuffers[0]);
-		CheckVulkanResult("Failed to record / end the command buffer", result, nameof(vkEndCommandBuffer));
+		commandBuffers[0].End();
 
 		SubmitRenderingCommandBuffer(0, imageIndex);
 		PresentSwapchainImage(0, imageIndex);
@@ -785,7 +718,7 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 	submitInfo.pWaitSemaphores = &imageAvaibleSemaphores[frameIndex];
 	submitInfo.pWaitDstStageMask = &waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffers[frameIndex];
+	submitInfo.pCommandBuffers = &commandBuffers[frameIndex].Get();
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[frameIndex];
 
@@ -831,7 +764,8 @@ void Renderer::StartRecording()
 
 	imageIndex = GetNextSwapchainImage(currentFrame);
 
-	vkResetCommandBuffer(commandBuffers[currentFrame], 0);
+	commandBuffers[currentFrame].Reset();
+
 	submittedCount = 0;
 	receivedObjects = 0;
 	renderedObjects = 0;
@@ -890,7 +824,7 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 }
 
-void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor, VkFramebuffer framebuffer)
+void Renderer::StartRenderPass(CommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor, VkFramebuffer framebuffer)
 {
 	if (framebuffer == VK_NULL_HANDLE)
 		framebuffer = this->framebuffer.Get();
@@ -908,12 +842,7 @@ void Renderer::StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass rende
 	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
-	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-}
-
-void Renderer::EndRenderPass(VkCommandBuffer commandBuffer)
-{
-	vkCmdEndRenderPass(commandBuffer);
+	commandBuffer.BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView)
@@ -991,18 +920,18 @@ void Renderer::SetLogicalDevice()
 	Vulkan::InitializeContext({ instance, logicalDevice, physicalDevice, graphicsQueue, queueIndex, presentQueue, indices.presentFamily.value(), computeQueue, indices.computeFamily.value() });
 }
 
-void Renderer::SetViewport(VkCommandBuffer commandBuffer, VkExtent2D extent)
+void Renderer::SetViewport(CommandBuffer commandBuffer, VkExtent2D extent)
 {
 	VkViewport viewport{};
 	Vulkan::PopulateDefaultViewport(viewport, extent);
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+	commandBuffer.SetViewport(viewport);
 }
 
-void Renderer::SetScissors(VkCommandBuffer commandBuffer, VkExtent2D extent)
+void Renderer::SetScissors(CommandBuffer commandBuffer, VkExtent2D extent)
 {
 	VkRect2D scissor{};
 	Vulkan::PopulateDefaultScissors(scissor, extent);
-	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+	commandBuffer.SetScissor(scissor);
 }
 
 void Renderer::SetViewportOffsets(glm::vec2 offsets)
@@ -1063,7 +992,7 @@ uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
 	return imageIndex;
 }
 
-RenderPipeline::Payload Renderer::GetPipelinePayload(VkCommandBuffer commandBuffer, Camera* camera)
+RenderPipeline::Payload Renderer::GetPipelinePayload(CommandBuffer commandBuffer, Camera* camera)
 {
 	RenderPipeline::Payload ret{};
 	ret.renderer = this;

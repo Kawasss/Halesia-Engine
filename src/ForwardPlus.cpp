@@ -62,7 +62,7 @@ void ForwardPlusPipeline::CreateShader()
 
 void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
 {
-	const VkCommandBuffer& cmdBuffer = payload.commandBuffer;
+	const CommandBuffer& cmdBuffer = payload.commandBuffer;
 
 	if (lightCount > 0)
 	{
@@ -75,17 +75,17 @@ void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Obje
 
 	DrawObjects(cmdBuffer, objects, payload.camera, payload.renderer->GetInternalWidth(), payload.renderer->GetInternalHeight());
 
-	payload.renderer->EndRenderPass(cmdBuffer);
+	cmdBuffer.EndRenderPass();
 }
 
-void ForwardPlusPipeline::ComputeCells(VkCommandBuffer commandBuffer, Camera* camera)
+void ForwardPlusPipeline::ComputeCells(CommandBuffer commandBuffer, Camera* camera)
 {
 	matrices->projection = camera->GetProjectionMatrix();
 	matrices->view = camera->GetViewMatrix();
 
-	Vulkan::StartDebugLabel(commandBuffer, __FUNCTION__);
+	Vulkan::StartDebugLabel(commandBuffer.Get(), __FUNCTION__);
 
-	cellBuffer.Fill(commandBuffer, 0, sizeof(uint32_t) * 2);
+	cellBuffer.Fill(commandBuffer.Get(), 0, sizeof(uint32_t) * 2);
 
 	computeShader->Execute(commandBuffer, lightCount, 1, 1);
 
@@ -96,24 +96,21 @@ void ForwardPlusPipeline::ComputeCells(VkCommandBuffer commandBuffer, Camera* ca
 	barrier.buffer = cellBuffer.Get();
 	barrier.size = VK_WHOLE_SIZE;
 
-	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+	commandBuffer.BufferMemoryBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 1, &barrier);
 
-	vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+	commandBuffer.EndDebugUtilsLabelEXT();
 }
 
-void ForwardPlusPipeline::DrawObjects(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj)
+void ForwardPlusPipeline::DrawObjects(CommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj)
 {
 	UpdateUniformBuffer(camera, customProj, width, height);
 
-	VkBuffer vertexBuffer = Renderer::g_vertexBuffer.GetBufferHandle();
-	VkDeviceSize offset = 0;
-
-	Vulkan::StartDebugLabel(commandBuffer, __FUNCTION__);
+	Vulkan::StartDebugLabel(commandBuffer.Get(), __FUNCTION__);
 
 	graphicsPipeline->Bind(commandBuffer);
 
-	vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, &offset);
-	vkCmdBindIndexBuffer(commandBuffer, Renderer::g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
+	commandBuffer.BindVertexBuffer(Renderer::g_vertexBuffer.GetBufferHandle(), 0);
+	commandBuffer.BindIndexBuffer(Renderer::g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
 
 	PushConstant pushConstant{};
 	for (Object* obj : objects)
@@ -121,16 +118,15 @@ void ForwardPlusPipeline::DrawObjects(VkCommandBuffer commandBuffer, const std::
 		pushConstant.model      = obj->transform.GetModelMatrix();
 		pushConstant.materialID = obj->mesh.materialIndex;
 
-		vkCmdPushConstants(commandBuffer, graphicsPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstant), &pushConstant);
+		commandBuffer.PushConstants(graphicsPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstant), &pushConstant);
 
 		uint32_t indexCount   = static_cast<uint32_t>(obj->mesh.indices.size());
 		uint32_t firstIndex   = static_cast<uint32_t>(Renderer::g_indexBuffer.GetItemOffset(obj->mesh.indexMemory));
 		uint32_t vertexOffset = static_cast<uint32_t>(Renderer::g_vertexBuffer.GetItemOffset(obj->mesh.vertexMemory));
 
-		vkCmdDrawIndexed(commandBuffer, indexCount, 1, firstIndex, vertexOffset, 0);
+		commandBuffer.DrawIndexed(indexCount, 1, firstIndex, vertexOffset, 0);
 	}
-
-	vkCmdEndDebugUtilsLabelEXT(commandBuffer);
+	commandBuffer.EndDebugUtilsLabelEXT();
 }
 
 void ForwardPlusPipeline::AddLight(const Light& light)

@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include "../glm.h"
 
+#include "CommandBuffer.h"
 #include "RenderPipeline.h"
 #include "Buffer.h"
 
@@ -23,8 +24,8 @@ public:
 	void AddLight(const Light& light) override;
 
 	// these functions can be used if the default render pipeline functions dont cut it (Execute( ... ) will call these functions)
-	void ComputeCells(VkCommandBuffer commandBuffer, Camera* camera);
-	void DrawObjects(VkCommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj = glm::mat4(0));
+	void ComputeCells(CommandBuffer commandBuffer, Camera* camera);
+	void DrawObjects(CommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj = glm::mat4(0));
 	void UpdateBindlessTextures();
 
 	ComputeShader* GetShader() { return computeShader; }

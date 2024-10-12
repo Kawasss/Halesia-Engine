@@ -3,6 +3,7 @@
 #include <string>
 
 #include "Buffer.h"
+#include "CommandBuffer.h"
 
 class Swapchain;
 class Texture;
@@ -17,7 +18,7 @@ public:
 	void Create(Swapchain* swapchain, std::string imagePath);
 
 	void WriteDataToBuffer(float timeElapsed);
-	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+	void RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex);
 	void Destroy();
 
 private:

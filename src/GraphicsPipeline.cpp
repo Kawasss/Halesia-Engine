@@ -40,10 +40,10 @@ GraphicsPipeline::~GraphicsPipeline()
 	vkDestroyDescriptorPool(ctx.logicalDevice, pool, nullptr);
 }
 
-void GraphicsPipeline::Bind(VkCommandBuffer commandBuffer)
+void GraphicsPipeline::Bind(CommandBuffer commandBuffer)
 {
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, static_cast<uint32_t>(descriptorSets[FIF::frameIndex].size()), descriptorSets[FIF::frameIndex].data(), 0, nullptr);
+	commandBuffer.BindPipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	commandBuffer.BindDescriptorSets(VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, static_cast<uint32_t>(descriptorSets[FIF::frameIndex].size()), descriptorSets[FIF::frameIndex].data(), 0, nullptr);
 }
 
 void GraphicsPipeline::CreateDescriptorPool(const ShaderGroupReflector& reflector)
@@ -202,7 +202,7 @@ void GraphicsPipeline::BindImageToName(const std::string& name, uint32_t index, 
 		writer->WriteImage(descriptorSets[i][binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout, 1, index);
 }
 
-void GraphicsPipeline::PushConstant(VkCommandBuffer commandBuffer, const void* value, VkShaderStageFlags stages, uint32_t size, uint32_t offset)
+void GraphicsPipeline::PushConstant(CommandBuffer commandBuffer, const void* value, VkShaderStageFlags stages, uint32_t size, uint32_t offset)
 {
-	vkCmdPushConstants(commandBuffer, layout, stages, offset, size, value);
+	commandBuffer.PushConstants(layout, stages, offset, size, value);
 }

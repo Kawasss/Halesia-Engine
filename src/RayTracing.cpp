@@ -66,7 +66,7 @@ void RayTracingPipeline::Execute(const Payload& payload, const std::vector<Objec
 {
 	const Window* window = payload.window;
 	const Camera* camera = payload.camera;
-	const VkCommandBuffer& cmdBuffer = payload.commandBuffer;
+	const VkCommandBuffer& cmdBuffer = payload.commandBuffer.Get();
 
 	if (payload.width == 0 || payload.height == 0)
 		return;

@@ -66,7 +66,7 @@ void Intro::WriteDataToBuffer(float timeElapsed)
 	if (pTimer->completionPercentage > 1) pTimer->completionPercentage = 1;
 }
 
-void Intro::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+void Intro::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex)
 {
 	VkRenderPassBeginInfo renderPassBeginInfo{};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -82,21 +82,21 @@ void Intro::RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageInd
 	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
-	vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	commandBuffer.BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	pipeline->Bind(commandBuffer);
+	pipeline->Bind(commandBuffer.Get());
 
 	VkViewport viewport{};
 	Vulkan::PopulateDefaultViewport(viewport, swapchain->extent);
-	vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+	commandBuffer.SetViewport(viewport);
 
 	VkRect2D scissor{};
 	Vulkan::PopulateDefaultScissors(scissor, swapchain->extent);
-	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+	commandBuffer.SetScissor(scissor);
 
-	vkCmdDraw(commandBuffer, 6, 1, 0, 0);
+	commandBuffer.Draw(6, 1, 0, 0);
 
-	vkCmdEndRenderPass(commandBuffer);
+	commandBuffer.EndRenderPass();
 }
 
 void Intro::Destroy()

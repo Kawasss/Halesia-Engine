@@ -8,6 +8,7 @@
 #include "PipelineCreator.h"
 #include "FramesInFlight.h"
 #include "Pipeline.h"
+#include "CommandBuffer.h"
 
 namespace FIF
 {
@@ -42,7 +43,7 @@ public:
 	GraphicsPipeline(const GraphicsPipeline&) = delete;
 	GraphicsPipeline& operator=(GraphicsPipeline&&) = delete;
 
-	void Bind(VkCommandBuffer commandBuffer);
+	void Bind(CommandBuffer commandBuffer);
 
 	void BindBufferToName(const std::string& name, VkBuffer buffer);
 	void BindBufferToName(const std::string& name, const FIF::Buffer& buffer);
@@ -50,7 +51,7 @@ public:
 	void BindImageToName(const std::string& name, uint32_t index, VkImageView view, VkSampler sampler, VkImageLayout layout);
 
 	template<typename T>
-	void PushConstant(VkCommandBuffer commandBuffer, const T& value, VkShaderStageFlags stages) 
+	void PushConstant(CommandBuffer commandBuffer, const T& value, VkShaderStageFlags stages) 
 	{
 		const void* val = static_cast<const void*>(&value);
 		uint32_t size = static_cast<uint32_t>(sizeof(T));
@@ -58,7 +59,7 @@ public:
 		PushConstant(commandBuffer, val, stages, size, 0); 
 	}
 
-	void PushConstant(VkCommandBuffer commandBuffer, const void* value, VkShaderStageFlags stages, uint32_t size, uint32_t offset = 0);
+	void PushConstant(CommandBuffer commandBuffer, const void* value, VkShaderStageFlags stages, uint32_t size, uint32_t offset = 0);
 
 private:
 	void CreateDescriptorPool(const ShaderGroupReflector& reflector);

@@ -5,6 +5,7 @@
 #include <map>
 
 #include "Pipeline.h"
+#include "CommandBuffer.h"
 
 class ShaderGroupReflector;
 
@@ -14,7 +15,7 @@ public:
 	ComputeShader(std::string path);
 	~ComputeShader();
 
-	void Execute(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z);
+	void Execute(CommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z);
 
 	void BindBufferToName(const std::string& name, VkBuffer buffer);
 	void BindImageToName(const std::string& name, VkImageView view, VkSampler sampler, VkImageLayout layout);

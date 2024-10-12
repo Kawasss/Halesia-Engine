@@ -55,6 +55,14 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     this->message = message + vulkanError + location;
 }
 
+void Vulkan::AllocateCommandBuffers(const VkCommandBufferAllocateInfo& allocationInfo, std::vector<CommandBuffer>& commandBuffers)
+{
+    VkCommandBuffer* pCommandBuffers = reinterpret_cast<VkCommandBuffer*>(commandBuffers.data()); // should be safe since the CommandBuffer class only contains the VkCommandBuffer
+
+    VkResult result = vkAllocateCommandBuffers(context.logicalDevice, &allocationInfo, pCommandBuffers);
+    CheckVulkanResult("Failed to allocate the command buffer", result, vkAllocateCommandBuffers);
+}
+
 VkPipelineDynamicStateCreateInfo Vulkan::GetDynamicStateCreateInfo()
 {
     return GetDynamicStateCreateInfo(dynamicStates);

@@ -172,6 +172,7 @@
     <ClCompile Include="src\Bone.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\CameraInjector.cpp" />
+    <ClCompile Include="src\CommandBuffer.cpp" />
     <ClCompile Include="src\ComputeShader.cpp" />
     <ClCompile Include="src\Console.cpp" />
     <ClCompile Include="src\Deferred.cpp" />
@@ -261,6 +262,7 @@
     <ClInclude Include="src\renderer\AccelerationStructures.h" />
     <ClInclude Include="src\renderer\AnimationManager.h" />
     <ClInclude Include="src\renderer\Bone.h" />
+    <ClInclude Include="src\renderer\CommandBuffer.h" />
     <ClInclude Include="src\renderer\ComputeShader.h" />
     <ClInclude Include="src\renderer\Deferred.h" />
     <ClInclude Include="src\renderer\Denoiser.h" />

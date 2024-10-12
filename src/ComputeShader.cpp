@@ -134,11 +134,11 @@ void ComputeShader::CreateComputePipeline(VkShaderModule module)
 	vkDestroyShaderModule(context.logicalDevice, module, nullptr);
 }
 
-void ComputeShader::Execute(VkCommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z)
+void ComputeShader::Execute(CommandBuffer commandBuffer, uint32_t x, uint32_t y, uint32_t z)
 {
-	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
-	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, (uint32_t)descriptorSets.size(), GetDescriptorSets().data(), 0, nullptr);
-	vkCmdDispatch(commandBuffer, x, y, z);
+	commandBuffer.BindPipeline(VK_PIPELINE_BIND_POINT_COMPUTE, pipeline);
+	commandBuffer.BindDescriptorSets(VK_PIPELINE_BIND_POINT_COMPUTE, layout, 0, (uint32_t)descriptorSets.size(), GetDescriptorSets().data(), 0, nullptr);
+	commandBuffer.Dispatch(x, y, z);
 }
 
 void ComputeShader::BindBufferToName(const std::string& name, VkBuffer buffer)

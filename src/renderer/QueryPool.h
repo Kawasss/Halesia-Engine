@@ -3,6 +3,8 @@
 #include <string>
 #include <map>
 
+#include "CommandBuffer.h"
+
 class QueryPool
 {
 public:
@@ -11,12 +13,12 @@ public:
 	QueryPool& operator=(QueryPool&&) = delete;
 
 	void Create(VkQueryType type, uint32_t amount);
-	void WriteTimeStamp(VkCommandBuffer commandBuffer);
-	void Reset(VkCommandBuffer commandBuffer);
+	void WriteTimeStamp(CommandBuffer commandBuffer);
+	void Reset(CommandBuffer commandBuffer);
 	void Fetch();
 
-	void BeginTimestamp(VkCommandBuffer commandBuffer, const std::string& label);
-	void EndTimestamp(VkCommandBuffer commandBuffer, const std::string& label);
+	void BeginTimestamp(CommandBuffer commandBuffer, const std::string& label);
+	void EndTimestamp(CommandBuffer commandBuffer, const std::string& label);
 
 	std::map<std::string, uint64_t> GetTimestamps();
 

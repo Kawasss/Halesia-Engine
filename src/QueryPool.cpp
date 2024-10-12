@@ -30,32 +30,32 @@ QueryPool::~QueryPool()
 	Destroy();
 }
 
-void QueryPool::WriteTimeStamp(VkCommandBuffer commandBuffer)
+void QueryPool::WriteTimeStamp(CommandBuffer commandBuffer)
 {
 	assert(queryType == VK_QUERY_TYPE_TIMESTAMP);
 
 	VkPipelineStageFlagBits stage = timestampIndex % 2 == 0 ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-	vkCmdWriteTimestamp(commandBuffer, stage, pool, timestampIndex);
+	commandBuffer.WriteTimestamp(stage, pool, timestampIndex);
 	timestampIndex++;
 }
 
-void QueryPool::BeginTimestamp(VkCommandBuffer commandBuffer, const std::string& label)
+void QueryPool::BeginTimestamp(CommandBuffer commandBuffer, const std::string& label)
 {
 	assert(queryType == VK_QUERY_TYPE_TIMESTAMP);
 
 	VkPipelineStageFlagBits stage = timestampIndex % 2 == 0 ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-	vkCmdWriteTimestamp(commandBuffer, stage, pool, timestampIndex);
+	commandBuffer.WriteTimestamp(stage, pool, timestampIndex);
 
 	Timestamp& timestamp = timestamps[label];
 	timestamp.begin = &data[timestampIndex++];
 }
 
-void QueryPool::EndTimestamp(VkCommandBuffer commandBuffer, const std::string& label)
+void QueryPool::EndTimestamp(CommandBuffer commandBuffer, const std::string& label)
 {
 	assert(queryType == VK_QUERY_TYPE_TIMESTAMP);
 
 	VkPipelineStageFlagBits stage = timestampIndex % 2 == 0 ? VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT : VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-	vkCmdWriteTimestamp(commandBuffer, stage, pool, timestampIndex);
+	commandBuffer.WriteTimestamp(stage, pool, timestampIndex);
 
 	Timestamp& timestamp = timestamps[label];
 	timestamp.end = &data[timestampIndex++];
@@ -80,7 +80,7 @@ void QueryPool::Fetch()
 	vkGetQueryPoolResults(ctx.logicalDevice, pool, 0, size, size * sizeof(uint64_t), data, sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
 }
 
-void QueryPool::Reset(VkCommandBuffer commandBuffer)
+void QueryPool::Reset(CommandBuffer commandBuffer)
 {
 	switch (queryType)
 	{
@@ -88,7 +88,7 @@ void QueryPool::Reset(VkCommandBuffer commandBuffer)
 		timestampIndex = 0;
 		break;
 	}
-	vkCmdResetQueryPool(commandBuffer, pool, 0, size);
+	commandBuffer.ResetQueryPool(pool, 0, size);
 }
 
 uint64_t& QueryPool::operator[](size_t index)

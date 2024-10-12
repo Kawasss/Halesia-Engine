@@ -17,6 +17,7 @@
 #include "RenderPipeline.h"
 #include "Framebuffer.h"
 #include "FramesInFlight.h"
+#include "CommandBuffer.h"
 #include "cuda_runtime_api.h"
 
 class Intro;
@@ -74,9 +75,8 @@ public:
 	void StartRecording();
 	void SubmitRecording();
 	void RenderObjects(const std::vector<Object*>& objects, Camera* camera);
-	void StartRenderPass(VkCommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor = glm::vec3(0), VkFramebuffer framebuffer = VK_NULL_HANDLE);
-	void EndRenderPass(VkCommandBuffer commandBuffer);
-	void RenderImGUI(VkCommandBuffer commandBuffer);
+	void StartRenderPass(CommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor = glm::vec3(0), VkFramebuffer framebuffer = VK_NULL_HANDLE);
+	void RenderImGUI(CommandBuffer commandBuffer);
 
 	std::map<std::string, uint64_t> GetTimestamps() { return queryPool.GetTimestamps(); }
 
@@ -91,8 +91,8 @@ public:
 	void SetInternalResolutionScale(float scale);
 	static float GetInternalResolutionScale();
 
-	static void BindBuffersForRendering(VkCommandBuffer commandBuffer);
-	static void RenderMesh(VkCommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount = 1);
+	static void BindBuffersForRendering(CommandBuffer commandBuffer);
+	static void RenderMesh(CommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount = 1);
 
 	static bool CompletedFIFCyle() { return FIF::frameIndex == 0; }
 
@@ -144,7 +144,7 @@ private:
 
 	std::unordered_map<RenderPipeline*, std::string> dbgPipelineNames;
 
-	std::vector<VkCommandBuffer>	commandBuffers;
+	std::vector<CommandBuffer>	commandBuffers;
 	std::vector<VkSemaphore>		imageAvaibleSemaphores;
 	std::vector<VkSemaphore>		renderFinishedSemaphores;
 	std::vector<cudaExternalSemaphore_t> externalRenderSemaphores;
@@ -189,9 +189,9 @@ private:
 	void GetQueryResults();
 	void WriteTimestamp(VkCommandBuffer commandBuffer, bool reset = false);
 	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);
-	void SetViewport(VkCommandBuffer commandBuffer, VkExtent2D extent);
-	void SetScissors(VkCommandBuffer commandBuffer, VkExtent2D extent);
-	void DenoiseSynchronized(VkCommandBuffer commandBuffer);
+	void SetViewport(CommandBuffer commandBuffer, VkExtent2D extent);
+	void SetScissors(CommandBuffer commandBuffer, VkExtent2D extent);
+	void DenoiseSynchronized(CommandBuffer commandBuffer);
 	void ProcessRenderPipeline(RenderPipeline* pipeline);
 	void ExportSemaphores();
 	void OnResize();
@@ -199,10 +199,11 @@ private:
 	void CreateContext();
 	void CreatePhysicalDevice();
 	void CheckForVRAMOverflow();
+	void RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects);
 	uint32_t DetectExternalTools();
 
 	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
-	void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
+	void RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
 	void RenderCollisionBoxes(const std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage);
 
 	void CheckForBufferResizes();
@@ -211,5 +212,5 @@ private:
 	void PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex);
 	void SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
 
-	RenderPipeline::Payload GetPipelinePayload(VkCommandBuffer commandBuffer, Camera* camera);
+	RenderPipeline::Payload GetPipelinePayload(CommandBuffer commandBuffer, Camera* camera);
 };

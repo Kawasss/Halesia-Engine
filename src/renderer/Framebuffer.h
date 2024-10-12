@@ -2,6 +2,8 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
+#include "CommandBuffer.h"
+
 class Framebuffer
 {
 public:
@@ -14,7 +16,7 @@ public:
 
 	void Resize(uint32_t width, uint32_t height);
 
-	void StartRenderPass(VkCommandBuffer commandBuffer);
+	void StartRenderPass(CommandBuffer commandBuffer);
 
 	VkFramebuffer Get() { return framebuffer; }
 	VkRenderPass GetRenderPass() { return renderPass; }
@@ -27,11 +29,11 @@ public:
 
 	void SetDebugName(const char* name);
 
-	void TransitionFromReadToWrite(VkCommandBuffer commandBuffer);
-	void TransitionFromWriteToRead(VkCommandBuffer commandBuffer);
+	void TransitionFromReadToWrite(CommandBuffer commandBuffer);
+	void TransitionFromWriteToRead(CommandBuffer commandBuffer);
 
 private:
-	void TransitionFromUndefinedToWrite(VkCommandBuffer commandBuffer);
+	void TransitionFromUndefinedToWrite(CommandBuffer commandBuffer);
 	 
 	void Destroy();
 	void Allocate();

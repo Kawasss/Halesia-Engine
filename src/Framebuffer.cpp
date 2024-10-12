@@ -91,7 +91,7 @@ void Framebuffer::Resize(uint32_t width, uint32_t height)
 	Allocate();
 }
 
-void Framebuffer::StartRenderPass(VkCommandBuffer commandBuffer)
+void Framebuffer::StartRenderPass(CommandBuffer commandBuffer)
 {
 	constexpr VkClearValue baseClear = { { 0.0f, 0.0f, 0.0f, 1.0f } };
 
@@ -107,7 +107,7 @@ void Framebuffer::StartRenderPass(VkCommandBuffer commandBuffer)
 	info.clearValueCount = static_cast<uint32_t>(clearValues.size());
 	info.pClearValues = clearValues.data();
 
-	vkCmdBeginRenderPass(commandBuffer, &info, VK_SUBPASS_CONTENTS_INLINE);
+	commandBuffer.BeginRenderPass(info, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void Framebuffer::SetDebugName(const char* name)
@@ -115,7 +115,7 @@ void Framebuffer::SetDebugName(const char* name)
 	Vulkan::SetDebugName(framebuffer, name);
 }
 
-void Framebuffer::TransitionFromUndefinedToWrite(VkCommandBuffer commandBuffer)
+void Framebuffer::TransitionFromUndefinedToWrite(CommandBuffer commandBuffer)
 {
 	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -126,10 +126,10 @@ void Framebuffer::TransitionFromUndefinedToWrite(VkCommandBuffer commandBuffer)
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 	for (int i = 0; i < images.size() - 1; i++) // skip the depth buffer !!
-		Vulkan::TransitionColorImage(commandBuffer, images[i], oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+		Vulkan::TransitionColorImage(commandBuffer.Get(), images[i], oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
-void Framebuffer::TransitionFromReadToWrite(VkCommandBuffer commandBuffer)
+void Framebuffer::TransitionFromReadToWrite(CommandBuffer commandBuffer)
 {
 	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -140,10 +140,10 @@ void Framebuffer::TransitionFromReadToWrite(VkCommandBuffer commandBuffer)
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 	for (int i = 0; i < images.size() - 1; i++)
-		Vulkan::TransitionColorImage(commandBuffer, images[i], oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+		Vulkan::TransitionColorImage(commandBuffer.Get(), images[i], oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
-void Framebuffer::TransitionFromWriteToRead(VkCommandBuffer commandBuffer)
+void Framebuffer::TransitionFromWriteToRead(CommandBuffer commandBuffer)
 {
 	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -154,7 +154,7 @@ void Framebuffer::TransitionFromWriteToRead(VkCommandBuffer commandBuffer)
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
 	for (int i = 0; i < images.size() - 1; i++)
-		Vulkan::TransitionColorImage(commandBuffer, images[i], oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+		Vulkan::TransitionColorImage(commandBuffer.Get(), images[i], oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
 void Framebuffer::Destroy()

@@ -9,6 +9,7 @@
 #include <unordered_map>
 
 #include "PhysicalDevice.h"
+#include "CommandBuffer.h"
 
 #include "../system/CriticalSection.h"
 
@@ -93,6 +94,8 @@ public:
     static VkCommandBuffer                    BeginSingleTimeCommands(VkCommandPool commandPool);
     static void                               EndSingleTimeCommands(VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool);
 
+    static void                               AllocateCommandBuffers(const VkCommandBufferAllocateInfo& allocationInfo, std::vector<CommandBuffer>& commandBuffers);
+
     static VkDeviceAddress                    GetDeviceAddress(VkBuffer buffer);
     static VkDeviceAddress                    GetDeviceAddress(VkAccelerationStructureKHR accelerationStructure);
     static HANDLE                             GetWin32MemoryHandle(VkDeviceMemory memory);
@@ -135,8 +138,8 @@ public:
     static void                               AddDeviceExtenion(const char* name);
     static void                               AddValidationLayer(const char* name);
 
-    static void AddDynamicState(VkDynamicState state);
-    static void RemoveDynamicState(VkDynamicState state);
+    static void                               AddDynamicState(VkDynamicState state);
+    static void                               RemoveDynamicState(VkDynamicState state);
 
     static std::vector<const char*>&          GetDeviceExtensions() { return requiredLogicalDeviceExtensions; }
     static std::vector<VkDynamicState>&       GetDynamicStates()    { return dynamicStates; }

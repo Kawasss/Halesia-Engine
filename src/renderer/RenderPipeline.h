@@ -4,6 +4,8 @@
 
 #include "../glm.h"
 
+#include "CommandBuffer.h"
+
 class Object;
 class Window;
 class Camera;
@@ -27,7 +29,7 @@ class RenderPipeline
 public:
 	struct Payload
 	{
-		VkCommandBuffer commandBuffer;
+		CommandBuffer commandBuffer;
 		Renderer* renderer;
 		Window* window;
 		Camera* camera;

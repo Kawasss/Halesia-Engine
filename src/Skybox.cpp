@@ -48,6 +48,8 @@ void SkyboxPipeline::Execute(const Payload& payload, const std::vector<Object*>&
 	if (cubemap == nullptr)
 		return;
 
+	const CommandBuffer cmdBuffer = payload.commandBuffer;
+
 	UBO* ptr = ubo.GetMappedPointer<UBO>();
 	ptr->projection = payload.camera->GetProjectionMatrix();
 	ptr->view = payload.camera->GetViewMatrix();
@@ -56,9 +58,9 @@ void SkyboxPipeline::Execute(const Payload& payload, const std::vector<Object*>&
 
 	pipeline->Bind(payload.commandBuffer);
 
-	vkCmdDraw(payload.commandBuffer, 6, 1, 0, 0);
+	cmdBuffer.Draw(6, 1, 0, 0);
 
-	vkCmdEndRenderPass(payload.commandBuffer);
+	cmdBuffer.EndRenderPass();
 }
 
 void SkyboxPipeline::Destroy()
