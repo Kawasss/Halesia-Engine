@@ -106,7 +106,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies\spirv-reflect;C:\Users\wveen\source\additionalDependencies\Nsight-Aftermath\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 8.0.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\include;C:\Users\wveen\physx\source;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8\imgui-1.89.8;%(AdditionalIncludeDirectories);C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\ScriptingInterpreter\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies\spirv-reflect;C:\Users\wveen\source\additionalDependencies\Nsight-Aftermath\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 8.0.0\include;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.3\include;C:\Users\wveen\physx\source;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8\imgui-1.89.8;%(AdditionalIncludeDirectories);C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\ScriptingInterpreter\src;C:\Users\wveen\source\repos\Halesia Standard Library\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
     </ClCompile>
@@ -237,7 +237,6 @@
     <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Parser.hpp" />
     <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Tools.hpp" />
     <ClInclude Include="src\Audio.h" />
-    <ClInclude Include="src\BufferView.h" />
     <ClInclude Include="src\core\Behavior.h" />
     <ClInclude Include="src\core\Camera.h" />
     <ClInclude Include="src\core\Console.h" />
@@ -293,7 +292,6 @@
     <ClInclude Include="src\renderer\Buffer.h" />
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\ResourceManager.h" />
-    <ClInclude Include="src\StackMap.h" />
     <ClInclude Include="src\system\CriticalSection.h" />
     <ClInclude Include="src\system\Input.h" />
     <ClInclude Include="src\system\SystemMetrics.h" />
