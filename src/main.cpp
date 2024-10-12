@@ -129,7 +129,7 @@ int main(int argc, char** argv)
 	renderer->AddLight(light);
 	renderer->AddLight(light2);
 
-	renderer->AddRenderPipeline<SkyboxPipeline>();
+	//renderer->AddRenderPipeline<SkyboxPipeline>();
 
 	instance->Run();
 

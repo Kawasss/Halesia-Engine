@@ -9,13 +9,13 @@
 
 #include "io/IO.h"
 
-GraphicsPipeline::GraphicsPipeline(const std::string& vertPath, const std::string& fragPath, PipelineOptions flags, VkRenderPass renderPass)
+GraphicsPipeline::GraphicsPipeline(const CreateInfo& createInfo)
 {
 	//std::vector<char> vertCode = ReadFile(vertPath), fragCode = ReadFile(fragPath);
 	std::vector<std::vector<char>> shaderCodes =
 	{
-		IO::ReadFile(vertPath), // vert is [0]
-		IO::ReadFile(fragPath), // frag is [1]
+		IO::ReadFile(createInfo.vertexShader),   // vert is [0]
+		IO::ReadFile(createInfo.fragmentShader), // frag is [1]
 	};
 	ShaderGroupReflector reflector(shaderCodes);
 
@@ -24,7 +24,7 @@ GraphicsPipeline::GraphicsPipeline(const std::string& vertPath, const std::strin
 	AllocateDescriptorSets(reflector.GetDescriptorSetCount());
 
 	CreatePipelineLayout(reflector);
-	CreateGraphicsPipeline(shaderCodes, flags, renderPass, reflector.GetOutputVariableCount(1));
+	CreateGraphicsPipeline(shaderCodes, createInfo, reflector.GetOutputVariableCount(1));
 }
 
 GraphicsPipeline::~GraphicsPipeline()
@@ -130,7 +130,7 @@ void GraphicsPipeline::CreatePipelineLayout(const ShaderGroupReflector& reflecto
 	CheckVulkanResult("Failed to create a pipeline layout for a graphics pipeline", result, vkCreatePipelineLayout);
 }
 
-void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, PipelineOptions flags, VkRenderPass renderPass, uint32_t attachmentCount)
+void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, const CreateInfo& createInfo, uint32_t attachmentCount)
 {
 	VkShaderModule vertModule = Vulkan::CreateShaderModule(shaders[0]);
 	VkShaderModule fragModule = Vulkan::CreateShaderModule(shaders[1]);
@@ -141,7 +141,21 @@ void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char
 		Vulkan::GetGenericShaderStageCreateInfo(fragModule, VK_SHADER_STAGE_FRAGMENT_BIT),
 	};
 
-	pipeline = PipelineCreator::CreatePipeline(layout, renderPass, shaderInfos, flags, attachmentCount);
+	PipelineBuilder builder(shaderInfos);
+
+	builder.layout = layout;
+	builder.attachmentCount = attachmentCount;
+	builder.renderPass = createInfo.renderPass;
+
+	builder.DisableVertices(createInfo.noVertices);
+	builder.DisableDepth(createInfo.noDepth);
+	builder.DisableCulling(createInfo.noCulling);
+	builder.DisableBlending(createInfo.noBlending);
+	builder.ShouldCullFront(createInfo.cullFront);
+	builder.FrontIsCW(createInfo.frontCW);
+	builder.PolygonAsLine(createInfo.polygonLine);
+
+	pipeline = builder.Build();
 
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	vkDestroyShaderModule(ctx.logicalDevice, vertModule, nullptr);

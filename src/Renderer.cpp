@@ -49,12 +49,6 @@ bool      Renderer::denoiseOutput = true;
 bool      Renderer::canRayTrace = false;
 float     Renderer::internalScale = 1;
 
-std::vector<VkDynamicState> Renderer::dynamicStates =
-{
-	VK_DYNAMIC_STATE_VIEWPORT,
-	VK_DYNAMIC_STATE_SCISSOR
-};
-
 VkMemoryAllocateFlagsInfo allocateFlagsInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO, nullptr, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT, 0 };
 
 Renderer::Renderer(Window* window, RendererFlags flags)
@@ -364,10 +358,23 @@ void Renderer::CreateTextureSampler()
 
 void Renderer::CreateRenderPass()
 {
-	renderPass    = PipelineCreator::CreateRenderPass(VK_FORMAT_R8G8B8A8_UNORM, RENDERPASS_FLAG_CLEAR_ON_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	GUIRenderPass = PipelineCreator::CreateRenderPass(swapchain->format, RENDERPASS_FLAG_NONE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	RenderPassBuilder builder3D(VK_FORMAT_R8G8B8A8_UNORM);
 
-	Vulkan::SetDebugName(renderPass, "Default 3D render pass");
+	builder3D.SetInitialLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	builder3D.SetFinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+	builder3D.ClearOnLoad(true);
+
+	renderPass = builder3D.Build();
+
+	RenderPassBuilder builderGUI(swapchain->format);
+
+	builderGUI.SetInitialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+	builderGUI.SetFinalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+	GUIRenderPass = builderGUI.Build();
+
+	Vulkan::SetDebugName(renderPass,    "Default 3D render pass");
 	Vulkan::SetDebugName(GUIRenderPass, "Default GUI render pass");
 }
 
@@ -375,7 +382,13 @@ void Renderer::CreateGraphicsPipeline()
 {
 	CreateRenderPass();
 
-	screenPipeline = new GraphicsPipeline("shaders/spirv/screen.vert.spv", "shaders/spirv/screen.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX, GUIRenderPass);
+	GraphicsPipeline::CreateInfo createInfo{};
+	createInfo.vertexShader   = "shaders/spirv/screen.vert.spv";
+	createInfo.fragmentShader = "shaders/spirv/screen.frag.spv";
+	createInfo.renderPass = GUIRenderPass;
+	createInfo.noVertices = true;
+		
+	screenPipeline = new GraphicsPipeline(createInfo);
 }
 
 void Renderer::CreateCommandPool()

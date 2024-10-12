@@ -51,7 +51,7 @@ public:
 
     struct SwapChainSupportDetails
     {
-        VkSurfaceCapabilitiesKHR        capabilities;
+        VkSurfaceCapabilitiesKHR        capabilities{};
         std::vector<VkSurfaceFormatKHR> formats;
         std::vector<VkPresentModeKHR>   presentModes;
     };
@@ -112,6 +112,7 @@ public:
     static VkPipelineViewportStateCreateInfo  GetDefaultViewportStateCreateInfo(VkViewport& viewport, VkRect2D& scissors, VkExtent2D extents);
     static VkPipelineViewportStateCreateInfo  GetDynamicViewportStateCreateInfo();
     static VkPipelineDynamicStateCreateInfo   GetDynamicStateCreateInfo(std::vector<VkDynamicState>& dynamicStates);
+    static VkPipelineDynamicStateCreateInfo   GetDynamicStateCreateInfo();
 
     static void                               InitializeContext(Context context);
     static const Context&                     GetContext();
@@ -134,7 +135,11 @@ public:
     static void                               AddDeviceExtenion(const char* name);
     static void                               AddValidationLayer(const char* name);
 
-    static const std::vector<const char*>&    GetDeviceExtensions() { return requiredLogicalDeviceExtensions; }
+    static void AddDynamicState(VkDynamicState state);
+    static void RemoveDynamicState(VkDynamicState state);
+
+    static std::vector<const char*>&          GetDeviceExtensions() { return requiredLogicalDeviceExtensions; }
+    static std::vector<VkDynamicState>&       GetDynamicStates()    { return dynamicStates; }
 
 private:
     static Context context;
@@ -145,6 +150,8 @@ private:
     static std::vector<const char*> requiredLogicalDeviceExtensions;
     static std::vector<const char*> requiredInstanceExtensions;
     static std::vector<const char*> validationLayers;
+
+    static std::vector<VkDynamicState> dynamicStates;
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL     DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 

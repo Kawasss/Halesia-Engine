@@ -16,10 +16,8 @@ void DeferredPipeline::Start(const Payload& payload)
 {
 	std::vector<VkFormat> formats = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM };
 
-	renderPass = PipelineCreator::CreateRenderPass(formats, RENDERPASS_FLAG_CLEAR_ON_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-	firstPipeline  = new GraphicsPipeline("shaders/spirv/deferredFirst.vert.spv",  "shaders/spirv/deferredFirst.frag.spv",  PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW, renderPass);
-	secondPipeline = new GraphicsPipeline("shaders/spirv/deferredSecond.vert.spv", "shaders/spirv/deferredSecond.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX, payload.renderer->GetDefault3DRenderPass());
+	CreateRenderPass(formats);
+	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
 
 	framebuffer.Init(renderPass, payload.width, payload.height, formats); // 32 bit format takes a lot of performance compared to an 8 bit format
 
@@ -47,6 +45,35 @@ void DeferredPipeline::Start(const Payload& payload)
 	secondPipeline->BindImageToName("metallicRoughnessAOImage", views[3], sampler, layout);
 
 	SetTextureBuffer();
+}
+
+void DeferredPipeline::CreateRenderPass(const std::vector<VkFormat>& formats)
+{
+	RenderPassBuilder builder(formats);
+
+	builder.SetInitialLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+	builder.SetFinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+	builder.ClearOnLoad(true);
+
+	renderPass = builder.Build();
+}
+
+void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass secondPass)
+{
+	GraphicsPipeline::CreateInfo createInfo{};
+	createInfo.vertexShader   = "shaders/spirv/deferredFirst.vert.spv";
+	createInfo.fragmentShader = "shaders/spirv/deferredFirst.frag.spv";
+	createInfo.renderPass = firstPass;
+	
+	firstPipeline = new GraphicsPipeline(createInfo);
+
+	createInfo.vertexShader   = "shaders/spirv/deferredSecond.vert.spv";
+	createInfo.fragmentShader = "shaders/spirv/deferredSecond.frag.spv";
+	createInfo.renderPass = secondPass;
+	createInfo.noVertices = true;
+
+	secondPipeline = new GraphicsPipeline(createInfo);
 }
 
 void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)

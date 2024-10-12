@@ -22,13 +22,8 @@ void Intro::Create(Swapchain* swapchain, std::string imagePath)
 	this->texture = new Texture(imagePath);
 	this->texture->AwaitGeneration();
 
-	renderPass = PipelineCreator::CreateRenderPass(swapchain->format, RENDERPASS_FLAG_NONE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-	// pipeline
-
-	pipeline = new GraphicsPipeline("shaders/spirv/intro.vert.spv", "shaders/spirv/intro.frag.spv", PIPELINE_FLAG_NO_VERTEX, renderPass);
-
-	// uniform buffer
+	CreateRenderPass();
+	CreatePipeline();
 
 	uniformBuffer.Init(sizeof(Timer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	pTimer = uniformBuffer.Map<Timer>();
@@ -37,6 +32,28 @@ void Intro::Create(Swapchain* swapchain, std::string imagePath)
 	pipeline->BindImageToName("image", texture->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	DescriptorWriter::Get()->Write();
+}
+
+void Intro::CreateRenderPass()
+{
+	RenderPassBuilder builder(swapchain->format);
+
+	builder.SetInitialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+	builder.SetFinalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+	renderPass = builder.Build();
+}
+
+void Intro::CreatePipeline()
+{
+	GraphicsPipeline::CreateInfo createInfo{};
+	createInfo.vertexShader   = "shaders/spirv/intro.vert.spv";
+	createInfo.fragmentShader = "shaders/spirv/intro.frag.spv";
+
+	createInfo.renderPass = renderPass;
+	createInfo.noVertices = true;
+
+	pipeline = new GraphicsPipeline(createInfo);
 }
 
 void Intro::WriteDataToBuffer(float timeElapsed)

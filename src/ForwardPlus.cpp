@@ -150,7 +150,12 @@ void ForwardPlusPipeline::AddLight(const Light& light)
 
 void ForwardPlusPipeline::PrepareGraphicsPipeline()
 {
-	graphicsPipeline = new GraphicsPipeline("shaders/spirv/triangle.vert.spv", "shaders/spirv/triangle.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW, renderPass);
+	GraphicsPipeline::CreateInfo createInfo{};
+	createInfo.vertexShader   = "shaders/spirv/triangle.vert.spv";
+	createInfo.fragmentShader = "shaders/spirv/triangle.frag.spv";
+	createInfo.renderPass     = renderPass;
+
+	graphicsPipeline = new GraphicsPipeline(createInfo);
 
 	uniformBuffer.Init(sizeof(UniformBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	uniformBufferMapped = uniformBuffer.Map<UniformBufferObject>();

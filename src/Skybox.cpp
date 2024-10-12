@@ -9,8 +9,8 @@
 
 void SkyboxPipeline::Start(const Payload& payload)
 {
-	pipeline = new GraphicsPipeline("shaders/spirv/skybox.vert.spv", "shaders/spirv/skybox.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_NO_VERTEX, renderPass);
-	renderPass = PipelineCreator::CreateRenderPass(VK_FORMAT_R8G8B8A8_UNORM, RENDERPASS_FLAG_DONT_CLEAR_DEPTH, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	CreateRenderPass();
+	CreatePipeline();
 
 	Cubemap* map = new Cubemap(1024, 1024);
 	SetSkyBox(map);
@@ -19,6 +19,28 @@ void SkyboxPipeline::Start(const Payload& payload)
 	ubo.MapPermanently();
 
 	pipeline->BindBufferToName("ubo", ubo);	
+}
+
+void SkyboxPipeline::CreateRenderPass()
+{
+	RenderPassBuilder builder(VK_FORMAT_R8G8B8A8_UNORM);
+
+	builder.SetInitialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+	builder.SetFinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	
+	renderPass = builder.Build();
+}
+
+void SkyboxPipeline::CreatePipeline()
+{
+	GraphicsPipeline::CreateInfo createInfo{};
+	createInfo.vertexShader   = "shaders/spirv/skybox.vert.spv";
+	createInfo.fragmentShader = "shaders/spirv/skybox.frag.spv";
+
+	createInfo.renderPass = renderPass;
+	createInfo.noVertices = true;
+
+	pipeline = new GraphicsPipeline(createInfo);
 }
 
 void SkyboxPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)

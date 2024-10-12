@@ -61,8 +61,6 @@ public:
 	static VkSampler defaultSampler;
 	static VkSampler noFilterSampler;
 
-	static std::vector<VkDynamicState> dynamicStates;
-
 	Renderer(Window* window, RendererFlags flags);
 	~Renderer() { Destroy(); }
 

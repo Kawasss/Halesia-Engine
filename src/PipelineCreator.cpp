@@ -5,16 +5,19 @@
 #include "renderer/Vertex.h"
 #include "renderer/Renderer.h"
 
-VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass renderPass, const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, PipelineOptions flags, uint32_t attachmentCount)
+VkPipeline PipelineBuilder::Build()
 {
-	VkPipelineDynamicStateCreateInfo dynamicState = Vulkan::GetDynamicStateCreateInfo(Renderer::dynamicStates);
+	if (renderPass == VK_NULL_HANDLE)
+		throw VulkanAPIError("Cannot build a pipeline: the render pass is invalid.");
+
+	VkPipelineDynamicStateCreateInfo dynamicState = Vulkan::GetDynamicStateCreateInfo();
 
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
 	std::array<VkVertexInputAttributeDescription, 5> attributeDescriptions = Vertex::GetAttributeDescriptions();
 	VkVertexInputBindingDescription bindingDescription = Vertex::GetBindingDescription();
-	if (!(flags & PIPELINE_FLAG_NO_VERTEX))
+	if (!options.noVertex)
 	{
 		vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
 		vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
@@ -32,24 +35,24 @@ VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-	depthStencil.depthTestEnable = !(flags & RENDERPASS_FLAG_NO_DEPTH);
-	depthStencil.depthWriteEnable = !(flags & RENDERPASS_FLAG_NO_DEPTH);
+	depthStencil.depthTestEnable  = !options.noDepth;
+	depthStencil.depthWriteEnable = !options.noDepth;
 	depthStencil.depthBoundsTestEnable = VK_FALSE;
 
 	VkPipelineRasterizationStateCreateInfo rasterizer{};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 
-	if (flags & PIPELINE_FLAG_NO_CULLING)
+	if (options.noCulling)
 	{
 		rasterizer.cullMode = VK_CULL_MODE_NONE;
 	}
 	else
 	{
-		rasterizer.cullMode = flags & PIPELINE_FLAG_CULL_BACK ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_FRONT_BIT;
-		rasterizer.frontFace = flags & PIPELINE_FLAG_FRONT_CCW ? VK_FRONT_FACE_COUNTER_CLOCKWISE : VK_FRONT_FACE_CLOCKWISE;
+		rasterizer.cullMode  = options.cullFront ? VK_CULL_MODE_FRONT_BIT  : VK_CULL_MODE_BACK_BIT;
+		rasterizer.frontFace = options.frontCW   ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	}
 
-	rasterizer.polygonMode = flags & PIPELINE_FLAG_POLYGON_LINE ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
+	rasterizer.polygonMode = options.polygonLine ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
@@ -62,7 +65,7 @@ VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass
 
 	VkPipelineColorBlendAttachmentState blendAttachment{};
 
-	blendAttachment.blendEnable = !(flags & PIPELINE_FLAG_NO_BLEND);
+	blendAttachment.blendEnable = !options.noBlend;
 	if (blendAttachment.blendEnable)
 	{
 		blendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -85,7 +88,7 @@ VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass
 	VkGraphicsPipelineCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 	createInfo.stageCount = 2;
-	createInfo.pStages = shaderStages.data();
+	createInfo.pStages = stages.data();
 	createInfo.pVertexInputState = &vertexInputInfo;
 	createInfo.pInputAssemblyState = &inputAssembly;
 	createInfo.pViewportState = &viewportState;
@@ -101,12 +104,15 @@ VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass
 	VkPipeline pipeline = VK_NULL_HANDLE;
 	VkResult result = vkCreateGraphicsPipelines(Vulkan::GetContext().logicalDevice, VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline);
 	CheckVulkanResult("Failed to create a graphics pipeline", result, vkCreateGraphicsPipelines);
-	
+
 	return pipeline;
 }
 
-VkRenderPass PipelineCreator::CreateRenderPass(const std::vector<VkFormat>& formats, RenderPassFlags flags, VkImageLayout initLayout, VkImageLayout finalLayout)
+VkRenderPass RenderPassBuilder::Build()
 {
+	if (initialLayout == INVALID_LAYOUT || finalLayout == INVALID_LAYOUT)
+		throw VulkanAPIError("Cannot build a render pass: the initial or final layout is invalid.");
+
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	uint32_t attachmentCount = static_cast<uint32_t>(formats.size());
@@ -118,21 +124,21 @@ VkRenderPass PipelineCreator::CreateRenderPass(const std::vector<VkFormat>& form
 	{
 		attachments[i].format = formats[i];
 		attachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
-		attachments[i].loadOp = flags & RENDERPASS_FLAG_CLEAR_ON_LOAD ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachments[i].loadOp = options.clearOnLoad ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-		attachments[i].initialLayout = initLayout;
+		attachments[i].initialLayout = initialLayout;
 		attachments[i].finalLayout = finalLayout;
 
 		colorReferences[i].attachment = i;
 		colorReferences[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
-	if (!(flags & RENDERPASS_FLAG_NO_DEPTH))
+	if (!options.noDepth)
 	{
 		VkAttachmentDescription depthAttachment{};
 		depthAttachment.format = ctx.physicalDevice.GetDepthFormat();
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		depthAttachment.loadOp = flags & RENDERPASS_FLAG_DONT_CLEAR_DEPTH ? VK_ATTACHMENT_LOAD_OP_DONT_CARE : VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.loadOp = options.dontClearDepth ? VK_ATTACHMENT_LOAD_OP_DONT_CARE : VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -150,7 +156,7 @@ VkRenderPass PipelineCreator::CreateRenderPass(const std::vector<VkFormat>& form
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = attachmentCount;
 	subpass.pColorAttachments = colorReferences.data();
-	subpass.pDepthStencilAttachment = flags & RENDERPASS_FLAG_NO_DEPTH ? nullptr : &depthReference;
+	subpass.pDepthStencilAttachment = options.noDepth ? nullptr : &depthReference;
 
 	VkSubpassDependency dependency{};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;

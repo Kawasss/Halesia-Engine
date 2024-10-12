@@ -1,41 +1,77 @@
 #pragma once
 #include <vulkan/vulkan.h>
-#include <cstdint>
 #include <vector>
 
 #include "PhysicalDevice.h"
 
-class Swapchain;
-
-using PipelineOptions = uint16_t;
-enum PipelineFlags : PipelineOptions
-{
-	PIPELINE_FLAG_NONE = 0,
-	PIPELINE_FLAG_NO_VERTEX = 1 << 1,
-	PIPELINE_FLAG_SRGB_ATTACHMENT = 1 << 2,
-	PIPELINE_FLAG_NO_BLEND = 1 << 3,
-	PIPELINE_FLAG_CULL_BACK = 1 << 4,
-	PIPELINE_FLAG_FRONT_CCW = 1 << 5,
-	PIPELINE_FLAG_NO_CULLING = 1 << 6,
-	PIPELINE_FLAG_POLYGON_LINE = 1 << 7,
-	
-}; // also one with polygon mode
-
-using RenderPassOptions = uint16_t;
-enum RenderPassFlags : RenderPassOptions
-{
-	RENDERPASS_FLAG_NONE = 0,
-	RENDERPASS_FLAG_NO_DEPTH = 1 << 0,
-	RENDERPASS_FLAG_CLEAR_ON_LOAD = 1 << 1,
-	RENDERPASS_FLAG_DONT_CLEAR_DEPTH = 1 << 2,
-};
-
-class PipelineCreator
+class PipelineBuilder
 {
 public:
-	static VkRenderPass CreateRenderPass(const std::vector<VkFormat>& formats, RenderPassFlags flags, VkImageLayout initLayout, VkImageLayout finalLayout);
+	PipelineBuilder(const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages) : stages(shaderStages) {}
 
-	static VkRenderPass CreateRenderPass(VkFormat format, RenderPassFlags flags, VkImageLayout initLayout, VkImageLayout finalLayout) { return CreateRenderPass(std::vector<VkFormat>{ format }, flags, initLayout, finalLayout); };
+	void DisableVertices(bool val) { options.noVertex = val;    } // vertices are on by default
+	void DisableDepth(bool val)    { options.noDepth = val;     } // depth is on by default
+	void DisableCulling(bool val)  { options.noCulling = val;   } // culling is on by default
+	void DisableBlending(bool val) { options.noBlend = val;     } // blend is on by default
+	void ShouldCullFront(bool val) { options.cullFront = val;   } // the back is culled by default
+	void FrontIsCW(bool val)       { options.frontCW = val;     } // the front is counterclock-wise by default
+	void PolygonAsLine(bool val)   { options.polygonLine = val; } // polygons are filled by default
 
-	static VkPipeline CreatePipeline(VkPipelineLayout layout, VkRenderPass renderPass, const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages, PipelineOptions flags, uint32_t attachmentCount);
+	VkPipelineLayout layout = VK_NULL_HANDLE;
+	VkRenderPass renderPass = VK_NULL_HANDLE;
+
+	uint32_t attachmentCount = 0;
+
+	VkPipeline Build();
+
+private:
+	struct Options
+	{
+		bool noVertex    : 1;
+		bool noDepth     : 1;
+		bool noCulling   : 1;
+		bool noBlend     : 1;
+		bool cullFront   : 1;
+		bool frontCW     : 1;
+		bool polygonLine : 1;
+	};
+	Options options{};
+
+	std::vector<VkPipelineShaderStageCreateInfo> stages;
+};
+
+class RenderPassBuilder
+{
+public:
+	RenderPassBuilder(const std::vector<VkFormat>& formats) : formats(formats) {}
+
+	RenderPassBuilder(VkFormat format) 
+	{ 
+		formats.push_back(format);
+	}
+
+	void DisableDepth(bool val)   { options.noDepth = val;        } // depth is on by default
+	void DontClearDepth(bool val) { options.dontClearDepth = val; } // depth is cleared by default
+	void ClearOnLoad(bool val)    { options.clearOnLoad = val;    } // clear is not on by default
+
+	void SetInitialLayout(VkImageLayout layout) { initialLayout = layout; }
+	void SetFinalLayout(VkImageLayout layout)   { finalLayout   = layout; }
+
+	VkRenderPass Build();
+
+private:
+	struct Options // optimal for space
+	{
+		bool noDepth        : 1;
+		bool dontClearDepth : 1;
+		bool clearOnLoad    : 1;
+	};
+	Options options{};
+	
+	static constexpr VkImageLayout INVALID_LAYOUT = static_cast<VkImageLayout>(-1);
+
+	VkImageLayout initialLayout = INVALID_LAYOUT;
+	VkImageLayout finalLayout   = INVALID_LAYOUT;
+
+	std::vector<VkFormat> formats;
 };

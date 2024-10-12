@@ -21,6 +21,9 @@ public:
 	void Destroy();
 
 private:
+	void CreateRenderPass();
+	void CreatePipeline();
+
 	Texture* texture;
 	Swapchain* swapchain;
 

@@ -36,6 +36,12 @@ std::vector<const char*> Vulkan::validationLayers =
     "VK_LAYER_KHRONOS_validation"
 };
 
+std::vector<VkDynamicState> Vulkan::dynamicStates =
+{
+    VK_DYNAMIC_STATE_VIEWPORT,
+    VK_DYNAMIC_STATE_SCISSOR,
+};
+
 Vulkan::Context Vulkan::context{};
 std::string forcedGPU;
 
@@ -47,6 +53,23 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     location += file == "" ? "" : " in " + file;
 
     this->message = message + vulkanError + location;
+}
+
+VkPipelineDynamicStateCreateInfo Vulkan::GetDynamicStateCreateInfo()
+{
+    return GetDynamicStateCreateInfo(dynamicStates);
+}
+
+void Vulkan::RemoveDynamicState(VkDynamicState state)
+{
+    auto it = std::find(dynamicStates.begin(), dynamicStates.end(), state);
+    if (it != dynamicStates.end())
+        dynamicStates.erase(it);
+}
+
+void Vulkan::AddDynamicState(VkDynamicState state)
+{
+    dynamicStates.push_back(state);
 }
 
 void Vulkan::AddInstanceExtension(const char* name)

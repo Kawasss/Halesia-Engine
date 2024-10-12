@@ -20,7 +20,23 @@ class Swapchain;
 class GraphicsPipeline : public Pipeline
 {
 public:
-	GraphicsPipeline(const std::string& vertPath, const std::string& fragPath, PipelineOptions flags, VkRenderPass renderPass);
+	struct CreateInfo
+	{
+		std::string vertexShader;
+		std::string fragmentShader;
+		VkRenderPass renderPass = VK_NULL_HANDLE;
+
+		//maybe just flags ??
+		bool noVertices  = false;
+		bool noDepth     = false;
+		bool noCulling   = false;
+		bool noBlending  = false;
+		bool cullFront   = false;
+		bool frontCW     = false;
+		bool polygonLine = false;
+	};
+
+	GraphicsPipeline(const CreateInfo& createInfo);
 	~GraphicsPipeline();
 
 	GraphicsPipeline(const GraphicsPipeline&) = delete;
@@ -50,7 +66,7 @@ private:
 	void AllocateDescriptorSets(uint32_t amount);
 
 	void CreatePipelineLayout(const ShaderGroupReflector& reflector);
-	void CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, PipelineOptions flags, VkRenderPass renderPass, uint32_t attachmentCount);
+	void CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, const CreateInfo& createInfo, uint32_t attachmentCount);
 
 	std::map<std::string, BindingLayout> nameToLayout;
 };

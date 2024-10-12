@@ -21,6 +21,9 @@ private:
 		glm::mat4 view;
 	};
 
+	void CreateRenderPass();
+	void CreatePipeline();
+
 	FIF::Buffer ubo;
 
 	GraphicsPipeline* pipeline = nullptr;

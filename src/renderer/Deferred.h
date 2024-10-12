@@ -37,6 +37,9 @@ private:
 	void SetTextureBuffer();
 	void UpdateUBO(Camera* cam);
 
+	void CreateRenderPass(const std::vector<VkFormat>& formats);
+	void CreatePipelines(VkRenderPass firstPass, VkRenderPass secondPass);
+
 	Framebuffer framebuffer;
 
 	FIF::Buffer uboBuffer;
