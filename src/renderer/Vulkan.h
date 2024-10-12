@@ -7,8 +7,6 @@
 #include <set>
 #include <mutex>
 #include <unordered_map>
-#include <functional>
-#include <deque>
 
 #include "PhysicalDevice.h"
 
@@ -63,10 +61,6 @@ public:
     static win32::CriticalSection graphicsQueueSection;
 
     static VkDeviceSize allocatedMemory;
-
-    static std::vector<const char*> requiredLogicalDeviceExtensions;
-    static std::vector<const char*> requiredInstanceExtensions;
-    static std::vector<const char*> validationLayers;
 
     static void                               DisableValidationLayers();
 
@@ -125,7 +119,7 @@ public:
     static VkQueryPool                        CreateQueryPool(VkQueryType type, uint32_t amount);
     static std::vector<uint64_t>              GetQueryPoolResults(VkQueryPool queryPool, uint32_t amount, uint32_t offset = 0);
 
-    static void                               SubmitObjectForDeletion(std::function<void()>&& func);
+    //static void                               SubmitObjectForDeletion(std::function<void()>&& func); // removed for a different implementation
     static void                               DeleteSubmittedObjects();
 
     static void                               StartDebugLabel(VkCommandBuffer commandBuffer, const std::string& label);
@@ -136,12 +130,21 @@ public:
 
     template<typename Type> static void       SetDebugName(Type object, const char* name);
 
+    static void                               AddInstanceExtension(const char* name);
+    static void                               AddDeviceExtenion(const char* name);
+    static void                               AddValidationLayer(const char* name);
+
+    static const std::vector<const char*>&    GetDeviceExtensions() { return requiredLogicalDeviceExtensions; }
+
 private:
     static Context context;
 
     static std::unordered_map<uint32_t, std::vector<VkCommandPool>> queueCommandPools;
     static std::unordered_map<VkDevice, std::mutex>                 logicalDeviceMutexes;
-    static std::deque<std::function<void()>>                        deletionQueue;
+
+    static std::vector<const char*> requiredLogicalDeviceExtensions;
+    static std::vector<const char*> requiredInstanceExtensions;
+    static std::vector<const char*> validationLayers;
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL     DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
 

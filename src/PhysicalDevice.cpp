@@ -163,13 +163,15 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
     if (!vulkan12Features.descriptorBindingPartiallyBound || !vulkan12Features.runtimeDescriptorArray)
         throw std::runtime_error("Bindless textures aren't supported, the engine can't work without them");
 
+    const std::vector<const char*>& extensions = Vulkan::GetDeviceExtensions();
+
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     createInfo.pNext = &deviceFeatures2;
     createInfo.pQueueCreateInfos = queueCreateInfos.data();
     createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(Vulkan::requiredLogicalDeviceExtensions.size());
-    createInfo.ppEnabledExtensionNames = Vulkan::requiredLogicalDeviceExtensions.data();
+    createInfo.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    createInfo.ppEnabledExtensionNames = extensions.data();
     createInfo.enabledLayerCount = 0;
 
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
@@ -177,7 +179,7 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
 
 #ifdef _DEBUG
     std::cout << "Enabled logical device extensions:" << std::endl;
-    for (const char* extension : Vulkan::requiredLogicalDeviceExtensions)
+    for (const char* extension : extensions)
         std::cout << "  " + (std::string)extension << std::endl;
 #endif
 

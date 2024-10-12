@@ -16,8 +16,6 @@ VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 std::unordered_map<uint32_t, std::vector<VkCommandPool>> Vulkan::queueCommandPools;
 std::unordered_map<VkDevice, std::mutex>                 Vulkan::logicalDeviceMutexes;
 
-std::deque<std::function<void()>> Vulkan::deletionQueue;
-
 win32::CriticalSection Vulkan::graphicsQueueSection;
 win32::CriticalSection commandPoolSection;
 
@@ -49,6 +47,21 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     location += file == "" ? "" : " in " + file;
 
     this->message = message + vulkanError + location;
+}
+
+void Vulkan::AddInstanceExtension(const char* name)
+{
+    requiredInstanceExtensions.push_back(name);
+}
+
+void Vulkan::AddDeviceExtenion(const char* name)
+{
+    requiredLogicalDeviceExtensions.push_back(name);
+}
+
+void Vulkan::AddValidationLayer(const char* name)
+{
+    validationLayers.push_back(name);
 }
 
 void Vulkan::ForcePhysicalDevice(const std::string& name)
@@ -129,14 +142,9 @@ bool Vulkan::Context::IsValid() const
 
 void Vulkan::DeleteSubmittedObjects()
 {
-    for (auto iter = deletionQueue.begin(); iter < deletionQueue.end(); iter++)
-        (*iter)();
-    deletionQueue.clear();
-}
-
-void Vulkan::SubmitObjectForDeletion(std::function<void()>&& func)
-{
-    deletionQueue.push_back(func);
+    //for (auto iter = deletionQueue.begin(); iter < deletionQueue.end(); iter++)
+    //    (*iter)();
+    //deletionQueue.clear();
 }
 
 bool Vulkan::LogicalDeviceExtensionIsSupported(PhysicalDevice physicalDevice, const char* extension)
@@ -822,7 +830,7 @@ std::vector<VkExtensionProperties> Vulkan::GetLogicalDeviceExtensions(PhysicalDe
 
 std::string CreateFunctionNotActivatedError(std::string functionName, std::string extensionName)
 {
-    return "Function \"" + functionName + "\" was called, but is invalid.\nIts extension \"" + extensionName + "\" has not been activated with \"ActivateLogicalDeviceExtensionFunctions\"";
+    return "Function \"" + functionName + "\" was called, but is invalid.\nIts extension \"" + extensionName + "\" has not been activated";
 }
 
 #ifdef _DEBUG

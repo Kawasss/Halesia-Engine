@@ -282,10 +282,6 @@ void Renderer::CreateContext()
 
 void Renderer::CreatePhysicalDevice()
 {
-	#ifdef _DEBUG
-	Vulkan::requiredInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-	#endif
-
 	instance = Vulkan::GenerateInstance();
 
 	surface = Surface::GenerateSurface(instance, testWindow);
@@ -299,13 +295,13 @@ void Renderer::AddExtensions()
 		shouldRasterize = true;
 	else
 	{
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-		Vulkan::requiredLogicalDeviceExtensions.push_back(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+		Vulkan::AddDeviceExtenion(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
+		Vulkan::AddDeviceExtenion(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
+		Vulkan::AddDeviceExtenion(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
+		Vulkan::AddDeviceExtenion(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
+		Vulkan::AddDeviceExtenion(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+		Vulkan::AddDeviceExtenion(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+		Vulkan::AddDeviceExtenion(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
 	}
 }
 
