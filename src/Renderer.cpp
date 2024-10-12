@@ -55,14 +55,14 @@ Renderer::Renderer(Window* window, RendererFlags flags)
 {
 	this->flags = flags;
 	testWindow = window;
-	window->additionalPollCallback = ImGui_ImplWin32_WndProcHandler;
+	window->additionalPollCallback = ::ImGui_ImplWin32_WndProcHandler;
 	Vulkan::optionalMemoryAllocationFlags = &allocateFlagsInfo;
 	InitVulkan();
 }
 
 void Renderer::Destroy()
 {
-	vkDeviceWaitIdle(logicalDevice);
+	::vkDeviceWaitIdle(logicalDevice);
 
 	Vulkan::DeleteSubmittedObjects();
 	Vulkan::DestroyAllCommandPools();
@@ -90,13 +90,13 @@ void Renderer::Destroy()
 	delete animationManager;
 	delete rayTracer;
 
-	vkDestroyDescriptorPool(logicalDevice, imGUIDescriptorPool, nullptr);
-	ImGui_ImplVulkan_Shutdown();
+	::vkDestroyDescriptorPool(logicalDevice, imGUIDescriptorPool, nullptr);
+	::ImGui_ImplVulkan_Shutdown();
 
 	delete swapchain;
 
-	vkDestroySampler(logicalDevice, defaultSampler, nullptr);
-	vkDestroySampler(logicalDevice, noFilterSampler, nullptr);
+	::vkDestroySampler(logicalDevice, defaultSampler, nullptr);
+	::vkDestroySampler(logicalDevice, noFilterSampler, nullptr);
 
 	framebuffer.~Framebuffer();
 
@@ -104,24 +104,24 @@ void Renderer::Destroy()
 
 	delete screenPipeline;
 
-	vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
-	vkDestroyRenderPass(logicalDevice, GUIRenderPass, nullptr);
+	::vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
+	::vkDestroyRenderPass(logicalDevice, GUIRenderPass, nullptr);
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		vkDestroySemaphore(logicalDevice, imageAvaibleSemaphores[i], nullptr);
-		vkDestroySemaphore(logicalDevice, renderFinishedSemaphores[i], nullptr);
+		::vkDestroySemaphore(logicalDevice, imageAvaibleSemaphores[i], nullptr);
+		::vkDestroySemaphore(logicalDevice, renderFinishedSemaphores[i], nullptr);
 
-		vkDestroyFence(logicalDevice, inFlightFences[i], nullptr);
+		::vkDestroyFence(logicalDevice, inFlightFences[i], nullptr);
 	}
 
-	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+	::vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 
-	vkDestroyDevice(logicalDevice, nullptr);
+	::vkDestroyDevice(logicalDevice, nullptr);
 
 	surface.Destroy();
 
-	vkDestroyInstance(instance, nullptr);
+	::vkDestroyInstance(instance, nullptr);
 }
 
 void Renderer::CreateImGUI()
@@ -148,13 +148,13 @@ void Renderer::CreateImGUI()
 	poolCreateInfo.poolSizeCount = static_cast<uint32_t>(std::size(poolSizes));
 	poolCreateInfo.pPoolSizes = poolSizes;
 
-	VkResult result = vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &imGUIDescriptorPool);
+	VkResult result = ::vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &imGUIDescriptorPool);
 	CheckVulkanResult("Failed to create the descriptor pool for imGUI", result, vkCreateDescriptorPool);
 
 	ImGui::CreateContext();
 	ImPlot::CreateContext();
 
-	ImGui_ImplWin32_Init(testWindow->window);
+	::ImGui_ImplWin32_Init(testWindow->window);
 
 	ImGui_ImplVulkan_InitInfo imGUICreateInfo{};
 	imGUICreateInfo.Instance = instance;
@@ -166,13 +166,13 @@ void Renderer::CreateImGUI()
 	imGUICreateInfo.ImageCount = 3;
 	imGUICreateInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
-	ImGui_ImplVulkan_Init(&imGUICreateInfo, GUIRenderPass);
+	::ImGui_ImplVulkan_Init(&imGUICreateInfo, GUIRenderPass);
 
 	VkCommandBuffer imGUICommandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
-	ImGui_ImplVulkan_CreateFontsTexture(imGUICommandBuffer);
+	::ImGui_ImplVulkan_CreateFontsTexture(imGUICommandBuffer);
 	Vulkan::EndSingleTimeCommands(graphicsQueue, imGUICommandBuffer, commandPool);
 
-	ImGui_ImplVulkan_DestroyFontUploadObjects();
+	::ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
 void Renderer::RecompileShaders()
@@ -193,7 +193,7 @@ void Renderer::RecompileShaders()
 		std::string shaderComp = file.path().string();
 		std::cout << "Executing script " << file.path().relative_path() << " for recompiling\n";
 		std::filesystem::current_path(newPath);
-		system(shaderComp.c_str()); // windows only!!
+		::system(shaderComp.c_str()); // windows only!!
 	}
 	std::filesystem::current_path(oldPath);
 }
@@ -255,8 +255,8 @@ void Renderer::InitVulkan()
 	CreateSyncObjects();
 	CreateImGUI();
 	
-	ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplWin32_NewFrame();
+	::ImGui_ImplVulkan_NewFrame();
+	::ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
 	viewportWidth  = testWindow->GetWidth() * internalScale;
@@ -302,7 +302,7 @@ void Renderer::AddExtensions()
 uint32_t Renderer::DetectExternalTools()
 {
 	uint32_t numTools = 0;
-	vkGetPhysicalDeviceToolProperties(physicalDevice.Device(), &numTools, nullptr);
+	::vkGetPhysicalDeviceToolProperties(physicalDevice.Device(), &numTools, nullptr);
 	std::cout << "Detected external tools:\n";
 	if (numTools == 0)
 	{
@@ -311,13 +311,13 @@ uint32_t Renderer::DetectExternalTools()
 	}
 
 	std::vector<VkPhysicalDeviceToolProperties> properties(numTools);
-	vkGetPhysicalDeviceToolProperties(physicalDevice.Device(), &numTools, properties.data());
+	::vkGetPhysicalDeviceToolProperties(physicalDevice.Device(), &numTools, properties.data());
 	for (int i = 0; i < numTools; i++)
 	{
 		std::cout << 
 			"\n  name: " << properties[i].name <<
 			"\n  version: " << properties[i].version <<
-			"\n  purposes: " << string_VkToolPurposeFlags(properties[i].purposes) <<
+			"\n  purposes: " << ::string_VkToolPurposeFlags(properties[i].purposes) <<
 			"\n  description: " << properties[i].description << "\n";
 	}
 	return numTools;
@@ -344,13 +344,13 @@ void Renderer::CreateTextureSampler()
 	createInfo.minLod = 0;
 	createInfo.maxLod = VK_LOD_CLAMP_NONE;
 
-	VkResult result = vkCreateSampler(logicalDevice, &createInfo, nullptr, &defaultSampler);
+	VkResult result = ::vkCreateSampler(logicalDevice, &createInfo, nullptr, &defaultSampler);
 	CheckVulkanResult("Failed to create the texture sampler", result, vkCreateSampler);
 
 	createInfo.magFilter = createInfo.minFilter = VK_FILTER_NEAREST;
 	createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
 
-	result = vkCreateSampler(logicalDevice, &createInfo, nullptr, &noFilterSampler);
+	result = ::vkCreateSampler(logicalDevice, &createInfo, nullptr, &noFilterSampler);
 	CheckVulkanResult("Failed to create the texture sampler", result, vkCreateSampler);
 
 	resultSampler = flags & NO_FILTERING_ON_RESULT ? noFilterSampler : defaultSampler;
@@ -559,7 +559,7 @@ void Renderer::CheckForBufferResizes()
 void Renderer::RenderImGUI(CommandBuffer commandBuffer)
 {
 	ImGui::Render();
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.Get());
+	::ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.Get());
 }
 
 void Renderer::DenoiseSynchronized(CommandBuffer commandBuffer)
@@ -619,7 +619,7 @@ void Renderer::ExportSemaphores()
 	{
 		getHandleInfo.semaphore = renderFinishedSemaphores[i];
 
-		VkResult result = vkGetSemaphoreWin32HandleKHR(logicalDevice, &getHandleInfo, &externalRenderSemaphoreHandles[i]);
+		VkResult result = ::vkGetSemaphoreWin32HandleKHR(logicalDevice, &getHandleInfo, &externalRenderSemaphoreHandles[i]);
 		CheckVulkanResult("Failed to get the win32 handle of a semaphore", result, vkGetSemaphoreWin32HandleKHR);
 
 		cudaExternalSemaphoreHandleDesc externSemaphoreDesc{};
@@ -627,7 +627,7 @@ void Renderer::ExportSemaphores()
 		externSemaphoreDesc.handle.win32.handle = externalRenderSemaphoreHandles[i];
 		externSemaphoreDesc.flags = 0;
 
-		cudaError_t cuResult = cudaImportExternalSemaphore(&externalRenderSemaphores[i], &externSemaphoreDesc);
+		cudaError_t cuResult = ::cudaImportExternalSemaphore(&externalRenderSemaphores[i], &externSemaphoreDesc);
 	}
 #endif
 }
@@ -639,11 +639,11 @@ void Renderer::RenderIntro(Intro* intro)
 
 	while (currentTime < Intro::maxSeconds)
 	{
-		vkWaitForFences(logicalDevice, 1, &inFlightFences[0], true, UINT64_MAX);
+		::vkWaitForFences(logicalDevice, 1, &inFlightFences[0], true, UINT64_MAX);
 
 		uint32_t imageIndex = GetNextSwapchainImage(0);
 
-		vkResetFences(logicalDevice, 1, &inFlightFences[0]);
+		::vkResetFences(logicalDevice, 1, &inFlightFences[0]);
 
 		commandBuffers[0].Reset();
 		commandBuffers[0].Begin();
@@ -736,8 +736,8 @@ inline bool ObjectIsValid(Object* object, bool checkBLAS)
 
 inline void ResetImGui()
 {
-	ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplWin32_NewFrame();
+	::ImGui_ImplVulkan_NewFrame();
+	::ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 }
 
@@ -787,7 +787,7 @@ void Renderer::SubmitRecording()
 
 inline void GetAllObjectsFromObject(std::vector<Object*>& ret, Object* obj, bool checkBLAS)
 {
-	if (!ObjectIsValid(obj, checkBLAS))
+	if (!::ObjectIsValid(obj, checkBLAS))
 		return;
 
 	ret.push_back(obj);
@@ -807,7 +807,7 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	std::vector<Object*> activeObjects;
 	for (Object* object : objects)
 	{
-		GetAllObjectsFromObject(activeObjects, object, canRayTrace);
+		::GetAllObjectsFromObject(activeObjects, object, canRayTrace);
 	}
 
 	receivedObjects += objects.size();
@@ -833,7 +833,7 @@ void Renderer::StartRenderPass(CommandBuffer commandBuffer, VkRenderPass renderP
 	clearColors[0].color = { clearColor.x, clearColor.y, clearColor.z, 1 };
 	clearColors[1].depthStencil = { 1, 0 };
 
-	VkRenderPassBeginInfo renderPassBeginInfo{};
+	::VkRenderPassBeginInfo renderPassBeginInfo{};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassBeginInfo.renderPass = renderPass;
 	renderPassBeginInfo.framebuffer = framebuffer;
@@ -889,8 +889,8 @@ void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkComma
 		glm::mat4 translationModel = glm::translate(glm::identity<glm::mat4>(), object->transform.position);
 		glm::mat4 trans = translationModel * localRotationModel * scaleModel;
 		
-		vkCmdPushConstants(commandBuffer, screenPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &trans);
-		vkCmdDraw(commandBuffer, 36, 1, 0, 0);
+		::vkCmdPushConstants(commandBuffer, screenPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &trans);
+		::vkCmdDraw(commandBuffer, 36, 1, 0, 0);
 	}	
 }
 
@@ -913,9 +913,9 @@ void Renderer::SetLogicalDevice()
 	QueueFamilyIndices indices = physicalDevice.QueueFamilies(surface);
 	queueIndex = indices.graphicsFamily.value();
 
-	vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
-	vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
-	vkGetDeviceQueue(logicalDevice, indices.computeFamily.value(), 0, &computeQueue);
+	::vkGetDeviceQueue(logicalDevice, indices.graphicsFamily.value(), 0, &graphicsQueue);
+	::vkGetDeviceQueue(logicalDevice, indices.presentFamily.value(), 0, &presentQueue);
+	::vkGetDeviceQueue(logicalDevice, indices.computeFamily.value(), 0, &computeQueue);
 
 	Vulkan::InitializeContext({ instance, logicalDevice, physicalDevice, graphicsQueue, queueIndex, presentQueue, indices.presentFamily.value(), computeQueue, indices.computeFamily.value() });
 }
@@ -981,7 +981,7 @@ void Renderer::GetQueryResults()
 uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
 {
 	uint32_t imageIndex;
-	VkResult result = vkAcquireNextImageKHR(logicalDevice, swapchain->vkSwapchain, UINT64_MAX, imageAvaibleSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
+	VkResult result = ::vkAcquireNextImageKHR(logicalDevice, swapchain->vkSwapchain, UINT64_MAX, imageAvaibleSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 	{
