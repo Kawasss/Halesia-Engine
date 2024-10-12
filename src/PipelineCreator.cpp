@@ -32,8 +32,8 @@ VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
-	depthStencil.depthTestEnable = !(flags & PIPELINE_FLAG_NO_DEPTH);
-	depthStencil.depthWriteEnable = !(flags & PIPELINE_FLAG_NO_DEPTH);
+	depthStencil.depthTestEnable = !(flags & RENDERPASS_FLAG_NO_DEPTH);
+	depthStencil.depthWriteEnable = !(flags & RENDERPASS_FLAG_NO_DEPTH);
 	depthStencil.depthBoundsTestEnable = VK_FALSE;
 
 	VkPipelineRasterizationStateCreateInfo rasterizer{};
@@ -105,8 +105,10 @@ VkPipeline PipelineCreator::CreatePipeline(VkPipelineLayout layout, VkRenderPass
 	return pipeline;
 }
 
-VkRenderPass PipelineCreator::CreateRenderPass(PhysicalDevice physicalDevice, const std::vector<VkFormat>& formats, PipelineFlags flags, VkImageLayout initLayout, VkImageLayout finalLayout)
+VkRenderPass PipelineCreator::CreateRenderPass(const std::vector<VkFormat>& formats, RenderPassFlags flags, VkImageLayout initLayout, VkImageLayout finalLayout)
 {
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
 	uint32_t attachmentCount = static_cast<uint32_t>(formats.size());
 
 	std::vector<VkAttachmentDescription> attachments(attachmentCount);
@@ -116,7 +118,7 @@ VkRenderPass PipelineCreator::CreateRenderPass(PhysicalDevice physicalDevice, co
 	{
 		attachments[i].format = formats[i];
 		attachments[i].samples = VK_SAMPLE_COUNT_1_BIT;
-		attachments[i].loadOp = flags & PIPELINE_FLAG_CLEAR_ON_LOAD ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+		attachments[i].loadOp = flags & RENDERPASS_FLAG_CLEAR_ON_LOAD ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachments[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		attachments[i].initialLayout = initLayout;
 		attachments[i].finalLayout = finalLayout;
@@ -125,12 +127,12 @@ VkRenderPass PipelineCreator::CreateRenderPass(PhysicalDevice physicalDevice, co
 		colorReferences[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	}
 
-	if (!(flags & PIPELINE_FLAG_NO_DEPTH))
+	if (!(flags & RENDERPASS_FLAG_NO_DEPTH))
 	{
 		VkAttachmentDescription depthAttachment{};
-		depthAttachment.format = physicalDevice.GetDepthFormat();
+		depthAttachment.format = ctx.physicalDevice.GetDepthFormat();
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
-		depthAttachment.loadOp = flags & PIPELINE_FLAG_DONT_CLEAR_DEPTH ? VK_ATTACHMENT_LOAD_OP_DONT_CARE : VK_ATTACHMENT_LOAD_OP_CLEAR;
+		depthAttachment.loadOp = flags & RENDERPASS_FLAG_DONT_CLEAR_DEPTH ? VK_ATTACHMENT_LOAD_OP_DONT_CARE : VK_ATTACHMENT_LOAD_OP_CLEAR;
 		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -148,7 +150,7 @@ VkRenderPass PipelineCreator::CreateRenderPass(PhysicalDevice physicalDevice, co
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = attachmentCount;
 	subpass.pColorAttachments = colorReferences.data();
-	subpass.pDepthStencilAttachment = flags & PIPELINE_FLAG_NO_DEPTH ? nullptr : &depthReference;
+	subpass.pDepthStencilAttachment = flags & RENDERPASS_FLAG_NO_DEPTH ? nullptr : &depthReference;
 
 	VkSubpassDependency dependency{};
 	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -168,7 +170,7 @@ VkRenderPass PipelineCreator::CreateRenderPass(PhysicalDevice physicalDevice, co
 	renderPassInfo.pDependencies = &dependency;
 
 	VkRenderPass renderPass = VK_NULL_HANDLE;
-	VkResult result = vkCreateRenderPass(Vulkan::GetContext().logicalDevice, &renderPassInfo, nullptr, &renderPass);
+	VkResult result = vkCreateRenderPass(ctx.logicalDevice, &renderPassInfo, nullptr, &renderPass);
 	CheckVulkanResult("Failed to create a render pass", result, vkCreateRenderPass);
 
 	return renderPass;

@@ -16,8 +16,7 @@ void DeferredPipeline::Start(const Payload& payload)
 {
 	std::vector<VkFormat> formats = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM };
 
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-	renderPass = PipelineCreator::CreateRenderPass(ctx.physicalDevice, formats, PIPELINE_FLAG_CLEAR_ON_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	renderPass = PipelineCreator::CreateRenderPass(formats, RENDERPASS_FLAG_CLEAR_ON_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	firstPipeline  = new GraphicsPipeline("shaders/spirv/deferredFirst.vert.spv",  "shaders/spirv/deferredFirst.frag.spv",  PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW, renderPass);
 	secondPipeline = new GraphicsPipeline("shaders/spirv/deferredSecond.vert.spv", "shaders/spirv/deferredSecond.frag.spv", PIPELINE_FLAG_CULL_BACK | PIPELINE_FLAG_FRONT_CCW | PIPELINE_FLAG_NO_VERTEX, payload.renderer->GetDefault3DRenderPass());

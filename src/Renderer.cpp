@@ -364,8 +364,8 @@ void Renderer::CreateTextureSampler()
 
 void Renderer::CreateRenderPass()
 {
-	renderPass    = PipelineCreator::CreateRenderPass(physicalDevice, VK_FORMAT_R8G8B8A8_UNORM, PIPELINE_FLAG_CLEAR_ON_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	GUIRenderPass = PipelineCreator::CreateRenderPass(physicalDevice, swapchain->format, PIPELINE_FLAG_NONE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	renderPass    = PipelineCreator::CreateRenderPass(VK_FORMAT_R8G8B8A8_UNORM, RENDERPASS_FLAG_CLEAR_ON_LOAD, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	GUIRenderPass = PipelineCreator::CreateRenderPass(swapchain->format, RENDERPASS_FLAG_NONE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 	Vulkan::SetDebugName(renderPass, "Default 3D render pass");
 	Vulkan::SetDebugName(GUIRenderPass, "Default GUI render pass");

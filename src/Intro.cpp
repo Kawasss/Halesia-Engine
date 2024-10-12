@@ -22,7 +22,7 @@ void Intro::Create(Swapchain* swapchain, std::string imagePath)
 	this->texture = new Texture(imagePath);
 	this->texture->AwaitGeneration();
 
-	renderPass = PipelineCreator::CreateRenderPass(ctx.physicalDevice, swapchain->format, PIPELINE_FLAG_NONE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	renderPass = PipelineCreator::CreateRenderPass(swapchain->format, RENDERPASS_FLAG_NONE, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
 	// pipeline
 
