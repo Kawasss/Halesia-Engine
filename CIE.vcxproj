@@ -275,6 +275,7 @@
     <ClInclude Include="src\renderer\Light.h" />
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
+    <ClInclude Include="src\renderer\Pipeline.h" />
     <ClInclude Include="src\renderer\PipelineCreator.h" />
     <ClInclude Include="src\renderer\QueryPool.h" />
     <ClInclude Include="src\renderer\RenderPipeline.h" />

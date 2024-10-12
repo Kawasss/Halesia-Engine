@@ -37,7 +37,7 @@ GraphicsPipeline::~GraphicsPipeline()
 	for (const VkDescriptorSetLayout& setLayout : setLayouts)
 		vkDestroyDescriptorSetLayout(ctx.logicalDevice, setLayout, nullptr);
 
-	vkDestroyDescriptorPool(ctx.logicalDevice, descriptorPool, nullptr);
+	vkDestroyDescriptorPool(ctx.logicalDevice, pool, nullptr);
 }
 
 void GraphicsPipeline::Bind(VkCommandBuffer commandBuffer)
@@ -60,7 +60,7 @@ void GraphicsPipeline::CreateDescriptorPool(const ShaderGroupReflector& reflecto
 	createInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	createInfo.pPoolSizes = poolSizes.data();
 
-	VkResult result = vkCreateDescriptorPool(ctx.logicalDevice, &createInfo, nullptr, &descriptorPool);
+	VkResult result = vkCreateDescriptorPool(ctx.logicalDevice, &createInfo, nullptr, &pool);
 	CheckVulkanResult("Failed to create the descriptor pool for a graphics pipeline", result, vkCreateDescriptorPool);
 }
 
@@ -69,9 +69,11 @@ void GraphicsPipeline::CreateSetLayout(const ShaderGroupReflector& reflector)
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	std::set<uint32_t> indices = reflector.GetDescriptorSetIndices();
 
+	setLayouts.reserve(indices.size());
+
 	for (uint32_t index : indices) 
 	{
-		std::vector<VkDescriptorSetLayoutBinding> bindings = reflector.GetLayoutBindingsOfSet(index); // add support for multiple sets
+		std::vector<VkDescriptorSetLayoutBinding> bindings = reflector.GetLayoutBindingsOfSet(index);
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -101,7 +103,7 @@ void GraphicsPipeline::AllocateDescriptorSets(uint32_t amount)
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocInfo.descriptorSetCount = amount;
-	allocInfo.descriptorPool = descriptorPool;
+	allocInfo.descriptorPool = pool;
 	allocInfo.pSetLayouts = setLayouts.data();
 
 	for (int i = 0; i < FIF::FRAME_COUNT; i++)

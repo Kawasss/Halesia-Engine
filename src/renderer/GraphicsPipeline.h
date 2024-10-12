@@ -7,6 +7,7 @@
 
 #include "PipelineCreator.h"
 #include "FramesInFlight.h"
+#include "Pipeline.h"
 
 namespace FIF
 {
@@ -16,7 +17,7 @@ namespace FIF
 class ShaderGroupReflector;
 class Swapchain;
 
-class GraphicsPipeline
+class GraphicsPipeline : public Pipeline
 {
 public:
 	GraphicsPipeline(const std::string& vertPath, const std::string& fragPath, PipelineOptions flags, VkRenderPass renderPass);
@@ -43,19 +44,7 @@ public:
 
 	void PushConstant(VkCommandBuffer commandBuffer, const void* value, VkShaderStageFlags stages, uint32_t size, uint32_t offset = 0);
 
-	std::vector<VkDescriptorSet>& GetDescriptorSets() { return descriptorSets[FIF::frameIndex]; }
-	
-	std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT>& GetAllDescriptorSets() { return descriptorSets; }
-
-	VkPipelineLayout GetLayout() { return layout; }
-
 private:
-	struct BindingLayout
-	{
-		uint32_t set;
-		VkDescriptorSetLayoutBinding binding;
-	};
-
 	void CreateDescriptorPool(const ShaderGroupReflector& reflector);
 	void CreateSetLayout(const ShaderGroupReflector& reflector);
 	void AllocateDescriptorSets(uint32_t amount);
@@ -64,11 +53,4 @@ private:
 	void CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, PipelineOptions flags, VkRenderPass renderPass, uint32_t attachmentCount);
 
 	std::map<std::string, BindingLayout> nameToLayout;
-
-	VkPipeline pipeline = VK_NULL_HANDLE;
-	VkPipelineLayout layout = VK_NULL_HANDLE;
-
-	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
-	std::vector<VkDescriptorSetLayout> setLayouts;
-	std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT> descriptorSets;
 };

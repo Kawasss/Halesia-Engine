@@ -125,7 +125,7 @@ int main(int argc, char** argv)
 	light2.direction = glm::vec4(0, -1, 0, glm::radians(12.5f));
 	light2.type  = Light::Type::Spot;
 
-	//renderer->AddRenderPipeline<DeferredPipeline>();
+	renderer->AddRenderPipeline<DeferredPipeline>();
 	renderer->AddLight(light);
 	renderer->AddLight(light2);
 
