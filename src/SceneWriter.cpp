@@ -153,11 +153,11 @@ void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 	writer.WriteToFileCompressed();
 }
 
-inline void WriteMesh(BinaryWriter& writer, const Mesh& mesh)
+inline void WriteMesh(BinaryWriter& writer, Mesh& mesh)
 {
 	writer 
 		<< NODE_TYPE_MESH << GetMeshNodeSize(mesh) 
-		<< mesh.materialIndex
+		<< mesh.GetMaterialIndex()
 		<< NODE_TYPE_VERTICES << mesh.vertices.size() * sizeof(mesh.vertices[0]) << mesh.vertices // vertices array
 		<< NODE_TYPE_INDICES << mesh.indices.size() * sizeof(mesh.indices[0]) << mesh.indices;    // indices array
 }

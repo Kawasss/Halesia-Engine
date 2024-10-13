@@ -3,6 +3,7 @@
 #include "renderer/Mesh.h"
 #include "renderer/Renderer.h"
 #include "renderer/AccelerationStructures.h"
+
 #include "io/SceneLoader.h"
 
 std::vector<Material> Mesh::materials;
@@ -13,12 +14,12 @@ void Mesh::ProcessMaterial(const MaterialCreationData& creationData)
 	if (materialIndex != 0) // if this mesh already has a material, then dont replace that with this one
 		return;
 
-	Texture* albedo = !creationData.albedoData.empty() ? new Texture(creationData.albedoData, creationData.aWidth, creationData.aHeight) : Texture::placeholderAlbedo;
-	Texture* normal = !creationData.normalData.empty() ? new Texture(creationData.normalData, creationData.nWidth, creationData.nHeight) : Texture::placeholderNormal;
-	Texture* metallic = !creationData.metallicData.empty() ? new Texture(creationData.metallicData, creationData.mWidth, creationData.mHeight) : Texture::placeholderMetallic;
-	Texture* roughness = !creationData.roughnessData.empty() ? new Texture(creationData.roughnessData, creationData.rWidth, creationData.rHeight) : Texture::placeholderRoughness;
-	Texture* ambientOcclusion = !creationData.ambientOcclusionData.empty() ? new Texture(creationData.ambientOcclusionData, creationData.aoWidth, creationData.aoHeight) : Texture::placeholderAmbientOcclusion;
-	SetMaterial({ albedo, normal, metallic, roughness, ambientOcclusion });
+	Texture* albedo    = !creationData.albedoData.empty()           ? new Texture(creationData.albedoData, creationData.aWidth, creationData.aHeight) : Texture::placeholderAlbedo;
+	Texture* normal    = !creationData.normalData.empty()           ? new Texture(creationData.normalData, creationData.nWidth, creationData.nHeight) : Texture::placeholderNormal;
+	Texture* metallic  = !creationData.metallicData.empty()         ? new Texture(creationData.metallicData, creationData.mWidth, creationData.mHeight) : Texture::placeholderMetallic;
+	Texture* roughness = !creationData.roughnessData.empty()        ? new Texture(creationData.roughnessData, creationData.rWidth, creationData.rHeight) : Texture::placeholderRoughness;
+	Texture* ao        = !creationData.ambientOcclusionData.empty() ? new Texture(creationData.ambientOcclusionData, creationData.aoWidth, creationData.aoHeight) : Texture::placeholderAmbientOcclusion;
+	SetMaterial({ albedo, normal, metallic, roughness, ao });
 }
 
 void Mesh::Create(const MeshCreationData& creationData)
@@ -46,9 +47,10 @@ void Mesh::Recreate()
 		Renderer::g_indexBuffer.DestroyData(indexMemory);
 	}
 
-	vertexMemory = Renderer::g_vertexBuffer.SubmitNewData(vertices);
-	indexMemory = Renderer::g_indexBuffer.SubmitNewData(indices);
+	vertexMemory        = Renderer::g_vertexBuffer.SubmitNewData(vertices);
+	indexMemory         = Renderer::g_indexBuffer.SubmitNewData(indices);
 	defaultVertexMemory = Renderer::g_defaultVertexBuffer.SubmitNewData(vertices);
+
 	if (Renderer::canRayTrace)
 		BLAS = BottomLevelAccelerationStructure::Create(*this);
 }
@@ -58,23 +60,43 @@ void Mesh::ResetMaterial()
 	materialIndex = 0;
 }
 
-void Mesh::SetMaterial(Material material)
+void Mesh::SetMaterial(const Material& material)
 {
 	std::lock_guard<std::mutex> lockGuard(materialMutex);
-	for (int i = 0; i < materials.size(); i++) // this code is bad and should not stay for long, but it currently prevents a bug related to material uploading
-		if (materials[i] == material)
-		{
-			materialIndex = i;
-			return;
-		}
 
-	materials.push_back(material); // maybe make it so that the previous material is removed and destroyed if no other meshes references it
-	for (int i = 0; i < materials.size(); i++) // poor performance
-		if (materials[i] == material)
-			materialIndex = i;
+	auto it = std::find(materials.begin(), materials.end(), material);
+	if (it != materials.end())
+	{
+		materialIndex = it - materials.begin();
+	}
+	else
+	{
+		materialIndex = FindUnusedMaterial(); // try to find an open spot to prevent a new allocation and to save space
+		if (materialIndex != materials.size())
+		{
+			materials[materialIndex] = material;
+		}
+		else
+		{
+			materials.push_back(material);
+		}
+	}
+	materials[materialIndex].AddReference();
 }
 
-bool Mesh::HasFinishedLoading()
+Material& Mesh::GetMaterial()
+{
+	return materials[GetMaterialIndex()];
+}
+
+uint32_t Mesh::GetMaterialIndex() // the mesh will fall back to the default material if its actual material for some reason doesnt exist anymore
+{
+	if (materialIndex >= materials.size())
+		materialIndex = 0;
+	return materialIndex;
+}
+
+bool Mesh::HasFinishedLoading() const
 {
 	return materials[materialIndex].HasFinishedLoading() && finished;
 }
@@ -91,6 +113,8 @@ bool Mesh::IsValid() const
 
 void Mesh::Destroy()
 {
+	materials[materialIndex].RemoveReference();
+
 	// should also delete the material in materials here (if no other meshes are referencing that material)
 	if (vertexMemory != 0)
 		Renderer::g_vertexBuffer.DestroyData(vertexMemory);
@@ -101,4 +125,12 @@ void Mesh::Destroy()
 	indices.clear();
 	vertices.clear();
 	//delete this;
+}
+
+uint32_t Mesh::FindUnusedMaterial() // a material is unused if it is not the default material and all textures are the default texture
+{
+	const Material& unusedMaterialTemplate = materials.front(); // the default material (which is at the front) will compare true to an unused material
+	auto it = std::find(materials.begin() + 1, materials.end(), unusedMaterialTemplate);
+
+	return it - materials.begin();
 }

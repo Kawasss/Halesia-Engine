@@ -170,7 +170,7 @@ void GUI::ShowObjectMeshes(Mesh& mesh)
 		"Material:   %i\n\n"
 		"center:     %.2f, %.2f, %.2f\n"
 		"extents:    %.2f, %.2f, %.2f\n",
-	mesh.vertexMemory, mesh.defaultVertexMemory, mesh.indexMemory, (uint64_t)mesh.BLAS.Get(), mesh.faceCount, (int)mesh.materialIndex, mesh.center.x, mesh.center.y, mesh.center.z, mesh.extents.x, mesh.extents.y, mesh.extents.z);
+	mesh.vertexMemory, mesh.defaultVertexMemory, mesh.indexMemory, (uint64_t)mesh.BLAS.Get(), mesh.faceCount, (int)mesh.GetMaterialIndex(), mesh.center.x, mesh.center.y, mesh.center.z, mesh.extents.x, mesh.extents.y, mesh.extents.z);
 }
 
 void GUI::ShowObjectData(Object* object)

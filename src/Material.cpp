@@ -73,6 +73,26 @@ void Material::Destroy() // only delete the textures if they arent the placehold
 	if (metallic != Texture::placeholderMetallic) delete metallic;
 	if (roughness != Texture::placeholderRoughness) delete roughness;
 	if (ambientOcclusion != Texture::placeholderAmbientOcclusion) delete ambientOcclusion;
+
+	// reset all textures to their default values, marking the material as unused
+	albedo = Texture::placeholderAlbedo;
+	normal = Texture::placeholderNormal;
+	metallic = Texture::placeholderMetallic;
+	roughness = Texture::placeholderRoughness;
+	ambientOcclusion = Texture::placeholderAmbientOcclusion;
+	isLight = false;
+}
+
+void Material::AddReference()
+{
+	referenceCount++;
+}
+
+void Material::RemoveReference()
+{
+	referenceCount--;
+	if (referenceCount <= 0)
+		Destroy();
 }
 
 bool operator==(const Material& lMaterial, const Material& rMaterial)

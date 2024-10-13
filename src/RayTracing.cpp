@@ -636,14 +636,17 @@ void RayTracingPipeline::UpdateInstanceDataBuffer(const std::vector<Object*>& ob
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
 		glm::vec2 ndc = objects[i]->rigid.type == RigidBody::Type::Dynamic ? objects[i]->transform.GetMotionVector(camera->GetProjectionMatrix(), camera->GetViewMatrix()) * glm::vec2(width, height) : staticMotion;
+
 		Mesh& mesh = objects[i]->mesh;
+		uint32_t matIndex = mesh.GetMaterialIndex();
+
 		instanceMeshDataPointer[i] =
 		{ 
 			objects[i]->transform.GetModelMatrix(), 
 			(uint32_t)Renderer::g_indexBuffer.GetItemOffset(mesh.indexMemory), 
 			(uint32_t)Renderer::g_vertexBuffer.GetItemOffset(mesh.vertexMemory), 
-			mesh.materialIndex, 
-			Mesh::materials[mesh.materialIndex].isLight, 
+			matIndex,
+			Mesh::materials[matIndex].isLight,
 			ndc,
 			objects[i]->handle
 		};

@@ -116,7 +116,7 @@ void ForwardPlusPipeline::DrawObjects(CommandBuffer commandBuffer, const std::ve
 	for (Object* obj : objects)
 	{
 		pushConstant.model      = obj->transform.GetModelMatrix();
-		pushConstant.materialID = obj->mesh.materialIndex;
+		pushConstant.materialID = obj->mesh.GetMaterialIndex();
 
 		commandBuffer.PushConstants(graphicsPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof(PushConstant), &pushConstant);
 

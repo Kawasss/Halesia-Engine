@@ -98,7 +98,7 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 	for (Object* obj : objects)
 	{
 		pushConstant.model = obj->transform.GetModelMatrix();
-		pushConstant.materialID = obj->mesh.materialIndex;
+		pushConstant.materialID = obj->mesh.GetMaterialIndex();
 
 		firstPipeline->PushConstant(cmdBuffer, pushConstant, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 

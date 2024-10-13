@@ -21,7 +21,6 @@ struct Mesh
 
 	std::string name = "NO_NAME";
 
-	uint32_t materialIndex = 0;
 	StorageMemory vertexMemory;
 	StorageMemory indexMemory;
 	StorageMemory defaultVertexMemory;
@@ -37,17 +36,25 @@ struct Mesh
 	void ResetMaterial(); // should make it so that it also deletes the material if no other mesh references it
 	void ProcessMaterial(const MaterialCreationData& creationData);
 	void Recreate();
-	bool HasFinishedLoading();
+	bool HasFinishedLoading() const;
 	void AwaitGeneration();
 	bool IsValid() const;
+
+	uint32_t GetMaterialIndex();
 
 	/// <summary>
 	/// Sets the material for this mesh, any old mesh will be overridden.
 	/// </summary>
 	/// <param name="material"></param>
-	void SetMaterial(Material material);
+	void SetMaterial(const Material& material);
+
+	Material& GetMaterial();
 
 private:
+	static uint32_t FindUnusedMaterial(); // returns the index to the material
+
+	uint32_t materialIndex = 0;
+
 	static std::mutex materialMutex;
 	bool finished = false;
 };

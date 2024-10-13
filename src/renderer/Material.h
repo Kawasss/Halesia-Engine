@@ -33,21 +33,36 @@ struct Material
 	static Material Create(const MaterialCreateInfo& createInfo);
 	static Material Create(const MaterialCreationData& createInfo);
 
-	// dont know if dynamically allocated is necessary since the material will always be used for the lifetime of the mesh, the class is sort of big so not so sure if copying is cheap
-	Texture* albedo = Texture::placeholderAlbedo;
-	Texture* normal = Texture::placeholderNormal;
-	Texture* metallic = Texture::placeholderMetallic;
-	Texture* roughness = Texture::placeholderRoughness;
-	Texture* ambientOcclusion = Texture::placeholderAmbientOcclusion;
-	bool isLight = false;
-	Handle handle = ResourceManager::GenerateHandle();
+	Material() = default;
+	Material(Texture* al, Texture* no, Texture* me, Texture* ro, Texture* ao) : albedo(al), normal(no), metallic(me), roughness(ro), ambientOcclusion(ao) {}
+
+	bool HasFinishedLoading();
+
+	void AwaitGeneration();
+	void Destroy(); // only delete the textures if they arent the placeholders
+
+	void AddReference();
+	void RemoveReference(); // the material will automatically self destruct if referenceCount is 0
+
+	int GetReferenceCount() { return referenceCount; }
+	void OverrideReferenceCount(int val) { referenceCount = val; } // should only be called by the renderer itself
 
 	Texture* operator[](size_t i);
 	Texture* operator[](MaterialTexture materialTexture);
 
-	bool HasFinishedLoading();
-	void AwaitGeneration();
-	void Destroy(); // only delete the textures if they arent the placeholders
+	Handle handle = ResourceManager::GenerateHandle();
+
+	// dont know if dynamically allocated is necessary since the material will always be used for the lifetime of the mesh, the class is sort of big so not so sure if copying is cheap
+	Texture* albedo           = Texture::placeholderAlbedo;
+	Texture* normal           = Texture::placeholderNormal;
+	Texture* metallic         = Texture::placeholderMetallic;
+	Texture* roughness        = Texture::placeholderRoughness;
+	Texture* ambientOcclusion = Texture::placeholderAmbientOcclusion;
+
+	bool isLight = false;
+	
+private:
+	int referenceCount = 0;
 };
 
 inline extern bool operator==(const Material& lMaterial, const Material& rMaterial);

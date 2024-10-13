@@ -119,11 +119,11 @@ void Editor::MainThreadUpdate(float delta)
 	
 	ObjectCreationData creationData = GenericLoader::LoadObjectFile(queuedMeshChange.path);
 
-	uint32_t matIndex = obj->mesh.materialIndex;
+	uint32_t matIndex = obj->mesh.GetMaterialIndex();
 
 	obj->mesh.Destroy();
 	obj->mesh.Create(creationData.mesh);
-	obj->mesh.materialIndex = matIndex;
+	obj->mesh.SetMaterial(Mesh::materials[matIndex]);
 
 	queuedMeshChange.isApplied = true;
 

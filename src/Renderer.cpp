@@ -67,8 +67,7 @@ void Renderer::Destroy()
 	if (!Vulkan::GetContext().IsValid()) // cannot destroy anything if vulkan isnt initialized yet
 		return;
 
-	for (Material& mat : Mesh::materials)
-		mat.Destroy();
+	Mesh::materials.front().Destroy(); // the only material whose lifetime is managed by the renderer is the default material
 
 	g_defaultVertexBuffer.Destroy();
 	g_vertexBuffer.Destroy();
@@ -205,8 +204,8 @@ void Renderer::InitVulkan()
 	uint32_t numTools = DetectExternalTools();
 	if (flags & NO_VALIDATION || numTools > 0)
 	{
-		const char* reason = numTools > 0 ? " due to possible interference of external tools\n" : ", the flag NO_VALIDATION was set\n";
-		Console::WriteLine("Disabled validation layers");
+		const char* reason = numTools > 0 ? "Disabled validation layers due to possible interference of external tools\n" : "Disabled validation layers because the flag NO_VALIDATION was set\n";
+		Console::WriteLine(reason);
 		Vulkan::DisableValidationLayers();
 	}
 
@@ -222,7 +221,8 @@ void Renderer::InitVulkan()
 	swapchain->CreateFramebuffers(GUIRenderPass);
 
 	Texture::GeneratePlaceholderTextures();
-	Mesh::materials.push_back({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
+	Mesh::materials.emplace_back(Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion);
+	Mesh::materials.front().OverrideReferenceCount(INT_MAX);
 
 	if (defaultSampler == VK_NULL_HANDLE)
 		CreateTextureSampler();
