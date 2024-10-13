@@ -361,7 +361,7 @@ void Editor::LoadFile()
 		AddObject(data);
 
 	for (const MaterialCreationData& data : loader.materials)
-		Mesh::materials.push_back(Material::Create(data));
+		Mesh::AddMaterial(Material::Create(data));
 }
 
 void Editor::SaveToFile()

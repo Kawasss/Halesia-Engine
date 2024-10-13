@@ -9,6 +9,14 @@
 std::vector<Material> Mesh::materials;
 std::mutex Mesh::materialMutex;
 
+void Mesh::AddMaterial(const Material& material)
+{
+	materials.push_back(material);
+	
+	Material& mat = materials.back();
+	mat.handle = reinterpret_cast<Handle>(&mat);
+}
+
 void Mesh::ProcessMaterial(const MaterialCreationData& creationData)
 {
 	if (materialIndex != 0) // if this mesh already has a material, then dont replace that with this one
@@ -78,7 +86,7 @@ void Mesh::SetMaterial(const Material& material)
 		}
 		else
 		{
-			materials.push_back(material);
+			AddMaterial(material);
 		}
 	}
 	materials[materialIndex].AddReference();

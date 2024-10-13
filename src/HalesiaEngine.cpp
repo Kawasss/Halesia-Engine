@@ -66,7 +66,7 @@ inline RendererFlags GetRendererFlagsFromBehavior()
 		else if (str == "-force_no_ray_tracing")
 			ret |= Renderer::Flags::NO_RAY_TRACING;
 		else if (str == "-vulkan_no_validation")
-			ret |= Renderer::Flags::NO_VALIDATION;
+			Vulkan::DisableValidationLayers();
 		else if (str == "-force_gpu" && Behavior::arguments.size() > i + 1)
 		{
 			std::string name = Behavior::arguments[++i];

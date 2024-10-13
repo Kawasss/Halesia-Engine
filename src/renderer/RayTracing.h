@@ -3,12 +3,10 @@
 #include <array>
 
 #include "Buffer.h"
+#include "RenderPipeline.h"
+#include "glm.h"
 
-#include "../ResourceManager.h"
-
-#include "renderer/RenderPipeline.h"
-
-typedef void* HANDLE;
+using Handle = uint64_t;
 class BottomLevelAccelerationStructure;
 class TopLevelAccelerationStructure;
 class Window;

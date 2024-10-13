@@ -2,8 +2,6 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
-#include "PhysicalDevice.h"
-
 class PipelineBuilder
 {
 public:

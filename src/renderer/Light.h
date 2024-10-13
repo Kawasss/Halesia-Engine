@@ -1,5 +1,5 @@
 #pragma once
-#include "../glm.h"
+#include "glm.h"
 
 #pragma pack(push, 1)
 struct Light

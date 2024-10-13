@@ -31,6 +31,7 @@ struct Mesh;
 struct Light;
 
 using HANDLE = void*;
+using Handle = unsigned long long;
 using RendererFlags = uint32_t;
 
 class Renderer

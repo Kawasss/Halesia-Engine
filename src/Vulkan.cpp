@@ -34,6 +34,7 @@ std::vector<const char*> Vulkan::requiredInstanceExtensions =
 {
     VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
     VK_KHR_SURFACE_EXTENSION_NAME,
+    VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 };
 std::vector<const char*> Vulkan::validationLayers =
 {
@@ -690,7 +691,6 @@ VkInstance Vulkan::GenerateInstance()
     debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     if (enableValidationLayers)
     {
-        requiredInstanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
         createInfo.ppEnabledLayerNames = validationLayers.data();
 

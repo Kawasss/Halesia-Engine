@@ -293,7 +293,7 @@ void Renderer::CreateDefaultObjects() // default objects are objects that are al
 
 	Texture::GeneratePlaceholderTextures();
 
-	Mesh::materials.emplace_back(Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion);
+	Mesh::AddMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
 	Mesh::materials.front().OverrideReferenceCount(INT_MAX);
 
 	if (defaultSampler == VK_NULL_HANDLE)

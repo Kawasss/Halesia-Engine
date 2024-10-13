@@ -6,15 +6,14 @@
 #include "Vulkan.h"
 #include "Buffer.h"
 
-#include "../ResourceManager.h"
 #include "../core/Console.h"
 
-#define CheckHandleValidity(memory, ret)                                                                                                         \
-if (!CheckIfHandleIsValid(memory))                                                                                                               \
-{                                                                                                                                                \
-	Console::WriteLine("An invalid memory handle (" + std::to_string(memory) + ") has been found in " + __FUNCTION__, Console::Severity::Error); \
-	return ret;                                                                                                                                  \
-}                                                                                                                                                \
+#define CheckHandleValidity(memory, ret)                                                                                                                   \
+if (!CheckIfHandleIsValid(memory))                                                                                                                         \
+{                                                                                                                                                          \
+	Console::WriteLine("An invalid memory handle (" + std::to_string((uint64_t)memory) + ") has been found in " + __FUNCTION__, Console::Severity::Error); \
+	return ret;                                                                                                                                            \
+}                                                                                                                                                          \
 
 struct StorageMemory_t // not a fan of this being visible
 {
@@ -23,7 +22,7 @@ struct StorageMemory_t // not a fan of this being visible
 	bool shouldBeTerminated;
 };
 
-using StorageMemory = Handle;
+using StorageMemory = unsigned long long;
 
 template<typename T> class StorageBuffer
 {
@@ -63,7 +62,7 @@ public:
 		}
 		else																					// if no spaces could be found then append the new data to the end of the buffer and register the new data
 		{
-			memoryHandle = ResourceManager::GenerateHandle();
+			memoryHandle = nextHandle++;
 			memoryData[memoryHandle] = StorageMemory_t{ writeSize, endOfBufferPointer, false };
 		}
 
@@ -277,6 +276,8 @@ private:
 
 	VkDevice logicalDevice = VK_NULL_HANDLE;
 	Buffer buffer;
+
+	StorageMemory nextHandle = 0;
 
 	VkDeviceSize reservedSize = 0;
 	VkDeviceSize endOfBufferPointer = 0;

@@ -2,7 +2,7 @@
 #include "Texture.h"
 #include "../ResourceManager.h"
 
-typedef uint64_t Handle;
+using Handle = uint64_t;
 struct MaterialCreationData;
 
 enum MaterialTexture
@@ -50,7 +50,7 @@ struct Material
 	Texture* operator[](size_t i);
 	Texture* operator[](MaterialTexture materialTexture);
 
-	Handle handle = ResourceManager::GenerateHandle();
+	Handle handle = 0;
 
 	// dont know if dynamically allocated is necessary since the material will always be used for the lifetime of the mesh, the class is sort of big so not so sure if copying is cheap
 	Texture* albedo           = Texture::placeholderAlbedo;
