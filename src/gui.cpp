@@ -4,7 +4,6 @@
 #include "implot.h"
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
-#include "imgui-1.89.8/imgui-1.89.8/imspinner.h"
 
 #include "renderer/RayTracing.h"
 #include "renderer/Mesh.h"

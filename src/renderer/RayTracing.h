@@ -6,9 +6,6 @@
 
 #include "../ResourceManager.h"
 
-#include "optix.h"
-#include "cuda_runtime_api.h"
-
 #include "renderer/RenderPipeline.h"
 
 typedef void* HANDLE;

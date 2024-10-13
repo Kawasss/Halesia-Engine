@@ -1,5 +1,4 @@
 #include <array>
-#include <iostream>
 #include <vulkan/vulkan.h>
 
 #include "renderer/Swapchain.h"
@@ -142,10 +141,7 @@ void Swapchain::Destroy()
 void Swapchain::Recreate(bool vsync)
 {
     if (!window->CanBeRenderedTo())
-    {
-        std::cout << "Window is minimized, ignoring the resize" << '\n';
         return;
-    }
 
     LockLogicalDevice(logicalDevice);
     vkDeviceWaitIdle(logicalDevice);
@@ -161,10 +157,7 @@ void Swapchain::Recreate(VkRenderPass renderPass, bool vsync)
     int width = window->GetWidth(), height = window->GetHeight();
 
     if (width == 0 || height == 0)
-    {
-        std::cout << "Window is minimized, ignoring the resize" << '\n';
         return;
-    }
 
     LockLogicalDevice(logicalDevice);
     vkDeviceWaitIdle(logicalDevice);

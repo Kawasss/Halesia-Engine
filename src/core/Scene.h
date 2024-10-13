@@ -2,16 +2,14 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include <future>
-
-#include "Console.h"
-#include "io/SceneLoader.h"
 
 class Object;
 class Camera;
 class Window;
 
-typedef uint64_t Handle;
+struct ObjectCreationData;
+
+using Handle = uint64_t;
 
 class Scene 
 {
@@ -59,9 +57,7 @@ public:
 private:
 	void RegisterObjectPointer(Object* objPtr);
 
-	std::future<void> loadingProcess;
 	std::unordered_map<Handle, Object*> objectHandles;
-	std::vector<ObjectCreationData> objectCreationDatas;
 
 	bool sceneIsLoading = false;
 

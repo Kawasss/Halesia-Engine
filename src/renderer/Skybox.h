@@ -15,12 +15,6 @@ public:
 	void Destroy() override;
 
 private:
-	struct UBO
-	{
-		glm::mat4 projection;
-		glm::mat4 view;
-	};
-
 	void CreateRenderPass();
 	void CreatePipeline();
 

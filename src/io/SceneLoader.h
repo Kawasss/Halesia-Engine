@@ -153,16 +153,6 @@ public:
 
 	void LoadScene();
 
-	// camera related info
-	glm::vec3 cameraPos = glm::vec3(0.0f);
-	float cameraPitch = 0.0f, cameraYaw = 0.0f;
-
-	// light related info
-	// int amountOfLights; not impelemented yet
-	glm::vec3 lightPos = glm::vec3(0.0f);
-
-	// model related info
-	int amountOfObjects = 0;
 	std::vector<ObjectCreationData> objects;
 	std::vector<MaterialCreationData> materials;
 

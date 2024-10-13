@@ -2,8 +2,6 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
-#include "../glm.h"
-
 #include "CommandBuffer.h"
 
 class Object;

@@ -1,8 +1,4 @@
 #pragma once
-#define USE_CUDA
-#ifdef USE_CUDA
-#pragma comment(lib, "cudart_static.lib")
-#endif
 #include <vector>
 #include <string>
 #include <unordered_map>
@@ -18,7 +14,6 @@
 #include "Framebuffer.h"
 #include "FramesInFlight.h"
 #include "CommandBuffer.h"
-#include "cuda_runtime_api.h"
 
 class Intro;
 class Camera;
@@ -144,12 +139,10 @@ private:
 
 	std::unordered_map<RenderPipeline*, std::string> dbgPipelineNames;
 
-	std::vector<CommandBuffer>	commandBuffers;
-	std::vector<VkSemaphore>		imageAvaibleSemaphores;
-	std::vector<VkSemaphore>		renderFinishedSemaphores;
-	std::vector<cudaExternalSemaphore_t> externalRenderSemaphores;
-	std::vector<HANDLE>             externalRenderSemaphoreHandles;
-	std::vector<VkFence>			inFlightFences;
+	std::vector<CommandBuffer> commandBuffers;
+	std::vector<VkSemaphore>   imageAvaibleSemaphores;
+	std::vector<VkSemaphore>   renderFinishedSemaphores;
+	std::vector<VkFence>       inFlightFences;
 
 	std::unordered_map<int, Handle> processedMaterials;
 
@@ -193,7 +186,6 @@ private:
 	void SetScissors(CommandBuffer commandBuffer, VkExtent2D extent);
 	void DenoiseSynchronized(CommandBuffer commandBuffer);
 	void ProcessRenderPipeline(RenderPipeline* pipeline);
-	void ExportSemaphores();
 	void OnResize();
 	void AddExtensions();
 	void CreateContext();

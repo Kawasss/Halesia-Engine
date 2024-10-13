@@ -7,6 +7,12 @@
 
 #include "core/Camera.h"
 
+struct UBO
+{
+	glm::mat4 projection;
+	glm::mat4 view;
+};
+
 void SkyboxPipeline::Start(const Payload& payload)
 {
 	CreateRenderPass();

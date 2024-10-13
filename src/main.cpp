@@ -1,16 +1,17 @@
-#include "demo/Topdown.h"
-#include "io/SceneWriter.h"
-
 #include "renderer/Renderer.h"
-#include "renderer/ForwardPlus.h"
 #include "renderer/Deferred.h"
 #include "renderer/Skybox.h"
 #include "renderer/Light.h"
+#include "renderer/Mesh.h"
 
+#include "core/Object.h"
 #include "core/UniquePointer.h"
 #include "core/ObjectStreamer.h"
-
 #include "core/Editor.h"
+
+#include "io/SceneLoader.h"
+
+#include "HalesiaEngine.h"
 
 class Room : public Scene
 {
@@ -31,62 +32,6 @@ class Room : public Scene
 		{
 			AddObject(data);
 		}
-	}
-};
-
-class StreamerTest : public Scene
-{
-	UniquePointer<ObjectStreamer> streamer;
-
-	void Start() override
-	{
-		streamer = new ObjectStreamer(this, "stdObj/streamTest.obj");
-
-		MaterialCreateInfo createInfo{};
-		createInfo.isLight = true;
-		Material lightMat = Material::Create(createInfo);
-
-		Object* light = AddObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
-		light->AwaitGeneration();
-		light->mesh.SetMaterial(lightMat);
-		light->transform.position.y += 10;
-		light->transform.scale += glm::vec3(5, 0, 5);
-	}
-
-	void Update(float delta) override
-	{
-		streamer->Poll();
-	}
-};
-
-class Shooter : public Scene
-{
-	std::vector<Animation> animations;
-	AnimationManager* animManager = nullptr;
-	void Start() override
-	{
-		animManager = AnimationManager::Get();
-
-		SceneLoader loader("stdObj/pistol.gltf");
-		loader.LoadScene();
-
-		for (auto& objData : loader.objects)
-		{
-			if (!objData.hasMesh)
-				continue;
-
-			objData.scale = glm::vec3(2);
-			AddObject(objData);
-		}
-			
-		animations = std::move(loader.animations);
-		for (Animation& anim : animations)
-			animManager->AddAnimation(&anim);
-	}
-
-	void Update(float delta) override
-	{
-		animManager->ComputeAnimations(delta);
 	}
 };
 

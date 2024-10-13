@@ -23,7 +23,7 @@ Shape Shape::GetShapeFromType(Type type, glm::vec3 extents)
 Sphere::Sphere(float radius)
 {
 	physx::PxSphereGeometry geometry = physx::PxSphereGeometry(radius);
-	shape = Physics::GetPhysicsObject()->createShape(geometry, *Physics::defaultMaterial);
+	shape = Physics::GetPhysicsObject()->createShape(geometry, Physics::GetDefaultMaterial());
 	data = glm::vec3(radius, radius, radius);
 	type = Type::Sphere;
 }
@@ -33,7 +33,7 @@ Box::Box(glm::vec3 extents)
 	if (extents.y == 0)
 		extents.y = 0.1f;
 	physx::PxBoxGeometry geometry = physx::PxBoxGeometry(extents.x, extents.y, extents.z);
-	shape = Physics::GetPhysicsObject()->createShape(geometry, *Physics::defaultMaterial);
+	shape = Physics::GetPhysicsObject()->createShape(geometry, Physics::GetDefaultMaterial());
 	data = extents;
 	type = Type::Box;
 }
@@ -41,7 +41,7 @@ Box::Box(glm::vec3 extents)
 Capsule::Capsule(float radius, float halfHeight)
 {
 	physx::PxCapsuleGeometry geometry = physx::PxCapsuleGeometry(radius, halfHeight);
-	shape = Physics::GetPhysicsObject()->createShape(geometry, *Physics::defaultMaterial);
+	shape = Physics::GetPhysicsObject()->createShape(geometry, Physics::GetDefaultMaterial());
 	data = glm::vec3(radius, halfHeight + radius, radius);
 	type = Type::Capsule;
 }
@@ -50,7 +50,7 @@ Capsule::Capsule(glm::vec3 extents)
 {
 	float radius = extents.x, halfHeight = extents.y - extents.x;
 	physx::PxCapsuleGeometry geometry = physx::PxCapsuleGeometry(radius, halfHeight);
-	shape = Physics::GetPhysicsObject()->createShape(geometry, *Physics::defaultMaterial);
+	shape = Physics::GetPhysicsObject()->createShape(geometry, Physics::GetDefaultMaterial());
 	data = extents;
 	type = Type::Capsule;
 }
@@ -58,6 +58,6 @@ Capsule::Capsule(glm::vec3 extents)
 Plane::Plane()
 {
 	physx::PxPlaneGeometry geometry = physx::PxPlaneGeometry();
-	shape = Physics::GetPhysicsObject()->createShape(geometry, *Physics::defaultMaterial);
+	shape = Physics::GetPhysicsObject()->createShape(geometry, Physics::GetDefaultMaterial());
 	type = Type::Plane;
 }

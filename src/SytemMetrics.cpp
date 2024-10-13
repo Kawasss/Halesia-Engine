@@ -1,10 +1,13 @@
 #include "system/SystemMetrics.h"
-#include "psapi.h"
+
+#include <Psapi.h>
+#include <intrin.h>
 
 #include <chrono>
 #include <iostream>
 #include <regex>
 #include <vector>
+#include <array>
 
 #include <pdh.h>
 #include <pdhmsg.h>

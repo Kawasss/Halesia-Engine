@@ -1,8 +1,5 @@
 #include <Windows.h>
-#include <intrin.h>
 #include <string>
-#include <array>
-#include <iostream>
 
 struct SystemInformation
 {

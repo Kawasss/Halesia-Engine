@@ -31,7 +31,7 @@ bool Scene::IsObjectHandleValid(Handle handle)
 
 bool Scene::HasFinishedLoading()
 {
-	return loadingProcess._Is_ready() || !sceneIsLoading;
+	return true;
 }
 
 void Scene::RegisterObjectPointer(Object* objPtr)

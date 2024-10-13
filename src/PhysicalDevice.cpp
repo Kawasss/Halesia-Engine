@@ -1,6 +1,4 @@
-#include <string>
 #include <set>
-#include <iostream>
 
 #include "renderer/Vulkan.h"
 #include "renderer/Surface.h"
@@ -176,12 +174,6 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
 
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)
         throw std::runtime_error("Failed to create the logical device for the physical device " + (std::string)Properties().deviceName);
-
-#ifdef _DEBUG
-    std::cout << "Enabled logical device extensions:" << std::endl;
-    for (const char* extension : extensions)
-        std::cout << "  " + (std::string)extension << std::endl;
-#endif
 
     return device;
 }

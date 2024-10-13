@@ -34,8 +34,6 @@
 
 #include "io/IO.h"
 
-#define CheckCudaResult(result) if (result != cudaSuccess) throw std::runtime_error(std::to_string(result) + " at line " + std::to_string(__LINE__) + " in " + (std::string)__FILENAME__);
-
 StorageBuffer<Vertex>   Renderer::g_vertexBuffer;
 StorageBuffer<uint16_t> Renderer::g_indexBuffer;
 StorageBuffer<Vertex>   Renderer::g_defaultVertexBuffer;
@@ -183,7 +181,7 @@ void Renderer::RecompileShaders()
 		return;
 	}
 
-	std::cout << "Debug mode detected, recompiling all shaders found in directory \"shaders\"...\n";
+	Console::WriteLine("Debug mode detected, recompiling all shaders found in directory \"shaders\"...", Console::Severity::Normal);
 	auto oldPath = std::filesystem::current_path();
 	auto newPath = std::filesystem::absolute("shaders");
 	for (const auto& file : std::filesystem::directory_iterator(newPath))
@@ -191,7 +189,6 @@ void Renderer::RecompileShaders()
 		if (file.path().extension() != ".bat")
 			continue;
 		std::string shaderComp = file.path().string();
-		std::cout << "Executing script " << file.path().relative_path() << " for recompiling\n";
 		std::filesystem::current_path(newPath);
 		::system(shaderComp.c_str()); // windows only!!
 	}
@@ -210,7 +207,7 @@ void Renderer::InitVulkan()
 	if (flags & NO_VALIDATION || numTools > 0)
 	{
 		const char* reason = numTools > 0 ? " due to possible interference of external tools\n" : ", the flag NO_VALIDATION was set\n";
-		std::cout << "Disabled validation layers" << reason;
+		Console::WriteLine("Disabled validation layers");
 		Vulkan::DisableValidationLayers();
 	}
 
@@ -289,10 +286,7 @@ void Renderer::AddExtensions()
 		shouldRasterize = true;
 	else
 	{
-		Vulkan::AddDeviceExtenion(VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
-		Vulkan::AddDeviceExtenion(VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME);
 		Vulkan::AddDeviceExtenion(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
-		Vulkan::AddDeviceExtenion(VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME);
 		Vulkan::AddDeviceExtenion(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 		Vulkan::AddDeviceExtenion(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 		Vulkan::AddDeviceExtenion(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
@@ -303,10 +297,10 @@ uint32_t Renderer::DetectExternalTools()
 {
 	uint32_t numTools = 0;
 	::vkGetPhysicalDeviceToolProperties(physicalDevice.Device(), &numTools, nullptr);
-	std::cout << "Detected external tools:\n";
+	Console::WriteLine("Detected external tools:");
 	if (numTools == 0)
 	{
-		std::cout << "  None\n";
+		Console::WriteLine("  None\n");
 		return numTools;
 	}
 
@@ -314,11 +308,11 @@ uint32_t Renderer::DetectExternalTools()
 	::vkGetPhysicalDeviceToolProperties(physicalDevice.Device(), &numTools, properties.data());
 	for (int i = 0; i < numTools; i++)
 	{
-		std::cout << 
-			"\n  name: " << properties[i].name <<
-			"\n  version: " << properties[i].version <<
-			"\n  purposes: " << ::string_VkToolPurposeFlags(properties[i].purposes) <<
-			"\n  description: " << properties[i].description << "\n";
+		Console::WriteLine(
+			"\n  name: " + (std::string)properties[i].name +
+			"\n  version: " + properties[i].version +
+			"\n  purposes: " + ::string_VkToolPurposeFlags(properties[i].purposes) +
+			"\n  description: " + properties[i].description);
 	}
 	return numTools;
 }
@@ -589,47 +583,12 @@ void Renderer::CreateSyncObjects()
 	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
-	VkExportSemaphoreCreateInfo semaphoreExportInfo{};
-	semaphoreExportInfo.sType = VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO;
-	semaphoreExportInfo.handleTypes = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-	void* semaphoreNext = canRayTrace ? &semaphoreExportInfo : nullptr;
-
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		imageAvaibleSemaphores[i] = Vulkan::CreateSemaphore(semaphoreNext);
-		renderFinishedSemaphores[i] = Vulkan::CreateSemaphore(semaphoreNext);
+		imageAvaibleSemaphores[i] = Vulkan::CreateSemaphore();
+		renderFinishedSemaphores[i] = Vulkan::CreateSemaphore();
 		inFlightFences[i] = Vulkan::CreateFence(VK_FENCE_CREATE_SIGNALED_BIT);
 	}
-
-	if (canRayTrace)
-		ExportSemaphores();
-}
-
-void Renderer::ExportSemaphores()
-{
-	externalRenderSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	externalRenderSemaphoreHandles.resize(MAX_FRAMES_IN_FLIGHT);
-
-#ifdef USE_CUDA
-	VkSemaphoreGetWin32HandleInfoKHR getHandleInfo{};
-	getHandleInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR;
-	getHandleInfo.handleType = VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT;
-
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		getHandleInfo.semaphore = renderFinishedSemaphores[i];
-
-		VkResult result = ::vkGetSemaphoreWin32HandleKHR(logicalDevice, &getHandleInfo, &externalRenderSemaphoreHandles[i]);
-		CheckVulkanResult("Failed to get the win32 handle of a semaphore", result, vkGetSemaphoreWin32HandleKHR);
-
-		cudaExternalSemaphoreHandleDesc externSemaphoreDesc{};
-		externSemaphoreDesc.type = cudaExternalSemaphoreHandleTypeOpaqueWin32;
-		externSemaphoreDesc.handle.win32.handle = externalRenderSemaphoreHandles[i];
-		externSemaphoreDesc.flags = 0;
-
-		cudaError_t cuResult = ::cudaImportExternalSemaphore(&externalRenderSemaphores[i], &externSemaphoreDesc);
-	}
-#endif
 }
 
 void Renderer::RenderIntro(Intro* intro)

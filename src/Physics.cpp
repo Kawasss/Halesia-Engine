@@ -15,7 +15,54 @@
 constexpr float simulationStep = 1 / 60.0f;
 
 Physics* Physics::physics = nullptr;
-physx::PxMaterial* Physics::defaultMaterial = nullptr;
+
+physx::PxMaterial* defaultMaterial        = nullptr;
+physx::PxDefaultCpuDispatcher* dispatcher = nullptr;
+
+class PhysXErrorHandler : public physx::PxErrorCallback
+{
+public:
+	void reportError(physx::PxErrorCode::Enum errorCode, const char* message, const char* file, int line) override
+	{
+		std::string error = "PhysX error: " + (std::string)message + " in file " + (std::string)file + " at line " + std::to_string(line);
+		__debugbreak();
+#ifndef PHYSICS_NO_THROWING
+		throw std::runtime_error(error);
+#endif
+	}
+};
+
+class PhysicsOnContactCallback : public physx::PxSimulationEventCallback
+{
+	void onContact(const physx::PxContactPairHeader& pairHeader, const physx::PxContactPair* pairs, physx::PxU32 nbPairs) override;
+	void onConstraintBreak(physx::PxConstraintInfo* constraints, physx::PxU32 count) override {}
+
+	void onWake(physx::PxActor** actors, physx::PxU32 count) override {}
+	void onSleep(physx::PxActor** actors, physx::PxU32 count) override {}
+	void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) override {}
+
+	void onAdvance(const physx::PxRigidBody* const* bodyBuffer, const physx::PxTransform* poseBuffer, const physx::PxU32 count) override {}
+
+};
+
+physx::PxFilterFlags FilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0, physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1, physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize)
+{
+	if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1))
+	{
+		pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
+		return physx::PxFilterFlag::eDEFAULT;
+	}
+
+	pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
+
+	if (physx::PxFilterObjectIsKinematic(attributes0) && physx::PxFilterObjectIsKinematic(attributes1))
+		pairFlags &= ~physx::PxPairFlag::eSOLVE_CONTACT;
+
+	//if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
+	pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
+
+	return physx::PxFilterFlag::eDEFAULT;
+}
 
 inline glm::vec3 PxToGlm(physx::PxVec3 vec)
 {
@@ -56,7 +103,10 @@ void Physics::Init()
 
 Physics::Physics()
 {
-	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, allocator, errorHandler);
+	allocator    = new physx::PxDefaultAllocator();
+	errorHandler = new PhysXErrorHandler();
+
+	foundation = PxCreateFoundation(PX_PHYSICS_VERSION, *allocator, *errorHandler);
 	if (!foundation)
 		throw std::runtime_error("Failed to create a PhysX foundation object");
 	
@@ -79,35 +129,21 @@ Physics::Physics()
 	sceneInfo.cpuDispatcher = dispatcher;
 	sceneInfo.filterShader = FilterShader;
 	sceneInfo.flags = physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
-	sceneInfo.simulationEventCallback = &contactCallback;
 	sceneInfo.kineKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
 	sceneInfo.staticKineFilteringMode = physx::PxPairFilteringMode::eKEEP;
+	sceneInfo.simulationEventCallback = contactCallback;
 	
 	scene = physicsObject->createScene(sceneInfo);
-}
-
-physx::PxFilterFlags Physics::FilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0, physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1, physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize)
-{
-	if (physx::PxFilterObjectIsTrigger(attributes0) || physx::PxFilterObjectIsTrigger(attributes1))
-	{
-		pairFlags = physx::PxPairFlag::eTRIGGER_DEFAULT;
-		return physx::PxFilterFlag::eDEFAULT;
-	}
-
-	pairFlags = physx::PxPairFlag::eCONTACT_DEFAULT;
-
-	if (physx::PxFilterObjectIsKinematic(attributes0) && physx::PxFilterObjectIsKinematic(attributes1))
-		pairFlags &= ~physx::PxPairFlag::eSOLVE_CONTACT;
-
-	//if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
-		pairFlags |= physx::PxPairFlag::eNOTIFY_TOUCH_FOUND;
-
-	return physx::PxFilterFlag::eDEFAULT;
 }
 
 Physics::~Physics()
 {
 	physicsObject->release();
+}
+
+physx::PxMaterial& Physics::GetDefaultMaterial()
+{
+	return *defaultMaterial;
 }
 
 bool Physics::CastRay(glm::vec3 pos, glm::vec3 dir, float maxDistance, RayHitInfo& info)
@@ -127,28 +163,28 @@ bool Physics::CastRay(glm::vec3 pos, glm::vec3 dir, float maxDistance, RayHitInf
 	return hasHit;
 }
 
-physx::PxTriangleMesh* Physics::CreateTriangleMesh(const Mesh& mesh)
-{
-	physx::PxTriangleMeshDesc meshDesc{};
-	meshDesc.points.count = mesh.vertices.size();
-	meshDesc.points.data = mesh.vertices.data();
-	meshDesc.points.stride = sizeof(Vertex);
-	meshDesc.triangles.count = mesh.indices.size() / 3;
-	meshDesc.triangles.data = mesh.indices.data();
-	meshDesc.triangles.stride = sizeof(mesh.indices[0]) * 3;
-
-	physx::PxTolerancesScale scale;
-	physx::PxCookingParams params(scale);
-
-#ifdef _DEBUG
-	// mesh should be validated before cooked without the mesh cleaning
-	bool res = PxValidateTriangleMesh(params, meshDesc);
-	if (!res)
-		throw std::runtime_error("Failed to validate a triangle mesh");
-#endif
-
-	return PxCreateTriangleMesh(params, meshDesc);
-}
+//physx::PxTriangleMesh* Physics::CreateTriangleMesh(const Mesh& mesh)
+//{
+//	physx::PxTriangleMeshDesc meshDesc{};
+//	meshDesc.points.count = mesh.vertices.size();
+//	meshDesc.points.data = mesh.vertices.data();
+//	meshDesc.points.stride = sizeof(Vertex);
+//	meshDesc.triangles.count = mesh.indices.size() / 3;
+//	meshDesc.triangles.data = mesh.indices.data();
+//	meshDesc.triangles.stride = sizeof(mesh.indices[0]) * 3;
+//
+//	physx::PxTolerancesScale scale;
+//	physx::PxCookingParams params(scale);
+//
+//#ifdef _DEBUG
+//	// mesh should be validated before cooked without the mesh cleaning
+//	bool res = PxValidateTriangleMesh(params, meshDesc);
+//	if (!res)
+//		throw std::runtime_error("Failed to validate a triangle mesh");
+//#endif
+//
+//	return PxCreateTriangleMesh(params, meshDesc);
+//}
 
 void Physics::FetchAndUpdateObjects()
 {

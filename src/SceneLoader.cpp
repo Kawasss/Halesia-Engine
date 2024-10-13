@@ -1,8 +1,9 @@
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
-#include <unordered_map>
 #include <filesystem>
+
+#include <hsl/StackMap.h>
 
 #include <Windows.h>
 #include <compressapi.h>
@@ -191,7 +192,7 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 		reader >> currentMat->ambientOcclusionData;
 		break;
 	default: 
-		std::cout << "unused node type " << NodeTypeToString(type) << " (" << type << ")\n";
+		Console::WriteLine("Encountered an unusable node type");
 		uint8_t* junk = new uint8_t[size];
 		reader.Read((char*)junk, size);
 		delete[] junk;
@@ -206,10 +207,10 @@ void SceneLoader::GetNodeHeader(NodeType& type, NodeSize& size)
 
 uint8_t SceneLoader::RetrieveFlagsFromName(std::string string, std::string& name)
 {
-	static std::unordered_map<std::string, ObjectFlags> stringToFlag =
+	static hsl::StackMap<std::string, ObjectFlags, 6> stringToFlag =
 	{
-		{ "rigid_static", OBJECT_FLAG_RIGID_STATIC }, { "rigid_dynamic", OBJECT_FLAG_RIGID_DYNAMIC }, { "hitbox", OBJECT_FLAG_HITBOX },
-		{ "shape_sphere", OBJECT_FLAG_SHAPE_SPHERE }, { "shape_box", OBJECT_FLAG_SHAPE_BOX }, { "shape_capsule", OBJECT_FLAG_SHAPE_CAPSULE }
+		{ "rigid_static", OBJECT_FLAG_RIGID_STATIC }, { "rigid_dynamic", OBJECT_FLAG_RIGID_DYNAMIC }, { "hitbox",        OBJECT_FLAG_HITBOX        },
+		{ "shape_sphere", OBJECT_FLAG_SHAPE_SPHERE }, { "shape_box",     OBJECT_FLAG_SHAPE_BOX     }, { "shape_capsule", OBJECT_FLAG_SHAPE_CAPSULE }
 	};
 
 	uint8_t ret = 0;
@@ -227,7 +228,7 @@ uint8_t SceneLoader::RetrieveFlagsFromName(std::string string, std::string& name
 		
 		if (name == "NO_NAME")
 			name = lexingString.empty() ? "NO_NAME" : lexingString;
-		else if (stringToFlag.count(lexingString) > 0)
+		else if (stringToFlag.Contains(lexingString))
 			ret |= stringToFlag[lexingString];
 		else
 			Console::WriteLine("Unrecognized object flag found: " + lexingString, Console::Severity::Warning);

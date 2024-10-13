@@ -1,6 +1,5 @@
 #pragma comment(lib, "cabinet.lib") // needed for compression
 #include <cstdint>
-#include <iostream>
 #include <sstream>
 #include <Windows.h>
 #include <compressapi.h>
