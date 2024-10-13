@@ -250,6 +250,7 @@
     <ClInclude Include="src\core\UniquePointer.h" />
     <ClInclude Include="src\demo\Calculator.h" />
     <ClInclude Include="src\demo\Topdown.h" />
+    <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\HalesiaEngine.h" />
     <ClInclude Include="src\io\FileFormat.h" />
     <ClInclude Include="src\io\IO.h" />

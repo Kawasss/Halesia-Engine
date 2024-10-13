@@ -13,5 +13,4 @@ public:
 	static AudioHandle PlayWavSound(WavSound& sound);
 	
 private:
-	static SoLoud::Soloud soloud;
 };

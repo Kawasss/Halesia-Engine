@@ -412,8 +412,8 @@ void GUI::ShowDevConsoleContent()
 {
 	for (const Console::Message& message : Console::messages)
 	{
-		glm::vec3 color = Console::GetColorFromMessage(message);
-		ImGui::TextColored(ImVec4(color.x, color.y, color.z, 1), message.text.c_str());
+		Console::Color color = Console::GetColorFromMessage(message);
+		ImGui::TextColored(ImVec4(color.r, color.g, color.b, 1), message.text.c_str());
 	}
 
 	std::string result = "";
@@ -578,7 +578,6 @@ void GUI::ShowChartGraph(size_t item, size_t max, const char* label)
 void GUI::ShowCameraData(Camera* camera)
 {
 	float width = ImGui::CalcTextSize("w").x;
-	ImGui::Text("camera: %s\n", ToHexadecimalString((uint64_t)camera).c_str());
 	ImGui::Text("position:");
 	ImGui::SameLine();
 	ShowInputVector(camera->position, { "##camposx", "##camposy", "##camposz" });

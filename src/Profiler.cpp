@@ -1,7 +1,7 @@
 #include <algorithm>
-#include <iostream>
 
 #include "core/Profiler.h"
+#include "core/Console.h"
 
 #include "system/SystemMetrics.h"
 
@@ -17,7 +17,7 @@ Profiler* Profiler::Get()
 void Profiler::SetFlags(ProfilerOptions options)
 {
 	this->options = options;
-	std::cout << "Set profiler flags to " << ProfilerFlagsToString(options) << '\n';
+	Console::WriteLine("Set profiler flags to " + ProfilerFlagsToString(options));
 }
 
 void Profiler::Update(float delta)

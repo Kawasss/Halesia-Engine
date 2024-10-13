@@ -1,7 +1,7 @@
 #include <iostream>
 #include "Audio.h"
 
-SoLoud::Soloud Audio::soloud;
+SoLoud::Soloud soloud;
 
 void Audio::Init()
 {

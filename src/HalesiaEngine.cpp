@@ -1,5 +1,6 @@
 #include <iostream>
 #include <future>
+
 #include "HalesiaEngine.h"
 
 #include "system/Input.h"
@@ -87,8 +88,8 @@ HalesiaEngine* HalesiaEngine::GetInstance()
 		return instance;
 
 	std::cout << "Generating Halesia instance:" 
-		<< "\n  createInfo.startingScene = " << ToHexadecimalString((int)createInfo.startingScene) 
-		<< "\n  createInfo.devConsoleKey = " << ToHexadecimalString((int)createInfo.devConsoleKey) 
+		<< "\n  createInfo.startingScene = " << std::to_string((int)createInfo.startingScene) 
+		<< "\n  createInfo.devConsoleKey = " << std::to_string((int)createInfo.devConsoleKey) 
 		<< "\n  createInfo.playIntro     = " << createInfo.playIntro << "\n\n";
 	try
 	{
@@ -107,7 +108,7 @@ HalesiaEngine* HalesiaEngine::GetInstance()
 			<< "\n  thread count:  " << systemInfo.processorCount
 			<< "\n  physical RAM:  " << systemInfo.installedRAM / 1024 << " MB\n"
 			<< "\n  GPU:           " << properties.deviceName
-			<< "\n  type:          " << string_VkPhysicalDeviceType(properties.deviceType)
+			<< "\n  type:          " << (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")
 			<< "\n  vulkan driver: " << properties.driverVersion
 			<< "\n  API version:   " << properties.apiVersion
 			<< "\n  heap 0 (VRAM): " << vram / (1024ull * 1024ull) << " MB"

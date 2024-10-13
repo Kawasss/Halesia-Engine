@@ -1,4 +1,3 @@
-#include <iostream>
 #include <future>
 
 #include "core/Object.h"
@@ -28,7 +27,7 @@ void Object::GenerateObjectWithData(const ObjectCreationData& creationData)
 	finishedLoading = true; //maybe use mutex here or just find better solution
 
 	#ifdef _DEBUG
-	Console::WriteLine("Created new object \"" + name + "\" with unique id \"" + ToHexadecimalString(handle) + '\"', Console::Severity::Debug);
+	Console::WriteLine("Created new object \"" + name + '"', Console::Severity::Debug);
 	#endif
 }
 

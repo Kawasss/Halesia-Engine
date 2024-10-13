@@ -1,6 +1,3 @@
-#include <iostream>
-#include <algorithm>
-
 #include "core/Camera.h"
 #include "core/Console.h"
 
@@ -138,7 +135,7 @@ void OrbitCamera::Update(Window* window, float delta)
 	if (radius < 0.1f) radius = 0.1f;
 
 	float phi = sumX * 2 * glm::pi<float>() / window->GetWidth();
-	float theta = std::clamp(sumY * glm::pi<float>() / window->GetHeight(), -0.49f * glm::pi<float>(), 0.49f * glm::pi<float>());
+	float theta = glm::clamp(sumY * glm::pi<float>() / window->GetHeight(), -0.49f * glm::pi<float>(), 0.49f * glm::pi<float>());
 
 	position.x = radius * (cos(phi) * cos(theta));
 	position.y = radius * sin(theta);

@@ -1,5 +1,5 @@
 #pragma once
-#include <mutex>
+#include "../system/CriticalSection.h"
 
 #include "Vulkan.h"
 #include "Buffer.h"
@@ -10,7 +10,7 @@
 #define CheckHandleValidity(memory, ret)                                                                                                              \
 if (!CheckIfHandleIsValid(memory))                                                                                                                    \
 {                                                                                                                                                     \
-	Console::WriteLine("An invalid memory handle (" + ToHexadecimalString(memory) + ") has been found in " + __FUNCTION__, Console::Severity::Error); \
+	Console::WriteLine("An invalid memory handle (" + std::to_string(memory) + ") has been found in " + __FUNCTION__, Console::Severity::Error); \
 	return ret;                                                                                                                                       \
 }                                                                                                                                                     \
 
@@ -35,21 +35,14 @@ public:
 	void Reserve(size_t maxAmountToBeStored, VkBufferUsageFlags usage)
 	{
 		Vulkan::Context context = Vulkan::GetContext();
-		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
+		win32::CriticalLockGuard lockGuard(readWriteSection);
+
 		this->logicalDevice = context.logicalDevice;
 		this->usage = usage;
 
 		reservedSize = maxAmountToBeStored * sizeof(T);
 
-		// create an empty buffer with the specified size
-		Buffer stagingBuffer(reservedSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
-
 		buffer.Init(reservedSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-		Vulkan::CopyBuffer(commandPool, context.graphicsQueue, stagingBuffer.Get(), buffer.Get(), reservedSize);
-
-		Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
 	}
 
 	StorageMemory SubmitNewData(const std::vector<T>& data)
@@ -57,7 +50,7 @@ public:
 		if (data.empty())
 			return 0;
 
-		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
+		win32::CriticalLockGuard lockGuard(readWriteSection);
 		VkDeviceSize writeSize = sizeof(T) * data.size();
 
 		StorageMemory memoryHandle = 0;
@@ -99,7 +92,7 @@ public:
 	/// <param name="creationObject"></param>
 	void Erase()
 	{
-		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
+		win32::CriticalLockGuard lockGuard(readWriteSection);
 		ClearBuffer();
 		allCreatedMemory.clear();
 		terminatedMemories.clear();
@@ -115,7 +108,7 @@ public:
 	/// <param name="memory"></param>
 	void EraseData(StorageMemory memory)
 	{
-		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
+		win32::CriticalLockGuard lockGuard(readWriteSection);
 		CheckHandleValidity(memory, );
 
 		ClearBuffer(memory);
@@ -127,7 +120,7 @@ public:
 	/// <param name="memory"></param>
 	void DestroyData(StorageMemory memory)
 	{
-		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
+		win32::CriticalLockGuard lockGuard(readWriteSection);
 		CheckHandleValidity(memory, );
 
 		StorageMemory_t& memoryInfo = memoryData[memory];
@@ -143,7 +136,7 @@ public:
 	/// <returns></returns>
 	VkDeviceSize GetMemoryOffset(StorageMemory memory)
 	{
-		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
+		win32::CriticalLockGuard lockGuard(readWriteSection);
 		CheckHandleValidity(memory, 0);
 
 		return memoryData[memory].offset;
@@ -172,7 +165,7 @@ public:
 
 	void Destroy()
 	{
-		std::lock_guard<std::mutex> lockGuard(readWriteMutex);
+		win32::CriticalLockGuard lockGuard(readWriteSection);
 		buffer.~Buffer();
 	}
 
@@ -277,7 +270,7 @@ private:
 	std::unordered_set<StorageMemory> terminatedMemories;
 	std::unordered_set<StorageMemory> allCreatedMemory;
 
-	std::mutex readWriteMutex;
+	win32::CriticalSection readWriteSection;
 	size_t size = 0;
 
 	VkDevice logicalDevice = VK_NULL_HANDLE;

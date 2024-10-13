@@ -16,11 +16,6 @@
 
 typedef unsigned char byte;
 
-struct HSFHeader
-{
-	uint32_t version = 1;
-};
-
 class BinaryWriter
 {
 public:

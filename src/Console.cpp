@@ -2,8 +2,8 @@
 #include <vector>
 #include <fstream>
 #include <sstream>
-#include <time.h>
 #include <chrono>
+#include <iomanip>
 
 #include "core/Console.h"
 
@@ -113,19 +113,19 @@ void Console::BindVariableToExternVariable(std::string externalVariable, void* v
 	interpreter.ConnectExternalVariable(op.id, variable, ByteSizeOf(op.type));
 }
 
-glm::vec3 Console::GetColorFromMessage(const Message& message)
+Console::Color Console::GetColorFromMessage(const Message& message)
 {
 	switch (message.severity)
 	{
 	case Console::Severity::Normal:
-		return glm::vec3(1);
+		return Color(1);
 	case Console::Severity::Warning:
-		return glm::vec3(1, 1, 0);
+		return Color(1, 1, 0);
 	case Console::Severity::Error:
-		return glm::vec3(1, 0, 0);
+		return Color(1, 0, 0);
 	case Console::Severity::Debug:
-		return glm::vec3(.1f, .1f, 1);
+		return Color(.1f, .1f, 1);
 	default:
-		return glm::vec3(1);
+		return Color(1);
 	}
 }

@@ -1,7 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
-#include <unordered_map>
+#include <map>
 #include <vulkan/vulkan.h>
 
 #include "PhysicalDevice.h"
@@ -137,14 +137,14 @@ private:
 
 	Framebuffer framebuffer;
 
-	std::unordered_map<RenderPipeline*, std::string> dbgPipelineNames;
+	std::map<RenderPipeline*, std::string> dbgPipelineNames;
 
 	std::vector<CommandBuffer> commandBuffers;
 	std::vector<VkSemaphore>   imageAvaibleSemaphores;
 	std::vector<VkSemaphore>   renderFinishedSemaphores;
 	std::vector<VkFence>       inFlightFences;
 
-	std::unordered_map<int, Handle> processedMaterials;
+	std::map<int, Handle> processedMaterials;
 
 	win32::CriticalSection drawingSection;
 

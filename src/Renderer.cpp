@@ -1,7 +1,7 @@
-#include <stdexcept>
 #include <vector>
 #include <array>
 #include <filesystem>
+#include <vulkan/vk_enum_string_helper.h>
 
 #include "renderer/Vulkan.h"
 #include "renderer/Swapchain.h"
@@ -23,7 +23,6 @@
 #include "core/Object.h"
 #include "core/Camera.h"
 
-#define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "implot.h"
 #include "imgui.h"
