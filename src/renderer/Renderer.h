@@ -87,7 +87,7 @@ public:
 	uint32_t GetInternalWidth()  { return viewportWidth;  }
 	uint32_t GetInternalHeight() { return viewportHeight; }
 
-	CommandBuffer GetActiveCommandBuffer() { return commandBuffers[currentFrame]; }
+	CommandBuffer GetActiveCommandBuffer() { return activeCmdBuffer; }
 
 	void SetInternalResolutionScale(float scale);
 	static float GetInternalResolutionScale();
@@ -118,6 +118,7 @@ public:
 	uint32_t receivedObjects = 0;
 	uint32_t renderedObjects = 0;
 	uint32_t submittedCount = 0;
+	uint32_t frameCount = 0;
 
 	float animationTime = 0;
 	float rebuildingTime = 0;
@@ -149,6 +150,8 @@ private:
 	std::vector<VkSemaphore>   imageAvaibleSemaphores;
 	std::vector<VkSemaphore>   renderFinishedSemaphores;
 	std::vector<VkFence>       inFlightFences;
+
+	CommandBuffer activeCmdBuffer = VK_NULL_HANDLE;
 
 	std::map<int, Handle> processedMaterials;
 

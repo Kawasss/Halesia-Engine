@@ -213,6 +213,8 @@ void Renderer::InitVulkan()
 	CreateSwapchain();
 
 	CreateImGUI();
+
+	StartRecording();
 }
 
 void Renderer::CheckForInterference()
@@ -453,8 +455,6 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 {
 	CheckForBufferResizes();
 
-	commandBuffer.Begin();
-
 	Vulkan::InsertDebugLabel(commandBuffer.Get(), "drawing buffer");
 
 	queryPool.Reset(commandBuffer);
@@ -512,8 +512,6 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 	queryPool.EndTimestamp(commandBuffer, "final pass");
 
 	commandBuffer.EndDebugUtilsLabelEXT();
-
-	commandBuffer.End();
 }
 
 void Renderer::RunRayTracer(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects)
@@ -675,6 +673,8 @@ void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
 		OnResize();
 	}
 	else CheckVulkanResult("Failed to present the swap chain image", result, nameof(vkQueuePresentKHR));
+
+	frameCount++;
 }
 
 void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
@@ -733,9 +733,12 @@ void Renderer::StartRecording()
 
 	imageIndex = GetNextSwapchainImage(currentFrame);
 
-	commandBuffers[currentFrame].Reset();
+	activeCmdBuffer = commandBuffers[currentFrame];
 
-	submittedCount = 0;
+	activeCmdBuffer.Reset();
+	activeCmdBuffer.Begin();
+	
+	submittedCount  = 0;
 	receivedObjects = 0;
 	renderedObjects = 0;
 
@@ -746,6 +749,8 @@ void Renderer::SubmitRecording()
 {
 	if (!testWindow->CanBeRenderedTo())
 		return;
+
+	activeCmdBuffer.End();
 
 	SubmitRenderingCommandBuffer(currentFrame, imageIndex);
 	PresentSwapchainImage(currentFrame, imageIndex);
@@ -978,7 +983,7 @@ RenderPipeline::Payload Renderer::GetPipelinePayload(CommandBuffer commandBuffer
 	RenderPipeline::Payload ret{};
 	ret.renderer = this;
 	ret.camera = camera;
-	ret.commandBuffer = commandBuffer;
+	ret.commandBuffer = commandBuffer.Get() == VK_NULL_HANDLE ? activeCmdBuffer : commandBuffer;
 	ret.width = viewportWidth;
 	ret.height = viewportHeight;
 	ret.window = testWindow;
