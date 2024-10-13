@@ -201,7 +201,7 @@ void Renderer::InitVulkan()
 	#endif
 
 	CreatePhysicalDevice();
-	
+
 	uint32_t numTools = DetectExternalTools();
 	if (flags & NO_VALIDATION || numTools > 0)
 	{
@@ -263,8 +263,6 @@ void Renderer::InitVulkan()
 
 void Renderer::CreateContext()
 {
-	CreatePhysicalDevice();
-
 	AddExtensions();
 
 	SetLogicalDevice();
@@ -782,7 +780,7 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 }
 
-void Renderer::StartRenderPass(CommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor, VkFramebuffer framebuffer)
+void Renderer::StartRenderPass(VkRenderPass renderPass, glm::vec3 clearColor, VkFramebuffer framebuffer)
 {
 	if (framebuffer == VK_NULL_HANDLE)
 		framebuffer = this->framebuffer.Get();
@@ -800,7 +798,25 @@ void Renderer::StartRenderPass(CommandBuffer commandBuffer, VkRenderPass renderP
 	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
-	commandBuffer.BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	commandBuffers[currentFrame].BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void Renderer::StartRenderPass(const Framebuffer& framebuffer, glm::vec3 clearColor)
+{
+	std::array<VkClearValue, 2> clearColors{};
+	clearColors[0].color = { clearColor.x, clearColor.y, clearColor.z, 1 };
+	clearColors[1].depthStencil = { 1, 0 };
+
+	::VkRenderPassBeginInfo renderPassBeginInfo{};
+	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+	renderPassBeginInfo.renderPass = framebuffer.GetRenderPass();
+	renderPassBeginInfo.framebuffer = framebuffer.Get();
+	renderPassBeginInfo.renderArea.offset = { 0, 0 };
+	renderPassBeginInfo.renderArea.extent = { framebuffer.GetWidth(), framebuffer.GetHeight() };
+	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+	renderPassBeginInfo.pClearValues = clearColors.data();
+
+	commandBuffers[currentFrame].BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
 void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView)

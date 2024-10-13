@@ -71,7 +71,7 @@ void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Obje
 
 	UpdateBindlessTextures();
 
-	payload.renderer->StartRenderPass(cmdBuffer, renderPass);
+	payload.renderer->StartRenderPass(renderPass);
 
 	DrawObjects(cmdBuffer, objects, payload.camera, payload.renderer->GetInternalWidth(), payload.renderer->GetInternalHeight());
 

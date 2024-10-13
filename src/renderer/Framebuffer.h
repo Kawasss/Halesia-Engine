@@ -18,14 +18,14 @@ public:
 
 	void StartRenderPass(CommandBuffer commandBuffer);
 
-	VkFramebuffer Get() { return framebuffer; }
-	VkRenderPass GetRenderPass() { return renderPass; }
+	VkFramebuffer Get()          const { return framebuffer; }
+	VkRenderPass GetRenderPass() const { return renderPass;  }
 
-	std::vector<VkImage>& GetImages()    { return images; }
+	std::vector<VkImage>& GetImages()    { return images;     }
 	std::vector<VkImageView>& GetViews() { return imageViews; }
 
-	uint32_t GetWidth()  { return width; }
-	uint32_t GetHeight() { return height; }
+	uint32_t GetWidth()  const { return width;  }
+	uint32_t GetHeight() const { return height; }
 
 	void SetDebugName(const char* name);
 

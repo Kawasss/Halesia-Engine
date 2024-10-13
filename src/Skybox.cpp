@@ -60,7 +60,7 @@ void SkyboxPipeline::Execute(const Payload& payload, const std::vector<Object*>&
 	ptr->projection = payload.camera->GetProjectionMatrix();
 	ptr->view = payload.camera->GetViewMatrix();
 
-	payload.renderer->StartRenderPass(payload.commandBuffer, renderPass);
+	payload.renderer->StartRenderPass(renderPass);
 
 	pipeline->Bind(payload.commandBuffer);
 

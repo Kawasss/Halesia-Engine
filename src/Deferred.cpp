@@ -107,7 +107,7 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 
 	cmdBuffer.EndRenderPass();
 
-	renderer->StartRenderPass(cmdBuffer, renderer->GetDefault3DRenderPass());
+	renderer->StartRenderPass(renderer->GetDefault3DRenderPass());
 
 	secondPipeline->Bind(cmdBuffer);
 

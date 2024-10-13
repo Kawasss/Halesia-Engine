@@ -70,8 +70,10 @@ public:
 	void StartRecording();
 	void SubmitRecording();
 	void RenderObjects(const std::vector<Object*>& objects, Camera* camera);
-	void StartRenderPass(CommandBuffer commandBuffer, VkRenderPass renderPass, glm::vec3 clearColor = glm::vec3(0), VkFramebuffer framebuffer = VK_NULL_HANDLE);
 	void RenderImGUI(CommandBuffer commandBuffer);
+
+	void StartRenderPass(VkRenderPass renderPass, glm::vec3 clearColor = glm::vec3(0), VkFramebuffer framebuffer = VK_NULL_HANDLE);
+	void StartRenderPass(const Framebuffer& framebuffer, glm::vec3 clearColor = glm::vec3(0));
 
 	std::map<std::string, uint64_t> GetTimestamps() { return queryPool.GetTimestamps(); }
 
@@ -82,6 +84,8 @@ public:
 
 	uint32_t GetInternalWidth()  { return viewportWidth;  }
 	uint32_t GetInternalHeight() { return viewportHeight; }
+
+	CommandBuffer GetActiveCommandBuffer() { return commandBuffers[currentFrame]; }
 
 	void SetInternalResolutionScale(float scale);
 	static float GetInternalResolutionScale();
