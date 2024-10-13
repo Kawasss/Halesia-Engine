@@ -1,4 +1,6 @@
 #pragma once
+#include <set>
+
 #include "../system/CriticalSection.h"
 
 #include "Vulkan.h"
@@ -7,12 +9,12 @@
 #include "../ResourceManager.h"
 #include "../core/Console.h"
 
-#define CheckHandleValidity(memory, ret)                                                                                                              \
-if (!CheckIfHandleIsValid(memory))                                                                                                                    \
-{                                                                                                                                                     \
+#define CheckHandleValidity(memory, ret)                                                                                                         \
+if (!CheckIfHandleIsValid(memory))                                                                                                               \
+{                                                                                                                                                \
 	Console::WriteLine("An invalid memory handle (" + std::to_string(memory) + ") has been found in " + __FUNCTION__, Console::Severity::Error); \
-	return ret;                                                                                                                                       \
-}                                                                                                                                                     \
+	return ret;                                                                                                                                  \
+}                                                                                                                                                \
 
 struct StorageMemory_t // not a fan of this being visible
 {
@@ -21,7 +23,7 @@ struct StorageMemory_t // not a fan of this being visible
 	bool shouldBeTerminated;
 };
 
-typedef Handle StorageMemory;
+using StorageMemory = Handle;
 
 template<typename T> class StorageBuffer
 {
@@ -38,11 +40,11 @@ public:
 		win32::CriticalLockGuard lockGuard(readWriteSection);
 
 		this->logicalDevice = context.logicalDevice;
-		this->usage = usage;
+		this->usage = usage | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
 
 		reservedSize = maxAmountToBeStored * sizeof(T);
 
-		buffer.Init(reservedSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		buffer.Init(reservedSize, this->usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	}
 
 	StorageMemory SubmitNewData(const std::vector<T>& data)
@@ -267,8 +269,8 @@ private:
 
 	std::unordered_map<StorageMemory, StorageMemory_t> memoryData;
 
-	std::unordered_set<StorageMemory> terminatedMemories;
-	std::unordered_set<StorageMemory> allCreatedMemory;
+	std::set<StorageMemory> terminatedMemories;
+	std::set<StorageMemory> allCreatedMemory;
 
 	win32::CriticalSection readWriteSection;
 	size_t size = 0;

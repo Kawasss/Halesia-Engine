@@ -30,8 +30,8 @@ class RenderPipeline;
 struct Mesh;
 struct Light;
 
-typedef void* HANDLE;
-typedef uint32_t RendererFlags;
+using HANDLE = void*;
+using RendererFlags = uint32_t;
 
 class Renderer
 {
@@ -50,9 +50,9 @@ public:
 	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT	= FIF::FRAME_COUNT;
 	static constexpr uint32_t MAX_TLAS_INSTANCES	= MAX_MESHES;
 
-	static StorageBuffer<Vertex>	g_vertexBuffer;
-	static StorageBuffer<uint16_t>	g_indexBuffer;
-	static StorageBuffer<Vertex>    g_defaultVertexBuffer;
+	static StorageBuffer<Vertex>   g_vertexBuffer;
+	static StorageBuffer<uint16_t> g_indexBuffer;
+	static StorageBuffer<Vertex>   g_defaultVertexBuffer;
 
 	static VkSampler defaultSampler;
 	static VkSampler noFilterSampler;
@@ -63,14 +63,15 @@ public:
 	void Destroy();
 	void RecompileShaders();
 	void RenderIntro(Intro* intro);
+	void AddLight(const Light& light);
+
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
-	void AddLight(const Light& light);
 
 	void StartRecording();
 	void SubmitRecording();
+
 	void RenderObjects(const std::vector<Object*>& objects, Camera* camera);
-	void RenderImGUI(CommandBuffer commandBuffer);
 
 	void StartRenderPass(VkRenderPass renderPass, glm::vec3 clearColor = glm::vec3(0), VkFramebuffer framebuffer = VK_NULL_HANDLE);
 	void StartRenderPass(const Framebuffer& framebuffer, glm::vec3 clearColor = glm::vec3(0));
@@ -170,33 +171,48 @@ private:
 	ForwardPlusPipeline* fwdPlus;
 	DescriptorWriter* writer;
 
-	static bool initGlobalBuffers;
-
 	bool shouldResize = false; // this uses a bool so that other threads can request the renderer to resize
 
 	void InitVulkan();
 	void SetLogicalDevice();
-	void CreateGraphicsPipeline();
+
+	void CreateContext();
+	void CreatePhysicalDevice();
 	void CreateCommandPool();
 	void CreateTextureSampler();
 	void CreateCommandBuffer();
 	void CreateSyncObjects();
-	void CreateRenderPass();
+	void Create3DRenderPass();
+	void CreateGUIRenderPass();
+	void CreateSwapchain();
 	void CreateImGUI();
+	void CreateDefaultObjects();
+	void CreateRayTracerCond();
+
+	void InitializeViewport();
+
+	static void CreateGlobalBuffers();
+
 	void GetQueryResults();
-	void WriteTimestamp(VkCommandBuffer commandBuffer, bool reset = false);
 	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);
-	void SetViewport(CommandBuffer commandBuffer, VkExtent2D extent);
-	void SetScissors(CommandBuffer commandBuffer, VkExtent2D extent);
-	void DenoiseSynchronized(CommandBuffer commandBuffer);
-	void ProcessRenderPipeline(RenderPipeline* pipeline);
+	
 	void OnResize();
 	void AddExtensions();
-	void CreateContext();
-	void CreatePhysicalDevice();
+	
 	void CheckForVRAMOverflow();
+	void CheckForInterference();
+
+	void ProcessRenderPipeline(RenderPipeline* pipeline);
 	void RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects);
+	void RunRayTracer(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects);
+
 	uint32_t DetectExternalTools();
+
+	void SetViewport(CommandBuffer commandBuffer, VkExtent2D extent);
+	void SetScissors(CommandBuffer commandBuffer, VkExtent2D extent);
+
+	static void RenderImGUI(CommandBuffer commandBuffer);
+	static void ResetImGUI();
 
 	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
 	void RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);

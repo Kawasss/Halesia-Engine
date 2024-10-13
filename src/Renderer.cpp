@@ -40,7 +40,6 @@ StorageBuffer<Vertex>   Renderer::g_defaultVertexBuffer;
 VkSampler Renderer::defaultSampler  = VK_NULL_HANDLE;
 VkSampler Renderer::noFilterSampler = VK_NULL_HANDLE;
 Handle    Renderer::selectedHandle = 0;
-bool      Renderer::initGlobalBuffers = false;
 bool      Renderer::shouldRenderCollisionBoxes = false;
 bool      Renderer::denoiseOutput = true;
 bool      Renderer::canRayTrace = false;
@@ -169,6 +168,8 @@ void Renderer::CreateImGUI()
 	Vulkan::EndSingleTimeCommands(graphicsQueue, imGUICommandBuffer, commandPool);
 
 	::ImGui_ImplVulkan_DestroyFontUploadObjects();
+
+	ResetImGUI();
 }
 
 void Renderer::RecompileShaders()
@@ -201,6 +202,21 @@ void Renderer::InitVulkan()
 
 	CreatePhysicalDevice();
 
+	CheckForInterference();
+
+	CreateContext();
+	
+	CreateDefaultObjects();
+
+	CreateRayTracerCond();
+
+	CreateSwapchain();
+
+	CreateImGUI();
+}
+
+void Renderer::CheckForInterference()
+{
 	uint32_t numTools = DetectExternalTools();
 	if (flags & NO_VALIDATION || numTools > 0)
 	{
@@ -208,57 +224,85 @@ void Renderer::InitVulkan()
 		Console::WriteLine(reason);
 		Vulkan::DisableValidationLayers();
 	}
+}
 
-	CreateContext();
-	CreateCommandPool();
+void Renderer::InitializeViewport()
+{
+	viewportWidth  = testWindow->GetWidth()  * internalScale;
+	viewportHeight = testWindow->GetHeight() * internalScale;
 
+	UpdateScreenShaderTexture(0);
+}
+
+void Renderer::CreateRayTracerCond() // only create if the GPU supports it
+{
+	shouldRasterize = !canRayTrace;
+	if (shouldRasterize)
+		return;
+
+	rayTracer = new RayTracingPipeline;
+	rayTracer->renderPass = renderPass;
+	rayTracer->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
+}
+
+void Renderer::CreateSwapchain()
+{
 	swapchain = new Swapchain(surface, testWindow, false);
 	swapchain->CreateImageViews();
-	queryPool.Create(VK_QUERY_TYPE_TIMESTAMP, 10);
-	CreateGraphicsPipeline();
-	
 	swapchain->CreateDepthBuffers();
+
+	CreateGUIRenderPass();
+
 	swapchain->CreateFramebuffers(GUIRenderPass);
 
+	GraphicsPipeline::CreateInfo createInfo{}; // the pipeline used to draw to the swapchain
+	createInfo.vertexShader   = "shaders/spirv/screen.vert.spv";
+	createInfo.fragmentShader = "shaders/spirv/screen.frag.spv";
+	createInfo.renderPass = GUIRenderPass;
+	createInfo.noVertices = true;
+
+	screenPipeline = new GraphicsPipeline(createInfo);
+
+	InitializeViewport();
+}
+
+void Renderer::CreateGlobalBuffers()
+{
+	static bool initGlobalBuffers = false;
+	if (initGlobalBuffers)
+		return;
+
+	constexpr VkBufferUsageFlags rayTracingFlags = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+
+	g_defaultVertexBuffer.Reserve(1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+
+	g_vertexBuffer.Reserve(1024, (canRayTrace ? rayTracingFlags : 0) | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	g_indexBuffer.Reserve(1024,  (canRayTrace ? rayTracingFlags : 0) | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+	initGlobalBuffers = true;
+}
+
+void Renderer::CreateDefaultObjects() // default objects are objects that are alive for the entire duration of the renderer and wont really change
+{
+	CreateCommandPool();
+	CreateCommandBuffer();
+
+	Create3DRenderPass();
+	CreateGlobalBuffers();
+	CreateSyncObjects();
+
 	Texture::GeneratePlaceholderTextures();
+
 	Mesh::materials.emplace_back(Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion);
 	Mesh::materials.front().OverrideReferenceCount(INT_MAX);
 
 	if (defaultSampler == VK_NULL_HANDLE)
 		CreateTextureSampler();
 
-	if (!initGlobalBuffers)
-	{
-		constexpr VkBufferUsageFlags commonFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-		g_defaultVertexBuffer.Reserve(1024, commonFlags | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-		g_vertexBuffer.Reserve(1024,        commonFlags | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-		g_indexBuffer.Reserve(1024,         commonFlags | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-		initGlobalBuffers = true;
-	}
-
 	writer = DescriptorWriter::Get();
 	animationManager = AnimationManager::Get();
 
-	if (canRayTrace)
-	{
-		rayTracer = new RayTracingPipeline;
-		rayTracer->renderPass = renderPass;
-		rayTracer->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
-	}
-	else shouldRasterize = true;
-
-	CreateCommandBuffer();
-	CreateSyncObjects();
-	CreateImGUI();
-	
-	::ImGui_ImplVulkan_NewFrame();
-	::ImGui_ImplWin32_NewFrame();
-	ImGui::NewFrame();
-
-	viewportWidth  = testWindow->GetWidth() * internalScale;
-	viewportHeight = testWindow->GetHeight() * internalScale;
-
-	UpdateScreenShaderTexture(0);
+	queryPool.Create(VK_QUERY_TYPE_TIMESTAMP, 10);
 }
 
 void Renderer::CreateContext()
@@ -347,7 +391,7 @@ void Renderer::CreateTextureSampler()
 	resultSampler = flags & NO_FILTERING_ON_RESULT ? noFilterSampler : defaultSampler;
 }
 
-void Renderer::CreateRenderPass()
+void Renderer::Create3DRenderPass()
 {
 	RenderPassBuilder builder3D(VK_FORMAT_R8G8B8A8_UNORM);
 
@@ -358,28 +402,19 @@ void Renderer::CreateRenderPass()
 
 	renderPass = builder3D.Build();
 
-	RenderPassBuilder builderGUI(swapchain->format);
-
-	builderGUI.SetInitialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-	builderGUI.SetFinalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-	GUIRenderPass = builderGUI.Build();
-
-	Vulkan::SetDebugName(renderPass,    "Default 3D render pass");
-	Vulkan::SetDebugName(GUIRenderPass, "Default GUI render pass");
+	Vulkan::SetDebugName(renderPass, "Default 3D render pass");
 }
 
-void Renderer::CreateGraphicsPipeline()
+void Renderer::CreateGUIRenderPass()
 {
-	CreateRenderPass();
+	RenderPassBuilder builder(swapchain->format);
 
-	GraphicsPipeline::CreateInfo createInfo{};
-	createInfo.vertexShader   = "shaders/spirv/screen.vert.spv";
-	createInfo.fragmentShader = "shaders/spirv/screen.frag.spv";
-	createInfo.renderPass = GUIRenderPass;
-	createInfo.noVertices = true;
-		
-	screenPipeline = new GraphicsPipeline(createInfo);
+	builder.SetInitialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
+	builder.SetFinalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+
+	GUIRenderPass = builder.Build();
+
+	Vulkan::SetDebugName(GUIRenderPass, "Default GUI render pass");
 }
 
 void Renderer::CreateCommandPool()
@@ -414,11 +449,6 @@ void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
 	renderPipelines.push_back(pipeline);
 }
 
-void Renderer::WriteTimestamp(VkCommandBuffer commandBuffer, bool reset)
-{
-	queryPool.WriteTimeStamp(commandBuffer);
-}
-
 void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> objects, Camera* camera)
 {
 	CheckForBufferResizes();
@@ -436,33 +466,11 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 
 	camera->SetAspectRatio((float)viewportWidth / (float)viewportHeight);
 
-	VkImageView imageToCopy = VK_NULL_HANDLE;
-	if (canRayTrace)
+	if (canRayTrace && !shouldRasterize)
 	{
-		Vulkan::StartDebugLabel(commandBuffer.Get(), "ray tracing");
-
-		queryPool.BeginTimestamp(commandBuffer, "ray-tracing");
-
-		if (!shouldRasterize)
-			rayTracer->Execute(GetPipelinePayload(commandBuffer, camera), objects);
-
-		queryPool.BeginTimestamp(commandBuffer, "ray-tracing");
-
-		if (denoiseOutput)
-		{
-			DenoiseSynchronized(commandBuffer);
-		}
-
-		imageToCopy = rayTracer->gBufferViews[0];
-		if (RayTracingPipeline::showNormals)
-			imageToCopy = rayTracer->gBufferViews[2];
-		else if (RayTracingPipeline::showAlbedo)
-			imageToCopy = rayTracer->gBufferViews[1];
-
-		commandBuffer.EndDebugUtilsLabelEXT();
+		RunRayTracer(commandBuffer, camera, objects);
 	}
-
-	if (shouldRasterize)
+	else
 	{
 		RunRenderPipelines(commandBuffer, camera, objects);
 	}
@@ -508,11 +516,21 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 	commandBuffer.End();
 }
 
+void Renderer::RunRayTracer(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects)
+{
+	Vulkan::StartDebugLabel(commandBuffer.Get(), "ray tracing");
+
+	queryPool.BeginTimestamp(commandBuffer, "ray-tracing");
+
+	rayTracer->Execute(GetPipelinePayload(commandBuffer, camera), objects);
+	commandBuffer.EndDebugUtilsLabelEXT();
+
+	queryPool.EndTimestamp(commandBuffer, "ray-tracing");	
+}
+
 void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects)
 {
 	VkExtent2D viewportExtent = { viewportWidth, viewportHeight };
-	SetViewport(commandBuffer, viewportExtent);
-	SetScissors(commandBuffer, viewportExtent);
 
 	RenderPipeline::Payload payload = GetPipelinePayload(commandBuffer, camera);
 	for (RenderPipeline* renderPipeline : renderPipelines)
@@ -533,29 +551,24 @@ void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, c
 
 void Renderer::CheckForBufferResizes()
 {
+	if (!g_vertexBuffer.HasResized() && !g_defaultVertexBuffer.HasResized() && !g_indexBuffer.HasResized())
+		return;
+
 	RenderPipeline::Payload payload = GetPipelinePayload(VK_NULL_HANDLE, nullptr); // maybe move this inside the main render recording to allow pipelines to use that command buffer ??
 
-	if (g_vertexBuffer.HasResized() || g_defaultVertexBuffer.HasResized() || g_indexBuffer.HasResized())
-	{
-		for (RenderPipeline* pipeline : renderPipelines)
-			pipeline->OnRenderingBufferResize(payload);
+	for (RenderPipeline* pipeline : renderPipelines)
+		pipeline->OnRenderingBufferResize(payload);
 
-		if (!shouldRasterize)
-			rayTracer->OnRenderingBufferResize(payload); // ray tracing is still handled seperately from the other pipelines !!
+	if (!shouldRasterize)
+		rayTracer->OnRenderingBufferResize(payload); // ray tracing is still handled seperately from the other pipelines !!
 
-		writer->Write(); // force a write, because rendering will immediately start over this check
-	}
+	writer->Write(); // force a write, because rendering will immediately start over this check
 }
 
 void Renderer::RenderImGUI(CommandBuffer commandBuffer)
 {
 	ImGui::Render();
 	::ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer.Get());
-}
-
-void Renderer::DenoiseSynchronized(CommandBuffer commandBuffer)
-{
-	
 }
 
 void Renderer::BindBuffersForRendering(CommandBuffer commandBuffer)
@@ -690,7 +703,7 @@ inline bool ObjectIsValid(Object* object, bool checkBLAS)
 	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && (checkBLAS ? object->mesh.IsValid() : true) && object->mesh.HasFinishedLoading() && !object->ShouldBeDestroyed();
 }
 
-inline void ResetImGui()
+void Renderer::ResetImGUI()
 {
 	::ImGui_ImplVulkan_NewFrame();
 	::ImGui_ImplWin32_NewFrame();
@@ -738,7 +751,7 @@ void Renderer::SubmitRecording()
 	PresentSwapchainImage(currentFrame, imageIndex);
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	FIF::frameIndex = currentFrame;
-	ResetImGui();
+	ResetImGUI();
 }
 
 inline void GetAllObjectsFromObject(std::vector<Object*>& ret, Object* obj, bool checkBLAS)
@@ -768,15 +781,9 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 
 	receivedObjects += objects.size();
 	renderedObjects += activeObjects.size();
-	
-	//if (activeObjects.empty())
-	//	return;
 
 	win32::CriticalLockGuard lockGuard(drawingSection);
 
-	//UpdateBindlessTextures(currentFrame, activeObjects);
-	//WriteIndirectDrawParameters(activeObjects);
-	
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 }
 
