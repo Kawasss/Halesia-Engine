@@ -4,6 +4,8 @@
 
 class Cubemap;
 class GraphicsPipeline;
+class Texture;
+struct Mesh;
 
 class SkyboxPipeline : public RenderPipeline
 {
@@ -15,11 +17,23 @@ public:
 	void Destroy() override;
 
 private:
+	void ConvertImageToCubemap(const Payload& payload);
+	void SetupConvert(const Payload& payload);
+
 	void CreateRenderPass();
 	void CreatePipeline();
 
 	FIF::Buffer ubo;
 
+	GraphicsPipeline* convertPipeline = nullptr;
 	GraphicsPipeline* pipeline = nullptr;
 	Cubemap* cubemap = nullptr;
+	Texture* texture = nullptr;
+
+	// these are stored here rn because i dont have good place to destroy them yet
+	VkRenderPass convertRenderPass;
+	VkFramebuffer framebuffer;
+	bool hasConverted = false;
+
+	Mesh* cube;
 };

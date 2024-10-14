@@ -69,7 +69,7 @@ void Image::GenerateEmptyImages(int width, int height, int amount)
 
 	// this transition seems like a waste of resources
 	TransitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 	this->texturesHaveChanged = true;
 }
@@ -216,13 +216,42 @@ Cubemap::Cubemap(const std::string& filePath, bool useMipMaps)
 		{
 			std::vector<char> data = IO::ReadFile(filePath);
 			this->GenerateImages(data, useMipMaps);
+			this->CreateLayerViews();
 		});
 }
 
 Cubemap::Cubemap(int width, int height)
 {
 	GenerateEmptyImages(width, height, 6);
-	Vulkan::SetDebugName(image, "cubemap");
+	CreateLayerViews();
+}
+
+void Cubemap::CreateLayerViews()
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+	for (int i = 0; i < 6; i++)
+	{
+		VkImageViewCreateInfo createInfo{};
+		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		createInfo.image = image;
+		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		createInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		createInfo.subresourceRange.levelCount = mipLevels;
+		createInfo.subresourceRange.layerCount = 1;
+		createInfo.subresourceRange.baseArrayLayer = i;
+		createInfo.subresourceRange.baseMipLevel = 0;
+
+		VkResult result = vkCreateImageView(ctx.logicalDevice, &createInfo, nullptr, &layerViews[i]);
+		CheckVulkanResult("Failed to create an image view", result, vkCreateImageView);
+	}
+}
+
+Cubemap::~Cubemap()
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+	for (VkImageView view : layerViews)
+		vkDestroyImageView(ctx.logicalDevice, view, nullptr);
 }
 
 Texture::Texture(std::string filePath, bool useMipMaps, TextureFormat format, TextureUseCase useCase)

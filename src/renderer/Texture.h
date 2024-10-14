@@ -2,6 +2,8 @@
 #include <vulkan/vulkan.h>
 #include <string>
 #include <future>
+#include <array>
+
 #include "PhysicalDevice.h"
 
 enum TextureFormat
@@ -79,6 +81,13 @@ public:
 	Cubemap(const std::string& filePath, bool useMipMaps = true);
 	Cubemap(std::vector<std::vector<char>> filePath, bool useMipMaps = true);
 	Cubemap(int width, int height);
+
+	~Cubemap();
+
+	std::array<VkImageView, 6> layerViews;
+
+private:
+	void CreateLayerViews();
 };
 
 class Texture : public Image

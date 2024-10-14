@@ -213,8 +213,6 @@ void Renderer::InitVulkan()
 	CreateSwapchain();
 
 	CreateImGUI();
-
-	StartRecording();
 }
 
 void Renderer::CheckForInterference()

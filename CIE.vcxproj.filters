@@ -274,7 +274,7 @@
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\CommandBuffer.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -609,6 +609,12 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\uncompiled\skybox.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\uncompiled\cubemapConv.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\uncompiled\cubemapConv.vert">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

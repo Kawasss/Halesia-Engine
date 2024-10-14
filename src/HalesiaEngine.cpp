@@ -203,7 +203,7 @@ void HalesiaEngine::UpdateRenderer(float delta)
 	
 	core.scene->UpdateGUI(delta);
 
-	if (core.renderer->frameCount > 0) // the first frame is automatically recorded
+	//if (core.renderer->frameCount > 0) // the first frame is automatically recorded
 		core.renderer->StartRecording();
 
 	core.renderer->RenderObjects(core.scene->allObjects, core.scene->camera);

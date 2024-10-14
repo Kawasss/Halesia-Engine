@@ -314,6 +314,8 @@
     <None Include="cfg\init.cfg" />
     <None Include="cfg\vars.vvm" />
     <None Include="shaders\uncompiled\anim.comp" />
+    <None Include="shaders\uncompiled\cubemapConv.frag" />
+    <None Include="shaders\uncompiled\cubemapConv.vert" />
     <None Include="shaders\uncompiled\deferredFirst.frag" />
     <None Include="shaders\uncompiled\deferredFirst.vert" />
     <None Include="shaders\uncompiled\deferredSecond.frag" />

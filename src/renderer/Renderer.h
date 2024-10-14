@@ -95,6 +95,9 @@ public:
 	static void BindBuffersForRendering(CommandBuffer commandBuffer);
 	static void RenderMesh(CommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount = 1);
 
+	static void SetViewport(CommandBuffer commandBuffer, VkExtent2D extent);
+	static void SetScissors(CommandBuffer commandBuffer, VkExtent2D extent);
+
 	static bool CompletedFIFCyle() { return FIF::frameIndex == 0; }
 
 	template<typename Type> void AddRenderPipeline()
@@ -211,9 +214,6 @@ private:
 	void RunRayTracer(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects);
 
 	uint32_t DetectExternalTools();
-
-	void SetViewport(CommandBuffer commandBuffer, VkExtent2D extent);
-	void SetScissors(CommandBuffer commandBuffer, VkExtent2D extent);
 
 	static void RenderImGUI(CommandBuffer commandBuffer);
 	static void ResetImGUI();
