@@ -61,14 +61,14 @@ int main(int argc, char** argv)
 
 	Light light{};
 	light.pos   = glm::vec4(0, 1, 0, 0);
-	light.color = glm::vec3(1, 0, 0);
+	light.color = glm::vec3(1, 0.2f, 0.2f);
 	light.type  = Light::Type::Point;
 
 	Light light2{};
 	light2.pos   = glm::vec4(0, 1, 3, glm::radians(17.5f));
-	light2.color = glm::vec3(0, 1, 0);
+	light2.color = glm::vec3(0.2f, 1, 0.2f);
 	light2.direction = glm::vec4(0, -1, 0, glm::radians(12.5f));
-	light2.type  = Light::Type::Spot;
+	light2.type  = Light::Type::Point;
 
 	renderer->AddRenderPipeline<DeferredPipeline>();
 	renderer->AddLight(light);

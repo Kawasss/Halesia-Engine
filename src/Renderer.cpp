@@ -83,7 +83,7 @@ void Renderer::Destroy()
 	delete writer;
 
 	delete animationManager;
-	delete rayTracer;
+	//delete rayTracer;
 
 	::vkDestroyDescriptorPool(logicalDevice, imGUIDescriptorPool, nullptr);
 	::ImGui_ImplVulkan_Shutdown();
@@ -240,9 +240,9 @@ void Renderer::CreateRayTracerCond() // only create if the GPU supports it
 	if (shouldRasterize)
 		return;
 
-	rayTracer = new RayTracingPipeline;
-	rayTracer->renderPass = renderPass;
-	rayTracer->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
+	//rayTracer = new RayTracingPipeline;
+	//rayTracer->renderPass = renderPass;
+	//rayTracer->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
 }
 
 void Renderer::CreateSwapchain()
@@ -466,14 +466,14 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 
 	camera->SetAspectRatio((float)viewportWidth / (float)viewportHeight);
 
-	if (canRayTrace && !shouldRasterize)
-	{
-		RunRayTracer(commandBuffer, camera, objects);
-	}
-	else
-	{
+	//if (canRayTrace && !shouldRasterize)
+	//{
+	//	RunRayTracer(commandBuffer, camera, objects);
+	//}
+	//else
+	//{
 		RunRenderPipelines(commandBuffer, camera, objects);
-	}
+	//}
 
 	Vulkan::StartDebugLabel(commandBuffer.Get(), "UI");
 
@@ -557,8 +557,8 @@ void Renderer::CheckForBufferResizes()
 	for (RenderPipeline* pipeline : renderPipelines)
 		pipeline->OnRenderingBufferResize(payload);
 
-	if (!shouldRasterize)
-		rayTracer->OnRenderingBufferResize(payload); // ray tracing is still handled seperately from the other pipelines !!
+	//if (!shouldRasterize)
+	//	rayTracer->OnRenderingBufferResize(payload); // ray tracing is still handled seperately from the other pipelines !!
 
 	writer->Write(); // force a write, because rendering will immediately start over this check
 }
@@ -641,8 +641,8 @@ void Renderer::OnResize()
 	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y;
 
 	swapchain->Recreate(GUIRenderPass, false);
-	if (canRayTrace)
-		rayTracer->RecreateImage(viewportWidth, viewportHeight);
+	//if (canRayTrace)
+	//	rayTracer->RecreateImage(viewportWidth, viewportHeight);
 
 	RenderPipeline::Payload payload = GetPipelinePayload(VK_NULL_HANDLE, nullptr);
 	for (RenderPipeline* renderPipeline : renderPipelines)
@@ -727,8 +727,8 @@ void Renderer::StartRecording()
 
 	if (canRayTrace)
 	{
-		selectedHandle = *rayTracer->handleBufferMemPointer;
-		*rayTracer->handleBufferMemPointer = 0;
+		//selectedHandle = *rayTracer->handleBufferMemPointer;
+		//*rayTracer->handleBufferMemPointer = 0;
 	}
 
 	imageIndex = GetNextSwapchainImage(currentFrame);
