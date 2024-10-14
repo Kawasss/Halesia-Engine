@@ -110,8 +110,13 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
+    VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
+    rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+    rayQueryFeatures.rayQuery = VK_TRUE;
+
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure{};
     accelerationStructure.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_ACCELERATION_STRUCTURE_FEATURES_KHR;
+    accelerationStructure.pNext = &rayQueryFeatures;
     accelerationStructure.accelerationStructure = VK_TRUE;
     accelerationStructure.accelerationStructureCaptureReplay = VK_FALSE;
     accelerationStructure.accelerationStructureIndirectBuild = VK_FALSE;

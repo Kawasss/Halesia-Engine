@@ -320,6 +320,7 @@
     <None Include="shaders\uncompiled\deferredFirst.vert" />
     <None Include="shaders\uncompiled\deferredSecond.frag" />
     <None Include="shaders\uncompiled\deferredSecond.vert" />
+    <None Include="shaders\uncompiled\deferredSecondRT.frag" />
     <None Include="shaders\uncompiled\forwardPlus.comp" />
     <None Include="shaders\uncompiled\gen.rgen" />
     <None Include="shaders\uncompiled\hit.rchit" />

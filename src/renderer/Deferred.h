@@ -8,6 +8,7 @@
 #include "Light.h"
 
 class GraphicsPipeline;
+class TopLevelAccelerationStructure;
 
 class DeferredPipeline : public RenderPipeline
 {
@@ -47,6 +48,8 @@ private:
 
 	GraphicsPipeline* firstPipeline  = nullptr;
 	GraphicsPipeline* secondPipeline = nullptr;
+
+	TopLevelAccelerationStructure* TLAS = nullptr;
 
 	std::array<std::vector<uint64_t>, FIF::FRAME_COUNT> processedMats;
 };

@@ -331,6 +331,8 @@ void Renderer::AddExtensions()
 		Vulkan::AddDeviceExtenion(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 		Vulkan::AddDeviceExtenion(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 		Vulkan::AddDeviceExtenion(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+		Vulkan::AddDeviceExtenion(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+		Vulkan::AddDeviceExtenion(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
 	}
 }
 

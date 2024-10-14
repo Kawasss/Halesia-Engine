@@ -617,5 +617,8 @@
     <None Include="shaders\uncompiled\cubemapConv.vert">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="shaders\uncompiled\deferredSecondRT.frag">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

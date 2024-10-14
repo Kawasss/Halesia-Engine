@@ -2,6 +2,7 @@
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/Renderer.h"
 #include "renderer/DescriptorWriter.h"
+#include "renderer/accelerationStructures.h"
 
 #include "core/Object.h"
 #include "core/Camera.h"
@@ -23,11 +24,9 @@ void DeferredPipeline::Start(const Payload& payload)
 
 	uboBuffer.Init(sizeof(UBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	uboBuffer.MapPermanently();
-	//ubo = uboBuffer.Map<UBO>();
 
 	lightBuffer.Init(sizeof(LightBuffer), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	lightBuffer.MapPermanently();
-	//lights = lightBuffer.Map<LightBuffer>();
 
 	const Material& mat = Mesh::materials[0];
 
@@ -44,6 +43,37 @@ void DeferredPipeline::Start(const Payload& payload)
 	secondPipeline->BindImageToName("normalImage", views[2], sampler, layout);
 	secondPipeline->BindImageToName("metallicRoughnessAOImage", views[3], sampler, layout);
 
+	if (Renderer::canRayTrace)
+	{
+		TLAS = TopLevelAccelerationStructure::Create({});
+		
+		VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
+		ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+		ASDescriptorInfo.accelerationStructureCount = 1;
+		ASDescriptorInfo.pAccelerationStructures = &TLAS->accelerationStructure;
+
+		const std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT>& FIFsets = secondPipeline->GetAllDescriptorSets();
+
+		for (const std::vector<VkDescriptorSet>& sets : FIFsets)
+		{
+			VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
+			ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+			ASDescriptorInfo.accelerationStructureCount = 1;
+			ASDescriptorInfo.pAccelerationStructures = &TLAS->accelerationStructure;
+
+			VkWriteDescriptorSet writeSet{};
+
+			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			writeSet.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+			writeSet.pNext = &ASDescriptorInfo;
+			writeSet.dstSet = sets[0];
+			writeSet.descriptorCount = 1;
+			writeSet.dstBinding = 4;
+
+			vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr); // better to incorporate this into Pipeline
+		}
+	}
+		
 	SetTextureBuffer();
 }
 
@@ -69,7 +99,7 @@ void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass seco
 	firstPipeline = new GraphicsPipeline(createInfo);
 
 	createInfo.vertexShader   = "shaders/spirv/deferredSecond.vert.spv";
-	createInfo.fragmentShader = "shaders/spirv/deferredSecond.frag.spv";
+	createInfo.fragmentShader = Renderer::canRayTrace ? "shaders/spirv/deferredSecondRT.frag.spv" : "shaders/spirv/deferredSecond.frag.spv";
 	createInfo.renderPass = secondPass;
 	createInfo.noVertices = true;
 
@@ -79,6 +109,13 @@ void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass seco
 void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
 {
 	UpdateTextureBuffer(); // temp !!!
+
+	if (Renderer::canRayTrace)
+	{
+		if (!TLAS->HasBeenBuilt() && !objects.empty())
+			TLAS->Build(objects);
+		TLAS->Update(objects, payload.commandBuffer.Get());
+	}
 
 	UpdateUBO(payload.camera);
 
@@ -236,6 +273,8 @@ void DeferredPipeline::Destroy()
 
 	delete firstPipeline;
 	delete secondPipeline;
+
+	delete TLAS;
 
 	framebuffer.~Framebuffer();
 
