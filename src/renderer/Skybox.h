@@ -5,7 +5,6 @@
 class Cubemap;
 class GraphicsPipeline;
 class Texture;
-struct Mesh;
 
 class SkyboxPipeline : public RenderPipeline
 {
@@ -34,6 +33,4 @@ private:
 	VkRenderPass convertRenderPass;
 	VkFramebuffer framebuffer;
 	bool hasConverted = false;
-
-	Mesh* cube;
 };

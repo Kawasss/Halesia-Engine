@@ -4,18 +4,9 @@
 #include "renderer/Vulkan.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/Texture.h"
-#include "renderer/Mesh.h"
 #include "renderer/DescriptorWriter.h"
 
-#include "io/sceneLoader.h"
-
 #include "core/Camera.h"
-
-struct PushConstant
-{
-	glm::mat4 projection;
-	glm::mat4 view;
-};
 
 struct UBO
 {
@@ -27,9 +18,6 @@ void SkyboxPipeline::Start(const Payload& payload)
 {
 	CreateRenderPass();
 	CreatePipeline();
-
-	cube = new Mesh();
-	cube->Create(GenericLoader::LoadObjectFile("stdObj/cube.obj").mesh);
 
 	texture = new Texture("textures/skybox/park.hdr", false);
 	texture->AwaitGeneration();
@@ -58,7 +46,10 @@ void SkyboxPipeline::CreateRenderPass()
 
 	builder.SetInitialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
 	builder.SetFinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	
+
+	builder.ClearOnLoad(false);
+	builder.DontClearDepth(true);
+
 	renderPass = builder.Build();
 
 	RenderPassBuilder convertBuilder(VK_FORMAT_R8G8B8A8_SRGB);
@@ -80,6 +71,7 @@ void SkyboxPipeline::CreatePipeline()
 
 	createInfo.renderPass = renderPass;
 	createInfo.noVertices = true;
+	createInfo.noCulling  = true;
 
 	pipeline = new GraphicsPipeline(createInfo);
 
@@ -87,7 +79,9 @@ void SkyboxPipeline::CreatePipeline()
 	createInfo.fragmentShader = "shaders/spirv/cubemapConv.frag.spv";
 
 	createInfo.renderPass = convertRenderPass;
-	createInfo.noVertices = false;
+	createInfo.noVertices = true;
+	createInfo.noCulling  = true;
+	createInfo.noDepth    = true;
 
 	convertPipeline = new GraphicsPipeline(createInfo);
 }
@@ -140,7 +134,7 @@ void SkyboxPipeline::ConvertImageToCubemap(const Payload& payload)
 		glm::lookAt(glm::vec3(0), glm::vec3( 0,  0,  1), glm::vec3(0, -1,  0)),
 		glm::lookAt(glm::vec3(0), glm::vec3( 0,  0, -1), glm::vec3(0, -1,  0)),
 	};
-	PushConstant pushConstant{};
+	UBO pushConstant{};
 	pushConstant.projection = glm::perspective(glm::pi<float>() * 0.5f, 1.0f, 0.01f, 1000.0f);
 	pushConstant.projection[1][1] *= -1;
 
@@ -150,7 +144,13 @@ void SkyboxPipeline::ConvertImageToCubemap(const Payload& payload)
 
 	for (int i = 0; i < 6; i++)
 	{
-		pushConstant.view = views[i];
+		int actual = i;
+		if (i == 3) // reverse the up and down texture
+			actual = 2;
+		else if (i == 2)
+			actual = 3;
+
+		pushConstant.view = views[actual];
 
 		convertPipeline->PushConstant(cmdBuffer, pushConstant, VK_SHADER_STAGE_VERTEX_BIT);
 
@@ -174,12 +174,11 @@ void SkyboxPipeline::ConvertImageToCubemap(const Payload& payload)
 
 		cmdBuffer.BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-		Renderer::RenderMesh(cmdBuffer, *cube);
-
+		cmdBuffer.Draw(36, 1, 0, 0);
 		cmdBuffer.EndRenderPass();
 	}
 
-	//hasConverted = true;
+	hasConverted = true;
 }
 
 void SkyboxPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
@@ -188,8 +187,11 @@ void SkyboxPipeline::Execute(const Payload& payload, const std::vector<Object*>&
 		return;
 
 	if (!hasConverted)
+	{
 		ConvertImageToCubemap(payload);
-
+		return;
+	}
+		
 	const CommandBuffer& cmdBuffer = payload.commandBuffer;
 
 	UBO* ptr = ubo.GetMappedPointer<UBO>();
@@ -200,7 +202,7 @@ void SkyboxPipeline::Execute(const Payload& payload, const std::vector<Object*>&
 
 	pipeline->Bind(payload.commandBuffer);
 
-	cmdBuffer.Draw(6, 1, 0, 0);
+	cmdBuffer.Draw(36, 1, 0, 0);
 
 	cmdBuffer.EndRenderPass();
 }
@@ -213,7 +215,6 @@ void SkyboxPipeline::Destroy()
 	delete convertPipeline;
 
 	delete texture;
-	delete cube;
 
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	vkDestroyRenderPass(ctx.logicalDevice, renderPass, nullptr);
