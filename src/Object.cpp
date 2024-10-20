@@ -141,9 +141,11 @@ void Object::Destroy(bool del)
 {
 	mesh.Destroy();
 	for (Object* obj : children)
-		obj->Destroy();
-	if (parent != nullptr)
-		parent->RemoveChild(this);
+	{
+		obj->Destroy(false);
+		delete obj;
+	}
+
 	rigid.Destroy();
 	rigid.type = RigidBody::Type::None;
 	if (del) delete this;

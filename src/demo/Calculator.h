@@ -10,6 +10,8 @@
 #include "../core/Scene.h"
 
 #include "../renderer/Renderer.h"
+#include "../renderer/Material.h"
+#include "../renderer/Mesh.h"
 
 #include "../Audio.h"
 
@@ -59,7 +61,7 @@ public:
 		UpdateVectors();
 	}
 
-	void Update(Win32Window* window, float delta) {}
+	void Update(Window* window, float delta) {}
 };
 
 class Rotator : public Object
@@ -84,9 +86,9 @@ class Rotator : public Object
 	}
 
 public:
-	static Win32Window* window;
+	static Window* window;
 };
-Win32Window* Rotator::window = nullptr;
+Window* Rotator::window = nullptr;
 
 class OutputChar : public Object
 {
@@ -105,8 +107,8 @@ class OutputChar : public Object
 public:
 	void Reset()
 	{
-		for (Object* child : children)
-			child->meshes[0].ResetMaterial();
+		for (Object* child : GetChildren())
+			child->mesh.ResetMaterial();
 	}
 
 	void SetChildrenStateToKeyType(KeyType type)
@@ -156,12 +158,12 @@ public:
 
 	void ColorPanels(const std::set<int>& panelsToAvoid)
 	{
-		for (int i = 0; i < children.size(); i++)
+		for (int i = 0; i < GetChildren().size(); i++)
 			if (panelsToAvoid.find(i) == panelsToAvoid.end())
-				children[i]->meshes[0].SetMaterial(mat);
+				GetChildren()[i]->mesh.SetMaterial(mat);
 	}
 };
-Material OutputChar::mat{};
+//Material OutputChar::mat{};
 
 class Key : public Object
 {
@@ -210,13 +212,13 @@ class CalculatorScene : public Scene
 	{
 		camera = AddCustomCamera<TestCam>();
 
-		Object* rotator = AddCustomObject<Rotator>(ObjectCreationData{ "rotator" });
+		Object* rotator = AddObject<Rotator>(ObjectCreationData{ "rotator" });
 
 		for (int i = 0; i < 4; i++)
-			outputChars.push_back(AddCustomObject<OutputChar>(ObjectCreationData{ "output" + std::to_string(i) }));
+			outputChars.push_back(AddObject<OutputChar>(ObjectCreationData{ "output" + std::to_string(i) }));
 
 		SceneLoader loader{ "stdObj/calculator.fbx" };
-		loader.LoadFBXScene();
+		loader.LoadScene();
 
 		MaterialCreateInfo matInfo{};
 		matInfo.albedo = "textures/red.png";
@@ -224,7 +226,7 @@ class CalculatorScene : public Scene
 		mat.AwaitGeneration();
 
 		MaterialCreateInfo buttonMat{};
-		buttonMat.albedo = "textures/glockAlbedo.png";
+		buttonMat.albedo = "textures/white.png";
 		Material buttonMaterial = Material::Create(buttonMat);
 		buttonMaterial.AwaitGeneration();
 		
@@ -234,12 +236,12 @@ class CalculatorScene : public Scene
 		{
 			Object* obj = nullptr;
 			if (info.name.substr(0, 3) != "key")
-				obj = AddStaticObject(info);
+				obj = AddObject(info);
 			else
 			{
 				std::string nameWOExtension = info.name.substr(3, info.name.size() - 7);
 
-				obj = AddCustomObject<Key>(info);
+				obj = AddObject<Key>(info);
 				obj->GetScript<Key>()->type = (KeyType)std::stoi(nameWOExtension);
 				objs.push_back(obj->GetScript<Key>());
 				keyCount++;
@@ -249,19 +251,18 @@ class CalculatorScene : public Scene
 				outputChars[info.name.back() - '0']->AddChild(obj);
 
 			if (info.name == "key3.001")
-				obj->meshes[0].SetMaterial(mat);
-			else obj->meshes[0].SetMaterial(buttonMaterial);
+				obj->mesh.SetMaterial(mat);
+			else obj->mesh.SetMaterial(buttonMaterial);
 			TransferObjectOwnership(rotator, obj);
 		}
 
 		MaterialCreateInfo lampInfo{};
 		lampInfo.isLight = true;
 		
-		Object* lamp = AddStaticObject({ "cube" });
-		lamp->AddMesh(GenericLoader::LoadObjectFile("stdObj/cube.obj").meshes);
+		Object* lamp = AddObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
 		Material lampMat = Material::Create(lampInfo);
 		lampMat.AwaitGeneration();
-		lamp->meshes[0].SetMaterial(lampMat);
+		lamp->mesh.SetMaterial(lampMat);
 		lamp->transform.position = glm::vec3(0, 10, 0);
 		lamp->transform.scale = glm::vec3(10, 1, 10);
 	}
