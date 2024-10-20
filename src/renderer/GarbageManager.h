@@ -7,10 +7,10 @@ namespace vgm // vulkan garbage manager
 
 	template<typename T> void Delete(T handle)
 	{
-		static_assert(false, "Cannot delete the given vulkan object");
+		//static_assert(false, "Cannot delete the given vulkan object");
 	}
 
-	DECLARE_DELETOR(VkBuffer, VK_OBJECT_TYPE_BUFFER)
+	//DECLARE_DELETOR(VkBuffer, VK_OBJECT_TYPE_BUFFER)
 
 	void DeleteObject(VkObjectType type, uint64_t handle);
 
