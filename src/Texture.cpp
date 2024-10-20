@@ -7,6 +7,7 @@
 #include "renderer/physicalDevice.h"
 #include "renderer/Texture.h"
 #include "renderer/Buffer.h"
+#include "renderer/GarbageManager.h"
 
 #include "core/Console.h"
 
@@ -251,7 +252,7 @@ Cubemap::~Cubemap()
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	for (VkImageView view : layerViews)
-		vkDestroyImageView(ctx.logicalDevice, view, nullptr);
+		vgm::Delete(view);
 }
 
 Texture::Texture(std::string filePath, bool useMipMaps, TextureFormat format, TextureUseCase useCase)
@@ -558,18 +559,8 @@ void Image::Destroy()
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	this->texturesHaveChanged = true;
-	/*Vulkan::SubmitObjectForDeletion
-	(
-		[device = logicalDevice, view = imageView, image = image, memory = imageMemory]()
-		{
-			vkDestroyImageView(device, view, nullptr);
-			vkDestroyImage(device, image, nullptr);
-			vkFreeMemory(device, memory, nullptr);
-		}
-	);
-	delete this;*/
 
-	vkDestroyImageView(ctx.logicalDevice, imageView, nullptr);
-	vkDestroyImage(ctx.logicalDevice, image, nullptr);
-	vkFreeMemory(ctx.logicalDevice, imageMemory, nullptr);
+	vgm::Delete(imageView);
+	vgm::Delete(image);
+	vgm::Delete(imageMemory);
 }

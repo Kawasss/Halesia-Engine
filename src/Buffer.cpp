@@ -1,5 +1,6 @@
 #include "renderer/Buffer.h"
 #include "renderer/Vulkan.h"
+#include "renderer/GarbageManager.h"
 
 void Buffer::Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {
@@ -14,9 +15,9 @@ void Buffer::Destroy()
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	if (buffer != VK_NULL_HANDLE)
-		vkDestroyBuffer(ctx.logicalDevice, buffer, nullptr);
+		vgm::Delete(buffer);
 	if (memory != VK_NULL_HANDLE)
-		vkFreeMemory(ctx.logicalDevice, memory, nullptr);
+		vgm::Delete(memory);
 
 	buffer = VK_NULL_HANDLE;
 	memory = VK_NULL_HANDLE;

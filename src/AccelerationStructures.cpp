@@ -2,6 +2,7 @@
 #include "renderer/AccelerationStructures.h"
 #include "renderer/Renderer.h"
 #include "renderer/Mesh.h"
+#include "renderer/GarbageManager.h"
 
 #include "core/Object.h"
 
@@ -106,8 +107,7 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 
 void AccelerationStructure::Destroy()
 {
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-	vkDestroyAccelerationStructureKHR(ctx.logicalDevice, accelerationStructure, nullptr);
+	vgm::Delete(accelerationStructure);
 }
 
 BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(Mesh& mesh)

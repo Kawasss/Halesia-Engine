@@ -3,19 +3,31 @@
 
 namespace vgm // vulkan garbage manager
 {
-#define DECLARE_DELETOR(handleType, objectType) template<> void Delete<##handleType##>(##handleType handle) { DeleteObject(##objectType##, reinterpret_cast<uint64_t>(handle)); }
+	extern void DeleteObject(VkObjectType type, uint64_t handle);
 
-	template<typename T> void Delete(T handle)
+	template<typename T> inline void Delete(T handle)
 	{
-		//static_assert(false, "Cannot delete the given vulkan object");
+		__debugbreak();
 	}
 
-	//DECLARE_DELETOR(VkBuffer, VK_OBJECT_TYPE_BUFFER)
+#define DECLARE_DELETOR(type, name) template<> inline void Delete<name>(name handle) { DeleteObject(type, reinterpret_cast<uint64_t>(handle)); }
 
-	void DeleteObject(VkObjectType type, uint64_t handle);
+	DECLARE_DELETOR(VK_OBJECT_TYPE_IMAGE, VkImage);
+	DECLARE_DELETOR(VK_OBJECT_TYPE_IMAGE_VIEW, VkImageView);
 
-	void CollectGarbage();
-	void ForceDelete();
+	DECLARE_DELETOR(VK_OBJECT_TYPE_BUFFER, VkBuffer);
+	DECLARE_DELETOR(VK_OBJECT_TYPE_DEVICE_MEMORY, VkDeviceMemory);
+
+	DECLARE_DELETOR(VK_OBJECT_TYPE_PIPELINE, VkPipeline);
+	DECLARE_DELETOR(VK_OBJECT_TYPE_PIPELINE_LAYOUT, VkPipelineLayout);
+
+	DECLARE_DELETOR(VK_OBJECT_TYPE_DESCRIPTOR_POOL, VkDescriptorPool);
+	DECLARE_DELETOR(VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, VkDescriptorSetLayout);
+
+	DECLARE_DELETOR(VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, VkAccelerationStructureKHR);
 
 #undef DECLARE_DELETOR
+
+	extern void CollectGarbage();
+	extern void ForceDelete();
 }

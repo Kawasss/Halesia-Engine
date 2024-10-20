@@ -15,6 +15,7 @@
 #include "renderer/DescriptorWriter.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
+#include "renderer/GarbageManager.h"
 #include "renderer/Light.h"
 
 #include "system/Window.h"
@@ -111,6 +112,8 @@ void Renderer::Destroy()
 	}
 
 	::vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+
+	vgm::ForceDelete();
 
 	::vkDestroyDevice(logicalDevice, nullptr);
 
@@ -757,6 +760,8 @@ void Renderer::SubmitRecording()
 	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 	FIF::frameIndex = currentFrame;
 	ResetImGUI();
+
+	vgm::CollectGarbage();
 }
 
 inline void GetAllObjectsFromObject(std::vector<Object*>& ret, Object* obj, bool checkBLAS)
