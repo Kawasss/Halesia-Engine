@@ -2,6 +2,7 @@
 
 #include "renderer/Framebuffer.h"
 #include "renderer/Vulkan.h"
+#include "renderer/GarbageManager.h"
 
 Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes)
 {
@@ -166,12 +167,12 @@ void Framebuffer::Destroy()
 
 	for (int i = 0; i < images.size(); i++)
 	{
-		vkDestroyImage(context.logicalDevice, images[i], nullptr);
-		vkDestroyImageView(context.logicalDevice, imageViews[i], nullptr);
-		vkFreeMemory(context.logicalDevice, memories[i], nullptr);
+		vgm::Delete(images[i]);
+		vgm::Delete(imageViews[i]);
+		vgm::Delete(memories[i]);
 	}
 
-	vkDestroyFramebuffer(context.logicalDevice, framebuffer, nullptr);
+	vgm::Delete(framebuffer);
 
 	framebuffer = VK_NULL_HANDLE;
 }

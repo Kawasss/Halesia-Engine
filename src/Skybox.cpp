@@ -5,6 +5,7 @@
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/Texture.h"
 #include "renderer/DescriptorWriter.h"
+#include "renderer/GarbageManager.h"
 
 #include "core/Camera.h"
 
@@ -216,11 +217,9 @@ void SkyboxPipeline::Destroy()
 
 	delete texture;
 
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-	vkDestroyRenderPass(ctx.logicalDevice, renderPass, nullptr);
-	vkDestroyRenderPass(ctx.logicalDevice, convertRenderPass, nullptr);
-
-	vkDestroyFramebuffer(ctx.logicalDevice, framebuffer, nullptr);
+	vgm::Delete(renderPass);
+	vgm::Delete(convertRenderPass);
+	vgm::Delete(framebuffer);
 
 	ubo.Destroy();
 }

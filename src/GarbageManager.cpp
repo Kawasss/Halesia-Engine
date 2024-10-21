@@ -46,6 +46,9 @@ namespace vgm
 #define DELETE_HANDLE(func, type) func(device, reinterpret_cast<type>(info.handle), nullptr); break
 	void DestroyType(const DeleteInfo& info)
 	{
+		if (info.handle == 0)
+			return;
+
 		VkDevice device = Vulkan::GetContext().logicalDevice;
 		switch (info.type)
 		{
@@ -60,6 +63,9 @@ namespace vgm
 
 		case VK_OBJECT_TYPE_DESCRIPTOR_POOL:       DELETE_HANDLE(vkDestroyDescriptorPool, VkDescriptorPool);
 		case VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT: DELETE_HANDLE(vkDestroyDescriptorSetLayout, VkDescriptorSetLayout);
+
+		case VK_OBJECT_TYPE_FRAMEBUFFER: DELETE_HANDLE(vkDestroyFramebuffer, VkFramebuffer);
+		case VK_OBJECT_TYPE_RENDER_PASS: DELETE_HANDLE(vkDestroyRenderPass, VkRenderPass);
 
 		case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR: DELETE_HANDLE(vkDestroyAccelerationStructureKHR, VkAccelerationStructureKHR);
 		}

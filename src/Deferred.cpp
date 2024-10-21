@@ -3,6 +3,7 @@
 #include "renderer/Renderer.h"
 #include "renderer/DescriptorWriter.h"
 #include "renderer/accelerationStructures.h"
+#include "renderer/GarbageManager.h"
 
 #include "core/Object.h"
 #include "core/Camera.h"
@@ -268,8 +269,7 @@ void DeferredPipeline::AddLight(const Light& light)
 
 void DeferredPipeline::Destroy()
 {
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-	vkDestroyRenderPass(ctx.logicalDevice, renderPass, nullptr);
+	vgm::Delete(renderPass);
 
 	delete firstPipeline;
 	delete secondPipeline;

@@ -78,12 +78,12 @@ namespace FIF
 		{
 			if (buffers[i] != VK_NULL_HANDLE)
 			{
-				vkDestroyBuffer(ctx.logicalDevice, buffers[i], nullptr);
+				vgm::Delete(buffers[i]);
 				buffers[i] = VK_NULL_HANDLE;
 			}
 			if (memories[i] != VK_NULL_HANDLE)
 			{
-				vkFreeMemory(ctx.logicalDevice, memories[i], nullptr);
+				vgm::Delete(memories[i]);
 				memories[i] = VK_NULL_HANDLE;
 			}
 		}

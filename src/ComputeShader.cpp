@@ -2,6 +2,7 @@
 #include "renderer/ComputeShader.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/DescriptorWriter.h"
+#include "renderer/GarbageManager.h"
 
 #include "io/IO.h"
 
@@ -22,12 +23,12 @@ ComputeShader::~ComputeShader()
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 
-	vkDestroyPipelineLayout(context.logicalDevice, layout, nullptr);
-	vkDestroyPipeline(context.logicalDevice, pipeline, nullptr);
-
+	vgm::Delete(layout);
+	vgm::Delete(pipeline);
+	
 	for (const VkDescriptorSetLayout& setLayout : setLayouts)
-		vkDestroyDescriptorSetLayout(context.logicalDevice, setLayout, nullptr);
-	vkDestroyDescriptorPool(context.logicalDevice, pool, nullptr);
+		vgm::Delete(setLayout);
+	vgm::Delete(pool);
 }
 
 void ComputeShader::CreateDescriptorPool(const ShaderGroupReflector& reflector)

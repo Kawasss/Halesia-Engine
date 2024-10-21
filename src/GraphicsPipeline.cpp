@@ -5,6 +5,7 @@
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/DescriptorWriter.h"
+#include "renderer/GarbageManager.h"
 #include "renderer/Buffer.h"
 
 #include "io/IO.h"
@@ -31,13 +32,13 @@ GraphicsPipeline::~GraphicsPipeline()
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
-	vkDestroyPipeline(ctx.logicalDevice, pipeline, nullptr);
-	vkDestroyPipelineLayout(ctx.logicalDevice, layout, nullptr);
+	vgm::Delete(pipeline);
+	vgm::Delete(layout);
 
 	for (const VkDescriptorSetLayout& setLayout : setLayouts)
-		vkDestroyDescriptorSetLayout(ctx.logicalDevice, setLayout, nullptr);
+		vgm::Delete(setLayout);
 
-	vkDestroyDescriptorPool(ctx.logicalDevice, pool, nullptr);
+	vgm::Delete(pool);
 }
 
 void GraphicsPipeline::Bind(CommandBuffer commandBuffer)
