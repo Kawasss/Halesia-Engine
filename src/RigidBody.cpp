@@ -2,12 +2,11 @@
 #include "core/Transform.h"
 #include "core/Object.h"
 
-RigidBody::RigidBody(Shape shape, Type type, glm::vec3 pos, glm::vec3 rot)
+RigidBody::RigidBody(Shape shape, Type type, glm::vec3 pos, glm::quat rot)
 {
 	this->shape = shape;
 	this->type = type;
-	glm::quat rotation = glm::quat(glm::radians(rot));
-	physx::PxTransform transform = physx::PxTransform(pos.x, pos.y, pos.z, physx::PxQuat(rotation.x, rotation.y, rotation.z, rotation.w));
+	physx::PxTransform transform(pos.x, pos.y, pos.z, physx::PxQuat(rot.x, rot.y, rot.z, rot.w));
 
 	switch (type)
 	{
@@ -113,8 +112,7 @@ void* RigidBody::GetUserData()
 
 physx::PxTransform RigidBody::GetTransform(Transform& transform)
 {
-	glm::quat quat = glm::quat(glm::radians(transform.rotation));
-	return physx::PxTransform(transform.position.x, transform.position.y, transform.position.z, physx::PxQuat(quat.x, quat.y, quat.z, quat.w));
+	return physx::PxTransform(transform.position.x, transform.position.y, transform.position.z, physx::PxQuat(transform.rotation.x, transform.rotation.y, transform.rotation.z, transform.rotation.w));
 }
 
 physx::PxTransform RigidBody::GetTransform()

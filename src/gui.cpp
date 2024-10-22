@@ -335,9 +335,13 @@ void GUI::ShowObjectTransform(Transform& transform)
 	ImGui::SameLine();
 	ShowInputVector(transform.position, { "##posx", "##posy", "##posz" });
 
+	glm::vec3 rot = glm::eulerAngles(transform.rotation);
+
 	ImGui::Text("rotation:");
 	ImGui::SameLine();
-	ShowInputVector(transform.rotation, { "##rotx", "##roty", "##rotz" });
+	ShowInputVector(rot, { "##rotx", "##roty", "##rotz" });
+
+	transform.rotation = glm::quat(rot);
 
 	ImGui::Text("scale:   ");
 	ImGui::SameLine();
@@ -451,6 +455,9 @@ void GUI::ShowObjectTable(const std::vector<Object*>& objects)
 	for (int i = 0; i < objects.size(); i++)
 	{
 		Object* currentObj = objects[i];
+
+		glm::vec3 rot = glm::eulerAngles(currentObj->transform.rotation);
+
 		ImGui::TableNextRow();
 		ImGui::TableNextColumn();
 		ImGui::Text(currentObj->name.c_str());
@@ -465,7 +472,7 @@ void GUI::ShowObjectTable(const std::vector<Object*>& objects)
 		ImGui::TableNextColumn();
 		ImGui::Text(Vec3ToString(currentObj->transform.position).c_str());
 		ImGui::TableNextColumn();
-		ImGui::Text(Vec3ToString(currentObj->transform.rotation).c_str());
+		ImGui::Text(Vec3ToString(rot).c_str());
 		ImGui::TableNextColumn();
 		ImGui::Text(Vec3ToString(currentObj->transform.scale).c_str());
 	}

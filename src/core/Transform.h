@@ -5,7 +5,7 @@ class Transform
 {
 public:
 	Transform() = default;
-	Transform(glm::vec3 translation, glm::vec3 rotation, glm::vec3 scale, glm::vec3 extents, glm::vec3 center);
+	Transform(glm::vec3 translation, glm::quat rotation, glm::vec3 scale, glm::vec3 extents, glm::vec3 center);
 
 	glm::mat4 GetModelMatrix();
 	glm::mat4 GetLocalRotation();
@@ -22,7 +22,8 @@ public:
 
 	void SetLocalRotation(glm::mat4 newLocalRotation);
 
-	glm::vec3 position = glm::vec3(0), scale = glm::vec3(1), rotation = glm::vec3(0);
+	glm::vec3 position = glm::vec3(0), scale = glm::vec3(1);
+	glm::quat rotation;
 	Transform* parent = nullptr;
 
 private:
