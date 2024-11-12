@@ -1,5 +1,6 @@
 #pragma once
 #include <set>
+#include <intrin.h>
 
 #include "../system/CriticalSection.h"
 
@@ -12,6 +13,7 @@
 if (!CheckIfHandleIsValid(memory))                                                                                                                         \
 {                                                                                                                                                          \
 	Console::WriteLine("An invalid memory handle (" + std::to_string((uint64_t)memory) + ") has been found in " + __FUNCTION__, Console::Severity::Error); \
+    __debugbreak();                                                                                                                                        \
 	return ret;                                                                                                                                            \
 }                                                                                                                                                          \
 

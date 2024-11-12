@@ -110,20 +110,21 @@ void AccelerationStructure::Destroy()
 	vgm::Delete(accelerationStructure);
 }
 
-BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(Mesh& mesh)
+BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(Mesh& mesh)
 {
-	BottomLevelAccelerationStructure* BLAS = new BottomLevelAccelerationStructure();
-
 	VkAccelerationStructureGeometryKHR geometry{};
 	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
 	geometry.geometryType = VK_GEOMETRY_TYPE_TRIANGLES_KHR;
 	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
 	geometry.geometry.triangles = GetTrianglesData(mesh);
 
-	BLAS->CreateAS(&geometry, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, mesh.faceCount);
+	CreateAS(&geometry, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, mesh.faceCount);
+	BuildAS(&geometry, mesh.faceCount, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
+}
 
-	BLAS->BuildAS(&geometry, mesh.faceCount, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
-
+BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(Mesh& mesh)
+{
+	BottomLevelAccelerationStructure* BLAS = new BottomLevelAccelerationStructure(mesh);
 	return BLAS;
 }
 
@@ -138,10 +139,9 @@ void BottomLevelAccelerationStructure::RebuildGeometry(VkCommandBuffer commandBu
 	BuildAS(&geometry, mesh.faceCount, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR, commandBuffer);
 }
 
-TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(const std::vector<Object*>& objects)
+TopLevelAccelerationStructure::TopLevelAccelerationStructure(const std::vector<Object*>& objects)
 {
-	TopLevelAccelerationStructure* TLAS = new TopLevelAccelerationStructure();
-	TLAS->instanceBuffer.Reserve(Renderer::MAX_TLAS_INSTANCES, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+	instanceBuffer.Reserve(Renderer::MAX_TLAS_INSTANCES, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
 	VkAccelerationStructureGeometryKHR geometry{};
 	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
@@ -149,13 +149,17 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(const std::
 	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
 	geometry.geometry.instances.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_INSTANCES_DATA_KHR;
 	geometry.geometry.instances.arrayOfPointers = VK_FALSE;
-	geometry.geometry.instances.data = { Vulkan::GetDeviceAddress(TLAS->instanceBuffer.GetBufferHandle()) };
+	geometry.geometry.instances.data = { Vulkan::GetDeviceAddress(instanceBuffer.GetBufferHandle()) };
 
-	TLAS->CreateAS(&geometry, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, Renderer::MAX_TLAS_INSTANCES);
+	CreateAS(&geometry, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, Renderer::MAX_TLAS_INSTANCES);
 
 	if (!objects.empty())
-		TLAS->Build(objects);
-	
+		Build(objects);
+}
+
+TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(const std::vector<Object*>& objects)
+{
+	TopLevelAccelerationStructure* TLAS = new TopLevelAccelerationStructure(objects);
 	return TLAS;
 }
 

@@ -60,7 +60,7 @@ void Mesh::Recreate()
 	defaultVertexMemory = Renderer::g_defaultVertexBuffer.SubmitNewData(vertices);
 
 	if (Renderer::canRayTrace)
-		BLAS = BottomLevelAccelerationStructure::Create(*this);
+		BLAS = hsl::Reference<BottomLevelAccelerationStructure>::Create(*this);
 }
 
 void Mesh::ResetMaterial()

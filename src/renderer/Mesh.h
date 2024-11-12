@@ -5,7 +5,7 @@
 #include "Vertex.h"
 #include "AccelerationStructures.h"
 
-#include <hsl/RefPointer.h>
+#include <hsl/Reference.h>
 
 class BottomLevelAccelerationStructure;
 struct MeshCreationData;
@@ -27,7 +27,7 @@ struct Mesh
 	StorageMemory indexMemory;
 	StorageMemory defaultVertexMemory;
 
-	hsl::RefPointer<BottomLevelAccelerationStructure> BLAS;
+	hsl::Reference<BottomLevelAccelerationStructure> BLAS;
 
 	std::vector<Vertex> vertices;
 	std::vector<uint16_t> indices;

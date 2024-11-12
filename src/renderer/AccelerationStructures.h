@@ -32,6 +32,8 @@ private:
 class BottomLevelAccelerationStructure : public AccelerationStructure
 {
 public:
+	BottomLevelAccelerationStructure(Mesh& mesh);
+
 	static BottomLevelAccelerationStructure* Create(Mesh& mesh);
 	void RebuildGeometry(VkCommandBuffer commandBuffer, Mesh& mesh);
 };
@@ -39,6 +41,8 @@ public:
 class TopLevelAccelerationStructure : public AccelerationStructure
 {
 public:
+	TopLevelAccelerationStructure(const std::vector<Object*>& objects);
+
 	static TopLevelAccelerationStructure* Create(const std::vector<Object*>& objects);
 
 	/// <summary>
