@@ -1,23 +1,25 @@
 #pragma once
-#include "RenderPipeline.h"
 #include "Buffer.h"
 
 class Cubemap;
 class GraphicsPipeline;
 class Texture;
+class CommandBuffer;
+class Camera;
+class Renderer;
 
-class SkyboxPipeline : public RenderPipeline
+class Skybox
 {
 public:
 	void SetSkyBox(Cubemap* skybox); // this will transfer ownership of the cubemap to this pipeline
 
-	void Start(const Payload& payload) override;
-	void Execute(const Payload& payload, const std::vector<Object*>& objects) override; // the pipeline expects to be called in an already active render pass
-	void Destroy() override;
+	void Start();
+	void Draw(const CommandBuffer& cmdBuffer, Camera* camera, Renderer* renderer); // the pipeline expects to be called in an already active render pass
+	void Destroy();
 
 private:
-	void ConvertImageToCubemap(const Payload& payload);
-	void SetupConvert(const Payload& payload);
+	void ConvertImageToCubemap(const CommandBuffer& cmdBuffer);
+	void SetupConvert();
 
 	void CreateRenderPass();
 	void CreatePipeline();
@@ -30,6 +32,7 @@ private:
 	Texture* texture = nullptr;
 
 	// these are stored here rn because i dont have good place to destroy them yet
+	VkRenderPass renderPass;
 	VkRenderPass convertRenderPass;
 	VkFramebuffer framebuffer;
 	bool hasConverted = false;

@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <array>
 
 #include "renderer/Framebuffer.h"
 #include "renderer/Vulkan.h"
@@ -175,4 +176,39 @@ void Framebuffer::Destroy()
 	vgm::Delete(framebuffer);
 
 	framebuffer = VK_NULL_HANDLE;
+}
+
+void ObserverFramebuffer::Observe(const std::vector<VkImageView>& views, uint32_t width, uint32_t height, VkRenderPass renderPass)
+{
+	Destroy();
+	CreateFramebuffer(views.data(), static_cast<uint32_t>(views.size()), width, height, renderPass);
+}
+
+void ObserverFramebuffer::Observe(VkImageView view, VkImageView depth, uint32_t width, uint32_t height, VkRenderPass renderPass)
+{
+	std::array<VkImageView, 2> views = { view, depth };
+	
+	Destroy();
+	CreateFramebuffer(views.data(), 2, width, height, renderPass);
+}
+
+void ObserverFramebuffer::CreateFramebuffer(const VkImageView* pViews, uint32_t count, uint32_t width, uint32_t height, VkRenderPass renderPass)
+{
+	VkFramebufferCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+	createInfo.attachmentCount = count;
+	createInfo.pAttachments = pViews;
+	createInfo.width = width;
+	createInfo.height = height;
+	createInfo.renderPass = renderPass;
+	createInfo.layers = 1;
+
+	VkResult result = vkCreateFramebuffer(Vulkan::GetContext().logicalDevice, &createInfo, nullptr, &framebuffer);
+	CheckVulkanResult("Failed to create an observer framebuffer", result, vkCreateFramebuffer);
+}
+
+void ObserverFramebuffer::Destroy()
+{
+	if (framebuffer != VK_NULL_HANDLE)
+		vgm::Delete(framebuffer);
 }

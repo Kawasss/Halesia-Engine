@@ -4,6 +4,7 @@
 #include "renderer/DescriptorWriter.h"
 #include "renderer/accelerationStructures.h"
 #include "renderer/GarbageManager.h"
+#include "renderer/Skybox.h"
 
 #include "core/Object.h"
 #include "core/Camera.h"
@@ -14,6 +15,8 @@ struct PushConstant
 	int materialID;
 };
 
+Skybox* DeferredPipeline::skybox = nullptr;
+
 void DeferredPipeline::Start(const Payload& payload)
 {
 	std::vector<VkFormat> formats = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM };
@@ -22,6 +25,7 @@ void DeferredPipeline::Start(const Payload& payload)
 	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
 
 	framebuffer.Init(renderPass, payload.width, payload.height, formats); // 32 bit format takes a lot of performance compared to an 8 bit format
+	//skyboxFramebuffer.Observe(framebuffer.GetViews()[1], framebuffer.GetDepthView(), payload.width, payload.height, framebuffer.GetRenderPass());
 
 	uboBuffer.Init(sizeof(UBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	uboBuffer.MapPermanently();
@@ -143,6 +147,8 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 		Renderer::RenderMesh(cmdBuffer, obj->mesh);
 	}
 
+	//skybox->render
+
 	cmdBuffer.EndRenderPass();
 
 	renderer->StartRenderPass(renderer->GetDefault3DRenderPass());
@@ -163,6 +169,7 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 void DeferredPipeline::Resize(const Payload& payload)
 {
 	framebuffer.Resize(payload.width, payload.height);
+	//skyboxFramebuffer.Observe(framebuffer.GetViews()[1], framebuffer.GetDepthView(), payload.width, payload.height, framebuffer.GetRenderPass());
 
 	const VkSampler& sampler = Renderer::defaultSampler;
 	const std::vector<VkImageView> views = framebuffer.GetViews();
@@ -276,6 +283,7 @@ void DeferredPipeline::Destroy()
 
 	delete TLAS;
 
+	skyboxFramebuffer.~ObserverFramebuffer();
 	framebuffer.~Framebuffer();
 
 	lightBuffer.~Buffer();

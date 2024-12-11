@@ -9,6 +9,7 @@
 
 class GraphicsPipeline;
 class TopLevelAccelerationStructure;
+class Skybox;
 
 class DeferredPipeline : public RenderPipeline
 {
@@ -19,6 +20,8 @@ public:
 
 	void Resize(const Payload& payload) override;
 	void AddLight(const Light& light) override;
+
+	static Skybox* skybox; // only for testing
 
 private:
 	struct UBO
@@ -42,6 +45,7 @@ private:
 	void CreatePipelines(VkRenderPass firstPass, VkRenderPass secondPass);
 
 	Framebuffer framebuffer;
+	ObserverFramebuffer skyboxFramebuffer;
 
 	FIF::Buffer uboBuffer;
 	FIF::Buffer lightBuffer;

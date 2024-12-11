@@ -27,6 +27,8 @@ public:
 	uint32_t GetWidth()  const { return width;  }
 	uint32_t GetHeight() const { return height; }
 
+	VkImageView GetDepthView() { return imageViews.back(); }
+
 	void SetDebugName(const char* name);
 
 	void TransitionFromReadToWrite(CommandBuffer commandBuffer);
@@ -47,4 +49,21 @@ private:
 	std::vector<VkImage> images;
 	std::vector<VkImageView> imageViews;
 	std::vector<VkDeviceMemory> memories;
+};
+
+class ObserverFramebuffer
+{
+public:
+	ObserverFramebuffer() = default;
+	~ObserverFramebuffer() { Destroy(); }
+
+	void Observe(const std::vector<VkImageView>& views, uint32_t width, uint32_t height, VkRenderPass renderPass); // depth buffer is the last element
+	void Observe(VkImageView view, VkImageView depth, uint32_t width, uint32_t height, VkRenderPass renderPass);
+
+	void Destroy();
+
+private:
+	void CreateFramebuffer(const VkImageView* pViews, uint32_t count, uint32_t width, uint32_t height, VkRenderPass renderPass);
+
+	VkFramebuffer framebuffer;
 };

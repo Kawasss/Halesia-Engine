@@ -15,7 +15,7 @@ struct UBO
 	glm::mat4 view;
 };
 
-void SkyboxPipeline::Start(const Payload& payload)
+void Skybox::Start()
 {
 	CreateRenderPass();
 	CreatePipeline();
@@ -33,7 +33,7 @@ void SkyboxPipeline::Start(const Payload& payload)
 
 	SetSkyBox(map);
 
-	SetupConvert(payload);
+	SetupConvert();
 
 	ubo.Init(sizeof(UBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	ubo.MapPermanently();
@@ -41,7 +41,7 @@ void SkyboxPipeline::Start(const Payload& payload)
 	pipeline->BindBufferToName("ubo", ubo);	
 }
 
-void SkyboxPipeline::CreateRenderPass()
+void Skybox::CreateRenderPass()
 {
 	RenderPassBuilder builder(VK_FORMAT_R8G8B8A8_UNORM);
 
@@ -64,7 +64,7 @@ void SkyboxPipeline::CreateRenderPass()
 	convertRenderPass = convertBuilder.Build();
 }
 
-void SkyboxPipeline::CreatePipeline()
+void Skybox::CreatePipeline()
 {
 	GraphicsPipeline::CreateInfo createInfo{};
 	createInfo.vertexShader   = "shaders/spirv/skybox.vert.spv";
@@ -87,7 +87,7 @@ void SkyboxPipeline::CreatePipeline()
 	convertPipeline = new GraphicsPipeline(createInfo);
 }
 
-void SkyboxPipeline::SetupConvert(const Payload& payload)
+void Skybox::SetupConvert()
 {
 	const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
 
@@ -119,10 +119,8 @@ void SkyboxPipeline::SetupConvert(const Payload& payload)
 	vkCreateFramebuffer(Vulkan::GetContext().logicalDevice, &createInfo, nullptr, &framebuffer);
 }
 
-void SkyboxPipeline::ConvertImageToCubemap(const Payload& payload)
+void Skybox::ConvertImageToCubemap(const CommandBuffer& cmdBuffer)
 {
-	const CommandBuffer& cmdBuffer = payload.commandBuffer;
-
 	Renderer::SetViewport(cmdBuffer, { 1024, 1024 });
 	Renderer::SetScissors(cmdBuffer, { 1024, 1024 });
 
@@ -182,33 +180,31 @@ void SkyboxPipeline::ConvertImageToCubemap(const Payload& payload)
 	hasConverted = true;
 }
 
-void SkyboxPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
+void Skybox::Draw(const CommandBuffer& cmdBuffer, Camera* camera, Renderer* renderer)
 {
 	if (cubemap == nullptr)
 		return;
 
 	if (!hasConverted)
 	{
-		ConvertImageToCubemap(payload);
+		ConvertImageToCubemap(cmdBuffer);
 		return;
 	}
 		
-	const CommandBuffer& cmdBuffer = payload.commandBuffer;
-
 	UBO* ptr = ubo.GetMappedPointer<UBO>();
-	ptr->projection = payload.camera->GetProjectionMatrix();
-	ptr->view = payload.camera->GetViewMatrix();
+	ptr->projection = camera->GetProjectionMatrix();
+	ptr->view = camera->GetViewMatrix();
 
-	payload.renderer->StartRenderPass(renderPass);
+	renderer->StartRenderPass(renderPass);
 
-	pipeline->Bind(payload.commandBuffer);
+	pipeline->Bind(cmdBuffer);
 
 	cmdBuffer.Draw(36, 1, 0, 0);
 
 	cmdBuffer.EndRenderPass();
 }
 
-void SkyboxPipeline::Destroy()
+void Skybox::Destroy()
 {
 	if (cubemap) delete cubemap;
 
@@ -224,7 +220,7 @@ void SkyboxPipeline::Destroy()
 	ubo.Destroy();
 }
 
-void SkyboxPipeline::SetSkyBox(Cubemap* skybox)
+void Skybox::SetSkyBox(Cubemap* skybox)
 {
 	if (cubemap) delete cubemap;
 	cubemap = skybox;

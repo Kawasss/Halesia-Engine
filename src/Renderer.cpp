@@ -68,7 +68,7 @@ void Renderer::Destroy()
 		return;
 
 	Mesh::materials.front().Destroy(); // the only material whose lifetime is managed by the renderer is the default material
-
+	
 	g_defaultVertexBuffer.Destroy();
 	g_vertexBuffer.Destroy();
 	g_indexBuffer.Destroy();
