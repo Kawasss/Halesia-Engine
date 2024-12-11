@@ -27,7 +27,6 @@ void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t wi
 
 	this->images.resize(imageCount + 1); // the depth buffer is stored as the last image in the vector
 	this->imageViews.resize(imageCount + 1);
-	this->memories.resize(imageCount + 1);
 	
 	Allocate();
 }
@@ -44,7 +43,6 @@ void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height,
 
 	this->images.resize(imageCount + 1); // the depth buffer is stored as the last image in the vector
 	this->imageViews.resize(imageCount + 1);
-	this->memories.resize(imageCount + 1);
 
 	Allocate();
 }
@@ -55,13 +53,13 @@ void Framebuffer::Allocate()
 
 	for (int i = 0; i < images.size() - 1; i++)
 	{
-		Vulkan::CreateImage(width, height, 1, 1, formats[i], VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, images[i], memories[i]);
-		imageViews[i] = Vulkan::CreateImageView(images[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, formats[i], VK_IMAGE_ASPECT_COLOR_BIT);
+		images[i] = Vulkan::CreateImage(width, height, 1, 1, formats[i], VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+		imageViews[i] = Vulkan::CreateImageView(images[i].Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, formats[i], VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
 	VkFormat depthFormat = ctx.physicalDevice.GetDepthFormat();
-	Vulkan::CreateImage(width, height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, images.back(), memories.back());
-	imageViews.back() = Vulkan::CreateImageView(images.back(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	images.back() = Vulkan::CreateImage(width, height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	imageViews.back() = Vulkan::CreateImageView(images.back().Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 	VkFramebufferCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -128,7 +126,7 @@ void Framebuffer::TransitionFromUndefinedToWrite(CommandBuffer commandBuffer)
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 	for (int i = 0; i < images.size() - 1; i++) // skip the depth buffer !!
-		Vulkan::TransitionColorImage(commandBuffer.Get(), images[i], oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+		Vulkan::TransitionColorImage(commandBuffer.Get(), images[i].Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
 void Framebuffer::TransitionFromReadToWrite(CommandBuffer commandBuffer)
@@ -142,7 +140,7 @@ void Framebuffer::TransitionFromReadToWrite(CommandBuffer commandBuffer)
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
 	for (int i = 0; i < images.size() - 1; i++)
-		Vulkan::TransitionColorImage(commandBuffer.Get(), images[i], oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+		Vulkan::TransitionColorImage(commandBuffer.Get(), images[i].Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
 void Framebuffer::TransitionFromWriteToRead(CommandBuffer commandBuffer)
@@ -156,7 +154,7 @@ void Framebuffer::TransitionFromWriteToRead(CommandBuffer commandBuffer)
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
 	for (int i = 0; i < images.size() - 1; i++)
-		Vulkan::TransitionColorImage(commandBuffer.Get(), images[i], oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+		Vulkan::TransitionColorImage(commandBuffer.Get(), images[i].Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
 void Framebuffer::Destroy()
@@ -168,9 +166,8 @@ void Framebuffer::Destroy()
 
 	for (int i = 0; i < images.size(); i++)
 	{
-		vgm::Delete(images[i]);
+		images[i].Destroy();
 		vgm::Delete(imageViews[i]);
-		vgm::Delete(memories[i]);
 	}
 
 	vgm::Delete(framebuffer);

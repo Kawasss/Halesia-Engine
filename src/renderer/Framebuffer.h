@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "CommandBuffer.h"
+#include "VideoMemoryManager.h"
 
 class Framebuffer
 {
@@ -21,7 +22,7 @@ public:
 	VkFramebuffer Get()          const { return framebuffer; }
 	VkRenderPass GetRenderPass() const { return renderPass;  }
 
-	std::vector<VkImage>& GetImages()    { return images;     }
+	std::vector<VvmImage>& GetImages()   { return images;     }
 	std::vector<VkImageView>& GetViews() { return imageViews; }
 
 	uint32_t GetWidth()  const { return width;  }
@@ -46,9 +47,8 @@ private:
 	uint32_t width = 0, height = 0;
 	float relRes = 1.0f;
 
-	std::vector<VkImage> images;
+	std::vector<VvmImage> images;
 	std::vector<VkImageView> imageViews;
-	std::vector<VkDeviceMemory> memories;
 };
 
 class ObserverFramebuffer

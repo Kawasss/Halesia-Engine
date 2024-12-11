@@ -5,6 +5,7 @@
 #include <array>
 
 #include "PhysicalDevice.h"
+#include "VideoMemoryManager.h"
 
 enum TextureFormat
 {
@@ -52,9 +53,8 @@ public:
 
 	static bool TexturesHaveChanged();
 
-	VkImage image;
+	VvmImage image;
 	VkImageView imageView = VK_NULL_HANDLE;
-	VkDeviceMemory imageMemory;
 	VkDeviceSize size = 0; // in bytes!
 
 	~Image() { Destroy(); }

@@ -214,6 +214,7 @@
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\ToString.cpp" />
     <ClCompile Include="src\Transform.cpp" />
+    <ClCompile Include="src\VideoMemoryManager.cpp" />
     <ClCompile Include="src\Vulkan.cpp" />
     <ClCompile Include="src\Buffer.cpp" />
     <ClCompile Include="src\Window.cpp" />
@@ -293,6 +294,7 @@
     <ClInclude Include="src\renderer\Swapchain.h" />
     <ClInclude Include="src\renderer\Texture.h" />
     <ClInclude Include="src\renderer\Vertex.h" />
+    <ClInclude Include="src\renderer\VideoMemoryManager.h" />
     <ClInclude Include="src\renderer\Vulkan.h" />
     <ClInclude Include="src\renderer\Buffer.h" />
     <ClInclude Include="src\resource.h" />

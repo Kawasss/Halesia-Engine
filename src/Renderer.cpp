@@ -113,6 +113,7 @@ void Renderer::Destroy()
 
 	::vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 
+	Vulkan::Destroy();
 	vgm::ForceDelete();
 
 	::vkDestroyDevice(logicalDevice, nullptr);
@@ -330,12 +331,10 @@ void Renderer::AddExtensions()
 		shouldRasterize = true;
 	else
 	{
-		Vulkan::AddDeviceExtenion(VK_KHR_TIMELINE_SEMAPHORE_EXTENSION_NAME);
 		Vulkan::AddDeviceExtenion(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
 		Vulkan::AddDeviceExtenion(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
 		Vulkan::AddDeviceExtenion(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
 		Vulkan::AddDeviceExtenion(VK_KHR_RAY_QUERY_EXTENSION_NAME);
-		Vulkan::AddDeviceExtenion(VK_KHR_SPIRV_1_4_EXTENSION_NAME);
 	}
 }
 
@@ -740,7 +739,7 @@ void Renderer::StartRecording()
 
 	activeCmdBuffer.Reset();
 	activeCmdBuffer.Begin();
-	
+
 	submittedCount  = 0;
 	receivedObjects = 0;
 	renderedObjects = 0;

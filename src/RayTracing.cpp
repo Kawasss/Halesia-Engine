@@ -71,7 +71,7 @@ void RayTracingPipeline::Execute(const Payload& payload, const std::vector<Objec
 	if (payload.width == 0 || payload.height == 0)
 		return;
 
-	if (gBuffers[0] == VK_NULL_HANDLE)
+	if (!gBuffers[0].IsValid())
 		RecreateImage(payload.width, payload.height);
 
 	if (imageHasChanged)
@@ -116,7 +116,7 @@ void RayTracingPipeline::Execute(const Payload& payload, const std::vector<Objec
 	vkCmdTraceRaysKHR(cmdBuffer, &rgenShaderBindingTable, &rmissShaderBindingTable, &rchitShaderBindingTable, &callableShaderBindingTable, width, height, 1);
 	frameCount++;
 
-	Vulkan::TransitionColorImage(cmdBuffer, gBuffers[0], VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+	Vulkan::TransitionColorImage(cmdBuffer, gBuffers[0].Get(), VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
 	payload.renderer->GetFramebuffer().TransitionFromWriteToRead(cmdBuffer); // normally this would transition with a render pass, but ray tracing doesnt use a render pass
 }
@@ -142,12 +142,10 @@ void RayTracingPipeline::Destroy()
 	for (int i = 0; i < gBuffers.size(); i++)
 	{
 		vkDestroyImageView(logicalDevice, gBufferViews[i], nullptr);
-		vkDestroyImage(logicalDevice, gBuffers[i], nullptr);
-		vkFreeMemory(logicalDevice, gBufferMemories[i], nullptr);
+		gBuffers[i].Destroy();
 	}
 	vkDestroyImageView(logicalDevice, prevImageView, nullptr);
-	vkDestroyImage(logicalDevice, prevImage, nullptr);
-	vkFreeMemory(logicalDevice, prevMemory, nullptr);
+	prevImage.Destroy();
 
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
@@ -406,25 +404,23 @@ void RayTracingPipeline::CreateImage(uint32_t width, uint32_t height)
 	this->width = width;
 	this->height = height;
 	const Vulkan::Context& context = Vulkan::GetContext();
-	if (gBuffers[0] != VK_NULL_HANDLE)
+	if (gBuffers[0].IsValid())
 	{
 		for (int i = 0; i < gBuffers.size(); i++)
 		{
 			vkDestroyImageView(logicalDevice, gBufferViews[i], nullptr);
-			vkDestroyImage(logicalDevice, gBuffers[i], nullptr);
-			vkFreeMemory(logicalDevice, gBufferMemories[i], nullptr);
+			gBuffers[i].Destroy();
 		}
 		vkDestroyImageView(logicalDevice, prevImageView, nullptr);
-		vkDestroyImage(logicalDevice, prevImage, nullptr);
-		vkFreeMemory(logicalDevice, prevMemory, nullptr);
+		prevImage.Destroy();
 
 		motionBuffer.Destroy();
 	}
 	
 	for (int i = 0; i < gBuffers.size(); i++)
 	{
-		Vulkan::CreateImage(width, height, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, gBuffers[i], gBufferMemories[i]);
-		gBufferViews[i] = Vulkan::CreateImageView(gBuffers[i], VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+		gBuffers[i] = Vulkan::CreateImage(width, height, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+		gBufferViews[i] = Vulkan::CreateImageView(gBuffers[i].Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
 		VkImageMemoryBarrier RTImageMemoryBarrier{};
 		RTImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -432,7 +428,7 @@ void RayTracingPipeline::CreateImage(uint32_t width, uint32_t height)
 		RTImageMemoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 		RTImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		RTImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-		RTImageMemoryBarrier.image = gBuffers[i];
+		RTImageMemoryBarrier.image = gBuffers[i].Get();
 		RTImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		RTImageMemoryBarrier.subresourceRange.levelCount = 1;
 		RTImageMemoryBarrier.subresourceRange.layerCount = 1;
@@ -441,14 +437,14 @@ void RayTracingPipeline::CreateImage(uint32_t width, uint32_t height)
 		vkCmdPipelineBarrier(imageBarrierCommandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &RTImageMemoryBarrier);
 		Vulkan::EndSingleTimeCommands(context.graphicsQueue, imageBarrierCommandBuffer, commandPool);
 	}
-	Vulkan::CreateImage(width, height, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, prevImage, prevMemory);
-	prevImageView = Vulkan::CreateImageView(prevImage, VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
+	prevImage = Vulkan::CreateImage(width, height, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	prevImageView = Vulkan::CreateImageView(prevImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, VK_FORMAT_R32G32B32A32_SFLOAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	CreateMotionBuffer();
 
 	imageHasChanged = true;
-	if (Renderer::denoiseOutput)
-		denoiser->AllocateBuffers(width, height);
+	//if (Renderer::denoiseOutput)
+	//	denoiser->AllocateBuffers(width, height);
 }
 
 
@@ -532,12 +528,12 @@ void RayTracingPipeline::CopyPreviousResult(VkCommandBuffer commandBuffer)
 	barriers[0].newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	barriers[0].srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barriers[0].dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barriers[0].image = gBuffers[0];
+	barriers[0].image = gBuffers[0].Get();
 	barriers[0].subresourceRange = subresourceRange;
 
 	barriers[1] = barriers[0];
 	barriers[1].newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-	barriers[1].image = prevImage;
+	barriers[1].image = prevImage.Get();
 
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 2, barriers);
 
@@ -548,7 +544,7 @@ void RayTracingPipeline::CopyPreviousResult(VkCommandBuffer commandBuffer)
 	imageCopy.srcSubresource.layerCount = 1;
 	imageCopy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 
-	vkCmdCopyImage(commandBuffer, gBuffers[0], VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, prevImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
+	vkCmdCopyImage(commandBuffer, gBuffers[0].Get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, prevImage.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &imageCopy);
 
 	barriers[0].oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	barriers[0].newLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -655,15 +651,15 @@ void RayTracingPipeline::UpdateInstanceDataBuffer(const std::vector<Object*>& ob
 
 void RayTracingPipeline::DenoiseImage()
 {
-	denoiser->DenoiseImage();
+	//denoiser->DenoiseImage();
 }
 
 void RayTracingPipeline::ApplyDenoisedImage(VkCommandBuffer commandBuffer)
 {
-	denoiser->CopyDenoisedBufferToImage(commandBuffer, gBuffers[0]);
+	//denoiser->CopyDenoisedBufferToImage(commandBuffer, gBuffers[0]);
 }
 
 void RayTracingPipeline::PrepareForDenoising(VkCommandBuffer commandBuffer)
 {
-	denoiser->CopyImagesToDenoisingBuffers(commandBuffer, gBuffers);
+	//denoiser->CopyImagesToDenoisingBuffers(commandBuffer, gBuffers.Get());
 }

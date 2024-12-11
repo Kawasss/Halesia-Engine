@@ -6,6 +6,7 @@ bool enableValidationLayers = true;
 #include <iostream>
 #include <algorithm>
 #include <cassert>
+#include <sstream>
 
 #include <vulkan/vk_enum_string_helper.h>
 
@@ -14,6 +15,7 @@ bool enableValidationLayers = true;
 #define VK_USE_PLATFORM_WIN32_KHR
 #include "renderer/Vulkan.h"
 #include "renderer/Surface.h"
+#include "renderer/VideoMemoryManager.h"
 
 VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 
@@ -28,7 +30,7 @@ VkDeviceSize Vulkan::allocatedMemory = 0;
 std::vector<const char*> Vulkan::requiredLogicalDeviceExtensions =
 {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
+    VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME,
 };
 std::vector<const char*> Vulkan::requiredInstanceExtensions =
 {
@@ -52,12 +54,31 @@ std::string forcedGPU;
 
 VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string functionName, std::string file, int line)
 {
-    std::string vulkanError = result == VK_SUCCESS ? "\n\n" : ":\n\n " + (std::string)string_VkResult(result) + " "; // result can be VK_SUCCESS for functions that dont use a vulkan functions, i.e. looking for a physical device but there are none that fit the bill
-    std::string location = functionName == "" ? "" : "from " + functionName;
-    location += line == 0 ? "" : " at line " + std::to_string(line);
-    location += file == "" ? "" : " in " + file;
+    std::stringstream stream; // result can be VK_SUCCESS for functions that dont use a vulkan functions, i.e. looking for a physical device but there are none that fit the bill
+    stream << message << "\n\n";
+    if (result != VK_SUCCESS)
+        stream << string_VkResult(result) << " ";
+    if (!functionName.empty())
+        stream << "from " << functionName;
+    if (line != 0)
+        stream << " at line " << line;
+    if (!file.empty())
+        stream << " in " << file;
 
-    this->message = message + vulkanError + location;
+#ifdef _DEBUG
+    uint32_t count = 0;
+    vkGetQueueCheckpointDataNV(Vulkan::GetContext().graphicsQueue, &count, nullptr);
+    if (count > 0)
+    {
+        std::vector<VkCheckpointDataNV> checkpoints(count);
+        vkGetQueueCheckpointDataNV(Vulkan::GetContext().graphicsQueue, &count, checkpoints.data());
+
+        stream << "\n\nCheckpoints:\n";
+        for (VkCheckpointDataNV& data : checkpoints)
+            stream << string_VkPipelineStageFlagBits(data.stage) << '\n' << reinterpret_cast<uint64_t>(data.pCheckpointMarker) << "\n\n";
+    }
+#endif
+    this->message = stream.str();
 }
 
 void Vulkan::AllocateCommandBuffers(const VkCommandBufferAllocateInfo& allocationInfo, std::vector<CommandBuffer>& commandBuffers)
@@ -473,15 +494,17 @@ void Vulkan::CreateExternalBuffer(VkDeviceSize size, VkBufferUsageFlags usage, V
     vkBindBufferMemory(context.logicalDevice, buffer, bufferMemory, 0);
 }
 
-void Vulkan::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
+VvmBuffer Vulkan::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {
+    VkBuffer buffer = VK_NULL_HANDLE;
     CreateBufferHandle(buffer, size, usage);
 
-    VkMemoryRequirements memoryRequirements;
-    vkGetBufferMemoryRequirements(context.logicalDevice, buffer, &memoryRequirements);
+    return VideoMemoryManager::AllocateBuffer(buffer, properties, optionalMemoryAllocationFlags);
+}
 
-    AllocateMemory(bufferMemory, memoryRequirements, properties, optionalMemoryAllocationFlags);
-    vkBindBufferMemory(context.logicalDevice, buffer, bufferMemory, 0);
+void Vulkan::Destroy()
+{
+    VideoMemoryManager::ForceDestroy();
 }
 
 uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice)
@@ -495,7 +518,7 @@ uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags proper
     CheckVulkanResult("Failed to get the memory type " + (std::string)string_VkMemoryPropertyFlags(properties) + " for the physical device " + (std::string)physicalDevice.Properties().deviceName, VK_ERROR_DEVICE_LOST, GetMemoryType);
 }
 
-void Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags, VkImage& image, VkDeviceMemory& memory)
+VvmImage Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags)
 {
     VkImageCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -513,14 +536,11 @@ void Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, ui
     createInfo.usage = usage;
     createInfo.flags = flags;
     
+    VkImage image = VK_NULL_HANDLE;
     VkResult result = vkCreateImage(context.logicalDevice, &createInfo, nullptr, &image);
     CheckVulkanResult("Failed to create an image", result, vkCreateImage);
 
-    VkMemoryRequirements memoryRequirements;
-    vkGetImageMemoryRequirements(context.logicalDevice, image, &memoryRequirements);
-
-    AllocateMemory(memory, memoryRequirements, properties);
-    vkBindImageMemory(context.logicalDevice, image, memory, 0);
+    VideoMemoryManager::AllocateImage(image, properties);
 }
 
 bool Vulkan::HasStencilComponent(VkFormat format)
@@ -755,29 +775,6 @@ VkBool32 Vulkan::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSev
     return VK_TRUE;
 }
 
-void Vulkan::CheckDeviceRequirements(bool indicesHasValue, bool extensionsSupported, bool swapChainIsCompatible, bool samplerAnisotropy, bool shaderUniformBufferArrayDynamicIndexing, std::set<std::string> unsupportedExtensions)
-{
-    if (!indicesHasValue)
-        throw VulkanAPIError("No compatible queue family could be found", VK_SUCCESS, nameof(!indices.HasValue()), __FILENAME__, __LINE__);
-
-    else if (!extensionsSupported)
-    {
-        std::string message = "Failed to find support for one or more logical device extensions:\n";
-        for (std::string extension : unsupportedExtensions)
-            message += '\n' + extension;
-        throw VulkanAPIError(message, VK_SUCCESS, nameof(Vulkan::CheckLogicalDeviceExtensionSupport(device, requiredLogicalDeviceExtensions)), __FILENAME__, __LINE__);
-    }
-
-    else if (!swapChainIsCompatible)
-        throw VulkanAPIError("No support for a swapchain could be found", VK_ERROR_FEATURE_NOT_PRESENT, nameof(Vulkan::QuerySwapChainSupport(device, surface)), __FILENAME__, __LINE__);
-
-    else if (!samplerAnisotropy)
-        throw VulkanAPIError("Critical feature is missing: VkPhysicalDeviceFeatures::samplerAnisotropy", VK_ERROR_FEATURE_NOT_PRESENT, nameof(device.Features().samplerAnisotropy), __FILENAME__, __LINE__);
-
-    else if (!shaderUniformBufferArrayDynamicIndexing)
-        throw VulkanAPIError("Critical feature is missing: VkPhysicalDeviceFeatures::shaderUniformBufferArrayDynamicIndexing", VK_ERROR_FEATURE_NOT_PRESENT, nameof(device.Features().shaderUniformBufferArrayDynamicIndexing), __FILENAME__, __LINE__);
-}
-
 bool Vulkan::IsDeviceCompatible(PhysicalDevice device, Surface surface)
 {
     QueueFamilyIndices indices = device.QueueFamilies(surface);
@@ -790,8 +787,7 @@ bool Vulkan::IsDeviceCompatible(PhysicalDevice device, Surface surface)
         SwapChainSupportDetails support = QuerySwapChainSupport(device, surface.VkSurface());
         swapChainIsCompatible = !support.formats.empty() && !support.presentModes.empty();
     }
-
-    CheckDeviceRequirements(indices.HasValue(), extensionsSupported, swapChainIsCompatible, device.Features().samplerAnisotropy, device.Features().shaderUniformBufferArrayDynamicIndexing, unsupportedExtensions);
+    std::string name = device.Properties().deviceName;
 
     return indices.HasValue() && extensionsSupported && swapChainIsCompatible && device.Features().samplerAnisotropy && device.Features().shaderUniformBufferArrayDynamicIndexing;
 }
@@ -995,5 +991,19 @@ VkResult vkSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectN
         return pvkSetDebugUtilsObjectNameEXT(device, pNameInfo);
     );
     return VK_SUCCESS;
+}
+
+void vkCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker)
+{
+    DEFINE_DEVICE_FUNCTION(vkCmdSetCheckpointNV);
+    CHECK_VALIDITY_DEBUG(pvkCmdSetCheckpointNV, VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+    pvkCmdSetCheckpointNV(commandBuffer, pCheckpointMarker);
+}
+
+void vkGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckPointDataCount, VkCheckpointDataNV* pCheckPointData)
+{
+    DEFINE_DEVICE_FUNCTION(vkGetQueueCheckpointDataNV);
+    CHECK_VALIDITY_DEBUG(pvkGetQueueCheckpointDataNV, VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
+    pvkGetQueueCheckpointDataNV(queue, pCheckPointDataCount, pCheckPointData);
 }
 #pragma endregion VulkanExtensionFunctionDefinitions

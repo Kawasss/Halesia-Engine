@@ -126,8 +126,7 @@ void Swapchain::CopyImageToSwapchain(VkImage image, VkCommandBuffer commandBuffe
 void Swapchain::Destroy()
 {
     vkDestroyImageView(logicalDevice, depthImageView, nullptr);
-    vkDestroyImage(logicalDevice, depthImage, nullptr);
-    vkFreeMemory(logicalDevice, depthImageMemory, nullptr);
+    depthImage.Destroy();
 
     for (const VkFramebuffer& framebuffer : framebuffers)
         vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
@@ -173,8 +172,8 @@ void Swapchain::Recreate(VkRenderPass renderPass, bool vsync)
 void Swapchain::CreateDepthBuffers()
 {
     VkFormat depthFormat = physicalDevice.GetDepthFormat();
-    Vulkan::CreateImage(extent.width, extent.height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, depthImage, depthImageMemory);
-    depthImageView = Vulkan::CreateImageView(depthImage, VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+    depthImage = Vulkan::CreateImage(extent.width, extent.height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+    depthImageView = Vulkan::CreateImageView(depthImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
 void Swapchain::CreateImageViews()

@@ -32,7 +32,7 @@ public:
 	void PrepareForDenoising(VkCommandBuffer commandBuffer);
 	void DenoiseImage();
 
-	std::array<VkImage, 3> gBuffers{};
+	std::array<VvmImage, 3> gBuffers{};
 	std::array<VkImageView, 3> gBufferViews;
 	uint64_t* handleBufferMemPointer = nullptr;
 
@@ -99,10 +99,8 @@ private:
 	VkPipelineLayout pipelineLayout;
 	VkPipeline pipeline;
 
-	VkImage prevImage;
+	VvmImage prevImage;
 	VkImageView prevImageView;
-	VkDeviceMemory prevMemory;
 
-	std::array<VkDeviceMemory, 3> gBufferMemories;
 	std::unordered_map<int, Handle> processedMaterials;
 };

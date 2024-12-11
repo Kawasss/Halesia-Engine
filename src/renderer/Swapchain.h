@@ -2,6 +2,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include "PhysicalDevice.h"
+#include "VideoMemoryManager.h"
 #include "surface.h"
 
 class Window;
@@ -30,9 +31,8 @@ public:
     std::vector<VkFramebuffer> framebuffers{};
     VkFormat format{};
     VkExtent2D extent{};
-    VkImage depthImage;
+    VvmImage depthImage;
     VkImageView depthImageView;
-    VkDeviceMemory depthImageMemory;
 
 private:
     VkDevice logicalDevice;

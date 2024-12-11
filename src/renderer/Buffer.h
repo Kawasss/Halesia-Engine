@@ -3,6 +3,7 @@
 #include <array>
 
 #include "FramesInFlight.h"
+#include "VideoMemoryManager.h"
 
 class Buffer
 {
@@ -17,7 +18,7 @@ public:
 	void Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 	void Destroy();
 
-	VkBuffer Get() { return buffer; }
+	VkBuffer Get() { return buffer.Get(); }
 	
 	void InheritFrom(Buffer& parent); // inherits the members from the parent and tells the parent to not destroy its members upon destruction (the buffer will destroy the current members first)
 
@@ -31,8 +32,7 @@ public:
 	void SetDebugName(const char* name);
 
 private:
-	VkBuffer buffer       = VK_NULL_HANDLE;
-	VkDeviceMemory memory = VK_NULL_HANDLE;
+	VvmBuffer buffer;
 };
 
 template<typename T> 
@@ -53,9 +53,9 @@ namespace FIF
 		Buffer(const Buffer&) = delete;
 		Buffer& operator=(Buffer&&) = delete;
 
-		VkBuffer operator[](size_t index) const { return buffers[index]; }
+		VkBuffer operator[](size_t index) const { return buffers[index].Get(); }
 
-		VkBuffer Get() { return buffers[FIF::frameIndex]; }
+		VkBuffer Get() { return buffers[FIF::frameIndex].Get(); }
 
 		void Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 		void Destroy();
@@ -72,9 +72,7 @@ namespace FIF
 		void SetDebugName(const char* name);
 
 	private:
-		std::array<VkBuffer, FIF::FRAME_COUNT> buffers; // should initialize all values to VK_NULL_HANDLE
-		std::array<VkDeviceMemory, FIF::FRAME_COUNT> memories;
-
+		std::array<VvmBuffer, FIF::FRAME_COUNT> buffers; // should initialize all values to VK_NULL_HANDLE
 		std::array<void*, FIF::FRAME_COUNT> pointers;
 	};
 }

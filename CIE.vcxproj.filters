@@ -279,6 +279,9 @@
     <ClCompile Include="src\GarbageManager.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\VideoMemoryManager.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -537,6 +540,9 @@
       <Filter>Header Files\math</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\GarbageManager.h">
+      <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\VideoMemoryManager.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
   </ItemGroup>

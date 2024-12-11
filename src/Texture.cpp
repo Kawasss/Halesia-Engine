@@ -63,10 +63,10 @@ void Image::GenerateEmptyImages(int width, int height, int amount)
 	VkDeviceSize imageSize = layerSize * amount;
 
 	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-	Vulkan::CreateImage(width, height, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
+	Vulkan::CreateImage(width, height, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags);
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
-	imageView = Vulkan::CreateImageView(image, viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+	imageView = Vulkan::CreateImageView(image.Get(), viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	// this transition seems like a waste of resources
 	TransitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -98,7 +98,7 @@ void Image::WritePixelsToBuffer(uint8_t* pixels, bool useMipMaps, TextureFormat 
 	stagingBuffer.Unmap();
 
 	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-	Vulkan::CreateImage(width, height, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags, image, imageMemory);
+	image = Vulkan::CreateImage(width, height, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags);
 
 	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 	CopyBufferToImage(stagingBuffer.Get());
@@ -106,7 +106,7 @@ void Image::WritePixelsToBuffer(uint8_t* pixels, bool useMipMaps, TextureFormat 
 	stagingBuffer.~Buffer();
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
-	imageView = Vulkan::CreateImageView(image, viewType, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_ASPECT_COLOR_BIT);
+	imageView = Vulkan::CreateImageView(image.Get(), viewType, mipLevels, layerCount, (VkFormat)format, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	useMipMaps ? GenerateMipMaps((VkFormat)format) : TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout);
 
@@ -160,7 +160,7 @@ std::vector<uint8_t> Image::GetImageData()
 	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	memoryBarrier.image = image;
+	memoryBarrier.image = image.Get();
 	memoryBarrier.subresourceRange = subresourceRange;
 	
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool); // messy
@@ -168,7 +168,7 @@ std::vector<uint8_t> Image::GetImageData()
 	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
 
 	commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
-	vkCmdCopyImageToBuffer(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, copyBuffer.Get(), 1, &imageCopy);
+	vkCmdCopyImageToBuffer(commandBuffer, image.Get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, copyBuffer.Get(), 1, &imageCopy);
 	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
 
 	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
@@ -234,7 +234,7 @@ void Cubemap::CreateLayerViews()
 	{
 		VkImageViewCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.image = image;
+		createInfo.image = image.Get();
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		createInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
 		createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -340,7 +340,7 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 	memoryBarrier.newLayout = newLayout;
 	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	memoryBarrier.image = image;
+	memoryBarrier.image = image.Get();
 	memoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	memoryBarrier.subresourceRange.baseMipLevel = 0;
 	memoryBarrier.subresourceRange.levelCount = mipLevels;
@@ -460,7 +460,7 @@ void Image::CopyBufferToImage(VkBuffer buffer)
 	region.imageOffset = { 0, 0, 0 };
 	region.imageExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 };
 
-	vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+	vkCmdCopyBufferToImage(commandBuffer, buffer, image.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
 	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
 	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
@@ -480,7 +480,7 @@ void Image::GenerateMipMaps(VkFormat imageFormat)
 
 	VkImageMemoryBarrier memoryBarrier{};
 	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	memoryBarrier.image = image;
+	memoryBarrier.image = image.Get();
 	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -514,7 +514,7 @@ void Image::GenerateMipMaps(VkFormat imageFormat)
 		blit.dstSubresource.baseArrayLayer = 0;
 		blit.dstSubresource.layerCount = layerCount;
 
-		vkCmdBlitImage(commandBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
+		vkCmdBlitImage(commandBuffer, image.Get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit, VK_FILTER_LINEAR);
 
 		memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		memoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -561,6 +561,5 @@ void Image::Destroy()
 	this->texturesHaveChanged = true;
 
 	vgm::Delete(imageView);
-	vgm::Delete(image);
-	vgm::Delete(imageMemory);
+	image.Destroy();
 }
