@@ -9,8 +9,6 @@
 
 #include "system/CriticalSection.h"
 
-#include <iostream>
-
 constexpr VkDeviceSize STANDARD_MEMORY_BLOCK_SIZE = 1024 * 1024; // 1 mb
 
 enum UsageType
@@ -85,6 +83,16 @@ struct MemoryBlock
 		return it;
 	}
 
+	bool CanFit(VkDeviceSize size)
+	{
+		for (const auto& [handle, segment] : segments)
+		{
+			if (segment.empty && segment.end - segment.begin >= size)
+				return true;
+		}
+		return false;
+	}
+
 	bool IsEmpty() { return segments.size() == 0; }
 };
 
@@ -133,19 +141,17 @@ MemoryBlock* AllocateNewBlock(VkMemoryRequirements& requirements, VkMemoryProper
 
 	blocks.push_back(block);
 
-	std::cout << "Created new memory block with size " << allocateInfo.allocationSize / 1024 << " kb\n";
-
 	return block;
 }
 
 inline MemoryBlock* GetMemoryBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, UsageType usageType, void* pNext = nullptr)
 {
-	/*for (int i = 0; i < blocks.size(); i++)
+	for (int i = 0; i < blocks.size(); i++)
 	{
 		MemoryBlock* block = blocks[i];
-		if (block->properties == properties && block->GetLeftOverMemory() >= requirements.size && block->usageType == usageType && block->alignment == requirements.alignment)
+		if (block->properties == properties && block->CanFit(requirements.size) && block->usageType == usageType && block->alignment == requirements.alignment)
 			return block;
-	}*/
+	}
 	return AllocateNewBlock(requirements, properties, usageType, pNext);
 }
 
@@ -174,7 +180,7 @@ VvmImage VideoMemoryManager::AllocateImage(VkImage image, VkMemoryPropertyFlags 
 		pair.mapped().empty = false;
 	}
 
-	vkBindImageMemory(ctx.logicalDevice, image, block->memory, block->used);
+	vkBindImageMemory(ctx.logicalDevice, image, block->memory, block->segments[handle].begin);
 
 	block->used += requirements.size;
 	imageToBlock[image] = block;
@@ -206,12 +212,11 @@ VvmBuffer VideoMemoryManager::AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFl
 		pair.mapped().empty = false;
 	}
 
-	vkBindBufferMemory(ctx.logicalDevice, buffer, block->memory, block->used);
+	vkBindBufferMemory(ctx.logicalDevice, buffer, block->memory, block->segments[handle].begin);
 
 	block->used += requirements.size;
 	bufferToBlock[buffer] = block;
 
-	std::cout << std::hex << (uint64_t)buffer << '\n';
 	return VvmBuffer(buffer);
 }
 

@@ -540,7 +540,7 @@ VvmImage Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels
     VkResult result = vkCreateImage(context.logicalDevice, &createInfo, nullptr, &image);
     CheckVulkanResult("Failed to create an image", result, vkCreateImage);
 
-    VideoMemoryManager::AllocateImage(image, properties);
+    return VideoMemoryManager::AllocateImage(image, properties);
 }
 
 bool Vulkan::HasStencilComponent(VkFormat format)

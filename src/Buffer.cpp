@@ -59,12 +59,8 @@ namespace FIF
 
 	void Buffer::Destroy()
 	{
-		const Vulkan::Context& ctx = Vulkan::GetContext();
-
 		for (int i = 0; i < FIF::FRAME_COUNT; i++)
-		{
 			buffers[i].Destroy();
-		}
 	}
 
 	void Buffer::InheritFrom(FIF::Buffer& parent)
@@ -80,18 +76,12 @@ namespace FIF
 
 	void Buffer::MapPermanently()
 	{
-		const Vulkan::Context& ctx = Vulkan::GetContext();
-
 		for (int i = 0; i < FIF::FRAME_COUNT; i++)
-		{
 			pointers[i] = VideoMemoryManager::MapBuffer(buffers[i]);
-		}
 	}
 
 	void Buffer::Unmap()
 	{
-		const Vulkan::Context& ctx = Vulkan::GetContext();
-
 		for (int i = 0; i < FIF::FRAME_COUNT; i++)
 			VideoMemoryManager::UnmapBuffer(buffers[i]);
 	}
