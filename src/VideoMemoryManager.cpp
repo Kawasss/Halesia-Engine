@@ -4,47 +4,54 @@
 #include <set>
 
 #include "renderer/VideoMemoryManager.h"
-#include "renderer/Vulkan.h"
 #include "renderer/GarbageManager.h"
+#include "renderer/Vulkan.h"
 
 #include "system/CriticalSection.h"
 
+// The video memory (vram) manager allocates large chunks of device memory and hands out parts of these chunks.
+// the memory block size is dictated by the value of 'STANDARD_MEMORY_BLOCK_SIZE'. The size of a block may be bigger than the standard size to accomodate for larger buffers, 
+// but the block size will never go lower than the standard size.
+
 constexpr VkDeviceSize STANDARD_MEMORY_BLOCK_SIZE = 1024 * 1024; // 1 mb
 
-enum UsageType
-{
-	USAGE_TYPE_IMAGE,
-	USAGE_TYPE_BUFFER,
-};
+// One block can be in use for multiple buffers or image. If some memory is freed, it will be marked as empty and can be reused for newer buffers requesting memory.
+// Memory blocks allocated for buffers can not store images and vice versa.
+// 
+//  block 1 (buffer)       block 2 (image)
+// +----------------+    +----------------+
+// |  |        |####|    |        |       |
+// |  |        |####| -> |        |       | -> ...
+// |  |        |####|    |        |       |
+// +----------------+    +----------------+
+//   |       \               /         \
+//   |        \             /           \
+// buffer 1  buffer 2    image 1       image 2
+
 
 struct Segment
 {
 	bool empty = true;
-	VkDeviceSize begin, end;
+	VkDeviceSize begin = 0, end = 0;
 
-	VkDeviceSize GetSize() { return end - begin; }
-
-	bool operator<(const Segment& other) { return begin < other.begin&& end < other.end; }
+	void SetSize(VkDeviceSize size) { end = begin + size; }
+	VkDeviceSize GetSize() const    { return end - begin; }
 };
 
 struct MemoryBlock
 {
 	MemoryBlock() = default;
-	MemoryBlock(UsageType us, VkMemoryPropertyFlags p, VkDeviceSize s, VkDeviceSize u, VkDeviceSize a, VkDeviceMemory m) : usageType(us), properties(p), size(s), used(u), alignment(a), memory(m) {}
+	MemoryBlock(VkMemoryPropertyFlags p, VkDeviceSize s, VkDeviceSize a, VkDeviceMemory m) : properties(p), size(s), alignment(a), memory(m) {}
 
-	UsageType usageType;
-	VkMemoryPropertyFlags properties;
-	VkDeviceSize size;
-	VkDeviceSize used;
-	VkDeviceSize alignment;
-	VkDeviceMemory memory;
+	VkMemoryPropertyFlags properties = 0;
+	VkDeviceSize size = 0;
+	VkDeviceSize alignment = 0;
+	VkDeviceMemory memory = VK_NULL_HANDLE;
 
 	int mappedCount = 0;
 	void* mapped = nullptr;
 
 	std::map<uint64_t, Segment> segments;
-
-	VkDeviceSize GetLeftOverMemory() { return size - used; }
 
 	void CheckedMap(VkMemoryMapFlags flags)
 	{
@@ -55,8 +62,12 @@ struct MemoryBlock
 
 	void ForceMap(VkMemoryMapFlags flags)
 	{
+		if ((properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0)
+			throw VulkanAPIError("Failed to map a memory block: it cannot be mapped due to its properties");
+
 		const Vulkan::Context& ctx = Vulkan::GetContext();
 		VkResult result = vkMapMemory(ctx.logicalDevice, memory, 0, VK_WHOLE_SIZE, flags, &mapped); // map the entire block, so the offset must be 0
+
 		CheckVulkanResult("Failed to map a memory block", result, vkMapMemory);
 	}
 
@@ -75,22 +86,16 @@ struct MemoryBlock
 
 	std::map<uint64_t, Segment>::iterator FindUsableSegment(VkDeviceSize size)
 	{
-		auto it = segments.begin();
-
-		for (; it != segments.end(); it++)
+		for (auto it = segments.begin(); it != segments.end(); it++)
 			if (it->second.empty && it->second.GetSize() >= size)
 				return it;
-		return it;
+
+		return segments.end();
 	}
 
 	bool CanFit(VkDeviceSize size)
 	{
-		for (const auto& [handle, segment] : segments)
-		{
-			if (segment.empty && segment.end - segment.begin >= size)
-				return true;
-		}
-		return false;
+		return FindUsableSegment(size) != segments.end();
 	}
 
 	bool IsEmpty() { return segments.size() == 0; }
@@ -99,12 +104,36 @@ struct MemoryBlock
 win32::CriticalSection blockGuard;
 std::vector<MemoryBlock*> blocks;
 
-std::map<VkBuffer, MemoryBlock*> bufferToBlock;
-std::map<VkImage, MemoryBlock*>  imageToBlock;
+std::map<VkBuffer, MemoryBlock*> bufferToBlock; // the buffer and image blocks are seperated into 2 maps, so that for example image look-up will stay fast, even if there are a lot of buffers.
+std::map<VkImage,  MemoryBlock*> imageToBlock;
 
 inline VkDeviceSize FitSizeToAlignment(VkDeviceSize size, VkDeviceSize alignment)
 {
 	return size < alignment ? alignment : size;
+}
+
+inline VkDeviceSize GetAppropriateBlockSize(VkDeviceSize size)
+{
+	return size < STANDARD_MEMORY_BLOCK_SIZE ? STANDARD_MEMORY_BLOCK_SIZE : size;
+}
+
+inline VkDeviceMemory AllocateMemory(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext)
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	requirements.size = GetAppropriateBlockSize(requirements.size);
+
+	VkMemoryAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+	allocateInfo.pNext = pNext;
+	allocateInfo.allocationSize = requirements.size;
+	allocateInfo.memoryTypeIndex = Vulkan::GetMemoryType(requirements.memoryTypeBits, properties, ctx.physicalDevice);
+
+	VkDeviceMemory memory = VK_NULL_HANDLE;
+	VkResult result = vkAllocateMemory(ctx.logicalDevice, &allocateInfo, nullptr, &memory);
+	CheckVulkanResult("Failed to allocate " + std::to_string(requirements.size) + " bytes of memory", result, vkAllocateMemory);
+
+	return memory;
 }
 
 MemoryBlock* FindRelevantMemoryBlock(VkBuffer buffer)
@@ -121,38 +150,24 @@ MemoryBlock* FindRelevantMemoryBlock(VkImage image)
 	return imageToBlock[image];
 }
 
-MemoryBlock* AllocateNewBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, UsageType usageType, void* pNext = nullptr)
+MemoryBlock* AllocateNewBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
 {
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-
-	VkDeviceSize size = requirements.size < STANDARD_MEMORY_BLOCK_SIZE ? STANDARD_MEMORY_BLOCK_SIZE : requirements.size;
-
-	VkMemoryAllocateInfo allocateInfo{};
-	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-	allocateInfo.pNext = pNext;
-	allocateInfo.allocationSize = size;
-	allocateInfo.memoryTypeIndex = Vulkan::GetMemoryType(requirements.memoryTypeBits, properties, ctx.physicalDevice);
-
-	VkDeviceMemory memory = VK_NULL_HANDLE;
-	VkResult result = vkAllocateMemory(ctx.logicalDevice, &allocateInfo, nullptr, &memory);
-	CheckVulkanResult("Failed to allocate " + std::to_string(requirements.size) + " bytes of memory", result, vkAllocateMemory);
-
-	MemoryBlock* block = new MemoryBlock(usageType, properties, size, 0, requirements.alignment, memory);
+	VkDeviceMemory memory = AllocateMemory(requirements, properties, pNext);
+	MemoryBlock* block = new MemoryBlock(properties, requirements.size, requirements.alignment, memory);
 
 	blocks.push_back(block);
-
 	return block;
 }
 
-inline MemoryBlock* GetMemoryBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, UsageType usageType, void* pNext = nullptr)
+inline MemoryBlock* GetMemoryBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
 {
 	for (int i = 0; i < blocks.size(); i++)
 	{
 		MemoryBlock* block = blocks[i];
-		if (block->properties == properties && block->CanFit(requirements.size) && block->usageType == usageType && block->alignment == requirements.alignment)
+		if (block->properties == properties && block->CanFit(requirements.size) && block->alignment == requirements.alignment)
 			return block;
 	}
-	return AllocateNewBlock(requirements, properties, usageType, pNext);
+	return AllocateNewBlock(requirements, properties, pNext);
 }
 
 VvmImage VideoMemoryManager::AllocateImage(VkImage image, VkMemoryPropertyFlags properties)
@@ -164,7 +179,7 @@ VvmImage VideoMemoryManager::AllocateImage(VkImage image, VkMemoryPropertyFlags 
 	vkGetImageMemoryRequirements(ctx.logicalDevice, image, &requirements);
 	requirements.size = FitSizeToAlignment(requirements.size, requirements.alignment);
 
-	MemoryBlock* block = GetMemoryBlock(requirements, properties, USAGE_TYPE_IMAGE);
+	MemoryBlock* block = GetMemoryBlock(requirements, properties);
 
 	uint64_t handle = reinterpret_cast<uint64_t>(image);
 	auto it = block->FindUsableSegment(requirements.size);
@@ -176,15 +191,13 @@ VvmImage VideoMemoryManager::AllocateImage(VkImage image, VkMemoryPropertyFlags 
 		auto pair = block->segments.extract(it->first); // effectively update the key and value in place
 
 		pair.key() = handle;
-		pair.mapped().end = pair.mapped().begin + requirements.size;
+		pair.mapped().SetSize(requirements.size);
 		pair.mapped().empty = false;
 	}
 
 	vkBindImageMemory(ctx.logicalDevice, image, block->memory, block->segments[handle].begin);
 
-	block->used += requirements.size;
 	imageToBlock[image] = block;
-
 	return VvmImage(image);
 }
 
@@ -196,7 +209,7 @@ VvmBuffer VideoMemoryManager::AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFl
 	VkMemoryRequirements requirements;
 	vkGetBufferMemoryRequirements(ctx.logicalDevice, buffer, &requirements);
 
-	MemoryBlock* block = GetMemoryBlock(requirements, properties, USAGE_TYPE_BUFFER, pNext);
+	MemoryBlock* block = GetMemoryBlock(requirements, properties, pNext);
 
 	uint64_t handle = reinterpret_cast<uint64_t>(buffer);
 	auto it = block->FindUsableSegment(requirements.size);
@@ -208,15 +221,13 @@ VvmBuffer VideoMemoryManager::AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFl
 		auto pair = block->segments.extract(it->first); // effectively update the key and value in place
 
 		pair.key() = handle;
-		pair.mapped().end = pair.mapped().begin + requirements.size;
+		pair.mapped().SetSize(requirements.size);
 		pair.mapped().empty = false;
 	}
 
 	vkBindBufferMemory(ctx.logicalDevice, buffer, block->memory, block->segments[handle].begin);
 
-	block->used += requirements.size;
 	bufferToBlock[buffer] = block;
-
 	return VvmBuffer(buffer);
 }
 
