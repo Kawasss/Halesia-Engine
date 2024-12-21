@@ -38,7 +38,7 @@ private:
 
 	void DestroyCurrentScene();
 
-	static std::string GetFile(const char* filter);
+	static std::string GetFile(const char* desc, const char* type);
 	void LoadFile();
 	void SaveToFile();
 

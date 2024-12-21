@@ -179,6 +179,7 @@
     <ClCompile Include="src\Denoiser.cpp" />
     <ClCompile Include="src\DescriptorWriter.cpp" />
     <ClCompile Include="src\Editor.cpp" />
+    <ClCompile Include="src\FileDialog.cpp" />
     <ClCompile Include="src\ForwardPlus.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\GarbageManager.cpp" />
@@ -300,6 +301,7 @@
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\ResourceManager.h" />
     <ClInclude Include="src\system\CriticalSection.h" />
+    <ClInclude Include="src\system\FileDialog.h" />
     <ClInclude Include="src\system\Input.h" />
     <ClInclude Include="src\system\SystemMetrics.h" />
     <ClInclude Include="src\system\Window.h" />

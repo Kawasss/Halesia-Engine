@@ -11,6 +11,7 @@
 #include "io/SceneWriter.h"
 
 #include "system/Input.h"
+#include "system/FileDialog.h"
 
 #include "HalesiaEngine.h"
 
@@ -63,7 +64,7 @@ void Editor::Start()
 	core.renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
 	core.renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
 
-	src = GetFile("Halesia Scene File (.hsf)\0*.hsf\0");
+	src = GetFile("Halesia Scene File (.hsf)", "*.hsf;");
 	if (src == "")
 		return;
 
@@ -106,7 +107,7 @@ void Editor::UpdateGUI(float delta)
 void Editor::MainThreadUpdate(float delta)
 {
 	if (!queuedMeshChange.isApplied)
-		queuedMeshChange.path = GetFile("Object file (.obj)\0*.obj\0");
+		queuedMeshChange.path = GetFile("Object file (.obj)", "*.obj;");
 	else return;
 
 	if (queuedMeshChange.path.empty())
@@ -129,7 +130,7 @@ void Editor::MainThreadUpdate(float delta)
 
 	if (loadFile)
 	{
-		src = GetFile("Halesia Scene File (.hsf)\0*.hsf\0");
+		src = GetFile("Halesia Scene File (.hsf)", "*.hsf;");
 		if (src != "")
 		{
 			DestroyCurrentScene();
@@ -369,24 +370,11 @@ void Editor::SaveToFile()
 	std::async(&HSFWriter::WriteHSFScene, this, src);
 }
 
-std::string Editor::GetFile(const char* filter)
+std::string Editor::GetFile(const char* desc, const char* type)
 {
-	Window* window = HalesiaEngine::GetInstance()->GetEngineCore().window;
-
-	OPENFILENAMEA ofn;
-	char szFile[260] = { 0 };
-
-	ZeroMemory(&ofn, sizeof(ofn));
-	ofn.lStructSize = sizeof(ofn);
-	ofn.hwndOwner = window->window;
-	ofn.lpstrFile = szFile;
-	ofn.nMaxFile = sizeof(szFile);
-	ofn.lpstrFilter = filter;
-	ofn.nFilterIndex = 1;
-	ofn.lpstrFileTitle = NULL;
-	ofn.nMaxFileTitle = 0;
-	ofn.lpstrInitialDir = NULL;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-
-	return GetOpenFileNameA(&ofn) == TRUE ? ofn.lpstrFile : "";
+	FileDialog::Filter filter{};
+	filter.description = desc;
+	filter.fileType = type;
+	
+	return FileDialog::RequestFile(filter);
 }
