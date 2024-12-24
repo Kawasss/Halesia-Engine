@@ -169,6 +169,8 @@
     <ClCompile Include="src\AccelerationStructures.cpp" />
     <ClCompile Include="src\AnimationManager.cpp" />
     <ClCompile Include="src\Audio.cpp" />
+    <ClCompile Include="src\BinaryReader.cpp" />
+    <ClCompile Include="src\BinaryWriter.cpp" />
     <ClCompile Include="src\Bone.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\CameraInjector.cpp" />
@@ -255,6 +257,8 @@
     <ClInclude Include="src\demo\Topdown.h" />
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\HalesiaEngine.h" />
+    <ClInclude Include="src\io\BinaryReader.h" />
+    <ClInclude Include="src\io\BinaryWriter.h" />
     <ClInclude Include="src\io\FileFormat.h" />
     <ClInclude Include="src\io\IO.h" />
     <ClInclude Include="src\io\SceneLoader.h" />

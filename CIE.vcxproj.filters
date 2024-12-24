@@ -285,6 +285,12 @@
     <ClCompile Include="src\FileDialog.cpp">
       <Filter>Source Files\system</Filter>
     </ClCompile>
+    <ClCompile Include="src\BinaryReader.cpp">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\BinaryWriter.cpp">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -550,6 +556,12 @@
     </ClInclude>
     <ClInclude Include="src\system\FileDialog.h">
       <Filter>Header Files\system</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\BinaryReader.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\BinaryWriter.h">
+      <Filter>Header Files\io</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,5 +1,5 @@
 #pragma once
-#include <hsl/RefPointer.h>
+#include <hsl/Reference.h>
 
 template<typename T>
-using RefPointer = hsl::RefPointer<T>;
+using RefPointer = hsl::Reference<T>;

@@ -13,6 +13,7 @@
 #include "physics/Shapes.h"
 #include "physics/RigidBody.h"
 
+#include "BinaryReader.h"
 #include "FileFormat.h"
 
 constexpr int textureCoordinateOffset = 12;
@@ -93,56 +94,6 @@ struct ObjectCreationData
 	
 	bool hasMesh = false;
 	MeshCreationData mesh;
-};
-
-class BinaryReader
-{
-public:
-	BinaryReader() {}
-	BinaryReader(std::string source);
-
-	void DecompressFile();
-
-	void Read(char* ptr, size_t size)
-	{
-		memcpy(ptr, stream.data() + pointer, size);
-		pointer += size;
-	}
-
-	template<typename Type>
-	BinaryReader& operator>>(Type& in)
-	{
-		memcpy((void*)&in, stream.data() + pointer, sizeof(Type));
-		pointer += sizeof(Type);
-		return *this;
-	}
-
-	template<typename Type>
-	BinaryReader& operator>>(std::vector<Type>& vec) // this expects the vector to already be resized to the correct size
-	{
-		memcpy((void*)vec.data(), stream.data() + pointer, sizeof(Type) * vec.size());
-		pointer += sizeof(Type) * vec.size();
-		return *this;
-	}
-
-	BinaryReader& operator>>(std::string& str) // this expects the string in the file to be null terminated
-	{
-		str = "";
-		while (stream[pointer] != '\0')
-			str += stream[pointer++];
-		pointer++;
-		return *this;
-	}
-
-	bool IsAtEndOfFile() { return pointer >= stream.size() - 1; }
-
-private:
-	void ReadCompressedData(char* src, size_t size);
-	size_t DecompressData(char* src, char* dst, uint32_t mode, size_t size, size_t expectedSize);
-
-	size_t pointer = 0;
-	std::vector<char> stream;
-	std::ifstream input;
 };
 
 class SceneLoader
