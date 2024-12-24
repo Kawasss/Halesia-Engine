@@ -563,6 +563,9 @@
     <ClInclude Include="src\io\BinaryWriter.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
+    <ClInclude Include="src\io\CreationData.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">

@@ -3,8 +3,8 @@
 #include <Windows.h>
 #include <compressapi.h>
 
+#include "io/CreationData.h"
 #include "io/SceneWriter.h"
-#include "io/SceneLoader.h"
 #include "io/BinaryWriter.h"
 
 #include "core/Scene.h"

@@ -259,6 +259,7 @@
     <ClInclude Include="src\HalesiaEngine.h" />
     <ClInclude Include="src\io\BinaryReader.h" />
     <ClInclude Include="src\io\BinaryWriter.h" />
+    <ClInclude Include="src\io\CreationData.h" />
     <ClInclude Include="src\io\FileFormat.h" />
     <ClInclude Include="src\io\IO.h" />
     <ClInclude Include="src\io\SceneLoader.h" />
