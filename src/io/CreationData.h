@@ -9,25 +9,10 @@
 #include "../physics/Shapes.h"
 #include "../physics/RigidBody.h"
 
-struct MaterialCreationData // dont know how smart it is to copy around possible megabytes of data, maybe make the stream read to the vector.data()
-{
-	std::string name;
+#include "FileMaterial.h"
 
-	uint32_t aWidth, aHeight, // albedo
-		nWidth, nHeight,      // normal
-		mWidth, mHeight,      // metallic
-		rWidth, rHeight,      // roughness
-		aoWidth, aoHeight;    // ambient occlusion
-
-	bool isLight;
-
-	std::vector<char> albedoData;
-	std::vector<char> normalData;
-	std::vector<char> metallicData;
-	std::vector<char> roughnessData;
-	std::vector<char> ambientOcclusionData;
-	std::vector<char> heightData;
-};
+using MaterialCreationData = FileMaterial;
+using ImageCreationData    = FileImage;
 
 struct MeshCreationData
 {

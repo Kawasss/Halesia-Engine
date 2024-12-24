@@ -2,8 +2,9 @@
 #include "Texture.h"
 #include "../ResourceManager.h"
 
+#include "../io/FwdDclCreationData.h"
+
 using Handle = uint64_t;
-struct MaterialCreationData;
 
 enum MaterialTexture
 {

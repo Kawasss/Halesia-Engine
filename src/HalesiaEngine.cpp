@@ -49,15 +49,6 @@ inline float CalculateFrameTime(int fps)
 inline RendererFlags GetRendererFlagsFromBehavior()
 {
 	RendererFlags ret = Renderer::Flags::NONE;
-	for (const std::string& str : Behavior::arguments)
-	{
-		if (str == "-no_shader_recompilation")
-			ret |= Renderer::Flags::NO_SHADER_RECOMPILATION;
-		else if (str == "-force_no_ray_tracing")
-			ret |= Renderer::Flags::NO_RAY_TRACING;
-		else if (str == "-vulkan_no_validation")
-			ret |= Renderer::Flags::NO_VALIDATION;
-	}
 	for (int i = 0; i < Behavior::arguments.size(); i++)
 	{
 		const std::string& str = Behavior::arguments[i];

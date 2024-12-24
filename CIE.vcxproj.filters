@@ -566,6 +566,24 @@
     <ClInclude Include="src\io\CreationData.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
+    <ClInclude Include="src\io\FileMesh.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\FileObject.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\FileRigidBody.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\FileShape.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\FileMaterial.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\FwdDclCreationData.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">

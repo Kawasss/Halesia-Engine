@@ -1,15 +1,16 @@
 #pragma once
 #include <mutex>
+#include <hsl/Reference.h>
 
 #include "Material.h"
 #include "Vertex.h"
 #include "AccelerationStructures.h"
 
-#include <hsl/Reference.h>
+#include "../io/FwdDclCreationData.h"
 
 class BottomLevelAccelerationStructure;
 struct MeshCreationData;
-struct MaterialCreationData;
+
 using StorageMemory = unsigned long long;
 
 struct Mesh

@@ -3,15 +3,9 @@
 #include <assimp/scene.h>
 #include <filesystem>
 
-#include <hsl/StackMap.h>
-
-#include <Windows.h>
-#include <compressapi.h>
-
 #include "io/SceneLoader.h"
 
 #include "core/Console.h"
-#include "core/UniquePointer.h"
 
 #pragma pack(push, 1)
 struct CompressionNode
@@ -120,29 +114,29 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 		RetrieveType(childType, childSize);
 		break;
 	case NODE_TYPE_ALBEDO:
-		currentMat->albedoData.resize(size - sizeof(uint32_t) * 2);
-		reader >> currentMat->aWidth >> currentMat->aHeight;
-		reader >> currentMat->albedoData;
+		currentMat->albedo.data.resize(size - sizeof(uint32_t) * 2);
+		reader >> currentMat->albedo.width >> currentMat->albedo.height;
+		reader >> currentMat->albedo.data;
 		break;
 	case NODE_TYPE_NORMAL:
-		currentMat->normalData.resize(size - sizeof(uint32_t) * 2);
-		reader >> currentMat->nWidth >> currentMat->nHeight;
-		reader >> currentMat->normalData;
+		currentMat->normal.data.resize(size - sizeof(uint32_t) * 2);
+		reader >> currentMat->normal.width >> currentMat->normal.height;
+		reader >> currentMat->normal.data;
 		break;
 	case NODE_TYPE_ROUGHNESS:
-		currentMat->roughnessData.resize(size - sizeof(uint32_t) * 2);
-		reader >> currentMat->rWidth >> currentMat->rHeight;
-		reader >> currentMat->roughnessData;
+		currentMat->roughness.data.resize(size - sizeof(uint32_t) * 2);
+		reader >> currentMat->roughness.width >> currentMat->roughness.height;
+		reader >> currentMat->roughness.data;
 		break;
 	case NODE_TYPE_METALLIC:
-		currentMat->metallicData.resize(size - sizeof(uint32_t) * 2);
-		reader >> currentMat->mWidth >> currentMat->mHeight;
-		reader >> currentMat->metallicData;
+		currentMat->metallic.data.resize(size - sizeof(uint32_t) * 2);
+		reader >> currentMat->roughness.width >> currentMat->roughness.height;
+		reader >> currentMat->metallic.data;
 		break;
 	case NODE_TYPE_AMBIENT_OCCLUSION:
-		currentMat->ambientOcclusionData.resize(size - sizeof(uint32_t) * 2);
-		reader >> currentMat->aoWidth >> currentMat->aoHeight;
-		reader >> currentMat->ambientOcclusionData;
+		currentMat->ambientOccl.data.resize(size - sizeof(uint32_t) * 2);
+		reader >> currentMat->ambientOccl.width >> currentMat->ambientOccl.height;
+		reader >> currentMat->ambientOccl.data;
 		break;
 	default: 
 		Console::WriteLine("Encountered an unusable node type");
@@ -158,36 +152,27 @@ void SceneLoader::GetNodeHeader(NodeType& type, NodeSize& size)
 	reader >> type >> size;
 }
 
-uint8_t SceneLoader::RetrieveFlagsFromName(std::string string, std::string& name)
+inline glm::vec3 Min(const glm::vec3& v1, const glm::vec3& v2)
 {
-	static hsl::StackMap<std::string, ObjectFlags, 6> stringToFlag =
-	{
-		{ "rigid_static", OBJECT_FLAG_RIGID_STATIC }, { "rigid_dynamic", OBJECT_FLAG_RIGID_DYNAMIC }, { "hitbox",        OBJECT_FLAG_HITBOX        },
-		{ "shape_sphere", OBJECT_FLAG_SHAPE_SPHERE }, { "shape_box",     OBJECT_FLAG_SHAPE_BOX     }, { "shape_capsule", OBJECT_FLAG_SHAPE_CAPSULE }
-	};
+	float x = v1.x < v2.x ? v1.x : v2.x;
+	float y = v1.y < v2.y ? v1.y : v2.y;
+	float z = v1.z < v2.z ? v1.z : v2.z;
 
-	uint8_t ret = 0;
-	name = "NO_NAME";
-	std::string lexingString;
-	for (int i = 0; i < string.size(); i++)
-	{
-		if (string[i] != '@' && i < string.size() - 1)
-		{
-			lexingString += string[i];
-			continue;
-		}
-		if (i == string.size() - 1)
-			lexingString += string[i];
-		
-		if (name == "NO_NAME")
-			name = lexingString.empty() ? "NO_NAME" : lexingString;
-		else if (stringToFlag.Contains(lexingString))
-			ret |= stringToFlag[lexingString];
-		else
-			Console::WriteLine("Unrecognized object flag found: " + lexingString, Console::Severity::Warning);
-		lexingString.clear();
-	}
-	return ret;
+	return { x, y, z };
+}
+
+inline glm::vec3 Max(const glm::vec3& v1, const glm::vec3& v2)
+{
+	float x = v1.x > v2.x ? v1.x : v2.x;
+	float y = v1.y > v2.y ? v1.y : v2.y;
+	float z = v1.z > v2.z ? v1.z : v2.z;
+
+	return { x, y, z };
+}
+
+inline glm::vec3 ConvertAiVec3(const aiVector3D& vec)
+{
+	return { vec.x, vec.y, vec.z };
 }
 
 inline std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& max)
@@ -197,21 +182,16 @@ inline std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::
 	{
 		Vertex vertex{};
 
-		vertex.position = glm::vec3(pMesh->mVertices[i].x, pMesh->mVertices[i].y, pMesh->mVertices[i].z);
+		vertex.position = ConvertAiVec3(pMesh->mVertices[i]);
 
-		max.x = vertex.position.x > max.x ? vertex.position.x : max.x;
-		max.y = vertex.position.y > max.y ? vertex.position.y : max.y;
-		max.z = vertex.position.z > max.z ? vertex.position.z : max.z;
-
-		min.x = vertex.position.x < min.x ? vertex.position.x : min.x;
-		min.y = vertex.position.y < min.y ? vertex.position.y : min.y;
-		min.z = vertex.position.z < min.z ? vertex.position.z : min.z;
+		max = Max(vertex.position, max);
+		min = Min(vertex.position, min);
 
 		if (pMesh->HasNormals())
-			vertex.normal = glm::vec3(pMesh->mNormals[i].x, pMesh->mNormals[i].y, pMesh->mNormals[i].z);
+			vertex.normal = ConvertAiVec3(pMesh->mNormals[i]);
 
 		if (pMesh->mTextureCoords[0])
-			vertex.textureCoordinates = glm::vec2(pMesh->mTextureCoords[0][i].x, pMesh->mTextureCoords[0][i].y);
+			vertex.textureCoordinates = ConvertAiVec3(pMesh->mTextureCoords[0][i]);
 		ret.push_back(vertex);
 	}
 	return ret;
@@ -360,24 +340,6 @@ inline void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::vec3& rot,
 	scale /= 100;
 }
 
-inline bool HasStaticRigidFlag(ObjectOptions flag)
-{
-	return flag & OBJECT_FLAG_RIGID_STATIC;
-}
-
-inline bool HasHitBoxFlag(ObjectOptions flag)
-{
-	return flag & OBJECT_FLAG_HITBOX;
-}
-
-inline Shape::Type GetShapeType(ObjectOptions flag)
-{
-	if (flag & OBJECT_FLAG_SHAPE_BOX)     return Shape::Type::Box;
-	if (flag & OBJECT_FLAG_SHAPE_CAPSULE) return Shape::Type::Capsule;
-	if (flag & OBJECT_FLAG_SHAPE_SPHERE)  return Shape::Type::Sphere;
-	return Shape::Type::Box;
-}
-
 void SceneLoader::LoadAssimpFile()
 {
 	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate | aiProcess_GenNormals);
@@ -401,18 +363,11 @@ void SceneLoader::RetrieveObject(const aiScene* scene, const aiNode* node, glm::
 	for (int i = 0; i < node->mNumMeshes; i++)
 	{
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		uint8_t flags = RetrieveFlagsFromName(mesh->mName.C_Str(), creationData.name);
-		if (HasHitBoxFlag(flags))
-		{
-			RigidBody::Type rigidType = HasStaticRigidFlag(flags) ? RigidBody::Type::Static : RigidBody::Type::Dynamic;
-			creationData.hitBox = { GetExtentsFromMesh(scene->mMeshes[node->mMeshes[0]]), GetShapeType(flags), rigidType };
-		}
-		else if (i == 0)
-		{
-			if (!(creationData.hasMesh = node->mNumMeshes > 0))
-				continue;
-			creationData.mesh = RetrieveMeshData(scene->mMeshes[node->mMeshes[i]]);
-		}
+		creationData.hasMesh = node->mNumMeshes > 0;
+
+		if (i != 0 || !creationData.hasMesh)
+			continue;
+		creationData.mesh = RetrieveMeshData(mesh);
 	}
 	for (int i = 0; i < node->mNumChildren; i++)
 		RetrieveObject(scene, node->mChildren[i], parentTrans * GetMat4(node->mTransformation));
@@ -424,9 +379,8 @@ ObjectCreationData GenericLoader::LoadObjectFile(std::string path) // kinda funk
 {
 	ObjectCreationData ret{};
 
-	// this takes the filename out of the full path by indexing the \'s and the file extension
-	std::string fileNameWithExtension = path.substr(path.find_last_of("/\\") + 1);
-	ret.name = fileNameWithExtension.substr(0, fileNameWithExtension.find_last_of('.'));
+	std::filesystem::path dir = path;
+	ret.name = dir.stem().string();
 
 	const aiScene* scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast);
 	
@@ -442,32 +396,6 @@ ObjectCreationData GenericLoader::LoadObjectFile(std::string path) // kinda funk
 	ret.mesh = GetMeshFromAssimp(pMesh);
 
 	return ret;
-}
-
-inline void RetrieveTexture(std::vector<char>& vectorToWriteTo, std::ifstream& stream)
-{
-	int size = GetTypeFromStream<int>(stream);
-	vectorToWriteTo.resize(size);
-	stream.read(vectorToWriteTo.data(), size);
-}
-
-MaterialCreationData GenericLoader::LoadCPBRMaterial(std::string path)
-{
-	std::ifstream stream;
-	stream.open(path, std::ios::in | std::ios::binary);
-	if (!stream)
-		throw std::runtime_error("failed to open file \"" + path + "\" since it can't be found");
-
-	MaterialCreationData creationData{};
-
-	RetrieveTexture(creationData.albedoData, stream);
-	RetrieveTexture(creationData.normalData, stream);
-	RetrieveTexture(creationData.metallicData, stream);
-	RetrieveTexture(creationData.roughnessData, stream);
-	RetrieveTexture(creationData.ambientOcclusionData, stream);
-	RetrieveTexture(creationData.heightData, stream);
-
-	return creationData;
 }
 
 glm::vec3 GenericLoader::LoadHitBox(std::string path)

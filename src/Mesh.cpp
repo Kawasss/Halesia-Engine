@@ -4,7 +4,7 @@
 #include "renderer/Renderer.h"
 #include "renderer/AccelerationStructures.h"
 
-#include "io/SceneLoader.h"
+#include "io/CreationData.h"
 
 std::vector<Material> Mesh::materials;
 std::mutex Mesh::materialMutex;
@@ -22,12 +22,8 @@ void Mesh::ProcessMaterial(const MaterialCreationData& creationData)
 	if (materialIndex != 0) // if this mesh already has a material, then dont replace that with this one
 		return;
 
-	Texture* albedo    = !creationData.albedoData.empty()           ? new Texture(creationData.albedoData, creationData.aWidth, creationData.aHeight) : Texture::placeholderAlbedo;
-	Texture* normal    = !creationData.normalData.empty()           ? new Texture(creationData.normalData, creationData.nWidth, creationData.nHeight) : Texture::placeholderNormal;
-	Texture* metallic  = !creationData.metallicData.empty()         ? new Texture(creationData.metallicData, creationData.mWidth, creationData.mHeight) : Texture::placeholderMetallic;
-	Texture* roughness = !creationData.roughnessData.empty()        ? new Texture(creationData.roughnessData, creationData.rWidth, creationData.rHeight) : Texture::placeholderRoughness;
-	Texture* ao        = !creationData.ambientOcclusionData.empty() ? new Texture(creationData.ambientOcclusionData, creationData.aoWidth, creationData.aoHeight) : Texture::placeholderAmbientOcclusion;
-	SetMaterial({ albedo, normal, metallic, roughness, ao });
+	Material mat = Material::Create(creationData);
+	SetMaterial(mat);
 }
 
 void Mesh::Create(const MeshCreationData& creationData)

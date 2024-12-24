@@ -1,14 +1,26 @@
 #include "renderer/Material.h"
-#include "io/SceneLoader.h"
+
+#include "io/CreationData.h"
 
 Material Material::Create(const MaterialCreateInfo& createInfo)
 {
 	Material ret{};
-	if (!createInfo.albedo.empty())           ret.albedo = new Texture(createInfo.albedo);
-	if (!createInfo.normal.empty())           ret.normal = new Texture(createInfo.normal, true, TEXTURE_FORMAT_UNORM);
-	if (!createInfo.metallic.empty())         ret.metallic = new Texture(createInfo.metallic);
-	if (!createInfo.roughness.empty())        ret.roughness = new Texture(createInfo.roughness);
-	if (!createInfo.ambientOcclusion.empty()) ret.ambientOcclusion = new Texture(createInfo.ambientOcclusion);
+
+	if (!createInfo.albedo.empty())           
+		ret.albedo = new Texture(createInfo.albedo);
+
+	if (!createInfo.normal.empty())           
+		ret.normal = new Texture(createInfo.normal, true, TEXTURE_FORMAT_UNORM);
+
+	if (!createInfo.metallic.empty())         
+		ret.metallic = new Texture(createInfo.metallic);
+
+	if (!createInfo.roughness.empty())        
+		ret.roughness = new Texture(createInfo.roughness);
+
+	if (!createInfo.ambientOcclusion.empty()) 
+		ret.ambientOcclusion = new Texture(createInfo.ambientOcclusion);
+
 	ret.isLight = createInfo.isLight;
 	
 	return ret;
@@ -17,12 +29,25 @@ Material Material::Create(const MaterialCreateInfo& createInfo)
 Material Material::Create(const MaterialCreationData& createInfo)
 {
 	Material ret{};
+	if (createInfo.IsDefault())
+		return ret;
+
 	ret.isLight = createInfo.isLight;
-	if (!createInfo.albedoData.empty())           ret.albedo = new Texture(createInfo.albedoData, createInfo.aWidth, createInfo.aHeight);
-	if (!createInfo.normalData.empty())           ret.normal = new Texture(createInfo.normalData, createInfo.nWidth, createInfo.nHeight, true, TEXTURE_FORMAT_UNORM);
-	if (!createInfo.metallicData.empty())         ret.metallic = new Texture(createInfo.metallicData, createInfo.mWidth, createInfo.mHeight);
-	if (!createInfo.roughnessData.empty())        ret.roughness = new Texture(createInfo.roughnessData, createInfo.rWidth, createInfo.rHeight);
-	if (!createInfo.ambientOcclusionData.empty()) ret.ambientOcclusion = new Texture(createInfo.ambientOcclusionData, createInfo.aoWidth, createInfo.aoHeight);
+	if (!createInfo.albedo.IsDefault())      
+		ret.albedo = new Texture(createInfo.albedo.data, createInfo.albedo.width, createInfo.albedo.height);
+
+	if (!createInfo.normal.IsDefault())      
+		ret.normal = new Texture(createInfo.normal.data, createInfo.normal.width, createInfo.normal.height, true, TEXTURE_FORMAT_UNORM);
+
+	if (!createInfo.metallic.IsDefault())    
+		ret.metallic = new Texture(createInfo.metallic.data, createInfo.metallic.width, createInfo.metallic.height);
+
+	if (!createInfo.roughness.IsDefault())   
+		ret.roughness = new Texture(createInfo.roughness.data, createInfo.roughness.width, createInfo.roughness.height);
+
+	if (!createInfo.ambientOccl.IsDefault()) 
+		ret.ambientOcclusion = new Texture(createInfo.ambientOccl.data, createInfo.ambientOccl.width, createInfo.ambientOccl.height);
+
 	return ret;
 }
 
