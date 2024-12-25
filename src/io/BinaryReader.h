@@ -3,6 +3,8 @@
 #include <vector>
 #include <fstream>
 
+#include "FileBase.h"
+
 class BinaryReader
 {
 public:
@@ -20,9 +22,15 @@ public:
 	template<typename Type>
 	BinaryReader& operator>>(Type& in)
 	{
-		char* dst = reinterpret_cast<char*>(&in);
-		Read(dst, sizeof(Type));
-
+		if constexpr (std::is_base_of_v<FileBase, Type>) // this check has to be done here, declaring a seperate method for derived FileBase structs doesnt work
+		{
+			in.Read(*this);
+		}
+		else
+		{
+			char* dst = reinterpret_cast<char*>(&in);
+			Read(dst, sizeof(Type));
+		}
 		return *this;
 	}
 

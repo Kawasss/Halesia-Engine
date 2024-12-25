@@ -10,10 +10,10 @@ struct FileImage : FileBase
 	uint width, height;
 	std::vector<char> data;
 
-	uint64 GetBinarySize() override;
+	uint64 GetBinarySize() const override;
 
 	void Read(BinaryReader& reader) override;
-	void Write(BinaryWriter& writer) override;
+	void Write(BinaryWriter& writer) const override;
 
 	bool IsDefault() const 
 	{ 
@@ -31,10 +31,10 @@ struct FileMaterial : FileBase
 	FileImage roughness;
 	FileImage ambientOccl;
 
-	uint64 GetBinarySize() override;
+	uint64 GetBinarySize() const override;
 
 	void Read(BinaryReader& reader) override;
-	void Write(BinaryWriter& writer) override;
+	void Write(BinaryWriter& writer) const override;
 
 	bool IsDefault() const
 	{

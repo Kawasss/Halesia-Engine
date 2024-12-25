@@ -17,13 +17,6 @@ struct CompressionNode
 };
 #pragma pack(pop)
 
-template<typename T> inline T GetTypeFromStream(std::ifstream& stream)
-{
-	T f;
-	stream.read((char*)&f, sizeof(T));
-	return f;
-}
-
 SceneLoader::SceneLoader(std::string sceneLocation) : reader(BinaryReader(sceneLocation)), location(sceneLocation) {}
 
 void SceneLoader::LoadScene() 
@@ -100,7 +93,7 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 		break;
 	case NODE_TYPE_MATERIAL:
 		materials.push_back({});
-		materials.back().Read(reader);
+		reader >> materials.back();
 		break;
 	default: 
 		Console::WriteLine("Encountered an unusable node type");

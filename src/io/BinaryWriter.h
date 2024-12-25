@@ -4,6 +4,8 @@
 #include <sstream>
 #include <vector>
 
+#include "FileBase.h"
+
 class BinaryWriter
 {
 public:
@@ -26,7 +28,14 @@ public:
 	template<typename Type>
 	BinaryWriter& operator<<(const Type& value)
 	{
-		stream.write(reinterpret_cast<const char*>(&value), sizeof(Type));
+		if constexpr (std::is_base_of_v<FileBase, Type>)
+		{
+			value.Write(*this);
+		}
+		else
+		{
+			stream.write(reinterpret_cast<const char*>(&value), sizeof(Type));
+		}
 		return *this;
 	}
 
