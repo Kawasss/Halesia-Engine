@@ -37,8 +37,6 @@ inline MeshCreationData GetMeshCreationData(Mesh& mesh)
 	return creationData;
 }
 
-constexpr uint64_t SIZE_OF_NODE_HEADER = sizeof(NodeType) + sizeof(NodeSize);
-
 template<typename Type>
 inline NodeSize GetArrayNodeSize(const std::vector<Type> vec) { return vec.size() * sizeof(Type); }
 inline NodeSize GetNameNodeSize(const std::string& name)      { return name.size() + 1; }

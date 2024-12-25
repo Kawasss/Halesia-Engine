@@ -10,12 +10,19 @@
 #include "../physics/RigidBody.h"
 
 #include "FileMaterial.h"
+#include "FileMesh.h"
 
 using MaterialCreationData = FileMaterial;
 using ImageCreationData    = FileImage;
 
 struct MeshCreationData
 {
+	void TransferFrom(FileMesh& mesh) // will inherit the vertices and indices of the given FileMesh
+	{
+		vertices = std::move(mesh.vertices);
+		indices  = std::move(mesh.indices);
+	}
+
 	std::string name;
 	uint32_t materialIndex;
 
@@ -46,7 +53,7 @@ struct ObjectCreationData
 
 	glm::vec3 position = glm::vec3(0);
 	glm::vec3 rotation = glm::vec3(0);
-	glm::vec3 scale = glm::vec3(1);
+	glm::vec3 scale    = glm::vec3(1);
 
 	RigidCreationData hitBox;
 	uint8_t state = 0;

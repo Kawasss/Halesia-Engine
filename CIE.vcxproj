@@ -182,6 +182,7 @@
     <ClCompile Include="src\DescriptorWriter.cpp" />
     <ClCompile Include="src\Editor.cpp" />
     <ClCompile Include="src\FileDialog.cpp" />
+    <ClCompile Include="src\FileReadWrite.cpp" />
     <ClCompile Include="src\ForwardPlus.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\GarbageManager.cpp" />
@@ -260,6 +261,7 @@
     <ClInclude Include="src\io\BinaryReader.h" />
     <ClInclude Include="src\io\BinaryWriter.h" />
     <ClInclude Include="src\io\CreationData.h" />
+    <ClInclude Include="src\io\FileBase.h" />
     <ClInclude Include="src\io\FileFormat.h" />
     <ClInclude Include="src\io\FileMaterial.h" />
     <ClInclude Include="src\io\FileMesh.h" />

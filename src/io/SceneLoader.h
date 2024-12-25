@@ -22,7 +22,7 @@ struct aiScene;
 class SceneLoader
 {
 public:
-	SceneLoader() {}
+	SceneLoader() = default;
 	SceneLoader(std::string sceneLocation);
 
 	void LoadScene();
@@ -52,7 +52,6 @@ private:
 
 	MeshCreationData* currentMesh = nullptr; // dont know how safe this is
 	std::vector<ObjectCreationData>::iterator currentObject{};
-	std::vector<MaterialCreationData>::iterator currentMat{};
 };
 
 namespace GenericLoader

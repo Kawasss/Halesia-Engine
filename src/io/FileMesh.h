@@ -1,18 +1,16 @@
 #pragma once
-#include <hsl/Reference.h>
+#include <vector>
+
+#include "FileBase.h"
+
+#include "../renderer/Vertex.h"
 
 using uint = unsigned int;
 
-struct SharedBuffer
+struct FileMesh : FileBase
 {
-	uint offset, size;
-	hsl::Reference<char> buffer;
-};
+	uint materialIndex;
 
-struct FileMesh
-{
-	int materialIndex;
-
-	SharedBuffer vertices;
-	SharedBuffer indices;
+	std::vector<Vertex> vertices;
+	std::vector<uint16_t> indices;
 };

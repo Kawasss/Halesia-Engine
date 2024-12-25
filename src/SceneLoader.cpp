@@ -100,43 +100,7 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 		break;
 	case NODE_TYPE_MATERIAL:
 		materials.push_back({});
-		currentMat = materials.begin() + materials.size() - 1;
-		reader >> currentMat->isLight;
-		GetNodeHeader(childType, childSize); // all textures
-		RetrieveType(childType, childSize);
-		GetNodeHeader(childType, childSize);
-		RetrieveType(childType, childSize);
-		GetNodeHeader(childType, childSize);
-		RetrieveType(childType, childSize);
-		GetNodeHeader(childType, childSize);
-		RetrieveType(childType, childSize);
-		GetNodeHeader(childType, childSize);
-		RetrieveType(childType, childSize);
-		break;
-	case NODE_TYPE_ALBEDO:
-		currentMat->albedo.data.resize(size - sizeof(uint32_t) * 2);
-		reader >> currentMat->albedo.width >> currentMat->albedo.height;
-		reader >> currentMat->albedo.data;
-		break;
-	case NODE_TYPE_NORMAL:
-		currentMat->normal.data.resize(size - sizeof(uint32_t) * 2);
-		reader >> currentMat->normal.width >> currentMat->normal.height;
-		reader >> currentMat->normal.data;
-		break;
-	case NODE_TYPE_ROUGHNESS:
-		currentMat->roughness.data.resize(size - sizeof(uint32_t) * 2);
-		reader >> currentMat->roughness.width >> currentMat->roughness.height;
-		reader >> currentMat->roughness.data;
-		break;
-	case NODE_TYPE_METALLIC:
-		currentMat->metallic.data.resize(size - sizeof(uint32_t) * 2);
-		reader >> currentMat->roughness.width >> currentMat->roughness.height;
-		reader >> currentMat->metallic.data;
-		break;
-	case NODE_TYPE_AMBIENT_OCCLUSION:
-		currentMat->ambientOccl.data.resize(size - sizeof(uint32_t) * 2);
-		reader >> currentMat->ambientOccl.width >> currentMat->ambientOccl.height;
-		reader >> currentMat->ambientOccl.data;
+		materials.back().Read(reader);
 		break;
 	default: 
 		Console::WriteLine("Encountered an unusable node type");

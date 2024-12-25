@@ -291,6 +291,9 @@
     <ClCompile Include="src\BinaryWriter.cpp">
       <Filter>Source Files\io</Filter>
     </ClCompile>
+    <ClCompile Include="src\FileReadWrite.cpp">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -582,6 +585,9 @@
       <Filter>Header Files\io</Filter>
     </ClInclude>
     <ClInclude Include="src\io\FwdDclCreationData.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\FileBase.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
   </ItemGroup>

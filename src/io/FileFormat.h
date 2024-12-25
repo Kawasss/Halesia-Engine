@@ -36,6 +36,8 @@ enum NodeType : uint16_t
 };
 inline extern const char* NodeTypeToString(NodeType type);
 
+constexpr uint64_t SIZE_OF_NODE_HEADER = sizeof(NodeType) + sizeof(NodeSize);
+
 // These identifiers are represented like this in binary:
 //
 // NODE_TYPE_NAME:

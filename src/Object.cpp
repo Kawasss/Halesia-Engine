@@ -3,7 +3,8 @@
 #include "core/Object.h"
 #include "core/Console.h"
 
-#include "io/SceneLoader.h"
+#include "io/CreationData.h"
+
 #include "physics/Physics.h"
 
 void Object::AwaitGeneration()
