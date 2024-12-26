@@ -35,7 +35,13 @@ COMDLG_FILTERSPEC CreateComFilter(const FileDialog::Filter& filter) // the filte
 
 inline std::string WideToASCII(const std::wstring& str)
 {
-	return { str.begin(), str.end() };
+	std::string ret;
+	ret.reserve(str.size());
+
+	for (wchar_t ch : str)
+		ret += static_cast<char>(ch);
+
+	return ret;
 }
 
 std::vector<std::string> RequestDialog(const FileDialog::Filter& filter, const std::string& start, FILEOPENDIALOGOPTIONS foptions)
@@ -79,7 +85,9 @@ std::vector<std::string> RequestDialog(const FileDialog::Filter& filter, const s
 	dialog->Show(NULL);
 
 	CComPtr<IShellItemArray> items;
-	dialog->GetResults(&items.p);
+	hr = dialog->GetResults(&items.p);
+	if (!SUCCEEDED(hr))
+		return ret;
 
 	DWORD count = 0;
 	items->GetCount(&count);
