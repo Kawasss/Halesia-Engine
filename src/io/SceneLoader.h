@@ -50,7 +50,6 @@ private:
 	void RetrieveType(NodeType type, NodeSize size);
 	void RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans);
 
-	MeshCreationData* currentMesh = nullptr; // dont know how safe this is
 	std::vector<ObjectCreationData>::iterator currentObject{};
 };
 

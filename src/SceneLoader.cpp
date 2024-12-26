@@ -65,23 +65,13 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 		RetrieveType(childType, childSize); // mesh
 		break;
 	case NODE_TYPE_MESH:
+	{
+		FileMesh mesh;
+		reader >> mesh;
 		currentObject->hasMesh = true;
-		currentMesh = &currentObject->mesh;
-		reader >> currentMesh->materialIndex;
-		GetNodeHeader(childType, childSize);
-		RetrieveType(childType, childSize); // vertices
-		GetNodeHeader(childType, childSize);
-		RetrieveType(childType, childSize); // indices
-		currentMesh->faceCount = currentMesh->indices.size() / 3;
+		currentObject->mesh.TransferFrom(mesh);
 		break;
-	case NODE_TYPE_VERTICES:
-		currentMesh->vertices.resize(size / sizeof(Vertex));
-		reader >> currentMesh->vertices;
-		break;
-	case NODE_TYPE_INDICES:
-		currentMesh->indices.resize(size / sizeof(uint16_t));
-		reader >> currentMesh->indices;
-		break;
+	}
 	case NODE_TYPE_RIGIDBODY:
 		reader >> currentObject->hitBox.rigidType >> currentObject->hitBox.shapeType >> currentObject->hitBox.extents;
 		break;

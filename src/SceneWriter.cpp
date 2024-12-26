@@ -16,27 +16,6 @@
 
 typedef unsigned char byte;
 
-inline RigidCreationData GetRigidCreationData(RigidBody& rigid)
-{
-	return RigidCreationData{ rigid.shape.data, rigid.shape.type, rigid.type };
-}
-
-inline MeshCreationData GetMeshCreationData(Mesh& mesh)
-{
-	MeshCreationData creationData{};
-	creationData.amountOfVertices = mesh.vertices.size();
-	creationData.vertices = mesh.vertices;
-	creationData.faceCount = mesh.faceCount;
-	creationData.indices = mesh.indices;
-	creationData.center = mesh.center;
-	creationData.extents = mesh.extents;
-	creationData.hasBones = 0;
-	creationData.hasMaterial = 0;
-	creationData.name = mesh.name;
-
-	return creationData;
-}
-
 template<typename Type>
 inline NodeSize GetArrayNodeSize(const std::vector<Type> vec) { return vec.size() * sizeof(Type); }
 inline NodeSize GetNameNodeSize(const std::string& name)      { return name.size() + 1; }
@@ -54,15 +33,6 @@ void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 		writer << FileMaterial::CreateFrom(Mesh::materials[i]);
 	writer.WriteDataToFile(NODE_TYPE_COMPRESSION).WriteDataToFile(sizeof(uint64_t) + sizeof(uint32_t)).WriteDataToFile(writer.GetCurrentSize()).WriteDataToFile(COMPRESS_ALGORITHM_XPRESS);
 	writer.WriteToFileCompressed();
-}
-
-inline void WriteMesh(BinaryWriter& writer, Mesh& mesh)
-{
-	writer 
-		<< NODE_TYPE_MESH << GetMeshNodeSize(mesh) 
-		<< mesh.GetMaterialIndex()
-		<< NODE_TYPE_VERTICES << mesh.vertices.size() * sizeof(mesh.vertices[0]) << mesh.vertices // vertices array
-		<< NODE_TYPE_INDICES << mesh.indices.size() * sizeof(mesh.indices[0]) << mesh.indices;    // indices array
 }
 
 inline void WriteRigidBody(BinaryWriter& writer, const RigidBody& rigid)
@@ -93,5 +63,5 @@ void HSFWriter::WriteObject(BinaryWriter& writer, Object* object)
 	if (!object->mesh.IsValid())
 		return;
 
-	WriteMesh(writer, object->mesh);
+	writer << FileMesh::CreateFrom(object->mesh);
 }

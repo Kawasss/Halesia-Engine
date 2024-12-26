@@ -24,14 +24,15 @@ struct FileArray : FileBase
 		return data.size() * sizeof(ValueType);
 	}
 
-	void Write(BinaryWriter& writer) const override
+	void Write(BinaryWriter& writer) const override // file arrays dont write their node type
 	{
-		writer << data;
+		writer << GetBinarySize() << data.size() << data;
 	}
 
 	void Read(BinaryReader& reader) override
 	{
 		uint64 size;
+		reader >> size; // read and discard the node size
 		reader >> size;
 		data.resize(size);
 		reader >> data;

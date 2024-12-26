@@ -23,7 +23,7 @@ uint64 FileMaterial::GetBinarySize() const
 uint64 FileMesh::GetBinarySize() const
 {
 	// account for the headers of the vertices and indices node
-	return SIZE_OF_NODE_HEADER * 2 + vertices.GetBinarySize() + indices.GetBinarySize();
+	return SIZE_OF_NODE_HEADER * 2 + vertices.GetBinarySize() + indices.GetBinarySize() + sizeof(materialIndex);
 }
 
 void FileImage::Read(BinaryReader& reader)
@@ -70,8 +70,7 @@ void FileMaterial::Read(BinaryReader& reader)
 void FileMesh::Read(BinaryReader& reader)
 {
 	NodeType type;
-	NodeSize size;
-	reader >> type >> size >> vertices >> type >> size >> indices;
+	reader >> materialIndex >> type >> vertices >> type >> indices;
 }
 
 void FileImage::Write(BinaryWriter& writer) const // file images are special in that they dont write their node type
@@ -91,7 +90,7 @@ void FileMaterial::Write(BinaryWriter& writer) const
 
 void FileMesh::Write(BinaryWriter& writer) const
 {
-	writer << NODE_TYPE_MESH << GetBinarySize() << vertices << indices;
+	writer << NODE_TYPE_MESH << GetBinarySize() << materialIndex << NODE_TYPE_VERTICES << vertices << NODE_TYPE_INDICES << indices;
 }
 
 FileImage FileImage::CreateFrom(Texture* tex)
@@ -125,6 +124,7 @@ FileMesh FileMesh::CreateFrom(const Mesh& mesh)
 
 	ret.vertices = FileArray<Vertex>::CreateFrom(mesh.vertices);
 	ret.indices = FileArray<uint16_t>::CreateFrom(mesh.indices);
+	ret.materialIndex = mesh.GetMaterialIndex();
 
 	return ret;
 }

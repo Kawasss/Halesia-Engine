@@ -22,6 +22,9 @@ struct MeshCreationData
 	{
 		vertices = std::move(mesh.vertices.data);
 		indices  = std::move(mesh.indices.data);
+
+		materialIndex = mesh.materialIndex;
+		faceCount = indices.size() / 3;
 	}
 
 	std::string name;

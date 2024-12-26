@@ -93,10 +93,8 @@ Material& Mesh::GetMaterial()
 	return materials[GetMaterialIndex()];
 }
 
-uint32_t Mesh::GetMaterialIndex() // the mesh will fall back to the default material if its actual material for some reason doesnt exist anymore
+uint32_t Mesh::GetMaterialIndex() const // the mesh will fall back to the default material if its actual material for some reason doesnt exist anymore
 {
-	if (materialIndex >= materials.size())
-		materialIndex = 0;
 	return materialIndex;
 }
 

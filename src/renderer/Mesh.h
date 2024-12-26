@@ -43,7 +43,7 @@ struct Mesh
 	void AwaitGeneration();
 	bool IsValid() const;
 
-	uint32_t GetMaterialIndex();
+	uint32_t GetMaterialIndex() const;
 	void SetMaterialIndex(uint32_t index);
 
 	/// <summary>

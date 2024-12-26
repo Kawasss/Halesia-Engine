@@ -12,14 +12,14 @@ using uint = unsigned int;
 
 struct FileMesh : FileBase
 {
-	uint materialIndex;
-
 	static FileMesh CreateFrom(const Mesh& mesh);
 
 	uint64 GetBinarySize() const override;
 
 	void Write(BinaryWriter& writer) const override;
 	void Read(BinaryReader& reader) override;
+
+	uint materialIndex;
 
 	FileArray<Vertex> vertices;
 	FileArray<uint16_t> indices;
