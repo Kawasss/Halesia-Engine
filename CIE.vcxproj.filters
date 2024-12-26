@@ -590,6 +590,9 @@
     <ClInclude Include="src\io\FileBase.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
+    <ClInclude Include="src\io\FileArray.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">

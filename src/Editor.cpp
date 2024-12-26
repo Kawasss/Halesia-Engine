@@ -106,6 +106,12 @@ void Editor::UpdateGUI(float delta)
 
 void Editor::MainThreadUpdate(float delta)
 {
+	if (save)
+	{
+		SaveToFile();
+		save = false;
+	}
+
 	if (!queuedMeshChange.isApplied)
 		queuedMeshChange.path = GetFile("Object file (.obj)", "*.obj;");
 	else return;
@@ -138,13 +144,6 @@ void Editor::MainThreadUpdate(float delta)
 		}
 		loadFile = false;
 	}
-
-	if (save)
-	{
-		SaveToFile();
-		save = false;
-	}
-
 }
 
 void Editor::ShowSideBars()
@@ -363,11 +362,18 @@ void Editor::LoadFile()
 
 	for (const MaterialCreationData& data : loader.materials)
 		Mesh::AddMaterial(Material::Create(data));
+
+	MaterialCreateInfo info{};
+	info.albedo = "textures/red.png";
+	info.isLight = true;
+
+	Mesh::AddMaterial(Material::Create(info));
 }
 
 void Editor::SaveToFile()
 {
-	std::async(&HSFWriter::WriteHSFScene, this, src);
+	//std::async(&HSFWriter::WriteHSFScene, this, src);
+	HSFWriter::WriteHSFScene(this, src);
 }
 
 std::string Editor::GetFile(const char* desc, const char* type)

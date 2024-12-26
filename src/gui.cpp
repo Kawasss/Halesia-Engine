@@ -167,10 +167,18 @@ void GUI::ShowObjectMeshes(Mesh& mesh)
 		"  index:    %I64u\n"
 		"BLAS:       %I64u\n"
 		"face count: %i\n\n"
-		"Material:   %i\n\n"
 		"center:     %.2f, %.2f, %.2f\n"
 		"extents:    %.2f, %.2f, %.2f\n",
-	mesh.vertexMemory, mesh.defaultVertexMemory, mesh.indexMemory, (uint64_t)mesh.BLAS.Get(), mesh.faceCount, (int)mesh.GetMaterialIndex(), mesh.center.x, mesh.center.y, mesh.center.z, mesh.extents.x, mesh.extents.y, mesh.extents.z);
+	mesh.vertexMemory, mesh.defaultVertexMemory, mesh.indexMemory, (uint64_t)mesh.BLAS.Get(), mesh.faceCount, mesh.center.x, mesh.center.y, mesh.center.z, mesh.extents.x, mesh.extents.y, mesh.extents.z);
+
+	int index = static_cast<int>(mesh.GetMaterialIndex());
+
+	ImGui::Text("Material: ");
+	ImGui::SameLine();
+	ImGui::InputInt("##inputmeshmaterialindex", &index);
+
+	if (index != static_cast<int>(mesh.GetMaterialIndex()))
+		mesh.SetMaterialIndex(index);
 }
 
 void GUI::ShowObjectData(Object* object)

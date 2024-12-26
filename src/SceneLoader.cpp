@@ -96,7 +96,7 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 		reader >> materials.back();
 		break;
 	default: 
-		Console::WriteLine("Encountered an unusable node type");
+		Console::WriteLine("Encountered an unusable node type " + std::to_string((int)type));
 		uint8_t* junk = new uint8_t[size];
 		reader.Read((char*)junk, size);
 		delete[] junk;
@@ -283,7 +283,7 @@ inline glm::vec3 GetExtentsFromMesh(aiMesh* pMesh)
 	return max - center;
 }
 
-inline void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::vec3& rot, glm::vec3& scale)
+inline void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::quat& rot, glm::vec3& scale)
 {
 	glm::mat4 trans;
 	memcpy(&trans, &mat, sizeof(glm::mat4));

@@ -42,7 +42,7 @@ inline NodeSize GetArrayNodeSize(const std::vector<Type> vec) { return vec.size(
 inline NodeSize GetNameNodeSize(const std::string& name)      { return name.size() + 1; }
 inline NodeSize GetMeshNodeSize(const Mesh& mesh)             { return GetArrayNodeSize(mesh.vertices) + GetArrayNodeSize(mesh.indices) + sizeof(uint32_t); }
 inline NodeSize GetObjectNodeSize(const Object* object)       { return GetNameNodeSize(object->name) + (object->mesh.IsValid() ? GetMeshNodeSize(object->mesh) : 0); } // should account for all meshes
-inline NodeSize GetTransformNodeSize()                        { return sizeof(glm::vec3) * 3; }
+inline NodeSize GetTransformNodeSize()                        { return sizeof(glm::vec3) * 2 + sizeof(glm::quat); }
 inline NodeSize GetRigidBodyNodeSize()                        { return sizeof(uint8_t) * 2 + sizeof(glm::vec3); }
 
 void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
@@ -76,10 +76,10 @@ inline void WriteRigidBody(BinaryWriter& writer, const RigidBody& rigid)
 
 inline void WriteTransform(BinaryWriter& writer, const Transform& transform)
 {
-	writer 
-		<< NODE_TYPE_TRANSFORM << GetTransformNodeSize() 
-		<< transform.position 
-		<< transform.rotation 
+	writer
+		<< NODE_TYPE_TRANSFORM << GetTransformNodeSize()
+		<< transform.position
+		<< transform.rotation
 		<< transform.scale;
 }
 

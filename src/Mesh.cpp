@@ -100,6 +100,12 @@ uint32_t Mesh::GetMaterialIndex() // the mesh will fall back to the default mate
 	return materialIndex;
 }
 
+void Mesh::SetMaterialIndex(uint32_t index)
+{
+	if (index < materials.size())
+		materialIndex = index;
+}
+
 bool Mesh::HasFinishedLoading() const
 {
 	return materials[materialIndex].HasFinishedLoading() && finished;

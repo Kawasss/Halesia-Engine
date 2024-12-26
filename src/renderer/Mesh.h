@@ -44,6 +44,7 @@ struct Mesh
 	bool IsValid() const;
 
 	uint32_t GetMaterialIndex();
+	void SetMaterialIndex(uint32_t index);
 
 	/// <summary>
 	/// Sets the material for this mesh, any old mesh will be overridden.

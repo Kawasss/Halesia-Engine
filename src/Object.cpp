@@ -48,11 +48,11 @@ void Object::Initialize(const ObjectCreationData& creationData, void* customClas
 	state = (ObjectState)creationData.state;
 
 	transform.position = creationData.position;
-	transform.rotation = glm::quat(glm::radians(creationData.rotation));
+	transform.rotation = creationData.rotation;
 	transform.scale    = creationData.scale;
 
 	if (creationData.hasMesh)
-		transform = Transform(creationData.position, glm::quat(glm::radians(creationData.rotation)), creationData.scale, mesh.extents, mesh.center);
+		transform = Transform(creationData.position, creationData.rotation, creationData.scale, mesh.extents, mesh.center);
 
 	GenerateObjectWithData(creationData); // maybe async??
 	Start();

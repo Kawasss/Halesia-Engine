@@ -2,8 +2,11 @@
 #include <vector>
 
 #include "FileBase.h"
+#include "FileArray.h"
 
 #include "../renderer/Vertex.h"
+
+struct Mesh;
 
 using uint = unsigned int;
 
@@ -11,6 +14,13 @@ struct FileMesh : FileBase
 {
 	uint materialIndex;
 
-	std::vector<Vertex> vertices;
-	std::vector<uint16_t> indices;
+	static FileMesh CreateFrom(const Mesh& mesh);
+
+	uint64 GetBinarySize() const override;
+
+	void Write(BinaryWriter& writer) const override;
+	void Read(BinaryReader& reader) override;
+
+	FileArray<Vertex> vertices;
+	FileArray<uint16_t> indices;
 };

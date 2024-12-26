@@ -10,7 +10,7 @@ using uint = unsigned int;
 
 struct FileImage : FileBase
 {
-	uint width, height;
+	uint width = 0, height = 0;
 	std::vector<char> data;
 
 	static FileImage CreateFrom(Texture* tex);

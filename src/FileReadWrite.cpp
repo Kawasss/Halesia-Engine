@@ -3,13 +3,27 @@
 
 #include "io/FileFormat.h"
 #include "io/FileMaterial.h"
+#include "io/FileArray.h"
+#include "io/FileMesh.h"
 
 #include "renderer/Texture.h"
 #include "renderer/Material.h"
+#include "renderer/Mesh.h"
 
 uint64 FileImage::GetBinarySize() const
 {
-	return SIZE_OF_NODE_HEADER + data.size() + sizeof(width) + sizeof(height);
+	return data.size() + sizeof(width) + sizeof(height);
+}
+
+uint64 FileMaterial::GetBinarySize() const
+{   // account for the node headers of the textures
+	return SIZE_OF_NODE_HEADER * 5 + albedo.GetBinarySize() + normal.GetBinarySize() + roughness.GetBinarySize() + metallic.GetBinarySize() + ambientOccl.GetBinarySize() + sizeof(isLight);
+}
+
+uint64 FileMesh::GetBinarySize() const
+{
+	// account for the headers of the vertices and indices node
+	return SIZE_OF_NODE_HEADER * 2 + vertices.GetBinarySize() + indices.GetBinarySize();
 }
 
 void FileImage::Read(BinaryReader& reader)
@@ -18,41 +32,6 @@ void FileImage::Read(BinaryReader& reader)
 
 	data.resize(width * height * 4);
 	reader >> data;
-}
-
-void FileImage::Write(BinaryWriter& writer) const
-{
-	writer << width << height << data;
-}
-
-FileImage FileImage::CreateFrom(Texture* tex)
-{
-	FileImage ret;
-
-	ret.width  = tex->GetWidth();
-	ret.height = tex->GetHeight();
-	ret.data   = tex->GetImageData();
-
-	return ret;
-}
-
-FileMaterial FileMaterial::CreateFrom(const Material& mat)
-{
-	FileMaterial ret;
-
-	ret.isLight     = mat.isLight;
-	ret.albedo      = FileImage::CreateFrom(mat.albedo);
-	ret.normal      = FileImage::CreateFrom(mat.normal);
-	ret.roughness   = FileImage::CreateFrom(mat.roughness);
-	ret.metallic    = FileImage::CreateFrom(mat.metallic);
-	ret.ambientOccl = FileImage::CreateFrom(mat.ambientOcclusion);
-
-	return ret;
-}
-
-uint64 FileMaterial::GetBinarySize() const
-{   // account for the node headers of the textures
-	return SIZE_OF_NODE_HEADER + albedo.GetBinarySize() + normal.GetBinarySize() + roughness.GetBinarySize() + metallic.GetBinarySize() + ambientOccl.GetBinarySize() + sizeof(isLight);
 }
 
 void FileMaterial::Read(BinaryReader& reader)
@@ -88,12 +67,64 @@ void FileMaterial::Read(BinaryReader& reader)
 	reader >> ambientOccl;
 }
 
+void FileMesh::Read(BinaryReader& reader)
+{
+	NodeType type;
+	NodeSize size;
+	reader >> type >> size >> vertices >> type >> size >> indices;
+}
+
+void FileImage::Write(BinaryWriter& writer) const // file images are special in that they dont write their node type
+{
+	writer << GetBinarySize() << width << height << data;
+}
+
 void FileMaterial::Write(BinaryWriter& writer) const
 {
 	writer 
-		<< NODE_TYPE_ALBEDO            << albedo.GetBinarySize()      << albedo
-		<< NODE_TYPE_NORMAL            << normal.GetBinarySize()      << normal
-		<< NODE_TYPE_ROUGHNESS         << roughness.GetBinarySize()   << roughness
-		<< NODE_TYPE_METALLIC          << metallic.GetBinarySize()    << metallic
-		<< NODE_TYPE_AMBIENT_OCCLUSION << ambientOccl.GetBinarySize() << ambientOccl;
+		<< NODE_TYPE_ALBEDO            << albedo
+		<< NODE_TYPE_NORMAL            << normal
+		<< NODE_TYPE_ROUGHNESS         << roughness
+		<< NODE_TYPE_METALLIC          << metallic
+		<< NODE_TYPE_AMBIENT_OCCLUSION << ambientOccl;
+}
+
+void FileMesh::Write(BinaryWriter& writer) const
+{
+	writer << NODE_TYPE_MESH << GetBinarySize() << vertices << indices;
+}
+
+FileImage FileImage::CreateFrom(Texture* tex)
+{
+	FileImage ret;
+
+	ret.width  = tex->GetWidth();
+	ret.height = tex->GetHeight();
+	ret.data   = tex->GetImageData();
+
+	return ret;
+}
+
+FileMaterial FileMaterial::CreateFrom(const Material& mat)
+{
+	FileMaterial ret;
+
+	ret.isLight     = mat.isLight;
+	ret.albedo      = FileImage::CreateFrom(mat.albedo);
+	ret.normal      = FileImage::CreateFrom(mat.normal);
+	ret.roughness   = FileImage::CreateFrom(mat.roughness);
+	ret.metallic    = FileImage::CreateFrom(mat.metallic);
+	ret.ambientOccl = FileImage::CreateFrom(mat.ambientOcclusion);
+
+	return ret;
+}
+
+FileMesh FileMesh::CreateFrom(const Mesh& mesh)
+{
+	FileMesh ret;
+
+	ret.vertices = FileArray<Vertex>::CreateFrom(mesh.vertices);
+	ret.indices = FileArray<uint16_t>::CreateFrom(mesh.indices);
+
+	return ret;
 }

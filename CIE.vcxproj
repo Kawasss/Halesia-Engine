@@ -261,6 +261,7 @@
     <ClInclude Include="src\io\BinaryReader.h" />
     <ClInclude Include="src\io\BinaryWriter.h" />
     <ClInclude Include="src\io\CreationData.h" />
+    <ClInclude Include="src\io\FileArray.h" />
     <ClInclude Include="src\io\FileBase.h" />
     <ClInclude Include="src\io\FileFormat.h" />
     <ClInclude Include="src\io\FileMaterial.h" />
