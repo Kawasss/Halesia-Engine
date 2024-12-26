@@ -4,6 +4,9 @@
 #include "io/FileFormat.h"
 #include "io/FileMaterial.h"
 
+#include "renderer/Texture.h"
+#include "renderer/Material.h"
+
 uint64 FileImage::GetBinarySize() const
 {
 	return SIZE_OF_NODE_HEADER + data.size() + sizeof(width) + sizeof(height);
@@ -20,6 +23,31 @@ void FileImage::Read(BinaryReader& reader)
 void FileImage::Write(BinaryWriter& writer) const
 {
 	writer << width << height << data;
+}
+
+FileImage FileImage::CreateFrom(Texture* tex)
+{
+	FileImage ret;
+
+	ret.width  = tex->GetWidth();
+	ret.height = tex->GetHeight();
+	ret.data   = tex->GetImageData();
+
+	return ret;
+}
+
+FileMaterial FileMaterial::CreateFrom(const Material& mat)
+{
+	FileMaterial ret;
+
+	ret.isLight     = mat.isLight;
+	ret.albedo      = FileImage::CreateFrom(mat.albedo);
+	ret.normal      = FileImage::CreateFrom(mat.normal);
+	ret.roughness   = FileImage::CreateFrom(mat.roughness);
+	ret.metallic    = FileImage::CreateFrom(mat.metallic);
+	ret.ambientOccl = FileImage::CreateFrom(mat.ambientOcclusion);
+
+	return ret;
 }
 
 uint64 FileMaterial::GetBinarySize() const

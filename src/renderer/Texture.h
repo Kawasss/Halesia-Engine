@@ -49,7 +49,7 @@ public:
 	void TransitionForShaderWrite(VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 	void TransitionForShaderRead(VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
-	std::vector<uint8_t> GetImageData();
+	std::vector<char> GetImageData();
 
 	static bool TexturesHaveChanged();
 

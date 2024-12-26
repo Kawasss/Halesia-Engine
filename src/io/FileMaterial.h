@@ -3,12 +3,17 @@
 
 #include "FileBase.h"
 
+class Texture;
+struct Material;
+
 using uint = unsigned int;
 
 struct FileImage : FileBase
 {
 	uint width, height;
 	std::vector<char> data;
+
+	static FileImage CreateFrom(Texture* tex);
 
 	uint64 GetBinarySize() const override;
 
@@ -30,6 +35,8 @@ struct FileMaterial : FileBase
 	FileImage metallic;
 	FileImage roughness;
 	FileImage ambientOccl;
+
+	static FileMaterial CreateFrom(const Material& mat);
 
 	uint64 GetBinarySize() const override;
 

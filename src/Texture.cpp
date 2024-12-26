@@ -131,7 +131,7 @@ void Image::ChangeData(uint8_t* data, uint32_t size, TextureFormat format)
 	CopyBufferToImage(stagingBuffer.Get());
 }
 
-std::vector<uint8_t> Image::GetImageData()
+std::vector<char> Image::GetImageData()
 {
 	AwaitGeneration();
 
@@ -180,10 +180,10 @@ std::vector<uint8_t> Image::GetImageData()
 
 	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 
-	uint8_t* ptr = copyBuffer.Map<uint8_t>();
+	char* ptr = copyBuffer.Map<char>();
 
-	std::vector<uint8_t> ret;
-	ret.resize(size / sizeof(uint8_t));
+	std::vector<char> ret;
+	ret.resize(size / sizeof(char));
 	memcpy(ret.data(), ptr, size);
 
 	copyBuffer.Unmap();
