@@ -5,10 +5,14 @@
 #include "io/FileMaterial.h"
 #include "io/FileArray.h"
 #include "io/FileMesh.h"
+#include "io/FileShape.h"
+#include "io/FileRigidBody.h"
 
 #include "renderer/Texture.h"
 #include "renderer/Material.h"
 #include "renderer/Mesh.h"
+
+#include "physics/RigidBody.h"
 
 uint64 FileImage::GetBinarySize() const
 {
@@ -73,6 +77,16 @@ void FileMesh::Read(BinaryReader& reader)
 	reader >> materialIndex >> type >> vertices >> type >> indices;
 }
 
+void FileShape::Read(BinaryReader& reader)
+{
+	reader >> type >> x >> y >> z;
+}
+
+void FileRigidBody::Read(BinaryReader& reader)
+{
+	reader >> type >> shape;
+}
+
 void FileImage::Write(BinaryWriter& writer) const // file images are special in that they dont write their node type
 {
 	writer << GetBinarySize() << width << height << data;
@@ -91,6 +105,16 @@ void FileMaterial::Write(BinaryWriter& writer) const
 void FileMesh::Write(BinaryWriter& writer) const
 {
 	writer << NODE_TYPE_MESH << GetBinarySize() << materialIndex << NODE_TYPE_VERTICES << vertices << NODE_TYPE_INDICES << indices;
+}
+
+void FileShape::Write(BinaryWriter& writer) const // will not write its node type and size
+{
+	writer << type << x << y << z;
+}
+
+void FileRigidBody::Write(BinaryWriter& writer) const
+{
+	writer << NODE_TYPE_RIGIDBODY << GetBinarySize() << type << shape;
 }
 
 FileImage FileImage::CreateFrom(Texture* tex)
@@ -125,6 +149,19 @@ FileMesh FileMesh::CreateFrom(const Mesh& mesh)
 	ret.vertices = FileArray<Vertex>::CreateFrom(mesh.vertices);
 	ret.indices = FileArray<uint16_t>::CreateFrom(mesh.indices);
 	ret.materialIndex = mesh.GetMaterialIndex();
+
+	return ret;
+}
+
+FileRigidBody FileRigidBody::CreateFrom(const RigidBody& rigid)
+{
+	FileRigidBody ret;
+
+	ret.type       = static_cast<FileRigidBody::Type>(rigid.type);
+	ret.shape.type = static_cast<FileShape::Type>(rigid.shape.type);
+	ret.shape.x    = rigid.shape.data.x;
+	ret.shape.y    = rigid.shape.data.y;
+	ret.shape.z    = rigid.shape.data.z;
 
 	return ret;
 }

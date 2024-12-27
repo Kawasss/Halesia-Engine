@@ -37,11 +37,7 @@ void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 
 inline void WriteRigidBody(BinaryWriter& writer, const RigidBody& rigid)
 {
-	writer
-		<< NODE_TYPE_RIGIDBODY << GetRigidBodyNodeSize()
-		<< rigid.type        // rigid body type
-		<< rigid.shape.type  // shape type
-		<< rigid.shape.data; // shape extents
+	writer << FileRigidBody::CreateFrom(rigid);
 }
 
 inline void WriteTransform(BinaryWriter& writer, const Transform& transform)

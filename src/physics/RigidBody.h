@@ -10,10 +10,10 @@ class RigidBody
 public:
 	enum class Type : uint8_t
 	{
-		None,
-		Static,
-		Dynamic,
-		Kinematic,
+		None      = 0,
+		Static    = 1,
+		Dynamic   = 2,
+		Kinematic = 3,
 	};
 	static std::string TypeToString(Type type);
 

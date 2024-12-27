@@ -11,11 +11,11 @@ class Shape
 public:
 	enum class Type : uint8_t
 	{
-		None,
-		Sphere,
-		Box,
-		Capsule,
-		Plane,
+		None    = 0,
+		Sphere  = 1,
+		Box     = 2,
+		Capsule = 3,
+		Plane   = 4,
 	};
 	static std::string TypeToString(Type type);
 

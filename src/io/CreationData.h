@@ -11,6 +11,7 @@
 
 #include "FileMaterial.h"
 #include "FileMesh.h"
+#include "FileRigidBody.h"
 
 using MaterialCreationData = FileMaterial;
 using ImageCreationData    = FileImage;
@@ -45,6 +46,14 @@ struct MeshCreationData
 
 struct RigidCreationData
 {
+	void TransferFrom(const FileRigidBody& file) // maybe move to source file
+	{
+		rigidType = static_cast<RigidBody::Type>(file.type);
+		shapeType = static_cast<Shape::Type>(file.shape.type);
+
+		extents = { file.shape.x, file.shape.y, file.shape.z };
+	}
+
 	glm::vec3 extents = glm::vec3(0);
 
 	Shape::Type     shapeType = Shape::Type::None;

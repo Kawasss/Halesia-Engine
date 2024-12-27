@@ -73,8 +73,12 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 		break;
 	}
 	case NODE_TYPE_RIGIDBODY:
-		reader >> currentObject->hitBox.rigidType >> currentObject->hitBox.shapeType >> currentObject->hitBox.extents;
+	{
+		FileRigidBody rigid;
+		reader >> rigid;
+		currentObject->hitBox.TransferFrom(rigid);
 		break;
+	}
 	case NODE_TYPE_NAME:
 		reader >> currentObject->name;
 		break;
