@@ -41,6 +41,9 @@ void main()
  
 	albedoColor = texture(textures[Constant.materialID * 5 + 0], texCoords);
 
+    if (albedoColor.a == 0.0)
+        discard;
+
     metallicRoughnessAOColor.r = texture(textures[Constant.materialID * 5 + 2], texCoords).r;
     metallicRoughnessAOColor.g = texture(textures[Constant.materialID * 5 + 3], texCoords).g;
     metallicRoughnessAOColor.b = texture(textures[Constant.materialID * 5 + 4], texCoords).b;

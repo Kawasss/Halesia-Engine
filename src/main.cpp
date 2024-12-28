@@ -13,6 +13,8 @@
 
 #include "HalesiaEngine.h"
 
+#include "io/CreationData.h"
+
 class Room : public Scene
 {
 	void Start() override
@@ -22,7 +24,7 @@ class Room : public Scene
 
 	void LoadScene()
 	{
-		SceneLoader loader("dinner.hsf");
+		/*SceneLoader loader("dinner.hsf");
 		loader.LoadScene();
 
 		for (const auto& data : loader.materials)
@@ -31,7 +33,15 @@ class Room : public Scene
 		for (const auto& data : loader.objects)
 		{
 			AddObject(data);
-		}
+		}*/
+
+		ObjectCreationData data = GenericLoader::LoadObjectFile("stdObj/tree.obj");
+		Object* obj = AddObject(data);
+
+		MaterialCreateInfo matInfo{};
+		matInfo.albedo = "textures/tree.png";
+
+		obj->mesh.SetMaterial(Material::Create(matInfo));
 	}
 };
 
@@ -41,7 +51,7 @@ int main(int argc, char** argv)
 	HalesiaEngineCreateInfo createInfo{};
 	createInfo.argsCount = argc;
 	createInfo.args = argv;
-	createInfo.startingScene = new Editor();
+	createInfo.startingScene = new Room();
 	createInfo.renderFlags = Renderer::Flags::NO_FILTERING_ON_RESULT;
 	createInfo.windowCreateInfo.windowName = "Halesia Test Scene";
 	createInfo.windowCreateInfo.width = 800;
