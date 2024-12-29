@@ -294,6 +294,9 @@
     <ClCompile Include="src\FileReadWrite.cpp">
       <Filter>Source Files\io</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\ImGuizmo.cpp">
+      <Filter>external\imgui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">

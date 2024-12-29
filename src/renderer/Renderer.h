@@ -69,6 +69,9 @@ public:
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
 
+	glm::vec2 GetViewportOffset() const;
+	glm::vec2 GetViewportModifier() const;
+
 	void StartRecording();
 	void SubmitRecording();
 

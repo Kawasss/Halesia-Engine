@@ -25,7 +25,9 @@
 #include "core/Camera.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
+#define IMGUI_DEFINE_MATH_OPERATORS_IMPLEMENTED
 #include "implot.h"
+#include "ImGuizmo.h"
 #include "imgui.h"
 #include "backends/imgui_impl_vulkan.h"
 #include "backends/imgui_impl_win32.h"
@@ -709,7 +711,9 @@ void Renderer::ResetImGUI()
 {
 	::ImGui_ImplVulkan_NewFrame();
 	::ImGui_ImplWin32_NewFrame();
+	
 	ImGui::NewFrame();
+	ImGuizmo::BeginFrame();
 }
 
 void Renderer::StartRecording()
@@ -935,6 +939,16 @@ void Renderer::SetViewportModifiers(glm::vec2 modifiers)
 		return;
 	viewportTransModifiers = modifiers;
 	shouldResize = true;
+}
+
+glm::vec2 Renderer::GetViewportOffset() const
+{
+	return viewportOffsets;
+}
+
+glm::vec2 Renderer::GetViewportModifier() const
+{
+	return viewportTransModifiers;
 }
 
 void Renderer::SetInternalResolutionScale(float scale)

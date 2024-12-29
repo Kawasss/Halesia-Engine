@@ -152,6 +152,7 @@
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_vulkan.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\ImGuizmo.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_demo.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_draw.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_tables.cpp" />

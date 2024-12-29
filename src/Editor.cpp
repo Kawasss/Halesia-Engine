@@ -15,13 +15,13 @@
 
 #include "HalesiaEngine.h"
 
-#define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
-#define IMSPINNER_DEMO
 #include <implot.h>
 #include <imgui.h>
+#include <ImGuizmo.h>
 #include <misc/cpp/imgui_stdlib.h>
-#include <imgui-1.89.8/imgui-1.89.8/imspinner.h>	
+
+#include <glm/gtc/type_ptr.hpp>
 
 constexpr float BAR_WIDTH = 0.15f;
 constexpr float LOWER_BAR_HEIGHT = 0.2f;
@@ -102,6 +102,40 @@ void Editor::UpdateGUI(float delta)
 
 	ShowSideBars();
 	ShowMenuBar();
+	ShowGizmo();
+}
+
+void Editor::ShowGizmo()
+{
+	HalesiaEngine* engine = HalesiaEngine::GetInstance();
+	EngineCore& core = engine->GetEngineCore();
+
+	ImGuizmo::OPERATION mode = ImGuizmo::TRANSLATE;
+	switch (gizmoMode)
+	{
+	case GizmoMode::Translate: break;
+	case GizmoMode::Rotate: mode = ImGuizmo::ROTATE; break;
+	case GizmoMode::Scale:  mode = ImGuizmo::SCALE;  break;
+	}
+
+	Object* obj = selectedObj;
+	if (obj == nullptr)
+		return;
+
+	glm::mat4 view = glm::lookAtRH(camera->position, camera->position + camera->front, camera->up);
+	glm::mat4 proj = glm::perspectiveRH(camera->fov, (float)width / (float)height, 0.001f, 10000.0f);
+
+	glm::vec2 mod = core.renderer->GetViewportModifier();
+	glm::vec2 off = core.renderer->GetViewportOffset();
+
+	glm::mat4 model = obj->transform.GetModelMatrix();
+
+	ImGuizmo::SetRect(off.x * width, off.y * height, mod.x * width, mod.y * height);
+	ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), mode, ImGuizmo::WORLD, glm::value_ptr(model));
+
+	glm::vec3 skew;
+	glm::vec4 pers;
+	glm::decompose(model, obj->transform.scale, obj->transform.rotation, obj->transform.position, skew, pers);
 }
 
 void Editor::MainThreadUpdate(float delta)
@@ -177,6 +211,7 @@ void Editor::ShowSideBars()
 		if (!ImGui::TreeNode(UIObjects[i]->name.c_str()))
 			continue;
 		selectedIndex = i;
+		selectedObj = UIObjects[selectedIndex];
 
 		const std::vector<Object*>& children = UIObjects[i]->GetChildren();
 		for (int j = 0; j < children.size(); j++)
@@ -243,6 +278,14 @@ void Editor::ShowMenuBar()
 	if (ImGui::BeginMenu("Add"))
 	{
 		if (ImGui::Button("Object")) addObject = true;
+		ImGui::EndMenu();
+	}
+
+	if (ImGui::BeginMenu("Gizmo"))
+	{
+		if (ImGui::Button("Translate")) gizmoMode = GizmoMode::Translate;
+		if (ImGui::Button("Rotate"))    gizmoMode = GizmoMode::Rotate;
+		if (ImGui::Button("Scale"))     gizmoMode = GizmoMode::Scale;
 		ImGui::EndMenu();
 	}
 
@@ -315,9 +358,6 @@ void Editor::ShowObjectComponents(int index)
 
 void Editor::ShowLowerBar()
 {
-	HalesiaEngine* engine = HalesiaEngine::GetInstance();
-	EngineCore& core = engine->GetEngineCore();
-
 	ImGuiStyle& style = ImGui::GetStyle();
 
 	ImGui::SetNextWindowPos(ImVec2(width * BAR_WIDTH, height * (1.0f - LOWER_BAR_HEIGHT)));

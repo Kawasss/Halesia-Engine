@@ -24,6 +24,13 @@ public:
 	void MainThreadUpdate(float delta) override;
 
 private:
+	enum class GizmoMode
+	{
+		Translate,
+		Rotate,
+		Scale,
+	};
+
 	struct MeshChangeData
 	{
 		bool isApplied = true;
@@ -35,6 +42,8 @@ private:
 	void ShowSideBars();
 	void ShowLowerBar();
 	void ShowObjectComponents(int index);
+
+	void ShowGizmo();
 
 	void DestroyCurrentScene();
 
@@ -53,6 +62,8 @@ private:
 	std::vector<Object*> UIObjects; // the objects in the UI are seperate from the actual objects, because UpdateGUI and Update run at the same time and can clash
 
 	MeshChangeData queuedMeshChange;
+	GizmoMode gizmoMode;
+	Object* selectedObj;
 
 	int width = 0, height = 0;
 };
