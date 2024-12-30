@@ -38,10 +38,12 @@ private:
 		std::string path;
 	};
 
+	void ShowUI();
 	void ShowMenuBar();
 	void ShowSideBars();
 	void ShowLowerBar();
-	void ShowObjectComponents(int index);
+	void ShowObjectComponents();
+	void ShowSelectedObject();
 
 	void ShowGizmo();
 
@@ -52,6 +54,8 @@ private:
 	void SaveToFile();
 
 	void QueueMeshChange(Object* object);
+
+	void UIFree(Object* obj);
 
 	bool addObject = false;
 	bool loadFile = false;

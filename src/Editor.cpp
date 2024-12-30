@@ -100,9 +100,7 @@ void Editor::UpdateGUI(float delta)
 	width = core.window->GetWidth();
 	height = core.window->GetHeight();
 
-	ShowSideBars();
-	ShowMenuBar();
-	ShowGizmo();
+	ShowUI();
 }
 
 void Editor::ShowGizmo()
@@ -180,6 +178,15 @@ void Editor::MainThreadUpdate(float delta)
 	}
 }
 
+void Editor::ShowUI()
+{
+	ShowLowerBar();
+	ShowSelectedObject();
+	ShowSideBars();
+	ShowMenuBar();
+	ShowGizmo();
+}
+
 void Editor::ShowSideBars()
 {
 	int selectedIndex = -1;
@@ -207,18 +214,28 @@ void Editor::ShowSideBars()
 			selectedObj = UIObjects[i]; 
 		}
 
+		std::string rightClickName = "##right_click_menu_object_" + std::to_string((uint64_t)UIObjects[i]);
+
+		if (ImGui::BeginPopupContextItem(rightClickName.c_str(), ImGuiPopupFlags_MouseButtonRight))
+		{
+			if (ImGui::MenuItem("Duplicate"))
+			{
+				DuplicateObject(UIObjects[i], "Duplicated object");
+			}
+			if (ImGui::MenuItem("Delete"))
+			{
+				UIFree(UIObjects[i]);
+				ImGui::EndPopup();
+				continue;
+			}
+			ImGui::EndPopup();
+		}
+
 		if (!UIObjects[i]->HasChildren())
 			continue;
 
 		if (!ImGui::TreeNode(UIObjects[i]->name.c_str()))
 			continue;
-
-		if (ImGui::BeginPopupContextItem("##right_click_menu_object", ImGuiPopupFlags_MouseButtonRight))
-		{
-			if (ImGui::MenuItem("Copy to object")) {}
-
-			ImGui::EndPopup();
-		}
 
 		selectedIndex = i;
 		selectedObj = UIObjects[selectedIndex];
@@ -233,12 +250,24 @@ void Editor::ShowSideBars()
 	ImGui::EndChild();
 	ImGui::End();
 
-	ShowLowerBar();
-
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
+}
 
-	ShowObjectComponents(selectedIndex);
+void Editor::UIFree(Object* obj)
+{
+	// first, remove all references to the object inside the editor
+	if (obj == selectedObj)
+		selectedObj = nullptr;
+
+	auto it = std::find(UIObjects.begin(), UIObjects.end(), obj);
+	if (it == UIObjects.end())
+		return;
+
+	UIObjects.erase(it);
+
+	// then, let the engine take care of removing the object from its structures
+	Free(obj);
 }
 
 void Editor::ShowMenuBar()
@@ -305,14 +334,8 @@ void Editor::ShowMenuBar()
 	ImGui::PopStyleColor(3);
 }
 
-void Editor::ShowObjectComponents(int index)
+void Editor::ShowSelectedObject()
 {
-	static int objectIndex = -1;
-	if (objectIndex >= UIObjects.size())
-		objectIndex = -1;
-	if (index != -1)
-		objectIndex = index;
-
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
@@ -339,24 +362,9 @@ void Editor::ShowObjectComponents(int index)
 
 	ImGui::BeginChild(2);
 
-	if (objectIndex != -1)
+	if (selectedObj != nullptr)
 	{
-		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
-
-		if (ImGui::CollapsingHeader("Metadata", flags))
-			GUI::ShowObjectData(UIObjects[objectIndex]);
-
-		if (ImGui::CollapsingHeader("Transform", flags))
-			GUI::ShowObjectTransform(UIObjects[objectIndex]->transform);
-
-		if (ImGui::CollapsingHeader("Rigid body", flags) && UIObjects[objectIndex]->rigid.type != RigidBody::Type::None)
-			GUI::ShowObjectRigidBody(UIObjects[objectIndex]->rigid);
-
-		if (ImGui::CollapsingHeader("Meshes", flags) && UIObjects[objectIndex]->mesh.IsValid())
-			GUI::ShowObjectMeshes(UIObjects[objectIndex]->mesh);
-
-		if (ImGui::Button("Change mesh"))
-			QueueMeshChange(UIObjects[objectIndex]);
+		ShowObjectComponents();
 	}
 
 	ImGui::PopStyleVar(3);
@@ -364,6 +372,26 @@ void Editor::ShowObjectComponents(int index)
 
 	ImGui::EndChild();
 	ImGui::End();
+}
+
+void Editor::ShowObjectComponents()
+{
+	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
+
+	if (ImGui::CollapsingHeader("Metadata", flags))
+		GUI::ShowObjectData(selectedObj);
+
+	if (ImGui::CollapsingHeader("Transform", flags))
+		GUI::ShowObjectTransform(selectedObj->transform);
+
+	if (ImGui::CollapsingHeader("Rigid body", flags) && selectedObj->rigid.type != RigidBody::Type::None)
+		GUI::ShowObjectRigidBody(selectedObj->rigid);
+
+	if (ImGui::CollapsingHeader("Meshes", flags) && selectedObj->mesh.IsValid())
+		GUI::ShowObjectMeshes(selectedObj->mesh);
+
+	if (ImGui::Button("Change mesh"))
+		QueueMeshChange(selectedObj);
 }
 
 void Editor::ShowLowerBar()
