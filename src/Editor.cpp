@@ -288,43 +288,43 @@ void Editor::ShowMenuBar()
 
 		ImGui::Separator();
 
-		if (ImGui::Button("Load file")) loadFile = true;
-		if (ImGui::Button("Save file")) save = true;
+		if (ImGui::MenuItem("Load file")) loadFile = true;
+		if (ImGui::MenuItem("Save file")) save = true;
 
 		ImGui::Separator();
 
-		if (ImGui::Button("Exit"))
+		if (ImGui::MenuItem("Exit"))
 			HalesiaEngine::Exit();
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("view"))
 	{
-		if (ImGui::Button("object metadata")) engine->showObjectData = !engine->showObjectData;
-		if (ImGui::Button("window data"))     engine->showWindowData = !engine->showWindowData;
+		if (ImGui::MenuItem("object metadata")) engine->showObjectData = !engine->showObjectData;
+		if (ImGui::MenuItem("window data"))     engine->showWindowData = !engine->showWindowData;
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("renderer"))
 	{
-		if (ImGui::Button("show albedo"))  RayTracingPipeline::showAlbedo = !RayTracingPipeline::showAlbedo;
-		if (ImGui::Button("show normals")) RayTracingPipeline::showNormals = !RayTracingPipeline::showNormals;
-		if (ImGui::Button("show unique"))  RayTracingPipeline::showUniquePrimitives = !RayTracingPipeline::showUniquePrimitives;
+		if (ImGui::MenuItem("show albedo"))  RayTracingPipeline::showAlbedo = !RayTracingPipeline::showAlbedo;
+		if (ImGui::MenuItem("show normals")) RayTracingPipeline::showNormals = !RayTracingPipeline::showNormals;
+		if (ImGui::MenuItem("show unique"))  RayTracingPipeline::showUniquePrimitives = !RayTracingPipeline::showUniquePrimitives;
 		ImGui::Separator();
-		if (ImGui::Button("show collision boxes")) Renderer::shouldRenderCollisionBoxes = !Renderer::shouldRenderCollisionBoxes;
+		if (ImGui::MenuItem("show collision boxes")) Renderer::shouldRenderCollisionBoxes = !Renderer::shouldRenderCollisionBoxes;
 		ImGui::Separator();
-		ImGui::Button("view statistics");
+		ImGui::MenuItem("view statistics");
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("Add"))
 	{
-		if (ImGui::Button("Object")) addObject = true;
+		if (ImGui::MenuItem("Object")) addObject = true;
 		ImGui::EndMenu();
 	}
 
 	if (ImGui::BeginMenu("Gizmo"))
 	{
-		if (ImGui::Button("Translate")) gizmoMode = GizmoMode::Translate;
-		if (ImGui::Button("Rotate"))    gizmoMode = GizmoMode::Rotate;
-		if (ImGui::Button("Scale"))     gizmoMode = GizmoMode::Scale;
+		if (ImGui::MenuItem("Translate")) gizmoMode = GizmoMode::Translate;
+		if (ImGui::MenuItem("Rotate"))    gizmoMode = GizmoMode::Rotate;
+		if (ImGui::MenuItem("Scale"))     gizmoMode = GizmoMode::Scale;
 		ImGui::EndMenu();
 	}
 
