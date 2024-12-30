@@ -79,8 +79,8 @@ HalesiaEngine* HalesiaEngine::GetInstance()
 		return instance;
 
 	std::cout << "Generating Halesia instance:" 
-		<< "\n  createInfo.startingScene = " << std::to_string((int)createInfo.startingScene) 
-		<< "\n  createInfo.devConsoleKey = " << std::to_string((int)createInfo.devConsoleKey) 
+		<< "\n  createInfo.startingScene = " << reinterpret_cast<uint64_t>(createInfo.startingScene) 
+		<< "\n  createInfo.devConsoleKey = " << static_cast<int>(createInfo.devConsoleKey)
 		<< "\n  createInfo.playIntro     = " << createInfo.playIntro << "\n\n";
 	try
 	{
@@ -315,6 +315,7 @@ HalesiaExitCode HalesiaEngine::Run()
 	{
 		std::string fullError = e.what();
 		ProcessError(e);
+		OnExit();
 		return HALESIA_EXIT_CODE_EXCEPTION;
 	}
 	catch (...) //catch any unknown exceptions and return, doesnt catch any read or write errors etc.

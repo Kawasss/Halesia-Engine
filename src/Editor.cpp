@@ -201,15 +201,25 @@ void Editor::ShowSideBars()
 
 	for (int i = 0; i < UIObjects.size(); i++)
 	{
-		if (UIObjects[i]->HasChildren())
+		if (ImGui::Selectable(UIObjects[i]->name.c_str()))
 		{
-			if (ImGui::Selectable(UIObjects[i]->name.c_str()))
-				selectedIndex = i;
-			continue;
+			selectedIndex = i;
+			selectedObj = UIObjects[i]; 
 		}
+
+		if (!UIObjects[i]->HasChildren())
+			continue;
 
 		if (!ImGui::TreeNode(UIObjects[i]->name.c_str()))
 			continue;
+
+		if (ImGui::BeginPopupContextItem("##right_click_menu_object", ImGuiPopupFlags_MouseButtonRight))
+		{
+			if (ImGui::MenuItem("Copy to object")) {}
+
+			ImGui::EndPopup();
+		}
+
 		selectedIndex = i;
 		selectedObj = UIObjects[selectedIndex];
 
@@ -255,7 +265,7 @@ void Editor::ShowMenuBar()
 		ImGui::Separator();
 
 		if (ImGui::Button("Exit"))
-			throw std::exception("Exit requested via UI");
+			HalesiaEngine::Exit();
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("view"))
@@ -325,7 +335,7 @@ void Editor::ShowObjectComponents(int index)
 
 	ImGui::Begin("components", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 
-	GUI::ShowObjectSelectMenu(UIObjects, objectIndex, "##ObjectComponents");
+	GUI::ShowObjectSelectMenu(UIObjects, selectedObj, "##ObjectComponents");
 
 	ImGui::BeginChild(2);
 
