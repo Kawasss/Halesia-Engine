@@ -44,6 +44,7 @@ private:
 	void ShowLowerBar();
 	void ShowObjectComponents();
 	void ShowSelectedObject();
+	void ShowDefaultRightClick();
 
 	void ShowGizmo();
 

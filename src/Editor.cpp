@@ -178,6 +178,28 @@ void Editor::MainThreadUpdate(float delta)
 	}
 }
 
+void Editor::ShowDefaultRightClick()
+{
+	static bool gizmoButton = false;
+
+	if (!ImGui::BeginPopupContextVoid("##default_right_click"))
+		return;
+
+	if (ImGui::MenuItem("Add object"))
+		AddObject({ "new object" });
+
+	ImGui::SeparatorText("Gizmo");
+
+	if (ImGui::MenuItem("Translate", nullptr, gizmoMode == GizmoMode::Translate)) 
+		gizmoMode = GizmoMode::Translate;
+	if (ImGui::MenuItem("Rotate", nullptr, gizmoMode == GizmoMode::Rotate))   
+		gizmoMode = GizmoMode::Rotate;
+	if (ImGui::MenuItem("Scale", nullptr, gizmoMode == GizmoMode::Scale))    
+		gizmoMode = GizmoMode::Scale;
+
+	ImGui::EndPopup();
+}
+
 void Editor::ShowUI()
 {
 	ShowLowerBar();
@@ -185,6 +207,7 @@ void Editor::ShowUI()
 	ShowSideBars();
 	ShowMenuBar();
 	ShowGizmo();
+	ShowDefaultRightClick();
 }
 
 void Editor::ShowSideBars()
@@ -284,7 +307,13 @@ void Editor::ShowMenuBar()
 
 	if (ImGui::BeginMenu("file"))
 	{
-		ImGui::Text("Load object");
+		if (ImGui::MenuItem("Load object"))
+		{
+			std::string file = GetFile("Object file", "*.obj;");
+			ObjectCreationData data = GenericLoader::LoadObjectFile(file);
+
+			AddObject(data);
+		}
 
 		ImGui::Separator();
 
@@ -317,14 +346,6 @@ void Editor::ShowMenuBar()
 	if (ImGui::BeginMenu("Add"))
 	{
 		if (ImGui::MenuItem("Object")) addObject = true;
-		ImGui::EndMenu();
-	}
-
-	if (ImGui::BeginMenu("Gizmo"))
-	{
-		if (ImGui::MenuItem("Translate")) gizmoMode = GizmoMode::Translate;
-		if (ImGui::MenuItem("Rotate"))    gizmoMode = GizmoMode::Rotate;
-		if (ImGui::MenuItem("Scale"))     gizmoMode = GizmoMode::Scale;
 		ImGui::EndMenu();
 	}
 
