@@ -208,6 +208,7 @@ void Editor::ShowUI()
 	ShowMenuBar();
 	ShowGizmo();
 	ShowDefaultRightClick();
+	ShowMaterialWindow();
 }
 
 void Editor::ShowSideBars()
@@ -277,6 +278,51 @@ void Editor::ShowSideBars()
 	ImGui::PopStyleColor(3);
 }
 
+void Editor::ShowMaterialWindow()
+{
+	static MaterialCreateInfo createInfo{};
+
+	ImGui::SetNextWindowSize(ImVec2(-1, -1));
+	ImGui::Begin("Material creator");
+
+	ImGui::Text("Albedo:    ");
+	ImGui::SameLine();
+	if (ImGui::Button(createInfo.albedo.empty() ? "Set path ##albedo_path" : createInfo.albedo.c_str()))
+		createInfo.albedo = GetFile("Image file", "*.png;*.jpg;");
+
+	ImGui::Text("Normal:    ");
+	ImGui::SameLine();
+	if (ImGui::Button(createInfo.normal.empty() ? "Set path ##normal_path" : createInfo.normal.c_str()))
+		createInfo.normal = GetFile("Image file", "*.png;*.jpg;");
+
+	ImGui::Text("Roughness: ");
+	ImGui::SameLine();
+	if (ImGui::Button(createInfo.roughness.empty() ? "Set path ##roughness_path" : createInfo.roughness.c_str()))
+		createInfo.roughness = GetFile("Image file", "*.png;*.jpg;");
+
+	ImGui::Text("Metallic:  ");
+	ImGui::SameLine();
+	if (ImGui::Button(createInfo.metallic.empty() ? "Set path ##metallic_path" : createInfo.metallic.c_str()))
+		createInfo.metallic = GetFile("Image file", "*.png;*.jpg;");
+
+	ImGui::Text("Amb. occl.:");
+	ImGui::SameLine();
+	if (ImGui::Button(createInfo.ambientOcclusion.empty() ? "Set path ##ambient_occlusion_path" : createInfo.ambientOcclusion.c_str()))
+		createInfo.ambientOcclusion = GetFile("Image file", "*.png;*.jpg;");
+
+	if (ImGui::Button("Create material"))
+	{
+		Mesh::AddMaterial(Material::Create(createInfo));
+
+		createInfo.albedo.clear();
+		createInfo.normal.clear();
+		createInfo.roughness.clear();
+		createInfo.metallic.clear();
+		createInfo.ambientOcclusion.clear();
+	}
+	ImGui::End();
+}
+
 void Editor::UIFree(Object* obj)
 {
 	// first, remove all references to the object inside the editor
@@ -284,10 +330,8 @@ void Editor::UIFree(Object* obj)
 		selectedObj = nullptr;
 
 	auto it = std::find(UIObjects.begin(), UIObjects.end(), obj);
-	if (it == UIObjects.end())
-		return;
-
-	UIObjects.erase(it);
+	if (it != UIObjects.end())
+		UIObjects.erase(it);
 
 	// then, let the engine take care of removing the object from its structures
 	Free(obj);
