@@ -156,7 +156,13 @@ enum class VirtualKey
 class Input
 {
 public:
-	static bool IsKeyPressed(VirtualKey key);
-	static bool IsKeyToggled(VirtualKey key);
-	static bool GetGlobalCursorPosition(int& x, int& y);
+	static bool FetchState();                                 //!< fetches the current state of the keyboard and mouse
+
+	static bool IsKeyJustReleased(VirtualKey key);            //!< returns true if the key was pressed previous frane, but not this frame
+	static bool IsKeyJustPressed(VirtualKey key);             //!< returns true if the key is pressed this frame
+
+	static bool IsKeyPressed(VirtualKey key);                 //!< returns true if the key is pressed
+	static bool IsKeyToggled(VirtualKey key);                 //!< returns true if the key is toggleable and is toggled (i.e. caps-lcok)
+
+	static bool GetGlobalCursorPosition(int& x, int& y);      //!< writes the x and y coordinates of the cursor to the arguments
 };

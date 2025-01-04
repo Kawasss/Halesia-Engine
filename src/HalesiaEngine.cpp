@@ -199,19 +199,10 @@ void HalesiaEngine::UpdateRenderer(float delta)
 
 void HalesiaEngine::CheckInput()
 {
-	static bool pressedLastFrame = false;
-	bool pressedThisFrame = Input::IsKeyPressed(VirtualKey::RightArrow) && Input::IsKeyPressed(VirtualKey::LeftControl);
-	playOneFrame = pressedLastFrame && !pressedThisFrame;
+	playOneFrame = Input::IsKeyJustPressed(VirtualKey::RightArrow) && Input::IsKeyJustPressed(VirtualKey::LeftControl);
 
-	if (Input::IsKeyPressed(VirtualKey::Q))
-		core.window->LockCursor();
-	if (Input::IsKeyPressed(VirtualKey::E))
-		core.window->UnlockCursor();
-
-	if (!Input::IsKeyPressed(devConsoleKey) && devKeyIsPressedLastFrame)
+	if (Input::IsKeyJustReleased(devConsoleKey))
 		Console::isOpen = !Console::isOpen;
-
-	pressedLastFrame = pressedThisFrame;
 }
 
 void HalesiaEngine::UpdateAsyncCompletionTimes(float frameDelta)
@@ -259,8 +250,8 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 		core.scene->Start();
 		while (!core.window->ShouldClose())
 		{
+			Input::FetchState();
 			CheckInput();
-			devKeyIsPressedLastFrame = Input::IsKeyPressed(devConsoleKey);
 
 			Physics::Simulate(frameDelta);
 			Physics::FetchAndUpdateObjects();
@@ -274,7 +265,7 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 				GUI::ShowWindowData(core.window); // only works on main thread, because it calls windows functions for changing the window
 
 			Window::PollMessages();
-
+			
 			asyncScripts.get();
 
 			if (core.renderer->CompletedFIFCyle())

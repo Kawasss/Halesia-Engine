@@ -83,7 +83,6 @@ private:
 	EngineCore core;                           //!< the engines core
 
 	bool playIntro = true;                     //!< if true, the is played on start up
-	bool devKeyIsPressedLastFrame = false;     //!< checks if the developer key was pressed last frame to prevent flickering
 	bool renderDevConsole = false;             //!< if true, the developer console is rendered
 	VirtualKey devConsoleKey;                  //!< the key that triggers the developer console
 
