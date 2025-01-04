@@ -123,13 +123,6 @@ void HalesiaEngine::SetCreateInfo(const HalesiaEngineCreateInfo& createInfo)
 	HalesiaEngine::createInfo = createInfo;
 }
 
-void HalesiaEngine::Destroy()
-{
-	delete core.renderer;
-	delete core.scene;
-	delete core.window;
-}
-
 void HalesiaEngine::LoadScene(Scene* newScene)
 {
 	core.scene->Destroy();
@@ -244,13 +237,13 @@ void HalesiaEngine::PlayIntro()
 	delete intro;
 }
 
-HalesiaExitCode HalesiaEngine::Run()
+HalesiaEngine::ExitCode HalesiaEngine::Run()
 {
 	std::string lastCommand;
 	float timeSinceLastDataUpdate = 0;
 
 	if (core.renderer == nullptr || core.window == nullptr/* || physics == nullptr*/)
-		return HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION;
+		return ExitCode::UnknownException;
 
 	RegisterConsoleVars();
 
@@ -304,24 +297,24 @@ HalesiaExitCode HalesiaEngine::Run()
 			}
 		}
 		OnExit();
-		return HALESIA_EXIT_CODE_SUCESS;
+		return ExitCode::Success;
 	}
 	catch (const ExitRequest& exit)
 	{
 		OnExit();
-		return HALESIA_EXIT_CODE_SUCESS;
+		return ExitCode::Success;
 	}
 	catch (const std::exception& e) //catch any normal exception and return
 	{
 		std::string fullError = e.what();
 		ProcessError(e);
 		OnExit();
-		return HALESIA_EXIT_CODE_EXCEPTION;
+		return ExitCode::Exception;
 	}
 	catch (...) //catch any unknown exceptions and return, doesnt catch any read or write errors etc.
 	{
 		MessageBoxA(nullptr, "Caught an unknown error, this build is most likely corrupt and can't be used.", "Unknown engine error", MB_OK | MB_ICONERROR);
-		return HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION;
+		return ExitCode::UnknownException;
 	}
 }
 
@@ -402,6 +395,13 @@ void HalesiaEngine::LoadVars()
 	std::cout << "Finished loading from cfg/vars.vvm\n";
 }
 
+void HalesiaEngine::Destroy()
+{
+	delete core.scene;
+	delete core.renderer;
+	delete core.window;
+}
+
 void HalesiaEngine::OnExit()
 {
 	Audio::Destroy();
@@ -429,10 +429,10 @@ void HalesiaEngine::OnExit()
 
 	VVM::WriteToFile("cfg/vars.vvm");
 	std::cout << "Finished writing to cfg/vars.vvm\n";
+	
+	Destroy();
 
-	delete core.scene;
-	delete core.renderer;
-	delete core.window;
+	delete this;
 }
 
 void HalesiaEngine::RegisterConsoleVars()

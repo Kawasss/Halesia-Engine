@@ -28,15 +28,15 @@ const char* NodeTypeToString(NodeType type)
 	return "NODE_TYPE_UNKNOWN";
 }
 
-std::string HalesiaExitCodeToString(HalesiaExitCode exitCode)
+std::string HalesiaEngine::ExitCodeToString(HalesiaEngine::ExitCode exitCode)
 {
 	switch (exitCode)
 	{
-	case HALESIA_EXIT_CODE_SUCESS:            return "HALESIA_EXIT_CODE_SUCESS";
-	case HALESIA_EXIT_CODE_EXCEPTION:         return "HALESIA_EXIT_CODE_EXCEPTION";
-	case HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION: return "HALESIA_EXIT_CODE_UNKNOWN_EXCEPTION";
+	case HalesiaEngine::ExitCode::Success:          return "HalesiaEngine::ExitCode::Success";
+	case HalesiaEngine::ExitCode::Exception:        return "HalesiaEngine::ExitCode::Exception";
+	case HalesiaEngine::ExitCode::UnknownException: return "HalesiaEngine::ExitCode::UnknownException";
 	}
-	return "";
+	return "HalesiaEngine::ExitCode::Unknown";
 }
 
 std::string RigidBody::TypeToString(Type type)
