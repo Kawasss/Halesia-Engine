@@ -364,23 +364,24 @@ void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
 
 void HalesiaEngine::LoadVars()
 {
+	VVM::Reader reader;
 	std::vector<VVM::Group> groups;
-	if (VVM::ReadFromFile("cfg/vars.vvm", groups) != VVM_SUCCESS)
+	if (reader.ReadFromFile("cfg/vars.vvm", groups) != VVM_SUCCESS)
 		return;
 
-	showFPS =     VVM::FindVariable("engineCore.showFPS", groups).As<bool>();
-	core.maxFPS = VVM::FindVariable("engineCore.maxFPS", groups).As<int>();
-	devConsoleKey = (VirtualKey)VVM::FindVariable("engineCore.consoleKey", groups).As<int>();
+	showFPS = reader.FindVariable("engineCore.showFPS", groups).As<bool>();
+	core.maxFPS = reader.FindVariable("engineCore.maxFPS", groups).As<int>();
+	devConsoleKey = (VirtualKey)reader.FindVariable("engineCore.consoleKey", groups).As<int>();
 
-	core.renderer->internalScale =         VVM::FindVariable("renderer.internalRes", groups).As<float>();
-	Renderer::shouldRenderCollisionBoxes = VVM::FindVariable("renderer.renderCollision", groups).As<bool>();
-	Renderer::denoiseOutput =              VVM::FindVariable("renderer.denoiseOutput", groups).As<bool>();
-	RayTracingPipeline::raySampleCount =       VVM::FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
-	RayTracingPipeline::rayDepth =             VVM::FindVariable("renderer.ray-tracing.rayDepth", groups).As<int>();
-	RayTracingPipeline::showNormals =          VVM::FindVariable("renderer.ray-tracing.showNormals", groups).As<bool>();
-	RayTracingPipeline::showUniquePrimitives = VVM::FindVariable("renderer.ray-tracing.showUnique", groups).As<bool>();
-	RayTracingPipeline::showAlbedo =           VVM::FindVariable("renderer.ray-tracing.showAlbedo", groups).As<bool>();
-	RayTracingPipeline::renderProgressive =    VVM::FindVariable("renderer.ray-tracing.renderProgressive", groups).As<bool>();
+	core.renderer->internalScale = reader.FindVariable("renderer.internalRes", groups).As<float>();
+	Renderer::shouldRenderCollisionBoxes = reader.FindVariable("renderer.renderCollision", groups).As<bool>();
+	Renderer::denoiseOutput = reader.FindVariable("renderer.denoiseOutput", groups).As<bool>();
+	RayTracingPipeline::raySampleCount = reader.FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
+	RayTracingPipeline::rayDepth = reader.FindVariable("renderer.ray-tracing.rayDepth", groups).As<int>();
+	RayTracingPipeline::showNormals = reader.FindVariable("renderer.ray-tracing.showNormals", groups).As<bool>();
+	RayTracingPipeline::showUniquePrimitives = reader.FindVariable("renderer.ray-tracing.showUnique", groups).As<bool>();
+	RayTracingPipeline::showAlbedo = reader.FindVariable("renderer.ray-tracing.showAlbedo", groups).As<bool>();
+	RayTracingPipeline::renderProgressive = reader.FindVariable("renderer.ray-tracing.renderProgressive", groups).As<bool>();
 
 	std::cout << "Finished loading from cfg/vars.vvm\n";
 }
@@ -396,32 +397,31 @@ void HalesiaEngine::OnExit()
 {
 	Audio::Destroy();
 
-	VVM::PushGroup("engineCore");
-	VVM::AddVariable("showFPS", showFPS);
-	VVM::AddVariable("maxFPS", core.maxFPS);
-	VVM::AddVariable("consoleKey", (int)devConsoleKey);
-	VVM::PopGroup();
+	VVM::Writer writer;
 
-	VVM::PushGroup("renderer");
-	VVM::AddVariable("interalRes", Renderer::internalScale);
-	VVM::AddVariable("renderCollision", Renderer::shouldRenderCollisionBoxes);
-	VVM::AddVariable("denoiseOutput", Renderer::denoiseOutput);
+	writer.PushGroup("engineCore");
+	writer.AddVariable("showFPS", showFPS);
+	writer.AddVariable("maxFPS", core.maxFPS);
+	writer.AddVariable("consoleKey", (int)devConsoleKey);
+	writer.PopGroup();
 
-	VVM::PushGroup("ray-tracing");
-	VVM::AddVariable("raySamples", RayTracingPipeline::raySampleCount);
-	VVM::AddVariable("rayDepth", RayTracingPipeline::rayDepth);
-	VVM::AddVariable("showNormals", RayTracingPipeline::showNormals);
-	VVM::AddVariable("showUnique", RayTracingPipeline::showUniquePrimitives);
-	VVM::AddVariable("showAlbedo", RayTracingPipeline::showAlbedo);
-	VVM::AddVariable("renderProgressive", RayTracingPipeline::renderProgressive);
-	VVM::PopGroup();
-	VVM::PopGroup();
+	writer.PushGroup("renderer");
+	writer.AddVariable("interalRes", Renderer::internalScale);
+	writer.AddVariable("renderCollision", Renderer::shouldRenderCollisionBoxes);
+	writer.AddVariable("denoiseOutput", Renderer::denoiseOutput);
 
-	VVM::WriteToFile("cfg/vars.vvm");
+	writer.PushGroup("ray-tracing");
+	writer.AddVariable("raySamples", RayTracingPipeline::raySampleCount);
+	writer.AddVariable("rayDepth", RayTracingPipeline::rayDepth);
+	writer.AddVariable("showNormals", RayTracingPipeline::showNormals);
+	writer.AddVariable("showUnique", RayTracingPipeline::showUniquePrimitives);
+	writer.AddVariable("showAlbedo", RayTracingPipeline::showAlbedo);
+	writer.AddVariable("renderProgressive", RayTracingPipeline::renderProgressive);
+	writer.PopGroup();
+	writer.PopGroup();
+
+	writer.WriteToFile("cfg/vars.vvm");
 	std::cout << "Finished writing to cfg/vars.vvm\n";
-	
-	VVM::Reset();
-	VVM::Destroy();
 
 	Destroy();
 
