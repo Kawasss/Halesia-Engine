@@ -20,6 +20,7 @@
 #include "core/Profiler.h"
 #include "core/Behavior.h"
 #include "core/Scene.h"
+#include "core/UniquePointer.h"
 
 #include "vvm/VVM.hpp"
 
@@ -74,7 +75,7 @@ inline RendererFlags GetRendererFlagsFromBehavior()
 HalesiaEngine* HalesiaEngine::GetInstance()
 {
 	static HalesiaEngine* instance = nullptr;
-	static  bool init = false;
+	static bool init = false;
 	if (init)
 		return instance;
 
@@ -133,12 +134,12 @@ void HalesiaEngine::LoadScene(Scene* newScene)
 inline void ManageCameraInjector(Scene* scene, bool pauseGame)
 {
 	static CameraInjector cameraInjector;
-	static Camera* orbitCamera = new OrbitCamera();
+	static UniquePointer orbitCamera = new OrbitCamera();
 
 	if (pauseGame && !cameraInjector.IsInjected())
 	{
 		cameraInjector = CameraInjector{ scene };
-		cameraInjector.Inject(orbitCamera);
+		cameraInjector.Inject(orbitCamera.Get());
 	}
 	else if (!pauseGame && cameraInjector.IsInjected())
 		cameraInjector.Eject();
@@ -219,13 +220,11 @@ void HalesiaEngine::PlayIntro()
 	if (!playIntro)
 		return;
 
-	Intro* intro = new Intro();
+    UniquePointer intro = new Intro();
 	intro->Create(core.renderer->swapchain, "textures/floor.png");
 
-	core.renderer->RenderIntro(intro);
+	core.renderer->RenderIntro(intro.Get());
 	intro->Destroy();
-
-	delete intro;
 }
 
 HalesiaEngine::ExitCode HalesiaEngine::Run()
@@ -421,6 +420,9 @@ void HalesiaEngine::OnExit()
 	VVM::WriteToFile("cfg/vars.vvm");
 	std::cout << "Finished writing to cfg/vars.vvm\n";
 	
+	VVM::Reset();
+	VVM::Destroy();
+
 	Destroy();
 
 	delete this;

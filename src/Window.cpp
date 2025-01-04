@@ -3,6 +3,7 @@
 #include <windowsx.h>
 #include <iostream>
 #include <stdexcept>
+#include <vector>
 
 #define BORDERLESS_WINDOWED WS_POPUP
 
@@ -296,21 +297,17 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		UINT sizeOfStruct = sizeof(RAWINPUT);
 
 		GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &sizeOfStruct, sizeof(RAWINPUTHEADER));
-		LPBYTE bytePointer = new BYTE[sizeOfStruct];
-		if (bytePointer == NULL)
-			return 0;
+		std::vector<BYTE> bytes(sizeOfStruct);
 
-		if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, bytePointer, &sizeOfStruct, sizeof(RAWINPUTHEADER)) != sizeOfStruct)
+		if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, bytes.data(), &sizeOfStruct, sizeof(RAWINPUTHEADER)) != sizeOfStruct)
 			throw std::runtime_error("GetRawInputData does not return correct size");
 
-		RAWINPUT* rawInput = (RAWINPUT*)bytePointer;
+		RAWINPUT* rawInput = reinterpret_cast<RAWINPUT*>(bytes.data());
 		if (rawInput->header.dwType != RIM_TYPEMOUSE)
 			break;
 
 		window->cursor.x = rawInput->data.mouse.lLastX;
 		window->cursor.y = rawInput->data.mouse.lLastY;
-
-		delete[] bytePointer;
 		break;
 	}
 
@@ -318,17 +315,16 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 	{
 		HDROP hDrop = (HDROP)wParam;
 		UINT bufferSize = DragQueryFileA(hDrop, 0, NULL, 512); // DragQueryFileA returns the length of the path of the file if the pointer to the file buffer is NULL
-		char* fileBuffer = new char[bufferSize + 1]; // + 1 to account for the null terminator
-		DragQueryFileA(hDrop, 0, fileBuffer, bufferSize + 1);
+
+		std::vector<char> fileBuffer(bufferSize + 1);
+		DragQueryFileA(hDrop, 0, fileBuffer.data(), bufferSize + 1); // could also directly write to the string ??
 
 		window->containsDroppedFile = true;
-		window->droppedFile = std::string(fileBuffer);
+		window->droppedFile = std::string(fileBuffer.data());
 
 #ifdef _DEBUG
 		std::cout << "Detected dropped file: " + window->droppedFile << std::endl;
 #endif
-
-		delete[] fileBuffer;
 		break;
 	}
 
