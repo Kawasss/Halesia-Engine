@@ -214,7 +214,7 @@ void DeferredPipeline::UpdateTextureBuffer()
 			VkDescriptorImageInfo& imageInfo = imageInfos[index];
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			imageInfo.imageView = Mesh::materials[i][PBRMaterialTextures[j]]->imageView;
-			imageInfo.sampler = Renderer::noFilterSampler;
+			imageInfo.sampler = Renderer::defaultSampler;
 
 			VkWriteDescriptorSet& writeSet = writeSets[index];
 			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
