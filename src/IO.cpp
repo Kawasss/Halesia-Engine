@@ -16,11 +16,10 @@ namespace IO
 			throw std::runtime_error("Failed to open the file at " + path);
 
 		size_t fileSize = (size_t)file.tellg();
-		std::vector<char> buffer(fileSize);
+		std::vector<char> buffer(fileSize + (nullTerm ? 1 : 0));
 
 		file.seekg(0);
 		file.read(buffer.data(), fileSize);
-		if (nullTerm) buffer.push_back('\0');
 
 		file.close();
 		return buffer;

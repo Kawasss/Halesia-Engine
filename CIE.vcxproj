@@ -162,7 +162,6 @@
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_items.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="..\..\additionalDependencies\spirv-reflect\spirv_reflect.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\vvm\VVM.cpp" />
     <ClCompile Include="..\ScriptingInterpreter\src\Instruction.cpp" />
     <ClCompile Include="..\ScriptingInterpreter\src\Interpeter.cpp" />
     <ClCompile Include="..\ScriptingInterpreter\src\Lexer.cpp" />
@@ -190,6 +189,7 @@
     <ClCompile Include="src\GraphicsPipeline.cpp" />
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\HalesiaEngine.cpp" />
+    <ClCompile Include="src\IniFile.cpp" />
     <ClCompile Include="src\Intro.cpp" />
     <ClCompile Include="src\IO.cpp" />
     <ClCompile Include="src\Material.cpp" />
@@ -238,7 +238,6 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_textedit.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_truetype.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.h" />
-    <ClInclude Include="..\..\additionalDependencies\vvm\VVM.hpp" />
     <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Instruction.hpp" />
     <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Interpreter.hpp" />
     <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Lexer.hpp" />
@@ -271,6 +270,7 @@
     <ClInclude Include="src\io\FileRigidBody.h" />
     <ClInclude Include="src\io\FileShape.h" />
     <ClInclude Include="src\io\FwdDclCreationData.h" />
+    <ClInclude Include="src\io\IniFile.h" />
     <ClInclude Include="src\io\IO.h" />
     <ClInclude Include="src\io\SceneLoader.h" />
     <ClInclude Include="src\io\SceneWriter.h" />
@@ -332,8 +332,8 @@
     <ResourceCompile Include="src\Halesia.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="cfg\engine.ini" />
     <None Include="cfg\init.cfg" />
-    <None Include="cfg\vars.vvm" />
     <None Include="shaders\uncompiled\anim.comp" />
     <None Include="shaders\uncompiled\cubemapConv.frag" />
     <None Include="shaders\uncompiled\cubemapConv.vert" />

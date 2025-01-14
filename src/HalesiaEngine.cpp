@@ -22,6 +22,8 @@
 #include "core/Scene.h"
 #include "core/UniquePointer.h"
 
+#include "io/IniFile.h"
+
 #include "vvm/VVM.hpp"
 
 #include "Audio.h"
@@ -364,26 +366,24 @@ void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
 
 void HalesiaEngine::LoadVars()
 {
-	VVM::Reader reader;
-	std::vector<VVM::Group> groups;
-	if (reader.ReadFromFile("cfg/vars.vvm", groups) != VVM_SUCCESS)
-		return;
+	ini::Reader reader("cfg/engine.ini");
 
-	showFPS = reader.FindVariable("engineCore.showFPS", groups).As<bool>();
-	core.maxFPS = reader.FindVariable("engineCore.maxFPS", groups).As<int>();
-	devConsoleKey = (VirtualKey)reader.FindVariable("engineCore.consoleKey", groups).As<int>();
+	showFPS       = reader.GetBool("showFPS");
+	core.maxFPS   = reader.GetInt("maxFPS");
+	devConsoleKey = static_cast<VirtualKey>(reader.GetFloat("consoleKey"));
 
-	core.renderer->internalScale = reader.FindVariable("renderer.internalRes", groups).As<float>();
-	Renderer::shouldRenderCollisionBoxes = reader.FindVariable("renderer.renderCollision", groups).As<bool>();
-	Renderer::denoiseOutput = reader.FindVariable("renderer.denoiseOutput", groups).As<bool>();
-	RayTracingPipeline::raySampleCount = reader.FindVariable("renderer.ray-tracing.raySamples", groups).As<int>();
-	RayTracingPipeline::rayDepth = reader.FindVariable("renderer.ray-tracing.rayDepth", groups).As<int>();
-	RayTracingPipeline::showNormals = reader.FindVariable("renderer.ray-tracing.showNormals", groups).As<bool>();
-	RayTracingPipeline::showUniquePrimitives = reader.FindVariable("renderer.ray-tracing.showUnique", groups).As<bool>();
-	RayTracingPipeline::showAlbedo = reader.FindVariable("renderer.ray-tracing.showAlbedo", groups).As<bool>();
-	RayTracingPipeline::renderProgressive = reader.FindVariable("renderer.ray-tracing.renderProgressive", groups).As<bool>();
+	core.renderer->internalScale         = reader.GetFloat("internalRes");
+	Renderer::shouldRenderCollisionBoxes = reader.GetBool("renderCollision");
+	Renderer::denoiseOutput              = reader.GetBool("denoiseOutput");
 
-	std::cout << "Finished loading from cfg/vars.vvm\n";
+	RayTracingPipeline::raySampleCount       = reader.GetInt("raySamples");
+	RayTracingPipeline::rayDepth             = reader.GetInt("rayDepth");
+	RayTracingPipeline::showNormals          = reader.GetBool("showNormals");
+	RayTracingPipeline::showUniquePrimitives = reader.GetBool("showUnique");
+	RayTracingPipeline::showAlbedo           = reader.GetBool("showAlbedo");
+	RayTracingPipeline::renderProgressive    = reader.GetBool("renderProgressive");
+
+	std::cout << "Finished loading from cfg/engine.ini\n";
 }
 
 void HalesiaEngine::Destroy()
@@ -397,31 +397,27 @@ void HalesiaEngine::OnExit()
 {
 	Audio::Destroy();
 
-	VVM::Writer writer;
+	ini::Writer writer("cfg/engine.ini");
+	writer.SetGroup("engine");
 
-	writer.PushGroup("engineCore");
-	writer.AddVariable("showFPS", showFPS);
-	writer.AddVariable("maxFPS", core.maxFPS);
-	writer.AddVariable("consoleKey", (int)devConsoleKey);
-	writer.PopGroup();
+	writer["showFPS"]    = std::to_string(showFPS);
+	writer["maxFPS"]     = std::to_string(core.maxFPS);
+	writer["consoleKey"] = std::to_string(static_cast<int>(devConsoleKey));
 
-	writer.PushGroup("renderer");
-	writer.AddVariable("interalRes", Renderer::internalScale);
-	writer.AddVariable("renderCollision", Renderer::shouldRenderCollisionBoxes);
-	writer.AddVariable("denoiseOutput", Renderer::denoiseOutput);
+	writer["internalRes"]     = std::to_string(Renderer::internalScale);
+	writer["renderCollision"] = std::to_string(Renderer::shouldRenderCollisionBoxes);
+	writer["denoiseOutput"]   = std::to_string(Renderer::denoiseOutput);
 
-	writer.PushGroup("ray-tracing");
-	writer.AddVariable("raySamples", RayTracingPipeline::raySampleCount);
-	writer.AddVariable("rayDepth", RayTracingPipeline::rayDepth);
-	writer.AddVariable("showNormals", RayTracingPipeline::showNormals);
-	writer.AddVariable("showUnique", RayTracingPipeline::showUniquePrimitives);
-	writer.AddVariable("showAlbedo", RayTracingPipeline::showAlbedo);
-	writer.AddVariable("renderProgressive", RayTracingPipeline::renderProgressive);
-	writer.PopGroup();
-	writer.PopGroup();
+	writer["raySamples"]        = std::to_string(RayTracingPipeline::raySampleCount);
+	writer["rayDepth"]          = std::to_string(RayTracingPipeline::rayDepth);
+	writer["showNormals"]       = std::to_string(RayTracingPipeline::showNormals);
+	writer["showUnique"]        = std::to_string(RayTracingPipeline::showUniquePrimitives);
+	writer["showAlbedo"]        = std::to_string(RayTracingPipeline::showAlbedo);
+	writer["renderProgressive"] = std::to_string(RayTracingPipeline::renderProgressive);
 
-	writer.WriteToFile("cfg/vars.vvm");
-	std::cout << "Finished writing to cfg/vars.vvm\n";
+	writer.Write();
+
+	std::cout << "Finished writing to cfg/engine.ini\n";
 
 	Destroy();
 

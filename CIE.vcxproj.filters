@@ -43,9 +43,6 @@
     <Filter Include="external\imgui">
       <UniqueIdentifier>{983a078f-7c39-44e9-9318-e794860e2725}</UniqueIdentifier>
     </Filter>
-    <Filter Include="external\vvm">
-      <UniqueIdentifier>{298d5cb3-a06d-4bef-98de-55d859886c29}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\system">
       <UniqueIdentifier>{2dc43ede-009b-45ba-83c5-68b2b8c34345}</UniqueIdentifier>
     </Filter>
@@ -161,9 +158,6 @@
     </ClCompile>
     <ClCompile Include="src\SceneLoader.cpp">
       <Filter>Source Files\io</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\vvm\VVM.cpp">
-      <Filter>external\vvm</Filter>
     </ClCompile>
     <ClCompile Include="src\Window.cpp">
       <Filter>Source Files\system</Filter>
@@ -297,6 +291,9 @@
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\ImGuizmo.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="src\IniFile.cpp">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -409,9 +406,6 @@
     </ClInclude>
     <ClInclude Include="src\renderer\gui.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\vvm\VVM.hpp">
-      <Filter>external\vvm</Filter>
     </ClInclude>
     <ClInclude Include="src\system\Window.h">
       <Filter>Header Files\system</Filter>
@@ -596,6 +590,9 @@
     <ClInclude Include="src\io\FileArray.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
+    <ClInclude Include="src\io\IniFile.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">
@@ -650,9 +647,6 @@
     <None Include="cfg\init.cfg">
       <Filter>cfg</Filter>
     </None>
-    <None Include="cfg\vars.vvm">
-      <Filter>cfg</Filter>
-    </None>
     <None Include="shaders\uncompiled\include\light.glsl">
       <Filter>Shaders</Filter>
     </None>
@@ -682,6 +676,9 @@
     </None>
     <None Include="shaders\uncompiled\deferredSecondRT.frag">
       <Filter>Shaders</Filter>
+    </None>
+    <None Include="cfg\engine.ini">
+      <Filter>cfg</Filter>
     </None>
   </ItemGroup>
 </Project>
