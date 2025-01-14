@@ -162,10 +162,6 @@
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_items.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="..\..\additionalDependencies\spirv-reflect\spirv_reflect.cpp" />
-    <ClCompile Include="..\ScriptingInterpreter\src\Instruction.cpp" />
-    <ClCompile Include="..\ScriptingInterpreter\src\Interpeter.cpp" />
-    <ClCompile Include="..\ScriptingInterpreter\src\Lexer.cpp" />
-    <ClCompile Include="..\ScriptingInterpreter\src\Parser.cpp" />
     <ClCompile Include="src\AccelerationStructures.cpp" />
     <ClCompile Include="src\AnimationManager.cpp" />
     <ClCompile Include="src\Audio.cpp" />
@@ -238,11 +234,6 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_textedit.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_truetype.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.h" />
-    <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Instruction.hpp" />
-    <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Interpreter.hpp" />
-    <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Lexer.hpp" />
-    <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Parser.hpp" />
-    <ClInclude Include="..\ScriptingInterpreter\src\interpreter\Tools.hpp" />
     <ClInclude Include="src\Audio.h" />
     <ClInclude Include="src\core\Behavior.h" />
     <ClInclude Include="src\core\Camera.h" />

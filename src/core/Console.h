@@ -33,6 +33,9 @@ public:
 
 	struct Message
 	{
+		Message() = default;
+		Message(const std::string& str, Severity sev) : text(str), severity(sev) {}
+
 		std::string text;
 		Severity severity;
 	};
@@ -43,32 +46,44 @@ public:
 	static void Init();
 
 	static void WriteLine(std::string message, Severity severity = Severity::Normal);
-	static void InterpretCommand(std::string command = "");
+	static void InterpretCommand(std::string_view command);
 
 	static Color GetColorFromMessage(const Message& message);
 
 	template<typename T> 
-	static void AddConsoleVariable(std::string variableName, T* variable, Access access = Access::ReadWrite);
-
-	template<typename T> 
-	static void AddConsoleVariables(std::vector<std::string> variableNames, std::vector<T*> variables);
+	static void AddCVar(const std::string& name, T* variable, Access access = Access::ReadWrite);
 
 private:
-	static void BindVariableToExternVariable(std::string externalVariable, void* variable);
-	static void BindExternFunctions();
+	enum class DataType
+	{
+		None,
+		Float,
+		Int,
+		Bool,
+	};
 
-	static bool init;
+	struct CVarInfo
+	{
+		void* ptr;
+		DataType type;
+	};
+
+	template<typename T>
+	static DataType GetDataType()
+	{
+		return DataType::None; // default value
+	}
+
+	static void AddCVariable(const std::string& name, DataType type, void* ptr);
 };
 
-template<typename T> 
-void Console::AddConsoleVariable(std::string variableName, T* variable, Access access)
-{
-	BindVariableToExternVariable(variableName, (void*)variable);
-}
+template<> inline Console::DataType Console::GetDataType<float>() { return DataType::Float; }
+template<> inline Console::DataType Console::GetDataType<int>()   { return DataType::Int;   }
+template<> inline Console::DataType Console::GetDataType<bool>()  { return DataType::Bool;  }
 
 template<typename T> 
-void Console::AddConsoleVariables(std::vector<std::string> variableNames, std::vector<T*> variables)
+void Console::AddCVar(const std::string& name, T* variable, Access access)
 {
-	for (int i = 0; i < variableNames.size() && i < variables.size(); i++)
-		BindVariableToExternVariable(variableNames[i], (void*)variables[i]);
+	DataType type = GetDataType<T>();
+	AddCVariable(name, type, reinterpret_cast<void*>(variable));
 }

@@ -4,6 +4,7 @@
 #include <sstream>
 #include <chrono>
 #include <iomanip>
+#include <map>
 
 #include "core/Console.h"
 
@@ -11,25 +12,15 @@
 
 #include "io/IO.h"
 
-#include <interpreter/Lexer.hpp>
-#include <interpreter/Parser.hpp>
-#include <interpreter/Interpreter.hpp>
+std::vector<Console::Message> Console::messages;
 
-std::vector<Console::Message> Console::messages{};
+std::map<std::string, float*> floatCVars;
+std::map<std::string, int*>   intCVars;
+std::map<std::string, bool*>  boolCVars;
 
 bool Console::isOpen = false;
-bool Console::init   = false;
-
-Parser parser;
-Interpreter interpreter;
 
 win32::CriticalSection writingLinesCritSection;
-
-inline void writeline(FunctionBody* body)
-{
-	std::string text = interpreter.GetStringFromStack(body->parameters[0]);
-	Console::WriteLine(text);
-}
 
 inline std::string GetTimeAsString()
 {
@@ -61,22 +52,54 @@ inline void WriteMessageWithColor(const std::string& message, Console::Severity 
 	}
 }
 
-void Console::Init()
+inline bool WriteValueToName(const std::string& name, float val)
 {
-	std::ifstream file("cfg/init.cfg", std::ios::ate | std::ios::binary);
-	std::cout << "Initialised console with" << (file.good() ? "" : "out") << " init.cfg" << "\n";
-	if (!file.good())
-		return;
-
-	interpreter.SetInstructions({ Instruction(INSTRUCTION_TYPE_PUSH_SCOPE) }, {});
-	interpreter.Execute();
-	InterpretCommand(IO::ReadFile("cfg/init.cfg", true).data());
-	init = true;
+	auto floatIt = floatCVars.find(name);
+	if (floatIt != floatCVars.end())
+	{
+		*floatIt->second = val;
+		return true;
+	}
+	auto intIt = intCVars.find(name);
+	if (intIt != intCVars.end())
+	{
+		*intIt->second = static_cast<int>(val);
+		return true;
+	}
+	auto boolIt = boolCVars.find(name);
+	if (boolIt != boolCVars.end())
+	{
+		*boolIt->second = static_cast<bool>(val);
+		return true;
+	}
+	return false;
 }
 
-void Console::BindExternFunctions()
+void Console::AddCVariable(const std::string& name, DataType type, void* ptr)
 {
-	interpreter.ConnectExternalFunction(parser.GetOperandByName("writeline").id, &writeline);
+	if (type == DataType::None)
+	{
+		WriteLine("Could not add cvar", Severity::Error);
+		return;
+	}
+
+	switch (type)
+	{
+	case DataType::Float:
+		floatCVars.emplace(name, reinterpret_cast<float*>(ptr));
+		break;
+	case DataType::Int:
+		intCVars.emplace(name, reinterpret_cast<int*>(ptr));
+		break;
+	case DataType::Bool:
+		boolCVars.emplace(name, reinterpret_cast<bool*>(ptr));
+		break;
+	}
+}
+
+void Console::Init()
+{
+
 }
 
 void Console::WriteLine(std::string message, Console::Severity severity)
@@ -84,33 +107,43 @@ void Console::WriteLine(std::string message, Console::Severity severity)
 	win32::CriticalLockGuard guard(writingLinesCritSection);
 	message = GetTimeAsString() + message;
 
-	messages.push_back({ message, severity });
+	messages.emplace_back(message, severity);
 
 	#ifdef _DEBUG
 	WriteMessageWithColor(message, severity);
 	#endif
 }
 
-void Console::InterpretCommand(std::string command)
+void Console::InterpretCommand(std::string_view command)
 {
-	if (!command.empty() && command.back() != ';') command += ';';
-	const std::vector<Lexer::Token> lexTokens = Lexer::LexInput(command);
-	parser.SetTokens(lexTokens);
-	parser.Parse();
+	size_t separator = command.find(' ');
+	if (separator == std::string::npos)
+	{
+		WriteLine("Parsing error", Severity::Error);
+		return;
+	}
 
-	if (!init)
-		BindExternFunctions();
+	std::string name = command.data();
+	name.erase(separator);
 
-	parser.instructions.erase(parser.instructions.begin(), parser.instructions.begin() + 2);
-	interpreter.SetInstructions(parser.instructions, parser.functions);
-	parser.ClearInstructions();
-	interpreter.Execute();
-}
+	std::string_view value = command.substr(separator + 1);
 
-void Console::BindVariableToExternVariable(std::string externalVariable, void* variable)
-{
-	Operand op = parser.GetOperandByName(externalVariable);
-	interpreter.ConnectExternalVariable(op.id, variable, ByteSizeOf(op.type));
+	float underlying = 0.0f;
+
+	try
+	{
+		underlying = std::stof(value.data());
+	}
+	catch (...)
+	{
+		WriteLine("Failed to interpret value", Severity::Error);
+		return;
+	}
+
+	if (!WriteValueToName(name, underlying))
+		WriteLine("Failed to find cvar", Severity::Error);
+	else
+		WriteLine("set value of cvar", Severity::Debug);
 }
 
 Console::Color Console::GetColorFromMessage(const Message& message)

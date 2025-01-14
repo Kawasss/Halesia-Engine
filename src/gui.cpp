@@ -432,7 +432,7 @@ void GUI::ShowDevConsoleContent()
 	std::string result = "";
 	ImGui::InputTextWithHint("##input", "Console commands...", &result);
 
-	if (Input::IsKeyPressed(VirtualKey::Return)) // if enter is pressed place the input value into the optional variable
+	if (Input::IsKeyPressed(VirtualKey::Return) && !result.empty()) // if enter is pressed place the input value into the optional variable
 		Console::InterpretCommand(result);
 }
 

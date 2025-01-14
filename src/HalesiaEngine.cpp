@@ -426,13 +426,24 @@ void HalesiaEngine::OnExit()
 
 void HalesiaEngine::RegisterConsoleVars()
 {
-	Console::AddConsoleVariables<bool>(
-		{ "pauseGame", "showFPS", "playOneFrame", "showAsyncTimes", "showMetaData", "showNormals", "showAlbedo", "showUnique", "renderProgressive", "rasterize", "denoiseOutput", "disableAnimations" },
-		{ &pauseGame, &showFPS, &playOneFrame, &showAsyncTimes, &showObjectData, &RayTracingPipeline::showNormals, &RayTracingPipeline::showAlbedo, &RayTracingPipeline::showUniquePrimitives, &RayTracingPipeline::renderProgressive, &core.renderer->shouldRasterize, &Renderer::denoiseOutput, &core.animationManager->disable }
-	);
-	Console::AddConsoleVariable("raySamples", &RayTracingPipeline::raySampleCount);
-	Console::AddConsoleVariable("rayDepth", &RayTracingPipeline::rayDepth);
-	Console::AddConsoleVariable("internalResScale", &Renderer::internalScale);
+	Console::AddCVar("pauseGame",    &pauseGame);
+	Console::AddCVar("showFPS",      &showFPS);
+	Console::AddCVar("playFrame",    &playOneFrame);
+	Console::AddCVar("showAsync",    &showAsyncTimes);
+	Console::AddCVar("showMetaData", &showObjectData);
+
+	Console::AddCVar("showNormals", &RayTracingPipeline::showNormals);
+	Console::AddCVar("showAlbedo",  &RayTracingPipeline::showAlbedo);
+	Console::AddCVar("showUnique",  &RayTracingPipeline::showUniquePrimitives);
+	Console::AddCVar("renderProg",  &RayTracingPipeline::renderProgressive);
+	Console::AddCVar("raySamples",  &RayTracingPipeline::raySampleCount);
+	Console::AddCVar("rayDepth",    &RayTracingPipeline::rayDepth);
+
+	Console::AddCVar("denoiseOutput", &Renderer::denoiseOutput);
+	Console::AddCVar("internalScale", &Renderer::internalScale);
+
+	Console::AddCVar("rasterize",         &core.renderer->shouldRasterize);
+	Console::AddCVar("disableAnimations", &core.animationManager->disable);
 }
 
 void HalesiaEngine::Exit()
