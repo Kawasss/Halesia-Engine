@@ -1,44 +1,7 @@
-#include <unordered_set>
-#include <unordered_map>
 #include <algorithm>
 
 #include "renderer/Vulkan.h"
 #include "renderer/ShaderReflector.h"
-
-ShaderReflector::ShaderReflector(const std::vector<char>& sourceCode)
-{
-	if (spvReflectCreateShaderModule(sourceCode.size(), sourceCode.data(), &module) != SPV_REFLECT_RESULT_SUCCESS)
-		throw VulkanAPIError("Cannot reflect on a given shader", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
-}
-
-VkDescriptorSetLayoutBinding ShaderReflector::GetDescriptorSetLayoutBinding(uint32_t bindingIndex, uint32_t setIndex) const
-{
-	if (setIndex >= module.descriptor_set_count)
-		throw VulkanAPIError("Cannot get the set bindings from a given shader", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
-	
-
-	for (uint32_t i = 0; i < module.descriptor_sets[setIndex].binding_count; i++)
-	{
-		if (module.descriptor_sets[setIndex].bindings[i]->binding != bindingIndex)
-			continue;
-		SpvReflectDescriptorBinding* binding = module.descriptor_sets[setIndex].bindings[i];
-
-		VkDescriptorSetLayoutBinding ret{};
-		ret.descriptorType = (VkDescriptorType)binding->descriptor_type;
-		ret.stageFlags = (VkShaderStageFlags)module.shader_stage;
-		ret.binding = binding->binding;
-		ret.pImmutableSamplers = nullptr;
-		ret.descriptorCount = 1; // descriptor count cannot be set with this, assume 1
-		
-		return ret;
-	}
-	throw VulkanAPIError("Cannot get the set bindings from a given shader", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
-}
-
-ShaderReflector::~ShaderReflector()
-{
-	spvReflectDestroyShaderModule(&module);
-}
 
 ShaderGroupReflector::ShaderGroupReflector(const std::vector<std::vector<char>>& sourceCodes)
 {
@@ -97,26 +60,24 @@ std::vector<VkDescriptorSetLayoutBinding> ShaderGroupReflector::GetLayoutBinding
 std::vector<VkDescriptorPoolSize> ShaderGroupReflector::GetDescriptorPoolSize() const
 {
 	std::vector<VkDescriptorPoolSize> ret;
-	std::unordered_map<SpvReflectDescriptorType, uint32_t> typeIndex;
-	std::unordered_set<uint64_t> doesBindingAlreadyExist;
+	std::map<VkDescriptorType, size_t> typeIndex; // where in 'ret' is this descriptor type
 
-	for (uint32_t i = 0; i < modules.size(); i++)
+	for (const auto& [set, bindings] : setLayoutBindings)
 	{
-		for (uint32_t j = 0; j < modules[i].descriptor_binding_count; j++)
+		for (const VkDescriptorSetLayoutBinding& binding : bindings)
 		{
-			SpvReflectDescriptorBinding& current = modules[i].descriptor_bindings[j];
-			uint64_t ID = CreateUniqueID(current.set, current.binding);
-			
-			if (doesBindingAlreadyExist.find(ID) == doesBindingAlreadyExist.end())
-				doesBindingAlreadyExist.insert(ID);
-			else continue;
-
-			if (typeIndex.count(current.descriptor_type) == 0)
+			auto it = typeIndex.find(binding.descriptorType);
+			if (it == typeIndex.end()) // if this descriptor isnt registered, then register it. otherwise, add the amount of newly found descriptors onto it
 			{
-				ret.push_back({ (VkDescriptorType)current.descriptor_type, 0 });
-				typeIndex[current.descriptor_type] = static_cast<uint32_t>(ret.size() - 1);
+				VkDescriptorPoolSize size{};
+				size.descriptorCount = binding.descriptorCount;
+				size.type = binding.descriptorType;
+
+				ret.push_back(size);
+				typeIndex.emplace(binding.descriptorType, ret.size() - 1);
 			}
-			ret[typeIndex[current.descriptor_type]].descriptorCount += current.count;
+			else
+				ret[it->second].descriptorCount += binding.descriptorCount;
 		}
 	}
 	return ret;
@@ -160,12 +121,9 @@ uint32_t ShaderGroupReflector::GetOutputVariableCount(uint32_t index) const
 std::set<uint32_t> ShaderGroupReflector::GetDescriptorSetIndices() const
 {
 	std::set<uint32_t> ret;
-	for (int i = 0; i < modules.size(); i++)
+	for (const auto& [index, bindings] : setLayoutBindings)
 	{
-		for (uint32_t j = 0; j < modules[i].descriptor_set_count; j++)
-		{
-			ret.insert(modules[i].descriptor_sets[j].set);
-		}
+		ret.insert(index);
 	}
 	return ret;
 }
@@ -184,22 +142,6 @@ const char* ShaderGroupReflector::GetNameOfBinding(const Binding& binding) const
 		}
 	}
 	return nullptr;
-}
-
-SpvReflectDescriptorBinding ShaderGroupReflector::GetDescriptorBindingFromBinding(const Binding& binding) const
-{
-	for (uint32_t i = 0; i < modules.size(); i++)
-	{
-		for (uint32_t j = 0; j < modules[i].descriptor_binding_count; j++)
-		{
-			SpvReflectDescriptorBinding& descriptorBinding = modules[i].descriptor_bindings[j];
-			Binding currBinding(descriptorBinding.set, descriptorBinding.binding);
-
-			if (currBinding == binding)
-				return descriptorBinding;
-		}
-	}
-	return {};
 }
 
 void ShaderGroupReflector::WriteToDescriptorSet(VkDevice logicalDevice, VkDescriptorSet set, VkBuffer buffer, uint32_t setIndex, uint32_t binding) const
@@ -230,7 +172,7 @@ void ShaderGroupReflector::WriteToDescriptorSet(VkDevice logicalDevice, VkDescri
 
 void ShaderGroupReflector::ExcludeBinding(uint32_t set, uint32_t binding)
 {
-	removedBindings.insert({ set, binding });
+	removedBindings.emplace(set, binding);
 }
 
 ShaderGroupReflector::~ShaderGroupReflector()
