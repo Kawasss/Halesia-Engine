@@ -16,17 +16,17 @@ Bone::Bone(const aiNodeAnim* animNode) : time(0), transform(glm::mat4(1.0f)), na
 	rotations.reserve(animNode->mNumRotationKeys);
 	scales.reserve(animNode->mNumScalingKeys);
 
-	for (int i = 0; i < animNode->mNumPositionKeys; i++)
+	for (unsigned int i = 0; i < animNode->mNumPositionKeys; i++)
 	{
 		const aiVectorKey& key = animNode->mPositionKeys[i];
 		positions.emplace_back(GetVec3(key.mValue), (float)key.mTime);
 	}
-	for (int i = 0; i < animNode->mNumRotationKeys; i++)
+	for (unsigned int i = 0; i < animNode->mNumRotationKeys; i++)
 	{
 		aiQuatKey& key = animNode->mRotationKeys[i];
 		rotations.emplace_back(GetQuat(key.mValue), (float)key.mTime);
 	}
-	for (int i = 0; i < animNode->mNumScalingKeys; i++)
+	for (unsigned int i = 0; i < animNode->mNumScalingKeys; i++)
 	{
 		aiVectorKey& key = animNode->mScalingKeys[i];
 		scales.emplace_back(GetVec3(key.mValue), (float)key.mTime);

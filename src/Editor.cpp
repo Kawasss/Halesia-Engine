@@ -16,10 +16,10 @@
 #include "HalesiaEngine.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include <implot.h>
-#include <imgui.h>
-#include <ImGuizmo.h>
-#include <misc/cpp/imgui_stdlib.h>
+#include <imgui-1.89.8/implot.h>
+#include <imgui-1.89.8/imgui.h>
+#include <imgui-1.89.8/ImGuizmo.h>
+#include <imgui-1.89.8/misc/cpp/imgui_stdlib.h>
 
 #include <glm/gtc/type_ptr.hpp>
 

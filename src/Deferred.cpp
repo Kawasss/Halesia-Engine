@@ -113,8 +113,8 @@ void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass seco
 
 void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
 {
-	Skybox* skybox = Skybox::ReadFromHDR("textures/skybox/park.hdr", payload.renderer->GetActiveCommandBuffer());
-	delete skybox;
+	//Skybox* skybox = Skybox::ReadFromHDR("textures/skybox/park.hdr", payload.renderer->GetActiveCommandBuffer()); memory leak ??
+	//delete skybox;
 
 	UpdateTextureBuffer(); // temp !!!
 

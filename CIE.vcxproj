@@ -106,7 +106,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8\imgui-1.89.8;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -136,7 +136,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8\imgui-1.89.8;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.3.261.1\Include;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -151,18 +151,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_vulkan.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_win32.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\ImGuizmo.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_demo.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_draw.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_tables.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_widgets.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_demo.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_items.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\backends\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\ImGuizmo.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui_demo.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui_draw.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui_tables.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui_widgets.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\implot.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\implot_demo.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\implot_items.cpp" />
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="..\..\additionalDependencies\spirv-reflect\spirv_reflect.cpp" />
     <ClCompile Include="src\AccelerationStructures.cpp" />
     <ClCompile Include="src\AnimationManager.cpp" />
@@ -224,19 +224,19 @@
     <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_vulkan.h" />
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\backends\imgui_impl_win32.h" />
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imconfig.h" />
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui.h" />
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_internal.h" />
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imgui_single_file.h" />
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot.h" />
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\implot_internal.h" />
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imspinner.h" />
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_rectpack.h" />
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_textedit.h" />
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\imstb_truetype.h" />
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui-1.89.8\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\backends\imgui_impl_vulkan.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\backends\imgui_impl_win32.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imconfig.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\ImGuizmo.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui_internal.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui_single_file.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\implot.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\implot_internal.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imspinner.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imstb_rectpack.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imstb_textedit.h" />
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imstb_truetype.h" />
     <ClInclude Include="src\Audio.h" />
     <ClInclude Include="src\core\Behavior.h" />
     <ClInclude Include="src\core\Camera.h" />

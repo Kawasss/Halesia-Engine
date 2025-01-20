@@ -9,8 +9,8 @@
 #include "renderer/GarbageManager.h"
 #include "renderer/Vulkan.h"
 
-GraphicsPipeline* pipeline = nullptr; // find a way to make only ONE pipeline exist for all skyboxes !! (this reference counting is bad !!!!)
-VkRenderPass renderPass;
+GraphicsPipeline* skyboxPipeline = nullptr; // find a way to make only ONE pipeline exist for all skyboxes !! (this reference counting is bad !!!!)
+VkRenderPass skyboxRenderPass;
 int pipelineRefCount = 0;
 
 Skybox* Skybox::ReadFromHDR(const std::string& path, const CommandBuffer& cmdBuffer)
@@ -30,7 +30,7 @@ Skybox* Skybox::ReadFromHDR(const std::string& path, const CommandBuffer& cmdBuf
 Skybox::Skybox()
 {
 	pipelineRefCount++;
-	if (pipeline != nullptr)
+	if (skyboxPipeline != nullptr)
 		return;
 
 	RenderPassBuilder builder(VK_FORMAT_R8G8B8A8_UNORM);
@@ -41,17 +41,17 @@ Skybox::Skybox()
 	builder.ClearOnLoad(false);
 	builder.DontClearDepth(true);
 
-	renderPass = builder.Build();
+	skyboxRenderPass = builder.Build();
 
 	GraphicsPipeline::CreateInfo createInfo{};
 	createInfo.vertexShader   = "shaders/spirv/skybox.vert.spv";
 	createInfo.fragmentShader = "shaders/spirv/skybox.frag.spv";
 
-	createInfo.renderPass = renderPass;
+	createInfo.renderPass = skyboxRenderPass;
 	createInfo.noVertices = true;
 	createInfo.noCulling  = true;
 
-	pipeline = new GraphicsPipeline(createInfo);
+	skyboxPipeline = new GraphicsPipeline(createInfo);
 }
 
 void Skybox::CreateFramebuffer()
@@ -81,7 +81,7 @@ void Skybox::CreateFramebuffer()
 	createInfo.height = 1024;
 	createInfo.layers = 1;
 	createInfo.attachmentCount = 1;
-	createInfo.renderPass = renderPass;
+	createInfo.renderPass = skyboxRenderPass;
 
 	vkCreateFramebuffer(Vulkan::GetContext().logicalDevice, &createInfo, nullptr, &framebuffer);
 }
@@ -96,9 +96,9 @@ void Skybox::Destroy()
 	pipelineRefCount--;
 	if (pipelineRefCount <= 0)
 	{
-		vgm::Delete(renderPass);
-		delete pipeline;
-		pipeline = nullptr;
+		vgm::Delete(skyboxRenderPass);
+		delete skyboxPipeline;
+		skyboxPipeline = nullptr;
 	}
 
 	vgm::Delete(framebuffer);

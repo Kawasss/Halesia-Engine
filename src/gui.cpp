@@ -1,9 +1,9 @@
 #define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
 #define IMSPINNER_DEMO
-#include "implot.h"
-#include "imgui.h"
-#include "misc/cpp/imgui_stdlib.h"
+#include "imgui-1.89.8/implot.h"
+#include "imgui-1.89.8/imgui.h"
+#include "imgui-1.89.8/misc/cpp/imgui_stdlib.h"
 
 #include "renderer/RayTracing.h"
 #include "renderer/Mesh.h"
