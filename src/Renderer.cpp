@@ -27,11 +27,11 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS_IMPLEMENTED
-#include "implot.h"
-#include "ImGuizmo.h"
-#include "imgui.h"
-#include "backends/imgui_impl_vulkan.h"
-#include "backends/imgui_impl_win32.h"
+#include <imgui-1.91.7/implot.h>
+#include <imgui-1.91.7/ImGuizmo.h>
+#include <imgui-1.91.7/imgui.h>
+#include <imgui-1.91.7/backends/imgui_impl_vulkan.h>
+#include <imgui-1.91.7/backends/imgui_impl_win32.h>
 
 #include "renderer/Renderer.h"
 
@@ -51,11 +51,21 @@ float     Renderer::internalScale = 1;
 
 VkMemoryAllocateFlagsInfo allocateFlagsInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO, nullptr, VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT, 0 };
 
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+static void check_vk_result(VkResult err)
+{
+	if (err == 0)
+		return;
+	fprintf(stderr, "[vulkan] Error: VkResult = %d\n", err);
+	if (err < 0)
+		abort();
+}
+
 Renderer::Renderer(Window* window, RendererFlags flags)
 {
 	this->flags = flags;
 	testWindow = window;
-	window->additionalPollCallback = ::ImGui_ImplWin32_WndProcHandler;
 	Vulkan::optionalMemoryAllocationFlags = &allocateFlagsInfo;
 	InitVulkan();
 }
@@ -91,8 +101,8 @@ void Renderer::Destroy()
 	HdrConverter::End();
 	//delete rayTracer;
 
-	::vkDestroyDescriptorPool(logicalDevice, imGUIDescriptorPool, nullptr);
 	::ImGui_ImplVulkan_Shutdown();
+	::vkDestroyDescriptorPool(logicalDevice, imGUIDescriptorPool, nullptr);
 
 	delete swapchain;
 
@@ -158,25 +168,33 @@ void Renderer::CreateImGUI()
 	ImGui::CreateContext();
 	ImPlot::CreateContext();
 
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
 	::ImGui_ImplWin32_Init(testWindow->window);
 
-	ImGui_ImplVulkan_InitInfo imGUICreateInfo{};
-	imGUICreateInfo.Instance = instance;
-	imGUICreateInfo.PhysicalDevice = physicalDevice.Device();
-	imGUICreateInfo.Device = logicalDevice;
-	imGUICreateInfo.Queue = graphicsQueue;
-	imGUICreateInfo.DescriptorPool = imGUIDescriptorPool;
-	imGUICreateInfo.MinImageCount = 3;
-	imGUICreateInfo.ImageCount = 3;
-	imGUICreateInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	testWindow->additionalPollCallback = ImGui_ImplWin32_WndProcHandler;
 
-	::ImGui_ImplVulkan_Init(&imGUICreateInfo, GUIRenderPass);
+	ImGui_ImplVulkan_InitInfo imGuiCreateInfo{};
+	imGuiCreateInfo.Instance = instance;
+	imGuiCreateInfo.PhysicalDevice = physicalDevice.Device();
+	imGuiCreateInfo.Device = logicalDevice;
+	imGuiCreateInfo.Queue = graphicsQueue;
+	imGuiCreateInfo.DescriptorPool = imGUIDescriptorPool;
+	imGuiCreateInfo.MinImageCount = 3;
+	imGuiCreateInfo.ImageCount = 3;
+	imGuiCreateInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+	imGuiCreateInfo.RenderPass = GUIRenderPass;
+	imGuiCreateInfo.CheckVkResultFn = check_vk_result;
 
-	VkCommandBuffer imGUICommandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
-	::ImGui_ImplVulkan_CreateFontsTexture(imGUICommandBuffer);
+	::ImGui_ImplVulkan_Init(&imGuiCreateInfo);
+
+	/*VkCommandBuffer imGUICommandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
+	::ImGui_ImplVulkan_CreateFontsTexture();
 	Vulkan::EndSingleTimeCommands(graphicsQueue, imGUICommandBuffer, commandPool);
 
-	::ImGui_ImplVulkan_DestroyFontUploadObjects();
+	::ImGui_ImplVulkan_DestroyFontsTexture();*/
 
 	ResetImGUI();
 }

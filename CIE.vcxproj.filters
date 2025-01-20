@@ -246,40 +246,40 @@
     <ClCompile Include="src\HdrConverter.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui.cpp">
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\imgui.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui_demo.cpp">
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\imgui_demo.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui_draw.cpp">
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\imgui_draw.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui_tables.cpp">
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\imgui_tables.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\imgui_widgets.cpp">
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\imgui_widgets.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\ImGuizmo.cpp">
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\backends\imgui_impl_vulkan.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\implot.cpp">
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\backends\imgui_impl_win32.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\implot_demo.cpp">
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\implot_items.cpp">
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\ImGuizmo.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\backends\imgui_impl_vulkan.cpp">
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\implot.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\backends\imgui_impl_win32.cpp">
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\implot_demo.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\imgui-1.89.8\misc\cpp\imgui_stdlib.cpp">
+    <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\implot_items.cpp">
       <Filter>external\imgui</Filter>
     </ClCompile>
   </ItemGroup>
@@ -530,43 +530,43 @@
     <ClInclude Include="src\renderer\HdrConverter.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imconfig.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imconfig.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imgui.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui_internal.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imgui_internal.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imgui_single_file.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\ImGuizmo.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\ImGuizmo.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\implot.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\implot.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imspinner.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\implot_internal.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_rectpack.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imspinner.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_textedit.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imstb_rectpack.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_truetype.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imstb_textedit.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\backends\imgui_impl_vulkan.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\imstb_truetype.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\backends\imgui_impl_win32.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\backends\imgui_impl_vulkan.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\additionalDependencies\imgui-1.89.8\backends\imgui_impl_win32.h">
+    <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\implot_internal.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
   </ItemGroup>
