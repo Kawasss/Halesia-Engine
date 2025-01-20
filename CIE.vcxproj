@@ -187,6 +187,7 @@
     <ClCompile Include="src\GraphicsPipeline.cpp" />
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\HalesiaEngine.cpp" />
+    <ClCompile Include="src\HdrConverter.cpp" />
     <ClCompile Include="src\IniFile.cpp" />
     <ClCompile Include="src\Intro.cpp" />
     <ClCompile Include="src\IO.cpp" />
@@ -285,6 +286,7 @@
     <ClInclude Include="src\renderer\GarbageManager.h" />
     <ClInclude Include="src\renderer\GraphicsPipeline.h" />
     <ClInclude Include="src\renderer\gui.h" />
+    <ClInclude Include="src\renderer\HdrConverter.h" />
     <ClInclude Include="src\renderer\Intro.h" />
     <ClInclude Include="src\renderer\Light.h" />
     <ClInclude Include="src\renderer\Material.h" />

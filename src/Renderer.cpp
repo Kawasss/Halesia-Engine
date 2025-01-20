@@ -16,6 +16,7 @@
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/GarbageManager.h"
+#include "renderer/HdrConverter.h"
 #include "renderer/Light.h"
 
 #include "system/Window.h"
@@ -86,6 +87,8 @@ void Renderer::Destroy()
 	delete writer;
 
 	delete animationManager;
+
+	HdrConverter::End();
 	//delete rayTracer;
 
 	::vkDestroyDescriptorPool(logicalDevice, imGUIDescriptorPool, nullptr);
@@ -311,6 +314,8 @@ void Renderer::CreateDefaultObjects() // default objects are objects that are al
 	animationManager = AnimationManager::Get();
 
 	queryPool.Create(VK_QUERY_TYPE_TIMESTAMP, 10);
+
+	HdrConverter::Start();
 }
 
 void Renderer::CreateContext()

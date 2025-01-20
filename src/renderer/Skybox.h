@@ -1,39 +1,39 @@
 #pragma once
+#include <string>
+
 #include "Buffer.h"
 
 class Cubemap;
 class GraphicsPipeline;
-class Texture;
 class CommandBuffer;
 class Camera;
-class Renderer;
 
 class Skybox
 {
 public:
-	void SetSkyBox(Cubemap* skybox); // this will transfer ownership of the cubemap to this pipeline
+	static Skybox* ReadFromHDR(const std::string& path, const CommandBuffer& cmdBuffer);
 
-	void Start();
-	void Draw(const CommandBuffer& cmdBuffer, Camera* camera, Renderer* renderer); // the pipeline expects to be called in an already active render pass
+	~Skybox()
+	{
+		Destroy();
+	}
+
+	Skybox(const Skybox&) = delete;
+	Skybox& operator=(Skybox&&) = delete;
+
+	void Draw(const CommandBuffer& cmdBuffer);
+
 	void Destroy();
 
+	VkImageView targetView = VK_NULL_HANDLE;
+	VkImageView depth = VK_NULL_HANDLE;
+
 private:
-	void ConvertImageToCubemap(const CommandBuffer& cmdBuffer);
-	void SetupConvert();
+	Skybox();
 
-	void CreateRenderPass();
-	void CreatePipeline();
+	void CreateFramebuffer();
 
-	FIF::Buffer ubo;
+	VkFramebuffer framebuffer = VK_NULL_HANDLE;
 
-	GraphicsPipeline* convertPipeline = nullptr;
-	GraphicsPipeline* pipeline = nullptr;
 	Cubemap* cubemap = nullptr;
-	Texture* texture = nullptr;
-
-	// these are stored here rn because i dont have good place to destroy them yet
-	VkRenderPass renderPass;
-	VkRenderPass convertRenderPass;
-	VkFramebuffer framebuffer;
-	bool hasConverted = false;
 };

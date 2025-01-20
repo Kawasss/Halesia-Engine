@@ -1,48 +1,38 @@
+#include <memory>
+
 #include "renderer/Skybox.h"
-#include "renderer/Buffer.h"
-#include "renderer/Renderer.h"
-#include "renderer/Vulkan.h"
-#include "renderer/GraphicsPipeline.h"
 #include "renderer/Texture.h"
-#include "renderer/DescriptorWriter.h"
+#include "renderer/HdrConverter.h"
+#include "renderer/CommandBuffer.h"
+#include "renderer/GraphicsPipeline.h"
+#include "renderer/PipelineCreator.h"
 #include "renderer/GarbageManager.h"
+#include "renderer/Vulkan.h"
 
-#include "core/Camera.h"
+GraphicsPipeline* pipeline = nullptr; // find a way to make only ONE pipeline exist for all skyboxes !! (this reference counting is bad !!!!)
+VkRenderPass renderPass;
+int pipelineRefCount = 0;
 
-struct UBO
+Skybox* Skybox::ReadFromHDR(const std::string& path, const CommandBuffer& cmdBuffer)
 {
-	glm::mat4 projection;
-	glm::mat4 view;
-};
+	Skybox* ret = new Skybox();
 
-void Skybox::Start()
-{
-	CreateRenderPass();
-	CreatePipeline();
+	std::unique_ptr<Texture> flat = std::make_unique<Texture>(path, false);
+	flat->AwaitGeneration();
 
-	texture = new Texture("textures/skybox/park.hdr", false);
-	texture->AwaitGeneration();
+	ret->cubemap = new Cubemap(1024, 1024);
 
-	Vulkan::SetDebugName(texture->image, "skybox 2d");
+	HdrConverter::ConvertTextureIntoCubemap(cmdBuffer, flat.get(), ret->cubemap);
 
-	convertPipeline->BindImageToName("equirectangularMap", texture->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-	DescriptorWriter::Get()->Write();
-
-	Cubemap* map = new Cubemap(1024, 1024);
-
-	SetSkyBox(map);
-
-	SetupConvert();
-
-	ubo.Init(sizeof(UBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	ubo.MapPermanently();
-
-	pipeline->BindBufferToName("ubo", ubo);	
+	return ret;
 }
 
-void Skybox::CreateRenderPass()
+Skybox::Skybox()
 {
+	pipelineRefCount++;
+	if (pipeline != nullptr)
+		return;
+
 	RenderPassBuilder builder(VK_FORMAT_R8G8B8A8_UNORM);
 
 	builder.SetInitialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
@@ -53,19 +43,6 @@ void Skybox::CreateRenderPass()
 
 	renderPass = builder.Build();
 
-	RenderPassBuilder convertBuilder(VK_FORMAT_R8G8B8A8_SRGB);
-
-	convertBuilder.SetInitialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
-	convertBuilder.SetFinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-	convertBuilder.DisableDepth(true);
-	convertBuilder.ClearOnLoad(true);
-
-	convertRenderPass = convertBuilder.Build();
-}
-
-void Skybox::CreatePipeline()
-{
 	GraphicsPipeline::CreateInfo createInfo{};
 	createInfo.vertexShader   = "shaders/spirv/skybox.vert.spv";
 	createInfo.fragmentShader = "shaders/spirv/skybox.frag.spv";
@@ -75,21 +52,11 @@ void Skybox::CreatePipeline()
 	createInfo.noCulling  = true;
 
 	pipeline = new GraphicsPipeline(createInfo);
-
-	createInfo.vertexShader   = "shaders/spirv/cubemapConv.vert.spv";
-	createInfo.fragmentShader = "shaders/spirv/cubemapConv.frag.spv";
-
-	createInfo.renderPass = convertRenderPass;
-	createInfo.noVertices = true;
-	createInfo.noCulling  = true;
-	createInfo.noDepth    = true;
-
-	convertPipeline = new GraphicsPipeline(createInfo);
 }
 
-void Skybox::SetupConvert()
+void Skybox::CreateFramebuffer()
 {
-	const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+	constexpr VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
 
 	VkFramebufferAttachmentImageInfo imageInfo{};
 	imageInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO;
@@ -114,116 +81,26 @@ void Skybox::SetupConvert()
 	createInfo.height = 1024;
 	createInfo.layers = 1;
 	createInfo.attachmentCount = 1;
-	createInfo.renderPass = convertRenderPass;
+	createInfo.renderPass = renderPass;
 
 	vkCreateFramebuffer(Vulkan::GetContext().logicalDevice, &createInfo, nullptr, &framebuffer);
 }
 
-void Skybox::ConvertImageToCubemap(const CommandBuffer& cmdBuffer)
+void Skybox::Draw(const CommandBuffer& cmdBuffer)
 {
-	Renderer::SetViewport(cmdBuffer, { 1024, 1024 });
-	Renderer::SetScissors(cmdBuffer, { 1024, 1024 });
-
-	const std::array<glm::mat4, 6> views =
-	{
-		glm::lookAt(glm::vec3(0), glm::vec3( 1,  0,  0), glm::vec3(0, -1,  0)),
-		glm::lookAt(glm::vec3(0), glm::vec3(-1,  0,  0), glm::vec3(0, -1,  0)),
-		glm::lookAt(glm::vec3(0), glm::vec3( 0,  1,  0), glm::vec3(0,  0,  1)),
-		glm::lookAt(glm::vec3(0), glm::vec3( 0, -1,  0), glm::vec3(0,  0, -1)),
-		glm::lookAt(glm::vec3(0), glm::vec3( 0,  0,  1), glm::vec3(0, -1,  0)),
-		glm::lookAt(glm::vec3(0), glm::vec3( 0,  0, -1), glm::vec3(0, -1,  0)),
-	};
-	UBO pushConstant{};
-	pushConstant.projection = glm::perspective(glm::pi<float>() * 0.5f, 1.0f, 0.01f, 1000.0f);
-	pushConstant.projection[1][1] *= -1;
-
-	Renderer::BindBuffersForRendering(cmdBuffer);
-
-	convertPipeline->Bind(cmdBuffer);
-
-	for (int i = 0; i < 6; i++)
-	{
-		int actual = i;
-		if (i == 3) // reverse the up and down texture
-			actual = 2;
-		else if (i == 2)
-			actual = 3;
-
-		pushConstant.view = views[actual];
-
-		convertPipeline->PushConstant(cmdBuffer, pushConstant, VK_SHADER_STAGE_VERTEX_BIT);
-
-		std::array<VkClearValue, 1> clearColors{};
-		clearColors[0].color = { 1, 0, 0, 1 };
-
-		VkRenderPassAttachmentBeginInfo attachInfo{};
-		attachInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_ATTACHMENT_BEGIN_INFO;
-		attachInfo.attachmentCount = 1;
-		attachInfo.pAttachments = &cubemap->layerViews[i];
-
-		::VkRenderPassBeginInfo renderPassBeginInfo{};
-		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		renderPassBeginInfo.pNext = &attachInfo;
-		renderPassBeginInfo.renderPass = convertRenderPass;
-		renderPassBeginInfo.framebuffer = framebuffer;
-		renderPassBeginInfo.renderArea.offset = { 0, 0 };
-		renderPassBeginInfo.renderArea.extent = { 1024, 1024 };
-		renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
-		renderPassBeginInfo.pClearValues = clearColors.data();
-
-		cmdBuffer.BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-		cmdBuffer.Draw(36, 1, 0, 0);
-		cmdBuffer.EndRenderPass();
-	}
-
-	hasConverted = true;
-}
-
-void Skybox::Draw(const CommandBuffer& cmdBuffer, Camera* camera, Renderer* renderer)
-{
-	if (cubemap == nullptr)
-		return;
-
-	if (!hasConverted)
-	{
-		ConvertImageToCubemap(cmdBuffer);
-		return;
-	}
-		
-	UBO* ptr = ubo.GetMappedPointer<UBO>();
-	ptr->projection = camera->GetProjectionMatrix();
-	ptr->view = camera->GetViewMatrix();
-
-	renderer->StartRenderPass(renderPass);
-
-	pipeline->Bind(cmdBuffer);
-
-	cmdBuffer.Draw(36, 1, 0, 0);
-
-	cmdBuffer.EndRenderPass();
+	
 }
 
 void Skybox::Destroy()
 {
-	if (cubemap) delete cubemap;
+	pipelineRefCount--;
+	if (pipelineRefCount <= 0)
+	{
+		vgm::Delete(renderPass);
+		delete pipeline;
+		pipeline = nullptr;
+	}
 
-	delete pipeline;
-	delete convertPipeline;
-
-	delete texture;
-
-	vgm::Delete(renderPass);
-	vgm::Delete(convertRenderPass);
 	vgm::Delete(framebuffer);
-
-	ubo.Destroy();
-}
-
-void Skybox::SetSkyBox(Cubemap* skybox)
-{
-	if (cubemap) delete cubemap;
-	cubemap = skybox;
-
-	pipeline->BindImageToName("skybox", skybox->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	delete cubemap;
 }

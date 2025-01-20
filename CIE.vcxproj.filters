@@ -279,6 +279,9 @@
     <ClCompile Include="src\IniFile.cpp">
       <Filter>Source Files\io</Filter>
     </ClCompile>
+    <ClCompile Include="src\HdrConverter.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -562,6 +565,9 @@
     </ClInclude>
     <ClInclude Include="src\io\IniFile.h">
       <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\HdrConverter.h">
+      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

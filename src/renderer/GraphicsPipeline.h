@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <map>
-#include <array>
 #include <vulkan/vulkan.h>
 
 #include "PipelineCreator.h"

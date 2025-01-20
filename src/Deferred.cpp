@@ -78,7 +78,7 @@ void DeferredPipeline::Start(const Payload& payload)
 			vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr); // better to incorporate this into Pipeline
 		}
 	}
-		
+
 	SetTextureBuffer();
 }
 
@@ -113,6 +113,9 @@ void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass seco
 
 void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
 {
+	Skybox* skybox = Skybox::ReadFromHDR("textures/skybox/park.hdr", payload.renderer->GetActiveCommandBuffer());
+	delete skybox;
+
 	UpdateTextureBuffer(); // temp !!!
 
 	if (Renderer::canRayTrace)
