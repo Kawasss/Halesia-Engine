@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <string>
 
 #include "RenderPipeline.h"
 #include "FramesInFlight.h"
@@ -21,7 +22,7 @@ public:
 	void Resize(const Payload& payload) override;
 	void AddLight(const Light& light) override;
 
-	static Skybox* skybox; // only for testing
+	void LoadSkybox(const std::string& path);
 
 private:
 	struct UBO
@@ -45,7 +46,6 @@ private:
 	void CreatePipelines(VkRenderPass firstPass, VkRenderPass secondPass);
 
 	Framebuffer framebuffer;
-	ObserverFramebuffer skyboxFramebuffer;
 
 	FIF::Buffer uboBuffer;
 	FIF::Buffer lightBuffer;
@@ -54,6 +54,8 @@ private:
 	GraphicsPipeline* secondPipeline = nullptr;
 
 	TopLevelAccelerationStructure* TLAS = nullptr;
+
+	Skybox* skybox = nullptr;
 
 	std::array<std::vector<uint64_t>, FIF::FRAME_COUNT> processedMats;
 };

@@ -69,11 +69,12 @@ int main(int argc, char** argv)
 	light2.direction = glm::vec4(0, -1, 0, glm::radians(12.5f));
 	light2.type  = Light::Type::Point;
 	
-	renderer->AddRenderPipeline<DeferredPipeline>();
+	renderer->AddRenderPipeline<DeferredPipeline>("deferred");
 	renderer->AddLight(light);
 	renderer->AddLight(light2);
 	
-	//renderer->AddRenderPipeline<SkyboxPipeline>();
+	DeferredPipeline* deferred = dynamic_cast<DeferredPipeline*>(renderer->GetRenderPipeline("deferred"));
+	deferred->LoadSkybox("textures/skybox/park.hdr");
 
 	instance->Run();
 

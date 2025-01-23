@@ -190,12 +190,6 @@ void Renderer::CreateImGUI()
 
 	::ImGui_ImplVulkan_Init(&imGuiCreateInfo);
 
-	/*VkCommandBuffer imGUICommandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
-	::ImGui_ImplVulkan_CreateFontsTexture();
-	Vulkan::EndSingleTimeCommands(graphicsQueue, imGUICommandBuffer, commandPool);
-
-	::ImGui_ImplVulkan_DestroyFontsTexture();*/
-
 	ResetImGUI();
 }
 
@@ -1032,4 +1026,14 @@ RenderPipeline::Payload Renderer::GetPipelinePayload(CommandBuffer commandBuffer
 	ret.window = testWindow;
 	
 	return ret;
+}
+
+RenderPipeline* Renderer::GetRenderPipeline(const std::string_view& name)
+{
+	for (const auto& [pPipeline, pipelineName] : dbgPipelineNames)
+	{
+		if (name == pipelineName)
+			return pPipeline;
+	}
+	return nullptr;
 }

@@ -21,7 +21,9 @@ public:
 	Skybox(const Skybox&) = delete;
 	Skybox& operator=(Skybox&&) = delete;
 
-	void Draw(const CommandBuffer& cmdBuffer);
+	void Draw(const CommandBuffer& cmdBuffer, Camera* camera);
+
+	void Resize(uint32_t width, uint32_t height);
 
 	void Destroy();
 
@@ -31,7 +33,12 @@ public:
 private:
 	Skybox();
 
-	void CreateFramebuffer();
+	GraphicsPipeline* pipeline = nullptr; // this is extremely wasteful if there are multiple skyboxes at once that arent sharing the pipeline and renderpass
+	VkRenderPass renderPass = VK_NULL_HANDLE;
+
+	uint32_t width = 0, height = 0;
+
+	void CreateFramebuffer(uint32_t width, uint32_t height);
 
 	VkFramebuffer framebuffer = VK_NULL_HANDLE;
 

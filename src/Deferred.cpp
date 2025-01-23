@@ -15,8 +15,6 @@ struct PushConstant
 	int materialID;
 };
 
-Skybox* DeferredPipeline::skybox = nullptr;
-
 void DeferredPipeline::Start(const Payload& payload)
 {
 	std::vector<VkFormat> formats = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM };
@@ -111,11 +109,32 @@ void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass seco
 	secondPipeline = new GraphicsPipeline(createInfo);
 }
 
+void DeferredPipeline::LoadSkybox(const std::string& path)
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	VkCommandPool pool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
+	VkCommandBuffer cmdBuffer = Vulkan::BeginSingleTimeCommands(pool);
+
+	Skybox* brandnew = Skybox::ReadFromHDR(path, cmdBuffer);
+	
+	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, cmdBuffer, pool);
+	Vulkan::YieldCommandPool(ctx.graphicsIndex, pool);
+
+	if (skybox != nullptr)
+		delete skybox;
+	skybox = brandnew;
+
+	uint32_t width = framebuffer.GetWidth(), height = framebuffer.GetHeight();
+	if (width != 0 && height != 0)
+		skybox->Resize(width, height);
+
+	skybox->targetView = framebuffer.GetViews()[1];
+	skybox->depth = framebuffer.GetDepthView();
+}
+
 void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
 {
-	//Skybox* skybox = Skybox::ReadFromHDR("textures/skybox/park.hdr", payload.renderer->GetActiveCommandBuffer()); memory leak ??
-	//delete skybox;
-
 	UpdateTextureBuffer(); // temp !!!
 
 	if (Renderer::canRayTrace)
@@ -154,6 +173,9 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 
 	cmdBuffer.EndRenderPass();
 
+	if (skybox != nullptr)
+		skybox->Draw(payload.commandBuffer, payload.camera);
+
 	renderer->StartRenderPass(renderer->GetDefault3DRenderPass());
 
 	secondPipeline->Bind(cmdBuffer);
@@ -183,6 +205,10 @@ void DeferredPipeline::Resize(const Payload& payload)
 	secondPipeline->BindImageToName("albedoImage", views[1], sampler, layout);
 	secondPipeline->BindImageToName("normalImage", views[2], sampler, layout);
 	secondPipeline->BindImageToName("metallicRoughnessAOImage", views[3], sampler, layout);
+
+	skybox->Resize(payload.width, payload.height);
+	skybox->targetView = framebuffer.GetViews()[1];
+	skybox->depth = framebuffer.GetDepthView();
 }
 
 void DeferredPipeline::UpdateTextureBuffer()
@@ -281,12 +307,14 @@ void DeferredPipeline::Destroy()
 {
 	vgm::Delete(renderPass);
 
+	if (skybox != nullptr)
+		delete skybox;
+
 	delete firstPipeline;
 	delete secondPipeline;
 
 	delete TLAS;
 
-	skyboxFramebuffer.~ObserverFramebuffer();
 	framebuffer.~Framebuffer();
 
 	lightBuffer.~Buffer();

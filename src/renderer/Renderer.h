@@ -103,13 +103,16 @@ public:
 
 	static bool CompletedFIFCyle() { return FIF::frameIndex == 0; }
 
-	template<typename Type> void AddRenderPipeline()
+	template<typename Type> 
+	void AddRenderPipeline(const char* name = "unnamed pipeline")
 	{
 		Type* actualPtr = new Type();
 		RenderPipeline* ptr = dynamic_cast<RenderPipeline*>(actualPtr);
-		dbgPipelineNames[ptr] = typeid(Type).name();
+		dbgPipelineNames[ptr] = name;
 		ProcessRenderPipeline(ptr);  // should check if it derives from RenderPipeline
 	}
+
+	RenderPipeline* GetRenderPipeline(const std::string_view& name);
 
 	Swapchain* swapchain; // better to keep it private
 	AnimationManager* animationManager;

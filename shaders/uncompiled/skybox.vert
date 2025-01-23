@@ -1,10 +1,10 @@
 #version 460
 layout (location = 0) out vec3 TexCoords;
 
-layout (set = 0, binding = 0) uniform Matrices
+layout (push_constant) uniform Matrices
 {
+    mat4 view;
 	mat4 projection;
-	mat4 view;
 } ubo;
 
 const vec3 coordinates[36] = vec3[](
