@@ -25,6 +25,7 @@ public:
 		std::string vertexShader;
 		std::string fragmentShader;
 		VkRenderPass renderPass = VK_NULL_HANDLE;
+		VkCompareOp depthCompareOp = VK_COMPARE_OP_LESS;
 
 		//maybe just flags ??
 		bool noVertices  = false;
@@ -34,6 +35,7 @@ public:
 		bool cullFront   = false;
 		bool frontCW     = false;
 		bool polygonLine = false;
+		bool writeDepth  = true;
 	};
 
 	GraphicsPipeline(const CreateInfo& createInfo);

@@ -147,6 +147,7 @@ void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char
 	builder.layout = layout;
 	builder.attachmentCount = attachmentCount;
 	builder.renderPass = createInfo.renderPass;
+	builder.depthCompareOp = createInfo.depthCompareOp;
 
 	builder.DisableVertices(createInfo.noVertices);
 	builder.DisableDepth(createInfo.noDepth);
@@ -155,6 +156,7 @@ void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char
 	builder.ShouldCullFront(createInfo.cullFront);
 	builder.FrontIsCW(createInfo.frontCW);
 	builder.PolygonAsLine(createInfo.polygonLine);
+	builder.WriteToDepth(createInfo.writeDepth);
 
 	pipeline = builder.Build();
 

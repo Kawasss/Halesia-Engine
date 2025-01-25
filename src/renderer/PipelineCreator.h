@@ -14,11 +14,14 @@ public:
 	void ShouldCullFront(bool val) { options.cullFront = val;   } // the back is culled by default
 	void FrontIsCW(bool val)       { options.frontCW = val;     } // the front is counterclock-wise by default
 	void PolygonAsLine(bool val)   { options.polygonLine = val; } // polygons are filled by default
+	void WriteToDepth(bool val)    { options.writeDepth = val;  } // writes to the depth buffer by default
 
 	VkPipelineLayout layout = VK_NULL_HANDLE;
 	VkRenderPass renderPass = VK_NULL_HANDLE;
 
 	uint32_t attachmentCount = 0;
+
+	VkCompareOp depthCompareOp = VK_COMPARE_OP_LESS;
 
 	VkPipeline Build();
 
@@ -32,6 +35,7 @@ private:
 		bool cullFront   : 1;
 		bool frontCW     : 1;
 		bool polygonLine : 1;
+		bool writeDepth  : 1;
 	};
 	Options options{};
 

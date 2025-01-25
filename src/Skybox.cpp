@@ -53,8 +53,10 @@ Skybox::Skybox()
 	createInfo.fragmentShader = "shaders/spirv/skybox.frag.spv";
 
 	createInfo.renderPass = renderPass;
+	createInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
 	createInfo.noVertices = true;
 	createInfo.noCulling  = true;
+	createInfo.writeDepth = false;
 
 	pipeline = new GraphicsPipeline(createInfo);
 }
@@ -68,7 +70,6 @@ void Skybox::CreateFramebuffer(uint32_t width, uint32_t height)
 
 	VkFramebufferAttachmentImageInfo& imageInfo = imageInfos[0];
 	imageInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO;
-	imageInfo.flags = 0;
 	imageInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	imageInfo.width = width;
 	imageInfo.height = height;
@@ -78,7 +79,6 @@ void Skybox::CreateFramebuffer(uint32_t width, uint32_t height)
 
 	VkFramebufferAttachmentImageInfo& depthInfo = imageInfos[1];
 	depthInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO;
-	depthInfo.flags = 0;
 	depthInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 	depthInfo.width = width;
 	depthInfo.height = height;
@@ -141,7 +141,7 @@ void Skybox::Draw(const CommandBuffer& cmdBuffer, Camera* camera)
 
 	PushConstantSkybox push{};
 	push.projection = camera->GetProjectionMatrix();
-	push.view = camera->GetViewMatrix();
+	push.view = glm::mat4(glm::mat3(camera->GetViewMatrix()));
 
 	pipeline->Bind(cmdBuffer);
 	pipeline->PushConstant(cmdBuffer, push, VK_SHADER_STAGE_VERTEX_BIT);

@@ -54,5 +54,5 @@ const vec3 coordinates[36] = vec3[](
 void main()
 {
 	pos = coordinates[gl_VertexIndex];
-	gl_Position = constant.projection * constant.view * vec4(coordinates[gl_VertexIndex], 1.0);
+	gl_Position = constant.projection * constant.view * vec4(pos, 1.0);
 }

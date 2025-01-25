@@ -75,6 +75,12 @@ void main()
 
     vec3 metallicRoughnessAO = texture(metallicRoughnessAOImage, uvCoord).rgb;
 
+    if (normal == vec3(0) && position == vec3(0) && metallicRoughnessAO == vec3(0))
+    {
+        fragColor = vec4(albedo, 1.0);
+        return;
+    }
+
 	float metallic         = metallicRoughnessAO.r;
 	float roughness        = metallicRoughnessAO.g;
 	float ambientOcclusion = metallicRoughnessAO.b;

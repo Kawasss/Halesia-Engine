@@ -55,8 +55,7 @@ void main()
 {
     TexCoords = coordinates[gl_VertexIndex];
 
-	mat4 cView = mat4(mat3(ubo.view));
-	vec4 clipPos = ubo.projection * cView * vec4(coordinates[gl_VertexIndex], 1.0);
+	vec4 clipPos = ubo.projection * ubo.view * vec4(coordinates[gl_VertexIndex], 1.0);
 
 	gl_Position = clipPos.xyww;
 }

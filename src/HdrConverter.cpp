@@ -13,7 +13,7 @@
 #include "renderer/Vulkan.h"
 #include "renderer/Buffer.h"
 
-struct PushConstant
+struct PushConstantConverter
 {
 	glm::mat4 projection;
 	glm::mat4 view;
@@ -33,7 +33,7 @@ const std::array<glm::mat4, 6> views = // sadly cant be constexpr
 	glm::lookAt(glm::vec3(0), glm::vec3( 0,  0, -1), glm::vec3(0, -1,  0)),
 };
 
-void CreateRenderPass()
+static void CreateRenderPass()
 {
 	RenderPassBuilder builder(VK_FORMAT_R8G8B8A8_SRGB);
 
@@ -46,7 +46,7 @@ void CreateRenderPass()
 	renderPass = builder.Build();
 }
 
-void CreatePipeline()
+static void CreatePipeline()
 {
 	GraphicsPipeline::CreateInfo createInfo{};
 	createInfo.vertexShader   = "shaders/spirv/cubemapConv.vert.spv";
@@ -60,7 +60,7 @@ void CreatePipeline()
 	pipeline = new GraphicsPipeline(createInfo);
 }
 
-void CreateFramebuffer()
+static void CreateFramebuffer()
 {
 	const VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
 
@@ -115,11 +115,9 @@ void HdrConverter::ConvertTextureIntoCubemap(const CommandBuffer& cmdBuffer, con
 	pipeline->BindImageToName("equirectangularMap", texture->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	DescriptorWriter::Get()->Write();
 
-	PushConstant push{};
+	PushConstantConverter push{};
 	push.projection = glm::perspective(glm::pi<float>() * 0.5f, 1.0f, 0.01f, 1000.0f);
 	push.projection[1][1] *= -1;
-
-	Renderer::BindBuffersForRendering(cmdBuffer); // not necessary..?
 
 	pipeline->Bind(cmdBuffer);
 

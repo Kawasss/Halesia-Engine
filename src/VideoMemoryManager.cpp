@@ -98,7 +98,22 @@ struct MemoryBlock
 		return FindUsableSegment(size) != segments.end();
 	}
 
-	bool IsEmpty() { return segments.size() == 0; }
+	void FreeSegment(uint64_t handle)
+	{
+		segments[handle].empty = true;
+	}
+
+	bool IsEmpty() const
+	{
+		for (const auto& [id, segment] : segments)
+			if (!segment.empty) // check if there are any used segments in this block, if no segment is used then we return true
+				return false;
+		return true;
+	}
+
+	void Destroy() const { vgm::Delete(memory); }
+
+	bool IsUnused() const { return segments.size() == 0; }
 };
 
 win32::CriticalSection blockGuard;
@@ -107,17 +122,17 @@ std::vector<MemoryBlock*> blocks;
 std::map<VkBuffer, MemoryBlock*> bufferToBlock; // the buffer and image blocks are seperated into 2 maps, so that for example image look-up will stay fast, even if there are a lot of buffers.
 std::map<VkImage,  MemoryBlock*> imageToBlock;
 
-inline VkDeviceSize FitSizeToAlignment(VkDeviceSize size, VkDeviceSize alignment)
+static VkDeviceSize FitSizeToAlignment(VkDeviceSize size, VkDeviceSize alignment)
 {
 	return size < alignment ? alignment : size;
 }
 
-inline VkDeviceSize GetAppropriateBlockSize(VkDeviceSize size)
+static VkDeviceSize GetAppropriateBlockSize(VkDeviceSize size)
 {
 	return size < STANDARD_MEMORY_BLOCK_SIZE ? STANDARD_MEMORY_BLOCK_SIZE : size;
 }
 
-inline VkDeviceMemory AllocateMemory(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext)
+static VkDeviceMemory AllocateMemory(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext)
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
@@ -136,21 +151,21 @@ inline VkDeviceMemory AllocateMemory(VkMemoryRequirements& requirements, VkMemor
 	return memory;
 }
 
-MemoryBlock* FindRelevantMemoryBlock(VkBuffer buffer)
+static MemoryBlock* FindRelevantMemoryBlock(VkBuffer buffer)
 {
 	if (bufferToBlock.find(buffer) == bufferToBlock.end())
 		throw VulkanAPIError("Failed to find a relevant memory for the given handle");
 	return bufferToBlock[buffer];
 }
 
-MemoryBlock* FindRelevantMemoryBlock(VkImage image)
+static MemoryBlock* FindRelevantMemoryBlock(VkImage image)
 {
 	if (imageToBlock.find(image) == imageToBlock.end())
 		throw VulkanAPIError("Failed to find a relevant memory for the given handle");
 	return imageToBlock[image];
 }
 
-MemoryBlock* AllocateNewBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
+static MemoryBlock* AllocateNewBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
 {
 	VkDeviceMemory memory = AllocateMemory(requirements, properties, pNext);
 	MemoryBlock* block = new MemoryBlock(properties, requirements.size, requirements.alignment, memory);
@@ -159,7 +174,7 @@ MemoryBlock* AllocateNewBlock(VkMemoryRequirements& requirements, VkMemoryProper
 	return block;
 }
 
-inline MemoryBlock* GetMemoryBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
+static MemoryBlock* GetMemoryBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
 {
 	for (int i = 0; i < blocks.size(); i++)
 	{
@@ -168,6 +183,25 @@ inline MemoryBlock* GetMemoryBlock(VkMemoryRequirements& requirements, VkMemoryP
 			return block;
 	}
 	return AllocateNewBlock(requirements, properties, pNext);
+}
+
+template<typename T>
+static void CheckBlockStatus(MemoryBlock* block, std::map<T, MemoryBlock*>& map)
+{
+	if (!block->IsEmpty())
+		return;
+
+	for (auto it = map.begin(); it != map.end(); it++)
+	{
+		if (it->second != block)
+			continue;
+
+		map.erase(it);
+		break;
+	}
+	blocks.erase(std::find(blocks.begin(), blocks.end(), block));
+	block->Destroy();
+	delete block;
 }
 
 VvmImage VideoMemoryManager::AllocateImage(VkImage image, VkMemoryPropertyFlags properties)
@@ -184,7 +218,7 @@ VvmImage VideoMemoryManager::AllocateImage(VkImage image, VkMemoryPropertyFlags 
 	uint64_t handle = reinterpret_cast<uint64_t>(image);
 	auto it = block->FindUsableSegment(requirements.size);
 
-	if (block->IsEmpty())
+	if (block->IsUnused())
 		block->segments[handle] = { false, 0, requirements.size };
 	else if (it != block->segments.end())
 	{
@@ -214,7 +248,7 @@ VvmBuffer VideoMemoryManager::AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFl
 	uint64_t handle = reinterpret_cast<uint64_t>(buffer);
 	auto it = block->FindUsableSegment(requirements.size);
 
-	if (block->IsEmpty())
+	if (block->IsUnused())
 		block->segments[handle] = { false, 0, requirements.size };
 	else if (it != block->segments.end())
 	{
@@ -260,7 +294,8 @@ void VideoMemoryManager::Destroy(VkImage image)
 
 	vgm::Delete(image);
 	MemoryBlock* block = FindRelevantMemoryBlock(image);
-	block->segments[handle].empty = true;
+	block->FreeSegment(handle);
+	CheckBlockStatus(block, imageToBlock);
 }
 
 void VideoMemoryManager::Destroy(VkBuffer buffer)
@@ -270,7 +305,8 @@ void VideoMemoryManager::Destroy(VkBuffer buffer)
 
 	vgm::Delete(buffer);
 	MemoryBlock* block = FindRelevantMemoryBlock(buffer);
-	block->segments[handle].empty = true;
+	block->FreeSegment(handle);
+	CheckBlockStatus(block, bufferToBlock);
 }
 
 void VideoMemoryManager::ForceDestroy()
@@ -278,7 +314,7 @@ void VideoMemoryManager::ForceDestroy()
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	for (MemoryBlock* block : blocks)
 	{
-		vgm::Delete(block->memory);
+		block->Destroy();
 		delete block;
 	}
 }

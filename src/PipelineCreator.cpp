@@ -34,10 +34,13 @@ VkPipeline PipelineBuilder::Build()
 
 	VkPipelineDepthStencilStateCreateInfo depthStencil{};
 	depthStencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+	depthStencil.depthCompareOp = depthCompareOp;
 	depthStencil.depthTestEnable  = !options.noDepth;
-	depthStencil.depthWriteEnable = !options.noDepth;
+	depthStencil.depthWriteEnable = options.writeDepth;
 	depthStencil.depthBoundsTestEnable = VK_FALSE;
+	depthStencil.back.compareMask = VK_COMPARE_OP_ALWAYS;
+
+	depthStencil.maxDepthBounds = 1.0f;
 
 	VkPipelineRasterizationStateCreateInfo rasterizer{};
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -139,7 +142,7 @@ VkRenderPass RenderPassBuilder::Build()
 		depthAttachment.format = ctx.physicalDevice.GetDepthFormat();
 		depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 		depthAttachment.loadOp = options.dontClearDepth ? VK_ATTACHMENT_LOAD_OP_DONT_CARE : VK_ATTACHMENT_LOAD_OP_CLEAR;
-		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+		depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		depthAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		depthAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		depthAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;

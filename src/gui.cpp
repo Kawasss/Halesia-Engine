@@ -687,9 +687,9 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 		if (sum < 1.0f)
 			values.push_back(1.0f - sum);
 
-		ImPlot::BeginPlot("timestap queries", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);
+		/*ImPlot::BeginPlot("timestap queries", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);
 		ImPlot::PlotPieChart(labels.data(), values.data(), values.size(), 0.5, 0.5, 0.5, "%.3f", 180);
-		ImPlot::EndPlot();
+		ImPlot::EndPlot();*/
 	}
 
 	if (ImGui::CollapsingHeader("scene"))
