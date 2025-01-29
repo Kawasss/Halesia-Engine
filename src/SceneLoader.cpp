@@ -28,50 +28,17 @@ void SceneLoader::LoadScene()
 		LoadAssimpFile();
 }
 
-#include <iostream>
-
-static void dbgRead(BinaryReader& reader)
-{
-	std::vector<char> data;
-	while (!reader.IsAtEndOfFile())
-	{
-		NodeType type = NODE_TYPE_NONE;
-		NodeSize size = 0;
-
-		reader >> type >> size;
-
-		std::cout << "type: " << type << ", size: " << size << '\n';
-		data.resize(size);
-		reader >> data;
-	}
-	reader.Reset();
-}
-
 void SceneLoader::LoadHSFFile()
 {
 	reader.DecompressFile();
 
-	dbgRead(reader);
-
 	NodeType type = NODE_TYPE_NONE;
 	NodeSize size = 0;
 
-	try
+	while (!reader.IsAtEndOfFile())
 	{
-		while (!reader.IsAtEndOfFile())
-		{
-			std::cout << type << ", " << size << '\n';
-
-			GetNodeHeader(type, size);
-			RetrieveType(type, size);
-
-			if (type == NODE_TYPE_MATERIAL)
-				return;
-		}
-	}
-	catch (...)
-	{
-		return;
+		GetNodeHeader(type, size);
+		RetrieveType(type, size);
 	}
 }
 

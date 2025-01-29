@@ -21,11 +21,6 @@ struct FileRigidBody : FileBase
 
 	static FileRigidBody CreateFrom(const RigidBody& rigid);
 
-	uint64 GetBinarySize() const override
-	{
-		return sizeof(type) + shape.GetBinarySize();
-	}
-
 	void Write(BinaryWriter& writer) const override;
 	void Read(BinaryReader& reader) override;
 };

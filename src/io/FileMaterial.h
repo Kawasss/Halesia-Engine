@@ -16,8 +16,6 @@ struct FileImage : FileBase
 
 	static FileImage CreateFrom(Texture* tex);
 
-	uint64 GetBinarySize() const override;
-
 	void Read(BinaryReader& reader) override;
 	void Write(BinaryWriter& writer) const override;
 
@@ -38,8 +36,6 @@ struct FileMaterial : FileBase
 	FileImage ambientOccl;
 
 	static FileMaterial CreateFrom(const Material& mat);
-
-	uint64 GetBinarySize() const override;
 
 	void Read(BinaryReader& reader) override;
 	void Write(BinaryWriter& writer) const override;

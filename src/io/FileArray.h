@@ -19,14 +19,9 @@ struct FileArray : FileBase
 		return ret;
 	}
 
-	uint64 GetBinarySize() const override
-	{
-		return data.size() * sizeof(ValueType);
-	}
-
 	void Write(BinaryWriter& writer) const override // file arrays dont write their node type
 	{
-		writer << NODE_TYPE_ARRAY << GetBinarySize() << data.size() << data;
+		writer << NODE_TYPE_ARRAY << 0ULL << data.size() << data;
 	}
 
 	void Read(BinaryReader& reader) override

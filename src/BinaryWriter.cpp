@@ -52,8 +52,6 @@ void BinaryWriter::WriteToFileCompressed()
 	output.close();
 }
 
-#include <iostream>
-
 void BinaryWriter::WriteFileBase(const FileBase& file)
 {
 	// FileBases are written based on nodes: the beginning of the node contains an identifier and the size of the node.
@@ -71,8 +69,6 @@ void BinaryWriter::WriteFileBase(const FileBase& file)
 	size_t end = base;
 
 	size_t size = end - (sizePos + sizeof(uint64_t));
-
-	std::cout << "calculated node size " << size << '\n';
 
 	SetBase(sizePos);
 	WriteToStream(reinterpret_cast<char*>(&size), sizeof(size));

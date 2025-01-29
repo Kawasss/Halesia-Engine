@@ -14,22 +14,6 @@
 
 #include "physics/RigidBody.h"
 
-uint64 FileImage::GetBinarySize() const
-{
-	return data.GetSize() + sizeof(width) + sizeof(height);
-}
-
-uint64 FileMaterial::GetBinarySize() const
-{   // account for the node headers of the textures
-	return SIZE_OF_NODE_HEADER * 5 + albedo.GetBinarySize() + normal.GetBinarySize() + roughness.GetBinarySize() + metallic.GetBinarySize() + ambientOccl.GetBinarySize() + sizeof(isLight);
-}
-
-uint64 FileMesh::GetBinarySize() const
-{
-	// account for the headers of the vertices and indices node
-	return SIZE_OF_NODE_HEADER * 2 + vertices.GetBinarySize() + indices.GetBinarySize() + sizeof(materialIndex);
-}
-
 void FileImage::Read(BinaryReader& reader)
 {
 	NodeType arrayType = NODE_TYPE_NONE;
@@ -129,7 +113,7 @@ void FileRigidBody::Read(BinaryReader& reader)
 }
 void FileImage::Write(BinaryWriter& writer) const
 {
-	writer << NODE_TYPE_IMAGE << GetBinarySize() << width << height << data;
+	writer << NODE_TYPE_IMAGE << 0ULL << width << height << data;
 }
 
 void FileMaterial::Write(BinaryWriter& writer) const
@@ -146,17 +130,17 @@ void FileMaterial::Write(BinaryWriter& writer) const
 
 void FileMesh::Write(BinaryWriter& writer) const
 {
-	writer << NODE_TYPE_MESH << GetBinarySize() << materialIndex << NODE_TYPE_VERTICES << vertices << NODE_TYPE_INDICES << indices;
+	writer << NODE_TYPE_MESH << 0ULL << materialIndex << NODE_TYPE_VERTICES << vertices << NODE_TYPE_INDICES << indices;
 }
 
 void FileShape::Write(BinaryWriter& writer) const
 {
-	writer << NODE_TYPE_SHAPE << GetBinarySize() << type << x << y << z;
+	writer << NODE_TYPE_SHAPE << 0ULL << type << x << y << z;
 }
 
 void FileRigidBody::Write(BinaryWriter& writer) const
 {
-	writer << NODE_TYPE_RIGIDBODY << GetBinarySize() << type << shape;
+	writer << NODE_TYPE_RIGIDBODY << 0ULL << type << shape;
 }
 
 FileImage FileImage::CreateFrom(Texture* tex)

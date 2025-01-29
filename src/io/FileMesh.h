@@ -14,8 +14,6 @@ struct FileMesh : FileBase
 {
 	static FileMesh CreateFrom(const Mesh& mesh);
 
-	uint64 GetBinarySize() const override;
-
 	void Write(BinaryWriter& writer) const override;
 	void Read(BinaryReader& reader) override;
 
