@@ -28,17 +28,50 @@ void SceneLoader::LoadScene()
 		LoadAssimpFile();
 }
 
+#include <iostream>
+
+static void dbgRead(BinaryReader& reader)
+{
+	std::vector<char> data;
+	while (!reader.IsAtEndOfFile())
+	{
+		NodeType type = NODE_TYPE_NONE;
+		NodeSize size = 0;
+
+		reader >> type >> size;
+
+		std::cout << "type: " << type << ", size: " << size << '\n';
+		data.resize(size);
+		reader >> data;
+	}
+	reader.Reset();
+}
+
 void SceneLoader::LoadHSFFile()
 {
 	reader.DecompressFile();
 
+	dbgRead(reader);
+
 	NodeType type = NODE_TYPE_NONE;
 	NodeSize size = 0;
 
-	while (!reader.IsAtEndOfFile())
+	try
 	{
-		GetNodeHeader(type, size);
-		RetrieveType(type, size);
+		while (!reader.IsAtEndOfFile())
+		{
+			std::cout << type << ", " << size << '\n';
+
+			GetNodeHeader(type, size);
+			RetrieveType(type, size);
+
+			if (type == NODE_TYPE_MATERIAL)
+				return;
+		}
+	}
+	catch (...)
+	{
+		return;
 	}
 }
 
@@ -89,7 +122,7 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 		materials.push_back({});
 		reader >> materials.back();
 		break;
-	default: 
+	default:
 		Console::WriteLine("Encountered an unusable node type " + std::to_string((int)type));
 		uint8_t* junk = new uint8_t[size];
 		reader.Read((char*)junk, size);

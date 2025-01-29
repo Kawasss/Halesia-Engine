@@ -505,17 +505,10 @@ void Editor::LoadFile()
 
 	for (const MaterialCreationData& data : loader.materials)
 		Mesh::AddMaterial(Material::Create(data));
-
-	MaterialCreateInfo info{};
-	info.albedo = "textures/red.png";
-	info.isLight = true;
-
-	Mesh::AddMaterial(Material::Create(info));
 }
 
 void Editor::SaveToFile()
 {
-	//std::async(&HSFWriter::WriteHSFScene, this, src);
 	HSFWriter::WriteHSFScene(this, src);
 }
 

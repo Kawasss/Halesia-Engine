@@ -17,12 +17,13 @@
 typedef unsigned char byte;
 
 template<typename Type>
-inline NodeSize GetArrayNodeSize(const std::vector<Type> vec) { return vec.size() * sizeof(Type); }
-inline NodeSize GetNameNodeSize(const std::string& name)      { return name.size() + 1; }
-inline NodeSize GetMeshNodeSize(const Mesh& mesh)             { return GetArrayNodeSize(mesh.vertices) + GetArrayNodeSize(mesh.indices) + sizeof(uint32_t); }
-inline NodeSize GetObjectNodeSize(const Object* object)       { return GetNameNodeSize(object->name) + (object->mesh.IsValid() ? GetMeshNodeSize(object->mesh) : 0); } // should account for all meshes
-inline NodeSize GetTransformNodeSize()                        { return sizeof(glm::vec3) * 2 + sizeof(glm::quat); }
-inline NodeSize GetRigidBodyNodeSize()                        { return sizeof(uint8_t) * 2 + sizeof(glm::vec3); }
+inline NodeSize GetArrayNodeSize(const std::vector<Type>& vec) { return vec.size() * sizeof(Type); }
+inline NodeSize GetNameNodeSize(const std::string& name)       { return name.size() + 1; }
+inline NodeSize GetMeshNodeSize(const Mesh& mesh)              { return GetArrayNodeSize(mesh.vertices) + GetArrayNodeSize(mesh.indices) + sizeof(uint32_t) + SIZE_OF_NODE_HEADER * 2; }
+inline NodeSize GetTransformNodeSize()                         { return sizeof(glm::vec3) * 2 + sizeof(glm::quat); }
+inline NodeSize GetRigidBodyNodeSize()                         { return sizeof(FileRigidBody); }
+inline NodeSize GetObjectNodeSize(const Object* object)        { return GetNameNodeSize(object->name) + GetMeshNodeSize(object->mesh) + GetTransformNodeSize() + GetRigidBodyNodeSize() + SIZE_OF_NODE_HEADER * 4; } // should account for all meshes
+
 
 void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 {
@@ -35,29 +36,52 @@ void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 	writer.WriteToFileCompressed();
 }
 
-inline void WriteRigidBody(BinaryWriter& writer, const RigidBody& rigid)
+static void WriteRigidBody(BinaryWriter& writer, const RigidBody& rigid)
 {
 	writer << FileRigidBody::CreateFrom(rigid);
 }
 
-inline void WriteTransform(BinaryWriter& writer, const Transform& transform)
+static void WriteTransform(BinaryWriter& writer, const Transform& transform)
 {
-	writer
-		<< NODE_TYPE_TRANSFORM << GetTransformNodeSize()
-		<< transform.position
-		<< transform.rotation
-		<< transform.scale;
+	writer << NODE_TYPE_TRANSFORM;
+
+	size_t pSize = writer.GetBase(); // location of the nodes size in the writers memory
+
+	writer << 0ULL
+	<< transform.position
+	<< transform.rotation
+	<< transform.scale;
+
+	size_t end = writer.GetBase();
+	size_t size = end - (pSize + sizeof(uint64_t));
+
+	writer.SetBase(pSize);
+	writer << size;
+	writer.SetBase(end); // reset to the end of the writer
 }
 
 void HSFWriter::WriteObject(BinaryWriter& writer, Object* object)
 {
-	writer << NODE_TYPE_OBJECT << SIZE_OF_NODE_HEADER + GetObjectNodeSize(object) << object->state << NODE_TYPE_NAME << object->name.size() + 1 << object->name;
+	writer << NODE_TYPE_OBJECT;
+
+	size_t pSize = writer.GetBase();
+
+	writer 
+		<< 0ULL
+		<< object->state 
+		<< NODE_TYPE_NAME
+		<< object->name.size() + 1 
+		<< object->name;
 
 	WriteTransform(writer, object->transform);
 	WriteRigidBody(writer, object->rigid);
 
-	if (!object->mesh.IsValid())
-		return;
-
 	writer << FileMesh::CreateFrom(object->mesh);
+
+	size_t end = writer.GetBase();
+	size_t size = end - (pSize + sizeof(uint64_t));
+
+	writer.SetBase(pSize);
+	writer << size;
+	writer.SetBase(end); // reset to the end of the writer
 }

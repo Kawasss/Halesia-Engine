@@ -77,3 +77,8 @@ size_t BinaryReader::DecompressData(char* src, char* dst, uint32_t mode, size_t 
 
 	return uncompressedSize;
 }
+
+void BinaryReader::Reset()
+{
+	pointer = 0;
+}

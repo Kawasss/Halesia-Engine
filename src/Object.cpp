@@ -19,7 +19,7 @@ void Object::GenerateObjectWithData(const ObjectCreationData& creationData)
 	if (creationData.hasMesh)
 		mesh.Create(creationData.mesh);
 
-	if (creationData.hitBox.shapeType != Shape::Type::None)
+	if (creationData.hitBox.shapeType != Shape::Type::None && creationData.hitBox.rigidType != RigidBody::Type::None)
 	{
 		Shape shape = Shape::GetShapeFromType(creationData.hitBox.shapeType, creationData.hitBox.extents);
 		SetRigidBody(creationData.hitBox.rigidType, shape);

@@ -16,7 +16,7 @@
 
 uint64 FileImage::GetBinarySize() const
 {
-	return data.size() + sizeof(width) + sizeof(height);
+	return data.GetSize() + sizeof(width) + sizeof(height);
 }
 
 uint64 FileMaterial::GetBinarySize() const
@@ -32,49 +32,82 @@ uint64 FileMesh::GetBinarySize() const
 
 void FileImage::Read(BinaryReader& reader)
 {
-	reader >> width >> height;
+	NodeType arrayType = NODE_TYPE_NONE;
+	NodeSize arraySize = 0;
 
-	data.resize(width * height * 4);
+	reader >> width >> height >> arrayType >> arraySize;
+
+	if (arrayType != NODE_TYPE_ARRAY)
+		__debugbreak();
+
 	reader >> data;
 }
 
 void FileMaterial::Read(BinaryReader& reader)
 {
 	NodeType type = NODE_TYPE_NONE;
-	uint64 size = 0;
+	NodeType imageType = NODE_TYPE_NONE;
+	NodeSize imageSize = 0;
 
 	reader >> isLight;
 
-	reader >> type >> size;
-	if (type != NODE_TYPE_ALBEDO || size == 0)
+	reader >> type;
+	if (type != NODE_TYPE_ALBEDO)
 		return; // could also throw
-	reader >> albedo;
+	reader >> imageType >> imageSize >> albedo;
 
-	reader >> type >> size;
-	if (type != NODE_TYPE_NORMAL || size == 0)
+	reader >> type;
+	if (type != NODE_TYPE_NORMAL)
 		return; // could also throw
-	reader >> normal;
+	reader >> imageType >> imageSize >> normal;
 
-	reader >> type >> size;
-	if (type != NODE_TYPE_ROUGHNESS || size == 0)
+	reader >> type;
+	if (type != NODE_TYPE_ROUGHNESS)
 		return; // could also throw
-	reader >> roughness;
+	reader >> imageType >> imageSize >> roughness;
 
-	reader >> type >> size;
-	if (type != NODE_TYPE_METALLIC || size == 0)
+	reader >> type;
+	if (type != NODE_TYPE_METALLIC)
 		return; // could also throw
-	reader >> metallic;
+	reader >> imageType >> imageSize >> metallic;
 
-	reader >> type >> size;
-	if (type != NODE_TYPE_AMBIENT_OCCLUSION || size == 0)
+	reader >> type;
+	if (type != NODE_TYPE_AMBIENT_OCCLUSION)
 		return; // could also throw
-	reader >> ambientOccl;
+	reader >> imageType >> imageSize >> ambientOccl;
 }
 
 void FileMesh::Read(BinaryReader& reader)
 {
-	NodeType type;
-	reader >> materialIndex >> type >> vertices >> type >> indices;
+	NodeType arrayType = NODE_TYPE_NONE;
+	NodeSize nSize = 0;
+
+	reader >> materialIndex;
+	reader >> arrayType;
+
+	if (materialIndex == 2)
+		materialIndex = 1; // debug
+
+	if (arrayType != NODE_TYPE_VERTICES)
+		__debugbreak();
+
+	reader >> arrayType >> nSize;
+
+	if (arrayType != NODE_TYPE_ARRAY)
+		__debugbreak();
+
+	reader >> vertices;
+	reader >> arrayType;
+
+	if (arrayType != NODE_TYPE_INDICES)
+		__debugbreak();
+
+	reader >> arrayType >> nSize;
+
+	if (arrayType != NODE_TYPE_ARRAY)
+		__debugbreak();
+
+	reader >> indices;
 }
 
 void FileShape::Read(BinaryReader& reader)
@@ -84,21 +117,30 @@ void FileShape::Read(BinaryReader& reader)
 
 void FileRigidBody::Read(BinaryReader& reader)
 {
-	reader >> type >> shape;
-}
+	NodeType shapeType = NODE_TYPE_NONE;
+	NodeSize shapeSize = 0;
 
-void FileImage::Write(BinaryWriter& writer) const // file images are special in that they dont write their node type
+	reader >> type >> shapeType >> shapeSize;
+
+	if (shapeType != NODE_TYPE_SHAPE)
+		__debugbreak();
+
+	reader >> shape;
+}
+void FileImage::Write(BinaryWriter& writer) const
 {
-	writer << GetBinarySize() << width << height << data;
+	writer << NODE_TYPE_IMAGE << GetBinarySize() << width << height << data;
 }
 
 void FileMaterial::Write(BinaryWriter& writer) const
 {
-	writer 
-		<< NODE_TYPE_ALBEDO            << albedo
-		<< NODE_TYPE_NORMAL            << normal
-		<< NODE_TYPE_ROUGHNESS         << roughness
-		<< NODE_TYPE_METALLIC          << metallic
+	writer
+		<< NODE_TYPE_MATERIAL << 0ULL
+		<< isLight
+		<< NODE_TYPE_ALBEDO << albedo
+		<< NODE_TYPE_NORMAL << normal
+		<< NODE_TYPE_ROUGHNESS << roughness
+		<< NODE_TYPE_METALLIC << metallic
 		<< NODE_TYPE_AMBIENT_OCCLUSION << ambientOccl;
 }
 
@@ -107,9 +149,9 @@ void FileMesh::Write(BinaryWriter& writer) const
 	writer << NODE_TYPE_MESH << GetBinarySize() << materialIndex << NODE_TYPE_VERTICES << vertices << NODE_TYPE_INDICES << indices;
 }
 
-void FileShape::Write(BinaryWriter& writer) const // will not write its node type and size
+void FileShape::Write(BinaryWriter& writer) const
 {
-	writer << type << x << y << z;
+	writer << NODE_TYPE_SHAPE << GetBinarySize() << type << x << y << z;
 }
 
 void FileRigidBody::Write(BinaryWriter& writer) const
@@ -123,7 +165,7 @@ FileImage FileImage::CreateFrom(Texture* tex)
 
 	ret.width  = tex->GetWidth();
 	ret.height = tex->GetHeight();
-	ret.data   = tex->GetImageData();
+	ret.data   = FileArray<char>::CreateFrom(tex->GetImageData());
 
 	return ret;
 }

@@ -16,7 +16,10 @@ public:
 	void WriteToFileCompressed();
 	void WriteToFileUncompressed();
 
-	size_t GetCurrentSize();
+	void SetBase(size_t pos);
+
+	size_t GetCurrentSize() const;
+	size_t GetBase() const;
 
 	template<typename Type>
 	BinaryWriter& WriteDataToFile(const Type& data)
@@ -30,11 +33,11 @@ public:
 	{
 		if constexpr (std::is_base_of_v<FileBase, Type>)
 		{
-			value.Write(*this);
+			WriteFileBase(value);
 		}
 		else
 		{
-			stream.write(reinterpret_cast<const char*>(&value), sizeof(Type));
+			WriteToStream(reinterpret_cast<const char*>(&value), sizeof(Type));
 		}
 		return *this;
 	}
@@ -42,18 +45,26 @@ public:
 	template<typename Type>
 	BinaryWriter& operator<<(const std::vector<Type>& vector)
 	{
-		if (vector.empty()) return *this;
-		stream.write((const char*)&vector[0], sizeof(Type) * vector.size());
+		if (!vector.empty())
+		{
+			const char* src = reinterpret_cast<const char*>(&vector[0]);
+			WriteToStream(src, sizeof(Type) * vector.size());
+		}
 		return *this;
 	}
 
-	BinaryWriter& operator<<(const std::string& str)
+	template<>
+	BinaryWriter& operator<<<std::string>(const std::string& str)
 	{
-		stream.write(str.c_str(), str.size() + 1); // also writes the null character
+		WriteToStream(str.c_str(), str.size() + 1); // also writes the null character
 		return *this;
 	}
 
 private:
-	std::stringstream stream;
+	void WriteFileBase(const FileBase& base);
+	void WriteToStream(const char* src, size_t size);
+
+	std::vector<char> stream;
 	std::ofstream output;
+	size_t base = 0;
 };

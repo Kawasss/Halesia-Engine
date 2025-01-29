@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "FileBase.h"
+#include "FileArray.h"
 
 class Texture;
 struct Material;
@@ -11,7 +12,7 @@ using uint = unsigned int;
 struct FileImage : FileBase
 {
 	uint width = 0, height = 0;
-	std::vector<char> data;
+	FileArray<char> data;
 
 	static FileImage CreateFrom(Texture* tex);
 
@@ -22,7 +23,7 @@ struct FileImage : FileBase
 
 	bool IsDefault() const 
 	{ 
-		return width == 0 || height == 0 || data.empty();
+		return width == 0 || height == 0 || data.IsEmpty();
 	}
 };
 

@@ -10,18 +10,31 @@ BinaryWriter::BinaryWriter(std::string destination) : output(std::ofstream(desti
 
 void BinaryWriter::Write(const char* ptr, size_t size)
 {
-	stream.write(ptr, size);
+	WriteToStream(ptr, size);
+}
+
+void BinaryWriter::WriteToStream(const char* src, size_t size)
+{
+	if (base + size > stream.size())
+		stream.resize(base + size);
+
+	memcpy(&stream[base], src, size);
+	base += size;
+}
+
+void BinaryWriter::SetBase(size_t pos)
+{
+	base = pos;
+}
+
+size_t BinaryWriter::GetBase() const
+{
+	return base;
 }
 
 void BinaryWriter::WriteToFileCompressed()
 {
-	size_t size = stream.seekg(0, std::ios::end).tellg();
-	stream.seekg(0, std::ios::beg);
-
-	UniquePointer data       = new char[size];
-	UniquePointer compressed = new char[size]; // size is the max size, not the actual compressed size
-
-	stream.read(data.Get(), size); // copying the stream into a usable buffer
+	UniquePointer<char> compressed = new char[stream.size()]; // size is the max size, not the actual compressed size
 
 	size_t compressedSize = 0;
 	COMPRESSOR_HANDLE compressor;
@@ -29,7 +42,7 @@ void BinaryWriter::WriteToFileCompressed()
 	if (!CreateCompressor(COMPRESS_ALGORITHM_XPRESS, NULL, &compressor)) 
 		throw std::runtime_error("Cannot create a compressor "); // XPRESS is fast but not the best compression, XPRESS with huffman has better compression but is slower, MSZIP uses more resources and LZMS is slow. its Using xpress right now since its the fastest
 	
-	if (!Compress(compressor, data.Get(), size, compressed.Get(), size, &compressedSize))
+	if (!Compress(compressor, stream.data(), stream.size(), compressed.Get(), stream.size(), &compressedSize))
 		throw std::runtime_error((std::string)"Cannot compress " + std::to_string(GetLastError()));
 	
 	if (!CloseCompressor(compressor)) 
@@ -39,21 +52,40 @@ void BinaryWriter::WriteToFileCompressed()
 	output.close();
 }
 
-void BinaryWriter::WriteToFileUncompressed()
-{
-	size_t size = stream.seekg(0, std::ios::end).tellg();
-	stream.seekg(0, std::ios::beg);
-	char* data = new char[size];
-	stream.read(data, size); // copying the stream into a usable buffer
+#include <iostream>
 
-	output.write(data, size);
-	output.close();
-	delete[] data;
+void BinaryWriter::WriteFileBase(const FileBase& file)
+{
+	// FileBases are written based on nodes: the beginning of the node contains an identifier and the size of the node.
+	// the size of the node is determined after the node has been written, so the steps of writing a FileBase looks like this:
+	//
+	// 1. calculate the location of the node header:
+	//   - the identifer is at the base of the node
+	//   - the size of the node is after the identifier, base + sizeof(uint16_t)
+	// 2. write the node
+	// 3. calculate the size of the node: currentLocation - (nodeBase + sizeof(NodeHeader))
+	// 4. go back to the location of the nodes size and write the calculated size
+
+	size_t sizePos = base + sizeof(uint16_t);
+	file.Write(*this);
+	size_t end = base;
+
+	size_t size = end - (sizePos + sizeof(uint64_t));
+
+	std::cout << "calculated node size " << size << '\n';
+
+	SetBase(sizePos);
+	WriteToStream(reinterpret_cast<char*>(&size), sizeof(size));
+	SetBase(end);
 }
 
-size_t BinaryWriter::GetCurrentSize() 
+void BinaryWriter::WriteToFileUncompressed()
 {
-	size_t ret = stream.seekg(0, std::ios::end).tellg(); 
-	stream.seekg(0); 
-	return ret; 
+	output.write(stream.data(), stream.size());
+	output.close();
+}
+
+size_t BinaryWriter::GetCurrentSize() const
+{
+	return stream.size(); 
 }

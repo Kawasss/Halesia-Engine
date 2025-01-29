@@ -164,20 +164,16 @@ std::vector<char> Image::GetImageData()
 	memoryBarrier.subresourceRange = subresourceRange;
 	
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool); // messy
-	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
-	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
 
-	commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
+	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
 	vkCmdCopyImageToBuffer(commandBuffer, image.Get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, copyBuffer.Get(), 1, &imageCopy);
-	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
 
 	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
-	commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool); // still messy
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
-	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
 
+	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
 	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 
 	char* ptr = copyBuffer.Map<char>();

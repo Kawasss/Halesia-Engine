@@ -26,16 +26,29 @@ struct FileArray : FileBase
 
 	void Write(BinaryWriter& writer) const override // file arrays dont write their node type
 	{
-		writer << GetBinarySize() << data.size() << data;
+		writer << NODE_TYPE_ARRAY << GetBinarySize() << data.size() << data;
 	}
 
 	void Read(BinaryReader& reader) override
 	{
-		uint64 size;
-		reader >> size; // read and discard the node size
-		reader >> size;
-		data.resize(size);
+		size_t vSize;
+		reader >> vSize; // read and discard the node size
+
+		if (vSize == 0)
+			return;
+
+		data.resize(vSize);
 		reader >> data;
+	}
+
+	bool IsEmpty() const
+	{
+		return data.empty();
+	}
+
+	size_t GetSize() const
+	{
+		return data.size();
 	}
 
 	std::vector<ValueType> data;

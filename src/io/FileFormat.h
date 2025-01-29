@@ -33,6 +33,8 @@ enum NodeType : uint16_t
 	NODE_TYPE_METALLIC,
 	NODE_TYPE_AMBIENT_OCCLUSION,
 	NODE_TYPE_COMPRESSION,
+	NODE_TYPE_SHAPE,
+	NODE_TYPE_IMAGE,
 };
 inline extern const char* NodeTypeToString(NodeType type);
 

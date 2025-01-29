@@ -16,6 +16,7 @@ public:
 	void DecompressFile();
 
 	bool IsAtEndOfFile() { return pointer >= stream.size() - 1; }
+	size_t GetPointer() const { return pointer; }
 
 	BinaryReader& operator>>(std::string& str); // this expects the string in the file to be null terminated
 
@@ -42,6 +43,8 @@ public:
 
 		return *this;
 	}
+
+	void Reset();
 
 private:
 	void ReadCompressedData(char* src, size_t size);
