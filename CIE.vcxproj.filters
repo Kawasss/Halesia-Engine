@@ -67,6 +67,18 @@
     <Filter Include="Source Files\tools">
       <UniqueIdentifier>{dde5520d-93a6-4ef6-b113-00774ad2cf7b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\deferred">
+      <UniqueIdentifier>{f731788a-6596-4f3c-a24d-763ec792d608}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\ray-tracing">
+      <UniqueIdentifier>{2bf9fc3f-fa85-4817-8119-fd5e8be13d49}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\skybox">
+      <UniqueIdentifier>{f39695c7-47bd-4430-9084-be45ecd518ae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\includes">
+      <UniqueIdentifier>{43db2465-dce4-4284-a4be-a98a23f7a331}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\HalesiaEngine.cpp">
@@ -581,24 +593,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\uncompiled\gen.rgen">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\hit.rchit">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\intro.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\intro.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\miss.rmiss">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\shadow.rmiss">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="shaders\uncompiled\triangle.frag">
       <Filter>Shaders</Filter>
     </None>
@@ -617,44 +611,62 @@
     <None Include="shaders\uncompiled\forwardPlus.comp">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="shaders\uncompiled\include\layouts.glsl">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="cfg\init.cfg">
       <Filter>cfg</Filter>
     </None>
-    <None Include="shaders\uncompiled\include\light.glsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\deferredSecond.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\deferredSecond.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\deferredFirst.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\deferredFirst.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\skybox.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\skybox.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\cubemapConv.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\cubemapConv.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\deferredSecondRT.frag">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="cfg\engine.ini">
       <Filter>cfg</Filter>
+    </None>
+    <None Include="shaders\uncompiled\deferredFirst.frag">
+      <Filter>Shaders\deferred</Filter>
+    </None>
+    <None Include="shaders\uncompiled\deferredFirst.vert">
+      <Filter>Shaders\deferred</Filter>
+    </None>
+    <None Include="shaders\uncompiled\deferredSecond.frag">
+      <Filter>Shaders\deferred</Filter>
+    </None>
+    <None Include="shaders\uncompiled\deferredSecond.vert">
+      <Filter>Shaders\deferred</Filter>
+    </None>
+    <None Include="shaders\uncompiled\deferredSecondRT.frag">
+      <Filter>Shaders\deferred</Filter>
+    </None>
+    <None Include="shaders\uncompiled\pathtracing.rgen">
+      <Filter>Shaders\ray-tracing</Filter>
+    </None>
+    <None Include="shaders\uncompiled\pathtracing.rchit">
+      <Filter>Shaders\ray-tracing</Filter>
+    </None>
+    <None Include="shaders\uncompiled\intro.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\uncompiled\intro.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\uncompiled\shadow.rmiss">
+      <Filter>Shaders\ray-tracing</Filter>
+    </None>
+    <None Include="shaders\uncompiled\pathtracing.rmiss">
+      <Filter>Shaders\ray-tracing</Filter>
+    </None>
+    <None Include="shaders\uncompiled\skybox.frag">
+      <Filter>Shaders\skybox</Filter>
+    </None>
+    <None Include="shaders\uncompiled\skybox.vert">
+      <Filter>Shaders\skybox</Filter>
+    </None>
+    <None Include="shaders\uncompiled\cubemapConv.frag">
+      <Filter>Shaders\skybox</Filter>
+    </None>
+    <None Include="shaders\uncompiled\cubemapConv.vert">
+      <Filter>Shaders\skybox</Filter>
+    </None>
+    <None Include="shaders\uncompiled\include\layouts.glsl">
+      <Filter>Shaders\includes</Filter>
+    </None>
+    <None Include="shaders\uncompiled\include\light.glsl">
+      <Filter>Shaders\includes</Filter>
     </None>
   </ItemGroup>
 </Project>

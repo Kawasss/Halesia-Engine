@@ -29,14 +29,14 @@ struct InstanceMeshData
 
 constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 1;
 
-int  RayTracingPipeline::raySampleCount = 1;
-int  RayTracingPipeline::rayDepth = 8;
-bool RayTracingPipeline::showNormals = false;
-bool RayTracingPipeline::showUniquePrimitives = false;
-bool RayTracingPipeline::showAlbedo = false;
-bool RayTracingPipeline::renderProgressive = false;
-bool RayTracingPipeline::useWhiteAsAlbedo = false;
-glm::vec3 RayTracingPipeline::directionalLightDir = glm::vec3(-0.5, -0.5, 0);
+int  RayTracingRenderPipeline::raySampleCount = 1;
+int  RayTracingRenderPipeline::rayDepth = 8;
+bool RayTracingRenderPipeline::showNormals = false;
+bool RayTracingRenderPipeline::showUniquePrimitives = false;
+bool RayTracingRenderPipeline::showAlbedo = false;
+bool RayTracingRenderPipeline::renderProgressive = false;
+bool RayTracingRenderPipeline::useWhiteAsAlbedo = false;
+glm::vec3 RayTracingRenderPipeline::directionalLightDir = glm::vec3(-0.5, -0.5, 0);
 
 struct UniformBuffer
 {
@@ -56,13 +56,13 @@ struct UniformBuffer
 };
 UniformBuffer* uniformBufferMemPtr;
 
-void RayTracingPipeline::Start(const Payload& payload)
+void RayTracingRenderPipeline::Start(const Payload& payload)
 {
 	Init();
 }
 
 uint32_t frameCount = 0;
-void RayTracingPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
+void RayTracingRenderPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
 {
 	const Window* window = payload.window;
 	const Camera* camera = payload.camera;
@@ -121,7 +121,7 @@ void RayTracingPipeline::Execute(const Payload& payload, const std::vector<Objec
 	payload.renderer->GetFramebuffer().TransitionFromWriteToRead(cmdBuffer); // normally this would transition with a render pass, but ray tracing doesnt use a render pass
 }
 
-void RayTracingPipeline::Destroy()
+void RayTracingRenderPipeline::Destroy()
 {
 	//vkDestroySemaphore(logicalDevice, semaphore, nullptr);
 	//CloseHandle(semaphoreHandle);
@@ -150,7 +150,7 @@ void RayTracingPipeline::Destroy()
 	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 }
 
-void RayTracingPipeline::SetUp()
+void RayTracingRenderPipeline::SetUp()
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 	this->logicalDevice = context.logicalDevice;
@@ -169,7 +169,7 @@ void RayTracingPipeline::SetUp()
 	TLAS = TopLevelAccelerationStructure::Create(holder); // second parameter is empty since there are no models to build, not the best way to solve this
 }
 
-void RayTracingPipeline::CreateDescriptorPool(const ShaderGroupReflector& groupReflection) // (frames in flight not implemented)
+void RayTracingRenderPipeline::CreateDescriptorPool(const ShaderGroupReflector& groupReflection) // (frames in flight not implemented)
 {
 	std::vector<VkDescriptorPoolSize> descriptorPoolSizes = groupReflection.GetDescriptorPoolSize();
 	for (int i = 0; i < descriptorPoolSizes.size(); i++)
@@ -187,7 +187,7 @@ void RayTracingPipeline::CreateDescriptorPool(const ShaderGroupReflector& groupR
 	CheckVulkanResult("Failed to create the descriptor pool for ray tracing", result, vkCreateDescriptorPool);
 }
 
-void RayTracingPipeline::CreateDescriptorSets(const ShaderGroupReflector& groupReflection)
+void RayTracingRenderPipeline::CreateDescriptorSets(const ShaderGroupReflector& groupReflection)
 {
 	std::vector<VkDescriptorSetLayoutBinding> setLayoutBindings = groupReflection.GetLayoutBindingsOfSet(0);
 
@@ -240,7 +240,7 @@ void RayTracingPipeline::CreateDescriptorSets(const ShaderGroupReflector& groupR
 	CheckVulkanResult("Failed to allocate the descriptor sets for ray tracing", result, vkAllocateDescriptorSets);
 }
 
-void RayTracingPipeline::CreateRayTracingPipeline(const std::vector<std::vector<char>>& shaderCodes) // 0 is rgen code, 1 is chit code, 2 is rmiss code, 3 is shadow code
+void RayTracingRenderPipeline::CreateRayTracingPipeline(const std::vector<std::vector<char>>& shaderCodes) // 0 is rgen code, 1 is chit code, 2 is rmiss code, 3 is shadow code
 {
 	VkShaderModule genShader = Vulkan::CreateShaderModule(shaderCodes[0]);
 	VkShaderModule hitShader = Vulkan::CreateShaderModule(shaderCodes[1]);
@@ -303,7 +303,7 @@ void RayTracingPipeline::CreateRayTracingPipeline(const std::vector<std::vector<
 	vkDestroyShaderModule(logicalDevice, genShader, nullptr);
 }
 
-void RayTracingPipeline::CreateBuffers(const ShaderGroupReflector& groupReflection)
+void RayTracingRenderPipeline::CreateBuffers(const ShaderGroupReflector& groupReflection)
 {
 	uniformBufferBuffer.Init(sizeof(UniformBuffer), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	uniformBufferMemPtr = uniformBufferBuffer.Map<UniformBuffer>();
@@ -341,20 +341,20 @@ void RayTracingPipeline::CreateBuffers(const ShaderGroupReflector& groupReflecti
 	UpdateMeshDataDescriptorSets();
 }
 
-void RayTracingPipeline::CreateMotionBuffer()
+void RayTracingRenderPipeline::CreateMotionBuffer()
 {
 	VkDeviceSize size = width * height * sizeof(glm::vec2);
 	motionBuffer.Init(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
-void RayTracingPipeline::Init()
+void RayTracingRenderPipeline::Init()
 {
 	std::vector<std::vector<char>> shaders =
 	{
-		IO::ReadFile("shaders/spirv/gen.rgen.spv"),     // rgen  = [0]
-		IO::ReadFile("shaders/spirv/hit.rchit.spv"),    // rchit = [1]
-		IO::ReadFile("shaders/spirv/miss.rmiss.spv"),   // rmiss = [2]
-		IO::ReadFile("shaders/spirv/shadow.rmiss.spv"), // rmiss = [3]
+		IO::ReadFile("shaders/spirv/pathtracing.rgen.spv"),  // rgen  = [0]
+		IO::ReadFile("shaders/spirv/pathtracing.rchit.spv"), // rchit = [1]
+		IO::ReadFile("shaders/spirv/pathtracing.rmiss.spv"), // rmiss = [2]
+		IO::ReadFile("shaders/spirv/pathtracing.rmiss.spv"), // rmiss = [3]
 	};
 	ShaderGroupReflector groupReflection(shaders);
 
@@ -366,7 +366,7 @@ void RayTracingPipeline::Init()
 	//CreateImage(swapchain->extent.width, swapchain->extent.height);
 }
 
-void RayTracingPipeline::UpdateMeshDataDescriptorSets()
+void RayTracingRenderPipeline::UpdateMeshDataDescriptorSets()
 {
 	VkDescriptorBufferInfo instanceDataBufferDescriptorInfo{};
 	instanceDataBufferDescriptorInfo.buffer = instanceMeshDataBuffer.Get();
@@ -399,7 +399,7 @@ void RayTracingPipeline::UpdateMeshDataDescriptorSets()
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)meshDataWriteDescriptorSets.size(), meshDataWriteDescriptorSets.data(), 0, nullptr);
 }
 
-void RayTracingPipeline::CreateImage(uint32_t width, uint32_t height)
+void RayTracingRenderPipeline::CreateImage(uint32_t width, uint32_t height)
 {
 	this->width = width;
 	this->height = height;
@@ -448,12 +448,12 @@ void RayTracingPipeline::CreateImage(uint32_t width, uint32_t height)
 }
 
 
-void RayTracingPipeline::RecreateImage(uint32_t width, uint32_t height)
+void RayTracingRenderPipeline::RecreateImage(uint32_t width, uint32_t height)
 {
 	CreateImage(width, height);
 }
 
-void RayTracingPipeline::CreateShaderBindingTable()
+void RayTracingRenderPipeline::CreateShaderBindingTable()
 {
 	VkDeviceSize progSize = rayTracingProperties.shaderGroupBaseAlignment;
 	VkDeviceSize shaderBindingTableSize = progSize * 4;
@@ -513,7 +513,7 @@ inline VkWriteDescriptorSet WriteSetImage(VkDescriptorSet dstSet, uint32_t dstBi
 	return ret;
 }
 
-void RayTracingPipeline::CopyPreviousResult(VkCommandBuffer commandBuffer)
+void RayTracingRenderPipeline::CopyPreviousResult(VkCommandBuffer commandBuffer)
 {
 	VkImageSubresourceRange subresourceRange{};
 	subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -554,7 +554,7 @@ void RayTracingPipeline::CopyPreviousResult(VkCommandBuffer commandBuffer)
 	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, nullptr, 0, nullptr, 2, barriers);
 }
 
-void RayTracingPipeline::UpdateDescriptorSets()
+void RayTracingRenderPipeline::UpdateDescriptorSets()
 {
 	VkDescriptorImageInfo RTImageDescriptorImageInfo = GetImageInfo(gBufferViews[0]);
 	VkDescriptorImageInfo albedoImageDescriptorImageInfo = GetImageInfo(gBufferViews[1]);
@@ -581,7 +581,7 @@ void RayTracingPipeline::UpdateDescriptorSets()
 	vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
-void RayTracingPipeline::OnRenderingBufferResize(const Payload& payload)
+void RayTracingRenderPipeline::OnRenderingBufferResize(const Payload& payload)
 {
 	DescriptorWriter* writer = DescriptorWriter::Get();
 
@@ -589,7 +589,7 @@ void RayTracingPipeline::OnRenderingBufferResize(const Payload& payload)
 	writer->WriteBuffer(descriptorSets[0], Renderer::g_vertexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
 }
 
-void RayTracingPipeline::UpdateTextureBuffer()
+void RayTracingRenderPipeline::UpdateTextureBuffer()
 {
 	uint32_t amountOfTexturesPerMaterial = rayTracingMaterialTextures.size();
 	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * amountOfTexturesPerMaterial);
@@ -624,7 +624,7 @@ void RayTracingPipeline::UpdateTextureBuffer()
 		vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
-void RayTracingPipeline::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera)
+void RayTracingRenderPipeline::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera)
 {
 	amountOfActiveObjects = 1;
 	glm::vec2 staticMotion = camera->GetMotionVector() * glm::vec2(width, height); // this only factors in the rotation of the camera, not the changes in position
@@ -649,17 +649,17 @@ void RayTracingPipeline::UpdateInstanceDataBuffer(const std::vector<Object*>& ob
 	}
 }
 
-void RayTracingPipeline::DenoiseImage()
+void RayTracingRenderPipeline::DenoiseImage()
 {
 	//denoiser->DenoiseImage();
 }
 
-void RayTracingPipeline::ApplyDenoisedImage(VkCommandBuffer commandBuffer)
+void RayTracingRenderPipeline::ApplyDenoisedImage(VkCommandBuffer commandBuffer)
 {
 	//denoiser->CopyDenoisedBufferToImage(commandBuffer, gBuffers[0]);
 }
 
-void RayTracingPipeline::PrepareForDenoising(VkCommandBuffer commandBuffer)
+void RayTracingRenderPipeline::PrepareForDenoising(VkCommandBuffer commandBuffer)
 {
 	//denoiser->CopyImagesToDenoisingBuffers(commandBuffer, gBuffers.Get());
 }

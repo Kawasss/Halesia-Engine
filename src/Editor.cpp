@@ -378,9 +378,9 @@ void Editor::ShowMenuBar()
 	}
 	if (ImGui::BeginMenu("renderer"))
 	{
-		if (ImGui::MenuItem("show albedo"))  RayTracingPipeline::showAlbedo = !RayTracingPipeline::showAlbedo;
-		if (ImGui::MenuItem("show normals")) RayTracingPipeline::showNormals = !RayTracingPipeline::showNormals;
-		if (ImGui::MenuItem("show unique"))  RayTracingPipeline::showUniquePrimitives = !RayTracingPipeline::showUniquePrimitives;
+		if (ImGui::MenuItem("show albedo"))  RayTracingRenderPipeline::showAlbedo = !RayTracingRenderPipeline::showAlbedo;
+		if (ImGui::MenuItem("show normals")) RayTracingRenderPipeline::showNormals = !RayTracingRenderPipeline::showNormals;
+		if (ImGui::MenuItem("show unique"))  RayTracingRenderPipeline::showUniquePrimitives = !RayTracingRenderPipeline::showUniquePrimitives;
 		ImGui::Separator();
 		if (ImGui::MenuItem("show collision boxes")) Renderer::shouldRenderCollisionBoxes = !Renderer::shouldRenderCollisionBoxes;
 		ImGui::Separator();

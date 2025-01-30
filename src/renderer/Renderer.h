@@ -23,7 +23,7 @@ class Image;
 class AnimationManager;
 class DescriptorWriter;
 class Window;
-class RayTracingPipeline;
+class RayTracingRenderPipeline;
 class ForwardPlusPipeline;
 class GraphicsPipeline;
 class RenderPipeline;
@@ -180,7 +180,7 @@ private:
 	uint32_t queueIndex = 0;
 	RendererFlags flags = NONE; 
 	
-	RayTracingPipeline* rayTracer;
+	RayTracingRenderPipeline* rayTracer;
 	ForwardPlusPipeline* fwdPlus;
 	DescriptorWriter* writer;
 

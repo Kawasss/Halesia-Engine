@@ -16,14 +16,14 @@ class Denoiser;
 class ShaderGroupReflector;
 struct InstanceMeshData;
 
-class RayTracingPipeline : public RenderPipeline
+class RayTracingRenderPipeline : public RenderPipeline
 {
 public:
 	void Start(const Payload& payload) override;
 	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
 	void Destroy() override;
 
-	~RayTracingPipeline() { Destroy(); }
+	~RayTracingRenderPipeline() { Destroy(); }
 
 	void OnRenderingBufferResize(const Payload& payload) override;
 

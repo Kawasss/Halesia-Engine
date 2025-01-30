@@ -376,12 +376,12 @@ void HalesiaEngine::LoadVars()
 	Renderer::shouldRenderCollisionBoxes = reader.GetBool("renderCollision");
 	Renderer::denoiseOutput              = reader.GetBool("denoiseOutput");
 
-	RayTracingPipeline::raySampleCount       = reader.GetInt("raySamples");
-	RayTracingPipeline::rayDepth             = reader.GetInt("rayDepth");
-	RayTracingPipeline::showNormals          = reader.GetBool("showNormals");
-	RayTracingPipeline::showUniquePrimitives = reader.GetBool("showUnique");
-	RayTracingPipeline::showAlbedo           = reader.GetBool("showAlbedo");
-	RayTracingPipeline::renderProgressive    = reader.GetBool("renderProgressive");
+	RayTracingRenderPipeline::raySampleCount       = reader.GetInt("raySamples");
+	RayTracingRenderPipeline::rayDepth             = reader.GetInt("rayDepth");
+	RayTracingRenderPipeline::showNormals          = reader.GetBool("showNormals");
+	RayTracingRenderPipeline::showUniquePrimitives = reader.GetBool("showUnique");
+	RayTracingRenderPipeline::showAlbedo           = reader.GetBool("showAlbedo");
+	RayTracingRenderPipeline::renderProgressive    = reader.GetBool("renderProgressive");
 
 	std::cout << "Finished loading from cfg/engine.ini\n";
 }
@@ -408,12 +408,12 @@ void HalesiaEngine::OnExit()
 	writer["renderCollision"] = std::to_string(Renderer::shouldRenderCollisionBoxes);
 	writer["denoiseOutput"]   = std::to_string(Renderer::denoiseOutput);
 
-	writer["raySamples"]        = std::to_string(RayTracingPipeline::raySampleCount);
-	writer["rayDepth"]          = std::to_string(RayTracingPipeline::rayDepth);
-	writer["showNormals"]       = std::to_string(RayTracingPipeline::showNormals);
-	writer["showUnique"]        = std::to_string(RayTracingPipeline::showUniquePrimitives);
-	writer["showAlbedo"]        = std::to_string(RayTracingPipeline::showAlbedo);
-	writer["renderProgressive"] = std::to_string(RayTracingPipeline::renderProgressive);
+	writer["raySamples"]        = std::to_string(RayTracingRenderPipeline::raySampleCount);
+	writer["rayDepth"]          = std::to_string(RayTracingRenderPipeline::rayDepth);
+	writer["showNormals"]       = std::to_string(RayTracingRenderPipeline::showNormals);
+	writer["showUnique"]        = std::to_string(RayTracingRenderPipeline::showUniquePrimitives);
+	writer["showAlbedo"]        = std::to_string(RayTracingRenderPipeline::showAlbedo);
+	writer["renderProgressive"] = std::to_string(RayTracingRenderPipeline::renderProgressive);
 
 	writer.Write();
 
@@ -432,12 +432,12 @@ void HalesiaEngine::RegisterConsoleVars()
 	Console::AddCVar("showAsync",    &showAsyncTimes);
 	Console::AddCVar("showMetaData", &showObjectData);
 
-	Console::AddCVar("showNormals", &RayTracingPipeline::showNormals);
-	Console::AddCVar("showAlbedo",  &RayTracingPipeline::showAlbedo);
-	Console::AddCVar("showUnique",  &RayTracingPipeline::showUniquePrimitives);
-	Console::AddCVar("renderProg",  &RayTracingPipeline::renderProgressive);
-	Console::AddCVar("raySamples",  &RayTracingPipeline::raySampleCount);
-	Console::AddCVar("rayDepth",    &RayTracingPipeline::rayDepth);
+	Console::AddCVar("showNormals", &RayTracingRenderPipeline::showNormals);
+	Console::AddCVar("showAlbedo",  &RayTracingRenderPipeline::showAlbedo);
+	Console::AddCVar("showUnique",  &RayTracingRenderPipeline::showUniquePrimitives);
+	Console::AddCVar("renderProg",  &RayTracingRenderPipeline::renderProgressive);
+	Console::AddCVar("raySamples",  &RayTracingRenderPipeline::raySampleCount);
+	Console::AddCVar("rayDepth",    &RayTracingRenderPipeline::rayDepth);
 
 	Console::AddCVar("denoiseOutput", &Renderer::denoiseOutput);
 	Console::AddCVar("internalScale", &Renderer::internalScale);
