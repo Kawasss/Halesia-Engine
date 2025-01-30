@@ -17,7 +17,7 @@ struct PushConstant
 
 void DeferredPipeline::Start(const Payload& payload)
 {
-	std::vector<VkFormat> formats = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM };
+	std::vector<VkFormat> formats = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R16G16B16A16_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM };
 
 	CreateRenderPass(formats);
 	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
