@@ -668,5 +668,14 @@
     <None Include="shaders\uncompiled\include\light.glsl">
       <Filter>Shaders\includes</Filter>
     </None>
+    <None Include="shaders\uncompiled\rtgi.rchit">
+      <Filter>Shaders\ray-tracing</Filter>
+    </None>
+    <None Include="shaders\uncompiled\rtgi.rgen">
+      <Filter>Shaders\ray-tracing</Filter>
+    </None>
+    <None Include="shaders\uncompiled\rtgi.rmiss">
+      <Filter>Shaders\ray-tracing</Filter>
+    </None>
   </ItemGroup>
 </Project>

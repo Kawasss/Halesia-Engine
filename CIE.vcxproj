@@ -338,6 +338,9 @@
     <None Include="shaders\uncompiled\deferredSecond.vert" />
     <None Include="shaders\uncompiled\deferredSecondRT.frag" />
     <None Include="shaders\uncompiled\forwardPlus.comp" />
+    <None Include="shaders\uncompiled\rtgi.rchit" />
+    <None Include="shaders\uncompiled\rtgi.rgen" />
+    <None Include="shaders\uncompiled\rtgi.rmiss" />
     <None Include="shaders\uncompiled\pathtracing.rgen" />
     <None Include="shaders\uncompiled\pathtracing.rchit" />
     <None Include="shaders\uncompiled\include\layouts.glsl" />

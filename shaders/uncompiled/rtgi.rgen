@@ -1,0 +1,87 @@
+#version 460
+#extension GL_EXT_ray_tracing : require
+
+#define PI 3.14159265359
+#define TWO_PI (PI * 2)
+#define ONE_OVER_PI (1 / PI)
+
+layout(location = 0) rayPayloadEXT Payload {
+	vec3 origin;
+	vec3 direction;
+	vec3 color;
+
+	int isActive;
+} payload;
+
+layout(push_constant) uniform Camera
+{
+	vec3 position;
+
+	mat4 viewInv;
+	mat4 projInv;
+
+	int width;
+	int height;
+} camera;
+
+layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
+
+layout(binding = 1, set = 0, rgba8) uniform image2D globalIlluminationImage;
+layout(binding = 2, set = 0) uniform sampler2D albedoImage;
+layout(binding = 3, set = 0) uniform sampler2D normalImage;
+
+vec3 CosineSampleHemisphereLocal(vec2 random) // https://github.com/boksajak/brdf/blob/master/brdf.h
+{
+	float a = sqrt(random.x);
+	float b = TWO_PI * random.y;
+
+	vec3 ret = vec3(a * cos(b), a * sin(b), sqrt(1.0 - random.x));
+
+	return ret;
+}
+
+mat3 GetBasisFromVector(vec3 normal) // https://columbusutrigas.com/posts/rtgi/
+{
+	vec3 up = abs(normal.y) < 0.999 ? vec3(0, 1, 0) : vec3(1, 0, 0);
+
+	vec3 x = normalize(cross(up, normal));
+	vec3 y = cross(normal, x);
+	vec3 z = normal;
+
+	return mat3(x, y, z);
+}
+
+vec3 CosineSampleHemisphere(vec2 random, vec3 normal)
+{
+	vec3 local = CosineSampleHemisphereLocal(random);
+	mat3 trans = GetBasisFromVector(normal);
+
+	return local * trans;
+}
+
+void main()
+{
+	payload.isActive = 1;
+
+	vec2 relCoors = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy);
+
+	vec3 normal = texture(normalImage, relCoors).xyz;
+
+	if (normal == vec3(0))
+		return;
+
+	vec2 center = vec2(gl_LaunchIDEXT.xy);
+    vec2 inUV = center / vec2(gl_LaunchSizeEXT.xy);
+    vec2 uv = inUV * 2.0 - 1.0;
+
+    vec4 target = camera.projInv * vec4(uv.x, uv.y, 1, 1);
+
+    payload.origin    = camera.position.xyz;
+    payload.direction = CosineSampleHemisphere(vec2(1), normal); // vec2(1) should be a random uniform number
+
+	payload.color = texture(albedoImage, relCoors).xyz;
+
+	traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.origin, 0.01, payload.direction, 1000.0, 0);
+
+	imageStore(globalIlluminationImage, ivec2(gl_LaunchIDEXT.xy), vec4(payload.color, 1));
+}
