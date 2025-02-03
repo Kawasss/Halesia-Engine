@@ -18,7 +18,7 @@ ShaderGroupReflector::ShaderGroupReflector(const std::vector<std::vector<char>>&
 	for (int i = 0; i < sourceCodes.size(); i++)
 	{
 		SpvReflectResult result = spvReflectCreateShaderModule(sourceCodes[i].size(), sourceCodes[i].data(), &modules[i]);
-		if (result  != SPV_REFLECT_RESULT_SUCCESS)
+		if (result != SPV_REFLECT_RESULT_SUCCESS)
 			throw VulkanAPIError("Cannot reflect on a given shader (code: " + std::to_string((int)result) + ')', VK_SUCCESS, "spvReflectCreateShaderModule", __FILENAME__, __LINE__);
 	}
 	ProcessLayoutBindings();
@@ -27,6 +27,11 @@ ShaderGroupReflector::ShaderGroupReflector(const std::vector<std::vector<char>>&
 static uint64_t CreateUniqueID(uint32_t set, uint32_t binding)
 {
 	return ShaderGroupReflector::Binding(set, binding).full;
+}
+
+static bool operator==(const VkDescriptorSetLayoutBinding& left, const ShaderGroupReflector::Binding& right) 
+{ 
+	return left.binding == right.binding;
 }
 
 void ShaderGroupReflector::ProcessLayoutBindings()
@@ -38,11 +43,9 @@ void ShaderGroupReflector::ProcessLayoutBindings()
 			SpvReflectDescriptorBinding& current = modules[i].descriptor_bindings[j];
 			Binding bindingID = { current.set, current.binding };
 
-			if (setLayoutBindings.find(bindingID.set) == setLayoutBindings.end())
-				setLayoutBindings[bindingID.set] = {};
 			std::vector<VkDescriptorSetLayoutBinding>& layoutBinding = setLayoutBindings[bindingID.set];
 
-			auto it = std::find_if(layoutBinding.begin(), layoutBinding.end(), [&](const VkDescriptorSetLayoutBinding& bind) { return bind.binding == bindingID.binding; }); // do not add duplicates
+			auto it = std::find(layoutBinding.begin(), layoutBinding.end(), bindingID); // do not add duplicates
 			if (it != layoutBinding.end())
 			{
 				it->stageFlags |= modules[i].shader_stage;

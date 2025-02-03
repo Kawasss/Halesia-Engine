@@ -16,6 +16,8 @@ struct PushConstant
 	int materialID;
 };
 
+#include "renderer/RayTracingPipeline.h"
+
 void DeferredPipeline::Start(const Payload& payload)
 {
 	std::vector<VkFormat> formats = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R16G16B16A16_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM };
@@ -77,6 +79,8 @@ void DeferredPipeline::Start(const Payload& payload)
 			vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr); // better to incorporate this into Pipeline
 		}
 	}
+
+	//RayTracingPipeline test("shaders/spirv/rtgi.rgen.spv", "shaders/spirv/rtgi.rchit.spv", "shaders/spirv/rtgi.rmiss.spv");
 
 	SetTextureBuffer();
 }
