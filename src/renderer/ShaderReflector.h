@@ -25,6 +25,7 @@ public:
 		bool operator< (const Binding& other) const { return full <  other.full; }
 	};
 
+	ShaderGroupReflector(const std::vector<char>& sourceCode);
 	ShaderGroupReflector(const std::vector<std::vector<char>>& sourceCodes);
 	~ShaderGroupReflector();
 

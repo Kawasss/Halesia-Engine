@@ -3,6 +3,15 @@
 #include "renderer/Vulkan.h"
 #include "renderer/ShaderReflector.h"
 
+ShaderGroupReflector::ShaderGroupReflector(const std::vector<char>& sourceCode)
+{
+	modules.resize(1);
+	SpvReflectResult result = spvReflectCreateShaderModule(sourceCode.size(), sourceCode.data(), &modules[0]);
+	if (result != SPV_REFLECT_RESULT_SUCCESS)
+		throw VulkanAPIError("Cannot reflect on a given shader (code: " + std::to_string((int)result) + ')', VK_SUCCESS, "spvReflectCreateShaderModule", __FILENAME__, __LINE__);
+	ProcessLayoutBindings();
+}
+
 ShaderGroupReflector::ShaderGroupReflector(const std::vector<std::vector<char>>& sourceCodes)
 {
 	modules.resize(sourceCodes.size());
@@ -15,7 +24,7 @@ ShaderGroupReflector::ShaderGroupReflector(const std::vector<std::vector<char>>&
 	ProcessLayoutBindings();
 }
 
-inline uint64_t CreateUniqueID(uint32_t set, uint32_t binding)
+static uint64_t CreateUniqueID(uint32_t set, uint32_t binding)
 {
 	return ShaderGroupReflector::Binding(set, binding).full;
 }

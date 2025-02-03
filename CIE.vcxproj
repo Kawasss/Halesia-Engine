@@ -197,6 +197,7 @@
     <ClCompile Include="src\PipelineCreator.cpp" />
     <ClCompile Include="src\Profiler.cpp" />
     <ClCompile Include="src\QueryPool.cpp" />
+    <ClCompile Include="src\RayTracingPipeline.cpp" />
     <ClCompile Include="src\ShaderReflector.cpp" />
     <ClCompile Include="src\RayTracing.cpp" />
     <ClCompile Include="src\Input.cpp" />
@@ -212,6 +213,7 @@
     <ClCompile Include="src\Shapes.cpp" />
     <ClCompile Include="src\objectStreamer.cpp" />
     <ClCompile Include="src\Skybox.cpp" />
+    <ClCompile Include="src\Pipeline.cpp" />
     <ClCompile Include="src\Surface.cpp" />
     <ClCompile Include="src\Swapchain.cpp" />
     <ClCompile Include="src\SytemMetrics.cpp" />
@@ -294,6 +296,7 @@
     <ClInclude Include="src\renderer\Pipeline.h" />
     <ClInclude Include="src\renderer\PipelineCreator.h" />
     <ClInclude Include="src\renderer\QueryPool.h" />
+    <ClInclude Include="src\renderer\RayTracingPipeline.h" />
     <ClInclude Include="src\renderer\RenderPipeline.h" />
     <ClInclude Include="src\renderer\ShaderReflector.h" />
     <ClInclude Include="src\renderer\RayTracing.h" />

@@ -56,7 +56,7 @@ vec3 CosineSampleHemisphere(vec2 random, vec3 normal)
 	vec3 local = CosineSampleHemisphereLocal(random);
 	mat3 trans = GetBasisFromVector(normal);
 
-	return local * trans;
+	return trans * local;
 }
 
 void main()
@@ -79,7 +79,7 @@ void main()
     payload.origin    = camera.position.xyz;
     payload.direction = CosineSampleHemisphere(vec2(1), normal); // vec2(1) should be a random uniform number
 
-	payload.color = texture(albedoImage, relCoors).xyz;
+	payload.color = vec3(0);//texture(albedoImage, relCoors).xyz;
 
 	traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.origin, 0.01, payload.direction, 1000.0, 0);
 

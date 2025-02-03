@@ -3,6 +3,7 @@
 #include "renderer/Renderer.h"
 #include "renderer/DescriptorWriter.h"
 #include "renderer/accelerationStructures.h"
+#include "renderer/PipelineCreator.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/Skybox.h"
 
