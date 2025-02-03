@@ -16,13 +16,14 @@ RayTracingPipeline::RayTracingPipeline(const std::string& rgen, const std::strin
 	ShaderGroupReflector reflector(shaders);
 
 	InitializeBase(reflector);
-	CreatePipeline(shaders);
+	CreatePipeline(reflector, shaders);
 }
 
-void RayTracingPipeline::CreatePipeline(const std::vector<std::vector<char>>& shaders)
+void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, const std::vector<std::vector<char>>& shaders)
 {
 	// shaders[0] = rgen, [1] = rchit, [2] = rmiss
 	const Vulkan::Context& ctx = Vulkan::GetContext();
+	std::vector<VkPushConstantRange> ranges = reflector.GetPushConstants();
 
 	VkShaderModule genShader  = Vulkan::CreateShaderModule(shaders[0]);
 	VkShaderModule hitShader  = Vulkan::CreateShaderModule(shaders[1]);
@@ -32,8 +33,8 @@ void RayTracingPipeline::CreatePipeline(const std::vector<std::vector<char>>& sh
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	pipelineLayoutCreateInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
 	pipelineLayoutCreateInfo.pSetLayouts = setLayouts.data();
-	pipelineLayoutCreateInfo.pushConstantRangeCount = 0;
-	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
+	pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(ranges.size());
+	pipelineLayoutCreateInfo.pPushConstantRanges = ranges.data();
 
 	VkResult result = vkCreatePipelineLayout(ctx.logicalDevice, &pipelineLayoutCreateInfo, nullptr, &layout);
 	CheckVulkanResult("Failed to create the pipeline layout for ray tracing", result, vkCreatePipelineLayout);

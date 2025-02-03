@@ -14,7 +14,7 @@ public:
 	RayTracingPipeline(const std::string& rgen, const std::string& rchit, const std::string& rmiss);
 
 private:
-	void CreatePipeline(const std::vector<std::vector<char>>& shaders);
+	void CreatePipeline(const ShaderGroupReflector& reflector, const std::vector<std::vector<char>>& shaders);
 
 	VkStridedDeviceAddressRegionKHR rchitShaderBinding{};
 	VkStridedDeviceAddressRegionKHR rgenShaderBinding{};
