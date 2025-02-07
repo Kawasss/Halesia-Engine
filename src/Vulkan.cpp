@@ -19,8 +19,8 @@ bool enableValidationLayers = true;
 
 VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 
-std::unordered_map<uint32_t, std::vector<VkCommandPool>> Vulkan::queueCommandPools;
-std::unordered_map<VkDevice, std::mutex>                 Vulkan::logicalDeviceMutexes;
+std::map<uint32_t, std::vector<VkCommandPool>> Vulkan::queueCommandPools;
+std::map<VkDevice, std::mutex>                 Vulkan::logicalDeviceMutexes;
 
 win32::CriticalSection Vulkan::graphicsQueueSection;
 win32::CriticalSection commandPoolSection;

@@ -4,7 +4,7 @@
 #include <vector>
 #include <set>
 #include <mutex>
-#include <unordered_map>
+#include <map>
 
 #include "PhysicalDevice.h"
 #include "CommandBuffer.h"
@@ -148,8 +148,8 @@ public:
 private:
     static Context context;
 
-    static std::unordered_map<uint32_t, std::vector<VkCommandPool>> queueCommandPools;
-    static std::unordered_map<VkDevice, std::mutex>                 logicalDeviceMutexes;
+    static std::map<uint32_t, std::vector<VkCommandPool>> queueCommandPools;
+    static std::map<VkDevice, std::mutex>                 logicalDeviceMutexes;
 
     static std::vector<const char*> requiredLogicalDeviceExtensions;
     static std::vector<const char*> requiredInstanceExtensions;
@@ -209,7 +209,7 @@ inline void Vulkan::SetDebugName<VkCommandBuffer>(VkCommandBuffer object, const 
 #define VULKAN_TRACK_MEMORY
 #ifdef  VULKAN_TRACK_MEMORY
 
-inline std::unordered_map<VkDeviceMemory, VkDeviceSize> memoryToSize;
+inline std::map<VkDeviceMemory, VkDeviceSize> memoryToSize;
 
 inline VkResult vkAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo, const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory)
 {

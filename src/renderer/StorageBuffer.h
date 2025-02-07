@@ -1,6 +1,6 @@
 #pragma once
 #include <set>
-#include <intrin.h>
+#include <map>
 
 #include "../system/CriticalSection.h"
 
@@ -268,7 +268,7 @@ private:
 		return allCreatedMemory.count(memory) > 0;
 	}
 
-	std::unordered_map<StorageMemory, StorageMemory_t> memoryData;
+	std::map<StorageMemory, StorageMemory_t> memoryData;
 
 	std::set<StorageMemory> terminatedMemories;
 	std::set<StorageMemory> allCreatedMemory;
