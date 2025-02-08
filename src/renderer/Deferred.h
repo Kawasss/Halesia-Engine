@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <string>
+#include <memory>
 
 #include "RenderPipeline.h"
 #include "FramesInFlight.h"
@@ -15,9 +16,10 @@ class Skybox;
 class DeferredPipeline : public RenderPipeline
 {
 public:
+	~DeferredPipeline();
+
 	void Start(const Payload& payload) override;
 	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
-	void Destroy() override;
 
 	void Resize(const Payload& payload) override;
 	void AddLight(const Light& light) override;
@@ -50,12 +52,12 @@ private:
 	FIF::Buffer uboBuffer;
 	FIF::Buffer lightBuffer;
 
-	GraphicsPipeline* firstPipeline  = nullptr;
-	GraphicsPipeline* secondPipeline = nullptr;
+	std::unique_ptr<GraphicsPipeline> firstPipeline  = nullptr;
+	std::unique_ptr<GraphicsPipeline> secondPipeline = nullptr;
 
-	TopLevelAccelerationStructure* TLAS = nullptr;
+	std::unique_ptr<TopLevelAccelerationStructure> TLAS = nullptr;
 
-	Skybox* skybox = nullptr;
+	std::unique_ptr<Skybox> skybox = nullptr;
 
 	std::array<std::vector<uint64_t>, FIF::FRAME_COUNT> processedMats;
 };

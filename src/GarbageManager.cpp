@@ -68,6 +68,8 @@ namespace vgm
 		case VK_OBJECT_TYPE_RENDER_PASS: DELETE_HANDLE(vkDestroyRenderPass, VkRenderPass);
 
 		case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR: DELETE_HANDLE(vkDestroyAccelerationStructureKHR, VkAccelerationStructureKHR);
+
+		case VK_OBJECT_TYPE_COMMAND_POOL: DELETE_HANDLE(vkDestroyCommandPool, VkCommandPool);
 		}
 	}
 #undef DELETE_HANDLE

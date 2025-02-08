@@ -859,9 +859,11 @@ std::vector<VkExtensionProperties> Vulkan::GetLogicalDeviceExtensions(PhysicalDe
     return extensions;
 }
 
-std::string CreateFunctionNotActivatedError(std::string functionName, std::string extensionName)
+std::string CreateFunctionNotActivatedError(const std::string_view& functionName, const std::string_view& extensionName)
 {
-    return "Function \"" + functionName + "\" was called, but is invalid.\nIts extension \"" + extensionName + "\" has not been activated";
+    std::stringstream stream;
+    stream << "Function \"" << functionName << "\" was called, but is invalid.\nIts extension \"" << extensionName << "\" has not been activated";
+    return stream.str();
 }
 
 #ifdef _DEBUG

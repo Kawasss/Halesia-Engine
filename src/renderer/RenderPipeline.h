@@ -37,7 +37,8 @@ public:
 
 	virtual void Start(const Payload& payload) = 0;
 	virtual void Execute(const Payload& payload, const std::vector<Object*>& objects) = 0;
-	virtual void Destroy() = 0;
+
+	virtual ~RenderPipeline() {}
 
 	virtual void Resize(const Payload& payload) {}
 	virtual void AddLight(const Light& light)   {}

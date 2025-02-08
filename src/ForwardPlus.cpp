@@ -21,17 +21,6 @@ void ForwardPlusPipeline::Start(const Payload& payload)
 	PrepareGraphicsPipeline();
 }
 
-void ForwardPlusPipeline::Destroy()
-{
-	delete computeShader;
-	delete graphicsPipeline;
-
-	uniformBuffer.Destroy();
-	matricesBuffer.Destroy();
-	cellBuffer.Destroy();
-	lightBuffer.Destroy();
-}
-
 void ForwardPlusPipeline::Allocate()
 {
 	VkDeviceSize size = cellWidth * cellHeight * sizeof(Cell) + sizeof(uint32_t) * 2;
@@ -53,7 +42,7 @@ void ForwardPlusPipeline::Allocate()
 
 void ForwardPlusPipeline::CreateShader()
 {
-	computeShader = new ComputeShader("shaders/spirv/forwardPlus.comp.spv");
+	computeShader = std::make_unique<ComputeShader>("shaders/spirv/forwardPlus.comp.spv");
 
 	computeShader->BindBufferToName("cells", cellBuffer.Get());
 	computeShader->BindBufferToName("lights", lightBuffer.Get());
@@ -151,7 +140,7 @@ void ForwardPlusPipeline::PrepareGraphicsPipeline()
 	createInfo.fragmentShader = "shaders/spirv/triangle.frag.spv";
 	createInfo.renderPass     = renderPass;
 
-	graphicsPipeline = new GraphicsPipeline(createInfo);
+	graphicsPipeline = std::make_unique<GraphicsPipeline>(createInfo);
 
 	uniformBuffer.Init(sizeof(UniformBufferObject), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	uniformBufferMapped = uniformBuffer.Map<UniformBufferObject>();

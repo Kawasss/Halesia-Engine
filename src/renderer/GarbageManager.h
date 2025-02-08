@@ -25,6 +25,8 @@ namespace vgm // vulkan garbage manager
 
 	DECLARE_DELETOR(VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, VkAccelerationStructureKHR);
 
+	DECLARE_DELETOR(VK_OBJECT_TYPE_COMMAND_POOL, VkCommandPool);
+
 #undef DECLARE_DELETOR
 
 	extern void CollectGarbage(); // this will automatically ignore any null handles

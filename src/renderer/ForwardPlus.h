@@ -1,6 +1,8 @@
 #pragma once
 #include <vector>
 #include <unordered_set>
+#include <memory>
+
 #include "glm.h"
 
 #include "CommandBuffer.h"
@@ -15,11 +17,10 @@ struct Light;
 class ForwardPlusPipeline : public RenderPipeline
 {
 public:
+	~ForwardPlusPipeline() = default;
+
 	void Start(const Payload& payload) override;
 	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
-	void Destroy() override;
-
-	~ForwardPlusPipeline() { Destroy(); }
 
 	void AddLight(const Light& light) override;
 
@@ -28,9 +29,9 @@ public:
 	void DrawObjects(CommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj = glm::mat4(0));
 	void UpdateBindlessTextures();
 
-	ComputeShader* GetShader() { return computeShader; }
-	VkBuffer GetCellBuffer()   { return cellBuffer.Get();  }
-	VkBuffer GetLightBuffer()  { return lightBuffer.Get(); }
+	ComputeShader* GetShader() { return computeShader.get(); }
+	VkBuffer GetCellBuffer()   { return cellBuffer.Get();    }
+	VkBuffer GetLightBuffer()  { return lightBuffer.Get();   }
 
 private:
 	void Allocate();
@@ -73,8 +74,8 @@ private:
 	uint32_t lightCount = 0;
 
 	Matrices* matrices = nullptr;
-	ComputeShader* computeShader = nullptr;
-	GraphicsPipeline* graphicsPipeline = nullptr;
+	std::unique_ptr<ComputeShader> computeShader;
+	std::unique_ptr<GraphicsPipeline> graphicsPipeline;
 
 	struct UniformBufferObject
 	{

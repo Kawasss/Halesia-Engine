@@ -90,7 +90,6 @@ void Renderer::Destroy()
 
 	for (RenderPipeline* renderPipeline : renderPipelines)
 	{
-		renderPipeline->Destroy();
 		delete renderPipeline;
 	}
 

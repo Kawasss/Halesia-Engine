@@ -1,5 +1,6 @@
 #pragma once
 #include <unordered_map>
+#include <memory>
 #include <array>
 
 #include "Buffer.h"
@@ -19,11 +20,10 @@ struct InstanceMeshData;
 class RayTracingRenderPipeline : public RenderPipeline
 {
 public:
+	~RayTracingRenderPipeline();
+
 	void Start(const Payload& payload) override;
 	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
-	void Destroy() override;
-
-	~RayTracingRenderPipeline() { Destroy(); }
 
 	void OnRenderingBufferResize(const Payload& payload) override;
 
@@ -68,9 +68,7 @@ private:
 	uint32_t width = 0, height = 0;
 
 	std::vector<BottomLevelAccelerationStructure*> BLASs;
-	TopLevelAccelerationStructure* TLAS = nullptr;
-
-	Denoiser* denoiser = nullptr;
+	std::unique_ptr<TopLevelAccelerationStructure> TLAS;
 
 	bool imageHasChanged = false;
 

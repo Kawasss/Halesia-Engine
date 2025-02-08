@@ -51,7 +51,7 @@ void DeferredPipeline::Start(const Payload& payload)
 
 	if (Renderer::canRayTrace)
 	{
-		TLAS = TopLevelAccelerationStructure::Create({});
+		TLAS.reset(TopLevelAccelerationStructure::Create({}));
 		
 		VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
 		ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
@@ -104,14 +104,14 @@ void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass seco
 	createInfo.fragmentShader = "shaders/spirv/deferredFirst.frag.spv";
 	createInfo.renderPass = firstPass;
 	
-	firstPipeline = new GraphicsPipeline(createInfo);
+	firstPipeline = std::make_unique<GraphicsPipeline>(createInfo);
 
 	createInfo.vertexShader   = "shaders/spirv/deferredSecond.vert.spv";
 	createInfo.fragmentShader = Renderer::canRayTrace ? "shaders/spirv/deferredSecondRT.frag.spv" : "shaders/spirv/deferredSecond.frag.spv";
 	createInfo.renderPass = secondPass;
 	createInfo.noVertices = true;
 
-	secondPipeline = new GraphicsPipeline(createInfo);
+	secondPipeline = std::make_unique<GraphicsPipeline>(createInfo);
 }
 
 void DeferredPipeline::LoadSkybox(const std::string& path)
@@ -126,9 +126,7 @@ void DeferredPipeline::LoadSkybox(const std::string& path)
 	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, cmdBuffer, pool);
 	Vulkan::YieldCommandPool(ctx.graphicsIndex, pool);
 
-	if (skybox != nullptr)
-		delete skybox;
-	skybox = brandnew;
+	skybox.reset(brandnew);
 
 	uint32_t width = framebuffer.GetWidth(), height = framebuffer.GetHeight();
 	if (width != 0 && height != 0)
@@ -308,20 +306,7 @@ void DeferredPipeline::AddLight(const Light& light)
 	lights->lights[lights->count++] = light;
 }
 
-void DeferredPipeline::Destroy()
+DeferredPipeline::~DeferredPipeline()
 {
 	vgm::Delete(renderPass);
-
-	if (skybox != nullptr)
-		delete skybox;
-
-	delete firstPipeline;
-	delete secondPipeline;
-
-	delete TLAS;
-
-	framebuffer.~Framebuffer();
-
-	lightBuffer.~Buffer();
-	uboBuffer.~Buffer();
 }

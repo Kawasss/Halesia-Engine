@@ -2,11 +2,11 @@
 
 #include "renderer/Renderer.h"
 #include "renderer/AccelerationStructures.h"
-#include "renderer/Denoiser.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/RayTracing.h"
 #include "renderer/Vulkan.h"
 #include "renderer/DescriptorWriter.h"
+#include "renderer/GarbageManager.h"
 
 #include "system/Input.h"
 #include "system/Window.h"
@@ -121,33 +121,24 @@ void RayTracingRenderPipeline::Execute(const Payload& payload, const std::vector
 	payload.renderer->GetFramebuffer().TransitionFromWriteToRead(cmdBuffer); // normally this would transition with a render pass, but ray tracing doesnt use a render pass
 }
 
-void RayTracingRenderPipeline::Destroy()
+RayTracingRenderPipeline::~RayTracingRenderPipeline()
 {
-	//vkDestroySemaphore(logicalDevice, semaphore, nullptr);
-	//CloseHandle(semaphoreHandle);
+	vgm::Delete(pipeline);
+	vgm::Delete(pipelineLayout);
 
-	/*vkFreeMemory(logicalDevice, uniformBufferMemory, nullptr);
-	vkDestroyBuffer(logicalDevice, uniformBufferBuffer, nullptr);*/
-
-	delete TLAS;
-	delete denoiser;
-
-	vkDestroyPipeline(logicalDevice, pipeline, nullptr);
-	vkDestroyPipelineLayout(logicalDevice, pipelineLayout, nullptr);
-
-	vkDestroyDescriptorPool(logicalDevice, descriptorPool, nullptr);
-	vkDestroyDescriptorSetLayout(logicalDevice, materialSetLayout, nullptr);
-	vkDestroyDescriptorSetLayout(logicalDevice, descriptorSetLayout, nullptr);
+	vgm::Delete(descriptorPool);
+	vgm::Delete(materialSetLayout);
+	vgm::Delete(descriptorSetLayout);
 
 	for (int i = 0; i < gBuffers.size(); i++)
 	{
-		vkDestroyImageView(logicalDevice, gBufferViews[i], nullptr);
+		vgm::Delete(gBufferViews[i]);
 		gBuffers[i].Destroy();
 	}
-	vkDestroyImageView(logicalDevice, prevImageView, nullptr);
+	vgm::Delete(prevImageView);
 	prevImage.Destroy();
 
-	vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+	vgm::Delete(commandPool);
 }
 
 void RayTracingRenderPipeline::SetUp()
@@ -163,10 +154,8 @@ void RayTracingRenderPipeline::SetUp()
 
 	vkGetPhysicalDeviceProperties2(context.physicalDevice.Device(), &properties2);
 
-	denoiser = Denoiser::Create();
-
 	std::vector<Object*> holder = {};
-	TLAS = TopLevelAccelerationStructure::Create(holder); // second parameter is empty since there are no models to build, not the best way to solve this
+	TLAS.reset(TopLevelAccelerationStructure::Create(holder)); // second parameter is empty since there are no models to build, not the best way to solve this
 }
 
 void RayTracingRenderPipeline::CreateDescriptorPool(const ShaderGroupReflector& groupReflection) // (frames in flight not implemented)
