@@ -1,6 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include <vector>
+#include <array>
 
 class PipelineBuilder
 {
@@ -45,6 +46,9 @@ private:
 class RenderPassBuilder
 {
 public:
+	template<size_t count>
+	RenderPassBuilder(const std::array<VkFormat, count>& formats) : formats(formats.data(), formats.data() + count) {}
+
 	RenderPassBuilder(const std::vector<VkFormat>& formats) : formats(formats) {}
 
 	RenderPassBuilder(VkFormat format) 

@@ -25,26 +25,35 @@ void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t wi
 	formats.resize(imageCount);
 	std::fill(formats.begin(), formats.end(), format);
 
-	this->images.resize(imageCount + 1); // the depth buffer is stored as the last image in the vector
-	this->imageViews.resize(imageCount + 1);
-	
+	ResizeImageContainers(imageCount, true);
 	Allocate();
 }
 
 void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::vector<VkFormat>& formats, float relativeRes)
 {
+	Init(renderPass, width, height, formats.data(), formats.size(), relativeRes);
+}
+
+void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const VkFormat* pFormats, size_t formatCount, float relativeRes)
+{
 	this->renderPass = renderPass;
 	this->width   = static_cast<uint32_t>(width * relativeRes);
 	this->height  = static_cast<uint32_t>(height * relativeRes);
+	this->formats = std::vector<VkFormat>(pFormats, pFormats + formatCount);
 	this->formats = formats;
 	this->relRes  = relRes;
 
-	const size_t imageCount = formats.size();
-
-	this->images.resize(imageCount + 1); // the depth buffer is stored as the last image in the vector
-	this->imageViews.resize(imageCount + 1);
-
+	ResizeImageContainers(formats.size(), true);
 	Allocate();
+}
+
+void Framebuffer::ResizeImageContainers(size_t size, bool depth)
+{
+	if (depth)
+		size++; // the depth buffer is stored as the last image in the vector
+
+	images.resize(size);
+	imageViews.resize(size);
 }
 
 void Framebuffer::Allocate()

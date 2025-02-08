@@ -14,6 +14,9 @@ public:
 
 	void Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes = 1.0f);
 	void Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::vector<VkFormat>& formats, float relativeRes = 1.0f);
+	
+	template<size_t count>
+	void Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::array<VkFormat, count>& formats, float relativeRes = 1.0f);
 
 	void Resize(uint32_t width, uint32_t height);
 
@@ -36,10 +39,14 @@ public:
 	void TransitionFromWriteToRead(CommandBuffer commandBuffer);
 
 private:
+	void Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const VkFormat* pFormats, size_t formatCount, float relativeRes = 1.0f);
+
 	void TransitionFromUndefinedToWrite(CommandBuffer commandBuffer);
 	 
 	void Destroy();
 	void Allocate();
+
+	void ResizeImageContainers(size_t size, bool depth);
 
 	VkFramebuffer framebuffer = VK_NULL_HANDLE;
 	VkRenderPass renderPass = VK_NULL_HANDLE;
@@ -67,3 +74,9 @@ private:
 
 	VkFramebuffer framebuffer;
 };
+
+template<size_t count>
+void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::array<VkFormat, count>& formats, float relativeRes)
+{
+	this->Init(renderPass, width, height, formats.data(), count, relativeRes);
+}

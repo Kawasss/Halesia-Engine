@@ -11,6 +11,7 @@
 
 class GraphicsPipeline;
 class TopLevelAccelerationStructure;
+class RayTracingPipeline;
 class Skybox;
 
 class DeferredPipeline : public RenderPipeline
@@ -27,6 +28,8 @@ public:
 	void LoadSkybox(const std::string& path);
 
 private:
+	static constexpr size_t GBUFFER_COUNT = 4;
+
 	struct UBO
 	{
 		glm::vec4 camPos;
@@ -43,21 +46,29 @@ private:
 	void UpdateTextureBuffer();
 	void SetTextureBuffer();
 	void UpdateUBO(Camera* cam);
+	void CreateBuffers();
+	void BindResources();
+	void BindTLAS();
 
-	void CreateRenderPass(const std::vector<VkFormat>& formats);
+	void CreateRenderPass(const std::array<VkFormat, GBUFFER_COUNT>& formats);
 	void CreatePipelines(VkRenderPass firstPass, VkRenderPass secondPass);
+
+	void CreateAndBindRTGI();
+
+	Skybox* CreateNewSkybox(const std::string& path);
 
 	Framebuffer framebuffer;
 
 	FIF::Buffer uboBuffer;
 	FIF::Buffer lightBuffer;
 
-	std::unique_ptr<GraphicsPipeline> firstPipeline  = nullptr;
-	std::unique_ptr<GraphicsPipeline> secondPipeline = nullptr;
+	std::unique_ptr<GraphicsPipeline> firstPipeline;
+	std::unique_ptr<GraphicsPipeline> secondPipeline;
+	std::unique_ptr<RayTracingPipeline> rtgiPipeline;
 
-	std::unique_ptr<TopLevelAccelerationStructure> TLAS = nullptr;
+	std::unique_ptr<TopLevelAccelerationStructure> TLAS;
 
-	std::unique_ptr<Skybox> skybox = nullptr;
+	std::unique_ptr<Skybox> skybox;
 
 	std::array<std::vector<uint64_t>, FIF::FRAME_COUNT> processedMats;
 };

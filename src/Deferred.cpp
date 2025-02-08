@@ -18,66 +18,35 @@ struct PushConstant
 
 #include "renderer/RayTracingPipeline.h"
 
+constexpr VkFormat GBUFFER_POSITION_FORMAT = VK_FORMAT_R32G32B32A32_SFLOAT; // 32 bit format takes a lot of performance compared to an 8 bit format
+constexpr VkFormat GBUFFER_ALBEDO_FORMAT   = VK_FORMAT_R8G8B8A8_UNORM;
+constexpr VkFormat GBUFFER_NORMAL_FORMAT   = VK_FORMAT_R16G16B16A16_SFLOAT; // 16 bit instead of 8 bit to allow for negative normals
+constexpr VkFormat GBUFFER_MRAO_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;      // Metallic, Roughness and Ambient Occlusion
+
 void DeferredPipeline::Start(const Payload& payload)
 {
-	std::vector<VkFormat> formats = { VK_FORMAT_R32G32B32A32_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM, VK_FORMAT_R16G16B16A16_SFLOAT, VK_FORMAT_R8G8B8A8_UNORM };
+	std::array<VkFormat, GBUFFER_COUNT> formats = 
+	{ 
+		GBUFFER_POSITION_FORMAT,
+		GBUFFER_ALBEDO_FORMAT, 
+		GBUFFER_NORMAL_FORMAT, 
+		GBUFFER_MRAO_FORMAT,
+	};
 
 	CreateRenderPass(formats);
 	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
 
-	framebuffer.Init(renderPass, payload.width, payload.height, formats); // 32 bit format takes a lot of performance compared to an 8 bit format
-	//skyboxFramebuffer.Observe(framebuffer.GetViews()[1], framebuffer.GetDepthView(), payload.width, payload.height, framebuffer.GetRenderPass());
+	framebuffer.Init(renderPass, payload.width, payload.height, formats);
 
-	uboBuffer.Init(sizeof(UBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	uboBuffer.MapPermanently();
+	CreateBuffers();
 
-	lightBuffer.Init(sizeof(LightBuffer), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	lightBuffer.MapPermanently();
-
-	const Material& mat = Mesh::materials[0];
-
-	firstPipeline->BindBufferToName("ubo", uboBuffer.Get());
-	secondPipeline->BindBufferToName("lights", lightBuffer.Get());
-
-	const VkSampler& sampler = Renderer::defaultSampler;
-	const std::vector<VkImageView> views = framebuffer.GetViews();
-
-	constexpr VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-	secondPipeline->BindImageToName("positionImage", views[0], sampler, layout);
-	secondPipeline->BindImageToName("albedoImage", views[1], sampler, layout);
-	secondPipeline->BindImageToName("normalImage", views[2], sampler, layout);
-	secondPipeline->BindImageToName("metallicRoughnessAOImage", views[3], sampler, layout);
-
+	BindResources();
+	
 	if (Renderer::canRayTrace)
 	{
 		TLAS.reset(TopLevelAccelerationStructure::Create({}));
-		
-		VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
-		ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-		ASDescriptorInfo.accelerationStructureCount = 1;
-		ASDescriptorInfo.pAccelerationStructures = &TLAS->accelerationStructure;
 
-		const std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT>& FIFsets = secondPipeline->GetAllDescriptorSets();
-
-		for (const std::vector<VkDescriptorSet>& sets : FIFsets)
-		{
-			VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
-			ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
-			ASDescriptorInfo.accelerationStructureCount = 1;
-			ASDescriptorInfo.pAccelerationStructures = &TLAS->accelerationStructure;
-
-			VkWriteDescriptorSet writeSet{};
-
-			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeSet.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
-			writeSet.pNext = &ASDescriptorInfo;
-			writeSet.dstSet = sets[0];
-			writeSet.descriptorCount = 1;
-			writeSet.dstBinding = 4;
-
-			vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr); // better to incorporate this into Pipeline
-		}
+		BindTLAS();
 	}
 
 	RayTracingPipeline test("shaders/spirv/rtgi.rgen.spv", "shaders/spirv/rtgi.rchit.spv", "shaders/spirv/rtgi.rmiss.spv");
@@ -85,7 +54,53 @@ void DeferredPipeline::Start(const Payload& payload)
 	SetTextureBuffer();
 }
 
-void DeferredPipeline::CreateRenderPass(const std::vector<VkFormat>& formats)
+void DeferredPipeline::CreateBuffers()
+{
+	uboBuffer.Init(sizeof(UBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	uboBuffer.MapPermanently();
+
+	lightBuffer.Init(sizeof(LightBuffer), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	lightBuffer.MapPermanently();
+}
+
+void DeferredPipeline::BindTLAS()
+{
+	VkWriteDescriptorSetAccelerationStructureKHR ASDescriptorInfo{};
+	ASDescriptorInfo.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET_ACCELERATION_STRUCTURE_KHR;
+	ASDescriptorInfo.accelerationStructureCount = 1;
+	ASDescriptorInfo.pAccelerationStructures = &TLAS->accelerationStructure;
+
+	VkWriteDescriptorSet writeSet{};
+	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR;
+	writeSet.pNext = &ASDescriptorInfo;
+	writeSet.descriptorCount = 1;
+	writeSet.dstBinding = 4;
+
+	for (const std::vector<VkDescriptorSet>& sets : secondPipeline->GetAllDescriptorSets())
+	{
+		writeSet.dstSet = sets[0];
+		vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr); // better to incorporate this into Pipeline
+	}
+}
+
+void DeferredPipeline::BindResources()
+{
+	constexpr VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+	const VkSampler& sampler = Renderer::defaultSampler;
+	const std::vector<VkImageView>& views = framebuffer.GetViews();
+
+	firstPipeline->BindBufferToName("ubo", uboBuffer.Get());
+	secondPipeline->BindBufferToName("lights", lightBuffer.Get());
+
+	secondPipeline->BindImageToName("positionImage", views[0], sampler, layout);
+	secondPipeline->BindImageToName("albedoImage", views[1], sampler, layout);
+	secondPipeline->BindImageToName("normalImage", views[2], sampler, layout);
+	secondPipeline->BindImageToName("metallicRoughnessAOImage", views[3], sampler, layout);
+}
+
+void DeferredPipeline::CreateRenderPass(const std::array<VkFormat, GBUFFER_COUNT>& formats)
 {
 	RenderPassBuilder builder(formats);
 
@@ -114,19 +129,24 @@ void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass seco
 	secondPipeline = std::make_unique<GraphicsPipeline>(createInfo);
 }
 
-void DeferredPipeline::LoadSkybox(const std::string& path)
+Skybox* DeferredPipeline::CreateNewSkybox(const std::string& path)
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	VkCommandPool pool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
 	VkCommandBuffer cmdBuffer = Vulkan::BeginSingleTimeCommands(pool);
 
-	Skybox* brandnew = Skybox::ReadFromHDR(path, cmdBuffer);
-	
+	Skybox* ret = Skybox::ReadFromHDR(path, cmdBuffer);
+
 	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, cmdBuffer, pool);
 	Vulkan::YieldCommandPool(ctx.graphicsIndex, pool);
 
-	skybox.reset(brandnew);
+	return ret;
+}
+
+void DeferredPipeline::LoadSkybox(const std::string& path)
+{
+	skybox.reset(CreateNewSkybox(path));
 
 	uint32_t width = framebuffer.GetWidth(), height = framebuffer.GetHeight();
 	if (width != 0 && height != 0)
@@ -172,8 +192,6 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 		Renderer::RenderMesh(cmdBuffer, obj->mesh);
 	}
 
-	//skybox->render
-
 	cmdBuffer.EndRenderPass();
 
 	if (skybox != nullptr)
@@ -197,7 +215,6 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 void DeferredPipeline::Resize(const Payload& payload)
 {
 	framebuffer.Resize(payload.width, payload.height);
-	//skyboxFramebuffer.Observe(framebuffer.GetViews()[1], framebuffer.GetDepthView(), payload.width, payload.height, framebuffer.GetRenderPass());
 
 	const VkSampler& sampler = Renderer::defaultSampler;
 	const std::vector<VkImageView> views = framebuffer.GetViews();
