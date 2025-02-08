@@ -204,7 +204,7 @@ static void CheckBlockStatus(MemoryBlock* block, std::map<T, MemoryBlock*>& map)
 	delete block;
 }
 
-VvmImage VideoMemoryManager::AllocateImage(VkImage image, VkMemoryPropertyFlags properties)
+vvm::Image vvm::AllocateImage(VkImage image, VkMemoryPropertyFlags properties)
 {
 	win32::CriticalLockGuard guard(blockGuard);
 	const Vulkan::Context& ctx = Vulkan::GetContext();
@@ -232,10 +232,10 @@ VvmImage VideoMemoryManager::AllocateImage(VkImage image, VkMemoryPropertyFlags 
 	vkBindImageMemory(ctx.logicalDevice, image, block->memory, block->segments[handle].begin);
 
 	imageToBlock[image] = block;
-	return VvmImage(image);
+	return Image(image);
 }
 
-VvmBuffer VideoMemoryManager::AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFlags properties, void* pNext)
+vvm::Buffer vvm::AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFlags properties, void* pNext)
 {
 	win32::CriticalLockGuard guard(blockGuard);
 	const Vulkan::Context& ctx = Vulkan::GetContext();
@@ -262,10 +262,10 @@ VvmBuffer VideoMemoryManager::AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFl
 	vkBindBufferMemory(ctx.logicalDevice, buffer, block->memory, block->segments[handle].begin);
 
 	bufferToBlock[buffer] = block;
-	return VvmBuffer(buffer);
+	return Buffer(buffer);
 }
 
-void* VideoMemoryManager::MapBuffer(VvmBuffer buffer, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags)
+void* vvm::MapBuffer(Buffer buffer, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags)
 {
 	win32::CriticalLockGuard guard(blockGuard);
 
@@ -279,7 +279,7 @@ void* VideoMemoryManager::MapBuffer(VvmBuffer buffer, VkDeviceSize offset, VkDev
 	return reinterpret_cast<void*>(data + offset); // add the offset afterwards, since its the entire block thats mapped and not just this instance
 }
 
-void VideoMemoryManager::UnmapBuffer(VvmBuffer buffer)
+void vvm::UnmapBuffer(Buffer buffer)
 {
 	win32::CriticalLockGuard guard(blockGuard);
 
@@ -287,7 +287,7 @@ void VideoMemoryManager::UnmapBuffer(VvmBuffer buffer)
 	block->CheckedUnmap();
 }
 
-void VideoMemoryManager::Destroy(VkImage image)
+void vvm::Destroy(VkImage image)
 {
 	win32::CriticalLockGuard guard(blockGuard);
 	uint64_t handle = reinterpret_cast<uint64_t>(image);
@@ -298,7 +298,7 @@ void VideoMemoryManager::Destroy(VkImage image)
 	CheckBlockStatus(block, imageToBlock);
 }
 
-void VideoMemoryManager::Destroy(VkBuffer buffer)
+void vvm::Destroy(VkBuffer buffer)
 {
 	win32::CriticalLockGuard guard(blockGuard);
 	uint64_t handle = reinterpret_cast<uint64_t>(buffer);
@@ -309,7 +309,7 @@ void VideoMemoryManager::Destroy(VkBuffer buffer)
 	CheckBlockStatus(block, bufferToBlock);
 }
 
-void VideoMemoryManager::ForceDestroy()
+void vvm::ForceDestroy()
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	for (MemoryBlock* block : blocks)

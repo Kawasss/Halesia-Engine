@@ -22,6 +22,7 @@ constexpr VkFormat GBUFFER_POSITION_FORMAT = VK_FORMAT_R32G32B32A32_SFLOAT; // 3
 constexpr VkFormat GBUFFER_ALBEDO_FORMAT   = VK_FORMAT_R8G8B8A8_UNORM;
 constexpr VkFormat GBUFFER_NORMAL_FORMAT   = VK_FORMAT_R16G16B16A16_SFLOAT; // 16 bit instead of 8 bit to allow for negative normals
 constexpr VkFormat GBUFFER_MRAO_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;      // Metallic, Roughness and Ambient Occlusion
+constexpr VkFormat GBUFFER_RTGI_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;
 
 void DeferredPipeline::Start(const Payload& payload)
 {
@@ -47,11 +48,46 @@ void DeferredPipeline::Start(const Payload& payload)
 		TLAS.reset(TopLevelAccelerationStructure::Create({}));
 
 		BindTLAS();
+
+		CreateAndBindRTGI(payload.width, payload.height);
 	}
 
-	RayTracingPipeline test("shaders/spirv/rtgi.rgen.spv", "shaders/spirv/rtgi.rchit.spv", "shaders/spirv/rtgi.rmiss.spv");
-
 	SetTextureBuffer();
+}
+
+void DeferredPipeline::CreateAndBindRTGI(uint32_t width, uint32_t height)
+{
+	rtgiPipeline = std::make_unique<RayTracingPipeline>("shaders/spirv/rtgi.rgen.spv", "shaders/spirv/rtgi.rchit.spv", "shaders/spirv/rtgi.rmiss.spv");
+
+	ResizeRTGI(width, height);
+}
+
+void DeferredPipeline::PushRTGIConstants(const Payload& payload)
+{
+	RTGIConstants constants{};
+	constants.position = payload.camera->position;
+	constants.viewInv  = glm::inverse(payload.camera->GetViewMatrix());
+	constants.projInv  = glm::inverse(payload.camera->GetProjectionMatrix());
+	constants.width    = payload.width;
+	constants.height   = payload.height;
+
+	rtgiPipeline->PushConstant(payload.commandBuffer, constants, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+}
+
+void DeferredPipeline::ResizeRTGI(uint32_t width, uint32_t height)
+{
+	if (rtgiImage.IsValid())
+		rtgiImage.Destroy();
+
+	if (rtgiView != VK_NULL_HANDLE)
+		vgm::Delete(rtgiView);
+
+	rtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	rtgiView = Vulkan::CreateImageView(rtgiImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	rtgiPipeline->BindImageToName("globalIlluminationImage", rtgiView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_GENERAL);
+	rtgiPipeline->BindImageToName("albedoImage", GetAlbedoView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_GENERAL);
+	rtgiPipeline->BindImageToName("normalImage", GetNormalView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_GENERAL);
 }
 
 void DeferredPipeline::CreateBuffers()
@@ -86,18 +122,23 @@ void DeferredPipeline::BindTLAS()
 
 void DeferredPipeline::BindResources()
 {
+	firstPipeline->BindBufferToName("ubo", uboBuffer.Get());
+	secondPipeline->BindBufferToName("lights", lightBuffer.Get());
+
+	BindGBuffers();
+}
+
+void DeferredPipeline::BindGBuffers()
+{
 	constexpr VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 	const VkSampler& sampler = Renderer::defaultSampler;
 	const std::vector<VkImageView>& views = framebuffer.GetViews();
 
-	firstPipeline->BindBufferToName("ubo", uboBuffer.Get());
-	secondPipeline->BindBufferToName("lights", lightBuffer.Get());
-
-	secondPipeline->BindImageToName("positionImage", views[0], sampler, layout);
-	secondPipeline->BindImageToName("albedoImage", views[1], sampler, layout);
-	secondPipeline->BindImageToName("normalImage", views[2], sampler, layout);
-	secondPipeline->BindImageToName("metallicRoughnessAOImage", views[3], sampler, layout);
+	secondPipeline->BindImageToName("positionImage", GetPositionView(), sampler, layout);
+	secondPipeline->BindImageToName("albedoImage", GetAlbedoView(), sampler, layout);
+	secondPipeline->BindImageToName("normalImage", GetNormalView(), sampler, layout);
+	secondPipeline->BindImageToName("metallicRoughnessAOImage", GetMRAOView(), sampler, layout);
 }
 
 void DeferredPipeline::CreateRenderPass(const std::array<VkFormat, GBUFFER_COUNT>& formats)
@@ -152,7 +193,7 @@ void DeferredPipeline::LoadSkybox(const std::string& path)
 	if (width != 0 && height != 0)
 		skybox->Resize(width, height);
 
-	skybox->targetView = framebuffer.GetViews()[1];
+	skybox->targetView = GetAlbedoView();
 	skybox->depth = framebuffer.GetDepthView();
 }
 
@@ -216,19 +257,13 @@ void DeferredPipeline::Resize(const Payload& payload)
 {
 	framebuffer.Resize(payload.width, payload.height);
 
-	const VkSampler& sampler = Renderer::defaultSampler;
-	const std::vector<VkImageView> views = framebuffer.GetViews();
-
-	constexpr VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-	secondPipeline->BindImageToName("positionImage", views[0], sampler, layout);
-	secondPipeline->BindImageToName("albedoImage", views[1], sampler, layout);
-	secondPipeline->BindImageToName("normalImage", views[2], sampler, layout);
-	secondPipeline->BindImageToName("metallicRoughnessAOImage", views[3], sampler, layout);
+	BindGBuffers();
 
 	skybox->Resize(payload.width, payload.height);
-	skybox->targetView = framebuffer.GetViews()[1];
+	skybox->targetView = GetAlbedoView();
 	skybox->depth = framebuffer.GetDepthView();
+
+	ResizeRTGI(payload.width, payload.height);
 }
 
 void DeferredPipeline::UpdateTextureBuffer()
@@ -326,4 +361,5 @@ void DeferredPipeline::AddLight(const Light& light)
 DeferredPipeline::~DeferredPipeline()
 {
 	vgm::Delete(renderPass);
+	vgm::Delete(rtgiView);
 }

@@ -1,69 +1,89 @@
 #pragma once
 #include <vulkan/vulkan.h>
 
-struct VvmBuffer;
-struct VvmImage;
-
-class VideoMemoryManager
+namespace vvm
 {
-public:
-	static VvmImage  AllocateImage(VkImage image, VkMemoryPropertyFlags properties);
-	static VvmBuffer AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFlags properties, void* pNext = nullptr);
+	template<typename VulkanType>
+	using Deleter = void(*)(VulkanType);
 
-	static void* MapBuffer(VvmBuffer buffer, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE, VkMemoryMapFlags flags = 0);
-	static void UnmapBuffer(VvmBuffer buffer);
+	template<typename VulkanType, Deleter<VulkanType> deleter>
+	class Handle
+	{
+	public:
+		using ValueType = VulkanType;
+		
+		static constexpr Deleter<VulkanType> destructor = deleter;
 
-	static void ForceDestroy();
+		Handle() = default;
+		Handle(VulkanType other) : handle(other) {}
 
-	static void Destroy(VkImage image);
-	static void Destroy(VkBuffer buffer);
-};
+		virtual ~Handle() {}
 
-struct VvmBuffer
-{
-	VvmBuffer() = default;
-	VvmBuffer(VkBuffer buffer) : buffer(buffer) {}
+		void Destroy()
+		{
+			if (!IsValid())
+				return;
 
-	void Destroy() 
-	{ 
-		if (!IsValid())
-			return;
+			deleter(handle);
+			Invalidate();
+		}
 
-		VideoMemoryManager::Destroy(buffer); 
-		Invalidate();
-	}
+		VulkanType& Get() { return handle; }
+		const VulkanType& Get() const { return handle; }
 
-	VkBuffer& Get() { return buffer; }
-	const VkBuffer& Get() const { return buffer; }
+		bool IsValid() const { return handle != VK_NULL_HANDLE; }
+		void Invalidate() { handle = VK_NULL_HANDLE; }
 
-	bool IsValid() { return buffer != VK_NULL_HANDLE; }
-	void Invalidate() { buffer = VK_NULL_HANDLE; }
+	protected:
+		VulkanType handle = VK_NULL_HANDLE;
+	};
 
-private:
-	VkBuffer buffer;
-};
+	template<typename VulkanType, Deleter<VulkanType> deleter>
+	class SmartHandle : public Handle<VulkanType, deleter>
+	{
+	public:
+		using HandleType = Handle<VulkanType, deleter>;
+		using SmartType  = SmartHandle<VulkanType, deleter>;
 
-struct VvmImage
-{
-public:
-	VvmImage() = default;
-	VvmImage(VkImage image) : image(image) {}
+		SmartHandle() = default;
+		SmartHandle(const SmartHandle&) = delete;
 
-	void Destroy()
-	{ 
-		if (!IsValid())
-			return;
+		SmartHandle& operator=(HandleType&& other) noexcept
+		{
+			this->handle = other.Get();
+			other.Invalidate();
 
-		VideoMemoryManager::Destroy(image); 
-		Invalidate();
-	}
+			return *this;
+		}
 
-	VkImage& Get() { return image; }
-	const VkImage& Get() const { return image; }
+		SmartHandle& operator=(SmartType&& other) noexcept
+		{
+			this->handle = other.Get();
+			other.Invalidate();
 
-	bool IsValid() { return image != VK_NULL_HANDLE; }
-	void Invalidate() { image = VK_NULL_HANDLE; }
+			return *this;
+		}
 
-private:
-	VkImage image;
+		~SmartHandle()
+		{
+			this->Destroy();
+		}
+	};
+
+	extern void Destroy(VkImage image);
+	extern void Destroy(VkBuffer buffer);
+
+	using Image  = Handle<VkImage,  vvm::Destroy>;
+	using Buffer = Handle<VkBuffer, vvm::Destroy>;
+
+	using SmartImage  = SmartHandle<Image::ValueType,  Image::destructor>;
+	using SmartBuffer = SmartHandle<Buffer::ValueType, Buffer::destructor>;
+
+	extern Image  AllocateImage(VkImage image, VkMemoryPropertyFlags properties);
+	extern Buffer AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFlags properties, void* pNext = nullptr);
+
+	extern void* MapBuffer(Buffer buffer, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE, VkMemoryMapFlags flags = 0);
+	extern void UnmapBuffer(Buffer buffer);
+
+	extern void ForceDestroy();
 };

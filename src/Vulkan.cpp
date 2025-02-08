@@ -494,17 +494,17 @@ void Vulkan::CreateExternalBuffer(VkDeviceSize size, VkBufferUsageFlags usage, V
     vkBindBufferMemory(context.logicalDevice, buffer, bufferMemory, 0);
 }
 
-VvmBuffer Vulkan::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
+vvm::Buffer Vulkan::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {
     VkBuffer buffer = VK_NULL_HANDLE;
     CreateBufferHandle(buffer, size, usage);
 
-    return VideoMemoryManager::AllocateBuffer(buffer, properties, optionalMemoryAllocationFlags);
+    return vvm::AllocateBuffer(buffer, properties, optionalMemoryAllocationFlags);
 }
 
 void Vulkan::Destroy()
 {
-    VideoMemoryManager::ForceDestroy();
+    vvm::ForceDestroy();
 }
 
 uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice)
@@ -518,7 +518,7 @@ uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags proper
     CheckVulkanResult("Failed to get the memory type " + (std::string)string_VkMemoryPropertyFlags(properties) + " for the physical device " + (std::string)physicalDevice.Properties().deviceName, VK_ERROR_DEVICE_LOST, GetMemoryType);
 }
 
-VvmImage Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags)
+vvm::Image Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags)
 {
     VkImageCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -540,7 +540,7 @@ VvmImage Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels
     VkResult result = vkCreateImage(context.logicalDevice, &createInfo, nullptr, &image);
     CheckVulkanResult("Failed to create an image", result, vkCreateImage);
 
-    return VideoMemoryManager::AllocateImage(image, properties);
+    return vvm::AllocateImage(image, properties);
 }
 
 bool Vulkan::HasStencilComponent(VkFormat format)

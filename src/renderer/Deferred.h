@@ -5,6 +5,7 @@
 
 #include "RenderPipeline.h"
 #include "FramesInFlight.h"
+#include "VideoMemoryManager.h"
 #include "Framebuffer.h"
 #include "Buffer.h"
 #include "Light.h"
@@ -17,6 +18,7 @@ class Skybox;
 class DeferredPipeline : public RenderPipeline
 {
 public:
+	DeferredPipeline() = default;
 	~DeferredPipeline();
 
 	void Start(const Payload& payload) override;
@@ -29,6 +31,17 @@ public:
 
 private:
 	static constexpr size_t GBUFFER_COUNT = 4;
+
+	struct RTGIConstants
+	{
+		glm::vec3 position;
+
+		glm::mat4 viewInv;
+		glm::mat4 projInv;
+
+		int width;
+		int height;
+	};
 
 	struct UBO
 	{
@@ -49,18 +62,29 @@ private:
 	void CreateBuffers();
 	void BindResources();
 	void BindTLAS();
+	void BindGBuffers();
 
 	void CreateRenderPass(const std::array<VkFormat, GBUFFER_COUNT>& formats);
 	void CreatePipelines(VkRenderPass firstPass, VkRenderPass secondPass);
 
-	void CreateAndBindRTGI();
+	void CreateAndBindRTGI(uint32_t width, uint32_t height); // maybe seperate RTGI into its own class ??
+	void PushRTGIConstants(const Payload& payload);
+	void ResizeRTGI(uint32_t width, uint32_t height);
 
 	Skybox* CreateNewSkybox(const std::string& path);
+
+	VkImageView GetPositionView() { return framebuffer.GetViews()[0]; }
+	VkImageView GetAlbedoView()   { return framebuffer.GetViews()[1]; }
+	VkImageView GetNormalView()   { return framebuffer.GetViews()[2]; }
+	VkImageView GetMRAOView()     { return framebuffer.GetViews()[3]; }
 
 	Framebuffer framebuffer;
 
 	FIF::Buffer uboBuffer;
 	FIF::Buffer lightBuffer;
+
+	vvm::SmartImage rtgiImage;
+	VkImageView rtgiView = VK_NULL_HANDLE;
 
 	std::unique_ptr<GraphicsPipeline> firstPipeline;
 	std::unique_ptr<GraphicsPipeline> secondPipeline;

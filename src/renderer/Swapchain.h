@@ -31,7 +31,7 @@ public:
     std::vector<VkFramebuffer> framebuffers{};
     VkFormat format{};
     VkExtent2D extent{};
-    VvmImage depthImage;
+    vvm::Image depthImage;
     VkImageView depthImageView;
 
 private:

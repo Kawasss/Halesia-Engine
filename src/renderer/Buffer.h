@@ -32,7 +32,7 @@ public:
 	void SetDebugName(const char* name);
 
 private:
-	VvmBuffer buffer;
+	vvm::Buffer buffer;
 };
 
 template<typename T> 
@@ -72,7 +72,7 @@ namespace FIF
 		void SetDebugName(const char* name);
 
 	private:
-		std::array<VvmBuffer, FIF::FRAME_COUNT> buffers; // should initialize all values to VK_NULL_HANDLE
+		std::array<vvm::Buffer, FIF::FRAME_COUNT> buffers; // should initialize all values to VK_NULL_HANDLE
 		std::array<void*, FIF::FRAME_COUNT> pointers;
 	};
 }

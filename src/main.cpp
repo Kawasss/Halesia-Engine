@@ -3,6 +3,7 @@
 #include "renderer/Skybox.h"
 #include "renderer/Light.h"
 #include "renderer/Mesh.h"
+#include "renderer/RayTracingPipeline.h"
 #include "renderer/GraphicsPipeline.h"
 
 #include "core/Object.h"

@@ -25,7 +25,7 @@ public:
 	VkFramebuffer Get()          const { return framebuffer; }
 	VkRenderPass GetRenderPass() const { return renderPass;  }
 
-	std::vector<VvmImage>& GetImages()   { return images;     }
+	std::vector<vvm::Image>& GetImages()   { return images;     }
 	std::vector<VkImageView>& GetViews() { return imageViews; }
 
 	uint32_t GetWidth()  const { return width;  }
@@ -54,7 +54,7 @@ private:
 	uint32_t width = 0, height = 0;
 	float relRes = 1.0f;
 
-	std::vector<VvmImage> images;
+	std::vector<vvm::Image> images;
 	std::vector<VkImageView> imageViews;
 };
 

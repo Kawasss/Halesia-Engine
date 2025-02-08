@@ -21,12 +21,12 @@ void Buffer::Destroy()
 
 void* Buffer::Map(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags)
 {
-	return VideoMemoryManager::MapBuffer(buffer, offset, size, flags);
+	return vvm::MapBuffer(buffer, offset, size, flags);
 }
 
 void Buffer::Unmap()
 {
-	VideoMemoryManager::UnmapBuffer(buffer);
+	vvm::UnmapBuffer(buffer);
 }
 
 void Buffer::InheritFrom(Buffer& other)
@@ -77,13 +77,13 @@ namespace FIF
 	void Buffer::MapPermanently()
 	{
 		for (int i = 0; i < FIF::FRAME_COUNT; i++)
-			pointers[i] = VideoMemoryManager::MapBuffer(buffers[i]);
+			pointers[i] = vvm::MapBuffer(buffers[i]);
 	}
 
 	void Buffer::Unmap()
 	{
 		for (int i = 0; i < FIF::FRAME_COUNT; i++)
-			VideoMemoryManager::UnmapBuffer(buffers[i]);
+			vvm::UnmapBuffer(buffers[i]);
 	}
 
 	void Buffer::SetDebugName(const char* name)

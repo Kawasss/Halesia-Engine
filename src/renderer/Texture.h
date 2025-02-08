@@ -53,7 +53,7 @@ public:
 
 	static bool TexturesHaveChanged();
 
-	VvmImage image;
+	vvm::Image image;
 	VkImageView imageView = VK_NULL_HANDLE;
 	VkDeviceSize size = 0; // in bytes!
 
