@@ -1,6 +1,7 @@
 #include "renderer/RayTracingPipeline.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/FramesInFlight.h"
+#include "renderer/CommandBuffer.h"
 #include "renderer/Vulkan.h"
 
 #include "io/IO.h"
@@ -17,6 +18,9 @@ RayTracingPipeline::RayTracingPipeline(const std::string& rgen, const std::strin
 
 	InitializeBase(reflector);
 	CreatePipeline(reflector, shaders);
+	CreateShaderBindingTable();
+
+	bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
 }
 
 void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, const std::vector<std::vector<char>>& shaders)
@@ -80,4 +84,60 @@ void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, c
 	vkDestroyShaderModule(ctx.logicalDevice, missShader, nullptr);
 	vkDestroyShaderModule(ctx.logicalDevice, hitShader, nullptr);
 	vkDestroyShaderModule(ctx.logicalDevice, genShader, nullptr);
+}
+
+void RayTracingPipeline::CreateShaderBindingTable()
+{
+	constexpr uint32_t GROUP_COUNT = 3;
+
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+	VkPhysicalDeviceRayTracingPipelinePropertiesKHR rtProperties{};
+	rtProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_PIPELINE_PROPERTIES_KHR;
+
+	VkPhysicalDeviceProperties2 properties2{};
+	properties2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+	properties2.pNext = &rtProperties;
+
+	vkGetPhysicalDeviceProperties2(ctx.physicalDevice.Device(), &properties2);
+
+	VkDeviceSize progSize = rtProperties.shaderGroupBaseAlignment;
+	VkDeviceSize shaderBindingTableSize = progSize * GROUP_COUNT;
+
+	shaderBindingTableBuffer.Init(shaderBindingTableSize, VK_BUFFER_USAGE_SHADER_BINDING_TABLE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+	std::vector<char> shaderBuffer(shaderBindingTableSize);
+	VkResult result = vkGetRayTracingShaderGroupHandlesKHR(ctx.logicalDevice, pipeline, 0, GROUP_COUNT, shaderBindingTableSize, shaderBuffer.data());
+	CheckVulkanResult("Failed to get the ray tracing shader group handles", result, vkGetRayTracingShaderGroupHandlesKHR);
+
+	void* shaderBindingTableMemPtr = shaderBindingTableBuffer.Map(0, shaderBindingTableSize);
+
+	for (uint32_t i = 0; i < GROUP_COUNT; i++)
+	{
+		memcpy(shaderBindingTableMemPtr, shaderBuffer.data() + i * rtProperties.shaderGroupHandleSize, rtProperties.shaderGroupHandleSize);
+		shaderBindingTableMemPtr = static_cast<char*>(shaderBindingTableMemPtr) + rtProperties.shaderGroupBaseAlignment;
+	}
+	shaderBindingTableBuffer.Unmap();
+
+	VkDeviceAddress shaderBindingTableBufferAddress = Vulkan::GetDeviceAddress(shaderBindingTableBuffer.Get());
+
+	VkDeviceSize hitGroupOffset = 0;
+	VkDeviceSize rayGenOffset = progSize;
+	VkDeviceSize missOffset = progSize * 2;
+
+	rchitShaderBinding.deviceAddress = shaderBindingTableBufferAddress + hitGroupOffset;
+	rchitShaderBinding.size = progSize;
+	rchitShaderBinding.stride = progSize;
+
+	rgenShaderBinding.deviceAddress = shaderBindingTableBufferAddress + rayGenOffset;
+	rgenShaderBinding.size = progSize;
+	rgenShaderBinding.stride = progSize;
+
+	rmissShaderBinding.deviceAddress = shaderBindingTableBufferAddress + missOffset;
+	rmissShaderBinding.size = progSize;
+	rmissShaderBinding.stride = progSize;
+}
+
+void RayTracingPipeline::Execute(const CommandBuffer& cmdBuffer, uint32_t width, uint32_t height, uint32_t depth) const
+{
+	cmdBuffer.TraceRays(&rgenShaderBinding, &rmissShaderBinding, &rchitShaderBinding, nullptr, width, height, depth);
 }

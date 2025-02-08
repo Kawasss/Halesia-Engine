@@ -80,7 +80,7 @@ void DeferredPipeline::Start(const Payload& payload)
 		}
 	}
 
-	//RayTracingPipeline test("shaders/spirv/rtgi.rgen.spv", "shaders/spirv/rtgi.rchit.spv", "shaders/spirv/rtgi.rmiss.spv");
+	RayTracingPipeline test("shaders/spirv/rtgi.rgen.spv", "shaders/spirv/rtgi.rchit.spv", "shaders/spirv/rtgi.rmiss.spv");
 
 	SetTextureBuffer();
 }
