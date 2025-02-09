@@ -33,7 +33,6 @@ std::vector<const char*> Vulkan::requiredLogicalDeviceExtensions =
     VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
 #ifdef _DEBUG
     VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME,
-    VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME,
 #endif
 };
 std::vector<const char*> Vulkan::requiredInstanceExtensions =
