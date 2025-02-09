@@ -15,6 +15,7 @@ RayTracingPipeline::RayTracingPipeline(const std::string& rgen, const std::strin
 		IO::ReadFile(rgen),
 		IO::ReadFile(rchit),
 		IO::ReadFile(rmiss),
+		IO::ReadFile(rmiss),
 	};
 	ShaderGroupReflector reflector(shaders);
 
@@ -34,6 +35,7 @@ void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, c
 	VkShaderModule genShader  = Vulkan::CreateShaderModule(shaders[0]);
 	VkShaderModule hitShader  = Vulkan::CreateShaderModule(shaders[1]);
 	VkShaderModule missShader = Vulkan::CreateShaderModule(shaders[2]);
+	VkShaderModule mis2Shader = Vulkan::CreateShaderModule(shaders[3]);
 
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -45,36 +47,40 @@ void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, c
 	VkResult result = vkCreatePipelineLayout(ctx.logicalDevice, &pipelineLayoutCreateInfo, nullptr, &layout);
 	CheckVulkanResult("Failed to create the pipeline layout for ray tracing", result, vkCreatePipelineLayout);
 
-	std::array<VkPipelineShaderStageCreateInfo, 3> stageCreateInfos{};
-	stageCreateInfos[0] = Vulkan::GetGenericShaderStageCreateInfo(genShader,  VK_SHADER_STAGE_RAYGEN_BIT_KHR);
-	stageCreateInfos[1] = Vulkan::GetGenericShaderStageCreateInfo(hitShader,  VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+	std::array<VkPipelineShaderStageCreateInfo, 4> stageCreateInfos{};
+	stageCreateInfos[0] = Vulkan::GetGenericShaderStageCreateInfo(hitShader,  VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
+	stageCreateInfos[1] = Vulkan::GetGenericShaderStageCreateInfo(genShader,  VK_SHADER_STAGE_RAYGEN_BIT_KHR);
 	stageCreateInfos[2] = Vulkan::GetGenericShaderStageCreateInfo(missShader, VK_SHADER_STAGE_MISS_BIT_KHR);
-	
-	std::array<VkRayTracingShaderGroupCreateInfoKHR, 3> RTShaderGroupCreateInfos{};
-	for (uint32_t i = 0; i < RTShaderGroupCreateInfos.size(); i++)
+	stageCreateInfos[3] = Vulkan::GetGenericShaderStageCreateInfo(mis2Shader, VK_SHADER_STAGE_MISS_BIT_KHR);
+
+	std::array<VkRayTracingShaderGroupCreateInfoKHR, 4> shaderGroupCreateInfos{};
+	for (uint32_t i = 0; i < shaderGroupCreateInfos.size(); i++)
 	{
-		RTShaderGroupCreateInfos[i].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
-		RTShaderGroupCreateInfos[i].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
-		RTShaderGroupCreateInfos[i].closestHitShader = VK_SHADER_UNUSED_KHR;
-		RTShaderGroupCreateInfos[i].anyHitShader = VK_SHADER_UNUSED_KHR;
-		RTShaderGroupCreateInfos[i].intersectionShader = VK_SHADER_UNUSED_KHR;
-		RTShaderGroupCreateInfos[i].generalShader = VK_SHADER_UNUSED_KHR;
+		shaderGroupCreateInfos[i].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
+		shaderGroupCreateInfos[i].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
+		shaderGroupCreateInfos[i].closestHitShader = VK_SHADER_UNUSED_KHR;
+		shaderGroupCreateInfos[i].anyHitShader = VK_SHADER_UNUSED_KHR;
+		shaderGroupCreateInfos[i].intersectionShader = VK_SHADER_UNUSED_KHR;
+		shaderGroupCreateInfos[i].generalShader = VK_SHADER_UNUSED_KHR;
 	}
-	RTShaderGroupCreateInfos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR; // rgen
-	RTShaderGroupCreateInfos[0].generalShader = 0;
+	shaderGroupCreateInfos[0].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR; // rchit
+	shaderGroupCreateInfos[0].closestHitShader = 0;
 
-	RTShaderGroupCreateInfos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_TRIANGLES_HIT_GROUP_KHR; // rchit
-	RTShaderGroupCreateInfos[1].closestHitShader = 1;
+	shaderGroupCreateInfos[1].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR; // rgen
+	shaderGroupCreateInfos[1].generalShader = 1;
 
-	RTShaderGroupCreateInfos[2].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR; // rmiss
-	RTShaderGroupCreateInfos[2].generalShader = 2;
+	shaderGroupCreateInfos[2].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR; // rmiss
+	shaderGroupCreateInfos[2].generalShader = 2;
+
+	shaderGroupCreateInfos[3].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR; // rmiss2
+	shaderGroupCreateInfos[3].generalShader = 3;
 
 	VkRayTracingPipelineCreateInfoKHR RTPipelineCreateInfo{};
 	RTPipelineCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
 	RTPipelineCreateInfo.stageCount = static_cast<uint32_t>(stageCreateInfos.size());
 	RTPipelineCreateInfo.pStages = stageCreateInfos.data();
-	RTPipelineCreateInfo.groupCount = static_cast<uint32_t>(RTShaderGroupCreateInfos.size());
-	RTPipelineCreateInfo.pGroups = RTShaderGroupCreateInfos.data();
+	RTPipelineCreateInfo.groupCount = static_cast<uint32_t>(shaderGroupCreateInfos.size());
+	RTPipelineCreateInfo.pGroups = shaderGroupCreateInfos.data();
 	RTPipelineCreateInfo.maxPipelineRayRecursionDepth = 1;
 	RTPipelineCreateInfo.layout = layout;
 	RTPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
@@ -83,6 +89,7 @@ void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, c
 	result = vkCreateRayTracingPipelinesKHR(ctx.logicalDevice, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &RTPipelineCreateInfo, nullptr, &pipeline);
 	CheckVulkanResult("Failed to create the pipeline for ray tracing", result, vkCreateRayTracingPipelinesKHR);
 
+	vkDestroyShaderModule(ctx.logicalDevice, mis2Shader, nullptr);
 	vkDestroyShaderModule(ctx.logicalDevice, missShader, nullptr);
 	vkDestroyShaderModule(ctx.logicalDevice, hitShader, nullptr);
 	vkDestroyShaderModule(ctx.logicalDevice, genShader, nullptr);
