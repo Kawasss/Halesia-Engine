@@ -13,6 +13,6 @@ layout(binding = 4, set = 0) uniform samplerCube skybox;
 
 void main()
 {
-	payload.isActive = 0;
-	payload.color += texture(skybox, payload.direction).rgb;
+	//payload.isActive = 0;
+	//payload.color += texture(skybox, payload.direction).rgb;
 }

@@ -37,10 +37,6 @@ inline void ProcessError(const std::exception& e)
 	std::string fullError = e.what();
 	MessageBoxA(nullptr, fullError.c_str(), ((std::string)"Engine error (" + (std::string)typeid(e).name() + ')').c_str(), MB_OK | MB_ICONERROR);
 	std::cerr << e.what() << std::endl;
-
-#ifdef _DEBUG
-	__debugbreak();
-#endif
 }
 
 inline float CalculateFrameTime(int fps)

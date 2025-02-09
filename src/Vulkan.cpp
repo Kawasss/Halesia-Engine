@@ -30,7 +30,10 @@ VkDeviceSize Vulkan::allocatedMemory = 0;
 std::vector<const char*> Vulkan::requiredLogicalDeviceExtensions =
 {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+#ifdef _DEBUG
     VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME,
+    "VK_NV_ray_tracing_validation",
+#endif
 };
 std::vector<const char*> Vulkan::requiredInstanceExtensions =
 {
@@ -70,12 +73,25 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     vkGetQueueCheckpointDataNV(Vulkan::GetContext().graphicsQueue, &count, nullptr);
     if (count > 0)
     {
-        std::vector<VkCheckpointDataNV> checkpoints(count);
+        VkCheckpointDataNV base{};
+        base.sType = VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV;
+
+        std::vector<VkCheckpointDataNV> checkpoints(count, base);
         vkGetQueueCheckpointDataNV(Vulkan::GetContext().graphicsQueue, &count, checkpoints.data());
 
         stream << "\n\nCheckpoints:\n";
         for (VkCheckpointDataNV& data : checkpoints)
-            stream << string_VkPipelineStageFlagBits(data.stage) << '\n' << reinterpret_cast<uint64_t>(data.pCheckpointMarker) << "\n\n";
+        {
+            const char* msg = static_cast<const char*>(data.pCheckpointMarker);
+            size_t msgLength = strnlen_s(msg, 128); // if the message is not a valid string (null terminator could not be found) then the marker is an integer value
+
+            stream << string_VkPipelineStageFlagBits(data.stage) << ", ";
+            if (msgLength >= 128)
+                stream << reinterpret_cast<uint64_t>(data.pCheckpointMarker);
+            else
+                stream << msg;
+            stream << "\n\n";
+        }
     }
 #endif
     this->message = stream.str();
@@ -518,14 +534,14 @@ uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags proper
     CheckVulkanResult("Failed to get the memory type " + (std::string)string_VkMemoryPropertyFlags(properties) + " for the physical device " + (std::string)physicalDevice.Properties().deviceName, VK_ERROR_DEVICE_LOST, GetMemoryType);
 }
 
-vvm::Image Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags)
+vvm::Image Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags, VkImageLayout initialLayout)
 {
     VkImageCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     createInfo.imageType = VK_IMAGE_TYPE_2D;
-    createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     createInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    createInfo.initialLayout = initialLayout;
     createInfo.extent.width = width;
     createInfo.extent.height = height;
     createInfo.extent.depth = 1;
@@ -698,9 +714,9 @@ VkInstance Vulkan::GenerateInstance()
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "Halesia";
-    appInfo.applicationVersion = VK_VERSION_1_3;
-    appInfo.engineVersion = VK_VERSION_1_3;
-    appInfo.apiVersion = VK_API_VERSION_1_3;
+    appInfo.applicationVersion = VK_VERSION_1_4;
+    appInfo.engineVersion = VK_VERSION_1_4;
+    appInfo.apiVersion = VK_API_VERSION_1_4;
     appInfo.pEngineName = "Halesia";  
 
     VkInstanceCreateInfo createInfo{};
@@ -872,8 +888,8 @@ std::string CreateFunctionNotActivatedError(const std::string_view& functionName
 #define DEBUG_ONLY(cont)
 #endif
 
-#define DEFINE_DEVICE_FUNCTION(function)   static PFN_##function p##function = (PFN_##function##)vkGetDeviceProcAddr(Vulkan::GetContext().logicalDevice, #function)
-#define DEFINE_INSTANCE_FUNCTION(function) static PFN_##function p##function = (PFN_##function##)vkGetInstanceProcAddr(instance, #function)
+#define DEFINE_DEVICE_FUNCTION(function)   static PFN_##function p##function = reinterpret_cast<PFN_##function>(vkGetDeviceProcAddr(Vulkan::GetContext().logicalDevice, #function))
+#define DEFINE_INSTANCE_FUNCTION(function) static PFN_##function p##function = reinterpret_cast<PFN_##function>(vkGetInstanceProcAddr(instance, #function))
 
 #define CHECK_VALIDITY_DEBUG(ptr, ext) \
 DEBUG_ONLY(                            \
@@ -1002,10 +1018,10 @@ void vkCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpoint
     pvkCmdSetCheckpointNV(commandBuffer, pCheckpointMarker);
 }
 
-void vkGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckPointDataCount, VkCheckpointDataNV* pCheckPointData)
+void vkGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckPointDataCount, VkCheckpointDataNV* pCheckpointData)
 {
     DEFINE_DEVICE_FUNCTION(vkGetQueueCheckpointDataNV);
     CHECK_VALIDITY_DEBUG(pvkGetQueueCheckpointDataNV, VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
-    pvkGetQueueCheckpointDataNV(queue, pCheckPointDataCount, pCheckPointData);
+    pvkGetQueueCheckpointDataNV(queue, pCheckPointDataCount, pCheckpointData);
 }
 #pragma endregion VulkanExtensionFunctionDefinitions

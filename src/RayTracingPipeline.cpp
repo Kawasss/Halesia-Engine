@@ -6,6 +6,8 @@
 
 #include "io/IO.h"
 
+VkStridedDeviceAddressRegionKHR fallbackShaderBinding{};
+
 RayTracingPipeline::RayTracingPipeline(const std::string& rgen, const std::string& rchit, const std::string& rmiss)
 {
 	std::vector<std::vector<char>> shaders =
@@ -139,5 +141,5 @@ void RayTracingPipeline::CreateShaderBindingTable()
 
 void RayTracingPipeline::Execute(const CommandBuffer& cmdBuffer, uint32_t width, uint32_t height, uint32_t depth) const
 {
-	cmdBuffer.TraceRays(&rgenShaderBinding, &rmissShaderBinding, &rchitShaderBinding, nullptr, width, height, depth);
+	cmdBuffer.TraceRays(rgenShaderBinding, rmissShaderBinding, rchitShaderBinding, rmissShaderBinding, width, height, depth);
 }

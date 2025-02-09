@@ -70,6 +70,8 @@ private:
 	void CreateAndBindRTGI(uint32_t width, uint32_t height); // maybe seperate RTGI into its own class ??
 	void PushRTGIConstants(const Payload& payload);
 	void ResizeRTGI(uint32_t width, uint32_t height);
+	void BindRTGIResources();
+	void SetRTGIImageLayout();
 
 	Skybox* CreateNewSkybox(const std::string& path);
 

@@ -47,9 +47,9 @@ void DeferredPipeline::Start(const Payload& payload)
 	{
 		TLAS.reset(TopLevelAccelerationStructure::Create({}));
 
-		BindTLAS();
-
 		CreateAndBindRTGI(payload.width, payload.height);
+
+		BindTLAS();
 	}
 
 	SetTextureBuffer();
@@ -85,9 +85,44 @@ void DeferredPipeline::ResizeRTGI(uint32_t width, uint32_t height)
 	rtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
 	rtgiView = Vulkan::CreateImageView(rtgiImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
+	SetRTGIImageLayout();
+	BindRTGIResources();
+}
+
+void DeferredPipeline::SetRTGIImageLayout()
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	VkImageMemoryBarrier memoryBarrier{};
+	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	memoryBarrier.image = rtgiImage.Get();
+	memoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	memoryBarrier.subresourceRange.baseMipLevel = 0;
+	memoryBarrier.subresourceRange.levelCount = 1;
+	memoryBarrier.subresourceRange.baseArrayLayer = 0;
+	memoryBarrier.subresourceRange.layerCount = 1;
+
+	constexpr VkPipelineStageFlags src = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	constexpr VkPipelineStageFlags dst = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+
+	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex); // or grab the command buffer from the renderer
+	CommandBuffer cmdBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
+
+	cmdBuffer.PipelineBarrier(src, dst, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+
+	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, cmdBuffer.Get(), commandPool);
+	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
+}
+
+void DeferredPipeline::BindRTGIResources()
+{
 	rtgiPipeline->BindImageToName("globalIlluminationImage", rtgiView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_GENERAL);
-	rtgiPipeline->BindImageToName("albedoImage", GetAlbedoView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_GENERAL);
-	rtgiPipeline->BindImageToName("normalImage", GetNormalView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_GENERAL);
+	rtgiPipeline->BindImageToName("albedoImage", GetAlbedoView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	rtgiPipeline->BindImageToName("normalImage", GetNormalView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void DeferredPipeline::CreateBuffers()
@@ -114,6 +149,14 @@ void DeferredPipeline::BindTLAS()
 	writeSet.dstBinding = 4;
 
 	for (const std::vector<VkDescriptorSet>& sets : secondPipeline->GetAllDescriptorSets())
+	{
+		writeSet.dstSet = sets[0];
+		vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr); // better to incorporate this into Pipeline
+	}
+
+	// also write the TLAS to the RTGI pipeline
+	writeSet.dstBinding = 0;
+	for (const std::vector<VkDescriptorSet>& sets : rtgiPipeline->GetAllDescriptorSets())
 	{
 		writeSet.dstSet = sets[0];
 		vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr); // better to incorporate this into Pipeline
@@ -238,6 +281,20 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 	if (skybox != nullptr)
 		skybox->Draw(payload.commandBuffer, payload.camera);
 
+	if (Renderer::canRayTrace)
+	{
+		PushRTGIConstants(payload);
+
+		payload.commandBuffer.SetCheckpoint(static_cast<const void*>("start of RTGI"));
+
+		rtgiPipeline->Bind(payload.commandBuffer);
+		rtgiPipeline->Execute(payload.commandBuffer, payload.width, payload.height, 1);
+
+		payload.commandBuffer.SetCheckpoint(static_cast<const void*>("end of RTGI"));
+	}
+
+	payload.commandBuffer.SetCheckpoint(static_cast<const void*>("start of final deferred pass"));
+
 	renderer->StartRenderPass(renderer->GetDefault3DRenderPass());
 
 	secondPipeline->Bind(cmdBuffer);
@@ -249,6 +306,8 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 	cmdBuffer.Draw(6, 1, 0, 0);
 
 	cmdBuffer.EndRenderPass();
+
+	payload.commandBuffer.SetCheckpoint(static_cast<const void*>("end of final deferred pass"));
 
 	framebuffer.TransitionFromReadToWrite(cmdBuffer);
 }
