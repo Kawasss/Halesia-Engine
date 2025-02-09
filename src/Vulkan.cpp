@@ -30,9 +30,10 @@ VkDeviceSize Vulkan::allocatedMemory = 0;
 std::vector<const char*> Vulkan::requiredLogicalDeviceExtensions =
 {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    VK_EXT_ROBUSTNESS_2_EXTENSION_NAME,
 #ifdef _DEBUG
     VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME,
-    "VK_NV_ray_tracing_validation",
+    VK_NV_RAY_TRACING_VALIDATION_EXTENSION_NAME,
 #endif
 };
 std::vector<const char*> Vulkan::requiredInstanceExtensions =
@@ -82,14 +83,14 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
         stream << "\n\nCheckpoints:\n";
         for (VkCheckpointDataNV& data : checkpoints)
         {
-            const char* msg = static_cast<const char*>(data.pCheckpointMarker);
-            size_t msgLength = strnlen_s(msg, 128); // if the message is not a valid string (null terminator could not be found) then the marker is an integer value
+            //const char* msg = static_cast<const char*>(data.pCheckpointMarker);
+            //size_t msgLength = strnlen_s(msg, 128); // if the message is not a valid string (null terminator could not be found) then the marker is an integer value
 
             stream << string_VkPipelineStageFlagBits(data.stage) << ", ";
-            if (msgLength >= 128)
+            /*if (msgLength >= 128)
                 stream << reinterpret_cast<uint64_t>(data.pCheckpointMarker);
             else
-                stream << msg;
+                stream << msg;*/
             stream << "\n\n";
         }
     }
@@ -242,6 +243,16 @@ VkQueryPool Vulkan::CreateQueryPool(VkQueryType type, uint32_t amount)
 
     VkResult result = vkCreateQueryPool(context.logicalDevice, &createInfo, nullptr, &ret);
     CheckVulkanResult("Failed to create a query pool", result, vkCreateQueryPool);
+
+    // query pools must be reset before being used, according to the vulkan spec
+    VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
+    CommandBuffer cmdBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
+
+    cmdBuffer.ResetQueryPool(ret, 0, amount);
+
+    Vulkan::EndSingleTimeCommands(context.graphicsQueue, cmdBuffer.Get(), commandPool);
+    Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
+
     return ret;
 }
 
