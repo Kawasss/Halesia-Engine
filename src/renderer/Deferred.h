@@ -34,13 +34,10 @@ private:
 
 	struct RTGIConstants
 	{
-		glm::vec3 position;
+		glm::vec4 position;
 
 		glm::mat4 viewInv;
 		glm::mat4 projInv;
-
-		int width;
-		int height;
 	};
 
 	struct UBO

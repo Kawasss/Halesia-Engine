@@ -30,6 +30,8 @@ public:
 	VkImageView targetView = VK_NULL_HANDLE;
 	VkImageView depth = VK_NULL_HANDLE;
 
+	Cubemap* GetCubemap() { return cubemap; }
+
 private:
 	Skybox();
 

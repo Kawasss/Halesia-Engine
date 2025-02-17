@@ -15,13 +15,10 @@ layout(location = 0) rayPayloadEXT Payload {
 
 layout(push_constant) uniform Camera
 {
-	vec3 position;
+	vec4 position;
 
 	mat4 viewInv;
 	mat4 projInv;
-
-	int width;
-	int height;
 } camera;
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
@@ -29,6 +26,7 @@ layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
 layout(binding = 1, set = 0, rgba8) uniform image2D globalIlluminationImage;
 layout(binding = 2, set = 0) uniform sampler2D albedoImage;
 layout(binding = 3, set = 0) uniform sampler2D normalImage;
+layout(binding = 4, set = 0) uniform sampler2D positionImage;
 
 vec3 CosineSampleHemisphereLocal(vec2 random) // https://github.com/boksajak/brdf/blob/master/brdf.h
 {
@@ -66,24 +64,29 @@ void main()
 	vec2 relCoors = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy);
 
 	vec3 normal = texture(normalImage, relCoors).xyz;
+	vec3 position = texture(positionImage, relCoors).xyz;
 
-	if (normal == vec3(0))
-		return;
-
-	vec2 center = vec2(gl_LaunchIDEXT.xy);
-    vec2 inUV = center / vec2(gl_LaunchSizeEXT.xy);
-    vec2 uv = inUV * 2.0 - 1.0;
+    vec2 uv = relCoors * 2.0 - 1.0;
 
     vec4 target = camera.projInv * vec4(uv.x, uv.y, 1, 1);
+	vec3 cameraDir = (camera.viewInv * vec4(normalize(target.xyz), 0)).xyz;
 
-    payload.origin    = camera.position.xyz;
-    payload.direction = CosineSampleHemisphere(vec2(1), normal); // vec2(1) should be a random uniform number
+	if (normal == vec3(0)) // shoot the ray at the skybox (maybe sample in this shader instead of the rmiss shader ??)
+	{
+		payload.origin = camera.position.xyz;
+		payload.direction = cameraDir;
+	}
+	else
+	{
+		payload.origin = camera.position.xyz;//position;
+		payload.direction = cameraDir;//normalize(CosineSampleHemisphere(vec2(1), normal)); // vec2(1) should be a random uniform number
+	}
 
 	payload.color = vec3(0);//texture(albedoImage, relCoors).xyz;
 
 	traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.origin, 0.01, payload.direction, 1000.0, 0);
 
-	payload.color = vec3(0.2);
+	vec3 result = payload.color;
 
-	imageStore(globalIlluminationImage, ivec2(gl_LaunchIDEXT.xy), vec4(payload.color, 1));
+	imageStore(globalIlluminationImage, ivec2(gl_LaunchIDEXT.xy), vec4(result, 1));
 }

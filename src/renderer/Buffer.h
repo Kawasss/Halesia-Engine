@@ -29,6 +29,8 @@ public:
 
 	void Fill(VkCommandBuffer commandBuffer, uint32_t value = 0, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE);
 
+	VkDeviceAddress GetDeviceAddress();
+
 	void SetDebugName(const char* name);
 
 private:

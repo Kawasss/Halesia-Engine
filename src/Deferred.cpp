@@ -24,6 +24,8 @@ constexpr VkFormat GBUFFER_NORMAL_FORMAT   = VK_FORMAT_R16G16B16A16_SFLOAT; // 1
 constexpr VkFormat GBUFFER_MRAO_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;      // Metallic, Roughness and Ambient Occlusion
 constexpr VkFormat GBUFFER_RTGI_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;
 
+static constexpr uint32_t RTGI_RESOLUTION_UPSCALE = 2;
+
 void DeferredPipeline::Start(const Payload& payload)
 {
 	std::array<VkFormat, GBUFFER_COUNT> formats = 
@@ -65,17 +67,18 @@ void DeferredPipeline::CreateAndBindRTGI(uint32_t width, uint32_t height)
 void DeferredPipeline::PushRTGIConstants(const Payload& payload)
 {
 	RTGIConstants constants{};
-	constants.position = payload.camera->position;
+	constants.position = glm::vec4(payload.camera->position, 1.0f);
 	constants.viewInv  = glm::inverse(payload.camera->GetViewMatrix());
 	constants.projInv  = glm::inverse(payload.camera->GetProjectionMatrix());
-	constants.width    = payload.width;
-	constants.height   = payload.height;
 
 	rtgiPipeline->PushConstant(payload.commandBuffer, constants, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
 }
 
 void DeferredPipeline::ResizeRTGI(uint32_t width, uint32_t height)
 {
+	width  /= RTGI_RESOLUTION_UPSCALE;
+	height /= RTGI_RESOLUTION_UPSCALE;
+
 	if (rtgiImage.IsValid())
 		rtgiImage.Destroy();
 
@@ -123,6 +126,7 @@ void DeferredPipeline::BindRTGIResources()
 	rtgiPipeline->BindImageToName("globalIlluminationImage", rtgiView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_GENERAL);
 	rtgiPipeline->BindImageToName("albedoImage", GetAlbedoView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	rtgiPipeline->BindImageToName("normalImage", GetNormalView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	rtgiPipeline->BindImageToName("positionImage", GetPositionView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void DeferredPipeline::CreateBuffers()
@@ -238,6 +242,8 @@ void DeferredPipeline::LoadSkybox(const std::string& path)
 
 	skybox->targetView = GetAlbedoView();
 	skybox->depth = framebuffer.GetDepthView();
+
+	rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
@@ -283,14 +289,18 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 
 	if (Renderer::canRayTrace)
 	{
+		Vulkan::StartDebugLabel(payload.commandBuffer.Get(), "RTGI");
+
 		PushRTGIConstants(payload);
 
 		payload.commandBuffer.SetCheckpoint(static_cast<const void*>("start of RTGI"));
 
 		rtgiPipeline->Bind(payload.commandBuffer);
-		rtgiPipeline->Execute(payload.commandBuffer, payload.width, payload.height, 1);
+		rtgiPipeline->Execute(payload.commandBuffer, payload.width / RTGI_RESOLUTION_UPSCALE, payload.height / RTGI_RESOLUTION_UPSCALE, 1);
 
 		payload.commandBuffer.SetCheckpoint(static_cast<const void*>("end of RTGI"));
+
+		payload.commandBuffer.EndDebugUtilsLabelEXT();
 	}
 
 	payload.commandBuffer.SetCheckpoint(static_cast<const void*>("start of final deferred pass"));

@@ -39,6 +39,11 @@ void Buffer::InheritFrom(Buffer& other)
 	other.buffer = VK_NULL_HANDLE;
 }
 
+VkDeviceAddress Buffer::GetDeviceAddress()
+{
+	return Vulkan::GetDeviceAddress(this->Get());
+}
+
 void Buffer::SetDebugName(const char* name)
 {
 	Vulkan::SetDebugName(buffer, name);
