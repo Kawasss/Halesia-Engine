@@ -38,6 +38,8 @@ private:
 
 		glm::mat4 viewInv;
 		glm::mat4 projInv;
+
+		float random; // from 0.0 to 1.0
 	};
 
 	struct UBO
@@ -69,6 +71,9 @@ private:
 	void ResizeRTGI(uint32_t width, uint32_t height);
 	void BindRTGIResources();
 	void SetRTGIImageLayout();
+
+	void TransitionRTGIToRead(const CommandBuffer& cmdBuffer);
+	void TransitionRTGIToWrite(const CommandBuffer& cmdBuffer);
 
 	Skybox* CreateNewSkybox(const std::string& path);
 

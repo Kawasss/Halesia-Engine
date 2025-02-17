@@ -22,6 +22,8 @@ layout (binding = 5) readonly buffer Lights
 	Light data[];
 } lights;
 
+layout (binding = 6) uniform sampler2D globalIlluminationImage;
+
 layout (push_constant) uniform Constant
 {
     vec3 camPos;
@@ -72,6 +74,8 @@ void main()
 	vec3 albedo   = texture(albedoImage, uvCoord).rgb;
 	vec3 normal   = texture(normalImage, uvCoord).rgb;
     vec3 position = texture(positionImage, uvCoord).rgb;
+
+    vec3 globalIllumination = texture(globalIlluminationImage, uvCoord).rgb;
 
     vec3 metallicRoughnessAO = texture(metallicRoughnessAOImage, uvCoord).rgb;
 
@@ -133,7 +137,7 @@ void main()
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
 	}
 
-    vec3 ambient = vec3(0.01) * albedo * ambientOcclusion;
+    vec3 ambient = globalIllumination * albedo * ambientOcclusion;
     
     vec3 color = ambient + Lo;
 

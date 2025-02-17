@@ -19,6 +19,8 @@ layout(push_constant) uniform Camera
 
 	mat4 viewInv;
 	mat4 projInv;
+
+	float random;
 } camera;
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
@@ -78,8 +80,8 @@ void main()
 	}
 	else
 	{
-		payload.origin = camera.position.xyz;//position;
-		payload.direction = cameraDir;//normalize(CosineSampleHemisphere(vec2(1), normal)); // vec2(1) should be a random uniform number
+		payload.origin = position;
+		payload.direction = normal;//normalize(CosineSampleHemisphere(vec2(1), normal)); // vec2(1) should be a random uniform number
 	}
 
 	payload.color = vec3(0);//texture(albedoImage, relCoors).xyz;

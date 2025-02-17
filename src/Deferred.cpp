@@ -24,7 +24,7 @@ constexpr VkFormat GBUFFER_NORMAL_FORMAT   = VK_FORMAT_R16G16B16A16_SFLOAT; // 1
 constexpr VkFormat GBUFFER_MRAO_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;      // Metallic, Roughness and Ambient Occlusion
 constexpr VkFormat GBUFFER_RTGI_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;
 
-static constexpr uint32_t RTGI_RESOLUTION_UPSCALE = 2;
+static constexpr uint32_t RTGI_RESOLUTION_UPSCALE = 1;
 
 void DeferredPipeline::Start(const Payload& payload)
 {
@@ -85,7 +85,7 @@ void DeferredPipeline::ResizeRTGI(uint32_t width, uint32_t height)
 	if (rtgiView != VK_NULL_HANDLE)
 		vgm::Delete(rtgiView);
 
-	rtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	rtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
 	rtgiView = Vulkan::CreateImageView(rtgiImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	SetRTGIImageLayout();
@@ -99,7 +99,7 @@ void DeferredPipeline::SetRTGIImageLayout()
 	VkImageMemoryBarrier memoryBarrier{};
 	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memoryBarrier.image = rtgiImage.Get();
@@ -121,12 +121,56 @@ void DeferredPipeline::SetRTGIImageLayout()
 	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 }
 
+void DeferredPipeline::TransitionRTGIToRead(const CommandBuffer& cmdBuffer)
+{
+	VkImageMemoryBarrier memoryBarrier{};
+	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	memoryBarrier.image = rtgiImage.Get();
+	memoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	memoryBarrier.subresourceRange.baseMipLevel = 0;
+	memoryBarrier.subresourceRange.levelCount = 1;
+	memoryBarrier.subresourceRange.baseArrayLayer = 0;
+	memoryBarrier.subresourceRange.layerCount = 1;
+
+	constexpr VkPipelineStageFlags src = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+	constexpr VkPipelineStageFlags dst = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+	cmdBuffer.ImageMemoryBarrier(src, dst, 0, 1, &memoryBarrier);
+}
+
+void DeferredPipeline::TransitionRTGIToWrite(const CommandBuffer& cmdBuffer)
+{
+	VkImageMemoryBarrier memoryBarrier{};
+	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	memoryBarrier.image = rtgiImage.Get();
+	memoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	memoryBarrier.subresourceRange.baseMipLevel = 0;
+	memoryBarrier.subresourceRange.levelCount = 1;
+	memoryBarrier.subresourceRange.baseArrayLayer = 0;
+	memoryBarrier.subresourceRange.layerCount = 1;
+
+	constexpr VkPipelineStageFlags src = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	constexpr VkPipelineStageFlags dst = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR; 
+
+	cmdBuffer.ImageMemoryBarrier(src, dst, 0, 1, &memoryBarrier);
+}
+
 void DeferredPipeline::BindRTGIResources()
 {
 	rtgiPipeline->BindImageToName("globalIlluminationImage", rtgiView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_GENERAL);
 	rtgiPipeline->BindImageToName("albedoImage", GetAlbedoView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	rtgiPipeline->BindImageToName("normalImage", GetNormalView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	rtgiPipeline->BindImageToName("positionImage", GetPositionView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+	secondPipeline->BindImageToName("globalIlluminationImage", rtgiView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void DeferredPipeline::CreateBuffers()
@@ -291,6 +335,8 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 	{
 		Vulkan::StartDebugLabel(payload.commandBuffer.Get(), "RTGI");
 
+		TransitionRTGIToWrite(payload.commandBuffer);
+
 		PushRTGIConstants(payload);
 
 		payload.commandBuffer.SetCheckpoint(static_cast<const void*>("start of RTGI"));
@@ -299,6 +345,8 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 		rtgiPipeline->Execute(payload.commandBuffer, payload.width / RTGI_RESOLUTION_UPSCALE, payload.height / RTGI_RESOLUTION_UPSCALE, 1);
 
 		payload.commandBuffer.SetCheckpoint(static_cast<const void*>("end of RTGI"));
+
+		TransitionRTGIToRead(payload.commandBuffer);
 
 		payload.commandBuffer.EndDebugUtilsLabelEXT();
 	}
