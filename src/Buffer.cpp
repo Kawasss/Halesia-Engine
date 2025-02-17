@@ -13,7 +13,6 @@ void Buffer::Destroy()
 	if (!buffer.IsValid())
 		return;
 
-	const Vulkan::Context& ctx = Vulkan::GetContext();
 	buffer.Destroy();
 
 	buffer = VK_NULL_HANDLE;

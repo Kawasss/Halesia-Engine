@@ -1,3 +1,5 @@
+#include <random>
+
 #include "renderer/Deferred.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/Renderer.h"
@@ -9,6 +11,9 @@
 
 #include "core/Object.h"
 #include "core/Camera.h"
+
+std::default_random_engine randomEngine;
+std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
 
 struct PushConstant
 {
@@ -70,6 +75,7 @@ void DeferredPipeline::PushRTGIConstants(const Payload& payload)
 	constants.position = glm::vec4(payload.camera->position, 1.0f);
 	constants.viewInv  = glm::inverse(payload.camera->GetViewMatrix());
 	constants.projInv  = glm::inverse(payload.camera->GetProjectionMatrix());
+	constants.random   = distribution(randomEngine);
 
 	rtgiPipeline->PushConstant(payload.commandBuffer, constants, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
 }
