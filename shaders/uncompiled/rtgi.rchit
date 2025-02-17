@@ -15,5 +15,5 @@ void main()
 		return;
 
 	// read the objects albedo and perform very basic lighting, then add to payload.color
-	payload.color = vec3(0.01);
+	payload.color += vec3(0.01);
 }

@@ -5,7 +5,7 @@
 #define TWO_PI (PI * 2)
 #define ONE_OVER_PI (1 / PI)
 
-#define SAMPLE_COUNT 1
+#define SAMPLE_COUNT 8
 
 layout(location = 0) rayPayloadEXT Payload {
 	vec3 origin;
@@ -110,7 +110,7 @@ void main()
 		else
 		{
 			payload.origin = position;
-			payload.direction = UniformSampleHemisphere(vec2(random), normal); // vec2(1) should be a random uniform number
+			payload.direction = CosineSampleHemisphereNew(vec2(random), normal); // should be a random uniform number
 		}
 
 		traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.origin, 0.01, payload.direction, 1000.0, 0);
