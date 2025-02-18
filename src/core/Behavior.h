@@ -4,7 +4,7 @@
 
 namespace Behavior // could also do something with converting the arguments into flags
 {
-	inline std::vector<std::string> arguments;
+	inline std::vector<std::string_view> arguments;
 
 	inline void ProcessArguments(int argc, char** argv)
 	{

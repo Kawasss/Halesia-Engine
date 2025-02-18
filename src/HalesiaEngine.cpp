@@ -24,8 +24,6 @@
 
 #include "io/IniFile.h"
 
-#include "vvm/VVM.hpp"
-
 #include "Audio.h"
 
 class ExitRequest : public std::exception {}; // not that great to request an exit via errors
@@ -50,7 +48,7 @@ inline RendererFlags GetRendererFlagsFromBehavior()
 	RendererFlags ret = Renderer::Flags::NONE;
 	for (int i = 0; i < Behavior::arguments.size(); i++)
 	{
-		const std::string& str = Behavior::arguments[i];
+		const std::string_view& str = Behavior::arguments[i];
 		if (str == "-no_shader_recompilation")
 			ret |= Renderer::Flags::NO_SHADER_RECOMPILATION;
 		else if (str == "-force_no_ray_tracing")
@@ -59,9 +57,9 @@ inline RendererFlags GetRendererFlagsFromBehavior()
 			Vulkan::DisableValidationLayers();
 		else if (str == "-force_gpu" && Behavior::arguments.size() > i + 1)
 		{
-			std::string name = Behavior::arguments[++i];
+			std::string name = std::string(Behavior::arguments[++i]);
 			while (i < Behavior::arguments.size() - 1 && Behavior::arguments[i][0] != '-') // assemble the full name since the command args are split by spaces
-				name += ' ' + Behavior::arguments[++i];
+				name += ' ' + std::string(Behavior::arguments[++i]);
 
 			Vulkan::ForcePhysicalDevice(name);
 		}
@@ -129,7 +127,7 @@ void HalesiaEngine::LoadScene(Scene* newScene)
 	core.scene = newScene;
 }
 
-inline void ManageCameraInjector(Scene* scene, bool pauseGame)
+static void ManageCameraInjector(Scene* scene, bool pauseGame)
 {
 	static CameraInjector cameraInjector;
 	static UniquePointer orbitCamera = new OrbitCamera();
@@ -141,6 +139,16 @@ inline void ManageCameraInjector(Scene* scene, bool pauseGame)
 	}
 	else if (!pauseGame && cameraInjector.IsInjected())
 		cameraInjector.Eject();
+}
+
+static float GetMilliseconds(const std::chrono::steady_clock::time_point& start, const std::chrono::steady_clock::time_point& end)
+{
+	return std::chrono::duration<float, std::chrono::milliseconds::period>(end - start).count();
+}
+
+static void WaitForTimeLimit(const std::chrono::steady_clock::time_point& startTime, float timeLimit)
+{
+	while (GetMilliseconds(startTime, std::chrono::high_resolution_clock::now()) < timeLimit); // wasting cycles
 }
 
 EngineCore& HalesiaEngine::GetEngineCore()
@@ -183,7 +191,9 @@ void HalesiaEngine::UpdateRenderer(float delta)
 		GUI::ShowPieGraph(asyncTimes, "Async Times (µs)");
 	if (showObjectData)
 		GUI::ShowObjectTable(core.scene->allObjects);
-	
+	if (showWindowData)
+		GUI::ShowWindowData(core.window);
+
 	core.scene->UpdateGUI(delta);
 
 	if (core.renderer->frameCount > 0) // the first frame is automatically recorded
@@ -227,7 +237,6 @@ void HalesiaEngine::PlayIntro()
 
 HalesiaEngine::ExitCode HalesiaEngine::Run()
 {
-	std::string lastCommand;
 	float timeSinceLastDataUpdate = 0;
 
 	if (core.renderer == nullptr || core.window == nullptr/* || physics == nullptr*/)
@@ -257,20 +266,16 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 			asyncRenderer = std::async(&HalesiaEngine::UpdateRenderer, this, frameDelta);
 
 			asyncRenderer.get();
-			
-			if (showWindowData)
-				GUI::ShowWindowData(core.window); // only works on main thread, because it calls windows functions for changing the window
+			asyncScripts.get();
 
 			Window::PollMessages();
-			
-			asyncScripts.get();
 
 			if (core.renderer->CompletedFIFCyle())
 				core.scene->MainThreadUpdate(frameDelta);
 
 			core.scene->CollectGarbage();
 
-			while (std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count() < CalculateFrameTime(core.maxFPS)); // wait untill the fps limit is reached
+			WaitForTimeLimit(timeSinceLastFrame, CalculateFrameTime(core.maxFPS)); // wait untill the fps limit is reached
 
 			frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();
 			timeSinceLastFrame = std::chrono::high_resolution_clock::now();
@@ -314,11 +319,16 @@ void HalesiaEngine::InitializeCoreComponents()
 
 	core.window = new Window(createInfo.windowCreateInfo);
 	std::cout << "\nRenderer:\n";
+
 	core.renderer = new Renderer(core.window, createInfo.renderFlags | GetRendererFlagsFromBehavior());
+
 	std::cout << "\nProfiler:\n";
+
 	core.profiler = Profiler::Get();
 	core.profiler->SetFlags(Profiler::ALL_OPTIONS);
+
 	std::cout << "\nAnimation manager:\n";
+
 	core.animationManager = AnimationManager::Get();
 
 	std::cout << "----------------------------------------\n\n";
@@ -349,13 +359,8 @@ void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
 	devConsoleKey = createInfo.devConsoleKey;
 	playIntro = createInfo.playIntro;
 
-	if (createInfo.startingScene == nullptr)
-	{
-		Console::WriteLine("The given HalesiaInstanceCreateInfo doesn't contain a valid starting scene", Console::Severity::Error);
-		core.scene = new Scene();
-	}
-	else
-		core.scene = createInfo.startingScene;
+	assert(createInfo.startingScene != nullptr);
+	core.scene = createInfo.startingScene;
 
 	LoadVars();
 }
