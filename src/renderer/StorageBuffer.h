@@ -13,7 +13,7 @@
 #define CheckHandleValidity(memory, ret)                                                                                                                   \
 if (!CheckIfHandleIsValid(memory))                                                                                                                         \
 {                                                                                                                                                          \
-	Console::WriteLine("An invalid memory handle (" + std::to_string((uint64_t)memory) + ") has been found in " + __FUNCTION__, Console::Severity::Error); \
+	Console::WriteLine("An invalid memory handle ({}) has been found in {}", Console::Severity::Error, static_cast<uint64_t>(memory), __FUNCTION__); \
     __debugbreak();                                                                                                                                        \
 	return ret;                                                                                                                                            \
 }                                                                                                                                                          \
@@ -42,7 +42,7 @@ public:
 		win32::CriticalLockGuard lockGuard(readWriteSection);
 
 		this->logicalDevice = context.logicalDevice;
-		this->usage = usage | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+		this->usage = usage | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
 		reservedSize = maxAmountToBeStored * sizeof(T);
 
@@ -176,10 +176,9 @@ public:
 private:
 	void Resize(size_t newSize)
 	{
-		std::string message = "StorageBuffer resize from " + std::to_string(reservedSize / 1024ull) + " kb to " + std::to_string(newSize / 1024ull) + " kb";
-		Console::WriteLine(message, Console::Severity::Debug);
+		Console::WriteLine("StorageBuffer resize from {} kb to {} kb", Console::Severity::Debug, reservedSize / 1024ull, newSize / 1024ull);
 
-		Buffer newBuffer(newSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		Buffer newBuffer(newSize, usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
 		Vulkan::ExecuteSingleTimeCommands(
 			[&](const CommandBuffer& cmdBuffer)

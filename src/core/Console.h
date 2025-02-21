@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <format>
 
 class Console
 {
@@ -52,6 +53,18 @@ public:
 
 	template<typename T> 
 	static void AddCVar(const std::string& name, T* variable, Access access = Access::ReadWrite);
+
+	template<typename... Args>
+	static void WriteLine(std::string_view fmt, Args&&... args)
+	{
+		WriteLine(std::vformat(fmt, std::make_format_args(args...)));
+	}
+
+	template<typename... Args>
+	static void WriteLine(std::string_view fmt, Severity severity, Args&&... args)
+	{
+		WriteLine(std::vformat(fmt, std::make_format_args(args...)), severity);
+	}
 
 private:
 	enum class DataType

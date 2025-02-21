@@ -7,12 +7,12 @@ bool enableValidationLayers = true;
 #include <algorithm>
 #include <cassert>
 #include <sstream>
+#include <format>
 
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "core/Console.h"
 
-#define VK_USE_PLATFORM_WIN32_KHR
 #include "renderer/Vulkan.h"
 #include "renderer/Surface.h"
 #include "renderer/VideoMemoryManager.h"
@@ -466,7 +466,7 @@ void Vulkan::AllocateMemory(VkDeviceMemory& memory, VkMemoryRequirements& memory
     allocateInfo.memoryTypeIndex = Vulkan::GetMemoryType(memoryRequirements.memoryTypeBits, properties, context.physicalDevice);
 
     VkResult result = vkAllocateMemory(context.logicalDevice, &allocateInfo, nullptr, &memory);
-    CheckVulkanResult("Failed to allocate " + std::to_string(memoryRequirements.size) + " bytes of memory", result);
+    CheckVulkanResult(std::format("Failed to allocate {} bytes of GPU memory", memoryRequirements.size), result);
 }
 
 void Vulkan::CreateExternalBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
@@ -626,7 +626,7 @@ PhysicalDevice Vulkan::GetBestPhysicalDevice(std::vector<PhysicalDevice> devices
     if (curr.IsValid())
         return curr;
 
-    std::string message = "There is no compatible vulkan GPU for this engine present: iterated through " + std::to_string(devices.size()) + " physical devices: \n";
+    std::string message = std::format("There is no compatible vulkan GPU for this engine present: iterated through {} physical devices: \n", devices.size());
     for (PhysicalDevice physicalDevice : devices)
         message += (std::string)physicalDevice.Properties().deviceName + "\n";
     throw VulkanAPIError(message);

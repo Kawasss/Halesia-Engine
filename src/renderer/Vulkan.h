@@ -1,7 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include <functional>
-#include <stdexcept>
 #include <vector>
 #include <set>
 #include <mutex>
