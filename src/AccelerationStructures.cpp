@@ -58,7 +58,7 @@ void AccelerationStructure::CreateAS(const VkAccelerationStructureGeometryKHR* p
 	createInfo.offset = 0;
 
 	VkResult result = vkCreateAccelerationStructureKHR(ctx.logicalDevice, &createInfo, nullptr, &accelerationStructure);
-	CheckVulkanResult("Failed to create an acceleration structure", result, nameof(vkCreateAccelerationStructureKHR));
+	CheckVulkanResult("Failed to create an acceleration structure", result);
 
 	ASAddress = Vulkan::GetDeviceAddress(accelerationStructure);
 

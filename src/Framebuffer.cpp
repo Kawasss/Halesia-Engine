@@ -4,6 +4,7 @@
 #include "renderer/Framebuffer.h"
 #include "renderer/Vulkan.h"
 #include "renderer/GarbageManager.h"
+#include "renderer/VulkanAPIError.h"
 
 Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes)
 {
@@ -80,7 +81,7 @@ void Framebuffer::Allocate()
 	createInfo.layers = 1;
 
 	VkResult result = vkCreateFramebuffer(ctx.logicalDevice, &createInfo, nullptr, &framebuffer);
-	CheckVulkanResult("Failed to create a framebuffer", result, vkCreateFramebuffer);
+	CheckVulkanResult("Failed to create a framebuffer", result);
 
 	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
 	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
@@ -210,7 +211,7 @@ void ObserverFramebuffer::CreateFramebuffer(const VkImageView* pViews, uint32_t 
 	createInfo.layers = 1;
 
 	VkResult result = vkCreateFramebuffer(Vulkan::GetContext().logicalDevice, &createInfo, nullptr, &framebuffer);
-	CheckVulkanResult("Failed to create an observer framebuffer", result, vkCreateFramebuffer);
+	CheckVulkanResult("Failed to create an observer framebuffer", result);
 }
 
 void ObserverFramebuffer::Destroy()

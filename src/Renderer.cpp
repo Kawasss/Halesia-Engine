@@ -162,7 +162,7 @@ void Renderer::CreateImGUI()
 	poolCreateInfo.pPoolSizes = poolSizes;
 
 	VkResult result = ::vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &imGUIDescriptorPool);
-	CheckVulkanResult("Failed to create the descriptor pool for imGUI", result, vkCreateDescriptorPool);
+	CheckVulkanResult("Failed to create the descriptor pool for imGUI", result);
 
 	ImGui::CreateContext();
 	ImPlot::CreateContext();
@@ -404,13 +404,13 @@ void Renderer::CreateTextureSampler()
 	createInfo.maxLod = VK_LOD_CLAMP_NONE;
 
 	VkResult result = ::vkCreateSampler(logicalDevice, &createInfo, nullptr, &defaultSampler);
-	CheckVulkanResult("Failed to create the texture sampler", result, vkCreateSampler);
+	CheckVulkanResult("Failed to create the texture sampler", result);
 
 	createInfo.magFilter = createInfo.minFilter = VK_FILTER_NEAREST;
 	createInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
 
 	result = ::vkCreateSampler(logicalDevice, &createInfo, nullptr, &noFilterSampler);
-	CheckVulkanResult("Failed to create the texture sampler", result, vkCreateSampler);
+	CheckVulkanResult("Failed to create the texture sampler", result);
 
 	resultSampler = flags & NO_FILTERING_ON_RESULT ? noFilterSampler : defaultSampler;
 }
@@ -694,7 +694,7 @@ void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
 	{
 		OnResize();
 	}
-	else CheckVulkanResult("Failed to present the swap chain image", result, nameof(vkQueuePresentKHR));
+	else CheckVulkanResult("Failed to present the swap chain image", result);
 
 	frameCount++;
 }
@@ -715,7 +715,7 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 
 	win32::CriticalLockGuard lockGuard(Vulkan::graphicsQueueSection);
 	VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]);
-	CheckVulkanResult("Failed to submit the queue", result, nameof(vkQueueSubmit));
+	CheckVulkanResult("Failed to submit the queue", result);
 
 	submittedCount++;
 }
@@ -742,9 +742,9 @@ void Renderer::StartRecording()
 	CheckForVRAMOverflow();
 
 	VkResult result = vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
-	CheckVulkanResult("Failed to wait for fences", result, vkWaitForFences);
+	CheckVulkanResult("Failed to wait for fences", result);
 	result = vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
-	CheckVulkanResult("Failed to reset fences", result, vkResetFences);
+	CheckVulkanResult("Failed to reset fences", result);
 
 	Vulkan::DeleteSubmittedObjects();
 	GetQueryResults();
@@ -1010,7 +1010,7 @@ uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
 		OnResize();
 	}
 	else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
-		throw VulkanAPIError("Failed to acquire the next swap chain image", result, nameof(vkAcquireNextImageKHR), __FILENAME__, __LINE__);
+		throw VulkanAPIError("Failed to acquire the next swap chain image", result);
 	return imageIndex;
 }
 

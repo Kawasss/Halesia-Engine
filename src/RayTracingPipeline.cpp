@@ -3,6 +3,7 @@
 #include "renderer/FramesInFlight.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/Vulkan.h"
+#include "renderer/VulkanAPIError.h"
 
 #include "io/IO.h"
 
@@ -45,7 +46,7 @@ void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, c
 	pipelineLayoutCreateInfo.pPushConstantRanges = ranges.data();
 
 	VkResult result = vkCreatePipelineLayout(ctx.logicalDevice, &pipelineLayoutCreateInfo, nullptr, &layout);
-	CheckVulkanResult("Failed to create the pipeline layout for ray tracing", result, vkCreatePipelineLayout);
+	CheckVulkanResult("Failed to create the pipeline layout for ray tracing", result);
 
 	std::array<VkPipelineShaderStageCreateInfo, RT_GROUP_COUNT> stageCreateInfos{};
 	stageCreateInfos[0] = Vulkan::GetGenericShaderStageCreateInfo(hitShader,  VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
@@ -83,7 +84,7 @@ void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, c
 	pipelineCreateInfo.basePipelineIndex = 0;
 
 	result = vkCreateRayTracingPipelinesKHR(ctx.logicalDevice, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &pipeline);
-	CheckVulkanResult("Failed to create the pipeline for ray tracing", result, vkCreateRayTracingPipelinesKHR);
+	CheckVulkanResult("Failed to create the pipeline for ray tracing", result);
 
 	vkDestroyShaderModule(ctx.logicalDevice, missShader, nullptr);
 	vkDestroyShaderModule(ctx.logicalDevice, hitShader, nullptr);
@@ -109,7 +110,7 @@ void RayTracingPipeline::CreateShaderBindingTable()
 
 	std::vector<char> shaderBuffer(shaderBindingTableSize);
 	VkResult result = vkGetRayTracingShaderGroupHandlesKHR(ctx.logicalDevice, pipeline, 0, RT_GROUP_COUNT, shaderBindingTableSize, shaderBuffer.data());
-	CheckVulkanResult("Failed to get the ray tracing shader group handles", result, vkGetRayTracingShaderGroupHandlesKHR);
+	CheckVulkanResult("Failed to get the ray tracing shader group handles", result);
 
 	char* shaderBindingTableMemPtr = shaderBindingTableBuffer.Map<char>(0, shaderBindingTableSize);
 

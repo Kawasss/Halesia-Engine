@@ -6,6 +6,7 @@
 
 #include "Vulkan.h"
 #include "Buffer.h"
+#include "VulkanAPIError.h"
 
 #include "../core/Console.h"
 
@@ -73,7 +74,7 @@ public:
 		if (endOfBufferPointer + writeSize > reservedSize && !canReuseMemory)				// throw an error if there is an attempt to write past the buffers capacity
 		{
 			VkDeviceSize overflow = endOfBufferPointer + writeSize - reservedSize;
-			throw VulkanAPIError("Failed to submit new storage buffer data, not enough space has been reserved: " + std::to_string(overflow / sizeof(T)) + " items (" + std::to_string(overflow) + " bytes) of overflow", VK_ERROR_OUT_OF_POOL_MEMORY, __FUNCTION__, __FILENAME__, __LINE__);
+			throw VulkanAPIError("Failed to submit new storage buffer data, not enough space has been reserved: " + std::to_string(overflow / sizeof(T)) + " items (" + std::to_string(overflow) + " bytes) of overflow", VK_ERROR_OUT_OF_POOL_MEMORY);
 		}
 
 		WriteToBuffer(data, memoryHandle);

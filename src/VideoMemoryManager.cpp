@@ -5,6 +5,7 @@
 
 #include "renderer/VideoMemoryManager.h"
 #include "renderer/GarbageManager.h"
+#include "renderer/VulkanAPIError.h"
 #include "renderer/Vulkan.h"
 
 #include "system/CriticalSection.h"
@@ -68,7 +69,7 @@ struct MemoryBlock
 		const Vulkan::Context& ctx = Vulkan::GetContext();
 		VkResult result = vkMapMemory(ctx.logicalDevice, memory, 0, VK_WHOLE_SIZE, flags, &mapped); // map the entire block, so the offset must be 0
 
-		CheckVulkanResult("Failed to map a memory block", result, vkMapMemory);
+		CheckVulkanResult("Failed to map a memory block", result);
 	}
 
 	void CheckedUnmap()
@@ -146,7 +147,7 @@ static VkDeviceMemory AllocateMemory(VkMemoryRequirements& requirements, VkMemor
 
 	VkDeviceMemory memory = VK_NULL_HANDLE;
 	VkResult result = vkAllocateMemory(ctx.logicalDevice, &allocateInfo, nullptr, &memory);
-	CheckVulkanResult("Failed to allocate " + std::to_string(requirements.size) + " bytes of memory", result, vkAllocateMemory);
+	CheckVulkanResult("Failed to allocate " + std::to_string(requirements.size) + " bytes of memory", result);
 
 	return memory;
 }

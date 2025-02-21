@@ -2,13 +2,14 @@
 
 #include "renderer/Vulkan.h"
 #include "renderer/ShaderReflector.h"
+#include "renderer/VulkanAPIError.h"
 
 ShaderGroupReflector::ShaderGroupReflector(const std::vector<char>& sourceCode)
 {
 	modules.resize(1);
 	SpvReflectResult result = spvReflectCreateShaderModule(sourceCode.size(), sourceCode.data(), &modules[0]);
 	if (result != SPV_REFLECT_RESULT_SUCCESS)
-		throw VulkanAPIError("Cannot reflect on a given shader (code: " + std::to_string((int)result) + ')', VK_SUCCESS, "spvReflectCreateShaderModule", __FILENAME__, __LINE__);
+		throw VulkanAPIError("Cannot reflect on a given shader (code: " + std::to_string((int)result) + ')');
 	ProcessLayoutBindings();
 }
 
@@ -19,7 +20,7 @@ ShaderGroupReflector::ShaderGroupReflector(const std::vector<std::vector<char>>&
 	{
 		SpvReflectResult result = spvReflectCreateShaderModule(sourceCodes[i].size(), sourceCodes[i].data(), &modules[i]);
 		if (result != SPV_REFLECT_RESULT_SUCCESS)
-			throw VulkanAPIError("Cannot reflect on a given shader (code: " + std::to_string((int)result) + ')', VK_SUCCESS, "spvReflectCreateShaderModule", __FILENAME__, __LINE__);
+			throw VulkanAPIError("Cannot reflect on a given shader (code: " + std::to_string((int)result) + ')');
 	}
 	ProcessLayoutBindings();
 }

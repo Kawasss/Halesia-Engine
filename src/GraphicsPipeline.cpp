@@ -3,6 +3,7 @@
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/PipelineCreator.h"
 #include "renderer/ShaderReflector.h"
+#include "renderer/VulkanAPIError.h"
 
 #include "io/IO.h"
 
@@ -36,7 +37,7 @@ void GraphicsPipeline::CreatePipelineLayout(const ShaderGroupReflector& reflecto
 	createInfo.pSetLayouts = setLayouts.data();
 
 	VkResult result = vkCreatePipelineLayout(ctx.logicalDevice, &createInfo, nullptr, &layout);
-	CheckVulkanResult("Failed to create a pipeline layout for a graphics pipeline", result, vkCreatePipelineLayout);
+	CheckVulkanResult("Failed to create a pipeline layout for a graphics pipeline", result);
 }
 
 void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, const CreateInfo& createInfo, uint32_t attachmentCount)

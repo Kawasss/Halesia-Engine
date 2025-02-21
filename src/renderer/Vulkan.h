@@ -13,24 +13,10 @@
 
 #include "../system/CriticalSection.h"
 
-#define nameof(s) #s
-#define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
-#define CheckVulkanResult(message, result, function) if (result != VK_SUCCESS) throw VulkanAPIError(message, result, nameof(function), __FILENAME__, __LINE__)
 #define LockLogicalDevice(logicalDevice) std::lock_guard<std::mutex> logicalDeviceLockGuard(Vulkan::FetchLogicalDeviceMutex(logicalDevice)) // can't create a function for this beacuse a lock guard gets destroyed when it goes out of scope
 #undef CreateSemaphore
 
-struct VulkanCreationObject;
-typedef void* HANDLE;
-
-class VulkanAPIError : public std::exception
-{
-public:
-    VulkanAPIError(std::string message, VkResult result = VK_SUCCESS, std::string functionName = "", std::string file = "", int line = 0);
-    const char* what() const override{ return message.c_str(); }
-
-private:
-    std::string message;
-};
+using HANDLE = void*;
 
 class Vulkan
 {
@@ -176,7 +162,7 @@ private:
 template<typename Type>
 void Vulkan::SetDebugName(Type object, const char* name)
 {
-    throw VulkanAPIError((std::string)"Cannot set the name of object: unsupported type " + typeid(Type).name());
+    __debugbreak();
 }
 
 template<>

@@ -4,6 +4,7 @@
 #include "renderer/DescriptorWriter.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/CommandBuffer.h"
+#include "renderer/VulkanAPIError.h"
 
 #include "io/IO.h"
 
@@ -31,7 +32,7 @@ void ComputeShader::CreatePipelineLayout()
 	layoutCreateInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
 
 	VkResult result = vkCreatePipelineLayout(context.logicalDevice, &layoutCreateInfo, nullptr, &layout);
-	CheckVulkanResult("Failed to create a pipeline layout", result, vkCreatePipelineLayout);
+	CheckVulkanResult("Failed to create a pipeline layout", result);
 }
 
 void ComputeShader::CreateComputePipeline(VkShaderModule module)
@@ -50,7 +51,7 @@ void ComputeShader::CreateComputePipeline(VkShaderModule module)
 	createInfo.stage = stageCreateInfo;
 
 	VkResult result = vkCreateComputePipelines(context.logicalDevice, VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline);
-	CheckVulkanResult("Failed to create a compute pipeline", result, vkCreatePipelineLayout);
+	CheckVulkanResult("Failed to create a compute pipeline", result);
 
 	vkDestroyShaderModule(context.logicalDevice, module, nullptr);
 }

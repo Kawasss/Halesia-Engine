@@ -5,6 +5,7 @@
 #include "system/Window.h"
 #include "renderer/Vulkan.h"
 #include "renderer/PhysicalDevice.h"
+#include "renderer/VulkanAPIError.h"
 #include "renderer/Surface.h"
 
 Swapchain::Swapchain(Surface surface, Window* window, bool vsync)
@@ -63,7 +64,7 @@ void Swapchain::Generate(Surface surface, Window* window, bool vsync)
     createInfo.oldSwapchain = VK_NULL_HANDLE;
 
     VkResult result = vkCreateSwapchainKHR(logicalDevice, &createInfo, nullptr, &vkSwapchain);
-    CheckVulkanResult("Couldn't create a swapchain with the current logical device", result, vkCreateSwapchainKHR);
+    CheckVulkanResult("Couldn't create a swapchain with the current logical device", result);
 
     uint32_t swapchainImageCount;
     vkGetSwapchainImagesKHR(logicalDevice, vkSwapchain, &swapchainImageCount, nullptr);

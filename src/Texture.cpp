@@ -8,6 +8,7 @@
 #include "renderer/Texture.h"
 #include "renderer/Buffer.h"
 #include "renderer/GarbageManager.h"
+#include "renderer/VulkanAPIError.h"
 
 #include "core/Console.h"
 
@@ -240,7 +241,7 @@ void Cubemap::CreateLayerViews()
 		createInfo.subresourceRange.baseMipLevel = 0;
 
 		VkResult result = vkCreateImageView(ctx.logicalDevice, &createInfo, nullptr, &layerViews[i]);
-		CheckVulkanResult("Failed to create an image view", result, vkCreateImageView);
+		CheckVulkanResult("Failed to create an image view", result);
 	}
 }
 

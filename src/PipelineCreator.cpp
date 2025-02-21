@@ -4,6 +4,7 @@
 #include "renderer/PhysicalDevice.h"
 #include "renderer/Vertex.h"
 #include "renderer/Renderer.h"
+#include "renderer/VulkanAPIError.h"
 
 VkPipeline PipelineBuilder::Build()
 {
@@ -106,7 +107,7 @@ VkPipeline PipelineBuilder::Build()
 
 	VkPipeline pipeline = VK_NULL_HANDLE;
 	VkResult result = vkCreateGraphicsPipelines(Vulkan::GetContext().logicalDevice, VK_NULL_HANDLE, 1, &createInfo, nullptr, &pipeline);
-	CheckVulkanResult("Failed to create a graphics pipeline", result, vkCreateGraphicsPipelines);
+	CheckVulkanResult("Failed to create a graphics pipeline", result);
 
 	return pipeline;
 }
@@ -180,7 +181,7 @@ VkRenderPass RenderPassBuilder::Build()
 
 	VkRenderPass renderPass = VK_NULL_HANDLE;
 	VkResult result = vkCreateRenderPass(ctx.logicalDevice, &renderPassInfo, nullptr, &renderPass);
-	CheckVulkanResult("Failed to create a render pass", result, vkCreateRenderPass);
+	CheckVulkanResult("Failed to create a render pass", result);
 
 	return renderPass;
 }

@@ -173,7 +173,7 @@ void RayTracingRenderPipeline::CreateDescriptorPool(const ShaderGroupReflector& 
 	descriptorPoolCreateInfo.pPoolSizes = descriptorPoolSizes.data();
 
 	VkResult result = vkCreateDescriptorPool(logicalDevice, &descriptorPoolCreateInfo, nullptr, &descriptorPool);
-	CheckVulkanResult("Failed to create the descriptor pool for ray tracing", result, vkCreateDescriptorPool);
+	CheckVulkanResult("Failed to create the descriptor pool for ray tracing", result);
 }
 
 void RayTracingRenderPipeline::CreateDescriptorSets(const ShaderGroupReflector& groupReflection)
@@ -194,7 +194,7 @@ void RayTracingRenderPipeline::CreateDescriptorSets(const ShaderGroupReflector& 
 	layoutCreateInfo.pNext = &setBindingFlagsCreateInfo;
 
 	VkResult result = vkCreateDescriptorSetLayout(logicalDevice, &layoutCreateInfo, nullptr, &descriptorSetLayout);
-	CheckVulkanResult("Failed to create the descriptor set layout for ray tracing", result, vkCreateDescriptorSetLayout);
+	CheckVulkanResult("Failed to create the descriptor set layout for ray tracing", result);
 
 	std::vector<VkDescriptorSetLayoutBinding> meshDataLayoutBindings = groupReflection.GetLayoutBindingsOfSet(1);
 	meshDataLayoutBindings[1].descriptorCount = Renderer::MAX_BINDLESS_TEXTURES;
@@ -213,7 +213,7 @@ void RayTracingRenderPipeline::CreateDescriptorSets(const ShaderGroupReflector& 
 	meshDataLayoutCreateInfo.pNext = &bindingFlagsCreateInfo;
 
 	result = vkCreateDescriptorSetLayout(logicalDevice, &meshDataLayoutCreateInfo, nullptr, &materialSetLayout);
-	CheckVulkanResult("Failed to create the material descriptor set layout for ray tracing", result, vkCreateDescriptorSetLayout);
+	CheckVulkanResult("Failed to create the material descriptor set layout for ray tracing", result);
 
 	std::vector<VkDescriptorSetLayout> descriptorSetLayouts{ descriptorSetLayout, materialSetLayout };
 
@@ -226,7 +226,7 @@ void RayTracingRenderPipeline::CreateDescriptorSets(const ShaderGroupReflector& 
 	descriptorSets.resize(descriptorSetLayouts.size());
 
 	result = vkAllocateDescriptorSets(logicalDevice, &setAllocateInfo, descriptorSets.data());
-	CheckVulkanResult("Failed to allocate the descriptor sets for ray tracing", result, vkAllocateDescriptorSets);
+	CheckVulkanResult("Failed to allocate the descriptor sets for ray tracing", result);
 }
 
 void RayTracingRenderPipeline::CreateRayTracingPipeline(const std::vector<std::vector<char>>& shaderCodes) // 0 is rgen code, 1 is chit code, 2 is rmiss code, 3 is shadow code
@@ -246,7 +246,7 @@ void RayTracingRenderPipeline::CreateRayTracingPipeline(const std::vector<std::v
 	pipelineLayoutCreateInfo.pPushConstantRanges = nullptr;
 
 	VkResult result = vkCreatePipelineLayout(logicalDevice, &pipelineLayoutCreateInfo, nullptr, &pipelineLayout);
-	CheckVulkanResult("Failed to create the pipeline layout for ray tracing", result, vkCreatePipelineLayout);
+	CheckVulkanResult("Failed to create the pipeline layout for ray tracing", result);
 
 	std::array<VkPipelineShaderStageCreateInfo, 4> pipelineStageCreateInfos{};
 	pipelineStageCreateInfos[0] = Vulkan::GetGenericShaderStageCreateInfo(hitShader, VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
@@ -284,7 +284,7 @@ void RayTracingRenderPipeline::CreateRayTracingPipeline(const std::vector<std::v
 	RTPipelineCreateInfo.basePipelineIndex = 0;
 
 	result = vkCreateRayTracingPipelinesKHR(logicalDevice, VK_NULL_HANDLE, VK_NULL_HANDLE, 1, &RTPipelineCreateInfo, nullptr, &pipeline);
-	CheckVulkanResult("Failed to create the pipeline for ray tracing", result, vkCreateRayTracingPipelinesKHR);
+	CheckVulkanResult("Failed to create the pipeline for ray tracing", result);
 
 	vkDestroyShaderModule(logicalDevice, shadowShader, nullptr);
 	vkDestroyShaderModule(logicalDevice, missShader, nullptr);
@@ -451,7 +451,7 @@ void RayTracingRenderPipeline::CreateShaderBindingTable()
 
 	std::vector<char> shaderBuffer(shaderBindingTableSize);
 	VkResult result = vkGetRayTracingShaderGroupHandlesKHR(logicalDevice, pipeline, 0, 4, shaderBindingTableSize, shaderBuffer.data());
-	CheckVulkanResult("Failed to get the ray tracing shader group handles", result, vkGetRayTracingShaderGroupHandlesKHR);
+	CheckVulkanResult("Failed to get the ray tracing shader group handles", result);
 
 	void* shaderBindingTableMemPtr = shaderBindingTableBuffer.Map(0, shaderBindingTableSize);
 

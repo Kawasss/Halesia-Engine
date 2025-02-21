@@ -1,5 +1,6 @@
 #include "renderer/CommandBuffer.h"
 #include "renderer/Vulkan.h"
+#include "renderer/VulkanAPIError.h"
 
 void CommandBuffer::Reset(VkCommandBufferResetFlags flags) const
 {
@@ -12,13 +13,13 @@ void CommandBuffer::Begin() const
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
     VkResult result = ::vkBeginCommandBuffer(commandBuffer, &beginInfo);
-    CheckVulkanResult("Failed to begin the given command buffer", result, vkBeginCommandBuffer);
+    CheckVulkanResult("Failed to begin the given command buffer", result);
 }
 
 void CommandBuffer::End() const
 {
     VkResult result = ::vkEndCommandBuffer(commandBuffer);
-    CheckVulkanResult("Failed to record / end the command buffer", result, vkEndCommandBuffer);
+    CheckVulkanResult("Failed to record / end the command buffer", result);
 }
 
 void CommandBuffer::SetViewport(const VkViewport& viewport) const

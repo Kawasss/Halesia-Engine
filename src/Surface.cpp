@@ -1,4 +1,5 @@
 #include "renderer/Vulkan.h"
+#include "renderer/VulkanAPIError.h"
 #include "renderer/Surface.h"
 #include "system/Window.h"
 
@@ -13,7 +14,7 @@ Surface Surface::GenerateSurface(VkInstance instance, Window* window)
 	surfaceCreateInfo.hinstance = window->hInstance;
 
 	VkResult result = vkCreateWin32SurfaceKHR(instance, &surfaceCreateInfo, nullptr, &lSurface.surface);
-	CheckVulkanResult("Failed to create a window surface for the current instance", result, vkCreateWin32SurfaceKHR);
+	CheckVulkanResult("Failed to create a window surface for the current instance", result);
 
 	return lSurface;
 }

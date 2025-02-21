@@ -5,6 +5,7 @@
 #include "renderer/CommandBuffer.h"
 #include "renderer/DescriptorWriter.h"
 #include "renderer/GarbageManager.h"
+#include "renderer/VulkanAPIError.h"
 #include "renderer/Buffer.h"
 #include "renderer/Vulkan.h"
 
@@ -31,7 +32,7 @@ void Pipeline::CreateDescriptorPool(const ShaderGroupReflector& reflector)
 	createInfo.pPoolSizes = poolSizes.data();
 
 	VkResult result = vkCreateDescriptorPool(ctx.logicalDevice, &createInfo, nullptr, &pool);
-	CheckVulkanResult("Failed to create the descriptor pool for a graphics pipeline", result, vkCreateDescriptorPool);
+	CheckVulkanResult("Failed to create the descriptor pool for a graphics pipeline", result);
 }
 
 void Pipeline::CreateSetLayouts(const ShaderGroupReflector& reflector)
@@ -52,7 +53,7 @@ void Pipeline::CreateSetLayouts(const ShaderGroupReflector& reflector)
 
 		VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;
 		VkResult result = vkCreateDescriptorSetLayout(ctx.logicalDevice, &createInfo, nullptr, &setLayout);
-		CheckVulkanResult("Failed to create a set layout for a graphics pipeline", result, vkCreateDescriptorSetLayout);
+		CheckVulkanResult("Failed to create a set layout for a graphics pipeline", result);
 
 		setLayouts.push_back(setLayout);
 
@@ -80,7 +81,7 @@ void Pipeline::AllocateDescriptorSets(uint32_t amount)
 	{
 		descriptorSets[i].resize(amount);
 		VkResult result = vkAllocateDescriptorSets(ctx.logicalDevice, &allocInfo, descriptorSets[i].data());
-		CheckVulkanResult("Failed to allocate descriptor sets for a graphics pipeline", result, vkAllocateDescriptorSets);
+		CheckVulkanResult("Failed to allocate descriptor sets for a graphics pipeline", result);
 	}
 }
 

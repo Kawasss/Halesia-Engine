@@ -16,6 +16,7 @@ bool enableValidationLayers = true;
 #include "renderer/Vulkan.h"
 #include "renderer/Surface.h"
 #include "renderer/VideoMemoryManager.h"
+#include "renderer/VulkanAPIError.h"
 
 VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 
@@ -55,48 +56,6 @@ std::vector<VkDynamicState> Vulkan::dynamicStates =
 Vulkan::Context Vulkan::context{};
 std::string forcedGPU;
 
-VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string functionName, std::string file, int line)
-{
-    std::stringstream stream; // result can be VK_SUCCESS for functions that dont use a vulkan functions, i.e. looking for a physical device but there are none that fit the bill
-    stream << message << "\n\n";
-    if (result != VK_SUCCESS)
-        stream << string_VkResult(result) << " ";
-    if (!functionName.empty())
-        stream << "from " << functionName;
-    if (line != 0)
-        stream << " at line " << line;
-    if (!file.empty())
-        stream << " in " << file;
-
-#ifdef _DEBUG
-    uint32_t count = 0;
-    vkGetQueueCheckpointDataNV(Vulkan::GetContext().graphicsQueue, &count, nullptr);
-    if (count > 0)
-    {
-        VkCheckpointDataNV base{};
-        base.sType = VK_STRUCTURE_TYPE_CHECKPOINT_DATA_NV;
-
-        std::vector<VkCheckpointDataNV> checkpoints(count, base);
-        vkGetQueueCheckpointDataNV(Vulkan::GetContext().graphicsQueue, &count, checkpoints.data());
-
-        stream << "\n\nCheckpoints:\n";
-        for (VkCheckpointDataNV& data : checkpoints)
-        {
-            //const char* msg = static_cast<const char*>(data.pCheckpointMarker);
-            //size_t msgLength = strnlen_s(msg, 128); // if the message is not a valid string (null terminator could not be found) then the marker is an integer value
-
-            stream << string_VkPipelineStageFlagBits(data.stage) << ", ";
-            /*if (msgLength >= 128)
-                stream << reinterpret_cast<uint64_t>(data.pCheckpointMarker);
-            else
-                stream << msg;*/
-            stream << "\n\n";
-        }
-    }
-#endif
-    this->message = stream.str();
-}
-
 void Vulkan::ExecuteSingleTimeCommands(std::function<void(const CommandBuffer&)>&& commands) // uses the graphics queue, maybe a parameter to specify the queue to use
 {
     VkCommandPool commandPool = FetchNewCommandPool(context.graphicsIndex);
@@ -113,7 +72,7 @@ void Vulkan::AllocateCommandBuffers(const VkCommandBufferAllocateInfo& allocatio
     VkCommandBuffer* pCommandBuffers = reinterpret_cast<VkCommandBuffer*>(commandBuffers.data()); // should be safe since the CommandBuffer class only contains the VkCommandBuffer
 
     VkResult result = vkAllocateCommandBuffers(context.logicalDevice, &allocationInfo, pCommandBuffers);
-    CheckVulkanResult("Failed to allocate the command buffer", result, vkAllocateCommandBuffers);
+    CheckVulkanResult("Failed to allocate the command buffer", result);
 }
 
 VkPipelineDynamicStateCreateInfo Vulkan::GetDynamicStateCreateInfo()
@@ -162,7 +121,7 @@ void Vulkan::DebugNameObject(uint64_t object, VkObjectType type, const char* nam
     nameInfo.pObjectName = name;
 
     VkResult result = vkSetDebugUtilsObjectNameEXT(context.logicalDevice, &nameInfo);
-    CheckVulkanResult("Failed to name an object", result, vkSetDebugUtilsObjectNameEXT);
+    CheckVulkanResult("Failed to name an object", result);
 }
 
 void Vulkan::TransitionColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags src, VkAccessFlags dst, VkPipelineStageFlags srcPipe, VkPipelineStageFlags dstPipe)
@@ -252,7 +211,7 @@ VkQueryPool Vulkan::CreateQueryPool(VkQueryType type, uint32_t amount)
     createInfo.queryCount = amount;
 
     VkResult result = vkCreateQueryPool(context.logicalDevice, &createInfo, nullptr, &ret);
-    CheckVulkanResult("Failed to create a query pool", result, vkCreateQueryPool);
+    CheckVulkanResult("Failed to create a query pool", result);
 
     // query pools must be reset before being used, according to the vulkan spec
     Vulkan::ExecuteSingleTimeCommands(
@@ -342,7 +301,7 @@ VkCommandPool Vulkan::FetchNewCommandPool(uint32_t queueIndex)
         createInfo.queueFamilyIndex = queueIndex;
 
         VkResult result = vkCreateCommandPool(context.logicalDevice, &createInfo, nullptr, &commandPool);
-        CheckVulkanResult("Failed to create a command pool for the storage buffer", result, vkCreateCommandPool);
+        CheckVulkanResult("Failed to create a command pool for the storage buffer", result);
     }
     else // if there are idle command pools, get the last one and remove that from the vector
     {
@@ -357,7 +316,7 @@ void Vulkan::YieldCommandPool(uint32_t index, VkCommandPool commandPool)
     win32::CriticalLockGuard lockGuard(commandPoolSection);
 
     if (queueCommandPools.count(index) == 0)
-        throw VulkanAPIError("Failed to yield a command pool, no matching queue family index could be found", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
+        throw VulkanAPIError("Failed to yield a command pool, no matching queue family index could be found");
     queueCommandPools[index].push_back(commandPool);
 }
 
@@ -396,7 +355,7 @@ HANDLE Vulkan::GetWin32MemoryHandle(VkDeviceMemory memory)
     handleInfo.memory = memory;
 
     VkResult result = vkGetMemoryWin32HandleKHR(context.logicalDevice, &handleInfo, &handle);
-    CheckVulkanResult("Failed to get the win32 handle of given memory", result, vkGetMemoryWin32HandleKHR);
+    CheckVulkanResult("Failed to get the win32 handle of given memory", result);
     return handle;
 }
 
@@ -409,7 +368,7 @@ VkShaderModule Vulkan::CreateShaderModule(const std::vector<char>& code)
 
     VkShaderModule module;
     VkResult result = vkCreateShaderModule(context.logicalDevice, &createInfo, nullptr, &module);
-    CheckVulkanResult("Failed to create a shader module", result, vkCreateShaderModule);
+    CheckVulkanResult("Failed to create a shader module", result);
 
     return module;
 }
@@ -447,7 +406,7 @@ win32::CriticalSection endCommandCritSection;
 void Vulkan::EndSingleTimeCommands(VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool)
 {
     VkResult result = vkEndCommandBuffer(commandBuffer);
-    CheckVulkanResult("Failed to end the single time command buffer", result, vkQueueSubmit);
+    CheckVulkanResult("Failed to end the single time command buffer", result);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -456,10 +415,10 @@ void Vulkan::EndSingleTimeCommands(VkQueue queue, VkCommandBuffer commandBuffer,
 
     win32::CriticalLockGuard guard(endCommandCritSection);
     result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-    CheckVulkanResult("Failed to submit the single time commands queue", result, vkQueueSubmit);
+    CheckVulkanResult("Failed to submit the single time commands queue", result);
     
     result = vkQueueWaitIdle(queue);
-    CheckVulkanResult("Failed to wait for the queue idle", result, vkQueueWaitIdle);
+    CheckVulkanResult("Failed to wait for the queue idle", result);
 
     vkFreeCommandBuffers(context.logicalDevice, commandPool, 1, &commandBuffer);
 }
@@ -480,7 +439,7 @@ VkCommandBuffer Vulkan::BeginSingleTimeCommands(VkCommandPool commandPool)
     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
     VkResult result = vkBeginCommandBuffer(localCommandBuffer, &beginInfo);
-    CheckVulkanResult("Failed to begin single time commands", result, vkBeginCommandBuffer);
+    CheckVulkanResult("Failed to begin single time commands", result);
 
     return localCommandBuffer;
 }
@@ -495,7 +454,7 @@ void Vulkan::CreateBufferHandle(VkBuffer& buffer, VkDeviceSize size, VkBufferUsa
     createInfo.pNext = pNext;
 
     VkResult result = vkCreateBuffer(context.logicalDevice, &createInfo, nullptr, &buffer);
-    CheckVulkanResult("Failed to create a new buffer", result, vkCreateBuffer);
+    CheckVulkanResult("Failed to create a new buffer", result);
 }
 
 void Vulkan::AllocateMemory(VkDeviceMemory& memory, VkMemoryRequirements& memoryRequirements, VkMemoryPropertyFlags properties, void* pNext)
@@ -507,7 +466,7 @@ void Vulkan::AllocateMemory(VkDeviceMemory& memory, VkMemoryRequirements& memory
     allocateInfo.memoryTypeIndex = Vulkan::GetMemoryType(memoryRequirements.memoryTypeBits, properties, context.physicalDevice);
 
     VkResult result = vkAllocateMemory(context.logicalDevice, &allocateInfo, nullptr, &memory);
-    CheckVulkanResult("Failed to allocate " + std::to_string(memoryRequirements.size) + " bytes of memory", result, vkAllocateMemory);
+    CheckVulkanResult("Failed to allocate " + std::to_string(memoryRequirements.size) + " bytes of memory", result);
 }
 
 void Vulkan::CreateExternalBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory)
@@ -551,7 +510,7 @@ uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags proper
         if ((typeFilter & (1 << i)) && (physicalMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties)
             return i;
 
-    CheckVulkanResult("Failed to get the memory type " + (std::string)string_VkMemoryPropertyFlags(properties) + " for the physical device " + (std::string)physicalDevice.Properties().deviceName, VK_ERROR_DEVICE_LOST, GetMemoryType);
+    CheckVulkanResult("Failed to get the memory type " + (std::string)string_VkMemoryPropertyFlags(properties) + " for the physical device " + (std::string)physicalDevice.Properties().deviceName, VK_ERROR_DEVICE_LOST);
 }
 
 vvm::Image Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags, VkImageLayout initialLayout)
@@ -574,7 +533,7 @@ vvm::Image Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLeve
     
     VkImage image = VK_NULL_HANDLE;
     VkResult result = vkCreateImage(context.logicalDevice, &createInfo, nullptr, &image);
-    CheckVulkanResult("Failed to create an image", result, vkCreateImage);
+    CheckVulkanResult("Failed to create an image", result);
 
     return vvm::AllocateImage(image, properties);
 }
@@ -599,7 +558,7 @@ VkImageView Vulkan::CreateImageView(VkImage image, VkImageViewType viewType, uin
 
     VkImageView imageView;
     VkResult result = vkCreateImageView(context.logicalDevice, &createInfo, nullptr, &imageView);
-    CheckVulkanResult("Failed to create an image view", result, vkCreateImageView);
+    CheckVulkanResult("Failed to create an image view", result);
 
     return imageView;
 }
@@ -651,7 +610,7 @@ PhysicalDevice Vulkan::GetBestPhysicalDevice(std::vector<PhysicalDevice> devices
         if (properties.deviceName == forcedGPU)
         {
             if (!capable) 
-                throw VulkanAPIError("Cannot force GPU to " + forcedGPU + ": it isn't compatible", VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
+                throw VulkanAPIError("Cannot force GPU to " + forcedGPU + ": it isn't compatible");
             return devices[i];
         }
 
@@ -662,7 +621,7 @@ PhysicalDevice Vulkan::GetBestPhysicalDevice(std::vector<PhysicalDevice> devices
         currProperties = curr.Properties();
     }
     if (!forcedGPU.empty())
-        throw VulkanAPIError("Cannot find forced GPU \"" + forcedGPU + '"', VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
+        throw VulkanAPIError("Cannot find forced GPU \"" + forcedGPU + '"');
 
     if (curr.IsValid())
         return curr;
@@ -670,7 +629,7 @@ PhysicalDevice Vulkan::GetBestPhysicalDevice(std::vector<PhysicalDevice> devices
     std::string message = "There is no compatible vulkan GPU for this engine present: iterated through " + std::to_string(devices.size()) + " physical devices: \n";
     for (PhysicalDevice physicalDevice : devices)
         message += (std::string)physicalDevice.Properties().deviceName + "\n";
-    throw VulkanAPIError(message, VK_SUCCESS, __FUNCTION__, __FILENAME__, __LINE__);
+    throw VulkanAPIError(message);
 }
 
 Vulkan::SwapChainSupportDetails Vulkan::QuerySwapChainSupport(PhysicalDevice device, VkSurfaceKHR surface)
@@ -706,7 +665,7 @@ VkFence Vulkan::CreateFence(VkFenceCreateFlags flags, void* pNext)
 
     VkFence ret = VK_NULL_HANDLE;
     VkResult result = vkCreateFence(context.logicalDevice, &createInfo, nullptr, &ret);
-    CheckVulkanResult("Failed to create a signaled fence", result, vkCreateFence);
+    CheckVulkanResult("Failed to create a signaled fence", result);
 
     return ret;
 }
@@ -719,7 +678,7 @@ VkSemaphore Vulkan::CreateSemaphore(void* pNext)
 
     VkSemaphore ret = VK_NULL_HANDLE;
     VkResult result = vkCreateSemaphore(context.logicalDevice, &createInfo, nullptr, &ret);
-    CheckVulkanResult("Failed to create a semaphore", result, vkCreateSemaphore);
+    CheckVulkanResult("Failed to create a semaphore", result);
 
     return ret;
 }
@@ -727,7 +686,7 @@ VkSemaphore Vulkan::CreateSemaphore(void* pNext)
 VkInstance Vulkan::GenerateInstance()
 {
     if (enableValidationLayers && !CheckValidationSupport())
-        throw VulkanAPIError("Failed the enable the required validation layers", VK_SUCCESS, nameof(GenerateInstance), __FILENAME__, __LINE__);
+        throw VulkanAPIError("Failed the enable the required validation layers");
 
     VkInstance instance;
 
@@ -767,7 +726,7 @@ VkInstance Vulkan::GenerateInstance()
     #endif
 
     VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
-    CheckVulkanResult("Couldn't create a Vulkan instance", result, vkCreateInstance);
+    CheckVulkanResult("Couldn't create a Vulkan instance", result);
 
     return instance;
 }
@@ -788,7 +747,7 @@ std::vector<PhysicalDevice> Vulkan::GetPhysicalDevices(VkInstance instance)
     vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
     if (deviceCount == 0)
-        throw VulkanAPIError("No Vulkan compatible GPUs could be found", VK_SUCCESS, nameof(GetPhysicalDevices), __FILENAME__, __LINE__);
+        throw VulkanAPIError("No Vulkan compatible GPUs could be found");
 
     std::vector<VkPhysicalDevice> physicalDevices(deviceCount);
     vkEnumeratePhysicalDevices(instance, &deviceCount, physicalDevices.data());
@@ -914,7 +873,7 @@ std::string CreateFunctionNotActivatedError(const std::string_view& functionName
 #define CHECK_VALIDITY_DEBUG(ptr, ext) \
 DEBUG_ONLY(                            \
 if (ptr == nullptr)                    \
-    throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, ext), VK_ERROR_EXTENSION_NOT_PRESENT, __FUNCTION__, __FILENAME__, __LINE__));
+    throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, ext), VK_ERROR_EXTENSION_NOT_PRESENT));
 
 #pragma region VulkanExtensionFunctionDefinitions
 VkResult vkGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle)
