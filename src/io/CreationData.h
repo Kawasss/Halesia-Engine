@@ -73,4 +73,6 @@ struct ObjectCreationData
 
 	bool hasMesh = false;
 	MeshCreationData mesh;
+
+	std::vector<ObjectCreationData> children;
 };

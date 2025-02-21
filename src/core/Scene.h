@@ -1,15 +1,12 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <unordered_map>
 
 class Object;
 class Camera;
 class Window;
 
 struct ObjectCreationData;
-
-using Handle = uint64_t;
 
 class Scene 
 {
@@ -22,6 +19,8 @@ public:
 	Object* AddObject(const ObjectCreationData& creationData);
 	Object* AddObject(const ObjectCreationData& creationData);
 	
+	Object* AddObjectAsChild(Object* parent, const ObjectCreationData& creationData);
+
 	template<typename T> 
 	Object* DuplicateObject(Object* objPtr, std::string name);
 	Object* DuplicateObject(Object* objPtr, std::string name);
@@ -29,8 +28,6 @@ public:
 	template<typename T>
 	Camera* AddCustomCamera();
 
-	Object* GetObjectByHandle(Handle handle);
-	bool IsObjectHandleValid(Handle handle);
 	bool HasFinishedLoading();
 
 	void UpdateCamera(Window* window, float delta);
@@ -57,17 +54,9 @@ public:
 private:
 	void RegisterObjectPointer(Object* objPtr);
 
-	std::unordered_map<Handle, Object*> objectHandles;
-
 	bool sceneIsLoading = false;
 
 protected:
-	/// <summary>
-	/// Finds an object by name and returns the pointer to it
-	/// </summary>
-	/// <param name="name"></param>
-	/// <returns>Will return a nullptr if the name doesn't match</returns>
-	Object* GetObjectByName(std::string name);
 	void Free(Object* object);
 };
 

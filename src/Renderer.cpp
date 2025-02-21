@@ -785,12 +785,10 @@ void Renderer::SubmitRecording()
 	vgm::CollectGarbage();
 }
 
-inline void GetAllObjectsFromObject(std::vector<Object*>& ret, Object* obj, bool checkBLAS)
+static void GetAllObjectsFromObject(std::vector<Object*>& ret, Object* obj, bool checkBLAS)
 {
-	if (!::ObjectIsValid(obj, checkBLAS))
-		return;
-
-	ret.push_back(obj);
+	if (::ObjectIsValid(obj, checkBLAS))
+		ret.push_back(obj);
 
 	const std::vector<Object*>& children = obj->GetChildren();
 	for (Object* object : children)

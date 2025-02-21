@@ -64,7 +64,7 @@ void Editor::Start()
 	core.renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
 	core.renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
 
-	src = GetFile("Halesia Scene File (.hsf)", "*.hsf;");
+	src = GetFile("Scene file", "*.hsf;*.fbx;*.glb");
 	if (src == "")
 		return;
 
@@ -168,7 +168,7 @@ void Editor::MainThreadUpdate(float delta)
 
 	if (loadFile)
 	{
-		src = GetFile("Halesia Scene File (.hsf)", "*.hsf;");
+		src = GetFile("Scene file", "*.hsf;*.fbx;");
 		if (src != "")
 		{
 			DestroyCurrentScene();

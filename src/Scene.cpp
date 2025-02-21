@@ -12,23 +12,6 @@
 
 Camera* Scene::defaultCamera = new Camera();
 
-Object* Scene::GetObjectByName(std::string name)
-{
-	return *std::find_if(allObjects.begin(), allObjects.end(), [&](Object* obj) { return obj->name == name; });
-}
-
-Object* Scene::GetObjectByHandle(Handle handle)
-{
-	if (objectHandles.count(handle) == 0)
-		throw std::runtime_error("Failed to get the object related with handle \"" + std::to_string(handle) + "\"");
-	return objectHandles[handle];
-}
-
-bool Scene::IsObjectHandleValid(Handle handle) 
-{ 
-	return objectHandles.count(handle) > 0; 
-}
-
 bool Scene::HasFinishedLoading()
 {
 	return true;
@@ -36,12 +19,11 @@ bool Scene::HasFinishedLoading()
 
 void Scene::RegisterObjectPointer(Object* objPtr)
 {
-	objectHandles[objPtr->handle] = objPtr;
 	allObjects.push_back(objPtr);
 	objPtr->SetParentScene(this);
 }
 
- inline void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberToErase)
+static void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberToErase)
 {
 	 auto it = std::find(vector.begin(), vector.end(), memberToErase);
 	 if (it != vector.end())
@@ -114,7 +96,6 @@ void Scene::CollectGarbage()
 
 void Scene::TransferObjectOwnership(Object* newOwner, Object* child)
 {
-	objectHandles.erase(child->handle);
 	std::vector<Object*>::iterator iter = std::find(allObjects.begin(), allObjects.end(), child);
 	if (iter != allObjects.end())
 		allObjects.erase(iter);

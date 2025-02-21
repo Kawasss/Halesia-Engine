@@ -48,7 +48,7 @@ private:
 
 	void GetNodeHeader(NodeType& type, NodeSize& size);
 	void RetrieveType(NodeType type, NodeSize size);
-	void RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans);
+	ObjectCreationData RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans);
 
 	std::vector<ObjectCreationData>::iterator currentObject{};
 };

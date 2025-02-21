@@ -55,6 +55,13 @@ void Object::Initialize(const ObjectCreationData& creationData, void* customClas
 		transform = Transform(creationData.position, creationData.rotation, creationData.scale, mesh.extents, mesh.center);
 
 	GenerateObjectWithData(creationData); // maybe async??
+
+	if (!creationData.children.empty())
+		children.reserve(creationData.children.size());
+
+	for (const ObjectCreationData& childData : creationData.children)
+		AddChild(childData);
+
 	Start();
 }
 
@@ -119,7 +126,8 @@ void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, v
 Object* Object::AddChild(const ObjectCreationData& creationData)
 {
 	Object* obj = Create(creationData);
-	children.push_back(obj);
+	
+	AddChild(obj);
 	return obj;
 }
 

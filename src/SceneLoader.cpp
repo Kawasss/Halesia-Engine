@@ -290,7 +290,7 @@ inline void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::quat& rot,
 	glm::decompose(trans, scale, orientation, pos, skew, perspective);
 	rot = glm::degrees(glm::eulerAngles(orientation));
 	pos /= 100;
-	scale /= 100;
+	//scale /= 100;
 }
 
 void SceneLoader::LoadAssimpFile()
@@ -299,7 +299,7 @@ void SceneLoader::LoadAssimpFile()
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + location);
 
-	RetrieveObject(scene, scene->mRootNode, glm::mat4(1));
+	objects.push_back(RetrieveObject(scene, scene->mRootNode, glm::mat4(1)));
 	if (!scene->HasAnimations())
 		return;
 	for (int i = 0; i < scene->mNumAnimations; i++)
@@ -308,10 +308,10 @@ void SceneLoader::LoadAssimpFile()
 	}
 }
 
-void SceneLoader::RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans)
+ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans)
 {
 	ObjectCreationData creationData;
-	GetTransform(GetMatrix4x4(parentTrans) * node->mTransformation, creationData.position, creationData.rotation, creationData.scale);
+	GetTransform(node->mTransformation, creationData.position, creationData.rotation, creationData.scale);
 
 	for (int i = 0; i < node->mNumMeshes; i++)
 	{
@@ -322,10 +322,14 @@ void SceneLoader::RetrieveObject(const aiScene* scene, const aiNode* node, glm::
 			continue;
 		creationData.mesh = RetrieveMeshData(mesh);
 	}
-	for (int i = 0; i < node->mNumChildren; i++)
-		RetrieveObject(scene, node->mChildren[i], parentTrans * GetMat4(node->mTransformation));
 	
-	objects.push_back(creationData);
+	if (node->mNumChildren > 0)
+		creationData.children.reserve(node->mNumChildren);
+
+	for (int i = 0; i < node->mNumChildren; i++)
+		creationData.children.push_back(RetrieveObject(scene, node->mChildren[i], GetMat4(node->mTransformation)));
+	
+	return creationData;
 }
 
 ObjectCreationData GenericLoader::LoadObjectFile(std::string path) // kinda funky now, maybe make the funcion return multiple objects instead of one
