@@ -180,13 +180,20 @@ private:
 
 		Buffer newBuffer(newSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-		T* oldPtr = buffer.Map<T>();
-		T* newPtr = newBuffer.Map<T>(0, reservedSize); // it is better to copy the buffers via vulkan, but that takes more time to implement
+		const Vulkan::Context& ctx = Vulkan::GetContext();
 
-		std::memcpy(newPtr, oldPtr, reservedSize);
+		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
+		VkCommandBuffer cmdBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
 
-		buffer.Unmap();
-		newBuffer.Unmap();
+		VkBufferCopy bufferCopy{};
+		bufferCopy.dstOffset = 0;
+		bufferCopy.srcOffset = 0;
+		bufferCopy.size = reservedSize;
+
+		vkCmdCopyBuffer(cmdBuffer, buffer.Get(), newBuffer.Get(), 1, &bufferCopy);
+
+		Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, cmdBuffer, commandPool);
+		Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 
 		buffer.InheritFrom(newBuffer);
 

@@ -63,6 +63,8 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 		RetrieveType(childType, childSize); // rigid body
 		GetNodeHeader(childType, childSize);
 		RetrieveType(childType, childSize); // mesh
+
+		currentObject->hasMesh = !currentObject->mesh.vertices.empty();
 		break;
 	case NODE_TYPE_MESH:
 	{
