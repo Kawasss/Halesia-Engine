@@ -14,8 +14,8 @@ struct WideFilter
 
 	void ConvertASCII(const std::string& str1, const std::string& str2)
 	{
-		description = { description.begin(), description.end() };
-		fileType    = { fileType.begin(),    fileType.end()    };
+		description = { str1.begin(), str1.end() };
+		fileType    = { str2.begin(), str2.end() };
 	}
 
 	std::wstring description;
@@ -27,13 +27,7 @@ struct WideFilter
 	}
 };
 
-COMDLG_FILTERSPEC CreateComFilter(const FileDialog::Filter& filter) // the filter argument may not go out of scope before the return value
-{
-	WideFilter wFilter(filter);
-	return wFilter.GetSystemFilter();
-}
-
-inline std::string WideToASCII(const std::wstring& str)
+static std::string WideToASCII(const std::wstring& str)
 {
 	std::string ret;
 	ret.reserve(str.size());
@@ -52,7 +46,8 @@ std::vector<std::string> RequestDialog(const FileDialog::Filter& filter, const s
 	if (!SUCCEEDED(hr))
 		return ret;
 
-	COMDLG_FILTERSPEC winfilter = CreateComFilter(filter);
+	WideFilter wFilter(filter);
+	COMDLG_FILTERSPEC winfilter = wFilter.GetSystemFilter();
 	CComPtr<IFileOpenDialog> dialog;
 
 	hr = dialog.CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER);
