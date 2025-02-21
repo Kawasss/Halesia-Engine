@@ -72,10 +72,7 @@ void DeferredPipeline::CreateAndBindRTGI(uint32_t width, uint32_t height)
 void DeferredPipeline::PushRTGIConstants(const Payload& payload)
 {
 	RTGIConstants constants{};
-	constants.position = glm::vec4(payload.camera->position, 1.0f);
-	constants.viewInv  = glm::inverse(payload.camera->GetViewMatrix());
-	constants.projInv  = glm::inverse(payload.camera->GetProjectionMatrix());
-	constants.random   = distribution(randomEngine);
+	constants.frame = frame++;
 
 	rtgiPipeline->PushConstant(payload.commandBuffer, constants, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
 }

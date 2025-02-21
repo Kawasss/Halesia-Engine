@@ -17,12 +17,7 @@ layout(location = 0) rayPayloadEXT Payload {
 
 layout(push_constant) uniform Camera
 {
-	vec4 position;
-
-	mat4 viewInv;
-	mat4 projInv;
-
-	float random;
+	uint frame;
 } camera;
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
@@ -83,35 +78,43 @@ vec3 UniformSampleHemisphere(vec2 random, vec3 normal)
     return normalize(r * sin(phi) * B + random.x * normal + r * cos(phi) * T);
 }
 
+// PCG (permuted congruential generator). Thanks to:
+// www.pcg-random.org and www.shadertoy.com/view/XlGcRh
+uint NextRandom(inout uint state)
+{
+	state = state * 747796405 + 2891336453;
+	uint result = ((state >> ((state >> 28) + 4)) ^ state) * 277803737;
+	result = (result >> 22) ^ result;
+	return result;
+}
+
+float RandomValue(inout uint state)
+{
+	return NextRandom(state) / 4294967295.0; // 2^32 - 1
+}
+
 void main()
 {
+	uint state = gl_LaunchIDEXT.y * gl_LaunchSizeEXT.x + gl_LaunchIDEXT.x;
+	state *= camera.frame;
+
 	vec2 relCoors = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy);
 
 	vec3 normal = texture(normalImage, relCoors).xyz;
 	vec3 position = texture(positionImage, relCoors).xyz;
 
-    vec2 uv = relCoors * 2.0 - 1.0;
-
-    vec4 target = camera.projInv * vec4(uv.x, uv.y, 1, 1);
-	vec3 cameraDir = (camera.viewInv * vec4(normalize(target.xyz), 0)).xyz;
+	if (normal == vec3(0))
+		return;
 
 	payload.color = vec3(0);
 
 	for (int i = 0; i < SAMPLE_COUNT; i++)
 	{
 		payload.isActive = 1;
-		float random = float(i) / float(SAMPLE_COUNT);
+		float random = RandomValue(state);
 
-		if (normal == vec3(0)) // shoot the ray at the skybox (maybe sample in this shader instead of the rmiss shader ??)
-		{
-			payload.origin = camera.position.xyz;
-			payload.direction = cameraDir;
-		}
-		else
-		{
-			payload.origin = position;
-			payload.direction = CosineSampleHemisphereNew(vec2(random), normal); // should be a random uniform number
-		}
+		payload.origin = position;
+		payload.direction = CosineSampleHemisphere(vec2(random), normal); // should be a random uniform number
 
 		traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.origin, 0.01, payload.direction, 1000.0, 0);
 	}

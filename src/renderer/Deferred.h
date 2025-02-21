@@ -34,12 +34,7 @@ private:
 
 	struct RTGIConstants
 	{
-		glm::vec4 position;
-
-		glm::mat4 viewInv;
-		glm::mat4 projInv;
-
-		float random; // from 0.0 to 1.0
+		uint32_t frame;
 	};
 
 	struct UBO
@@ -99,4 +94,6 @@ private:
 	std::unique_ptr<Skybox> skybox;
 
 	std::array<std::vector<uint64_t>, FIF::FRAME_COUNT> processedMats;
+
+	uint32_t frame = 0;
 };

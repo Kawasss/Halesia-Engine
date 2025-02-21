@@ -295,7 +295,7 @@ inline void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::quat& rot,
 
 void SceneLoader::LoadAssimpFile()
 {
-	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate | aiProcess_GenNormals);
+	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals);
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + location);
 
