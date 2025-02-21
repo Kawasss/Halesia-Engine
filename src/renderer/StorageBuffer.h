@@ -180,20 +180,17 @@ private:
 
 		Buffer newBuffer(newSize, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 
-		const Vulkan::Context& ctx = Vulkan::GetContext();
+		Vulkan::ExecuteSingleTimeCommands(
+			[&](const CommandBuffer& cmdBuffer)
+			{
+				VkBufferCopy bufferCopy{};
+				bufferCopy.dstOffset = 0;
+				bufferCopy.srcOffset = 0;
+				bufferCopy.size = reservedSize;
 
-		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
-		VkCommandBuffer cmdBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
-
-		VkBufferCopy bufferCopy{};
-		bufferCopy.dstOffset = 0;
-		bufferCopy.srcOffset = 0;
-		bufferCopy.size = reservedSize;
-
-		vkCmdCopyBuffer(cmdBuffer, buffer.Get(), newBuffer.Get(), 1, &bufferCopy);
-
-		Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, cmdBuffer, commandPool);
-		Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
+				cmdBuffer.CopyBuffer(buffer.Get(), newBuffer.Get(), 1, &bufferCopy);
+			}
+		);
 
 		buffer.InheritFrom(newBuffer);
 
@@ -261,13 +258,12 @@ private:
 			size = memoryInfo.size;
 		}
 
-		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
-
-		VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(logicalDevice, commandPool);
-		vkCmdFillBuffer(commandBuffer, buffer.Get(), offset, size, 0); // fill the specified part of the buffer with 0's
-		Vulkan::EndSingleTimeCommands(logicalDevice, context.graphicsQueue, commandBuffer, commandPool);
-
-		Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
+		Vulkan::ExecuteSingleTimeCommands(
+			[&](const CommandBuffer& cmdBuffer)
+			{
+				buffer.Fill(cmdBuffer.Get(), 0, offset, size);
+			}
+		);
 	}
 
 	bool CheckIfHandleIsValid(StorageMemory memory)

@@ -1,5 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include <functional>
 #include <stdexcept>
 #include <vector>
 #include <set>
@@ -142,6 +143,8 @@ public:
 
     static std::vector<const char*>&          GetDeviceExtensions() { return requiredLogicalDeviceExtensions; }
     static std::vector<VkDynamicState>&       GetDynamicStates()    { return dynamicStates; }
+
+    static void                               ExecuteSingleTimeCommands(std::function<void(const CommandBuffer&)>&& commands);
 
     static void                               Destroy();
 

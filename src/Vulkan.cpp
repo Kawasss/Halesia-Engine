@@ -97,6 +97,17 @@ VulkanAPIError::VulkanAPIError(std::string message, VkResult result, std::string
     this->message = stream.str();
 }
 
+void Vulkan::ExecuteSingleTimeCommands(std::function<void(const CommandBuffer&)>&& commands) // uses the graphics queue, maybe a parameter to specify the queue to use
+{
+    VkCommandPool commandPool = FetchNewCommandPool(context.graphicsIndex);
+    CommandBuffer cmdBuffer = BeginSingleTimeCommands(commandPool);
+
+    commands(cmdBuffer);
+
+    YieldCommandPool(context.graphicsIndex, commandPool);
+    EndSingleTimeCommands(context.graphicsQueue, cmdBuffer.Get(), commandPool);
+}
+
 void Vulkan::AllocateCommandBuffers(const VkCommandBufferAllocateInfo& allocationInfo, std::vector<CommandBuffer>& commandBuffers)
 {
     VkCommandBuffer* pCommandBuffers = reinterpret_cast<VkCommandBuffer*>(commandBuffers.data()); // should be safe since the CommandBuffer class only contains the VkCommandBuffer
@@ -244,13 +255,12 @@ VkQueryPool Vulkan::CreateQueryPool(VkQueryType type, uint32_t amount)
     CheckVulkanResult("Failed to create a query pool", result, vkCreateQueryPool);
 
     // query pools must be reset before being used, according to the vulkan spec
-    VkCommandPool commandPool = Vulkan::FetchNewCommandPool(context.graphicsIndex);
-    CommandBuffer cmdBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
-
-    cmdBuffer.ResetQueryPool(ret, 0, amount);
-
-    Vulkan::EndSingleTimeCommands(context.graphicsQueue, cmdBuffer.Get(), commandPool);
-    Vulkan::YieldCommandPool(context.graphicsIndex, commandPool);
+    Vulkan::ExecuteSingleTimeCommands(
+        [&](const CommandBuffer& cmdBuffer)
+        {
+            cmdBuffer.ResetQueryPool(ret, 0, amount);
+        }
+    );
 
     return ret;
 }

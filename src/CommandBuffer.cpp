@@ -136,6 +136,11 @@ void CommandBuffer::TraceRays(const VkStridedDeviceAddressRegionKHR& raygenShade
     ::vkCmdTraceRaysKHR(commandBuffer, &raygenShaderBindingTable, &missShaderBindingTable, &hitShaderBindingTable, &callableShaderBindingTable, width, height, depth);
 }
 
+void CommandBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy* pRegions) const
+{
+    ::vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, regionCount, pRegions);
+}
+
 void CommandBuffer::SetCheckpoint(const void* pCheckpointMarker) const
 {
     ::vkCmdSetCheckpointNV(commandBuffer, pCheckpointMarker);

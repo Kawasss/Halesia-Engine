@@ -47,6 +47,8 @@ public:
 
 	void TraceRays(const VkStridedDeviceAddressRegionKHR& raygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR& missShaderBindingTable, const VkStridedDeviceAddressRegionKHR& hitShaderBindingTable, const VkStridedDeviceAddressRegionKHR& callableShaderBindingTable, uint32_t width, uint32_t height, uint32_t depth) const;
 
+	void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy* pRegions) const;
+
 	void SetCheckpoint(const void* pCheckpointMarker) const;
 
 	VkCommandBuffer& Get() { return commandBuffer; }
