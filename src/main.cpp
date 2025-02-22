@@ -72,8 +72,8 @@ int main(int argc, char** argv)
 	light2.type  = Light::Type::Point;
 	
 	renderer->AddRenderPipeline<DeferredPipeline>("deferred");
-	renderer->AddLight(light);
-	renderer->AddLight(light2);
+	//renderer->AddLight(light);
+	//renderer->AddLight(light2);
 	
 	DeferredPipeline* deferred = dynamic_cast<DeferredPipeline*>(renderer->GetRenderPipeline("deferred"));
 	deferred->LoadSkybox("textures/skybox/park.hdr");

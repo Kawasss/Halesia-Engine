@@ -100,7 +100,7 @@ void main()
 
 	vec2 relCoors = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy);
 
-	vec3 normal = texture(normalImage, relCoors).xyz;
+	vec3 normal = normalize(texture(normalImage, relCoors).xyz);
 	vec3 position = texture(positionImage, relCoors).xyz;
 
 	if (normal == vec3(0))
@@ -111,10 +111,10 @@ void main()
 	for (int i = 0; i < SAMPLE_COUNT; i++)
 	{
 		payload.isActive = 1;
-		float random = RandomValue(state);
+		vec2 random = vec2(RandomValue(state), RandomValue(state));
 
 		payload.origin = position;
-		payload.direction = CosineSampleHemisphere(vec2(random), normal); // should be a random uniform number
+		payload.direction = CosineSampleHemisphere(random, normal);
 
 		traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.origin, 0.01, payload.direction, 1000.0, 0);
 	}

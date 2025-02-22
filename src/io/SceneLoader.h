@@ -3,10 +3,11 @@
 #include <vector>
 #include <map>
 
-#include "glm.h"
+#include "../glm.h"
 
-#include "renderer/Bone.h"
-#include "renderer/AnimationManager.h"
+#include "../renderer/Bone.h"
+#include "../renderer/AnimationManager.h"
+#include "../renderer/Light.h"
 
 #include "BinaryReader.h"
 #include "FileFormat.h"
@@ -29,6 +30,8 @@ public:
 
 	std::vector<ObjectCreationData> objects;
 	std::vector<MaterialCreationData> materials;
+
+	std::vector<Light> lights;
 
 	// animations
 	std::vector<Animation> animations;

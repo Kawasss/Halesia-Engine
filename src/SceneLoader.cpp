@@ -289,19 +289,43 @@ inline void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::quat& rot,
 	glm::vec4 perspective;
 	glm::decompose(trans, scale, orientation, pos, skew, perspective);
 	rot = glm::degrees(glm::eulerAngles(orientation));
-	pos /= 100;
+	//pos /= 100;
 	//scale /= 100;
 }
 
 void SceneLoader::LoadAssimpFile()
 {
-	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals);
+	const aiScene* scene = aiImportFile(location.c_str(), 0);
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + location);
 
 	objects.push_back(RetrieveObject(scene, scene->mRootNode, glm::mat4(1)));
-	if (!scene->HasAnimations())
-		return;
+
+	if (scene->HasLights())
+		lights.reserve(scene->mNumLights);
+
+	glm::vec3 position;
+	glm::quat filler;
+	glm::vec3 filler2;
+
+	for (int i = 0; i < scene->mNumLights; i++)
+	{
+		const aiLight* assimpLight = scene->mLights[i];
+		const aiNode* node = scene->mRootNode->FindNode(assimpLight->mName);
+
+		GetTransform(node->mTransformation, position, filler, filler2);
+
+		Light light{};
+		light.pos = glm::vec4(position, 1.0f);
+		light.type = Light::Type::Point;
+		light.color = glm::vec3(1);// assimp cant find the lights color !! glm::vec3(assimpLight->mColorDiffuse.r, assimpLight->mColorDiffuse.g, assimpLight->mColorDiffuse.b);
+		
+		lights.push_back(light);
+	}
+
+	if (scene->HasAnimations())
+		animations.resize(scene->mNumAnimations);
+
 	for (int i = 0; i < scene->mNumAnimations; i++)
 	{
 		animations.push_back(Animation(scene->mAnimations[i], scene->mRootNode, boneInfoMap));
@@ -312,7 +336,7 @@ ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNod
 {
 	ObjectCreationData creationData;
 	GetTransform(node->mTransformation, creationData.position, creationData.rotation, creationData.scale);
-
+	
 	for (int i = 0; i < node->mNumMeshes; i++)
 	{
 		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
