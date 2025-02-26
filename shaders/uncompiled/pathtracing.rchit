@@ -1,4 +1,4 @@
-#version 460
+ #version 460
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_nonuniform_qualifier : enable
 #extension GL_EXT_shader_16bit_storage : enable

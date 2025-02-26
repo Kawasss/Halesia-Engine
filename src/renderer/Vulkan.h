@@ -120,7 +120,7 @@ public:
     template<typename Type> static void       SetDebugName(Type object, const char* name);
 
     static void                               AddInstanceExtension(const char* name);
-    static void                               AddDeviceExtenion(const char* name);
+    static void                               AddDeviceExtension(const char* name);
     static void                               AddValidationLayer(const char* name);
 
     static void                               AddDynamicState(VkDynamicState state);

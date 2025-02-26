@@ -5,12 +5,15 @@
 #define TWO_PI (PI * 2)
 #define ONE_OVER_PI (1 / PI)
 
-#define SAMPLE_COUNT 8
+#define SAMPLE_COUNT 1
+#define BOUNCE_COUNT 1
 
 layout(location = 0) rayPayloadEXT Payload {
 	vec3 origin;
 	vec3 direction;
 	vec3 color;
+
+	int depth;
 
 	int isActive;
 } payload;
@@ -106,20 +109,34 @@ void main()
 	if (normal == vec3(0))
 		return;
 
-	payload.color = vec3(0);
+	vec3 color = vec3(0);
 
 	for (int i = 0; i < SAMPLE_COUNT; i++)
 	{
 		payload.isActive = 1;
 		vec2 random = vec2(RandomValue(state), RandomValue(state));
+		vec3 direction = CosineSampleHemisphere(random, normal);
 
 		payload.origin = position;
-		payload.direction = CosineSampleHemisphere(random, normal);
+		payload.direction = direction;
+		payload.color = vec3(0);
+		payload.depth = 0;
 
-		traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.origin, 0.01, payload.direction, 1000.0, 0);
+		for (int j = 0; j < BOUNCE_COUNT; j++)
+		{
+			traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.origin, 0.001, payload.direction, 1000.0, 0);
+
+			if (payload.isActive == 0)
+				break;
+
+			vec2 random = vec2(RandomValue(state), RandomValue(state));
+			payload.direction = reflect(direction, payload.direction); // the normal of the current collision is communicated through the payload.direction
+			direction = payload.direction;
+		}
+		color += payload.color / float(payload.depth);
 	}
 
-	vec3 result = payload.color / float(SAMPLE_COUNT);
+	vec3 result = color / float(SAMPLE_COUNT);
 
 	imageStore(globalIlluminationImage, ivec2(gl_LaunchIDEXT.xy), vec4(result, 1));
 }

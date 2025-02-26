@@ -8,6 +8,7 @@
 #include "renderer/PipelineCreator.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/Skybox.h"
+#include "renderer/Vulkan.h"
 
 #include "core/Object.h"
 #include "core/Camera.h"

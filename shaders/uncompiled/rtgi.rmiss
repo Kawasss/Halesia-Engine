@@ -6,6 +6,8 @@ layout(location = 0) rayPayloadInEXT Payload {
 	vec3 direction;
 	vec3 color;
 
+	int depth;
+
 	int isActive;
 } payload;
 
@@ -15,4 +17,5 @@ void main()
 {
 	payload.isActive = 0;
 	payload.color += texture(skybox, normalize(payload.direction)).rgb;
+	payload.depth++;
 }

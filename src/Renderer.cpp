@@ -351,10 +351,11 @@ void Renderer::AddExtensions()
 		shouldRasterize = true;
 	else
 	{
-		Vulkan::AddDeviceExtenion(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-		Vulkan::AddDeviceExtenion(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
-		Vulkan::AddDeviceExtenion(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
-		Vulkan::AddDeviceExtenion(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+		Vulkan::AddDeviceExtension(VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+		Vulkan::AddDeviceExtension(VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
+		Vulkan::AddDeviceExtension(VK_KHR_DEFERRED_HOST_OPERATIONS_EXTENSION_NAME);
+		Vulkan::AddDeviceExtension(VK_KHR_RAY_QUERY_EXTENSION_NAME);
+		Vulkan::AddDeviceExtension(VK_KHR_RAY_TRACING_POSITION_FETCH_EXTENSION_NAME);
 	}
 }
 

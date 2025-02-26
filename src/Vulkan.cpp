@@ -97,7 +97,7 @@ void Vulkan::AddInstanceExtension(const char* name)
     requiredInstanceExtensions.push_back(name);
 }
 
-void Vulkan::AddDeviceExtenion(const char* name)
+void Vulkan::AddDeviceExtension(const char* name)
 {
     requiredLogicalDeviceExtensions.push_back(name);
 }

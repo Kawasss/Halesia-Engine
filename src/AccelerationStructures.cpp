@@ -70,7 +70,7 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
 	buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
-	buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+	buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR;
 	buildGeometryInfo.mode = mode;
 	buildGeometryInfo.type = type;
 	buildGeometryInfo.srcAccelerationStructure = accelerationStructure;
@@ -212,7 +212,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 		VkAccelerationStructureInstanceKHR instance{};
 		instance.instanceCustomIndex = processedAmount;
 		instance.mask = 0xFF;
-		instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+		//instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 		instance.accelerationStructureReference = objects[i]->mesh.BLAS->GetAccelerationStructureAddress();
 			
 		glm::mat4 transform = glm::transpose(objects[i]->transform.GetModelMatrix());

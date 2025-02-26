@@ -110,8 +110,13 @@ VkDevice PhysicalDevice::GetLogicalDevice(Surface& surface)
         queueCreateInfos.push_back(queueCreateInfo);
     }
 
+    VkPhysicalDeviceRayTracingPositionFetchFeaturesKHR fetchFeatures{}; // enable position fetching
+    fetchFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_TRACING_POSITION_FETCH_FEATURES_KHR;
+    fetchFeatures.rayTracingPositionFetch = VK_TRUE;
+
     VkPhysicalDeviceRayQueryFeaturesKHR rayQueryFeatures{};
     rayQueryFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_RAY_QUERY_FEATURES_KHR;
+    rayQueryFeatures.pNext = &fetchFeatures;
     rayQueryFeatures.rayQuery = VK_TRUE;
 
     VkPhysicalDeviceAccelerationStructureFeaturesKHR accelerationStructure{};
