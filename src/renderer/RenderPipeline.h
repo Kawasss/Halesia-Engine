@@ -41,7 +41,6 @@ public:
 	virtual ~RenderPipeline() {}
 
 	virtual void Resize(const Payload& payload) {}
-	virtual void AddLight(const Light& light)   {}
 
 	virtual void SetRenderMode(RenderMode mode) { renderMode = mode; }
 

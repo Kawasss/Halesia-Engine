@@ -27,7 +27,6 @@ void ForwardPlusPipeline::Allocate()
 
 	VkMemoryPropertyFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
 	cellBuffer.Init(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	lightBuffer.Init(MAX_LIGHTS * sizeof(Light), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, flags);
 	matricesBuffer.Init(sizeof(Matrices), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, flags);
 
 	matrices = matricesBuffer.Map<Matrices>();
@@ -45,7 +44,6 @@ void ForwardPlusPipeline::CreateShader()
 	computeShader = std::make_unique<ComputeShader>("shaders/spirv/forwardPlus.comp.spv");
 
 	computeShader->BindBufferToName("cells", cellBuffer.Get());
-	computeShader->BindBufferToName("lights", lightBuffer.Get());
 	computeShader->BindBufferToName("matrices", matricesBuffer.Get());
 }
 
@@ -53,9 +51,9 @@ void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Obje
 {
 	const CommandBuffer& cmdBuffer = payload.commandBuffer;
 
-	if (lightCount > 0)
+	if (payload.renderer->GetLightCount() > 0)
 	{
-		ComputeCells(cmdBuffer, payload.camera);
+		ComputeCells(cmdBuffer, payload.renderer->GetLightCount(), payload.camera);
 	}
 
 	UpdateBindlessTextures();
@@ -67,7 +65,7 @@ void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Obje
 	cmdBuffer.EndRenderPass();
 }
 
-void ForwardPlusPipeline::ComputeCells(CommandBuffer commandBuffer, Camera* camera)
+void ForwardPlusPipeline::ComputeCells(CommandBuffer commandBuffer, uint32_t lightCount, Camera* camera)
 {
 	matrices->projection = camera->GetProjectionMatrix();
 	matrices->view = camera->GetViewMatrix();
@@ -118,21 +116,6 @@ void ForwardPlusPipeline::DrawObjects(CommandBuffer commandBuffer, const std::ve
 	commandBuffer.EndDebugUtilsLabelEXT();
 }
 
-void ForwardPlusPipeline::AddLight(const Light& light)
-{
-	if (lightCount + 1 >= MAX_LIGHTS)
-		throw std::runtime_error("Fatal error: upper light limit succeeded");
-
-	const Vulkan::Context& context = Vulkan::GetContext();
-
-	VkDeviceSize offset = lightCount == 0 ? 0 : (lightCount - 1) * sizeof(glm::vec3);
-	Light* lights = lightBuffer.Map<Light>(offset, sizeof(Light));
-
-	lights[lightCount++] = light;
-
-	lightBuffer.Unmap();
-}
-
 void ForwardPlusPipeline::PrepareGraphicsPipeline()
 {
 	GraphicsPipeline::CreateInfo createInfo{};
@@ -147,7 +130,6 @@ void ForwardPlusPipeline::PrepareGraphicsPipeline()
 
 	graphicsPipeline->BindBufferToName("ubo", uniformBuffer.Get());
 	graphicsPipeline->BindBufferToName("cells", cellBuffer.Get());
-	graphicsPipeline->BindBufferToName("lights", lightBuffer.Get());
 
 	VkDescriptorImageInfo imageInfo{}; // prepare the texture buffer
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;

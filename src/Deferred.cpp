@@ -49,7 +49,7 @@ void DeferredPipeline::Start(const Payload& payload)
 
 	CreateBuffers();
 
-	BindResources();
+	BindResources(payload.renderer->GetLightBuffer().Get());
 	
 	if (Renderer::canRayTrace)
 	{
@@ -181,9 +181,6 @@ void DeferredPipeline::CreateBuffers()
 {
 	uboBuffer.Init(sizeof(UBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	uboBuffer.MapPermanently();
-
-	lightBuffer.Init(sizeof(LightBuffer), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	lightBuffer.MapPermanently();
 }
 
 void DeferredPipeline::BindTLAS()
@@ -215,10 +212,10 @@ void DeferredPipeline::BindTLAS()
 	}
 }
 
-void DeferredPipeline::BindResources()
+void DeferredPipeline::BindResources(VkBuffer lightBuffer)
 {
 	firstPipeline->BindBufferToName("ubo", uboBuffer.Get());
-	secondPipeline->BindBufferToName("lights", lightBuffer.Get());
+	secondPipeline->BindBufferToName("lights", lightBuffer);
 
 	BindGBuffers();
 }
@@ -471,12 +468,6 @@ void DeferredPipeline::UpdateUBO(Camera* cam)
 	ubo->camPos = glm::vec4(cam->position, 1.0f);
 	ubo->proj = cam->GetProjectionMatrix();
 	ubo->view = cam->GetViewMatrix();
-}
-
-void DeferredPipeline::AddLight(const Light& light)
-{
-	LightBuffer* lights = lightBuffer.GetMappedPointer<LightBuffer>();
-	lights->lights[lights->count++] = light;
 }
 
 DeferredPipeline::~DeferredPipeline()

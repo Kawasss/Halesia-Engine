@@ -37,6 +37,12 @@
 
 #include "io/IO.h"
 
+struct Renderer::LightBuffer
+{
+	int count;
+	Light lights[1024];
+};
+
 StorageBuffer<Vertex>   Renderer::g_vertexBuffer;
 StorageBuffer<uint16_t> Renderer::g_indexBuffer;
 StorageBuffer<Vertex>   Renderer::g_defaultVertexBuffer;
@@ -80,8 +86,13 @@ void Renderer::Destroy()
 	if (!Vulkan::GetContext().IsValid()) // cannot destroy anything if vulkan isnt initialized yet
 		return;
 
-	Mesh::materials.front().Destroy(); // the only material whose lifetime is managed by the renderer is the default material
-	
+	lightBuffer.~Buffer();
+
+	for (Material& mat : Mesh::materials)
+		mat.Destroy();
+
+	Mesh::materials.clear();
+
 	g_defaultVertexBuffer.Destroy();
 	g_vertexBuffer.Destroy();
 	g_indexBuffer.Destroy();
@@ -325,6 +336,9 @@ void Renderer::CreateDefaultObjects() // default objects are objects that are al
 	animationManager = AnimationManager::Get();
 
 	queryPool.Create(VK_QUERY_TYPE_TIMESTAMP, 10);
+
+	lightBuffer.Init(sizeof(LightBuffer), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	lightBuffer.MapPermanently();
 
 	HdrConverter::Start();
 }
@@ -907,8 +921,8 @@ void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkComma
 
 void Renderer::AddLight(const Light& light)
 {
-	for (RenderPipeline* renderPipeline : renderPipelines)
-		renderPipeline->AddLight(light); // this wont add the light to any render pipeline created after this moment
+	LightBuffer* dst = lightBuffer.GetMappedPointer<LightBuffer>();
+	dst->lights[dst->count++] = light;
 }
 
 void Renderer::CheckForVRAMOverflow()
@@ -1034,4 +1048,9 @@ RenderPipeline* Renderer::GetRenderPipeline(const std::string_view& name)
 			return pPipeline;
 	}
 	return nullptr;
+}
+
+int Renderer::GetLightCount() const
+{
+	return lightBuffer.GetMappedPointer<LightBuffer>()->count;
 }

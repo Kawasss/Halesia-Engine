@@ -18,7 +18,7 @@ public:
 	void Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 	void Destroy();
 
-	VkBuffer Get() { return buffer.Get(); }
+	VkBuffer Get() const { return buffer.Get(); }
 	
 	void InheritFrom(Buffer& parent); // inherits the members from the parent and tells the parent to not destroy its members upon destruction (the buffer will destroy the current members first)
 
@@ -57,7 +57,7 @@ namespace FIF
 
 		VkBuffer operator[](size_t index) const { return buffers[index].Get(); }
 
-		VkBuffer Get() { return buffers[FIF::frameIndex].Get(); }
+		VkBuffer Get() const { return buffers[FIF::frameIndex].Get(); }
 
 		void Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 		void Destroy();
@@ -66,8 +66,8 @@ namespace FIF
 		void Unmap();
 
 		template<typename T>
-		T*    GetMappedPointer() { return static_cast<T*>(GetMappedPointer()); }
-		void* GetMappedPointer() { return pointers[FIF::frameIndex]; }
+		T*    GetMappedPointer() const { return static_cast<T*>(GetMappedPointer()); }
+		void* GetMappedPointer() const { return pointers[FIF::frameIndex]; }
 
 		void InheritFrom(FIF::Buffer& parent); // inherits the members from the parent and tells the parent to not destroy its members upon destruction (the buffer will destroy the current members first)
 

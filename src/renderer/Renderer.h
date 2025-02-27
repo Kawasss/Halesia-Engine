@@ -82,15 +82,19 @@ public:
 
 	std::map<std::string, uint64_t> GetTimestamps() { return queryPool.GetTimestamps(); }
 
-	VkRenderPass GetDefault3DRenderPass()   { return renderPass;    }
-	VkRenderPass GetNonClearingRenderPass() { return GUIRenderPass; }
+	VkRenderPass GetDefault3DRenderPass()   const { return renderPass;    }
+	VkRenderPass GetNonClearingRenderPass() const { return GUIRenderPass; }
 
 	Framebuffer& GetFramebuffer() { return framebuffer; }
 
-	uint32_t GetInternalWidth()  { return viewportWidth;  }
-	uint32_t GetInternalHeight() { return viewportHeight; }
+	uint32_t GetInternalWidth()  const  { return viewportWidth;  }
+	uint32_t GetInternalHeight() const { return viewportHeight; }
 
-	CommandBuffer GetActiveCommandBuffer() { return activeCmdBuffer; }
+	CommandBuffer GetActiveCommandBuffer() const { return activeCmdBuffer; }
+	
+	const FIF::Buffer& GetLightBuffer() const { return lightBuffer; }
+
+	int GetLightCount() const;
 
 	void SetInternalResolutionScale(float scale);
 	static float GetInternalResolutionScale();
@@ -138,6 +142,8 @@ public:
 	float idleTime = 0;
 
 private:
+	struct LightBuffer;
+
 	VkInstance instance					 = VK_NULL_HANDLE;
 	VkDevice logicalDevice				 = VK_NULL_HANDLE;
 	VkRenderPass renderPass				 = VK_NULL_HANDLE;
@@ -152,6 +158,8 @@ private:
 	QueryPool queryPool;
 
 	Framebuffer framebuffer;
+
+	FIF::Buffer lightBuffer;
 
 	std::map<RenderPipeline*, std::string> dbgPipelineNames;
 

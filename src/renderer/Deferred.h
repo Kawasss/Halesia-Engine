@@ -25,7 +25,6 @@ public:
 	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
 
 	void Resize(const Payload& payload) override;
-	void AddLight(const Light& light) override;
 
 	void LoadSkybox(const std::string& path);
 
@@ -44,17 +43,11 @@ private:
 		glm::mat4 proj;
 	};
 
-	struct LightBuffer
-	{
-		int count;
-		Light lights[1024];
-	};
-
 	void UpdateTextureBuffer();
 	void SetTextureBuffer();
 	void UpdateUBO(Camera* cam);
 	void CreateBuffers();
-	void BindResources();
+	void BindResources(VkBuffer lightBuffer);
 	void BindTLAS();
 	void BindGBuffers();
 
@@ -80,7 +73,6 @@ private:
 	Framebuffer framebuffer;
 
 	FIF::Buffer uboBuffer;
-	FIF::Buffer lightBuffer;
 
 	vvm::SmartImage rtgiImage;
 	VkImageView rtgiView = VK_NULL_HANDLE;

@@ -506,8 +506,8 @@ void Editor::LoadFile()
 	for (const MaterialCreationData& data : loader.materials)
 		Mesh::AddMaterial(Material::Create(data));
 
-	/*for (const Light& light : loader.lights)
-		HalesiaEngine::GetInstance()->GetEngineCore().renderer->AddLight(light);*/
+	//for (const Light& light : loader.lights)
+	//	HalesiaEngine::GetInstance()->GetEngineCore().renderer->AddLight(light);
 }
 
 void Editor::SaveToFile()
