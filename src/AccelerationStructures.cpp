@@ -67,7 +67,6 @@ void AccelerationStructure::CreateAS(const VkAccelerationStructureGeometryKHR* p
 
 void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pGeometry, uint32_t primitiveCount, VkBuildAccelerationStructureModeKHR mode, VkCommandBuffer externalCommandBuffer)
 {
-	const Vulkan::Context& ctx = Vulkan::GetContext();
 	VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
 	buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 	buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR;
@@ -85,13 +84,8 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 
 	if (externalCommandBuffer == VK_NULL_HANDLE)
 	{
-		VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
-		VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
-
-		vkCmdBuildAccelerationStructuresKHR(commandBuffer, 1, &buildGeometryInfo, &pBuildRangeInfo);
-		Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
-		
-		Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
+		VkResult result = vkBuildAccelerationStructuresKHR(Vulkan::GetContext().logicalDevice, VK_NULL_HANDLE, 1, &buildGeometryInfo, &pBuildRangeInfo);
+		CheckVulkanResult("Failed to build acceleration structures", result);
 	}
 	else // this option is faster for runtime building since it doesn't wait for the queue to go idle (which can be a long time)
 	{

@@ -931,6 +931,12 @@ void vkDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureK
     CHECK_VALIDITY_DEBUG(pvkDestroyAccelerationStructureKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
 }
+VkResult vkBuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
+{
+    DEFINE_DEVICE_FUNCTION(vkBuildAccelerationStructuresKHR);
+    CHECK_VALIDITY_DEBUG(pvkBuildAccelerationStructuresKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
+    pvkBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos);
+}
 
 void vkCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
 {
