@@ -1,6 +1,7 @@
 #include <vector>
 #include <array>
 #include <filesystem>
+#include <iostream>
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "renderer/Vulkan.h"
@@ -353,6 +354,12 @@ void Renderer::CreateContext()
 void Renderer::CreatePhysicalDevice()
 {
 	instance = Vulkan::GenerateInstance();
+
+	#ifdef _DEBUG
+	std::cout << "enabled instance extensions:\n";
+	for (const char* extension : Vulkan::GetInstanceExtensions())
+		std::cout << "  " << extension << '\n';
+	#endif // _DEBUG
 
 	surface = Surface::GenerateSurface(instance, testWindow);
 	physicalDevice = Vulkan::GetBestPhysicalDevice(instance, surface);
@@ -943,6 +950,12 @@ void Renderer::SetLogicalDevice()
 	::vkGetDeviceQueue(logicalDevice, indices.computeFamily.value(), 0, &computeQueue);
 
 	Vulkan::InitializeContext({ instance, logicalDevice, physicalDevice, graphicsQueue, queueIndex, presentQueue, indices.presentFamily.value(), computeQueue, indices.computeFamily.value() });
+
+	#ifdef _DEBUG
+	std::cout << "enabled device extensions:\n";
+	for (const char* extension : Vulkan::GetDeviceExtensions())
+		std::cout << "  " << extension << '\n';
+	#endif // _DEBUG
 }
 
 void Renderer::SetViewport(CommandBuffer commandBuffer, VkExtent2D extent)

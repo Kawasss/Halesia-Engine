@@ -61,7 +61,7 @@ public:
     static void                               ForcePhysicalDevice(const std::string& name); // forces 'GetBestPhysicalDevice' to return the GPU with the given name
   
     static VkInstance                         GenerateInstance();
-    static std::vector<VkExtensionProperties> GetInstanceExtensions();
+    static std::vector<VkExtensionProperties> GetAllInstanceExtensions();
     static std::vector<VkExtensionProperties> GetLogicalDeviceExtensions(PhysicalDevice physicalDevice);
 
     static SwapChainSupportDetails            QuerySwapChainSupport(PhysicalDevice device, VkSurfaceKHR surface);
@@ -126,8 +126,9 @@ public:
     static void                               AddDynamicState(VkDynamicState state);
     static void                               RemoveDynamicState(VkDynamicState state);
 
-    static std::vector<const char*>&          GetDeviceExtensions() { return requiredLogicalDeviceExtensions; }
-    static std::vector<VkDynamicState>&       GetDynamicStates()    { return dynamicStates; }
+    static std::vector<const char*>&          GetDeviceExtensions()   { return requiredLogicalDeviceExtensions; }
+    static std::vector<const char*>&          GetInstanceExtensions() { return requiredInstanceExtensions; }
+    static std::vector<VkDynamicState>&       GetDynamicStates()      { return dynamicStates; }
 
     static void                               ExecuteSingleTimeCommands(std::function<void(const CommandBuffer&)>&& commands);
 

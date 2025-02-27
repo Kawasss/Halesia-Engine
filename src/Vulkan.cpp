@@ -718,13 +718,6 @@ VkInstance Vulkan::GenerateInstance()
     createInfo.enabledExtensionCount = (uint32_t)requiredInstanceExtensions.size();
     createInfo.ppEnabledExtensionNames = requiredInstanceExtensions.data();
 
-    #ifdef _DEBUG
-    std::cout << "Enabled instance extensions:" << "\n";
-    for (const char* extension : requiredInstanceExtensions)
-        std::cout << "  " + (std::string)extension << "\n";
-    std::cout << "\n";
-    #endif
-
     VkResult result = vkCreateInstance(&createInfo, nullptr, &instance);
     CheckVulkanResult("Couldn't create a Vulkan instance", result);
 
@@ -789,7 +782,7 @@ bool Vulkan::IsDeviceCompatible(PhysicalDevice device, Surface surface)
 
 bool Vulkan::CheckInstanceExtensionSupport(std::vector<const char*> extensions)
 {
-    std::vector<VkExtensionProperties> allExtensions = GetInstanceExtensions();
+    std::vector<VkExtensionProperties> allExtensions = GetAllInstanceExtensions();
     std::set<std::string> stringExtensions(extensions.begin(), extensions.end());
 
     for (const VkExtensionProperties& property : allExtensions)
@@ -832,7 +825,7 @@ bool Vulkan::CheckValidationSupport()
     return true;
 }
 
-std::vector<VkExtensionProperties> Vulkan::GetInstanceExtensions()
+std::vector<VkExtensionProperties> Vulkan::GetAllInstanceExtensions()
 {
     uint32_t extensionCount = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
