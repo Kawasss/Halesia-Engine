@@ -487,12 +487,8 @@ void Editor::DestroyCurrentScene()
 		delete obj;
 
 	for (int i = 1; i < Mesh::materials.size(); i++)
-	{
-		auto it = Mesh::materials.begin() + i;
-
 		Mesh::materials[i].Destroy();
-		Mesh::materials.erase(it);
-	}
+	Mesh::materials.clear();
 }
 
 void Editor::LoadFile()

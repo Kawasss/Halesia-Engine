@@ -84,8 +84,11 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 
 	if (externalCommandBuffer == VK_NULL_HANDLE)
 	{
-		VkResult result = vkBuildAccelerationStructuresKHR(Vulkan::GetContext().logicalDevice, VK_NULL_HANDLE, 1, &buildGeometryInfo, &pBuildRangeInfo);
-		CheckVulkanResult("Failed to build acceleration structures", result);
+		Vulkan::ExecuteSingleTimeCommands([&](const CommandBuffer& cmdBuffer)
+			{
+				vkCmdBuildAccelerationStructuresKHR(cmdBuffer.Get(), 1, &buildGeometryInfo, &pBuildRangeInfo);
+			}
+		);
 	}
 	else // this option is faster for runtime building since it doesn't wait for the queue to go idle (which can be a long time)
 	{
