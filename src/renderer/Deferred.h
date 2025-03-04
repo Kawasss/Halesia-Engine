@@ -28,8 +28,12 @@ public:
 
 	void LoadSkybox(const std::string& path);
 
+	void ReloadShaders(const Payload& payload) override;
+
 private:
 	static constexpr size_t GBUFFER_COUNT = 4;
+
+	struct PushConstant;
 
 	struct RTGIConstants
 	{
@@ -51,6 +55,7 @@ private:
 	void BindTLAS();
 	void BindGBuffers();
 
+	void CreateAndPreparePipelines(const Payload& payload);
 	void CreateRenderPass(const std::array<VkFormat, GBUFFER_COUNT>& formats);
 	void CreatePipelines(VkRenderPass firstPass, VkRenderPass secondPass);
 

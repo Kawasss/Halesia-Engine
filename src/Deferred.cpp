@@ -16,7 +16,7 @@
 std::default_random_engine randomEngine;
 std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
 
-struct PushConstant
+struct DeferredPipeline::PushConstant
 {
 	glm::mat4 model;
 	int materialID;
@@ -42,25 +42,48 @@ void DeferredPipeline::Start(const Payload& payload)
 		GBUFFER_MRAO_FORMAT,
 	};
 
+	CreateBuffers();
 	CreateRenderPass(formats);
-	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
 
 	framebuffer.Init(renderPass, payload.width, payload.height, formats);
 
-	CreateBuffers();
-
-	BindResources(payload.renderer->GetLightBuffer().Get());
-	
 	if (Renderer::canRayTrace)
-	{
 		TLAS.reset(TopLevelAccelerationStructure::Create({}));
 
+	CreateAndPreparePipelines(payload);
+}
+
+void DeferredPipeline::CreateAndPreparePipelines(const Payload& payload)
+{
+	std::array<VkFormat, GBUFFER_COUNT> formats =
+	{
+		GBUFFER_POSITION_FORMAT,
+		GBUFFER_ALBEDO_FORMAT,
+		GBUFFER_NORMAL_FORMAT,
+		GBUFFER_MRAO_FORMAT,
+	};
+
+	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
+
+	BindResources(payload.renderer->GetLightBuffer().Get());
+
+	if (Renderer::canRayTrace)
+	{
 		CreateAndBindRTGI(payload.width, payload.height);
 
 		BindTLAS();
 	}
 
 	SetTextureBuffer();
+}
+
+void DeferredPipeline::ReloadShaders(const Payload& payload)
+{
+	firstPipeline.reset();
+	secondPipeline.reset();
+	rtgiPipeline.reset();
+
+	CreateAndPreparePipelines(payload);
 }
 
 void DeferredPipeline::CreateAndBindRTGI(uint32_t width, uint32_t height)
