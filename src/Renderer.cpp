@@ -38,6 +38,8 @@
 
 #include "io/IO.h"
 
+namespace fs = std::filesystem;
+
 struct Renderer::LightBuffer
 {
 	int count;
@@ -213,17 +215,69 @@ void Renderer::RecompileShaders()
 	}
 
 	Console::WriteLine("Debug mode detected, recompiling all shaders found in directory \"shaders\"...", Console::Severity::Normal);
-	auto oldPath = std::filesystem::current_path();
-	auto newPath = std::filesystem::absolute("shaders");
-	for (const auto& file : std::filesystem::directory_iterator(newPath))
+	for (const fs::path& file : fs::directory_iterator("shaders/uncompiled"))
 	{
-		if (file.path().extension() != ".bat")
-			continue;
-		std::string shaderComp = file.path().string();
-		std::filesystem::current_path(newPath);
-		::system(shaderComp.c_str()); // windows only!!
+		if (!fs::is_directory(file))
+			CompileShaderToSpirv(file);
 	}
-	std::filesystem::current_path(oldPath);
+}
+
+void Renderer::CompileShaderToSpirv(const std::filesystem::path& file)
+{
+	if (!fs::exists(file))
+	{
+		std::cout << "Could not compile " << file << '\n';
+		return;
+	}
+		
+	fs::path spirv = "shaders/spirv/" + file.filename().string() + ".spv";
+
+	if (fs::exists(spirv)) // the file has been compiled before, check if the compiled version is out of date
+	{
+		fs::file_time_type sourceWriteTime = fs::last_write_time(file);
+		fs::file_time_type spirvWriteTime  = fs::last_write_time(spirv);
+
+		if (sourceWriteTime < spirvWriteTime) // the source is older than the compiled version, so we do not recompile it
+		{
+			std::cout << "skipped compilation of " << file << '\n';
+			return;
+		}
+	}
+
+	ForceCompileShaderToSpirv(file);
+}
+
+void Renderer::ForceCompileShaderToSpirv(const std::filesystem::path& file)
+{
+	std::cout << "compiling " << file << "...\n";
+
+	char* rawPath = nullptr;
+	size_t size = 0;
+	errno_t err = _dupenv_s(&rawPath, &size, "VK_SDK_PATH");
+
+	if (rawPath == nullptr)
+		return;
+
+	std::string sdkPath = rawPath;
+
+	free(rawPath);
+
+	std::string compiler = sdkPath + std::string("\\Bin\\glslc.exe");
+
+	if (!fs::exists(compiler))
+		return; // vulkan SDK (and glslc) is missing
+
+	std::string args = std::format("-i {} -o shaders/spirv/{}.spv --target-env=vulkan1.4", file.string(), file.filename().string()); // can compile with -O for optimisations
+
+	STARTUPINFOA startInfo{};
+	PROCESS_INFORMATION procInformation{};
+	
+	BOOL success = CreateProcessA(compiler.c_str(), args.data(), nullptr, nullptr, FALSE, 0, NULL, "./", &startInfo, &procInformation);
+	if (!success)
+		return;
+
+	CloseHandle(procInformation.hProcess);
+	CloseHandle(procInformation.hThread);
 }
 
 void Renderer::InitVulkan()
@@ -1066,4 +1120,13 @@ RenderPipeline* Renderer::GetRenderPipeline(const std::string_view& name)
 int Renderer::GetLightCount() const
 {
 	return lightBuffer.GetMappedPointer<LightBuffer>()->count;
+}
+
+const std::string& Renderer::GetRenderPipelineName(RenderPipeline* renderPipeline) const
+{
+	for (const auto& [pipeline, name] : dbgPipelineNames)
+		if (renderPipeline == pipeline)
+			return name;
+	__debugbreak();
+	return nullptr;
 }

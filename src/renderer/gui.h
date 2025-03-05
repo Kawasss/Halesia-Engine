@@ -8,6 +8,7 @@ class Transform;
 class RigidBody;
 class Profiler;
 class Camera;
+class Renderer;
 struct Mesh;
 
 class GUI

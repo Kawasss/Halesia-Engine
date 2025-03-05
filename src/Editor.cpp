@@ -59,10 +59,12 @@ void Editor::Start()
 {
 	EngineCore& core = HalesiaEngine::GetInstance()->GetEngineCore();
 
+	renderer = core.renderer;
+
 	camera = AddCustomCamera<EditorCamera>();
 
-	core.renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
-	core.renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
+	renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
+	renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
 
 	src = GetFile("Scene file", "*.hsf;*.fbx;*.glb");
 	if (src == "")
@@ -105,9 +107,6 @@ void Editor::UpdateGUI(float delta)
 
 void Editor::ShowGizmo()
 {
-	HalesiaEngine* engine = HalesiaEngine::GetInstance();
-	EngineCore& core = engine->GetEngineCore();
-
 	ImGuizmo::OPERATION mode = ImGuizmo::TRANSLATE;
 	switch (gizmoMode)
 	{
@@ -123,8 +122,8 @@ void Editor::ShowGizmo()
 	glm::mat4 view = glm::lookAtRH(camera->position, camera->position + camera->front, camera->up);
 	glm::mat4 proj = glm::perspectiveRH(camera->fov, (float)width / (float)height, 0.001f, 10000.0f);
 
-	glm::vec2 mod = core.renderer->GetViewportModifier();
-	glm::vec2 off = core.renderer->GetViewportOffset();
+	glm::vec2 mod = renderer->GetViewportModifier();
+	glm::vec2 off = renderer->GetViewportOffset();
 
 	glm::mat4 model = obj->transform.GetModelMatrix();
 
@@ -203,7 +202,14 @@ void Editor::ShowDefaultRightClick()
 void Editor::ShowUI()
 {
 	ShowLowerBar();
+
+	StartRightBar();
+
+	ShowRenderPipelines();
 	ShowSelectedObject();
+
+	EndRightBar();
+
 	ShowSideBars();
 	ShowMenuBar();
 	ShowGizmo();
@@ -399,7 +405,7 @@ void Editor::ShowMenuBar()
 	ImGui::PopStyleColor(3);
 }
 
-void Editor::ShowSelectedObject()
+void Editor::StartRightBar()
 {
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.03f, 0.03f, 0.03f, 1));
@@ -423,6 +429,20 @@ void Editor::ShowSelectedObject()
 
 	ImGui::Begin("components", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 
+}
+
+void Editor::EndRightBar()
+{
+	ImGui::PopStyleVar(3);
+	ImGui::PopStyleColor(3);
+	ImGui::End();
+}
+
+void Editor::ShowSelectedObject()
+{
+	if (!ImGui::CollapsingHeader("Selected object"))
+		return;
+
 	GUI::ShowObjectSelectMenu(UIObjects, selectedObj, "##ObjectComponents");
 
 	ImGui::BeginChild(2);
@@ -431,12 +451,6 @@ void Editor::ShowSelectedObject()
 	{
 		ShowObjectComponents();
 	}
-
-	ImGui::PopStyleVar(3);
-	ImGui::PopStyleColor(3);
-
-	ImGui::EndChild();
-	ImGui::End();
 }
 
 void Editor::ShowObjectComponents()
@@ -473,6 +487,23 @@ void Editor::ShowLowerBar()
 
 	ImGui::EndChild();
 	ImGui::End();
+}
+
+void Editor::ShowRenderPipelines()
+{
+	if (!ImGui::CollapsingHeader("Render pipelines"))
+		return;
+
+	const std::vector<RenderPipeline*> pipelines = renderer->GetAllRenderPipelines();
+	for (RenderPipeline* pipeline : pipelines)
+	{
+		std::string msg = renderer->GetRenderPipelineName(pipeline) + ": ";
+
+		ImGui::Text(msg.c_str());
+		ImGui::SameLine();
+		if (ImGui::Button("Reload"))
+			pipeline->ReloadShaders(renderer->GetPipelinePayload(renderer->GetActiveCommandBuffer(), camera));
+	}
 }
 
 void Editor::QueueMeshChange(Object* object)

@@ -5,6 +5,7 @@
 #include "Camera.h"
 
 class Window;
+class Renderer;
 
 class EditorCamera : public Camera
 {
@@ -46,6 +47,10 @@ private:
 	void ShowSelectedObject();
 	void ShowDefaultRightClick();
 	void ShowMaterialWindow();
+	void ShowRenderPipelines();
+
+	void StartRightBar();
+	void EndRightBar();
 
 	void ShowGizmo();
 
@@ -70,6 +75,8 @@ private:
 	MeshChangeData queuedMeshChange;
 	GizmoMode gizmoMode;
 	Object* selectedObj;
+
+	Renderer* renderer;
 
 	int width = 0, height = 0;
 };

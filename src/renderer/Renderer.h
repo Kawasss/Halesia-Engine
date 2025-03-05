@@ -30,6 +30,8 @@ class RenderPipeline;
 struct Mesh;
 struct Light;
 
+namespace std { namespace filesystem { class path; } }
+
 using HANDLE = void*;
 using Handle = unsigned long long;
 using RendererFlags = uint32_t;
@@ -94,6 +96,9 @@ public:
 	
 	const FIF::Buffer& GetLightBuffer() const { return lightBuffer; }
 
+	const std::vector<RenderPipeline*>& GetAllRenderPipelines() const { return renderPipelines; }
+	const std::string& GetRenderPipelineName(RenderPipeline* renderPipeline) const;
+
 	int GetLightCount() const;
 
 	void SetInternalResolutionScale(float scale);
@@ -107,6 +112,8 @@ public:
 
 	static bool CompletedFIFCyle() { return FIF::frameIndex == 0; }
 
+	RenderPipeline::Payload GetPipelinePayload(CommandBuffer commandBuffer, Camera* camera);
+
 	template<typename Type> 
 	void AddRenderPipeline(const char* name = "unnamed pipeline")
 	{
@@ -117,6 +124,9 @@ public:
 	}
 
 	RenderPipeline* GetRenderPipeline(const std::string_view& name);
+
+	static void CompileShaderToSpirv(const std::filesystem::path& file);
+	static void ForceCompileShaderToSpirv(const std::filesystem::path& file);
 
 	Swapchain* swapchain; // better to keep it private
 	AnimationManager* animationManager;
@@ -241,6 +251,4 @@ private:
 	uint32_t GetNextSwapchainImage(uint32_t frameIndex);
 	void PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex);
 	void SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
-
-	RenderPipeline::Payload GetPipelinePayload(CommandBuffer commandBuffer, Camera* camera);
 };
