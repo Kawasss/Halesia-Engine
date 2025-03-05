@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <filesystem>
 #include <vulkan/vulkan.h>
 
 #include "PhysicalDevice.h"
@@ -29,8 +30,6 @@ class GraphicsPipeline;
 class RenderPipeline;
 struct Mesh;
 struct Light;
-
-namespace std { namespace filesystem { class path; } }
 
 using HANDLE = void*;
 using Handle = unsigned long long;

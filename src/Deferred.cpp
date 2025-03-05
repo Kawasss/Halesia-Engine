@@ -1,9 +1,8 @@
-#include <random>
-
 #include "renderer/Deferred.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/Renderer.h"
 #include "renderer/DescriptorWriter.h"
+#include "renderer/RayTracingPipeline.h"
 #include "renderer/accelerationStructures.h"
 #include "renderer/PipelineCreator.h"
 #include "renderer/GarbageManager.h"
@@ -13,16 +12,11 @@
 #include "core/Object.h"
 #include "core/Camera.h"
 
-std::default_random_engine randomEngine;
-std::uniform_real_distribution<float> distribution(0.0f, 1.0f);
-
 struct DeferredPipeline::PushConstant
 {
 	glm::mat4 model;
 	int materialID;
 };
-
-#include "renderer/RayTracingPipeline.h"
 
 constexpr VkFormat GBUFFER_POSITION_FORMAT = VK_FORMAT_R32G32B32A32_SFLOAT; // 32 bit format takes a lot of performance compared to an 8 bit format
 constexpr VkFormat GBUFFER_ALBEDO_FORMAT   = VK_FORMAT_R8G8B8A8_UNORM;
@@ -82,6 +76,16 @@ void DeferredPipeline::ReloadShaders(const Payload& payload)
 	firstPipeline.reset();
 	secondPipeline.reset();
 	rtgiPipeline.reset();
+
+	Renderer::CompileShaderToSpirv("shaders/uncompiled/deferredFirst.vert");
+	Renderer::CompileShaderToSpirv("shaders/uncompiled/deferredFirst.frag");
+	Renderer::CompileShaderToSpirv("shaders/uncompiled/deferredSecond.vert");
+	Renderer::CompileShaderToSpirv("shaders/uncompiled/deferredSecond.frag");
+	Renderer::CompileShaderToSpirv("shaders/uncompiled/deferredSecondRT.frag");
+
+	Renderer::CompileShaderToSpirv("shaders/uncompiled/rtgi.rgen");
+	Renderer::CompileShaderToSpirv("shaders/uncompiled/rtgi.rchit");
+	Renderer::CompileShaderToSpirv("shaders/uncompiled/rtgi.rmiss");
 
 	CreateAndPreparePipelines(payload);
 }
