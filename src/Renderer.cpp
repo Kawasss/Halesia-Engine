@@ -285,7 +285,7 @@ void Renderer::ForceCompileShaderToSpirv(const std::filesystem::path& file)
 
 void Renderer::InitVulkan()
 {
-	#ifdef _DEBUG // recompiles all the shaders with their .bat files, this simply makes it less of a hassle to change the shaders
+	#ifdef _DEBUG
 	RecompileShaders();
 	#endif
 
@@ -531,7 +531,7 @@ void Renderer::CreateCommandBuffer()
 void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
 {
 	pipeline->renderPass = renderPass;
-	pipeline->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
+	pipeline->Start(GetPipelinePayload(GetActiveCommandBuffer(), nullptr));
 	renderPipelines.push_back(pipeline);
 }
 
@@ -614,7 +614,7 @@ void Renderer::CheckForBufferResizes()
 	if (!g_vertexBuffer.HasResized() && !g_defaultVertexBuffer.HasResized() && !g_indexBuffer.HasResized())
 		return;
 
-	RenderPipeline::Payload payload = GetPipelinePayload(VK_NULL_HANDLE, nullptr); // maybe move this inside the main render recording to allow pipelines to use that command buffer ??
+	RenderPipeline::Payload payload = GetPipelinePayload(GetActiveCommandBuffer(), nullptr); // maybe move this inside the main render recording to allow pipelines to use that command buffer ??
 
 	for (RenderPipeline* pipeline : renderPipelines)
 		pipeline->OnRenderingBufferResize(payload);
@@ -696,12 +696,12 @@ void Renderer::OnResize()
 		return;
 	}
 
-	viewportWidth  = testWindow->GetWidth()  * viewportTransModifiers.x;
-	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y;
+	viewportWidth  = testWindow->GetWidth()  * viewportTransModifiers.x * internalScale;
+	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y * internalScale;
 
 	swapchain->Recreate(GUIRenderPass, false);
 
-	RenderPipeline::Payload payload = GetPipelinePayload(VK_NULL_HANDLE, nullptr);
+	RenderPipeline::Payload payload = GetPipelinePayload(GetActiveCommandBuffer(), nullptr);
 	for (RenderPipeline* renderPipeline : renderPipelines)
 		renderPipeline->Resize(payload);
 

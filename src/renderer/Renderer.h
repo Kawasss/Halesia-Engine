@@ -88,7 +88,7 @@ public:
 
 	Framebuffer& GetFramebuffer() { return framebuffer; }
 
-	uint32_t GetInternalWidth()  const  { return viewportWidth;  }
+	uint32_t GetInternalWidth()  const { return viewportWidth;  }
 	uint32_t GetInternalHeight() const { return viewportHeight; }
 
 	CommandBuffer GetActiveCommandBuffer() const { return activeCmdBuffer; }
