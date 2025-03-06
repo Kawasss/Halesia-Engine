@@ -87,7 +87,12 @@ void DeferredPipeline::ReloadShaders(const Payload& payload)
 	Renderer::CompileShaderToSpirv("shaders/uncompiled/rtgi.rchit");
 	Renderer::CompileShaderToSpirv("shaders/uncompiled/rtgi.rmiss");
 
+	Sleep(500); // let the compiler finish its job (really bad way)
+
 	CreateAndPreparePipelines(payload);
+
+	if (skybox != nullptr)
+		rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void DeferredPipeline::CreateAndBindRTGI(uint32_t width, uint32_t height)

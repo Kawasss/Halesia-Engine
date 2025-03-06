@@ -217,7 +217,6 @@ private:
 	void CreateSwapchain();
 	void CreateImGUI();
 	void CreateDefaultObjects();
-	void CreateRayTracerCond();
 
 	void InitializeViewport();
 

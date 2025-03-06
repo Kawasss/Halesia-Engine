@@ -262,7 +262,7 @@ void Renderer::ForceCompileShaderToSpirv(const std::filesystem::path& file)
 
 	free(rawPath);
 
-	std::string compiler = sdkPath + std::string("\\Bin\\glslc.exe");
+	std::string compiler = sdkPath + "\\Bin\\glslc.exe";
 
 	if (!fs::exists(compiler))
 		return; // vulkan SDK (and glslc) is missing
@@ -294,8 +294,6 @@ void Renderer::InitVulkan()
 	
 	CreateDefaultObjects();
 
-	CreateRayTracerCond();
-
 	CreateSwapchain();
 
 	CreateImGUI();
@@ -320,17 +318,6 @@ void Renderer::InitializeViewport()
 	viewportHeight = testWindow->GetHeight() * internalScale;
 
 	UpdateScreenShaderTexture(0);
-}
-
-void Renderer::CreateRayTracerCond() // only create if the GPU supports it
-{
-	shouldRasterize = !canRayTrace;
-	if (shouldRasterize)
-		return;
-
-	//rayTracer = new RayTracingPipeline;
-	//rayTracer->renderPass = renderPass;
-	//rayTracer->Start(GetPipelinePayload(VK_NULL_HANDLE, nullptr));
 }
 
 void Renderer::CreateSwapchain()
@@ -360,12 +347,12 @@ void Renderer::CreateGlobalBuffers()
 	if (initGlobalBuffers)
 		return;
 
-	constexpr VkBufferUsageFlags rayTracingFlags = VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR;
+	const VkBufferUsageFlags rayTracingFlags = canRayTrace ?  VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR : 0;
 
 	g_defaultVertexBuffer.Reserve(1024, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 
-	g_vertexBuffer.Reserve(1024, (canRayTrace ? rayTracingFlags : 0) | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-	g_indexBuffer.Reserve(1024,  (canRayTrace ? rayTracingFlags : 0) | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	g_vertexBuffer.Reserve(1024, rayTracingFlags | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	g_indexBuffer.Reserve(1024,  rayTracingFlags | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
 	initGlobalBuffers = true;
 }
@@ -449,11 +436,7 @@ uint32_t Renderer::DetectExternalTools()
 	::vkGetPhysicalDeviceToolProperties(physicalDevice.Device(), &numTools, properties.data());
 	for (int i = 0; i < numTools; i++)
 	{
-		Console::WriteLine(
-			"\n  name: " + (std::string)properties[i].name +
-			"\n  version: " + properties[i].version +
-			"\n  purposes: " + ::string_VkToolPurposeFlags(properties[i].purposes) +
-			"\n  description: " + properties[i].description);
+		Console::WriteLine("  name: {}\n  version: {}\n  purposes: {}\n  description: {}", properties[i].name, properties[i].version, ::string_VkToolPurposeFlags(properties[i].purposes), properties[i].description);
 	}
 	return numTools;
 }
@@ -558,20 +541,10 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 	queryPool.Reset(commandBuffer);
 
 	//animationManager->ApplyAnimations(commandBuffer); // not good
-	
-	//for (Object* obj : objects)
-	//	obj->mesh.BLAS->RebuildGeometry(commandBuffer, obj->mesh);
 
 	camera->SetAspectRatio((float)viewportWidth / (float)viewportHeight);
 
-	//if (canRayTrace && !shouldRasterize)
-	//{
-	//	RunRayTracer(commandBuffer, camera, objects);
-	//}
-	//else
-	//{
-		RunRenderPipelines(commandBuffer, camera, objects);
-	//}
+	RunRenderPipelines(commandBuffer, camera, objects);
 
 	Vulkan::StartDebugLabel(commandBuffer.Get(), "UI");
 
@@ -655,9 +628,6 @@ void Renderer::CheckForBufferResizes()
 	for (RenderPipeline* pipeline : renderPipelines)
 		pipeline->OnRenderingBufferResize(payload);
 
-	//if (!shouldRasterize)
-	//	rayTracer->OnRenderingBufferResize(payload); // ray tracing is still handled seperately from the other pipelines !!
-
 	writer->Write(); // force a write, because rendering will immediately start over this check
 }
 
@@ -739,8 +709,6 @@ void Renderer::OnResize()
 	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y;
 
 	swapchain->Recreate(GUIRenderPass, false);
-	//if (canRayTrace)
-	//	rayTracer->RecreateImage(viewportWidth, viewportHeight);
 
 	RenderPipeline::Payload payload = GetPipelinePayload(VK_NULL_HANDLE, nullptr);
 	for (RenderPipeline* renderPipeline : renderPipelines)
@@ -824,12 +792,6 @@ void Renderer::StartRecording()
 
 	Vulkan::DeleteSubmittedObjects();
 	GetQueryResults();
-
-	if (canRayTrace)
-	{
-		//selectedHandle = *rayTracer->handleBufferMemPointer;
-		//*rayTracer->handleBufferMemPointer = 0;
-	}
 
 	imageIndex = GetNextSwapchainImage(currentFrame);
 
@@ -1128,5 +1090,5 @@ const std::string& Renderer::GetRenderPipelineName(RenderPipeline* renderPipelin
 		if (renderPipeline == pipeline)
 			return name;
 	__debugbreak();
-	return nullptr;
+	return "";
 }
