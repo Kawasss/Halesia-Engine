@@ -124,7 +124,7 @@ public:
 
 	RenderPipeline* GetRenderPipeline(const std::string_view& name);
 
-	static void CompileShaderToSpirv(const std::filesystem::path& file);
+	static bool CompileShaderToSpirv(const std::filesystem::path& file); //!< returns true if the shader is compiled, false if the shader didnt need to be compiled
 	static void ForceCompileShaderToSpirv(const std::filesystem::path& file);
 
 	Swapchain* swapchain; // better to keep it private
@@ -233,7 +233,6 @@ private:
 
 	void ProcessRenderPipeline(RenderPipeline* pipeline);
 	void RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects);
-	void RunRayTracer(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects);
 
 	uint32_t DetectExternalTools();
 

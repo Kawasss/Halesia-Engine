@@ -222,12 +222,12 @@ void Renderer::RecompileShaders()
 	}
 }
 
-void Renderer::CompileShaderToSpirv(const std::filesystem::path& file)
+bool Renderer::CompileShaderToSpirv(const std::filesystem::path& file)
 {
 	if (!fs::exists(file))
 	{
 		std::cout << "Could not compile " << file << '\n';
-		return;
+		return false;
 	}
 		
 	fs::path spirv = "shaders/spirv/" + file.filename().string() + ".spv";
@@ -240,11 +240,12 @@ void Renderer::CompileShaderToSpirv(const std::filesystem::path& file)
 		if (sourceWriteTime < spirvWriteTime) // the source is older than the compiled version, so we do not recompile it
 		{
 			std::cout << "skipped compilation of " << file << '\n';
-			return;
+			return false;
 		}
 	}
 
 	ForceCompileShaderToSpirv(file);
+	return true;
 }
 
 void Renderer::ForceCompileShaderToSpirv(const std::filesystem::path& file)
@@ -253,14 +254,14 @@ void Renderer::ForceCompileShaderToSpirv(const std::filesystem::path& file)
 
 	char* rawPath = nullptr;
 	size_t size = 0;
-	errno_t err = _dupenv_s(&rawPath, &size, "VK_SDK_PATH");
+	errno_t err = ::_dupenv_s(&rawPath, &size, "VK_SDK_PATH");
 
 	if (rawPath == nullptr)
 		return;
 
 	std::string sdkPath = rawPath;
 
-	free(rawPath);
+	::free(rawPath);
 
 	std::string compiler = sdkPath + "\\Bin\\glslc.exe";
 
@@ -272,12 +273,14 @@ void Renderer::ForceCompileShaderToSpirv(const std::filesystem::path& file)
 	STARTUPINFOA startInfo{};
 	PROCESS_INFORMATION procInformation{};
 	
-	BOOL success = CreateProcessA(compiler.c_str(), args.data(), nullptr, nullptr, FALSE, 0, NULL, "./", &startInfo, &procInformation);
+	BOOL success = ::CreateProcessA(compiler.c_str(), args.data(), nullptr, nullptr, FALSE, 0, NULL, "./", &startInfo, &procInformation);
 	if (!success)
 		return;
 
-	CloseHandle(procInformation.hProcess);
-	CloseHandle(procInformation.hThread);
+	::WaitForSingleObject(procInformation.hProcess, 1000); // wait for one second max for the compiler to finish compiling
+
+	::CloseHandle(procInformation.hProcess);
+	::CloseHandle(procInformation.hThread);
 }
 
 void Renderer::InitVulkan()
@@ -583,18 +586,6 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 	queryPool.EndTimestamp(commandBuffer, "final pass");
 
 	commandBuffer.EndDebugUtilsLabelEXT();
-}
-
-void Renderer::RunRayTracer(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects)
-{
-	Vulkan::StartDebugLabel(commandBuffer.Get(), "ray tracing");
-
-	queryPool.BeginTimestamp(commandBuffer, "ray-tracing");
-
-	rayTracer->Execute(GetPipelinePayload(commandBuffer, camera), objects);
-	commandBuffer.EndDebugUtilsLabelEXT();
-
-	queryPool.EndTimestamp(commandBuffer, "ray-tracing");	
 }
 
 void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects)

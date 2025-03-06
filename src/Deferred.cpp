@@ -87,8 +87,6 @@ void DeferredPipeline::ReloadShaders(const Payload& payload)
 	Renderer::CompileShaderToSpirv("shaders/uncompiled/rtgi.rchit");
 	Renderer::CompileShaderToSpirv("shaders/uncompiled/rtgi.rmiss");
 
-	Sleep(500); // let the compiler finish its job (really bad way)
-
 	CreateAndPreparePipelines(payload);
 
 	if (skybox != nullptr)
