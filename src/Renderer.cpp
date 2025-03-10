@@ -43,7 +43,7 @@ namespace fs = std::filesystem;
 struct Renderer::LightBuffer
 {
 	int count;
-	Light lights[1024];
+	LightGPU lights[1024];
 };
 
 StorageBuffer<Vertex>   Renderer::g_vertexBuffer;
@@ -936,7 +936,19 @@ void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkComma
 void Renderer::AddLight(const Light& light)
 {
 	LightBuffer* dst = lightBuffer.GetMappedPointer<LightBuffer>();
-	dst->lights[dst->count++] = light;
+	dst->lights[dst->count++] = LightGPU::CreateFromLight(light);
+}
+
+void Renderer::RemoveLight(int index)
+{
+	LightBuffer* buffer = lightBuffer.GetMappedPointer<LightBuffer>();
+	int start = index;
+
+	for (int i = start; i < buffer->count - 1; i++)
+	{
+		buffer->lights[i] = std::move(buffer->lights[i + 1]);
+	}
+	buffer->count--;
 }
 
 void Renderer::CheckForVRAMOverflow()

@@ -66,6 +66,7 @@ public:
 	void RecompileShaders();
 	void RenderIntro(Intro* intro);
 	void AddLight(const Light& light);
+	void RemoveLight(int index);
 
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);

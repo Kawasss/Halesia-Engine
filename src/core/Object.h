@@ -46,9 +46,15 @@ public:
 	static Object* Create(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
 
 	Object() = default;
-	virtual		~Object() {}
+
+	// order of the destruction:
+	// 1. call Destroy()
+	// 2. destroy children
+	// 3. destroy any members (i.e. mesh and rigidbody)
+	~Object();
+
 	virtual void Start()  {}
-	virtual void Destroy(bool del = true);
+	virtual void Destroy() {}
 	virtual void Update(float delta) {}
 
 	virtual void OnCollisionEnter(Object* object) {}

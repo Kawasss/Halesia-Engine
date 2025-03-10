@@ -66,6 +66,7 @@ void RigidBody::Destroy()
 		return;
 	physx::PxActor* actor = rigidDynamic == nullptr ? rigidStatic->is<physx::PxActor>() : rigidDynamic->is<physx::PxActor>();
 	Physics::RemoveActor(*actor);
+	type == Type::None;
 }
 
 glm::vec3 RigidBody::GetPosition()
