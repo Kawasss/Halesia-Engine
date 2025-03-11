@@ -102,8 +102,14 @@ void Scene::TransferObjectOwnership(Object* newOwner, Object* child)
 	newOwner->AddChild(child);
 }
 
-void Scene::Destroy()
+void Scene::DestroyAllObjects()
 {
 	for (Object* object : allObjects)
-		object->Destroy();
+		delete object;
+}
+
+Scene::~Scene()
+{
+	Destroy();
+	DestroyAllObjects();
 }

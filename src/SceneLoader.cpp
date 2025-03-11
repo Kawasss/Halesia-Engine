@@ -17,7 +17,7 @@ struct CompressionNode
 };
 #pragma pack(pop)
 
-SceneLoader::SceneLoader(std::string sceneLocation) : reader(BinaryReader(sceneLocation)), location(sceneLocation) {}
+SceneLoader::SceneLoader(std::string sceneLocation) : reader(sceneLocation), location(sceneLocation) {}
 
 void SceneLoader::LoadScene() 
 {
@@ -316,7 +316,7 @@ void SceneLoader::LoadAssimpFile()
 		GetTransform(node->mTransformation, position, filler, filler2);
 
 		Light light{};
-		light.pos = glm::vec4(position, 1.0f);
+		light.pos = glm::vec3(position);
 		light.type = Light::Type::Point;
 		light.color = glm::vec3(1);// assimp cant find the lights color !! glm::vec3(assimpLight->mColorDiffuse.r, assimpLight->mColorDiffuse.g, assimpLight->mColorDiffuse.b);
 		

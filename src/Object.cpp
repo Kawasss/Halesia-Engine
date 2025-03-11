@@ -146,16 +146,13 @@ bool Object::HasFinishedLoading()
 	return finishedLoading || !generation.valid();
 }
 
-void Object::Destroy(bool del)
+Object::~Object()
 {
-	mesh.Destroy();
-	for (Object* obj : children)
-	{
-		obj->Destroy(false);
-		delete obj;
-	}
+	Destroy();
 
+	for (Object* obj : children)
+		delete obj;
+
+	mesh.Destroy();
 	rigid.Destroy();
-	rigid.type = RigidBody::Type::None;
-	if (del) delete this;
 }

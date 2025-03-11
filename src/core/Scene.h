@@ -18,8 +18,6 @@ public:
 	template<typename T> 
 	Object* AddObject(const ObjectCreationData& creationData);
 	Object* AddObject(const ObjectCreationData& creationData);
-	
-	Object* AddObjectAsChild(Object* parent, const ObjectCreationData& creationData);
 
 	template<typename T> 
 	Object* DuplicateObject(Object* objPtr, std::string name);
@@ -34,6 +32,8 @@ public:
 	void UpdateScripts(float delta);
 	void CollectGarbage();
 
+	void DestroyAllObjects();
+
 	/// <summary>
 	/// Transfers the ownership of the child from the scene to the object. The scene can no longer access the child after the transfer,
 	/// the object will become the sole owner. The scene will no longer be responsible for deletion.
@@ -46,9 +46,13 @@ public:
 
 	virtual void MainThreadUpdate(float delta) {}; // this is only called from the main thread and after the renderer completes a frames in flight cycle
 
-	~Scene() { Destroy(); }
-	void Destroy();
+	virtual void Destroy() {}
 
+	// order of destruction:
+	// 1. call Destroy()
+	// 2. destroy all objects
+	~Scene();
+	
 	std::vector<Object*> allObjects; // this vector owns the objects
 
 private:

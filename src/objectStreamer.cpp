@@ -65,6 +65,6 @@ void ObjectStreamer::Poll()
 void ObjectStreamer::OnChange()
 {
 	ObjectCreationData data = GenericLoader::LoadObjectFile(path);
-	obj->Destroy(false);
+	obj->Destroy();
 	obj->Initialize(data);
 }
