@@ -82,7 +82,7 @@ void Editor::Update(float delta)
 		addObject = false;
 	}
 
-	if (allObjects.size() == 0)
+	if (allObjects.empty())
 	{
 		UIObjects.clear();
 		return;
@@ -201,16 +201,20 @@ void Editor::ShowDefaultRightClick()
 
 void Editor::ShowUI()
 {
-	ShowLowerBar();
+	if (showUI)
+	{
+		ShowLowerBar();
 
-	StartRightBar();
+		StartRightBar();
 
-	ShowRenderPipelines();
-	ShowSelectedObject();
+		ShowRenderPipelines();
+		ShowSelectedObject();
 
-	EndRightBar();
+		EndRightBar();
 
-	ShowSideBars();
+		ShowSideBars();
+	}
+
 	ShowMenuBar();
 	ShowGizmo();
 	ShowDefaultRightClick();
@@ -396,6 +400,24 @@ void Editor::ShowMenuBar()
 	if (ImGui::BeginMenu("Add"))
 	{
 		if (ImGui::MenuItem("Object")) addObject = true;
+		ImGui::EndMenu();
+	}
+	if (ImGui::BeginMenu("misc."))
+	{
+		if (ImGui::MenuItem("enable/disable UI"))
+		{
+			showUI = !showUI;
+			if (showUI)
+			{
+				renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
+				renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
+			}
+			else
+			{
+				renderer->SetViewportOffsets({ 0.0f, 0.0f });
+				renderer->SetViewportModifiers({ 1.0f, 1.0f });
+			}
+		}
 		ImGui::EndMenu();
 	}
 

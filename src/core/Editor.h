@@ -67,6 +67,7 @@ private:
 	bool addObject = false;
 	bool loadFile = false;
 	bool save = false;
+	bool showUI = true;
 
 	std::string src;
 
