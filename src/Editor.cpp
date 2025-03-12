@@ -219,8 +219,6 @@ void Editor::ShowUI()
 
 void Editor::ShowSideBars()
 {
-	int selectedIndex = -1;
-
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.03f, 0.03f, 0.03f, 1));
 	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
@@ -238,50 +236,50 @@ void Editor::ShowSideBars()
 
 	for (int i = 0; i < UIObjects.size(); i++)
 	{
-		if (ImGui::Selectable(UIObjects[i]->name.c_str()))
-		{
-			selectedIndex = i;
-			selectedObj = UIObjects[i]; 
-		}
-
-		std::string rightClickName = "##right_click_menu_object_" + std::to_string((uint64_t)UIObjects[i]);
-
-		if (ImGui::BeginPopupContextItem(rightClickName.c_str(), ImGuiPopupFlags_MouseButtonRight))
-		{
-			if (ImGui::MenuItem("Duplicate"))
-			{
-				DuplicateObject(UIObjects[i], "Duplicated object");
-			}
-			if (ImGui::MenuItem("Delete"))
-			{
-				UIFree(UIObjects[i]);
-				ImGui::EndPopup();
-				continue;
-			}
-			ImGui::EndPopup();
-		}
-
-		if (!UIObjects[i]->HasChildren())
-			continue;
-
-		if (!ImGui::TreeNode(UIObjects[i]->name.c_str()))
-			continue;
-
-		selectedIndex = i;
-		selectedObj = UIObjects[selectedIndex];
-
-		const std::vector<Object*>& children = UIObjects[i]->GetChildren();
-		for (int j = 0; j < children.size(); j++)
-		{
-			ImGui::Text(children[j]->name.c_str());
-		}
-		ImGui::TreePop();
+		ShowObjectWithChildren(UIObjects[i]);
 	}
 	ImGui::EndChild();
 	ImGui::End();
 
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
+}
+
+void Editor::ShowObjectWithChildren(Object* object)
+{
+	std::string rightClickName = "##right_click_menu_object_" + std::to_string((uint64_t)object);
+
+	if (ImGui::BeginPopupContextItem(rightClickName.c_str(), ImGuiPopupFlags_MouseButtonRight))
+	{
+		if (ImGui::MenuItem("Duplicate"))
+		{
+			DuplicateObject(object, "Duplicated object");
+		}
+		if (ImGui::MenuItem("Delete"))
+		{
+			UIFree(object);
+			ImGui::EndPopup();
+			return;
+		}
+		ImGui::EndPopup();
+	}
+
+	std::string nodeName = "##n_" + object->name;
+	bool success = ImGui::TreeNode(nodeName.c_str());
+
+	ImGui::SameLine();
+	if (ImGui::Selectable(object->name.c_str()))
+		selectedObj = object;
+
+	if (!success)
+		return;
+	
+	const std::vector<Object*>& children = object->GetChildren();
+	for (Object* child : children)
+	{
+		ShowObjectWithChildren(child);
+	}
+	ImGui::TreePop();
 }
 
 void Editor::ShowMaterialWindow()
@@ -451,6 +449,8 @@ void Editor::ShowSelectedObject()
 	{
 		ShowObjectComponents();
 	}
+
+	ImGui::EndChild();
 }
 
 void Editor::ShowObjectComponents()

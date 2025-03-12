@@ -237,12 +237,13 @@ MeshCreationData SceneLoader::RetrieveMeshData(aiMesh* pMesh)
 	ret.extents = max - ret.center;
 
 	ret.name = pMesh->mName.C_Str();
-	if (ret.name == "") ret.name = "NO_NAME";
+	if (ret.name.empty())
+		ret.name = "NO_NAME" + std::to_string(unnamedObjectCount++);
 
 	return ret;
 }
 
-inline MeshCreationData GetMeshFromAssimp(aiMesh* pMesh)
+static MeshCreationData GetMeshFromAssimp(aiMesh* pMesh)
 {
 	MeshCreationData ret{};
 
@@ -335,6 +336,8 @@ void SceneLoader::LoadAssimpFile()
 ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans)
 {
 	ObjectCreationData creationData;
+	creationData.name = node->mName.length == 0 ? "NO_NAME" + std::to_string(unnamedObjectCount) : node->mName.C_Str();
+
 	GetTransform(node->mTransformation, creationData.position, creationData.rotation, creationData.scale);
 	
 	for (int i = 0; i < node->mNumMeshes; i++)

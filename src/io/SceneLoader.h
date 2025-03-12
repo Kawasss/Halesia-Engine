@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 
 #include "../glm.h"
 
@@ -54,6 +55,8 @@ private:
 	ObjectCreationData RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans);
 
 	std::vector<ObjectCreationData>::iterator currentObject{};
+
+	int unnamedObjectCount = 0; // used for creating uniques names for unnamed objects
 };
 
 namespace GenericLoader

@@ -54,6 +54,8 @@ private:
 
 	void ShowGizmo();
 
+	void ShowObjectWithChildren(Object* object);
+
 	void DestroyCurrentScene();
 
 	static std::string GetFile(const char* desc, const char* type);
