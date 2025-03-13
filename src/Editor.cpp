@@ -251,7 +251,7 @@ void Editor::ShowSideBars()
 
 void Editor::ShowObjectWithChildren(Object* object)
 {
-	std::string rightClickName = "##right_click_menu_object_" + std::to_string((uint64_t)object);
+	std::string rightClickName = "##r_" + std::to_string((uint64_t)object);
 
 	if (ImGui::BeginPopupContextItem(rightClickName.c_str(), ImGuiPopupFlags_MouseButtonRight))
 	{
@@ -269,9 +269,13 @@ void Editor::ShowObjectWithChildren(Object* object)
 	}
 
 	std::string nodeName = "##n_" + object->name;
-	bool success = ImGui::TreeNode(nodeName.c_str());
+	bool success = false; // default state is that the object has no children
+	if (!object->GetChildren().empty())
+	{
+		success = ImGui::TreeNode(nodeName.c_str());
+		ImGui::SameLine();
+	}
 
-	ImGui::SameLine();
 	if (ImGui::Selectable(object->name.c_str()))
 		selectedObj = object;
 
@@ -462,8 +466,6 @@ void Editor::ShowSelectedObject()
 {
 	if (!ImGui::CollapsingHeader("Selected object"))
 		return;
-
-	GUI::ShowObjectSelectMenu(UIObjects, selectedObj, "##ObjectComponents");
 
 	ImGui::BeginChild(2);
 

@@ -375,26 +375,6 @@ void GUI::ShowDropdownMenu(std::string* items, size_t size, std::string& current
 	ImGui::EndCombo();
 }
 
-void GUI::ShowObjectSelectMenu(const std::vector<Object*>& objects, Object*& curr, const char* label)
-{
-	bool indexIsValid = curr != nullptr;
-	const char* name = indexIsValid ? curr->name.c_str() : "None";
-
-	if (!ImGui::BeginCombo(label, name))
-		return;
-
-	for (int i = 0; i < objects.size(); i++)
-	{
-		bool isSelected = curr == objects[i];
-		if (ImGui::Selectable(objects[i]->name.c_str(), &isSelected))
-		{
-			ImGui::SetItemDefaultFocus();
-			curr = objects[i];
-		}
-	}
-	ImGui::EndCombo();
-}
-
 void GUI::ShowDevConsole()
 {
 	if (!Console::isOpen)
