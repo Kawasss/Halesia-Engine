@@ -303,6 +303,9 @@
     <ClCompile Include="src\VulkanAPIError.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\System.cpp">
+      <Filter>Source Files\system</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -595,6 +598,9 @@
     </ClInclude>
     <ClInclude Include="src\renderer\VulkanAPIError.h">
       <Filter>Header Files\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\system\System.h">
+      <Filter>Header Files\system</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

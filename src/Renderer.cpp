@@ -21,6 +21,7 @@
 #include "renderer/Light.h"
 
 #include "system/Window.h"
+#include "system/System.h"
 
 #include "core/Console.h"
 #include "core/Object.h"
@@ -252,18 +253,7 @@ void Renderer::ForceCompileShaderToSpirv(const std::filesystem::path& file)
 {
 	std::cout << "compiling " << file << "...\n";
 
-	char* rawPath = nullptr;
-	size_t size = 0;
-	errno_t err = ::_dupenv_s(&rawPath, &size, "VK_SDK_PATH");
-
-	if (rawPath == nullptr)
-		return;
-
-	std::string sdkPath = rawPath;
-
-	::free(rawPath);
-
-	std::string compiler = sdkPath + "\\Bin\\glslc.exe";
+	std::string compiler = sys::GetEnvVariable("VK_SDK_PATH") + "\\Bin\\glslc.exe";
 
 	if (!fs::exists(compiler))
 		return; // vulkan SDK (and glslc) is missing

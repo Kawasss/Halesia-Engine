@@ -1,0 +1,7 @@
+#pragma once
+#include <string>
+
+namespace sys // 'system' is an already defined symbol :(
+{
+	extern std::string GetEnvVariable(const std::string_view& name);
+}
