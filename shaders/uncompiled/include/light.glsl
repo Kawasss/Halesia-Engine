@@ -3,6 +3,37 @@
 #define LIGHT_TYPE_POINT 1
 #define LIGHT_TYPE_SPOT 2
 
+#define LIGHT_OUT_OF_REACH_TRESHOLD 0.001
+
+#ifdef __cplusplus // my syntax highlighter doesnt recognize this as shader code so add some function definitions for the syntax highlighting
+
+struct vec3
+{
+	float x, y, z;
+	float xyz;
+};
+
+struct vec4
+{
+	float x, y, z, w;
+	float xyz;
+};
+
+struct ivec4
+{
+	int x, y, z, w;
+	float xyz;
+};
+
+vec3 normalize(float);
+float length(float);
+float dot(vec3, float);
+float clamp(float, float, float);
+
+float operator-(float v1, vec3 v2);
+
+#endif // __cplusplus
+
 struct Light
 {
 	vec4 pos; // w is padding
@@ -34,6 +65,12 @@ float GetAttenuation(Light light, vec3 pos)
 		float dist = length(light.pos.xyz - pos);
 		return 1.0 / (dist * dist);
 	}
+}
+
+bool LightIsOutOfReach(Light light, vec3 pos)
+{
+	float attenuation = GetAttenuation(light, pos);
+	return attenuation < LIGHT_OUT_OF_REACH_TRESHOLD;
 }
 
 bool LightIsOutOfRange(Light light, vec3 lightDir)

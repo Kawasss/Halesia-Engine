@@ -106,6 +106,9 @@ void main()
 	{
 		Light light = lights.data[i];
 
+        if (LightIsOutOfReach(light, position))
+            continue;
+
         vec3 L = GetLightDir(light, position);
 
         float dist = distance(position, light.pos.xyz);

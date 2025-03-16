@@ -24,7 +24,7 @@ constexpr VkFormat GBUFFER_NORMAL_FORMAT   = VK_FORMAT_R16G16B16A16_SFLOAT; // 1
 constexpr VkFormat GBUFFER_MRAO_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;      // Metallic, Roughness and Ambient Occlusion
 constexpr VkFormat GBUFFER_RTGI_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;
 
-static constexpr uint32_t RTGI_RESOLUTION_UPSCALE = 1;
+static constexpr uint32_t RTGI_RESOLUTION_UPSCALE = 2;
 
 void DeferredPipeline::Start(const Payload& payload)
 {
@@ -204,7 +204,7 @@ void DeferredPipeline::BindRTGIResources()
 	rtgiPipeline->BindImageToName("normalImage", GetNormalView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	rtgiPipeline->BindImageToName("positionImage", GetPositionView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	secondPipeline->BindImageToName("globalIlluminationImage", rtgiView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	secondPipeline->BindImageToName("globalIlluminationImage", rtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void DeferredPipeline::CreateBuffers()
