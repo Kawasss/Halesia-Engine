@@ -260,17 +260,7 @@ void Renderer::ForceCompileShaderToSpirv(const std::filesystem::path& file)
 
 	std::string args = std::format("-i {} -o shaders/spirv/{}.spv --target-env=vulkan1.4", file.string(), file.filename().string()); // can compile with -O for optimisations
 
-	STARTUPINFOA startInfo{};
-	PROCESS_INFORMATION procInformation{};
-	
-	BOOL success = ::CreateProcessA(compiler.c_str(), args.data(), nullptr, nullptr, FALSE, 0, NULL, "./", &startInfo, &procInformation);
-	if (!success)
-		return;
-
-	::WaitForSingleObject(procInformation.hProcess, 1000); // wait for one second max for the compiler to finish compiling
-
-	::CloseHandle(procInformation.hProcess);
-	::CloseHandle(procInformation.hThread);
+	sys::StartProcess(compiler, args);
 }
 
 void Renderer::InitVulkan()
