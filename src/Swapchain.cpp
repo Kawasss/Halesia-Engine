@@ -6,6 +6,7 @@
 #include "renderer/Vulkan.h"
 #include "renderer/PhysicalDevice.h"
 #include "renderer/VulkanAPIError.h"
+#include "renderer/GarbageManager.h"
 #include "renderer/Surface.h"
 
 Swapchain::Swapchain(Surface surface, Window* window, bool vsync)
@@ -126,14 +127,14 @@ void Swapchain::CopyImageToSwapchain(VkImage image, VkCommandBuffer commandBuffe
 
 void Swapchain::Destroy()
 {
-    vkDestroyImageView(logicalDevice, depthImageView, nullptr);
+    vgm::Delete(depthImageView);
     depthImage.Destroy();
 
     for (const VkFramebuffer& framebuffer : framebuffers)
-        vkDestroyFramebuffer(logicalDevice, framebuffer, nullptr);
+        vgm::Delete(framebuffer);
 
     for (const VkImageView& imageView : imageViews)
-        vkDestroyImageView(logicalDevice, imageView, nullptr);   
+        vgm::Delete(imageView);
 
     vkDestroySwapchainKHR(logicalDevice, vkSwapchain, nullptr);
 }
@@ -158,9 +159,6 @@ void Swapchain::Recreate(VkRenderPass renderPass, bool vsync)
 
     if (width == 0 || height == 0)
         return;
-
-    LockLogicalDevice(logicalDevice);
-    vkDeviceWaitIdle(logicalDevice);
 
     Destroy();
 

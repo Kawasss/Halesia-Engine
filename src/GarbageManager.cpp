@@ -70,6 +70,8 @@ namespace vgm
 		case VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR: DELETE_HANDLE(vkDestroyAccelerationStructureKHR, VkAccelerationStructureKHR);
 
 		case VK_OBJECT_TYPE_COMMAND_POOL: DELETE_HANDLE(vkDestroyCommandPool, VkCommandPool);
+
+		case VK_OBJECT_TYPE_SWAPCHAIN_KHR: DELETE_HANDLE(vkDestroySwapchainKHR, VkSwapchainKHR);
 		}
 	}
 #undef DELETE_HANDLE
