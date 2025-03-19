@@ -1,5 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include <span>
 #include <vector>
 
 #include "CommandBuffer.h"
@@ -13,10 +14,7 @@ public:
 	~Framebuffer();
 
 	void Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes = 1.0f);
-	void Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::vector<VkFormat>& formats, float relativeRes = 1.0f);
-	
-	template<size_t count>
-	void Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::array<VkFormat, count>& formats, float relativeRes = 1.0f);
+	void Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::span<VkFormat>& formats, float relativeRes = 1.0f);
 
 	void Resize(uint32_t width, uint32_t height);
 
@@ -25,7 +23,7 @@ public:
 	VkFramebuffer Get()          const { return framebuffer; }
 	VkRenderPass GetRenderPass() const { return renderPass;  }
 
-	std::vector<vvm::Image>& GetImages()   { return images;     }
+	std::vector<vvm::Image>& GetImages() { return images;     }
 	std::vector<VkImageView>& GetViews() { return imageViews; }
 
 	uint32_t GetWidth()  const { return width;  }
@@ -39,8 +37,6 @@ public:
 	void TransitionFromWriteToRead(CommandBuffer commandBuffer);
 
 private:
-	void Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const VkFormat* pFormats, size_t formatCount, float relativeRes = 1.0f);
-
 	void TransitionFromUndefinedToWrite(CommandBuffer commandBuffer);
 	 
 	void Destroy();
@@ -74,9 +70,3 @@ private:
 
 	VkFramebuffer framebuffer;
 };
-
-template<size_t count>
-void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::array<VkFormat, count>& formats, float relativeRes)
-{
-	this->Init(renderPass, width, height, formats.data(), count, relativeRes);
-}

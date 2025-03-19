@@ -30,19 +30,13 @@ void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t wi
 	Allocate();
 }
 
-void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::vector<VkFormat>& formats, float relativeRes)
-{
-	Init(renderPass, width, height, formats.data(), formats.size(), relativeRes);
-}
-
-void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const VkFormat* pFormats, size_t formatCount, float relativeRes)
+void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::span<VkFormat>& formats, float relativeRes)
 {
 	this->renderPass = renderPass;
-	this->width   = static_cast<uint32_t>(width * relativeRes);
-	this->height  = static_cast<uint32_t>(height * relativeRes);
-	this->formats = std::vector<VkFormat>(pFormats, pFormats + formatCount);
-	this->formats = formats;
-	this->relRes  = relRes;
+	this->width = static_cast<uint32_t>(width * relativeRes);
+	this->height = static_cast<uint32_t>(height * relativeRes);
+	this->formats = std::vector<VkFormat>(formats.begin(), formats.end());
+	this->relRes = relRes;
 
 	ResizeImageContainers(formats.size(), true);
 	Allocate();
