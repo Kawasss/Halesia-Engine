@@ -16,6 +16,6 @@ layout(binding = 5, set = 0) uniform samplerCube skybox;
 void main()
 {
 	payload.isActive = 0;
-	payload.color += vec3(1, 0, 0);//texture(skybox, normalize(payload.direction)).rgb;
+	payload.color = texture(skybox, normalize(payload.direction)).rgb;
 	payload.depth++;
 }
