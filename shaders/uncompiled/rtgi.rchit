@@ -21,9 +21,9 @@ void main()
 
 	vec3 barycentric = vec3(1.0 - hitCoordinate.x - hitCoordinate.y, hitCoordinate.x, hitCoordinate.y);
 
-	vec3 vertex0 = (gl_ObjectToWorld3x4EXT * gl_HitTriangleVertexPositionsEXT[0]).xyz;
-	vec3 vertex1 = (gl_ObjectToWorld3x4EXT * gl_HitTriangleVertexPositionsEXT[1]).xyz;
-	vec3 vertex2 = (gl_ObjectToWorld3x4EXT * gl_HitTriangleVertexPositionsEXT[2]).xyz;
+	vec3 vertex0 = (transpose(gl_ObjectToWorld3x4EXT) * gl_HitTriangleVertexPositionsEXT[0]).xyz;
+	vec3 vertex1 = (transpose(gl_ObjectToWorld3x4EXT) * gl_HitTriangleVertexPositionsEXT[1]).xyz;
+	vec3 vertex2 = (transpose(gl_ObjectToWorld3x4EXT) * gl_HitTriangleVertexPositionsEXT[2]).xyz;
 
 	payload.direction = normalize(cross(vertex1 - vertex0, vertex2 - vertex0));
 	payload.origin = vertex0 * barycentric.x + vertex1 * barycentric.y + vertex2 * barycentric.z;

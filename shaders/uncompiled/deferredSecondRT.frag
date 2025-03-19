@@ -82,6 +82,9 @@ void main()
 
     vec3 globalIllumination = texture(globalIlluminationImage, uvCoord).rgb;
 
+    fragColor = vec4(globalIllumination, 1.0);
+    return;
+
     vec3 metallicRoughnessAO = texture(metallicRoughnessAOImage, uvCoord).rgb;
 
     if (normal == vec3(0) && position == vec3(0) && metallicRoughnessAO == vec3(0))

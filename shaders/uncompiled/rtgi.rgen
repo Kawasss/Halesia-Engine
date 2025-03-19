@@ -6,7 +6,7 @@
 #define ONE_OVER_PI (1 / PI)
 
 #define SAMPLE_COUNT 1
-#define BOUNCE_COUNT 1
+#define BOUNCE_COUNT 4
 
 layout(location = 0) rayPayloadEXT Payload {
 	vec3 origin;
@@ -103,11 +103,14 @@ void main()
 
 	vec2 relCoors = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy);
 
-	vec3 normal = normalize(texture(normalImage, relCoors).xyz);
+	vec3 normal   = normalize(texture(normalImage, relCoors).xyz);
 	vec3 position = texture(positionImage, relCoors).xyz;
 
 	if (normal == vec3(0))
+	{
+		imageStore(globalIlluminationImage, ivec2(gl_LaunchIDEXT.xy), vec4(0, 0, 0, 1));
 		return;
+	}
 
 	vec3 color = vec3(0);
 
@@ -130,7 +133,7 @@ void main()
 				break;
 
 			vec2 random = vec2(RandomValue(state), RandomValue(state));
-			payload.direction = reflect(direction, payload.direction); // the normal of the current collision is communicated through the payload.direction
+			payload.direction = CosineSampleHemisphere(random, payload.direction); // the normal of the current collision is communicated through the payload.direction
 			direction = payload.direction;
 		}
 		color += payload.color / float(payload.depth);
