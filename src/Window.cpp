@@ -1,9 +1,13 @@
-#include "system/Window.h"
-#include <shellapi.h>
-#include <windowsx.h>
 #include <iostream>
 #include <stdexcept>
 #include <vector>
+
+#include <Windows.h>
+#include <shellapi.h>
+#include <windowsx.h>
+#include <hidusage.h>
+
+#include "system/Window.h"
 
 #define BORDERLESS_WINDOWED WS_POPUP
 
@@ -90,18 +94,17 @@ Window::Window(const Win32WindowCreateInfo& createInfo)
 	SetTimer(window, 0, USER_TIMER_MINIMUM, NULL); //makes sure the window is being updated even when if the cursor isnt moving
 
 	RAWINPUTDEVICE rawInputDevice{};
-	rawInputDevice.usUsagePage = 0x01;
-	rawInputDevice.usUsage = 0x02;
-	rawInputDevice.dwFlags = 0; // no flags
-	rawInputDevice.hwndTarget = NULL;
+	rawInputDevice.usUsagePage = HID_USAGE_PAGE_GENERIC;
+	rawInputDevice.usUsage = HID_USAGE_GENERIC_MOUSE;
+	rawInputDevice.dwFlags = RIDEV_INPUTSINK;
+	rawInputDevice.hwndTarget = window;
 
 	if (!RegisterRawInputDevices(&rawInputDevice, 1, sizeof(rawInputDevice)))
 		throw std::runtime_error("Failed to register the raw input device for the mouse");
 
 #ifdef _DEBUG
-	std::string message = "Created new window with dimensions " + std::to_string(size.x) + 'x' + std::to_string(size.y) + " and mode " + WindowModeToString(mode);
-	std::cout << message << std::endl;
-#endif
+	std::cout << "Created new window with dimensions " << size.x << 'x' << size.y << " and mode " << WindowModeToString(mode) << '\n';
+#endif // _DEBUG
 }
 
 void Window::ApplyWindowMode()
@@ -305,6 +308,9 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		RAWINPUT* rawInput = reinterpret_cast<RAWINPUT*>(bytes.data());
 		if (rawInput->header.dwType != RIM_TYPEMOUSE)
 			break;
+
+		if (rawInput->data.mouse.usFlags & MOUSE_MOVE_RELATIVE)
+			DebugBreak();
 
 		window->cursor.x = rawInput->data.mouse.lLastX;
 		window->cursor.y = rawInput->data.mouse.lLastY;
