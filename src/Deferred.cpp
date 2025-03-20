@@ -330,7 +330,7 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 	if (Renderer::canRayTrace)
 	{
 		if (!TLAS->HasBeenBuilt() && !objects.empty())
-			TLAS->Build(objects, RTGI_TLAS_INDEX_TYPE);
+			TLAS->Build(objects, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
 		else
 			TLAS->Update(objects, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
 	}
