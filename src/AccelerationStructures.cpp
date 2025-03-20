@@ -136,7 +136,7 @@ void BottomLevelAccelerationStructure::RebuildGeometry(VkCommandBuffer commandBu
 	BuildAS(&geometry, mesh.faceCount, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR, commandBuffer);
 }
 
-TopLevelAccelerationStructure::TopLevelAccelerationStructure(const std::vector<Object*>& objects)
+TopLevelAccelerationStructure::TopLevelAccelerationStructure()
 {
 	instanceBuffer.Reserve(Renderer::MAX_TLAS_INSTANCES, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_BUILD_INPUT_READ_ONLY_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 
@@ -149,22 +149,19 @@ TopLevelAccelerationStructure::TopLevelAccelerationStructure(const std::vector<O
 	geometry.geometry.instances.data = { Vulkan::GetDeviceAddress(instanceBuffer.GetBufferHandle()) };
 
 	CreateAS(&geometry, VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR, Renderer::MAX_TLAS_INSTANCES);
-
-	if (!objects.empty())
-		Build(objects);
 }
 
-TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create(const std::vector<Object*>& objects)
+TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create()
 {
-	TopLevelAccelerationStructure* TLAS = new TopLevelAccelerationStructure(objects);
+	TopLevelAccelerationStructure* TLAS = new TopLevelAccelerationStructure();
 	return TLAS;
 }
 
-void TopLevelAccelerationStructure::Build(const std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer)
+void TopLevelAccelerationStructure::Build(const std::vector<Object*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
 {
 	instanceBuffer.ResetAddressPointer();
-	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects); // write all of the BLAS instances to a single buffer so that vulkan can easily read all of the instances in one go
-	instanceBuffer.SubmitNewData(BLASInstances);										   // make it so that only the new BLASs get submitted instead of all of the BLASs (even the old ones). the code right now is a REALLY bad implementation
+	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects, indexType); // write all of the BLAS instances to a single buffer so that vulkan can easily read all of the instances in one go
+	instanceBuffer.SubmitNewData(BLASInstances);										              // make it so that only the new BLASs get submitted instead of all of the BLASs (even the old ones). the code right now is a REALLY bad implementation
 
 	VkAccelerationStructureGeometryKHR geometry{};
 	GetGeometry(geometry);
@@ -173,10 +170,10 @@ void TopLevelAccelerationStructure::Build(const std::vector<Object*>& objects, V
 	hasBeenBuilt = true;
 }
 
-void TopLevelAccelerationStructure::Update(const std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer)
+void TopLevelAccelerationStructure::Update(const std::vector<Object*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
 {
 	instanceBuffer.ResetAddressPointer();
-	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects);
+	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects, indexType);
 	instanceBuffer.SubmitNewData(BLASInstances);
 
 	VkAccelerationStructureGeometryKHR geometry{};
@@ -195,7 +192,7 @@ void TopLevelAccelerationStructure::GetGeometry(VkAccelerationStructureGeometryK
 	geometry.geometry.instances.data = { Vulkan::GetDeviceAddress(instanceBuffer.GetBufferHandle()) };
 }
 
-std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(const std::vector<Object*>& objects)
+std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(const std::vector<Object*>& objects, InstanceIndexType indexType)
 {
 	uint32_t processedAmount = 0; // add a second counter for each processed mesh. if an object is checked, but it doesnt have a mesh it will leave an empty instance custom index, which results in data missalignment
 	std::vector<VkAccelerationStructureInstanceKHR> instances;
@@ -207,7 +204,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 			continue;
 
 		VkAccelerationStructureInstanceKHR instance{};
-		instance.instanceCustomIndex = processedAmount;
+		instance.instanceCustomIndex = indexType == InstanceIndexType::Identifier ? processedAmount : objects[i]->mesh.GetMaterialIndex();
 		instance.mask = 0xFF;
 		//instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 		instance.accelerationStructureReference = objects[i]->mesh.BLAS->GetAccelerationStructureAddress();

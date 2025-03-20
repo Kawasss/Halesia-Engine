@@ -80,7 +80,7 @@ void RayTracingRenderPipeline::Execute(const Payload& payload, const std::vector
 		imageHasChanged = false;
 	}
 	if (!TLAS->HasBeenBuilt() && !objects.empty())
-		TLAS->Build(objects);
+		TLAS->Build(objects, TopLevelAccelerationStructure::InstanceIndexType::Identifier);
 
 	UpdateInstanceDataBuffer(objects, payload.camera);
 
@@ -109,7 +109,7 @@ void RayTracingRenderPipeline::Execute(const Payload& payload, const std::vector
 	uniformBufferMemPtr->renderProgressive = renderProgressive;
 	uniformBufferMemPtr->directionalLightDir = directionalLightDir;
 
-	TLAS->Update(objects, cmdBuffer);
+	TLAS->Update(objects, TopLevelAccelerationStructure::InstanceIndexType::Identifier, cmdBuffer);
 	CopyPreviousResult(cmdBuffer);
 	vkCmdBindPipeline(cmdBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipeline);
 	vkCmdBindDescriptorSets(cmdBuffer, VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR, pipelineLayout, 0, (uint32_t)descriptorSets.size(), descriptorSets.data(), 0, nullptr);
@@ -154,8 +154,7 @@ void RayTracingRenderPipeline::SetUp()
 
 	vkGetPhysicalDeviceProperties2(context.physicalDevice.Device(), &properties2);
 
-	std::vector<Object*> holder = {};
-	TLAS.reset(TopLevelAccelerationStructure::Create(holder)); // second parameter is empty since there are no models to build, not the best way to solve this
+	TLAS.reset(TopLevelAccelerationStructure::Create()); // second parameter is empty since there are no models to build, not the best way to solve this
 }
 
 void RayTracingRenderPipeline::CreateDescriptorPool(const ShaderGroupReflector& groupReflection) // (frames in flight not implemented)

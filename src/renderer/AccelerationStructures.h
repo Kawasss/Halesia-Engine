@@ -41,19 +41,25 @@ public:
 class TopLevelAccelerationStructure : public AccelerationStructure
 {
 public:
-	TopLevelAccelerationStructure(const std::vector<Object*>& objects);
+	enum class InstanceIndexType
+	{
+		Identifier, // uses an unique identifier as an instances custom index
+		Material,   // uses the object meshes material index as the custom index
+	};
 
-	static TopLevelAccelerationStructure* Create(const std::vector<Object*>& objects);
+	TopLevelAccelerationStructure();
+
+	static TopLevelAccelerationStructure* Create();
 
 	/// <summary>
 	/// Builds the top level acceleration structure. It uses single time commands per default, but can use an external command buffer. An external command buffer is recommended if it's being rebuild with performance in mind
 	/// </summary>
-	void Build(const std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
-	void Update(const std::vector<Object*>& objects, VkCommandBuffer externalCommandBuffer);
+	void Build(const std::vector<Object*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
+	void Update(const std::vector<Object*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer);
 	bool HasBeenBuilt();
 
 private:
-	static std::vector<VkAccelerationStructureInstanceKHR> GetInstances(const std::vector<Object*>& objects);
+	static std::vector<VkAccelerationStructureInstanceKHR> GetInstances(const std::vector<Object*>& objects, InstanceIndexType indexType);
 	void GetGeometry(VkAccelerationStructureGeometryKHR& geometry);
 
 	StorageBuffer<VkAccelerationStructureInstanceKHR> instanceBuffer;

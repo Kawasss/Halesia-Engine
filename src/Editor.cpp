@@ -43,7 +43,7 @@ void EditorCamera::Update(Window* window, float delta)
 	window->GetAbsoluteCursorPosition(mouseX, mouseY);
 
 	bool isInViewport    = (mouseX > viewportX && mouseX < (viewportX + viewportWidth)) && (mouseY > viewportY && mouseY < (viewportY + viewportHeight));
-	bool buttonIsPressed = Input::IsKeyPressed(VirtualKey::MiddleMouseButton);
+	bool buttonIsPressed = Input::IsKeyPressed(VirtualKey::LeftMouseButton);
 
 	if (isInViewport && buttonIsPressed)
 		active = true;

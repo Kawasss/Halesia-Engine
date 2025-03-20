@@ -24,6 +24,8 @@ constexpr VkFormat GBUFFER_NORMAL_FORMAT   = VK_FORMAT_R16G16B16A16_SFLOAT; // 1
 constexpr VkFormat GBUFFER_MRAO_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;      // Metallic, Roughness and Ambient Occlusion
 constexpr VkFormat GBUFFER_RTGI_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;
 
+constexpr TopLevelAccelerationStructure::InstanceIndexType RTGI_TLAS_INDEX_TYPE = TopLevelAccelerationStructure::InstanceIndexType::Identifier;
+
 constexpr uint32_t RTGI_RESOLUTION_UPSCALE = 2;
 
 void DeferredPipeline::Start(const Payload& payload)
@@ -42,7 +44,7 @@ void DeferredPipeline::Start(const Payload& payload)
 	framebuffer.Init(renderPass, payload.width, payload.height, formats);
 
 	if (Renderer::canRayTrace)
-		TLAS.reset(TopLevelAccelerationStructure::Create({}));
+		TLAS.reset(TopLevelAccelerationStructure::Create());
 
 	CreateAndPreparePipelines(payload);
 }
@@ -328,8 +330,9 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 	if (Renderer::canRayTrace)
 	{
 		if (!TLAS->HasBeenBuilt() && !objects.empty())
-			TLAS->Build(objects);
-		TLAS->Update(objects, payload.commandBuffer.Get());
+			TLAS->Build(objects, RTGI_TLAS_INDEX_TYPE);
+		else
+			TLAS->Update(objects, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
 	}
 
 	UpdateUBO(payload.camera);
