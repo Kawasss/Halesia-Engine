@@ -31,7 +31,7 @@ public:
 	void ReloadShaders(const Payload& payload) override;
 
 private:
-	static constexpr size_t GBUFFER_COUNT = 4;
+	static constexpr size_t GBUFFER_COUNT = 5;
 
 	struct PushConstant;
 

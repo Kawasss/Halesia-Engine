@@ -19,6 +19,7 @@ layout(set = 0, binding = 0) uniform sceneInfo {
 layout(push_constant) uniform constant
 {
     mat4 model;
+    vec2 velocity;
     int materialID;
 } Constant;
 

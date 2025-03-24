@@ -15,6 +15,7 @@
 struct DeferredPipeline::PushConstant
 {
 	glm::mat4 model;
+	glm::vec2 velocity;
 	int materialID;
 };
 
@@ -23,6 +24,7 @@ constexpr VkFormat GBUFFER_ALBEDO_FORMAT   = VK_FORMAT_R8G8B8A8_UNORM;
 constexpr VkFormat GBUFFER_NORMAL_FORMAT   = VK_FORMAT_R16G16B16A16_SFLOAT; // 16 bit instead of 8 bit to allow for negative normals
 constexpr VkFormat GBUFFER_MRAO_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;      // Metallic, Roughness and Ambient Occlusion
 constexpr VkFormat GBUFFER_RTGI_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;
+constexpr VkFormat GBUFFER_VELOCITY_FORMAT = VK_FORMAT_R16G16B16A16_SFLOAT;
 
 constexpr TopLevelAccelerationStructure::InstanceIndexType RTGI_TLAS_INDEX_TYPE = TopLevelAccelerationStructure::InstanceIndexType::Identifier;
 
@@ -36,6 +38,7 @@ void DeferredPipeline::Start(const Payload& payload)
 		GBUFFER_ALBEDO_FORMAT, 
 		GBUFFER_NORMAL_FORMAT, 
 		GBUFFER_MRAO_FORMAT,
+		GBUFFER_VELOCITY_FORMAT,
 	};
 
 	CreateBuffers();
@@ -57,6 +60,7 @@ void DeferredPipeline::CreateAndPreparePipelines(const Payload& payload)
 		GBUFFER_ALBEDO_FORMAT,
 		GBUFFER_NORMAL_FORMAT,
 		GBUFFER_MRAO_FORMAT,
+		GBUFFER_VELOCITY_FORMAT,
 	};
 
 	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
@@ -344,15 +348,18 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 
 	firstPipeline->Bind(cmdBuffer);
 
-	VkBuffer vertexBuffer = Renderer::g_vertexBuffer.GetBufferHandle();
-	VkDeviceSize offset = 0;
-
 	Renderer::BindBuffersForRendering(cmdBuffer);
+
+	glm::mat4 view = payload.camera->GetViewMatrix();
+	glm::mat4 proj = payload.camera->GetProjectionMatrix();
 
 	PushConstant pushConstant{};
 	for (Object* obj : objects)
 	{
-		pushConstant.model = obj->transform.GetModelMatrix();
+		glm::mat4 model = obj->transform.GetModelMatrix();
+
+		pushConstant.model = model;
+		pushConstant.velocity = obj->transform.GetMotionVector(proj, view, model);
 		pushConstant.materialID = obj->mesh.GetMaterialIndex();
 
 		firstPipeline->PushConstant(cmdBuffer, pushConstant, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -391,9 +398,7 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 
 	secondPipeline->Bind(cmdBuffer);
 
-	glm::vec3 camPos = payload.camera->position;
-
-	secondPipeline->PushConstant(cmdBuffer, camPos, VK_SHADER_STAGE_FRAGMENT_BIT);
+	secondPipeline->PushConstant(cmdBuffer, payload.camera->position, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	cmdBuffer.Draw(6, 1, 0, 0);
 

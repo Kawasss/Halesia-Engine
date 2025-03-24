@@ -46,7 +46,7 @@ glm::vec3 Transform::GetForward()
 
 glm::vec3 Transform::GetGlobalScale()
 {
-	return glm::vec3((float)GetRight().length(), (float)GetUp().length(), (float)GetBackward().length());
+	return glm::vec3(glm::length(GetRight()), glm::length(GetUp()), glm::length(GetBackward()));
 }
 
 float Transform::GetYaw()
@@ -70,15 +70,14 @@ void Transform::SetLocalRotation(glm::mat4 newLocalRotation)
 	localRotationChanged = true;
 }
 
-glm::vec2 Transform::GetMotionVector(glm::mat4 projection, glm::mat4 view)
+glm::vec2 Transform::GetMotionVector(glm::mat4 projection, glm::mat4 view, glm::mat4 model)
 {
-	glm::vec4 NDC = projection * view * glm::vec4(position, 1);
-	NDC /= NDC.w;
+	glm::vec4 currentClipSpace = projection * view * model * glm::vec4(position, 1);
 
-	glm::vec2 current = glm::vec2((NDC.x + 1.0f) * 0.5f, (NDC.y + 1.0f) * 0.5f);
-	glm::vec2 ret = current - prev2Dspot;
-	if (ret != ret) // if the player is at 0, 0 ret will be NaN, according to IEEE NaN cannot be equal to NaN so this checks for that
-		ret = glm::vec2(0);
-	prev2Dspot = current;
-	return ret;
+	glm::vec2 difference = glm::vec2(currentClipSpace) / currentClipSpace.w - glm::vec2(previousClipPosition) / previousClipPosition.w;
+
+	if (difference != difference) // if the player is at 0, 0 ret will be NaN, according to IEEE NaN cannot be equal to NaN so this checks for that
+		difference = glm::vec2(0);
+	previousClipPosition = currentClipSpace;
+	return difference;
 }

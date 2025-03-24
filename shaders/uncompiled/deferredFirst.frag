@@ -8,10 +8,12 @@ layout (location = 0) out vec4 positionColor;
 layout (location = 1) out vec4 albedoColor;
 layout (location = 2) out vec4 normalColor;
 layout (location = 3) out vec4 metallicRoughnessAOColor;
+layout (location = 4) out vec4 velocityColor;
 
 layout(push_constant) uniform constant
 {
     mat4 model;
+    vec2 velocity;
     int materialID;
 } Constant;
 
@@ -36,13 +38,15 @@ vec3 GetNormalFromMap()
 
 void main()
 {
-    positionColor = vec4(position, 1.0);
-    normalColor   = vec4(GetNormalFromMap(), 1.0);
- 
 	albedoColor = texture(textures[Constant.materialID * 5 + 0], texCoords);
 
     if (albedoColor.a == 0.0)
         discard;
+
+    positionColor = vec4(position, 1.0);
+    normalColor   = vec4(GetNormalFromMap(), 1.0);
+
+    velocityColor = vec4(Constant.velocity, 0.0, 1.0);
 
     metallicRoughnessAOColor.r = texture(textures[Constant.materialID * 5 + 2], texCoords).r;
     metallicRoughnessAOColor.g = texture(textures[Constant.materialID * 5 + 3], texCoords).g;
