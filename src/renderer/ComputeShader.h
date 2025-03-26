@@ -17,6 +17,6 @@ public:
 	void Execute(const CommandBuffer& commandBuffer, uint32_t x, uint32_t y, uint32_t z);
 
 private:
-	void CreatePipelineLayout();
+	void CreatePipelineLayout(const ShaderGroupReflector& reflector);
 	void CreateComputePipeline(VkShaderModule module); // this handles the destruction for the module!
 };

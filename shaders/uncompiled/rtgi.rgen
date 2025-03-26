@@ -5,8 +5,8 @@
 #define TWO_PI (PI * 2)
 #define ONE_OVER_PI (1 / PI)
 
-#define SAMPLE_COUNT 2
-#define BOUNCE_COUNT 4
+#define SAMPLE_COUNT 1
+#define BOUNCE_COUNT 1
 
 layout(location = 0) rayPayloadEXT Payload {
 	vec3 origin;

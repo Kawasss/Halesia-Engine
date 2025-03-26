@@ -1,5 +1,6 @@
 #include "renderer/Deferred.h"
 #include "renderer/GraphicsPipeline.h"
+#include "renderer/ComputeShader.h"
 #include "renderer/Renderer.h"
 #include "renderer/DescriptorWriter.h"
 #include "renderer/RayTracingPipeline.h"
@@ -19,16 +20,30 @@ struct DeferredPipeline::PushConstant
 	int materialID;
 };
 
+struct DeferredPipeline::RTGIConstants
+{
+	uint32_t frame;
+};
+
+struct DeferredPipeline::TAAConstants
+{
+	glm::mat4 viewInv;
+	glm::mat4 prevViewInv;
+	glm::mat4 projInv;
+	int width;
+	int height;
+};
+
 constexpr VkFormat GBUFFER_POSITION_FORMAT = VK_FORMAT_R32G32B32A32_SFLOAT; // 32 bit format takes a lot of performance compared to an 8 bit format
 constexpr VkFormat GBUFFER_ALBEDO_FORMAT   = VK_FORMAT_R8G8B8A8_UNORM;
 constexpr VkFormat GBUFFER_NORMAL_FORMAT   = VK_FORMAT_R16G16B16A16_SFLOAT; // 16 bit instead of 8 bit to allow for negative normals
 constexpr VkFormat GBUFFER_MRAO_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;      // Metallic, Roughness and Ambient Occlusion
 constexpr VkFormat GBUFFER_RTGI_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;
-constexpr VkFormat GBUFFER_VELOCITY_FORMAT = VK_FORMAT_R16G16B16A16_SFLOAT;
+constexpr VkFormat GBUFFER_VELOCITY_FORMAT = VK_FORMAT_R16G16_SFLOAT;
 
 constexpr TopLevelAccelerationStructure::InstanceIndexType RTGI_TLAS_INDEX_TYPE = TopLevelAccelerationStructure::InstanceIndexType::Identifier;
 
-constexpr uint32_t RTGI_RESOLUTION_UPSCALE = 2;
+constexpr uint32_t RTGI_RESOLUTION_UPSCALE = 1;
 
 void DeferredPipeline::Start(const Payload& payload)
 {
@@ -73,6 +88,10 @@ void DeferredPipeline::CreateAndPreparePipelines(const Payload& payload)
 
 		BindTLAS();
 	}
+
+	CreateTAAPipeline();
+	CreateTAAResources(payload.width, payload.height);
+	BindTAAResources();
 
 	SetTextureBuffer();
 }
@@ -298,6 +317,34 @@ void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass seco
 	secondPipeline = std::make_unique<GraphicsPipeline>(createInfo);
 }
 
+void DeferredPipeline::CreateTAAPipeline()
+{
+	taaPipeline = std::make_unique<ComputeShader>("shaders/spirv/taa.comp.spv");
+}
+
+void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	prevDepthImage = Vulkan::CreateImage(width, height, 1, 1, ctx.physicalDevice.GetDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	prevDepthView = Vulkan::CreateImageView(prevDepthImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, ctx.physicalDevice.GetDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
+}
+
+void DeferredPipeline::BindTAAResources()
+{
+
+}
+
+void DeferredPipeline::CopyResourcesForTAA(const CommandBuffer& cmdBuffer)
+{
+
+}
+
+void DeferredPipeline::CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer)
+{
+
+}
+
 Skybox* DeferredPipeline::CreateNewSkybox(const std::string& path)
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
@@ -370,29 +417,29 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 	cmdBuffer.EndRenderPass();
 
 	if (skybox != nullptr)
-		skybox->Draw(payload.commandBuffer, payload.camera);
+		skybox->Draw(cmdBuffer, payload.camera);
 
 	if (Renderer::canRayTrace)
 	{
-		Vulkan::StartDebugLabel(payload.commandBuffer.Get(), "RTGI");
+		Vulkan::StartDebugLabel(cmdBuffer.Get(), "RTGI");
 
-		TransitionRTGIToWrite(payload.commandBuffer);
+		TransitionRTGIToWrite(cmdBuffer);
 
 		PushRTGIConstants(payload);
 
-		payload.commandBuffer.SetCheckpoint(static_cast<const void*>("start of RTGI"));
+		cmdBuffer.SetCheckpoint(static_cast<const void*>("start of RTGI"));
 
-		rtgiPipeline->Bind(payload.commandBuffer);
-		rtgiPipeline->Execute(payload.commandBuffer, payload.width / RTGI_RESOLUTION_UPSCALE, payload.height / RTGI_RESOLUTION_UPSCALE, 1);
+		rtgiPipeline->Bind(cmdBuffer);
+		rtgiPipeline->Execute(cmdBuffer, payload.width / RTGI_RESOLUTION_UPSCALE, payload.height / RTGI_RESOLUTION_UPSCALE, 1);
 
-		payload.commandBuffer.SetCheckpoint(static_cast<const void*>("end of RTGI"));
+		cmdBuffer.SetCheckpoint(static_cast<const void*>("end of RTGI"));
 
-		TransitionRTGIToRead(payload.commandBuffer);
+		TransitionRTGIToRead(cmdBuffer);
 
-		payload.commandBuffer.EndDebugUtilsLabelEXT();
+		cmdBuffer.EndDebugUtilsLabelEXT();
 	}
 
-	payload.commandBuffer.SetCheckpoint(static_cast<const void*>("start of final deferred pass"));
+	cmdBuffer.SetCheckpoint(static_cast<const void*>("start of final deferred pass"));
 
 	renderer->StartRenderPass(renderer->GetDefault3DRenderPass());
 
@@ -512,4 +559,6 @@ DeferredPipeline::~DeferredPipeline()
 {
 	vgm::Delete(renderPass);
 	vgm::Delete(rtgiView);
+
+	vgm::Delete(prevDepthView);
 }

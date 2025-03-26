@@ -698,5 +698,8 @@
     <None Include="shaders\uncompiled\rtgi.rmiss">
       <Filter>Shaders\ray-tracing</Filter>
     </None>
+    <None Include="shaders\uncompiled\taa.comp">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -11,6 +11,7 @@
 #include "Light.h"
 
 class GraphicsPipeline;
+class ComputeShader;
 class TopLevelAccelerationStructure;
 class RayTracingPipeline;
 class Skybox;
@@ -34,11 +35,8 @@ private:
 	static constexpr size_t GBUFFER_COUNT = 5;
 
 	struct PushConstant;
-
-	struct RTGIConstants
-	{
-		uint32_t frame;
-	};
+	struct RTGIConstants;
+	struct TAAConstants;
 
 	struct UBO
 	{
@@ -58,6 +56,12 @@ private:
 	void CreateAndPreparePipelines(const Payload& payload);
 	void CreateRenderPass(const std::array<VkFormat, GBUFFER_COUNT>& formats);
 	void CreatePipelines(VkRenderPass firstPass, VkRenderPass secondPass);
+
+	void CreateTAAPipeline();
+	void CreateTAAResources(uint32_t width, uint32_t height);
+	void BindTAAResources();
+	void CopyResourcesForTAA(const CommandBuffer& cmdBuffer);
+	void CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer);
 
 	void CreateAndBindRTGI(uint32_t width, uint32_t height); // maybe seperate RTGI into its own class ??
 	void PushRTGIConstants(const Payload& payload);
@@ -82,8 +86,12 @@ private:
 	vvm::SmartImage rtgiImage;
 	VkImageView rtgiView = VK_NULL_HANDLE;
 
+	vvm::SmartImage prevDepthImage;
+	VkImageView prevDepthView = VK_NULL_HANDLE;
+
 	std::unique_ptr<GraphicsPipeline> firstPipeline;
 	std::unique_ptr<GraphicsPipeline> secondPipeline;
+	std::unique_ptr<ComputeShader> taaPipeline;
 	std::unique_ptr<RayTracingPipeline> rtgiPipeline;
 
 	std::unique_ptr<TopLevelAccelerationStructure> TLAS;
@@ -91,6 +99,8 @@ private:
 	std::unique_ptr<Skybox> skybox;
 
 	std::array<std::vector<uint64_t>, FIF::FRAME_COUNT> processedMats;
+
+	glm::mat4 prevViewInv;
 
 	uint32_t frame = 0;
 };

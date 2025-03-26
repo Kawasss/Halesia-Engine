@@ -5,6 +5,7 @@
 #include "renderer/Mesh.h"
 #include "renderer/RayTracingPipeline.h"
 #include "renderer/GraphicsPipeline.h"
+#include "renderer/ComputeShader.h"
 
 #include "core/Object.h"
 #include "core/UniquePointer.h"

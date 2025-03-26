@@ -16,22 +16,25 @@ ComputeShader::ComputeShader(const std::string& path)
 
 	InitializeBase(reflector);
 
-	CreatePipelineLayout();
+	CreatePipelineLayout(reflector);
 	CreateComputePipeline(module);
 
 	bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
 }
 
-void ComputeShader::CreatePipelineLayout()
+void ComputeShader::CreatePipelineLayout(const ShaderGroupReflector& reflector)
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
+	std::vector<VkPushConstantRange> ranges = reflector.GetPushConstants();
 
-	VkPipelineLayoutCreateInfo layoutCreateInfo{};
-	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	layoutCreateInfo.pSetLayouts = setLayouts.data();
-	layoutCreateInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
+	VkPipelineLayoutCreateInfo createInfo{};
+	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	createInfo.pushConstantRangeCount = static_cast<uint32_t>(ranges.size());
+	createInfo.pPushConstantRanges = ranges.data();
+	createInfo.pSetLayouts = setLayouts.data();
+	createInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
 
-	VkResult result = vkCreatePipelineLayout(context.logicalDevice, &layoutCreateInfo, nullptr, &layout);
+	VkResult result = vkCreatePipelineLayout(context.logicalDevice, &createInfo, nullptr, &layout);
 	CheckVulkanResult("Failed to create a pipeline layout", result);
 }
 

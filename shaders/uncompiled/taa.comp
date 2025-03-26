@@ -1,0 +1,70 @@
+#version 460
+
+// this shader does not apply TAA with jitter, because it was made to be used with ray-tracing
+
+// all sampler2Ds should be bound with a "closest neighbor"-sampler
+layout (binding = 0) uniform sampler2D depthImage;
+layout (binding = 1) uniform sampler2D prevDepthImage;
+layout (binding = 2) uniform sampler2D baseImage;
+layout (binding = 3) uniform sampler2D prevBaseImage;
+layout (binding = 4) uniform sampler2D velocityImage;
+
+layout (binding = 5, rgba16) uniform image2D resultImage;
+
+layout (push_constant) uniform Constant 
+{
+	mat4 viewInv;
+	mat4 prevViewInv;
+	mat4 projInv;
+	int width;
+	int height;
+} constant;
+
+float GetLinearDepth(ivec2 coords, float depth)
+{
+	vec2 relCoords = (coords + 0.5) / vec2(constant.width, constant.height); // + 0.5 for the pixel offset
+	vec2 ndc = relCoords * 2.0 - 1.0;
+	vec4 projected = constant.projInv * vec4(ndc, depth, 1.0);
+
+	return abs(projected.z / projected.w);
+}
+
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in; // total size should be the size of the image to apply TAA to
+void main() // https://columbusutrigas.com/posts/rtgi/
+{
+	vec2 relCoords = vec2(gl_GlobalInvocationID.xy) / vec2(constant.width, constant.height);
+	ivec2 absCoords = ivec2(gl_GlobalInvocationID.xy);
+	ivec2 size = ivec2(constant.width, constant.height);
+
+	float depth = texture(depthImage, relCoords).r;
+	float prevDepth = texture(prevDepthImage, relCoords).r;
+	vec2 velocity = texture(velocityImage, relCoords).rg; // / 2 * vec2(size) + 0.5;
+
+	ivec2 prevCoords = ivec2(absCoords - velocity);
+
+	if (prevCoords.x < 0 || prevCoords.x >= size.x || prevCoords.y < 0 || prevCoords.y >= size.y) // out of bounds
+		return;
+
+	vec2 ndc = relCoords * 2.0 - 1.0;
+
+	vec4 worldspace = constant.projInv * constant.viewInv * vec4(ndc, depth, 1.0); // or inverse(proj * view) ...?
+	worldspace /= worldspace.w + 0.00001;
+
+	vec4 prevNdc = constant.projInv * constant.prevViewInv * worldspace;
+	prevNdc /= prevNdc.w + 0.00001;
+
+	float reprojLinearDepth = GetLinearDepth(absCoords, prevNdc.z);
+	float prevLinearDepth = GetLinearDepth(prevCoords, prevDepth);
+
+	float depthDiff = abs(prevLinearDepth - reprojLinearDepth) / reprojLinearDepth;
+
+	if (depthDiff > 0.01)
+		return;
+
+	vec3 prevColor = texture(prevBaseImage, relCoords).rgb;
+	vec3 currColor = texture(baseImage, relCoords).rgb;
+
+	vec3 result = mix(prevColor, currColor, 0.5); // mix based on weights
+
+	imageStore(resultImage, absCoords, vec4(result, 1.0));
+}

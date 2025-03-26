@@ -360,6 +360,7 @@
     <None Include="shaders\uncompiled\shadow.rmiss" />
     <None Include="shaders\uncompiled\skybox.frag" />
     <None Include="shaders\uncompiled\skybox.vert" />
+    <None Include="shaders\uncompiled\taa.comp" />
     <None Include="shaders\uncompiled\triangle.frag" />
     <None Include="shaders\uncompiled\triangle.vert" />
   </ItemGroup>
