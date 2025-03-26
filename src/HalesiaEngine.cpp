@@ -1,4 +1,5 @@
 #include <iostream>
+#include <format>
 #include <future>
 
 #include "HalesiaEngine.h"
@@ -28,22 +29,35 @@
 
 class ExitRequest : public std::exception {}; // not that great to request an exit via errors
 
-HalesiaEngineCreateInfo HalesiaEngine::createInfo{};
+HalesiaEngine* HalesiaEngine::instance = nullptr;
 
-inline void ProcessError(const std::exception& e)
+static void ProcessError(const std::exception& e)
 {
 	std::string fullError = e.what();
-	MessageBoxA(nullptr, fullError.c_str(), ((std::string)"Engine error (" + (std::string)typeid(e).name() + ')').c_str(), MB_OK | MB_ICONERROR);
+
+	std::string message = std::format("Engine error ({})", typeid(e).name());
+
+	MessageBoxA(nullptr, fullError.c_str(), message.c_str(), MB_OK | MB_ICONERROR);
 	std::cerr << e.what() << std::endl;
 }
 
-inline float CalculateFrameTime(int fps)
+static float CalculateFrameTime(int fps)
 {
 	if (fps <= 0) return 0;
 	return 1000.0f / fps;
 }
 
-inline RendererFlags GetRendererFlagsFromBehavior()
+static float GetMilliseconds(const std::chrono::steady_clock::time_point& start, const std::chrono::steady_clock::time_point& end)
+{
+	return std::chrono::duration<float, std::chrono::milliseconds::period>(end - start).count();
+}
+
+static void WaitForTimeLimit(const std::chrono::steady_clock::time_point& startTime, float timeLimit)
+{
+	while (GetMilliseconds(startTime, std::chrono::high_resolution_clock::now()) < timeLimit); // wasting cycles
+}
+
+static RendererFlags GetRendererFlagsFromBehavior()
 {
 	RendererFlags ret = Renderer::Flags::NONE;
 	for (int i = 0; i < Behavior::arguments.size(); i++)
@@ -68,41 +82,20 @@ inline RendererFlags GetRendererFlagsFromBehavior()
 	return ret;
 }
 
-HalesiaEngine* HalesiaEngine::GetInstance()
+HalesiaEngine* HalesiaEngine::CreateInstance(CreateInfo& createInfo)
 {
-	static HalesiaEngine* instance = nullptr;
-	static bool init = false;
-	if (init)
-		return instance;
+	assert(instance == nullptr); // cannot create an instance after one instance is already created
 
-	std::cout << "Generating Halesia instance:" 
-		<< "\n  createInfo.startingScene = " << reinterpret_cast<uint64_t>(createInfo.startingScene) 
-		<< "\n  createInfo.devConsoleKey = " << static_cast<int>(createInfo.devConsoleKey)
-		<< "\n  createInfo.playIntro     = " << createInfo.playIntro << "\n\n";
+	std::cout << "Generating Halesia instance:"
+		<< "\n  createInfo.startingScene = 0x" << reinterpret_cast<void*>(createInfo.startingScene)
+		<< "\n  createInfo.devConsoleKey = "   << static_cast<int>(createInfo.devConsoleKey)
+		<< "\n  createInfo.playIntro     = "   << createInfo.playIntro << "\n\n";
 	try
 	{
-		instance = new HalesiaEngine;
+		instance = new HalesiaEngine();
 		instance->OnLoad(createInfo);
 
-		const Vulkan::Context& context = Vulkan::GetContext();
-		SystemInformation systemInfo = GetCpuInfo();
-		VkPhysicalDeviceProperties properties = context.physicalDevice.Properties();
-		uint64_t vram = context.physicalDevice.VRAM();
-
-		std::cout
-			<< "\n----------------------------------------"
-			<< "\nSystem info:"
-			<< "\n  CPU:           " << systemInfo.CPUName
-			<< "\n  thread count:  " << systemInfo.processorCount
-			<< "\n  physical RAM:  " << systemInfo.installedRAM / 1024 << " MB\n"
-			<< "\n  GPU:           " << properties.deviceName
-			<< "\n  type:          " << (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")
-			<< "\n  vulkan driver: " << properties.driverVersion
-			<< "\n  API version:   " << properties.apiVersion
-			<< "\n  heap 0 (VRAM): " << vram / (1024ull * 1024ull) << " MB"
-			<< "\n----------------------------------------\n\n";
-		
-		init = true;
+		LogLoadingInformation();
 	}
 	catch (const std::exception& e) //catch any normal exception and return
 	{
@@ -115,9 +108,30 @@ HalesiaEngine* HalesiaEngine::GetInstance()
 	return instance;
 }
 
-void HalesiaEngine::SetCreateInfo(const HalesiaEngineCreateInfo& createInfo)
+void HalesiaEngine::LogLoadingInformation()
 {
-	HalesiaEngine::createInfo = createInfo;
+	const Vulkan::Context& context = Vulkan::GetContext();
+	SystemInformation systemInfo = GetCpuInfo();
+	VkPhysicalDeviceProperties properties = context.physicalDevice.Properties();
+
+	std::cout
+		<< "\n----------------------------------------"
+		<< "\nSystem info:"
+		<< "\n  CPU:           " << systemInfo.CPUName
+		<< "\n  thread count:  " << systemInfo.processorCount
+		<< "\n  physical RAM:  " << systemInfo.installedRAM / 1024 << " MB\n"
+		<< "\n  GPU:           " << properties.deviceName
+		<< "\n  type:          " << (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")
+		<< "\n  vulkan driver: " << properties.driverVersion
+		<< "\n  API version:   " << properties.apiVersion
+		<< "\n  heap 0 (VRAM): " << context.physicalDevice.VRAM() / (1024ull * 1024ull) << " MB"
+		<< "\n----------------------------------------\n\n";
+}
+
+HalesiaEngine* HalesiaEngine::GetInstance()
+{
+	assert(instance != nullptr); // may not return an invalid pointer
+	return instance;
 }
 
 void HalesiaEngine::LoadScene(Scene* newScene)
@@ -139,16 +153,6 @@ static void ManageCameraInjector(Scene* scene, bool pauseGame)
 	}
 	else if (!pauseGame && cameraInjector.IsInjected())
 		cameraInjector.Eject();
-}
-
-static float GetMilliseconds(const std::chrono::steady_clock::time_point& start, const std::chrono::steady_clock::time_point& end)
-{
-	return std::chrono::duration<float, std::chrono::milliseconds::period>(end - start).count();
-}
-
-static void WaitForTimeLimit(const std::chrono::steady_clock::time_point& startTime, float timeLimit)
-{
-	while (GetMilliseconds(startTime, std::chrono::high_resolution_clock::now()) < timeLimit); // wasting cycles
 }
 
 EngineCore& HalesiaEngine::GetEngineCore()
@@ -237,15 +241,14 @@ void HalesiaEngine::PlayIntro()
 
 HalesiaEngine::ExitCode HalesiaEngine::Run()
 {
-	float timeSinceLastDataUpdate = 0;
-
-	if (core.renderer == nullptr || core.window == nullptr/* || physics == nullptr*/)
+	if (core.renderer == nullptr || core.window == nullptr)
 		return ExitCode::UnknownException;
 
 	RegisterConsoleVars();
 
 	try
 	{
+		float timeSinceLastDataUpdate = 0;
 		float frameDelta = 0;
 		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
@@ -311,7 +314,7 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 	}
 }
 
-void HalesiaEngine::InitializeCoreComponents()
+void HalesiaEngine::InitializeCoreComponents(const CreateInfo& createInfo)
 {
 	std::cout 
 		<< "----------------------------------------\n"
@@ -320,7 +323,7 @@ void HalesiaEngine::InitializeCoreComponents()
 	core.window = new Window(createInfo.windowCreateInfo);
 	std::cout << "\nRenderer:\n";
 
-	core.renderer = new Renderer(core.window, createInfo.renderFlags | GetRendererFlagsFromBehavior());
+	core.renderer = new Renderer(core.window, createInfo.renderFlags | ::GetRendererFlagsFromBehavior());
 
 	std::cout << "\nProfiler:\n";
 
@@ -349,11 +352,11 @@ void HalesiaEngine::InitializeSubSystems()
 	std::cout << "----------------------------------------\n\n";
 }
 
-void HalesiaEngine::OnLoad(HalesiaEngineCreateInfo& createInfo)
+void HalesiaEngine::OnLoad(const CreateInfo& createInfo)
 {
 	Behavior::ProcessArguments(createInfo.argsCount, createInfo.args);
 
-	InitializeCoreComponents();
+	InitializeCoreComponents(createInfo);
 	InitializeSubSystems();
 	
 	devConsoleKey = createInfo.devConsoleKey;

@@ -23,8 +23,7 @@ int main(int argc, char** argv)
 	windowInfo.extendedStyle = Window::ExtendedStyle::DragAndDropFiles;
 	windowInfo.startMaximized = false;
 
-	HalesiaEngine* instance = nullptr;
-	HalesiaEngineCreateInfo createInfo{};
+	HalesiaEngine::CreateInfo createInfo{};
 	createInfo.argsCount = argc;
 	createInfo.args = argv;
 	createInfo.startingScene = new Editor();
@@ -32,12 +31,10 @@ int main(int argc, char** argv)
 	createInfo.windowCreateInfo = windowInfo;
 #ifdef _DEBUG
 	createInfo.playIntro = false;
-#endif
+#endif // _DEBUG
 
-	HalesiaEngine::SetCreateInfo(createInfo);
-	instance = HalesiaEngine::GetInstance();
-
-	Renderer* renderer = instance->GetEngineCore().renderer;
+	HalesiaEngine* instance = HalesiaEngine::CreateInstance(createInfo);
+	Renderer*      renderer = instance->GetEngineCore().renderer;
 
 	renderer->AddRenderPipeline<DeferredPipeline>("deferred");
 	
