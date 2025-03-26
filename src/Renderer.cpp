@@ -186,7 +186,7 @@ void Renderer::CreateImGUI()
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-	::ImGui_ImplWin32_Init(testWindow->window);
+	::ImGui_ImplWin32_Init(testWindow->GetHandle());
 
 	testWindow->additionalPollCallback = ImGui_ImplWin32_WndProcHandler;
 

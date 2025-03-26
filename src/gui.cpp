@@ -77,16 +77,16 @@ inline void ShowInputVector(glm::vec2& vector, const std::vector<const char*>& l
 void GUI::ShowWindowData(Window* window)
 {
 	static std::array<std::string, 2> modes = { "WINDOW_MODE_WINDOWED", "WINDOW_MODE_BORDERLESS_WINDOWED" };
-	static hsl::StackMap<std::string, WindowMode, 2> stringToMode = { { "WINDOW_MODE_WINDOWED", WINDOW_MODE_WINDOWED }, { "WINDOW_MODE_BORDERLESS_WINDOWED", WINDOW_MODE_BORDERLESS_WINDOWED } };
+	static hsl::StackMap<std::string, Window::Mode, 2> stringToMode = { { "WINDOW_MODE_WINDOWED", Window::Mode::Windowed }, { "WINDOW_MODE_BORDERLESS_WINDOWED", Window::Mode::BorderlessWindowed } };
 	static std::string currentMode;
 	static int modeIndex = -1;
 	static bool lockCursor = false;
 	switch (window->GetWindowMode())
 	{
-	case WINDOW_MODE_WINDOWED:
+	case Window::Mode::Windowed:
 		modeIndex = 0;
 		break;
-	case WINDOW_MODE_BORDERLESS_WINDOWED:
+	case Window::Mode::BorderlessWindowed:
 		modeIndex = 1;
 		break;
 	}

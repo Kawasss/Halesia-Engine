@@ -16,7 +16,7 @@ std::map<HWND, Window*> Window::windowBinding;
 MSG Window::message;
 
 //Returns the last Win32 error, in string format. Returns an empty string if there is no error.
-std::string WinGetLastErrorAsString()
+static std::string WinGetLastErrorAsString()
 {
 	//Get the error message ID, if any.
 	DWORD errorMessageID = ::GetLastError();
@@ -40,14 +40,14 @@ std::string WinGetLastErrorAsString()
 	return message;
 }
 
-Window::Window(const Win32WindowCreateInfo& createInfo)
+Window::Window(const Window::CreateInfo& createInfo)
 {
 	size = Point(createInfo.width, createInfo.height);
 
 	coordinates = Point(createInfo.x, createInfo.y);
 	mode = createInfo.windowMode;
-	hIcon = createInfo.icon;
-	hCursor = createInfo.cursor;
+	hIcon = reinterpret_cast<HICON>(LoadImageA(NULL, createInfo.icon.c_str(), IMAGE_ICON, 128, 128, LR_LOADFROMFILE));
+	hCursor = LoadCursorW(NULL, IDC_ARROW);
 	className = createInfo.className;
 
 	hInstance = GetModuleHandle(NULL);
@@ -69,47 +69,47 @@ Window::Window(const Win32WindowCreateInfo& createInfo)
 	if (!RegisterClassExA(&wc))
 		throw std::runtime_error("Failed to register a window: " + WinGetLastErrorAsString());
 
-	ExtendedWindowStyle exStyle = createInfo.extendedWindowStyle;
-	WindowStyle style = WindowStyle::OverlappedWindow;
+	ExtendedStyle exStyle = createInfo.extendedStyle;
+	Style style = Style::OverlappedWindow;
 
-	if (createInfo.windowMode == WINDOW_MODE_BORDERLESS_WINDOWED)
+	if (createInfo.windowMode == Mode::BorderlessWindowed)
 	{
 		size.x = GetSystemMetrics(SM_CXSCREEN);
 		size.y = GetSystemMetrics(SM_CYSCREEN);
 		coordinates.x = coordinates.y = 0;
-		exStyle = ExtendedWindowStyle::AppWindow;
-		style = WindowStyle::PopUpWindow;
+		exStyle = ExtendedStyle::AppWindow;
+		style = Style::PopUpWindow;
 	}
 
-	window = CreateWindowExA((DWORD)exStyle, className.c_str(), createInfo.windowName.c_str(), (DWORD)style, createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
+	hWindow = CreateWindowExA((DWORD)exStyle, className.c_str(), createInfo.name.c_str(), (DWORD)style, createInfo.x, createInfo.y, createInfo.width, createInfo.height, NULL, NULL, hInstance, NULL);
 
-	windowBinding[window] = this;
+	windowBinding[hWindow] = this;
 
-	if (window == NULL)
+	if (hWindow == NULL)
 		throw std::runtime_error("Failed to create a window: " + WinGetLastErrorAsString());
 
 	maximized = createInfo.startMaximized;
-	ShowWindow(window, maximized);
+	ShowWindow(hWindow, maximized);
 
-	SetTimer(window, 0, USER_TIMER_MINIMUM, NULL); //makes sure the window is being updated even when if the cursor isnt moving
+	SetTimer(hWindow, 0, USER_TIMER_MINIMUM, NULL); //makes sure the window is being updated even when if the cursor isnt moving
 
 	RAWINPUTDEVICE rawInputDevice{};
 	rawInputDevice.usUsagePage = HID_USAGE_PAGE_GENERIC;
 	rawInputDevice.usUsage = HID_USAGE_GENERIC_MOUSE;
 	rawInputDevice.dwFlags = RIDEV_INPUTSINK;
-	rawInputDevice.hwndTarget = window;
+	rawInputDevice.hwndTarget = hWindow;
 
 	if (!RegisterRawInputDevices(&rawInputDevice, 1, sizeof(rawInputDevice)))
 		throw std::runtime_error("Failed to register the raw input device for the mouse");
 
 #ifdef _DEBUG
-	std::cout << "Created new window with dimensions " << size.x << 'x' << size.y << " and mode " << WindowModeToString(mode) << '\n';
+	std::cout << "Created new window with dimensions " << size.x << 'x' << size.y << " and mode " << ModeToString(mode) << '\n';
 #endif // _DEBUG
 }
 
 void Window::ApplyWindowMode()
 {
-	HMONITOR monitor = MonitorFromWindow(window, 0);
+	HMONITOR monitor = MonitorFromWindow(hWindow, 0);
 
 	MONITORINFOEXA monitorInfo{};
 	monitorInfo.cbSize = sizeof(monitorInfo);
@@ -122,28 +122,28 @@ void Window::ApplyWindowMode()
 	coordinates.x = monitorInfo.rcMonitor.left;
 	coordinates.y = monitorInfo.rcMonitor.top;
 
-	if (mode == WINDOW_MODE_BORDERLESS_WINDOWED)
+	if (mode == Mode::BorderlessWindowed)
 	{
 		size.x = maxWidth;
 		size.y = maxHeight;
 
-		SetWindowLongPtrA(window, GWL_STYLE, BORDERLESS_WINDOWED);
-		if (SetWindowPos(window, NULL, 0, 0, size.x, size.y, SWP_FRAMECHANGED) == 0)
+		SetWindowLongPtrA(hWindow, GWL_STYLE, BORDERLESS_WINDOWED);
+		if (SetWindowPos(hWindow, NULL, 0, 0, size.x, size.y, SWP_FRAMECHANGED) == 0)
 			throw std::runtime_error("Failed to resize the window to borderless mode: " + WinGetLastErrorAsString());
 	}
-	else if (mode == WINDOW_MODE_WINDOWED)
+	else if (mode == Mode::Windowed)
 	{
 		size.x = maxWidth / 2;
 		size.y = maxHeight / 2;
 
-		SetWindowLongPtrA(window, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-		if (SetWindowPos(window, NULL, coordinates.x + size.x / 2, coordinates.y + size.y / 2, size.x, size.y, SWP_FRAMECHANGED) == 0)
+		SetWindowLongPtrA(hWindow, GWL_STYLE, WS_OVERLAPPEDWINDOW);
+		if (SetWindowPos(hWindow, NULL, coordinates.x + size.x / 2, coordinates.y + size.y / 2, size.x, size.y, SWP_FRAMECHANGED) == 0)
 			throw std::runtime_error("Failed to resize the window to windowed mode: " + WinGetLastErrorAsString());
 	}
 	events |= EVENT_VISIBILITY_CHANGE;
 }
 
-void Window::SetWindowMode(WindowMode windowMode)
+void Window::SetWindowMode(Window::Mode windowMode)
 {
 	if (windowMode == mode)
 		return;
@@ -220,16 +220,38 @@ std::string Window::GetDroppedFile()
 	return droppedFile;
 }
 
+int Window::GetMonitorWidth()
+{
+	return GetSystemMetrics(SM_CXSCREEN);
+}
+
+int Window::GetMonitorHeight()
+{
+	return GetSystemMetrics(SM_CYSCREEN);
+}
+
+std::string_view Window::ModeToString(Window::Mode mode)
+{
+	switch (mode)
+	{
+	case Window::Mode::BorderlessWindowed:
+		return "BorderlessWindowed";
+	case Window::Mode::Windowed:
+		return "Windowed";
+	}
+	return "Unknown";
+}
+
 void Window::HandleEvents()
 {
 	if (events & EVENT_MODE_CHANGE)
 		ApplyWindowMode();
 	if (events & EVENT_RESIZE)
-		SetWindowPos(window, NULL, coordinates.x, coordinates.y, size.x, size.y, SWP_FRAMECHANGED);
+		SetWindowPos(hWindow, NULL, coordinates.x, coordinates.y, size.x, size.y, SWP_FRAMECHANGED);
 	if (events & EVENT_CURSOR_CHANGE)
 		ShowCursor(lockCursor);
 	if (events & EVENT_VISIBILITY_CHANGE)
-		ShowWindow(window, maximized ? SW_RESTORE : 0);
+		ShowWindow(hWindow, maximized ? SW_RESTORE : 0);
 
 	events = 0;
 }
@@ -292,7 +314,7 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 
 	case WM_KEYDOWN:
 		if (wParam == VK_F11)
-			window->SetWindowMode(window->mode == WINDOW_MODE_BORDERLESS_WINDOWED ? WINDOW_MODE_WINDOWED : WINDOW_MODE_BORDERLESS_WINDOWED);
+			window->SetWindowMode(window->mode == Mode::BorderlessWindowed ? Mode::Windowed : Mode::BorderlessWindowed);
 		break;
 
 	case WM_INPUT: // when an input has been detected
@@ -350,7 +372,7 @@ void Window::Destroy()
 
 Window::~Window()
 {
-	DestroyWindow(window);
-	windowBinding.erase(window);
+	DestroyWindow(hWindow);
+	windowBinding.erase(hWindow);
 	UnregisterClassA(className.c_str(), hInstance);
 }

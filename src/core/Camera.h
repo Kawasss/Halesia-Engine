@@ -5,7 +5,7 @@
 class Camera
 {
 public:
-	Camera(glm::vec3 position = glm::vec3(0), float aspectRatio = monitorWidth / (float)monitorHeight);
+	Camera(glm::vec3 position = glm::vec3(0), float aspectRatio = Window::GetMonitorWidth() / (float)Window::GetMonitorHeight());
 
 	float cameraSpeed = 5;
 	float pitch = 0, yaw = -(glm::pi<float>() / 2), fov = glm::pi<float>() / 2;
@@ -46,7 +46,7 @@ private:
 	glm::vec2 prev2D = glm::vec2(0);
 	void* attachedScript = nullptr;
 	
-	float nearPlane = 0.01f, farPlane = 1000, aspectRatio = monitorWidth / (float)monitorHeight;
+	float nearPlane = 0.01f, farPlane = 1000, aspectRatio = Window::GetMonitorWidth() / (float)Window::GetMonitorHeight();
 
 protected:
 	void UpdateVectors();

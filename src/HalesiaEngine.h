@@ -14,7 +14,7 @@ class AnimationManager;
 struct HalesiaEngineCreateInfo
 {
 	Scene* startingScene = nullptr;               //!< the engine will use this scene as its entry point
-	Win32WindowCreateInfo windowCreateInfo{};     //!< the engines window will be created with this information
+	Window::CreateInfo windowCreateInfo{};        //!< the engines window will be created with this information
 	VirtualKey devConsoleKey = VirtualKey::Tilde; //!< pressing this key will enable the developer console
 	bool enableDevConsole = true;                 //!< if true, the developer console can be used by pressing 'devConsoleKey'
 	bool playIntro = true;                        //!< the engine will play the intro if true
