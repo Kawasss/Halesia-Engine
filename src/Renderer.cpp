@@ -80,6 +80,11 @@ Renderer::Renderer(Window* window, RendererFlags flags)
 	InitVulkan();
 }
 
+Renderer::~Renderer()
+{
+	Destroy();
+}
+
 void Renderer::Destroy()
 {
 	::vkDeviceWaitIdle(logicalDevice);
@@ -209,7 +214,7 @@ void Renderer::CreateImGUI()
 
 void Renderer::RecompileShaders()
 {
-	if (flags & NO_SHADER_RECOMPILATION)
+	if (flags & NoShaderRecompilation)
 	{
 		Console::WriteLine("Cannot recompile shaders because the flag NO_SHADER_RECOMPILATION was set");
 		return;
@@ -287,7 +292,7 @@ void Renderer::InitVulkan()
 void Renderer::CheckForInterference()
 {
 	uint32_t numTools = DetectExternalTools();
-	if (flags & NO_VALIDATION || numTools > 0)
+	if (flags & NoValidation || numTools > 0)
 	{
 		const char* reason = numTools > 0 ? "Disabled validation layers due to possible interference of external tools\n" : "Disabled validation layers because the flag NO_VALIDATION was set\n";
 		Console::WriteLine(reason);
@@ -391,7 +396,7 @@ void Renderer::CreatePhysicalDevice()
 
 void Renderer::AddExtensions()
 {
-	canRayTrace = Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) && !(flags & NO_RAY_TRACING);
+	canRayTrace = Vulkan::LogicalDeviceExtensionIsSupported(physicalDevice, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME) && !(flags & NoRayTracing);
 	if (!canRayTrace)
 		shouldRasterize = true;
 	else
@@ -454,7 +459,7 @@ void Renderer::CreateTextureSampler()
 	result = ::vkCreateSampler(logicalDevice, &createInfo, nullptr, &noFilterSampler);
 	CheckVulkanResult("Failed to create the texture sampler", result);
 
-	resultSampler = flags & NO_FILTERING_ON_RESULT ? noFilterSampler : defaultSampler;
+	resultSampler = flags & NoFilteringOnResult ? noFilterSampler : defaultSampler;
 }
 
 void Renderer::Create3DRenderPass()
@@ -984,16 +989,6 @@ void Renderer::SetViewportModifiers(glm::vec2 modifiers)
 	shouldResize = true;
 }
 
-glm::vec2 Renderer::GetViewportOffset() const
-{
-	return viewportOffsets;
-}
-
-glm::vec2 Renderer::GetViewportModifier() const
-{
-	return viewportTransModifiers;
-}
-
 void Renderer::SetInternalResolutionScale(float scale)
 {
 	internalScale = scale;
@@ -1074,4 +1069,64 @@ const std::string& Renderer::GetRenderPipelineName(RenderPipeline* renderPipelin
 			return name;
 	__debugbreak();
 	return "";
+}
+
+glm::vec2 Renderer::GetViewportOffset() const
+{
+	return viewportOffsets;
+}
+
+glm::vec2 Renderer::GetViewportModifier() const
+{
+	return viewportTransModifiers;
+}
+
+VkRenderPass Renderer::GetDefault3DRenderPass() const
+{
+	return renderPass;
+}
+
+VkRenderPass Renderer::GetNonClearingRenderPass() const
+{
+	return GUIRenderPass;
+}
+
+uint32_t Renderer::GetInternalWidth() const
+{
+	return viewportWidth;
+}
+
+uint32_t Renderer::GetInternalHeight() const 
+{ 
+	return viewportHeight; 
+}
+
+std::map<std::string, uint64_t> Renderer::GetTimestamps() const
+{
+	return queryPool.GetTimestamps(); 
+}
+
+Framebuffer& Renderer::GetFramebuffer()
+{
+	return framebuffer;
+}
+
+CommandBuffer Renderer::GetActiveCommandBuffer() const
+{
+	return activeCmdBuffer;
+}
+
+const FIF::Buffer& Renderer::GetLightBuffer() const
+{
+	return lightBuffer;
+}
+
+const std::vector<RenderPipeline*>& Renderer::GetAllRenderPipelines() const
+{
+	return renderPipelines; 
+}
+
+bool Renderer::CompletedFIFCyle()
+{
+	return FIF::frameIndex == 0;
 }

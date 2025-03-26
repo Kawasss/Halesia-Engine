@@ -16,19 +16,20 @@ int main(int argc, char** argv)
 {
 	Window::CreateInfo windowInfo{};
 	windowInfo.name = "Halesia Test Scene";
+	windowInfo.icon = "logo4.ico";
 	windowInfo.width = 800;
 	windowInfo.height = 600;
 	windowInfo.windowMode = Window::Mode::Windowed;
-	windowInfo.icon = "logo4.ico";
 	windowInfo.extendedStyle = Window::ExtendedStyle::DragAndDropFiles;
 	windowInfo.startMaximized = false;
 
 	HalesiaEngine::CreateInfo createInfo{};
 	createInfo.argsCount = argc;
 	createInfo.args = argv;
-	createInfo.startingScene = new Editor();
-	createInfo.renderFlags = Renderer::Flags::NO_FILTERING_ON_RESULT;
+	createInfo.startingScene = new Editor(); // launch the engines built-in editor
+	createInfo.renderFlags = Renderer::Flags::NoFilteringOnResult; // the renderer must not filter the final frame for crisp resolution scaling
 	createInfo.windowCreateInfo = windowInfo;
+
 #ifdef _DEBUG
 	createInfo.playIntro = false;
 #endif // _DEBUG
@@ -36,9 +37,7 @@ int main(int argc, char** argv)
 	HalesiaEngine* instance = HalesiaEngine::CreateInstance(createInfo);
 	Renderer*      renderer = instance->GetEngineCore().renderer;
 
-	renderer->AddRenderPipeline<DeferredPipeline>("deferred");
-	
-	DeferredPipeline* deferred = dynamic_cast<DeferredPipeline*>(renderer->GetRenderPipeline("deferred"));
+	DeferredPipeline* deferred = renderer->AddRenderPipeline<DeferredPipeline>("deferred"); // choose the deferred pipeline for rendering
 	deferred->LoadSkybox("textures/skybox/park.hdr");
 
 	instance->Run();

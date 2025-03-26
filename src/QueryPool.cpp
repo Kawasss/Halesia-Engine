@@ -61,7 +61,7 @@ void QueryPool::EndTimestamp(CommandBuffer commandBuffer, const std::string& lab
 	timestamp.end = &data[timestampIndex++];
 }
 
-std::map<std::string, uint64_t> QueryPool::GetTimestamps()
+std::map<std::string, uint64_t> QueryPool::GetTimestamps() const
 {
 	std::map<std::string, uint64_t> ret;
 	for (const auto& [label, timestamp] : timestamps)

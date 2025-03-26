@@ -40,11 +40,11 @@ class Renderer
 public:
 	enum Flags : RendererFlags
 	{
-		NONE = 0,
-		NO_RAY_TRACING = 1 << 0,
-		NO_SHADER_RECOMPILATION = 1 << 1,
-		NO_VALIDATION = 1 << 2,
-		NO_FILTERING_ON_RESULT = 1 << 3,
+		None                  = 0 << 0,
+		NoRayTracing          = 1 << 0,
+		NoShaderRecompilation = 1 << 1,
+		NoValidation          = 1 << 2,
+		NoFilteringOnResult   = 1 << 3,
 	};
 
 	static constexpr uint32_t MAX_MESHES			= 1000U; //should be more than enough
@@ -60,43 +60,41 @@ public:
 	static VkSampler noFilterSampler;
 
 	Renderer(Window* window, RendererFlags flags);
-	~Renderer() { Destroy(); }
+	~Renderer();
 
-	void Destroy();
-	void RecompileShaders();
 	void RenderIntro(Intro* intro);
+	void RenderObjects(const std::vector<Object*>& objects, Camera* camera);
+
 	void AddLight(const Light& light);
 	void RemoveLight(int index);
-
-	void SetViewportOffsets(glm::vec2 offsets);
-	void SetViewportModifiers(glm::vec2 modifiers);
-
-	glm::vec2 GetViewportOffset() const;
-	glm::vec2 GetViewportModifier() const;
 
 	void StartRecording();
 	void SubmitRecording();
 
-	void RenderObjects(const std::vector<Object*>& objects, Camera* camera);
-
 	void StartRenderPass(VkRenderPass renderPass, glm::vec3 clearColor = glm::vec3(0), VkFramebuffer framebuffer = VK_NULL_HANDLE);
 	void StartRenderPass(const Framebuffer& framebuffer, glm::vec3 clearColor = glm::vec3(0));
 
-	std::map<std::string, uint64_t> GetTimestamps() { return queryPool.GetTimestamps(); }
+	void SetViewportOffsets(glm::vec2 offsets);
+	void SetViewportModifiers(glm::vec2 modifiers);
 
-	VkRenderPass GetDefault3DRenderPass()   const { return renderPass;    }
-	VkRenderPass GetNonClearingRenderPass() const { return GUIRenderPass; }
+	std::map<std::string, uint64_t> GetTimestamps() const;
 
-	Framebuffer& GetFramebuffer() { return framebuffer; }
+	VkRenderPass GetDefault3DRenderPass()   const;
+	VkRenderPass GetNonClearingRenderPass() const;
 
-	uint32_t GetInternalWidth()  const { return viewportWidth;  }
-	uint32_t GetInternalHeight() const { return viewportHeight; }
+	Framebuffer& GetFramebuffer();
 
-	CommandBuffer GetActiveCommandBuffer() const { return activeCmdBuffer; }
+	uint32_t GetInternalWidth()  const;
+	uint32_t GetInternalHeight() const;
+
+	glm::vec2 GetViewportOffset() const;
+	glm::vec2 GetViewportModifier() const;
+
+	CommandBuffer GetActiveCommandBuffer() const;
 	
-	const FIF::Buffer& GetLightBuffer() const { return lightBuffer; }
+	const FIF::Buffer& GetLightBuffer() const;
 
-	const std::vector<RenderPipeline*>& GetAllRenderPipelines() const { return renderPipelines; }
+	const std::vector<RenderPipeline*>& GetAllRenderPipelines() const;
 	const std::string& GetRenderPipelineName(RenderPipeline* renderPipeline) const;
 
 	int GetLightCount() const;
@@ -110,24 +108,19 @@ public:
 	static void SetViewport(CommandBuffer commandBuffer, VkExtent2D extent);
 	static void SetScissors(CommandBuffer commandBuffer, VkExtent2D extent);
 
-	static bool CompletedFIFCyle() { return FIF::frameIndex == 0; }
+	static bool CompletedFIFCyle();
 
 	RenderPipeline::Payload GetPipelinePayload(CommandBuffer commandBuffer, Camera* camera);
 
 	template<typename Type> 
-	void AddRenderPipeline(const char* name = "unnamed pipeline")
-	{
-		Type* actualPtr = new Type();
-		RenderPipeline* ptr = dynamic_cast<RenderPipeline*>(actualPtr);
-		dbgPipelineNames[ptr] = name;
-		ProcessRenderPipeline(ptr);  // should check if it derives from RenderPipeline
-	}
+	Type* AddRenderPipeline(const char* name = "unnamed pipeline"); // returns the created pipeline
 
 	RenderPipeline* GetRenderPipeline(const std::string_view& name);
 
-	static bool CompileShaderToSpirv(const std::filesystem::path& file); //!< returns true if the shader is compiled, false if the shader didnt need to be compiled
+	void RecompileShaders();
 	static void ForceCompileShaderToSpirv(const std::filesystem::path& file);
-
+	static bool CompileShaderToSpirv(const std::filesystem::path& file); //!< returns true if the shader is compiled, false if the shader didnt need to be compiled
+	
 	Swapchain* swapchain; // better to keep it private
 	AnimationManager* animationManager;
 
@@ -196,13 +189,15 @@ private:
 	uint32_t currentFrame = 0;
 	uint32_t imageIndex = 0;
 	uint32_t queueIndex = 0;
-	RendererFlags flags = NONE; 
+	RendererFlags flags = Flags::None; 
 	
 	RayTracingRenderPipeline* rayTracer;
 	ForwardPlusPipeline* fwdPlus;
 	DescriptorWriter* writer;
 
 	bool shouldResize = false; // this uses a bool so that other threads can request the renderer to resize
+
+	void Destroy();
 
 	void InitVulkan();
 	void SetLogicalDevice();
@@ -250,3 +245,14 @@ private:
 	void PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex);
 	void SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
 };
+
+template<typename Type>
+Type* Renderer::AddRenderPipeline(const char* name)
+{
+	Type* actualPtr = new Type();
+	RenderPipeline* ptr = dynamic_cast<RenderPipeline*>(actualPtr);
+	dbgPipelineNames[ptr] = name;
+	ProcessRenderPipeline(ptr);  // should check if it derives from RenderPipeline
+
+	return actualPtr;
+}

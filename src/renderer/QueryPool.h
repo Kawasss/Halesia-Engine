@@ -20,7 +20,7 @@ public:
 	void BeginTimestamp(CommandBuffer commandBuffer, const std::string& label);
 	void EndTimestamp(CommandBuffer commandBuffer, const std::string& label);
 
-	std::map<std::string, uint64_t> GetTimestamps();
+	std::map<std::string, uint64_t> GetTimestamps() const;
 
 	uint64_t& operator[](size_t index);
 

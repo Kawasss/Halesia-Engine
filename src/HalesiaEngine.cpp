@@ -59,14 +59,14 @@ static void WaitForTimeLimit(const std::chrono::steady_clock::time_point& startT
 
 static RendererFlags GetRendererFlagsFromBehavior()
 {
-	RendererFlags ret = Renderer::Flags::NONE;
+	RendererFlags ret = Renderer::Flags::None;
 	for (int i = 0; i < Behavior::arguments.size(); i++)
 	{
 		const std::string_view& str = Behavior::arguments[i];
 		if (str == "-no_shader_recompilation")
-			ret |= Renderer::Flags::NO_SHADER_RECOMPILATION;
+			ret |= Renderer::Flags::NoShaderRecompilation;
 		else if (str == "-force_no_ray_tracing")
-			ret |= Renderer::Flags::NO_RAY_TRACING;
+			ret |= Renderer::Flags::NoRayTracing;
 		else if (str == "-vulkan_no_validation")
 			Vulkan::DisableValidationLayers();
 		else if (str == "-force_gpu" && Behavior::arguments.size() > i + 1)
