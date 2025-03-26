@@ -8,6 +8,7 @@ namespace Behavior // could also do something with converting the arguments into
 
 	inline void ProcessArguments(int argc, char** argv)
 	{
+		arguments.reserve(argc);
 		for (int i = 0; i < argc; i++)
 			arguments.push_back(argv[i]);
 	}
