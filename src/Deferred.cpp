@@ -328,11 +328,36 @@ void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)
 
 	prevDepthImage = Vulkan::CreateImage(width, height, 1, 1, ctx.physicalDevice.GetDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
 	prevDepthView = Vulkan::CreateImageView(prevDepthImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, ctx.physicalDevice.GetDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
+
+	prevRtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	prevRtgiView = Vulkan::CreateImageView(prevRtgiImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void DeferredPipeline::BindTAAResources()
 {
+	taaPipeline->BindImageToName("depthImage", framebuffer.GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	taaPipeline->BindImageToName("prevDepthImage", prevDepthView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	taaPipeline->BindImageToName("baseImage", rtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	taaPipeline->BindImageToName("prevBaseImage", prevRtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	taaPipeline->BindImageToName("velocityImage", GetVelocityView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
 
+void DeferredPipeline::ResizeTAA(uint32_t width, uint32_t height)
+{
+	if (prevDepthImage.IsValid())
+		prevDepthImage.Destroy();
+
+	if (prevDepthView != VK_NULL_HANDLE)
+		vgm::Delete(prevDepthView);
+
+	if (prevRtgiImage.IsValid())
+		prevRtgiImage.Destroy();
+
+	if (prevRtgiView != VK_NULL_HANDLE)
+		vgm::Delete(prevRtgiView);
+
+	CreateTAAResources(width, height);
+	BindTAAResources();
 }
 
 void DeferredPipeline::CopyResourcesForTAA(const CommandBuffer& cmdBuffer)
@@ -558,7 +583,8 @@ void DeferredPipeline::UpdateUBO(Camera* cam)
 DeferredPipeline::~DeferredPipeline()
 {
 	vgm::Delete(renderPass);
-	vgm::Delete(rtgiView);
 
+	vgm::Delete(rtgiView);
+	vgm::Delete(prevRtgiView);
 	vgm::Delete(prevDepthView);
 }

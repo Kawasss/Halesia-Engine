@@ -60,8 +60,12 @@ private:
 	void CreateTAAPipeline();
 	void CreateTAAResources(uint32_t width, uint32_t height);
 	void BindTAAResources();
+	void ResizeTAA(uint32_t width, uint32_t height);
 	void CopyResourcesForTAA(const CommandBuffer& cmdBuffer);
 	void CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer);
+
+	void TransitionResourcesToTAA(const CommandBuffer& cmdBuffer);
+	void TransitionResourcesFromTAA(const CommandBuffer& cmdBuffer);
 
 	void CreateAndBindRTGI(uint32_t width, uint32_t height); // maybe seperate RTGI into its own class ??
 	void PushRTGIConstants(const Payload& payload);
@@ -78,6 +82,7 @@ private:
 	VkImageView GetAlbedoView()   { return framebuffer.GetViews()[1]; }
 	VkImageView GetNormalView()   { return framebuffer.GetViews()[2]; }
 	VkImageView GetMRAOView()     { return framebuffer.GetViews()[3]; }
+	VkImageView GetVelocityView() { return framebuffer.GetViews()[4]; }
 
 	Framebuffer framebuffer;
 
@@ -86,8 +91,14 @@ private:
 	vvm::SmartImage rtgiImage;
 	VkImageView rtgiView = VK_NULL_HANDLE;
 
+	vvm::SmartImage prevRtgiImage;
+	VkImageView prevRtgiView = VK_NULL_HANDLE;
+
 	vvm::SmartImage prevDepthImage;
 	VkImageView prevDepthView = VK_NULL_HANDLE;
+
+	vvm::SmartImage denoisedRrtgiImage;
+	VkImageView denoisedRtgiView = VK_NULL_HANDLE;
 
 	std::unique_ptr<GraphicsPipeline> firstPipeline;
 	std::unique_ptr<GraphicsPipeline> secondPipeline;
