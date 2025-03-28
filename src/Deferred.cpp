@@ -59,7 +59,7 @@ void DeferredPipeline::Start(const Payload& payload)
 	CreateBuffers();
 	CreateRenderPass(formats);
 
-	framebuffer.Init(renderPass, payload.width, payload.height, formats);
+	framebuffer.Init(renderPass, payload.width, payload.height, formats, 1.0f, true);
 
 	if (Renderer::canRayTrace)
 		TLAS.reset(TopLevelAccelerationStructure::Create());
@@ -335,11 +335,11 @@ void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)
 
 void DeferredPipeline::BindTAAResources()
 {
-	/*taaPipeline->BindImageToName("depthImage", framebuffer.GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	taaPipeline->BindImageToName("depthImage", framebuffer.GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	taaPipeline->BindImageToName("prevDepthImage", prevDepthView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	taaPipeline->BindImageToName("baseImage", rtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	taaPipeline->BindImageToName("prevBaseImage", prevRtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	taaPipeline->BindImageToName("velocityImage", GetVelocityView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);*/
+	taaPipeline->BindImageToName("velocityImage", GetVelocityView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void DeferredPipeline::ResizeTAA(uint32_t width, uint32_t height)
@@ -391,7 +391,7 @@ void DeferredPipeline::LoadSkybox(const std::string& path)
 
 	uint32_t width = framebuffer.GetWidth(), height = framebuffer.GetHeight();
 	if (width != 0 && height != 0)
-		skybox->Resize(width, height);
+		skybox->Resize(width, height, true);
 
 	skybox->targetView = GetAlbedoView();
 	skybox->depth = framebuffer.GetDepthView();
@@ -487,7 +487,7 @@ void DeferredPipeline::Resize(const Payload& payload)
 
 	BindGBuffers();
 
-	skybox->Resize(payload.width, payload.height);
+	skybox->Resize(payload.width, payload.height, true);
 	skybox->targetView = GetAlbedoView();
 	skybox->depth = framebuffer.GetDepthView();
 

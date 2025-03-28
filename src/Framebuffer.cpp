@@ -6,9 +6,9 @@
 #include "renderer/GarbageManager.h"
 #include "renderer/VulkanAPIError.h"
 
-Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes)
+Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes, bool sampleDepth)
 {
-	Init(renderPass, imageCount, width, height, format, relativeRes);
+	Init(renderPass, imageCount, width, height, format, relativeRes, sampleDepth);
 }
 
 Framebuffer::~Framebuffer()
@@ -16,12 +16,13 @@ Framebuffer::~Framebuffer()
 	Destroy();
 }
 
-void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes)
+void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes, bool sampleDepth)
 {
 	this->renderPass = renderPass;
 	this->width  = static_cast<uint32_t>(width * relativeRes);
 	this->height = static_cast<uint32_t>(height * relativeRes);
 	this->relRes = relRes;
+	this->sampleDepth = sampleDepth;
 
 	formats.resize(imageCount);
 	std::fill(formats.begin(), formats.end(), format);
@@ -30,13 +31,14 @@ void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t wi
 	Allocate();
 }
 
-void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::span<VkFormat>& formats, float relativeRes)
+void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::span<VkFormat>& formats, float relativeRes, bool sampleDepth)
 {
 	this->renderPass = renderPass;
 	this->width = static_cast<uint32_t>(width * relativeRes);
 	this->height = static_cast<uint32_t>(height * relativeRes);
 	this->formats = std::vector<VkFormat>(formats.begin(), formats.end());
 	this->relRes = relRes;
+	this->sampleDepth = sampleDepth;
 
 	ResizeImageContainers(formats.size(), true);
 	Allocate();
@@ -61,8 +63,10 @@ void Framebuffer::Allocate()
 		imageViews[i] = Vulkan::CreateImageView(images[i].Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, formats[i], VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
+	const VkImageUsageFlags depthUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | (sampleDepth ? VK_IMAGE_USAGE_SAMPLED_BIT : 0);
+
 	VkFormat depthFormat = ctx.physicalDevice.GetDepthFormat();
-	images.back() = Vulkan::CreateImage(width, height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	images.back() = Vulkan::CreateImage(width, height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, depthUsage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
 	imageViews.back() = Vulkan::CreateImageView(images.back().Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 	VkFramebufferCreateInfo createInfo{};

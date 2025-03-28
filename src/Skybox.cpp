@@ -61,10 +61,13 @@ Skybox::Skybox()
 	pipeline = new GraphicsPipeline(createInfo);
 }
 
-void Skybox::CreateFramebuffer(uint32_t width, uint32_t height)
+void Skybox::CreateFramebuffer(uint32_t width, uint32_t height, bool sampleDepth)
 {
 	constexpr VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 	const VkFormat depthFormat = Vulkan::GetContext().physicalDevice.GetDepthFormat();
+
+	const VkImageUsageFlags depthUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | (sampleDepth ? VK_IMAGE_USAGE_SAMPLED_BIT : 0);
+
 
 	VkFramebufferAttachmentImageInfo imageInfos[2]{};
 
@@ -79,7 +82,7 @@ void Skybox::CreateFramebuffer(uint32_t width, uint32_t height)
 
 	VkFramebufferAttachmentImageInfo& depthInfo = imageInfos[1];
 	depthInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO;
-	depthInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	depthInfo.usage = depthUsage;
 	depthInfo.width = width;
 	depthInfo.height = height;
 	depthInfo.layerCount = 1;
@@ -104,7 +107,7 @@ void Skybox::CreateFramebuffer(uint32_t width, uint32_t height)
 	vkCreateFramebuffer(Vulkan::GetContext().logicalDevice, &createInfo, nullptr, &framebuffer);
 }
 
-void Skybox::Resize(uint32_t width, uint32_t height)
+void Skybox::Resize(uint32_t width, uint32_t height, bool sampleDepth)
 {
 	this->width  = width;
 	this->height = height;
@@ -112,7 +115,7 @@ void Skybox::Resize(uint32_t width, uint32_t height)
 	if (framebuffer != VK_NULL_HANDLE)
 		vgm::Delete(framebuffer);
 
-	CreateFramebuffer(width, height);
+	CreateFramebuffer(width, height, sampleDepth);
 }
 
 void Skybox::Draw(const CommandBuffer& cmdBuffer, Camera* camera)
