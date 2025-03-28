@@ -31,7 +31,7 @@ void Intro::Create(Swapchain* swapchain, std::string imagePath)
 	pipeline->BindBufferToName("timer", uniformBuffer.Get());
 	pipeline->BindImageToName("image", texture->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	DescriptorWriter::Get()->Write();
+	DescriptorWriter::Write();
 }
 
 void Intro::CreateRenderPass()

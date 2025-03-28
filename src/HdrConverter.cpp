@@ -113,7 +113,7 @@ void HdrConverter::ConvertTextureIntoCubemap(const CommandBuffer& cmdBuffer, con
 	Renderer::SetScissors(cmdBuffer, { 1024, 1024 });
 
 	pipeline->BindImageToName("equirectangularMap", texture->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	DescriptorWriter::Get()->Write();
+	DescriptorWriter::Write();
 
 	PushConstantConverter push{};
 	push.projection = glm::perspective(glm::pi<float>() * 0.5f, 1.0f, 0.01f, 1000.0f);

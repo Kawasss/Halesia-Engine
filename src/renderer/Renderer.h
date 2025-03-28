@@ -22,7 +22,6 @@ class Object;
 class Swapchain;
 class Image;
 class AnimationManager;
-class DescriptorWriter;
 class Window;
 class RayTracingRenderPipeline;
 class ForwardPlusPipeline;
@@ -193,7 +192,6 @@ private:
 	
 	RayTracingRenderPipeline* rayTracer;
 	ForwardPlusPipeline* fwdPlus;
-	DescriptorWriter* writer;
 
 	bool shouldResize = false; // this uses a bool so that other threads can request the renderer to resize
 

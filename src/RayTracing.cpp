@@ -571,10 +571,8 @@ void RayTracingRenderPipeline::UpdateDescriptorSets()
 
 void RayTracingRenderPipeline::OnRenderingBufferResize(const Payload& payload)
 {
-	DescriptorWriter* writer = DescriptorWriter::Get();
-
-	writer->WriteBuffer(descriptorSets[0], Renderer::g_indexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2);
-	writer->WriteBuffer(descriptorSets[0], Renderer::g_vertexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
+	DescriptorWriter::WriteBuffer(descriptorSets[0], Renderer::g_indexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 2);
+	DescriptorWriter::WriteBuffer(descriptorSets[0], Renderer::g_vertexBuffer.GetBufferHandle(), VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 3);
 }
 
 void RayTracingRenderPipeline::UpdateTextureBuffer()

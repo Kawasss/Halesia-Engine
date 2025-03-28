@@ -113,8 +113,6 @@ void Renderer::Destroy()
 		delete renderPipeline;
 	}
 
-	delete writer;
-
 	delete animationManager;
 
 	HdrConverter::End();
@@ -362,7 +360,6 @@ void Renderer::CreateDefaultObjects() // default objects are objects that are al
 	if (defaultSampler == VK_NULL_HANDLE)
 		CreateTextureSampler();
 
-	writer = DescriptorWriter::Get();
 	animationManager = AnimationManager::Get();
 
 	queryPool.Create(VK_QUERY_TYPE_TIMESTAMP, 10);
@@ -604,7 +601,7 @@ void Renderer::CheckForBufferResizes()
 	for (RenderPipeline* pipeline : renderPipelines)
 		pipeline->OnRenderingBufferResize(payload);
 
-	writer->Write(); // force a write, because rendering will immediately start over this check
+	DescriptorWriter::Write(); // force a write, because rendering will immediately start over this check
 }
 
 void Renderer::RenderImGUI(CommandBuffer commandBuffer)
@@ -780,7 +777,7 @@ void Renderer::StartRecording()
 	receivedObjects = 0;
 	renderedObjects = 0;
 
-	writer->Write();
+	DescriptorWriter::Write();
 }
 
 void Renderer::SubmitRecording()
@@ -882,7 +879,7 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 
 	imageView = (shouldRasterize || !canRayTrace || rayTracer == nullptr) ? framebuffer.GetViews()[0] : rayTracer->gBufferViews[0];
 	screenPipeline->BindImageToName("image", imageView, resultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	writer->Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
+	DescriptorWriter::Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
 }
 
 std::vector<Object*> processedObjects;
@@ -895,7 +892,7 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 
 		for (int j = 0; j < deferredMaterialTextures.size(); j++)
 		{
-			writer->WriteImage(screenPipeline->GetDescriptorSets()[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, Mesh::materials[i][deferredMaterialTextures[j]]->imageView, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); // dont have any test to run this on, so I just hope this works
+			DescriptorWriter::WriteImage(screenPipeline->GetDescriptorSets()[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, Mesh::materials[i][deferredMaterialTextures[j]]->imageView, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); // dont have any test to run this on, so I just hope this works
 		}
 		processedMaterials[i] = Mesh::materials[i].handle;
 	}

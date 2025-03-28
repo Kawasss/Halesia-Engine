@@ -1,14 +1,10 @@
 #include "renderer/DescriptorWriter.h"
 #include "renderer/Vulkan.h"
 
-DescriptorWriter* DescriptorWriter::Get()
-{
-	static DescriptorWriter* ptr = nullptr;
-	if (ptr == nullptr)
-		ptr = new DescriptorWriter;
+DescriptorWriter::GenericDescriptorInfo DescriptorWriter::infos[MAX_INFO_COUNT];
+VkWriteDescriptorSet DescriptorWriter::writeSets[MAX_INFO_COUNT];
 
-	return ptr;
-}
+int DescriptorWriter::infoSize = 0;
 
 void DescriptorWriter::Write()
 {

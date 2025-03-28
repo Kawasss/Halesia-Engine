@@ -115,38 +115,30 @@ void Pipeline::BindBufferToName(const std::string& name, VkBuffer buffer)
 {
 	const BindingLayout& binding = nameToLayout[name];
 
-	DescriptorWriter* writer = DescriptorWriter::Get();
-
 	for (int i = 0; i < FIF::FRAME_COUNT; i++)
-		writer->WriteBuffer(descriptorSets[i][binding.set], buffer, binding.binding.descriptorType, binding.binding.binding);
+		DescriptorWriter::WriteBuffer(descriptorSets[i][binding.set], buffer, binding.binding.descriptorType, binding.binding.binding);
 }
 
 void Pipeline::BindBufferToName(const std::string& name, const FIF::Buffer& buffer)
 {
 	const BindingLayout& binding = nameToLayout[name];
 
-	DescriptorWriter* writer = DescriptorWriter::Get();
-
 	for (int i = 0; i < FIF::FRAME_COUNT; i++)
-		writer->WriteBuffer(descriptorSets[i][binding.set], buffer[i], binding.binding.descriptorType, binding.binding.binding);
+		DescriptorWriter::WriteBuffer(descriptorSets[i][binding.set], buffer[i], binding.binding.descriptorType, binding.binding.binding);
 }
 
 void Pipeline::BindImageToName(const std::string& name, VkImageView view, VkSampler sampler, VkImageLayout layout)
 {
 	const BindingLayout& binding = nameToLayout[name];
 
-	DescriptorWriter* writer = DescriptorWriter::Get();
-
 	for (int i = 0; i < FIF::FRAME_COUNT; i++)
-		writer->WriteImage(descriptorSets[i][binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout);
+		DescriptorWriter::WriteImage(descriptorSets[i][binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout);
 }
 
 void Pipeline::BindImageToName(const std::string& name, uint32_t index, VkImageView view, VkSampler sampler, VkImageLayout layout)
 {
 	const BindingLayout& binding = nameToLayout[name];
 
-	DescriptorWriter* writer = DescriptorWriter::Get();
-
 	for (int i = 0; i < FIF::FRAME_COUNT; i++)
-		writer->WriteImage(descriptorSets[i][binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout, 1, index);
+		DescriptorWriter::WriteImage(descriptorSets[i][binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout, 1, index);
 }
