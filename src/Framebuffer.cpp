@@ -6,9 +6,9 @@
 #include "renderer/GarbageManager.h"
 #include "renderer/VulkanAPIError.h"
 
-Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes, bool sampleDepth)
+Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes)
 {
-	Init(renderPass, imageCount, width, height, format, relativeRes, sampleDepth);
+	Init(renderPass, imageCount, width, height, format, relativeRes);
 }
 
 Framebuffer::~Framebuffer()
@@ -16,13 +16,12 @@ Framebuffer::~Framebuffer()
 	Destroy();
 }
 
-void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes, bool sampleDepth)
+void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes)
 {
 	this->renderPass = renderPass;
 	this->width  = static_cast<uint32_t>(width * relativeRes);
 	this->height = static_cast<uint32_t>(height * relativeRes);
 	this->relRes = relRes;
-	this->sampleDepth = sampleDepth;
 
 	formats.resize(imageCount);
 	std::fill(formats.begin(), formats.end(), format);
@@ -31,14 +30,13 @@ void Framebuffer::Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t wi
 	Allocate();
 }
 
-void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::span<VkFormat>& formats, float relativeRes, bool sampleDepth)
+void Framebuffer::Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::span<VkFormat>& formats, float relativeRes)
 {
 	this->renderPass = renderPass;
 	this->width = static_cast<uint32_t>(width * relativeRes);
 	this->height = static_cast<uint32_t>(height * relativeRes);
 	this->formats = std::vector<VkFormat>(formats.begin(), formats.end());
 	this->relRes = relRes;
-	this->sampleDepth = sampleDepth;
 
 	ResizeImageContainers(formats.size(), true);
 	Allocate();
@@ -62,7 +60,7 @@ void Framebuffer::Allocate()
 
 	for (int i = 0; i < images.size() - 1; i++)
 	{
-		images[i] = Vulkan::CreateImage(width, height, 1, 1, formats[i], VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | imageUsages[i], VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+		images[i] = Vulkan::CreateImage(width, height, 1, 1, formats[i], VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | imageUsages[i], VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
 		imageViews[i] = Vulkan::CreateImageView(images[i].Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, formats[i], VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
@@ -93,7 +91,7 @@ void Framebuffer::Allocate()
 
 void Framebuffer::SetImageUsage(unsigned int index, VkImageUsageFlags flags)
 {
-	if (index > imageUsages.size())
+	if (index >= imageUsages.size())
 		imageUsages.resize(index + 1);
 
 	imageUsages[index] |= flags;
