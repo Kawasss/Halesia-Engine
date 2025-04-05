@@ -59,7 +59,10 @@ void DeferredPipeline::Start(const Payload& payload)
 	CreateBuffers();
 	CreateRenderPass(formats);
 
-	framebuffer.Init(renderPass, payload.width, payload.height, formats, 1.0f, true);
+	for (int i = 0; i < formats.size() + 1; i++) // also account for the depth
+		framebuffer.SetImageUsage(i, VK_IMAGE_USAGE_SAMPLED_BIT);
+
+	framebuffer.Init(renderPass, payload.width, payload.height, formats, 1.0f);
 
 	if (Renderer::canRayTrace)
 		TLAS.reset(TopLevelAccelerationStructure::Create());
@@ -366,6 +369,16 @@ void DeferredPipeline::CopyResourcesForTAA(const CommandBuffer& cmdBuffer)
 }
 
 void DeferredPipeline::CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer)
+{
+
+}
+
+void DeferredPipeline::TransitionResourcesFromTAA(const CommandBuffer& cmdBuffer)
+{
+
+}
+
+void DeferredPipeline::TransitionResourcesToTAA(const CommandBuffer& cmdBuffer)
 {
 
 }

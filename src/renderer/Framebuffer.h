@@ -10,11 +10,14 @@ class Framebuffer
 {
 public:
 	Framebuffer() = default;
-	Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes = 1.0f, bool sampleDepth = false);
+	Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes = 1.0f);
 	~Framebuffer();
 
-	void Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes = 1.0f, bool sampleDepth = false);
-	void Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::span<VkFormat>& formats, float relativeRes = 1.0f, bool sampleDepth = false);
+	void Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes = 1.0f);
+	void Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::span<VkFormat>& formats, float relativeRes = 1.0f);
+
+	void SetImageUsage(unsigned int index, VkImageUsageFlags flags);
+	VkImageUsageFlags GetImageUsage(unsigned int index) const;
 
 	void Resize(uint32_t width, uint32_t height);
 
@@ -49,10 +52,10 @@ private:
 	std::vector<VkFormat> formats;
 	uint32_t width = 0, height = 0;
 	float relRes = 1.0f;
-	bool sampleDepth = false;
 
 	std::vector<vvm::Image> images;
 	std::vector<VkImageView> imageViews;
+	std::vector<VkImageUsageFlags> imageUsages;
 };
 
 class ObserverFramebuffer

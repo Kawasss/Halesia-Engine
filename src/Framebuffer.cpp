@@ -51,6 +51,9 @@ void Framebuffer::ResizeImageContainers(size_t size, bool depth)
 
 	images.resize(size);
 	imageViews.resize(size);
+
+	if (imageUsages.size() < size)
+		imageUsages.resize(size);
 }
 
 void Framebuffer::Allocate()
@@ -59,14 +62,12 @@ void Framebuffer::Allocate()
 
 	for (int i = 0; i < images.size() - 1; i++)
 	{
-		images[i] = Vulkan::CreateImage(width, height, 1, 1, formats[i], VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+		images[i] = Vulkan::CreateImage(width, height, 1, 1, formats[i], VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | imageUsages[i], VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
 		imageViews[i] = Vulkan::CreateImageView(images[i].Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, formats[i], VK_IMAGE_ASPECT_COLOR_BIT);
 	}
 
-	const VkImageUsageFlags depthUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | (sampleDepth ? VK_IMAGE_USAGE_SAMPLED_BIT : 0);
-
 	VkFormat depthFormat = ctx.physicalDevice.GetDepthFormat();
-	images.back() = Vulkan::CreateImage(width, height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, depthUsage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	images.back() = Vulkan::CreateImage(width, height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | imageUsages.back(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
 	imageViews.back() = Vulkan::CreateImageView(images.back().Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
 
 	VkFramebufferCreateInfo createInfo{};
@@ -88,6 +89,19 @@ void Framebuffer::Allocate()
 
 	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
 	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
+}
+
+void Framebuffer::SetImageUsage(unsigned int index, VkImageUsageFlags flags)
+{
+	if (index > imageUsages.size())
+		imageUsages.resize(index + 1);
+
+	imageUsages[index] |= flags;
+}
+
+VkImageUsageFlags Framebuffer::GetImageUsage(unsigned int index) const
+{
+	return index > imageUsages.size() ? 0 : imageUsages[index];
 }
 
 void Framebuffer::Resize(uint32_t width, uint32_t height)

@@ -68,7 +68,6 @@ void Skybox::CreateFramebuffer(uint32_t width, uint32_t height, bool sampleDepth
 
 	const VkImageUsageFlags depthUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | (sampleDepth ? VK_IMAGE_USAGE_SAMPLED_BIT : 0);
 
-
 	VkFramebufferAttachmentImageInfo imageInfos[2]{};
 
 	VkFramebufferAttachmentImageInfo& imageInfo = imageInfos[0];
