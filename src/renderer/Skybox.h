@@ -23,9 +23,12 @@ public:
 
 	void Draw(const CommandBuffer& cmdBuffer, Camera* camera);
 
-	void Resize(uint32_t width, uint32_t height, bool sampleDepth);
+	void Resize(uint32_t width, uint32_t height);
 
 	void Destroy();
+
+	VkImageUsageFlags targetUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	VkImageUsageFlags depthUsageFlags  = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
 	VkImageView targetView = VK_NULL_HANDLE;
 	VkImageView depth = VK_NULL_HANDLE;
@@ -40,7 +43,7 @@ private:
 
 	uint32_t width = 0, height = 0;
 
-	void CreateFramebuffer(uint32_t width, uint32_t height, bool sampleDepth);
+	void CreateFramebuffer(uint32_t width, uint32_t height);
 
 	VkFramebuffer framebuffer = VK_NULL_HANDLE;
 

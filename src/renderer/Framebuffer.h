@@ -32,15 +32,20 @@ public:
 	uint32_t GetWidth()  const { return width;  }
 	uint32_t GetHeight() const { return height; }
 
+	size_t GetImageCount() const { return images.size(); }
+
 	VkImageView GetDepthView() { return imageViews.back(); }
 
 	void SetDebugName(const char* name);
 
-	void TransitionFromReadToWrite(CommandBuffer commandBuffer);
-	void TransitionFromWriteToRead(CommandBuffer commandBuffer);
+	void TransitionFromReadToWrite(const CommandBuffer& commandBuffer);
+	void TransitionFromWriteToRead(const CommandBuffer& commandBuffer);
+
+	void TransitionImageFromReadToWrite(const CommandBuffer& commandBuffer, unsigned int index);
+	void TransitionImageFromWriteToRead(const CommandBuffer& commandBuffer, unsigned int index);
 
 private:
-	void TransitionFromUndefinedToWrite(CommandBuffer commandBuffer);
+	void TransitionFromUndefinedToWrite(const CommandBuffer& commandBuffer);
 	 
 	void Destroy();
 	void Allocate();

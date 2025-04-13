@@ -80,13 +80,11 @@ void Framebuffer::Allocate()
 	VkResult result = vkCreateFramebuffer(ctx.logicalDevice, &createInfo, nullptr, &framebuffer);
 	CheckVulkanResult("Failed to create a framebuffer", result);
 
-	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
-	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
-
-	TransitionFromUndefinedToWrite(commandBuffer);
-
-	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
-	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
+	Vulkan::ExecuteSingleTimeCommands([this](const CommandBuffer& cmdBuffer)
+		{
+			TransitionFromUndefinedToWrite(cmdBuffer);
+		}
+	);
 }
 
 void Framebuffer::SetImageUsage(unsigned int index, VkImageUsageFlags flags)
@@ -135,7 +133,7 @@ void Framebuffer::SetDebugName(const char* name)
 	Vulkan::SetDebugName(framebuffer, name);
 }
 
-void Framebuffer::TransitionFromUndefinedToWrite(CommandBuffer commandBuffer)
+void Framebuffer::TransitionFromUndefinedToWrite(const CommandBuffer& commandBuffer)
 {
 	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -149,8 +147,23 @@ void Framebuffer::TransitionFromUndefinedToWrite(CommandBuffer commandBuffer)
 		Vulkan::TransitionColorImage(commandBuffer.Get(), images[i].Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
-void Framebuffer::TransitionFromReadToWrite(CommandBuffer commandBuffer)
+void Framebuffer::TransitionFromReadToWrite(const CommandBuffer& commandBuffer)
 {
+	for (int i = 0; i < images.size() - 1; i++)
+		TransitionImageFromReadToWrite(commandBuffer, i);
+}
+
+void Framebuffer::TransitionFromWriteToRead(const CommandBuffer& commandBuffer)
+{
+	for (int i = 0; i < images.size() - 1; i++)
+		TransitionImageFromWriteToRead(commandBuffer, i);
+}
+
+void Framebuffer::TransitionImageFromReadToWrite(const CommandBuffer& commandBuffer, unsigned int index)
+{
+	if (index >= images.size())
+		return; // failure
+
 	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	constexpr VkAccessFlags srcAccess = VK_ACCESS_SHADER_READ_BIT;
@@ -159,12 +172,14 @@ void Framebuffer::TransitionFromReadToWrite(CommandBuffer commandBuffer)
 	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-	for (int i = 0; i < images.size() - 1; i++)
-		Vulkan::TransitionColorImage(commandBuffer.Get(), images[i].Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+	Vulkan::TransitionColorImage(commandBuffer.Get(), images[index].Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
-void Framebuffer::TransitionFromWriteToRead(CommandBuffer commandBuffer)
+void Framebuffer::TransitionImageFromWriteToRead(const CommandBuffer& commandBuffer, unsigned int index)
 {
+	if (index >= images.size())
+		return; // failure
+
 	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	constexpr VkAccessFlags srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -173,16 +188,13 @@ void Framebuffer::TransitionFromWriteToRead(CommandBuffer commandBuffer)
 	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 
-	for (int i = 0; i < images.size() - 1; i++)
-		Vulkan::TransitionColorImage(commandBuffer.Get(), images[i].Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+	Vulkan::TransitionColorImage(commandBuffer.Get(), images[index].Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
 void Framebuffer::Destroy()
 {
 	if (framebuffer == VK_NULL_HANDLE)
 		return;
-
-	const Vulkan::Context& context = Vulkan::GetContext();
 
 	for (int i = 0; i < images.size(); i++)
 	{

@@ -404,9 +404,12 @@ void DeferredPipeline::LoadSkybox(const std::string& path)
 {
 	skybox.reset(CreateNewSkybox(path));
 
+	skybox->targetUsageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
+	skybox->depthUsageFlags  |= VK_IMAGE_USAGE_SAMPLED_BIT;
+
 	uint32_t width = framebuffer.GetWidth(), height = framebuffer.GetHeight();
 	if (width != 0 && height != 0)
-		skybox->Resize(width, height, true);
+		skybox->Resize(width, height);
 
 	skybox->targetView = GetAlbedoView();
 	skybox->depth = framebuffer.GetDepthView();
@@ -502,7 +505,7 @@ void DeferredPipeline::Resize(const Payload& payload)
 
 	BindGBuffers();
 
-	skybox->Resize(payload.width, payload.height, true);
+	skybox->Resize(payload.width, payload.height);
 	skybox->targetView = GetAlbedoView();
 	skybox->depth = framebuffer.GetDepthView();
 
