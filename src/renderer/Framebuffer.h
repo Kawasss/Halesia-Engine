@@ -16,8 +16,8 @@ public:
 	void Init(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes = 1.0f);
 	void Init(VkRenderPass renderPass, uint32_t width, uint32_t height, const std::span<VkFormat>& formats, float relativeRes = 1.0f);
 
-	void SetImageUsage(unsigned int index, VkImageUsageFlags flags);
-	VkImageUsageFlags GetImageUsage(unsigned int index) const;
+	void SetImageUsage(size_t index, VkImageUsageFlags flags);
+	VkImageUsageFlags GetImageUsage(size_t index) const;
 
 	void Resize(uint32_t width, uint32_t height);
 
@@ -34,15 +34,18 @@ public:
 
 	size_t GetImageCount() const { return images.size(); }
 
-	VkImageView GetDepthView() { return imageViews.back(); }
+	VkImageView GetDepthView()  const { return imageViews.back();   }
+	VkImage     GetDepthImage() const { return images.back().Get(); }
 
 	void SetDebugName(const char* name);
 
 	void TransitionFromReadToWrite(const CommandBuffer& commandBuffer);
 	void TransitionFromWriteToRead(const CommandBuffer& commandBuffer);
 
-	void TransitionImageFromReadToWrite(const CommandBuffer& commandBuffer, unsigned int index);
-	void TransitionImageFromWriteToRead(const CommandBuffer& commandBuffer, unsigned int index);
+	void TransitionImageFromReadToWrite(const CommandBuffer& commandBuffer, size_t index);
+	void TransitionImageFromWriteToRead(const CommandBuffer& commandBuffer, size_t index);
+
+	void TransitionImage(const CommandBuffer& commandBuffer, size_t index, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags srcAccess, VkAccessFlags dstAccess, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage);
 
 private:
 	void TransitionFromUndefinedToWrite(const CommandBuffer& commandBuffer);

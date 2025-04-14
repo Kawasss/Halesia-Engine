@@ -87,7 +87,7 @@ void Framebuffer::Allocate()
 	);
 }
 
-void Framebuffer::SetImageUsage(unsigned int index, VkImageUsageFlags flags)
+void Framebuffer::SetImageUsage(size_t index, VkImageUsageFlags flags)
 {
 	if (index >= imageUsages.size())
 		imageUsages.resize(index + 1);
@@ -95,7 +95,7 @@ void Framebuffer::SetImageUsage(unsigned int index, VkImageUsageFlags flags)
 	imageUsages[index] |= flags;
 }
 
-VkImageUsageFlags Framebuffer::GetImageUsage(unsigned int index) const
+VkImageUsageFlags Framebuffer::GetImageUsage(size_t index) const
 {
 	return index > imageUsages.size() ? 0 : imageUsages[index];
 }
@@ -159,11 +159,8 @@ void Framebuffer::TransitionFromWriteToRead(const CommandBuffer& commandBuffer)
 		TransitionImageFromWriteToRead(commandBuffer, i);
 }
 
-void Framebuffer::TransitionImageFromReadToWrite(const CommandBuffer& commandBuffer, unsigned int index)
+void Framebuffer::TransitionImageFromReadToWrite(const CommandBuffer& commandBuffer, size_t index)
 {
-	if (index >= images.size())
-		return; // failure
-
 	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	constexpr VkAccessFlags srcAccess = VK_ACCESS_SHADER_READ_BIT;
@@ -172,14 +169,11 @@ void Framebuffer::TransitionImageFromReadToWrite(const CommandBuffer& commandBuf
 	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 
-	Vulkan::TransitionColorImage(commandBuffer.Get(), images[index].Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+	TransitionImage(commandBuffer, index, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }
 
-void Framebuffer::TransitionImageFromWriteToRead(const CommandBuffer& commandBuffer, unsigned int index)
+void Framebuffer::TransitionImageFromWriteToRead(const CommandBuffer& commandBuffer, size_t index)
 {
-	if (index >= images.size())
-		return; // failure
-
 	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	constexpr VkAccessFlags srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -187,6 +181,14 @@ void Framebuffer::TransitionImageFromWriteToRead(const CommandBuffer& commandBuf
 
 	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+	TransitionImage(commandBuffer, index, oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+}
+
+void Framebuffer::TransitionImage(const CommandBuffer& commandBuffer, size_t index, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags srcAccess, VkAccessFlags dstAccess, VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage)
+{
+	if (index >= images.size())
+		return; // failure
 
 	Vulkan::TransitionColorImage(commandBuffer.Get(), images[index].Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
 }

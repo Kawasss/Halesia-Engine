@@ -306,6 +306,9 @@
     <ClCompile Include="src\System.cpp">
       <Filter>Source Files\system</Filter>
     </ClCompile>
+    <ClCompile Include="src\ImageTransitioner.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -601,6 +604,9 @@
     </ClInclude>
     <ClInclude Include="src\system\System.h">
       <Filter>Header Files\system</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\ImageTransitioner.h">
+      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

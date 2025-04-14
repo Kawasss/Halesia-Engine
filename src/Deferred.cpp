@@ -7,6 +7,7 @@
 #include "renderer/accelerationStructures.h"
 #include "renderer/PipelineCreator.h"
 #include "renderer/GarbageManager.h"
+#include "renderer/ImageTransitioner.h"
 #include "renderer/Skybox.h"
 #include "renderer/Vulkan.h"
 
@@ -61,6 +62,8 @@ void DeferredPipeline::Start(const Payload& payload)
 
 	for (int i = 0; i < formats.size() + 1; i++)
 		framebuffer.SetImageUsage(i, VK_IMAGE_USAGE_SAMPLED_BIT);
+
+	framebuffer.SetImageUsage(formats.size(), VK_IMAGE_USAGE_TRANSFER_SRC_BIT); // the depth buffer is to be transferred for TAA
 
 	framebuffer.Init(renderPass, payload.width, payload.height, formats, 1.0f);
 
@@ -329,22 +332,43 @@ void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
-	prevDepthImage = Vulkan::CreateImage(width, height, 1, 1, ctx.physicalDevice.GetDepthFormat(), VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-	prevDepthView = Vulkan::CreateImageView(prevDepthImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, ctx.physicalDevice.GetDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT);
+	constexpr VkImageUsageFlags prevUsageFlags = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	const VkFormat depthFormat = ctx.physicalDevice.GetDepthFormat();
 
-	prevRtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
-	prevRtgiView = Vulkan::CreateImageView(prevRtgiImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT);
+	prevDepthImage = Vulkan::CreateImage(width, height, 1, 1, depthFormat, VK_IMAGE_TILING_OPTIMAL, prevUsageFlags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	prevDepthView  = Vulkan::CreateImageView(prevDepthImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+
+	prevRtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, prevUsageFlags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	prevRtgiView  = Vulkan::CreateImageView(prevRtgiImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	Vulkan::ExecuteSingleTimeCommands([=](const CommandBuffer& cmdBuffer)
+		{
+			ImageTransitioner transitioner(prevDepthImage.Get());
+			transitioner.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			transitioner.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			transitioner.srcAccess = 0;
+			transitioner.dstAccess = VK_ACCESS_SHADER_READ_BIT;
+			transitioner.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+			transitioner.width = width;
+			transitioner.height = height;
+
+			transitioner.Transition(cmdBuffer);
+
+			transitioner.image = prevRtgiImage.Get();
+			transitioner.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+
+			transitioner.Transition(cmdBuffer);
+		}
+	);
 }
 
 void DeferredPipeline::BindTAAResources()
 {
-	/*
-	taaPipeline->BindImageToName("depthImage", framebuffer.GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	taaPipeline->BindImageToName("prevDepthImage", prevDepthView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	taaPipeline->BindImageToName("depthImage", framebuffer.GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+	taaPipeline->BindImageToName("prevDepthImage", prevDepthView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
 	taaPipeline->BindImageToName("baseImage", rtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	taaPipeline->BindImageToName("prevBaseImage", prevRtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	taaPipeline->BindImageToName("velocityImage", GetVelocityView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	*/
 }
 
 void DeferredPipeline::ResizeTAA(uint32_t width, uint32_t height)
@@ -367,7 +391,50 @@ void DeferredPipeline::ResizeTAA(uint32_t width, uint32_t height)
 
 void DeferredPipeline::CopyResourcesForTAA(const CommandBuffer& cmdBuffer)
 {
+	ImageTransitioner prevDepthTransition(prevDepthImage.Get());
+	prevDepthTransition.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+	prevDepthTransition.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	prevDepthTransition.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	prevDepthTransition.srcAccess = VK_ACCESS_MEMORY_READ_BIT;
+	prevDepthTransition.dstAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+	prevDepthTransition.srcStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	prevDepthTransition.dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+	prevDepthTransition.width = framebuffer.GetWidth();
+	prevDepthTransition.height = framebuffer.GetHeight();
 
+	VkImage currentDepth = framebuffer.GetImages().back().Get();
+	ImageTransitioner depthTransition(currentDepth);
+	depthTransition.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+	depthTransition.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthTransition.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	depthTransition.srcAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+	depthTransition.dstAccess = VK_ACCESS_TRANSFER_READ_BIT;
+	depthTransition.srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	depthTransition.dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+	depthTransition.width = framebuffer.GetWidth();
+	depthTransition.height = framebuffer.GetHeight();
+
+	prevDepthTransition.Transition(cmdBuffer);
+	depthTransition.Transition(cmdBuffer);
+
+	VkImageCopy copy{};
+	copy.extent = { framebuffer.GetWidth(), framebuffer.GetHeight(), 1 };
+	copy.srcOffset = { 0, 0 };
+	copy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	copy.srcSubresource.baseArrayLayer = 0;
+	copy.srcSubresource.layerCount = 1;
+	copy.srcSubresource.mipLevel = 0;
+	copy.dstOffset = { 0, 0 };
+	copy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	copy.dstSubresource.baseArrayLayer = 0;
+	copy.dstSubresource.layerCount = 1;
+	copy.dstSubresource.mipLevel = 0;
+
+	cmdBuffer.CopyImage(framebuffer.GetDepthImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, prevDepthImage.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+
+	// should transition to read for the compute shader
+	depthTransition.Detransition(cmdBuffer);
+	prevDepthTransition.Detransition(cmdBuffer);
 }
 
 void DeferredPipeline::CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer)
@@ -405,7 +472,7 @@ void DeferredPipeline::LoadSkybox(const std::string& path)
 	skybox.reset(CreateNewSkybox(path));
 
 	skybox->targetUsageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
-	skybox->depthUsageFlags  |= VK_IMAGE_USAGE_SAMPLED_BIT;
+	skybox->depthUsageFlags  |= VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
 	uint32_t width = framebuffer.GetWidth(), height = framebuffer.GetHeight();
 	if (width != 0 && height != 0)
@@ -478,6 +545,12 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 		cmdBuffer.SetCheckpoint(static_cast<const void*>("end of RTGI"));
 
 		TransitionRTGIToRead(cmdBuffer);
+
+		cmdBuffer.EndDebugUtilsLabelEXT();
+
+		Vulkan::StartDebugLabel(cmdBuffer.Get(), "TAA");
+
+		CopyResourcesForTAA(cmdBuffer);
 
 		cmdBuffer.EndDebugUtilsLabelEXT();
 	}
