@@ -200,8 +200,8 @@ void Framebuffer::Destroy()
 
 	for (int i = 0; i < images.size(); i++)
 	{
-		images[i].Destroy();
 		vgm::Delete(imageViews[i]);
+		images[i].Destroy();
 	}
 
 	vgm::Delete(framebuffer);

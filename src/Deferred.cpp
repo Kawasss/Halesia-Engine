@@ -150,7 +150,7 @@ void DeferredPipeline::ResizeRTGI(uint32_t width, uint32_t height)
 	if (rtgiView != VK_NULL_HANDLE)
 		vgm::Delete(rtgiView);
 
-	rtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	rtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
 	rtgiView = Vulkan::CreateImageView(rtgiImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	SetRTGIImageLayout();
@@ -164,7 +164,7 @@ void DeferredPipeline::SetRTGIImageLayout()
 	VkImageMemoryBarrier memoryBarrier{};
 	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memoryBarrier.image = rtgiImage.Get();
@@ -186,47 +186,47 @@ void DeferredPipeline::SetRTGIImageLayout()
 	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 }
 
-void DeferredPipeline::TransitionRTGIToRead(const CommandBuffer& cmdBuffer)
-{
-	VkImageMemoryBarrier memoryBarrier{};
-	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	memoryBarrier.image = rtgiImage.Get();
-	memoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	memoryBarrier.subresourceRange.baseMipLevel = 0;
-	memoryBarrier.subresourceRange.levelCount = 1;
-	memoryBarrier.subresourceRange.baseArrayLayer = 0;
-	memoryBarrier.subresourceRange.layerCount = 1;
-
-	constexpr VkPipelineStageFlags src = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
-	constexpr VkPipelineStageFlags dst = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-
-	cmdBuffer.ImageMemoryBarrier(src, dst, 0, 1, &memoryBarrier);
-}
-
-void DeferredPipeline::TransitionRTGIToWrite(const CommandBuffer& cmdBuffer)
-{
-	VkImageMemoryBarrier memoryBarrier{};
-	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	memoryBarrier.image = rtgiImage.Get();
-	memoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	memoryBarrier.subresourceRange.baseMipLevel = 0;
-	memoryBarrier.subresourceRange.levelCount = 1;
-	memoryBarrier.subresourceRange.baseArrayLayer = 0;
-	memoryBarrier.subresourceRange.layerCount = 1;
-
-	constexpr VkPipelineStageFlags src = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	constexpr VkPipelineStageFlags dst = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR; 
-
-	cmdBuffer.ImageMemoryBarrier(src, dst, 0, 1, &memoryBarrier);
-}
+//void DeferredPipeline::TransitionRTGIToRead(const CommandBuffer& cmdBuffer)
+//{
+//	VkImageMemoryBarrier memoryBarrier{};
+//	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+//	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+//	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+//	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//	memoryBarrier.image = rtgiImage.Get();
+//	memoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+//	memoryBarrier.subresourceRange.baseMipLevel = 0;
+//	memoryBarrier.subresourceRange.levelCount = 1;
+//	memoryBarrier.subresourceRange.baseArrayLayer = 0;
+//	memoryBarrier.subresourceRange.layerCount = 1;
+//
+//	constexpr VkPipelineStageFlags src = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
+//	constexpr VkPipelineStageFlags dst = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+//
+//	cmdBuffer.ImageMemoryBarrier(src, dst, 0, 1, &memoryBarrier);
+//}
+//
+//void DeferredPipeline::TransitionRTGIToWrite(const CommandBuffer& cmdBuffer)
+//{
+//	VkImageMemoryBarrier memoryBarrier{};
+//	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+//	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+//	memoryBarrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+//	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+//	memoryBarrier.image = rtgiImage.Get();
+//	memoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+//	memoryBarrier.subresourceRange.baseMipLevel = 0;
+//	memoryBarrier.subresourceRange.levelCount = 1;
+//	memoryBarrier.subresourceRange.baseArrayLayer = 0;
+//	memoryBarrier.subresourceRange.layerCount = 1;
+//
+//	constexpr VkPipelineStageFlags src = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+//	constexpr VkPipelineStageFlags dst = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR; 
+//
+//	cmdBuffer.ImageMemoryBarrier(src, dst, 0, 1, &memoryBarrier);
+//}
 
 void DeferredPipeline::BindRTGIResources()
 {
@@ -235,7 +235,7 @@ void DeferredPipeline::BindRTGIResources()
 	rtgiPipeline->BindImageToName("normalImage", GetNormalView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	rtgiPipeline->BindImageToName("positionImage", GetPositionView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	secondPipeline->BindImageToName("globalIlluminationImage", rtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	secondPipeline->BindImageToName("globalIlluminationImage", rtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL);
 }
 
 void DeferredPipeline::CreateBuffers()
@@ -341,7 +341,10 @@ void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)
 	prevRtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, prevUsageFlags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
 	prevRtgiView  = Vulkan::CreateImageView(prevRtgiImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
-	Vulkan::ExecuteSingleTimeCommands([=](const CommandBuffer& cmdBuffer)
+	denoisedRtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	denoisedRtgiView = Vulkan::CreateImageView(denoisedRtgiImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	Vulkan::ExecuteSingleTimeCommands([&](const CommandBuffer& cmdBuffer)
 		{
 			ImageTransitioner transitioner(prevDepthImage.Get());
 			transitioner.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -355,7 +358,12 @@ void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)
 			transitioner.Transition(cmdBuffer);
 
 			transitioner.image = prevRtgiImage.Get();
+			transitioner.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 			transitioner.aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+
+			transitioner.Transition(cmdBuffer);
+
+			transitioner.image = denoisedRtgiImage.Get();
 
 			transitioner.Transition(cmdBuffer);
 		}
@@ -364,11 +372,12 @@ void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)
 
 void DeferredPipeline::BindTAAResources()
 {
-	taaPipeline->BindImageToName("depthImage", framebuffer.GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
-	taaPipeline->BindImageToName("prevDepthImage", prevDepthView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
-	taaPipeline->BindImageToName("baseImage", rtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	taaPipeline->BindImageToName("prevBaseImage", prevRtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	taaPipeline->BindImageToName("depthImage", framebuffer.GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	taaPipeline->BindImageToName("prevDepthImage", prevDepthView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	taaPipeline->BindImageToName("baseImage", rtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL);
+	taaPipeline->BindImageToName("prevBaseImage", prevRtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL);
 	taaPipeline->BindImageToName("velocityImage", GetVelocityView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	taaPipeline->BindImageToName("resultImage", denoisedRtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL);
 }
 
 void DeferredPipeline::ResizeTAA(uint32_t width, uint32_t height)
@@ -385,11 +394,17 @@ void DeferredPipeline::ResizeTAA(uint32_t width, uint32_t height)
 	if (prevRtgiView != VK_NULL_HANDLE)
 		vgm::Delete(prevRtgiView);
 
+	if (denoisedRtgiImage.IsValid())
+		denoisedRtgiImage.Destroy();
+
+	if (denoisedRtgiView != VK_NULL_HANDLE)
+		vgm::Delete(denoisedRtgiView);
+
 	CreateTAAResources(width, height);
 	BindTAAResources();
 }
 
-void DeferredPipeline::CopyResourcesForTAA(const CommandBuffer& cmdBuffer)
+void DeferredPipeline::CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer)
 {
 	ImageTransitioner prevDepthTransition(prevDepthImage.Get());
 	prevDepthTransition.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -405,9 +420,9 @@ void DeferredPipeline::CopyResourcesForTAA(const CommandBuffer& cmdBuffer)
 	VkImage currentDepth = framebuffer.GetImages().back().Get();
 	ImageTransitioner depthTransition(currentDepth);
 	depthTransition.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
-	depthTransition.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthTransition.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // already transitioned from attachment to this by the TAA
 	depthTransition.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-	depthTransition.srcAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+	depthTransition.srcAccess = VK_ACCESS_MEMORY_READ_BIT;
 	depthTransition.dstAccess = VK_ACCESS_TRANSFER_READ_BIT;
 	depthTransition.srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	depthTransition.dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
@@ -430,26 +445,77 @@ void DeferredPipeline::CopyResourcesForTAA(const CommandBuffer& cmdBuffer)
 	copy.dstSubresource.layerCount = 1;
 	copy.dstSubresource.mipLevel = 0;
 
-	cmdBuffer.CopyImage(framebuffer.GetDepthImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, prevDepthImage.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+	VkImageCopy rtgiCopy{};
+	rtgiCopy.extent = { GetRTGIWidth(), GetRTGIHeight(), 1};
+	rtgiCopy.srcOffset = { 0, 0 };
+	rtgiCopy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	rtgiCopy.srcSubresource.baseArrayLayer = 0;
+	rtgiCopy.srcSubresource.layerCount = 1;
+	rtgiCopy.srcSubresource.mipLevel = 0;
+	rtgiCopy.dstOffset = { 0, 0 };
+	rtgiCopy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	rtgiCopy.dstSubresource.baseArrayLayer = 0;
+	rtgiCopy.dstSubresource.layerCount = 1;
+	rtgiCopy.dstSubresource.mipLevel = 0;
 
-	// should transition to read for the compute shader
+	cmdBuffer.CopyImage(framebuffer.GetDepthImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, prevDepthImage.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+	cmdBuffer.CopyImage(rtgiImage.Get(), VK_IMAGE_LAYOUT_GENERAL, prevRtgiImage.Get(), VK_IMAGE_LAYOUT_GENERAL, 1, &rtgiCopy);
+
 	depthTransition.Detransition(cmdBuffer);
 	prevDepthTransition.Detransition(cmdBuffer);
 }
 
-void DeferredPipeline::CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer)
-{
-
-}
-
 void DeferredPipeline::TransitionResourcesFromTAA(const CommandBuffer& cmdBuffer)
 {
+	/*VkImage currentDepth = framebuffer.GetImages().back().Get();
+	ImageTransitioner depthTransition(currentDepth);
+	depthTransition.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+	depthTransition.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	depthTransition.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthTransition.srcAccess = VK_ACCESS_MEMORY_READ_BIT;
+	depthTransition.dstAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+	depthTransition.srcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT; VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	depthTransition.dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT; VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	depthTransition.width = framebuffer.GetWidth();
+	depthTransition.height = framebuffer.GetHeight();
 
+	depthTransition.Transition(cmdBuffer);*/
 }
 
 void DeferredPipeline::TransitionResourcesToTAA(const CommandBuffer& cmdBuffer)
 {
+	// images that are already transitioned:
+	// - previous depth
+	// - velocity
+	// - RTGI (never transition: VK_IMAGE_LAYOUT_GENERAL)
 
+	VkImage currentDepth = framebuffer.GetImages().back().Get();
+	ImageTransitioner depthTransition(currentDepth);
+	depthTransition.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+	depthTransition.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthTransition.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	depthTransition.srcAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+	depthTransition.dstAccess = VK_ACCESS_MEMORY_READ_BIT;
+	depthTransition.srcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT; VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	depthTransition.dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT; VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	depthTransition.width = framebuffer.GetWidth();
+	depthTransition.height = framebuffer.GetHeight();
+
+	depthTransition.Transition(cmdBuffer);
+}
+
+void DeferredPipeline::PushTAAConstants(const CommandBuffer& cmdBuffer, const Camera* camera)
+{
+	TAAConstants constants{};
+	constants.viewInv = glm::inverse(camera->GetViewMatrix());
+	constants.prevViewInv = prevViewInv;
+	constants.projInv = glm::inverse(camera->GetProjectionMatrix());
+	constants.width = framebuffer.GetWidth();
+	constants.height = framebuffer.GetHeight();
+	
+	taaPipeline->PushConstant(cmdBuffer, constants, VK_SHADER_STAGE_COMPUTE_BIT);
+
+	prevViewInv = constants.viewInv;
 }
 
 Skybox* DeferredPipeline::CreateNewSkybox(const std::string& path)
@@ -533,7 +599,7 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 	{
 		Vulkan::StartDebugLabel(cmdBuffer.Get(), "RTGI");
 
-		TransitionRTGIToWrite(cmdBuffer);
+		//TransitionRTGIToWrite(cmdBuffer);
 
 		PushRTGIConstants(payload);
 
@@ -544,13 +610,19 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 
 		cmdBuffer.SetCheckpoint(static_cast<const void*>("end of RTGI"));
 
-		TransitionRTGIToRead(cmdBuffer);
+		//TransitionRTGIToRead(cmdBuffer);
 
 		cmdBuffer.EndDebugUtilsLabelEXT();
 
 		Vulkan::StartDebugLabel(cmdBuffer.Get(), "TAA");
 
-		CopyResourcesForTAA(cmdBuffer);
+		TransitionResourcesToTAA(cmdBuffer);
+		PushTAAConstants(cmdBuffer, payload.camera);
+
+		taaPipeline->Execute(cmdBuffer, GetRTGIWidth(), GetRTGIHeight(), 1);
+
+		CopyResourcesForNextTAA(cmdBuffer);
+		TransitionResourcesFromTAA(cmdBuffer);
 
 		cmdBuffer.EndDebugUtilsLabelEXT();
 	}
@@ -583,6 +655,7 @@ void DeferredPipeline::Resize(const Payload& payload)
 	skybox->depth = framebuffer.GetDepthView();
 
 	ResizeRTGI(payload.width, payload.height);
+	ResizeTAA(payload.width, payload.height);
 }
 
 void DeferredPipeline::UpdateTextureBuffer()
@@ -671,6 +744,16 @@ void DeferredPipeline::UpdateUBO(Camera* cam)
 	ubo->view = cam->GetViewMatrix();
 }
 
+uint32_t DeferredPipeline::GetRTGIWidth() const
+{
+	return framebuffer.GetWidth() / RTGI_RESOLUTION_UPSCALE;
+}
+
+uint32_t DeferredPipeline::GetRTGIHeight() const
+{
+	return framebuffer.GetHeight() / RTGI_RESOLUTION_UPSCALE;
+}
+
 DeferredPipeline::~DeferredPipeline()
 {
 	vgm::Delete(renderPass);
@@ -678,4 +761,5 @@ DeferredPipeline::~DeferredPipeline()
 	vgm::Delete(rtgiView);
 	vgm::Delete(prevRtgiView);
 	vgm::Delete(prevDepthView);
+	vgm::Delete(denoisedRtgiView);
 }

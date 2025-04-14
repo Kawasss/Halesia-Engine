@@ -58,8 +58,8 @@ void main() // https://columbusutrigas.com/posts/rtgi/
 
 	float depthDiff = abs(prevLinearDepth - reprojLinearDepth) / reprojLinearDepth;
 
-	if (depthDiff > 0.01)
-		return;
+	//if (depthDiff > 0.01)
+	//	return;
 
 	vec3 prevColor = texture(prevBaseImage, relCoords).rgb;
 	vec3 currColor = texture(baseImage, relCoords).rgb;

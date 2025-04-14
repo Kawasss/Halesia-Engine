@@ -61,8 +61,8 @@ private:
 	void CreateTAAResources(uint32_t width, uint32_t height);
 	void BindTAAResources();
 	void ResizeTAA(uint32_t width, uint32_t height);
-	void CopyResourcesForTAA(const CommandBuffer& cmdBuffer);
 	void CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer);
+	void PushTAAConstants(const CommandBuffer& cmdBuffer, const Camera* camera);
 
 	void TransitionResourcesToTAA(const CommandBuffer& cmdBuffer);
 	void TransitionResourcesFromTAA(const CommandBuffer& cmdBuffer);
@@ -73,8 +73,8 @@ private:
 	void BindRTGIResources();
 	void SetRTGIImageLayout();
 
-	void TransitionRTGIToRead(const CommandBuffer& cmdBuffer);
-	void TransitionRTGIToWrite(const CommandBuffer& cmdBuffer);
+	//void TransitionRTGIToRead(const CommandBuffer& cmdBuffer);
+	//void TransitionRTGIToWrite(const CommandBuffer& cmdBuffer);
 
 	Skybox* CreateNewSkybox(const std::string& path);
 
@@ -83,6 +83,9 @@ private:
 	VkImageView GetNormalView()   { return framebuffer.GetViews()[2]; }
 	VkImageView GetMRAOView()     { return framebuffer.GetViews()[3]; }
 	VkImageView GetVelocityView() { return framebuffer.GetViews()[4]; }
+
+	uint32_t GetRTGIWidth()  const;
+	uint32_t GetRTGIHeight() const;
 
 	Framebuffer framebuffer;
 
@@ -97,7 +100,7 @@ private:
 	vvm::SmartImage prevDepthImage;
 	VkImageView prevDepthView = VK_NULL_HANDLE;
 
-	vvm::SmartImage denoisedRrtgiImage;
+	vvm::SmartImage denoisedRtgiImage;
 	VkImageView denoisedRtgiView = VK_NULL_HANDLE;
 
 	std::unique_ptr<GraphicsPipeline> firstPipeline;

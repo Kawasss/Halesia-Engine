@@ -190,6 +190,12 @@ inline void Vulkan::SetDebugName<VkImage>(VkImage object, const char* name)
 }
 
 template<>
+inline void Vulkan::SetDebugName<VkImageView>(VkImageView object, const char* name)
+{
+    DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_IMAGE_VIEW, name);
+}
+
+template<>
 inline void Vulkan::SetDebugName<VkCommandBuffer>(VkCommandBuffer object, const char* name)
 {
     DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_COMMAND_BUFFER, name);
