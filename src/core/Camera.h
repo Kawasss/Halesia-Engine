@@ -56,7 +56,7 @@ protected:
 	/// </summary>
 	void UpdateUpAndRightVectors();
 
-	const float SENSITIVITY = 0.1f;
+	static constexpr float SENSITIVITY = 0.005f;
 };
 
 class OrbitCamera : public Camera

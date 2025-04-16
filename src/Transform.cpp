@@ -69,7 +69,7 @@ void Transform::SetLocalRotation(glm::mat4 newLocalRotation)
 	localRotationModel = newLocalRotation;
 	localRotationChanged = true;
 }
-#include <iostream>
+
 glm::vec2 Transform::GetMotionVector(glm::mat4 projection, glm::mat4 view, glm::mat4 model)
 {
 	glm::vec4 currentClipSpace = projection * view * model * glm::vec4(position, 1);
@@ -78,7 +78,7 @@ glm::vec2 Transform::GetMotionVector(glm::mat4 projection, glm::mat4 view, glm::
 
 	if (difference != difference) // if the player is at 0, 0 ret will be NaN, according to IEEE NaN cannot be equal to NaN so this checks for that
 		difference = glm::vec2(0);
-	std::cout << difference.x << ", " << difference.y << '\n';
+	
 	previousClipPosition = currentClipSpace;
 	return difference;
 }

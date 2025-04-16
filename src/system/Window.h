@@ -110,7 +110,7 @@ public:
 	void SetXAndY(int x, int y);
 	void SetMaximized(bool val);
 
-	void GetRelativeCursorPosition(int& x, int& y) const { x = cursor.x; y = cursor.y;       }
+	void GetRelativeCursorPosition(int& x, int& y) const;
 	void GetAbsoluteCursorPosition(int& x, int& y) const { x = absCursor.x; y = absCursor.y; }
 	void LockCursor();
 	void UnlockCursor();
@@ -157,8 +157,8 @@ private:
 
 	Point size;
 	Point coordinates;
-	Point cursor;
 	Point absCursor;
+	Point prevCursor;
 	Window::Mode mode;
 
 	bool lockCursor = false;

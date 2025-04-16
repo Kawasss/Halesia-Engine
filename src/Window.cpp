@@ -93,15 +93,6 @@ Window::Window(const Window::CreateInfo& createInfo)
 
 	SetTimer(hWindow, 0, USER_TIMER_MINIMUM, NULL); //makes sure the window is being updated even when if the cursor isnt moving
 
-	RAWINPUTDEVICE rawInputDevice{};
-	rawInputDevice.usUsagePage = HID_USAGE_PAGE_GENERIC;
-	rawInputDevice.usUsage = HID_USAGE_GENERIC_MOUSE;
-	rawInputDevice.dwFlags = RIDEV_INPUTSINK;
-	rawInputDevice.hwndTarget = hWindow;
-
-	if (!RegisterRawInputDevices(&rawInputDevice, 1, sizeof(rawInputDevice)))
-		throw std::runtime_error("Failed to register the raw input device for the mouse");
-
 #ifdef _DEBUG
 	std::cout << "Created new window with dimensions " << size.x << 'x' << size.y << " and mode " << ModeToString(mode) << '\n';
 #endif // _DEBUG
@@ -155,8 +146,8 @@ void Window::PollMessages()
 {
 	for (const auto& [handle, window] : windowBinding)
 	{
-		window->cursor.Clear();
 		window->wheelRotation = 0;
+		window->prevCursor = window->absCursor;
 
 		window->HandleEvents();
 	}
@@ -228,6 +219,12 @@ int Window::GetMonitorWidth()
 int Window::GetMonitorHeight()
 {
 	return GetSystemMetrics(SM_CYSCREEN);
+}
+
+void Window::GetRelativeCursorPosition(int& x, int& y) const
+{
+	x = absCursor.x - prevCursor.x;
+	y = absCursor.y - prevCursor.y;
 }
 
 std::string_view Window::ModeToString(Window::Mode mode)
@@ -316,28 +313,6 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		if (wParam == VK_F11)
 			window->SetWindowMode(window->mode == Mode::BorderlessWindowed ? Mode::Windowed : Mode::BorderlessWindowed);
 		break;
-
-	case WM_INPUT: // when an input has been detected
-	{
-		UINT sizeOfStruct = sizeof(RAWINPUT);
-
-		GetRawInputData((HRAWINPUT)lParam, RID_INPUT, NULL, &sizeOfStruct, sizeof(RAWINPUTHEADER));
-		std::vector<BYTE> bytes(sizeOfStruct);
-
-		if (GetRawInputData((HRAWINPUT)lParam, RID_INPUT, bytes.data(), &sizeOfStruct, sizeof(RAWINPUTHEADER)) != sizeOfStruct)
-			throw std::runtime_error("GetRawInputData does not return correct size");
-
-		RAWINPUT* rawInput = reinterpret_cast<RAWINPUT*>(bytes.data());
-		if (rawInput->header.dwType != RIM_TYPEMOUSE)
-			break;
-
-		if (rawInput->data.mouse.usFlags & MOUSE_MOVE_RELATIVE)
-			DebugBreak();
-
-		window->cursor.x = rawInput->data.mouse.lLastX;
-		window->cursor.y = rawInput->data.mouse.lLastY;
-		break;
-	}
 
 	case WM_DROPFILES: // when a file has been dropped on the window
 	{
