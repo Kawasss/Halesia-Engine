@@ -5,6 +5,8 @@
 #include "FramesInFlight.h"
 #include "VideoMemoryManager.h"
 
+class CommandBuffer;
+
 class Buffer
 {
 public:
@@ -32,6 +34,8 @@ public:
 	VkDeviceAddress GetDeviceAddress();
 
 	void SetDebugName(const char* name);
+
+	bool IsValid() const;
 
 private:
 	vvm::Buffer buffer;
@@ -72,6 +76,10 @@ namespace FIF
 		void InheritFrom(FIF::Buffer& parent); // inherits the members from the parent and tells the parent to not destroy its members upon destruction (the buffer will destroy the current members first)
 
 		void SetDebugName(const char* name);
+
+		void Fill(const CommandBuffer& cmdBuffer, uint32_t value = 0, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE);
+
+		bool IsValid() const;
 
 	private:
 		std::array<vvm::Buffer, FIF::FRAME_COUNT> buffers; // should initialize all values to VK_NULL_HANDLE

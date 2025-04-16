@@ -2,6 +2,7 @@
 #include "renderer/Vulkan.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/VideoMemoryManager.h"
+#include "renderer/CommandBuffer.h"
 
 void Buffer::Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {
@@ -53,6 +54,11 @@ void Buffer::Fill(VkCommandBuffer commandBuffer, uint32_t value, VkDeviceSize of
 	vkCmdFillBuffer(commandBuffer, buffer.Get(), offset, size, value);
 }
 
+bool Buffer::IsValid() const
+{
+	return buffer.IsValid();
+}
+
 namespace FIF
 {
 	void Buffer::Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
@@ -94,5 +100,19 @@ namespace FIF
 	{
 		for (int i = 0; i < FIF::FRAME_COUNT; i++)
 			Vulkan::SetDebugName(buffers[i], name);
+	}
+
+	void Buffer::Fill(const CommandBuffer& cmdBuffer, uint32_t value, VkDeviceSize offset, VkDeviceSize size)
+	{
+		for (int i = 0; i < FIF::FRAME_COUNT; i++)
+			cmdBuffer.FillBuffer(buffers[i].Get(), offset, size, value);
+	}
+
+	bool Buffer::IsValid() const
+	{
+		for (int i = 0; i < FIF::FRAME_COUNT; i++)
+			if (!buffers[i].IsValid())
+				return false;
+		return true;
 	}
 }

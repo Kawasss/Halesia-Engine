@@ -73,8 +73,7 @@ private:
 	void BindRTGIResources();
 	void SetRTGIImageLayout();
 
-	//void TransitionRTGIToRead(const CommandBuffer& cmdBuffer);
-	//void TransitionRTGIToWrite(const CommandBuffer& cmdBuffer);
+	void CopyDenoisedToRTGI(const CommandBuffer& cmdBuffer);
 
 	Skybox* CreateNewSkybox(const std::string& path);
 
@@ -114,7 +113,10 @@ private:
 
 	std::array<std::vector<uint64_t>, FIF::FRAME_COUNT> processedMats;
 
-	glm::mat4 prevViewInv;
+	glm::mat4 prevView;
+	glm::mat4 prevProj;
+
+	FIF::Buffer TAASampleBuffer;
 
 	uint32_t frame = 0;
 };

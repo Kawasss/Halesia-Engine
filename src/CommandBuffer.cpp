@@ -147,6 +147,11 @@ void CommandBuffer::CopyImage(VkImage srcImage, VkImageLayout srcImageLayout, Vk
     ::vkCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
+void CommandBuffer::FillBuffer(VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data) const
+{
+    ::vkCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
+}
+
 void CommandBuffer::SetCheckpoint(const void* pCheckpointMarker) const
 {
     ::vkCmdSetCheckpointNV(commandBuffer, pCheckpointMarker);
