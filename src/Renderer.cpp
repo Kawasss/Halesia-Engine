@@ -531,7 +531,7 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 
 	RunRenderPipelines(commandBuffer, camera, objects);
 
-	Vulkan::StartDebugLabel(commandBuffer.Get(), "UI");
+	commandBuffer.BeginDebugUtilsLabel("UI");
 
 	SetViewport(commandBuffer.Get(), swapchain->extent);
 	SetScissors(commandBuffer.Get(), swapchain->extent);
@@ -567,7 +567,7 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 
 	queryPool.EndTimestamp(commandBuffer, "final pass");
 
-	commandBuffer.EndDebugUtilsLabelEXT();
+	commandBuffer.EndDebugUtilsLabel();
 }
 
 void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects)
@@ -585,7 +585,7 @@ void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, c
 		SetScissors(commandBuffer, viewportExtent);
 
 		renderPipeline->Execute(payload, objects);
-		commandBuffer.EndDebugUtilsLabelEXT();
+		commandBuffer.EndDebugUtilsLabel();
 
 		queryPool.EndTimestamp(commandBuffer, dbgPipelineNames[renderPipeline]);
 	}

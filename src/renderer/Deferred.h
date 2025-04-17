@@ -79,6 +79,10 @@ private:
 
 	void CopyDenoisedToRTGI(const CommandBuffer& cmdBuffer);
 
+	void PerformRayTracedRendering(const CommandBuffer& cmdBuffer, const Payload& payload);
+	void PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<Object*>& objects);
+	void PerformSecondDeferred(const CommandBuffer& cmdBuffer, const Payload& payload);
+	
 	Skybox* CreateNewSkybox(const std::string& path);
 
 	VkImageView GetPositionView() { return framebuffer.GetViews()[0]; }

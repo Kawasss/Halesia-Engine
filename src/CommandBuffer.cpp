@@ -62,7 +62,16 @@ void CommandBuffer::Draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t 
     ::vkCmdDraw(commandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
 }
 
-void CommandBuffer::EndDebugUtilsLabelEXT() const
+void CommandBuffer::BeginDebugUtilsLabel(const char* pLabelName) const
+{
+    VkDebugUtilsLabelEXT label{};
+    label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+    label.pLabelName = pLabelName;
+    
+    ::vkCmdBeginDebugUtilsLabelEXT(commandBuffer, &label);
+}
+
+void CommandBuffer::EndDebugUtilsLabel() const
 {
     ::vkCmdEndDebugUtilsLabelEXT(commandBuffer);
 }

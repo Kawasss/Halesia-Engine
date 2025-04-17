@@ -560,6 +560,56 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 
 	framebuffer.StartRenderPass(cmdBuffer);
 
+	PerformFirstDeferred(cmdBuffer, payload, objects);
+
+	cmdBuffer.BeginDebugUtilsLabel("skybox");
+
+	if (skybox != nullptr)
+		skybox->Draw(cmdBuffer, payload.camera);
+
+	cmdBuffer.EndDebugUtilsLabel();
+
+	if (Renderer::canRayTrace)
+		PerformRayTracedRendering(cmdBuffer, payload);
+
+	PerformSecondDeferred(cmdBuffer, payload);
+
+	framebuffer.TransitionFromReadToWrite(cmdBuffer);
+}
+
+void DeferredPipeline::PerformRayTracedRendering(const CommandBuffer& cmdBuffer, const Payload& payload)
+{
+	cmdBuffer.BeginDebugUtilsLabel("RTGI");
+
+	PushRTGIConstants(payload);
+
+	cmdBuffer.SetCheckpoint(static_cast<const void*>("start of RTGI"));
+
+	rtgiPipeline->Bind(cmdBuffer);
+	rtgiPipeline->Execute(cmdBuffer, GetRTGIWidth(), GetRTGIHeight(), 1);
+
+	cmdBuffer.SetCheckpoint(static_cast<const void*>("end of RTGI"));
+
+	cmdBuffer.EndDebugUtilsLabel();
+
+	cmdBuffer.BeginDebugUtilsLabel("TAA");
+
+	TransitionResourcesToTAA(cmdBuffer);
+	PushTAAConstants(cmdBuffer, payload.camera);
+
+	taaPipeline->Execute(cmdBuffer, GetRTGIWidth() / 8, GetRTGIHeight() / 8, 1);
+
+	CopyDenoisedToRTGI(cmdBuffer);
+	CopyResourcesForNextTAA(cmdBuffer);
+	TransitionResourcesFromTAA(cmdBuffer);
+
+	cmdBuffer.EndDebugUtilsLabel();
+}
+
+void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<Object*>& objects)
+{
+	cmdBuffer.BeginDebugUtilsLabel("first deferred");
+
 	firstPipeline->Bind(cmdBuffer);
 
 	Renderer::BindBuffersForRendering(cmdBuffer);
@@ -583,41 +633,14 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 
 	cmdBuffer.EndRenderPass();
 
-	if (skybox != nullptr)
-		skybox->Draw(cmdBuffer, payload.camera);
+	cmdBuffer.EndDebugUtilsLabel();
+}
 
-	if (Renderer::canRayTrace)
-	{
-		Vulkan::StartDebugLabel(cmdBuffer.Get(), "RTGI");
+void DeferredPipeline::PerformSecondDeferred(const CommandBuffer& cmdBuffer, const Payload& payload)
+{
+	cmdBuffer.BeginDebugUtilsLabel("second deferred");
 
-		PushRTGIConstants(payload);
-
-		cmdBuffer.SetCheckpoint(static_cast<const void*>("start of RTGI"));
-
-		rtgiPipeline->Bind(cmdBuffer);
-		rtgiPipeline->Execute(cmdBuffer, payload.width / RTGI_RESOLUTION_UPSCALE, payload.height / RTGI_RESOLUTION_UPSCALE, 1);
-
-		cmdBuffer.SetCheckpoint(static_cast<const void*>("end of RTGI"));
-
-		cmdBuffer.EndDebugUtilsLabelEXT();
-
-		Vulkan::StartDebugLabel(cmdBuffer.Get(), "TAA");
-
-		TransitionResourcesToTAA(cmdBuffer);
-		PushTAAConstants(cmdBuffer, payload.camera);
-
-		taaPipeline->Execute(cmdBuffer, GetRTGIWidth() / 8, GetRTGIHeight() / 8, 1);
-
-		CopyDenoisedToRTGI(cmdBuffer);
-		CopyResourcesForNextTAA(cmdBuffer);
-		TransitionResourcesFromTAA(cmdBuffer);
-
-		cmdBuffer.EndDebugUtilsLabelEXT();
-	}
-
-	cmdBuffer.SetCheckpoint(static_cast<const void*>("start of final deferred pass"));
-
-	renderer->StartRenderPass(renderer->GetDefault3DRenderPass());
+	payload.renderer->StartRenderPass(payload.renderer->GetDefault3DRenderPass());
 
 	secondPipeline->Bind(cmdBuffer);
 
@@ -627,9 +650,7 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 
 	cmdBuffer.EndRenderPass();
 
-	payload.commandBuffer.SetCheckpoint(static_cast<const void*>("end of final deferred pass"));
-
-	framebuffer.TransitionFromReadToWrite(cmdBuffer);
+	cmdBuffer.EndDebugUtilsLabel();
 }
 
 void DeferredPipeline::Resize(const Payload& payload)

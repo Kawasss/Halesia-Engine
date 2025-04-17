@@ -30,8 +30,8 @@ void Camera::DefaultUpdate(Window* window, float delta)
 	int newPosX, newPosY;
 	window->GetRelativeCursorPosition(newPosX, newPosY);
 
-	SetYaw(glm::degrees(yaw) + newPosX * delta * SENSITIVITY);
-	SetPitch(glm::degrees(pitch) - newPosY * delta * SENSITIVITY);
+	SetYaw(glm::degrees(yaw) + newPosX * SENSITIVITY);
+	SetPitch(glm::degrees(pitch) - newPosY * SENSITIVITY);
 }
 
 Camera::Camera(glm::vec3 position, float aspectRatio)

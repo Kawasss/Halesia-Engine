@@ -70,7 +70,7 @@ void ForwardPlusPipeline::ComputeCells(CommandBuffer commandBuffer, uint32_t lig
 	matrices->projection = camera->GetProjectionMatrix();
 	matrices->view = camera->GetViewMatrix();
 
-	Vulkan::StartDebugLabel(commandBuffer.Get(), __FUNCTION__);
+	commandBuffer.BeginDebugUtilsLabel(__FUNCTION__);
 
 	cellBuffer.Fill(commandBuffer.Get(), 0, sizeof(uint32_t) * 2);
 
@@ -85,14 +85,14 @@ void ForwardPlusPipeline::ComputeCells(CommandBuffer commandBuffer, uint32_t lig
 
 	commandBuffer.BufferMemoryBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 1, &barrier);
 
-	commandBuffer.EndDebugUtilsLabelEXT();
+	commandBuffer.EndDebugUtilsLabel();
 }
 
 void ForwardPlusPipeline::DrawObjects(CommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj)
 {
 	UpdateUniformBuffer(camera, customProj, width, height);
 
-	Vulkan::StartDebugLabel(commandBuffer.Get(), __FUNCTION__);
+	commandBuffer.BeginDebugUtilsLabel(__FUNCTION__);
 
 	graphicsPipeline->Bind(commandBuffer);
 
@@ -113,7 +113,7 @@ void ForwardPlusPipeline::DrawObjects(CommandBuffer commandBuffer, const std::ve
 
 		commandBuffer.DrawIndexed(indexCount, 1, firstIndex, vertexOffset, 0);
 	}
-	commandBuffer.EndDebugUtilsLabelEXT();
+	commandBuffer.EndDebugUtilsLabel();
 }
 
 void ForwardPlusPipeline::PrepareGraphicsPipeline()
