@@ -501,7 +501,7 @@ void DeferredPipeline::PushTAAConstants(const CommandBuffer& cmdBuffer, const Ca
 	constants.prevProjView = prevProj * prevView;
 	constants.width = GetRTGIWidth();
 	constants.height = GetRTGIHeight();
-	constants.maxSampleCount = 4;
+	constants.maxSampleCount = maxSampleCountTAA;
 	
 	taaPipeline->PushConstant(cmdBuffer, constants, VK_SHADER_STAGE_COMPUTE_BIT);
 
@@ -644,6 +644,14 @@ void DeferredPipeline::Resize(const Payload& payload)
 
 	ResizeRTGI(payload.width, payload.height);
 	ResizeTAA(payload.width, payload.height);
+}
+
+std::vector<RenderPipeline::IntVariable> DeferredPipeline::GetIntVariables()
+{
+	std::vector<RenderPipeline::IntVariable> ret;
+	ret.emplace_back("taa sample count", &maxSampleCountTAA);
+
+	return ret;
 }
 
 void DeferredPipeline::UpdateTextureBuffer()

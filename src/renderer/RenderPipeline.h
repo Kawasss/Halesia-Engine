@@ -1,6 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include <vector>
+#include <string_view>
 
 #include "CommandBuffer.h"
 
@@ -35,6 +36,17 @@ public:
 		uint32_t height;
 	};
 
+	struct IntVariable
+	{
+		IntVariable() = default;
+		IntVariable(const std::string_view& name, int* pValue) : name(name), pValue(pValue) {}
+
+		std::string_view name;
+		int* pValue = nullptr;
+
+		bool IsValid() const { return pValue != nullptr; }
+	};
+
 	virtual void Start(const Payload& payload) = 0;
 	virtual void Execute(const Payload& payload, const std::vector<Object*>& objects) = 0;
 
@@ -47,6 +59,8 @@ public:
 	virtual void OnRenderingBufferResize(const Payload& payload) {}
 
 	virtual void ReloadShaders(const Payload& payload) {}
+
+	virtual std::vector<IntVariable> GetIntVariables() { return {}; }
 
 	template<typename T> T* GetChild() { return reinterpret_cast<T*>(this); }
 

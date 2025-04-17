@@ -31,6 +31,10 @@ public:
 
 	void ReloadShaders(const Payload& payload) override;
 
+	std::vector<IntVariable> GetIntVariables() override;
+
+	int maxSampleCountTAA = 4;
+
 private:
 	static constexpr size_t GBUFFER_COUNT = 5;
 

@@ -349,7 +349,7 @@ void Editor::UIFree(Object* obj)
 	Free(obj);
 }
 
-void Editor::ShowMenuBar()
+void Editor::ShowMenuBar() // add renderer variables here like taa sample count
 {
 	HalesiaEngine* engine = HalesiaEngine::GetInstance();
 
@@ -521,12 +521,25 @@ void Editor::ShowRenderPipelines()
 	const std::vector<RenderPipeline*> pipelines = renderer->GetAllRenderPipelines();
 	for (RenderPipeline* pipeline : pipelines)
 	{
-		std::string msg = renderer->GetRenderPipelineName(pipeline) + ": ";
+		std::string name = renderer->GetRenderPipelineName(pipeline);
+		std::string msg = name + ": ";
 
 		ImGui::Text(msg.c_str());
 		ImGui::SameLine();
 		if (ImGui::Button("Reload"))
 			pipeline->ReloadShaders(renderer->GetPipelinePayload(renderer->GetActiveCommandBuffer(), camera));
+
+		std::vector<RenderPipeline::IntVariable> vars = pipeline->GetIntVariables();
+		if (vars.empty())
+			continue;
+
+		for (const RenderPipeline::IntVariable& var : vars)
+		{
+			std::string full = std::string(var.name) + ":##" + name;
+			ImGui::Text(var.name.data());
+			ImGui::SameLine();
+			ImGui::InputInt(full.c_str(), var.pValue);
+		}
 	}
 }
 
