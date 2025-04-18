@@ -10,13 +10,13 @@
 
 #include "../core/Console.h"
 
-#define CheckHandleValidity(memory, ret)                                                                                                                   \
-if (!CheckIfHandleIsValid(memory))                                                                                                                         \
-{                                                                                                                                                          \
+#define CheckHandleValidity(memory, ret)                                                                                                             \
+if (!CheckIfHandleIsValid(memory))                                                                                                                   \
+{                                                                                                                                                    \
 	Console::WriteLine("An invalid memory handle ({}) has been found in {}", Console::Severity::Error, static_cast<uint64_t>(memory), __FUNCTION__); \
-    __debugbreak();                                                                                                                                        \
-	return ret;                                                                                                                                            \
-}                                                                                                                                                          \
+    __debugbreak();                                                                                                                                  \
+	return ret;                                                                                                                                      \
+}                                                                                                                                                    \
 
 struct StorageMemory_t // not a fan of this being visible
 {
@@ -46,7 +46,7 @@ public:
 
 		reservedSize = maxAmountToBeStored * sizeof(T);
 
-		buffer.Init(reservedSize, this->usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		buffer.Init(reservedSize, this->usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	}
 
 	StorageMemory SubmitNewData(const std::vector<T>& data)
@@ -178,7 +178,7 @@ private:
 	{
 		Console::WriteLine("StorageBuffer resize from {} kb to {} kb", Console::Severity::Debug, reservedSize / 1024ull, newSize / 1024ull);
 
-		Buffer newBuffer(newSize, usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		Buffer newBuffer(newSize, usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 		Vulkan::ExecuteSingleTimeCommands(
 			[&](const CommandBuffer& cmdBuffer)
@@ -234,10 +234,27 @@ private:
 	void WriteToBuffer(const std::vector<T>& data, StorageMemory memory)
 	{
 		StorageMemory_t& memoryInfo = memoryData[memory];
+		size_t writeSize = data.size() * sizeof(T);
 
-		void* memoryPointer = buffer.Map(memoryInfo.offset, memoryInfo.size);
-		memcpy(memoryPointer, data.data(), (size_t)memoryInfo.size);
-		buffer.Unmap();
+		Buffer transferBuffer(writeSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+		void* pData = transferBuffer.Map();
+
+		std::memcpy(pData, data.data(), writeSize);
+
+		Vulkan::ExecuteSingleTimeCommands([&](const CommandBuffer& cmdBuffer)
+			{
+				const StorageMemory_t& storageData = memoryData[memory];
+
+				VkBufferCopy copy{};
+				copy.dstOffset = storageData.offset;
+				copy.size = writeSize;
+				copy.srcOffset = 0;
+
+				cmdBuffer.CopyBuffer(transferBuffer.Get(), buffer.Get(), 1, &copy);
+			}
+		);
+
+		transferBuffer.Unmap();
 	}
 
 	void ClearBuffer(StorageMemory memory = 0)
