@@ -29,7 +29,7 @@ layout (push_constant) uniform Constant
 float GetLinearDepth(ivec2 coords, float depth)
 {
 	vec2 relCoords = (coords + 0.5) / vec2(constant.width, constant.height); // + 0.5 for the pixel offset
-	vec2 ndc = relCoords * 2.0 - 1.0;
+	vec2 ndc = vec2(relCoords.x, 1.0 - relCoords.y) * 2.0 - 1.0;
 	vec4 projected = constant.projInv * vec4(ndc, depth, 1.0);
 
 	return abs(projected.z / projected.w);
@@ -38,7 +38,7 @@ float GetLinearDepth(ivec2 coords, float depth)
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in; // total size should be the size of the image to apply TAA to
 void main() // https://columbusutrigas.com/posts/rtgi/
 {
-	vec2 relCoords = vec2(gl_GlobalInvocationID.xy) / vec2(constant.width, constant.height);
+	vec2 relCoords = (vec2(gl_GlobalInvocationID.xy) + 0.5) / vec2(constant.width, constant.height);
 	ivec2 absCoords = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 size = ivec2(constant.width, constant.height);
 
@@ -47,10 +47,9 @@ void main() // https://columbusutrigas.com/posts/rtgi/
 	vec2 velocity = floor(texelFetch(velocityImage, absCoords, 0).rg / 2 * vec2(size) + 0.5);
 
 	ivec2 prevCoords = ivec2(absCoords - velocity);
+	prevCoords = clamp(prevCoords, ivec2(0), size - ivec2(1));
 
-	prevCoords = clamp(prevCoords, ivec2(0), size);
-
-	vec2 ndc = relCoords * 2.0 - 1.0;
+	vec2 ndc = vec2(relCoords.x, 1.0 - relCoords.y) * 2.0 - 1.0;
 
 	vec4 worldspace = constant.projViewInv * vec4(ndc, depth, 1.0);
 	worldspace /= worldspace.w;
