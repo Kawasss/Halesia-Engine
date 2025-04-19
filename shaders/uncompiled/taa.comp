@@ -35,6 +35,14 @@ float GetLinearDepth(ivec2 coords, float depth)
 	return abs(projected.z / projected.w);
 }
 
+ivec2 GetPreviousCoordinates(ivec2 absCoords, ivec2 size)
+{
+	vec2 velocity = floor(texelFetch(velocityImage, absCoords, 0).rg / 2 * vec2(size) + 0.5);
+
+	ivec2 prevCoords = ivec2(absCoords - velocity);
+	return clamp(prevCoords, ivec2(0), size - ivec2(1));
+}
+
 layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in; // total size should be the size of the image to apply TAA to
 void main() // https://columbusutrigas.com/posts/rtgi/
 {
@@ -42,14 +50,11 @@ void main() // https://columbusutrigas.com/posts/rtgi/
 	ivec2 absCoords = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 size = ivec2(constant.width, constant.height);
 
-	float depth = texelFetch(depthImage, absCoords, 0).r;
-	
-	vec2 velocity = floor(texelFetch(velocityImage, absCoords, 0).rg / 2 * vec2(size) + 0.5);
-
-	ivec2 prevCoords = ivec2(absCoords - velocity);
-	prevCoords = clamp(prevCoords, ivec2(0), size - ivec2(1));
+	ivec2 prevCoords = GetPreviousCoordinates(absCoords, size);
 
 	vec2 ndc = vec2(relCoords.x, 1.0 - relCoords.y) * 2.0 - 1.0;
+
+	float depth = texelFetch(depthImage, absCoords, 0).r;
 
 	vec4 worldspace = constant.projViewInv * vec4(ndc, depth, 1.0);
 	worldspace /= worldspace.w;
@@ -57,18 +62,18 @@ void main() // https://columbusutrigas.com/posts/rtgi/
 	vec4 prevNdc = constant.prevProjView * worldspace;
 	prevNdc /= prevNdc.w;
 
+	uint prevSampleIndex = prevCoords.y * constant.width + prevCoords.x;
+	uint sampleIndex = absCoords.y * constant.width + absCoords.x;
+	uint sampleCount = sampleCountBuffer.sampleCounts[prevSampleIndex];
+
 	float prevDepth = texelFetch(prevDepthImage, prevCoords, 0).r;
 
 	float reprojLinearDepth = GetLinearDepth(absCoords, prevNdc.z);
 	float prevLinearDepth = GetLinearDepth(prevCoords, prevDepth);
 
-	uint prevSampleIndex = prevCoords.y * constant.width + prevCoords.x;
-	uint sampleIndex = absCoords.y * constant.width + absCoords.x;
-	uint sampleCount = sampleCountBuffer.sampleCounts[prevSampleIndex];
-
 	float depthDiff = abs(prevLinearDepth - reprojLinearDepth) / reprojLinearDepth;
 
-	if (depthDiff > 0.01)
+	if (depthDiff >= 0.01)
 		sampleCount = 0;
 	else
 		sampleCount++;
@@ -78,7 +83,8 @@ void main() // https://columbusutrigas.com/posts/rtgi/
 	vec3 prevColor = texelFetch(prevBaseImage, prevCoords, 0).rgb;
 	vec3 currColor = texelFetch(baseImage, absCoords, 0).rgb;
 
-	vec3 result = mix(prevColor, currColor, 1.0 / (float(sampleCount) + 1.0));
+	float weight = 1.0 / (float(sampleCount) + 1.0);
+	vec3 result = mix(prevColor, currColor, weight);
 
 	imageStore(resultImage, absCoords, vec4(result, 1.0));
 	sampleCountBuffer.sampleCounts[sampleIndex] = sampleCount;
