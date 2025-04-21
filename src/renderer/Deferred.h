@@ -31,9 +31,9 @@ public:
 
 	void ReloadShaders(const Payload& payload) override;
 
-	std::vector<IntVariable> GetIntVariables() override;
+	void OnRenderingBufferResize(const Payload& payload) override;
 
-	int maxSampleCountTAA = 4;
+	std::vector<IntVariable> GetIntVariables() override;
 
 private:
 	static constexpr size_t GBUFFER_COUNT = 5;
@@ -41,6 +41,7 @@ private:
 	struct PushConstant;
 	struct RTGIConstants;
 	struct TAAConstants;
+	struct InstanceData;
 
 	struct UBO
 	{
@@ -53,7 +54,7 @@ private:
 	void SetTextureBuffer();
 	void UpdateUBO(Camera* cam);
 	void CreateBuffers();
-	void BindResources(VkBuffer lightBuffer);
+	void BindResources(const FIF::Buffer& lightBuffer);
 	void BindTLAS();
 	void BindGBuffers();
 
@@ -71,11 +72,12 @@ private:
 	void TransitionResourcesToTAA(const CommandBuffer& cmdBuffer);
 	void TransitionResourcesFromTAA(const CommandBuffer& cmdBuffer);
 
-	void CreateAndBindRTGI(uint32_t width, uint32_t height); // maybe seperate RTGI into its own class ??
+	void CreateAndBindRTGI(const Payload& payload); // maybe seperate RTGI into its own class ??
 	void PushRTGIConstants(const Payload& payload);
 	void ResizeRTGI(uint32_t width, uint32_t height);
 	void BindRTGIResources();
 	void SetRTGIImageLayout();
+	void SetInstanceData(const std::vector<Object*>& objects);
 
 	void CopyDenoisedToRTGI(const CommandBuffer& cmdBuffer);
 
@@ -97,6 +99,7 @@ private:
 	Framebuffer framebuffer;
 
 	FIF::Buffer uboBuffer;
+	FIF::Buffer instanceBuffer;
 
 	vvm::SmartImage rtgiImage;
 	VkImageView rtgiView = VK_NULL_HANDLE;
@@ -127,4 +130,8 @@ private:
 	FIF::Buffer TAASampleBuffer;
 
 	uint32_t frame = 0;
+
+	int maxSampleCountTAA = 4;
+	int rtgiSampleCount = 1;
+	int rtgiBounceCount = 2;
 };

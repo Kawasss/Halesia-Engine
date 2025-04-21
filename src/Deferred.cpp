@@ -24,6 +24,9 @@ struct DeferredPipeline::PushConstant
 struct DeferredPipeline::RTGIConstants
 {
 	uint32_t frame;
+	int32_t sampleCount;
+	int32_t bounceCount;
+	glm::vec3 position;
 };
 
 struct DeferredPipeline::TAAConstants
@@ -34,6 +37,16 @@ struct DeferredPipeline::TAAConstants
 	int width;
 	int height;
 	int maxSampleCount;
+};
+
+struct DeferredPipeline::InstanceData
+{
+	InstanceData() = default;
+	InstanceData(uint32_t v, uint32_t i, uint32_t m) : vertexOffset(v), indexOffset(i), material(m) {}
+
+	uint32_t vertexOffset;
+	uint32_t indexOffset;
+	int material;
 };
 
 constexpr VkFormat GBUFFER_POSITION_FORMAT = VK_FORMAT_R32G32B32A32_SFLOAT; // 32 bit format takes a lot of performance compared to an 8 bit format
@@ -87,11 +100,11 @@ void DeferredPipeline::CreateAndPreparePipelines(const Payload& payload)
 
 	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
 
-	BindResources(payload.renderer->GetLightBuffer().Get());
+	BindResources(payload.renderer->GetLightBuffer());
 
 	if (Renderer::canRayTrace)
 	{
-		CreateAndBindRTGI(payload.width, payload.height);
+		CreateAndBindRTGI(payload);
 
 		BindTLAS();
 	}
@@ -125,19 +138,32 @@ void DeferredPipeline::ReloadShaders(const Payload& payload)
 		rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-void DeferredPipeline::CreateAndBindRTGI(uint32_t width, uint32_t height)
+void DeferredPipeline::CreateAndBindRTGI(const Payload& payload)
 {
+	constexpr VkDeviceSize MAX_INSTANCE_COUNT = 500ULL;
+
 	rtgiPipeline = std::make_unique<RayTracingPipeline>("shaders/spirv/rtgi.rgen.spv", "shaders/spirv/rtgi.rchit.spv", "shaders/spirv/rtgi.rmiss.spv");
 
-	ResizeRTGI(width, height);
+	instanceBuffer.Init(sizeof(InstanceData) * MAX_INSTANCE_COUNT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	instanceBuffer.MapPermanently();
+
+	rtgiPipeline->BindBufferToName("instanceBuffer", instanceBuffer);
+	rtgiPipeline->BindBufferToName("lights", payload.renderer->GetLightBuffer().Get());
+	rtgiPipeline->BindBufferToName("vertexBuffer", Renderer::g_vertexBuffer.GetBufferHandle());
+	rtgiPipeline->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
+
+	ResizeRTGI(payload.width, payload.height);
 }
 
 void DeferredPipeline::PushRTGIConstants(const Payload& payload)
 {
 	RTGIConstants constants{};
 	constants.frame = frame++;
+	constants.sampleCount = rtgiSampleCount;
+	constants.bounceCount = rtgiBounceCount;
+	constants.position = payload.camera->position;
 
-	rtgiPipeline->PushConstant(payload.commandBuffer, constants, VK_SHADER_STAGE_RAYGEN_BIT_KHR);
+	rtgiPipeline->PushConstant(payload.commandBuffer, constants, VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
 }
 
 void DeferredPipeline::ResizeRTGI(uint32_t width, uint32_t height)
@@ -160,8 +186,6 @@ void DeferredPipeline::ResizeRTGI(uint32_t width, uint32_t height)
 
 void DeferredPipeline::SetRTGIImageLayout()
 {
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-
 	VkImageMemoryBarrier memoryBarrier{};
 	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	memoryBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -178,13 +202,11 @@ void DeferredPipeline::SetRTGIImageLayout()
 	constexpr VkPipelineStageFlags src = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 	constexpr VkPipelineStageFlags dst = VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR;
 
-	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex); // or grab the command buffer from the renderer
-	CommandBuffer cmdBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
-
-	cmdBuffer.PipelineBarrier(src, dst, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
-
-	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, cmdBuffer.Get(), commandPool);
-	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
+	Vulkan::ExecuteSingleTimeCommands([&](const CommandBuffer& cmdBuffer)
+		{
+			cmdBuffer.PipelineBarrier(src, dst, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+		}
+	);
 }
 
 void DeferredPipeline::BindRTGIResources()
@@ -232,10 +254,10 @@ void DeferredPipeline::BindTLAS()
 	}
 }
 
-void DeferredPipeline::BindResources(VkBuffer lightBuffer)
+void DeferredPipeline::BindResources(const FIF::Buffer& lightBuffer)
 {
 	firstPipeline->BindBufferToName("ubo", uboBuffer.Get());
-	secondPipeline->BindBufferToName("lights", lightBuffer);
+	secondPipeline->BindBufferToName("lights", lightBuffer.Get());
 
 	BindGBuffers();
 }
@@ -570,11 +592,31 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 	cmdBuffer.EndDebugUtilsLabel();
 
 	if (Renderer::canRayTrace)
+	{
+		SetInstanceData(objects);
 		PerformRayTracedRendering(cmdBuffer, payload);
+	}
 
 	PerformSecondDeferred(cmdBuffer, payload);
 
 	framebuffer.TransitionFromReadToWrite(cmdBuffer);
+}
+
+void DeferredPipeline::SetInstanceData(const std::vector<Object*>& objects)
+{
+	std::vector<InstanceData> instances;
+	instances.reserve(objects.size());
+
+	for (Object* obj : objects)
+	{
+		const Mesh& mesh = obj->mesh;
+
+		uint32_t vOffset = Renderer::g_vertexBuffer.GetItemOffset(mesh.vertexMemory);
+		uint32_t iOffset = Renderer::g_indexBuffer.GetItemOffset(mesh.indexMemory);
+
+		instances.emplace_back(vOffset, iOffset, mesh.GetMaterialIndex());
+	}
+	std::memcpy(instanceBuffer.GetMappedPointer(), instances.data(), sizeof(InstanceData) * instances.size());
 }
 
 void DeferredPipeline::PerformRayTracedRendering(const CommandBuffer& cmdBuffer, const Payload& payload)
@@ -667,10 +709,18 @@ void DeferredPipeline::Resize(const Payload& payload)
 	ResizeTAA(payload.width, payload.height);
 }
 
+void DeferredPipeline::OnRenderingBufferResize(const Payload& payload)
+{
+	rtgiPipeline->BindBufferToName("vertexBuffer", Renderer::g_vertexBuffer.GetBufferHandle());
+	rtgiPipeline->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
+}
+
 std::vector<RenderPipeline::IntVariable> DeferredPipeline::GetIntVariables()
 {
 	std::vector<RenderPipeline::IntVariable> ret;
 	ret.emplace_back("taa sample count", &maxSampleCountTAA);
+	ret.emplace_back("rtgi sample count", &rtgiSampleCount);
+	ret.emplace_back("rtgi bounce count", &rtgiBounceCount);
 
 	return ret;
 }

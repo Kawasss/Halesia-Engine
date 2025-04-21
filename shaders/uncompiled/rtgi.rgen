@@ -5,13 +5,12 @@
 #define TWO_PI (PI * 2)
 #define ONE_OVER_PI (1 / PI)
 
-#define SAMPLE_COUNT 1
-#define BOUNCE_COUNT 1
-
 layout(location = 0) rayPayloadEXT Payload {
 	vec3 origin;
 	vec3 direction;
 	vec3 color;
+
+	float pdf;
 
 	int depth;
 
@@ -21,6 +20,9 @@ layout(location = 0) rayPayloadEXT Payload {
 layout(push_constant) uniform Camera
 {
 	uint frame;
+	int sampleCount;
+	int bounceCount;
+	vec3 position;
 } camera;
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;
@@ -30,12 +32,13 @@ layout(binding = 2, set = 0) uniform sampler2D albedoImage;
 layout(binding = 3, set = 0) uniform sampler2D normalImage;
 layout(binding = 4, set = 0) uniform sampler2D positionImage;
 
-vec3 CosineSampleHemisphereLocal(vec2 random) // https://github.com/boksajak/brdf/blob/master/brdf.h
+vec3 CosineSampleHemisphereLocal(vec2 random, out float pdf) // https://github.com/boksajak/brdf/blob/master/brdf.h
 {
 	float a = sqrt(random.x);
 	float b = TWO_PI * random.y;
 
 	vec3 ret = vec3(a * cos(b), a * sin(b), sqrt(1.0 - random.x));
+	pdf = ret.z * ONE_OVER_PI;
 
 	return ret;
 }
@@ -51,9 +54,9 @@ mat3 GetBasisFromVector(vec3 normal) // https://columbusutrigas.com/posts/rtgi/
 	return mat3(x, y, z);
 }
 
-vec3 CosineSampleHemisphere(vec2 random, vec3 normal)
+vec3 CosineSampleHemisphere(vec2 random, vec3 normal, out float pdf)
 {
-	vec3 local = CosineSampleHemisphereLocal(random);
+	vec3 local = CosineSampleHemisphereLocal(random, pdf);
 	mat3 trans = GetBasisFromVector(normal);
 
 	return trans * local;
@@ -114,18 +117,19 @@ void main()
 
 	vec3 color = vec3(0);
 
-	for (int i = 0; i < SAMPLE_COUNT; i++)
+	for (int i = 0; i < camera.sampleCount; i++)
 	{
 		payload.isActive = 1;
+
 		vec2 random = vec2(RandomValue(state), RandomValue(state));
-		vec3 direction = CosineSampleHemisphereNew(random, normal);
+		vec3 direction = CosineSampleHemisphere(random, normal, payload.pdf);
 
 		payload.origin = position;
 		payload.direction = direction;
 		payload.color = vec3(0);
 		payload.depth = 0;
 
-		for (int j = 0; j < BOUNCE_COUNT; j++)
+		for (int j = 0; j < camera.bounceCount; j++)
 		{
 			traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT, 0xFF, 0, 0, 0, payload.origin, 0.001, payload.direction, 1000.0, 0);
 
@@ -133,13 +137,13 @@ void main()
 				break;
 
 			vec2 random = vec2(RandomValue(state), RandomValue(state));
-			payload.direction = CosineSampleHemisphereNew(random, payload.direction); // the normal of the current collision is communicated through the payload.direction
+			payload.direction = CosineSampleHemisphere(random, payload.direction, payload.pdf); // the normal of the current collision is communicated through the payload.direction
 			direction = payload.direction;
 		}
 		color += payload.color / float(payload.depth);
 	}
 
-	vec3 result = color / float(SAMPLE_COUNT);
+	vec3 result = color / float(camera.sampleCount);
 
 	imageStore(globalIlluminationImage, ivec2(gl_LaunchIDEXT.xy), vec4(result, 1));
 }
