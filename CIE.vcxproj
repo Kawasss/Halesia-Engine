@@ -199,6 +199,7 @@
     <ClCompile Include="src\Profiler.cpp" />
     <ClCompile Include="src\QueryPool.cpp" />
     <ClCompile Include="src\RayTracingPipeline.cpp" />
+    <ClCompile Include="src\ResizableBuffer.cpp" />
     <ClCompile Include="src\ShaderReflector.cpp" />
     <ClCompile Include="src\RayTracing.cpp" />
     <ClCompile Include="src\Input.cpp" />
@@ -302,6 +303,7 @@
     <ClInclude Include="src\renderer\QueryPool.h" />
     <ClInclude Include="src\renderer\RayTracingPipeline.h" />
     <ClInclude Include="src\renderer\RenderPipeline.h" />
+    <ClInclude Include="src\renderer\ResizableBuffer.h" />
     <ClInclude Include="src\renderer\ShaderReflector.h" />
     <ClInclude Include="src\renderer\RayTracing.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />

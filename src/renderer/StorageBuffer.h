@@ -1,11 +1,12 @@
 #pragma once
 #include <set>
 #include <map>
+#include <span>
 
 #include "../system/CriticalSection.h"
 
 #include "Vulkan.h"
-#include "Buffer.h"
+#include "ResizableBuffer.h"
 #include "VulkanAPIError.h"
 
 #include "../core/Console.h"
@@ -30,10 +31,11 @@ struct StorageMemory_t // not a fan of this being visible
 
 using StorageMemory = unsigned long long;
 
-template<typename T> class StorageBuffer
+template<typename T> 
+class StorageBuffer
 {
 public:
-	StorageBuffer() {}
+	StorageBuffer() = default;
 	~StorageBuffer() { Destroy(); }
 
 	StorageBuffer(const StorageBuffer&) = delete;
@@ -42,12 +44,7 @@ public:
 	void Reserve(size_t maxAmountToBeStored, VkBufferUsageFlags usage)
 	{
 		win32::CriticalLockGuard lockGuard(readWriteSection);
-
-		this->usage = usage | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-
-		reservedSize = maxAmountToBeStored * sizeof(T);
-
-		buffer.Init(reservedSize, this->usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+		buffer.Init(maxAmountToBeStored * sizeof(T), ResizableBuffer::MemoryType::Gpu, usage | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT);
 	}
 
 	/// <summary>
@@ -55,7 +52,7 @@ public:
 	/// </summary>
 	/// <param name="data">data to append</param>
 	/// <returns></returns>
-	StorageMemory SubmitNewData(const std::vector<T>& data)
+	StorageMemory SubmitNewData(const std::span<T>& data)
 	{
 		if (data.empty())
 			return 0;
@@ -76,8 +73,6 @@ public:
 			memoryData.emplace(std::piecewise_construct, std::forward_as_tuple(memoryHandle), std::forward_as_tuple(writeSize, endOfBufferPointer, false));
 		}
 
-		if (!canReuseMemory) // only resize of new data is appended at the end
-			CheckForResize(data.size());
 		WriteToBuffer(data, memoryHandle);
 
 		if (!canReuseMemory) // the end of the buffer is only moved forward if data is appended
@@ -159,10 +154,10 @@ public:
 	VkBuffer     GetBufferHandle() { return buffer.Get(); }
 
 	size_t GetSize()    { return size; }
-	size_t GetMaxSize() { return reservedSize / sizeof(T); }
+	size_t GetMaxSize() { return buffer.GetSize() / sizeof(T); }
 
-	bool HasChanged()   { bool ret = hasChanged; hasChanged = false; return ret; }
-	bool HasResized()   { bool ret = hasResized; hasResized = false; return ret; }
+	bool HasChanged() { bool ret = hasChanged; hasChanged = false; return ret; }
+	bool HasResized() { return buffer.Resized(); }
 
 	/// <summary>
 	/// This resets the internal memory pointer to 0. Any existing data won't be erased, but will be overwritten
@@ -172,48 +167,10 @@ public:
 	void Destroy()
 	{
 		win32::CriticalLockGuard lockGuard(readWriteSection);
-		buffer.~Buffer();
+		buffer.~ResizableBuffer();
 	}
 
 private:
-	void Resize(size_t newSize)
-	{
-		Console::WriteLine("StorageBuffer resize from {} kb to {} kb", Console::Severity::Debug, reservedSize / 1024ull, newSize / 1024ull);
-
-		Buffer newBuffer(newSize, usage | VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-		Vulkan::ExecuteSingleTimeCommands(
-			[&](const CommandBuffer& cmdBuffer)
-			{
-				VkBufferCopy bufferCopy{};
-				bufferCopy.dstOffset = 0;
-				bufferCopy.srcOffset = 0;
-				bufferCopy.size = reservedSize;
-
-				cmdBuffer.CopyBuffer(buffer.Get(), newBuffer.Get(), 1, &bufferCopy);
-			}
-		);
-
-		buffer.InheritFrom(newBuffer);
-
-		reservedSize = newSize;
-		hasResized = true;
-	}
-
-	void CheckForResize(size_t extraSize)
-	{
-		int multiplier = 2;
-		size_t sizeBytes = (size + extraSize) * sizeof(T);
-
-		if (sizeBytes < reservedSize)
-			return;
-
-		while (reservedSize * multiplier < sizeBytes)
-			multiplier *= 2;
-
-		Resize(reservedSize * multiplier);
-	}
-
 	/// <summary>
 	/// This looks for for any free space within used memories, reducing the need to create a bigger buffer since terminated spots can be reused
 	/// </summary>
@@ -232,30 +189,9 @@ private:
 		return INVALID_HANDLE;
 	}
 
-	void WriteToBuffer(const std::vector<T>& data, StorageMemory memory)
+	void WriteToBuffer(const std::span<T>& data, StorageMemory memory)
 	{
-		StorageMemory_t& memoryInfo = memoryData[memory];
-		size_t writeSize = data.size() * sizeof(T);
-
-		Buffer transferBuffer(writeSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-		void* pData = transferBuffer.Map();
-
-		std::memcpy(pData, data.data(), writeSize);
-
-		Vulkan::ExecuteSingleTimeCommands([&](const CommandBuffer& cmdBuffer)
-			{
-				const StorageMemory_t& storageData = memoryData[memory];
-
-				VkBufferCopy copy{};
-				copy.dstOffset = storageData.offset;
-				copy.size = writeSize;
-				copy.srcOffset = 0;
-
-				cmdBuffer.CopyBuffer(transferBuffer.Get(), buffer.Get(), 1, &copy);
-			}
-		);
-
-		transferBuffer.Unmap();
+		buffer.Write(data, memoryData[memory].offset);
 	}
 
 	void ClearBuffer(StorageMemory memory = INVALID_HANDLE)
@@ -267,7 +203,7 @@ private:
 		if (memory == INVALID_HANDLE)	// if no specific memory has been given the entire buffer gets cleared
 		{
 			offset = 0;
-			size = reservedSize;
+			size = buffer.GetSize();
 		}
 		else				            // if a specific memory is given, then only clear that part of the buffer
 		{
@@ -279,7 +215,7 @@ private:
 		Vulkan::ExecuteSingleTimeCommands(
 			[&](const CommandBuffer& cmdBuffer)
 			{
-				buffer.Fill(cmdBuffer.Get(), 0, offset, size);
+				buffer.Fill(cmdBuffer.Get(), 0, size, offset);
 			}
 		);
 	}
@@ -297,15 +233,12 @@ private:
 	win32::CriticalSection readWriteSection;
 	size_t size = 0;
 
-	Buffer buffer;
+	ResizableBuffer buffer;
 
 	StorageMemory nextHandle = 1;
 
-	VkDeviceSize reservedSize = 0;
 	VkDeviceSize endOfBufferPointer = 0;
-	VkBufferUsageFlags usage = 0;
 
-	bool hasResized = false;
 	bool hasChanged = false;
 };
 

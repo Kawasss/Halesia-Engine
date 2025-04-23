@@ -152,6 +152,9 @@ void DeferredPipeline::CreateAndBindRTGI(const Payload& payload)
 	rtgiPipeline->BindBufferToName("vertexBuffer", Renderer::g_vertexBuffer.GetBufferHandle());
 	rtgiPipeline->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
 
+	if (skybox != nullptr)
+		rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
 	ResizeRTGI(payload.width, payload.height);
 }
 
