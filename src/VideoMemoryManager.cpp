@@ -54,20 +54,28 @@ struct MemoryBlock
 
 	std::map<uint64_t, Segment> segments;
 
-	void CheckedMap(VkMemoryMapFlags flags)
+	void CheckedMap(VkDeviceSize size, VkDeviceSize offset, VkMemoryMapFlags flags)
 	{
 		mappedCount++;
 		if (mappedCount <= 1 || mapped == nullptr)
-			ForceMap(flags);
+			ForceMap(size, offset, flags);
 	}
 
-	void ForceMap(VkMemoryMapFlags flags)
+	void ForceMap(VkDeviceSize size, VkDeviceSize offset, VkMemoryMapFlags flags)
 	{
 		if ((properties & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) == 0)
 			throw VulkanAPIError("Failed to map a memory block: it cannot be mapped due to its properties");
 
 		const Vulkan::Context& ctx = Vulkan::GetContext();
-		VkResult result = vkMapMemory(ctx.logicalDevice, memory, 0, VK_WHOLE_SIZE, flags, &mapped); // map the entire block, so the offset must be 0
+
+		VkResult result = VK_SUCCESS;
+
+		// map the entire block, because multiple segments can be mapped at the same time: vulkan only allows mapping a memory once, so the offset must be 0 and the size must be VK_WHOLE_SIZE.
+		// an optimisation: if a memory block is consumed entirely by one segment, then only map the required parts. A segment that uses the entire block removes to need to check for multiple mappings.
+		if (segments.size() == 1 && segments.begin()->second.GetSize() == size)
+			result = vkMapMemory(ctx.logicalDevice, memory, offset, size, flags, &mapped);
+		else                                  
+			result = vkMapMemory(ctx.logicalDevice, memory, 0, VK_WHOLE_SIZE, flags, &mapped);
 
 		CheckVulkanResult("Failed to map a memory block", result);
 	}
@@ -271,7 +279,7 @@ void* vvm::MapBuffer(Buffer buffer, VkDeviceSize offset, VkDeviceSize size, VkMe
 	win32::CriticalLockGuard guard(blockGuard);
 
 	MemoryBlock* block = FindRelevantMemoryBlock(buffer.Get());
-	block->CheckedMap(flags);
+	block->CheckedMap(size, offset, flags);
 
 	uint64_t handle = reinterpret_cast<uint64_t>(buffer.Get());
 	offset += block->segments[handle].begin; // can also check for incorrect offsets here
