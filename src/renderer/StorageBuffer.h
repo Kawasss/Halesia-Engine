@@ -63,14 +63,14 @@ public:
 		win32::CriticalLockGuard lockGuard(readWriteSection);
 		VkDeviceSize writeSize = sizeof(T) * data.size();
 
-		StorageMemory memoryHandle = FindReusableMemory(writeSize);				// first check if there any spaces within the buffer that can be filled
+		StorageMemory memoryHandle = FindReusableMemory(writeSize);	// first check if there any spaces within the buffer that can be filled
 		bool canReuseMemory = memoryHandle != INVALID_HANDLE;
 
-		if (canReuseMemory)																		// if a space can be filled then overwrite that space
+		if (canReuseMemory)											// if a space can be filled then overwrite that space
 		{
 			memoryData[memoryHandle].size = writeSize;
 		}
-		else																					// if no spaces could be found then append the new data to the end of the buffer and register the new data
+		else														// if no spaces could be found then append the new data to the end of the buffer and register the new data
 		{
 			memoryHandle = nextHandle++;
 			memoryData.emplace(std::piecewise_construct, std::forward_as_tuple(memoryHandle), std::forward_as_tuple(writeSize, endOfBufferPointer, false));
