@@ -20,6 +20,9 @@ if (!CheckIfHandleIsValid(memory))                                              
 
 struct StorageMemory_t // not a fan of this being visible
 {
+	StorageMemory_t() = default;
+	StorageMemory_t(VkDeviceSize s, VkDeviceSize o, bool sh) : size(s), offset(o), shouldBeTerminated(sh) {}
+
 	VkDeviceSize size;
 	VkDeviceSize offset;
 	bool shouldBeTerminated;
@@ -38,10 +41,8 @@ public:
 
 	void Reserve(size_t maxAmountToBeStored, VkBufferUsageFlags usage)
 	{
-		Vulkan::Context context = Vulkan::GetContext();
 		win32::CriticalLockGuard lockGuard(readWriteSection);
 
-		this->logicalDevice = context.logicalDevice;
 		this->usage = usage | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
 		reservedSize = maxAmountToBeStored * sizeof(T);
@@ -49,6 +50,11 @@ public:
 		buffer.Init(reservedSize, this->usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	}
 
+	/// <summary>
+	/// Appends the given data at the end of the buffer, if the buffer is not big enough it may resize.
+	/// </summary>
+	/// <param name="data">data to append</param>
+	/// <returns></returns>
 	StorageMemory SubmitNewData(const std::vector<T>& data)
 	{
 		if (data.empty())
@@ -57,8 +63,9 @@ public:
 		win32::CriticalLockGuard lockGuard(readWriteSection);
 		VkDeviceSize writeSize = sizeof(T) * data.size();
 
-		StorageMemory memoryHandle = 0;
-		bool canReuseMemory = FindReusableMemory(memoryHandle, writeSize);						// first check if there any spaces within the buffer that can be filled
+		StorageMemory memoryHandle = FindReusableMemory(writeSize);				// first check if there any spaces within the buffer that can be filled
+		bool canReuseMemory = memoryHandle != INVALID_HANDLE;
+
 		if (canReuseMemory)																		// if a space can be filled then overwrite that space
 		{
 			memoryData[memoryHandle].size = writeSize;
@@ -66,17 +73,11 @@ public:
 		else																					// if no spaces could be found then append the new data to the end of the buffer and register the new data
 		{
 			memoryHandle = nextHandle++;
-			memoryData[memoryHandle] = StorageMemory_t{ writeSize, endOfBufferPointer, false };
+			memoryData.emplace(std::piecewise_construct, std::forward_as_tuple(memoryHandle), std::forward_as_tuple(writeSize, endOfBufferPointer, false));
 		}
 
-		CheckForResize(data.size());                                                        // this check should make sure that the next check for an 'out of bounds' error never succeeds, making it redundant
-
-		if (endOfBufferPointer + writeSize > reservedSize && !canReuseMemory)				// throw an error if there is an attempt to write past the buffers capacity
-		{
-			VkDeviceSize overflow = endOfBufferPointer + writeSize - reservedSize;
-			throw VulkanAPIError("Failed to submit new storage buffer data, not enough space has been reserved: " + std::to_string(overflow / sizeof(T)) + " items (" + std::to_string(overflow) + " bytes) of overflow", VK_ERROR_OUT_OF_POOL_MEMORY);
-		}
-
+		if (!canReuseMemory) // only resize of new data is appended at the end
+			CheckForResize(data.size());
 		WriteToBuffer(data, memoryHandle);
 
 		if (!canReuseMemory) // the end of the buffer is only moved forward if data is appended
@@ -93,7 +94,6 @@ public:
 	/// <summary>
 	/// Erases all of the data inside the buffer, this also invalidates all memory handles
 	/// </summary>
-	/// <param name="creationObject"></param>
 	void Erase()
 	{
 		win32::CriticalLockGuard lockGuard(readWriteSection);
@@ -145,6 +145,8 @@ public:
 
 		return memoryData[memory].offset;
 	}
+
+	static constexpr StorageMemory INVALID_HANDLE = 0;
 
 	/// <summary>
 	/// Gives the distance between the beginning of the buffer and the location of the memory in the size of the item (offset in bytes / sizeof(item))
@@ -216,19 +218,18 @@ private:
 	/// This looks for for any free space within used memories, reducing the need to create a bigger buffer since terminated spots can be reused
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
-	bool FindReusableMemory(StorageMemory& memory, VkDeviceSize size)
+	StorageMemory FindReusableMemory(VkDeviceSize size)
 	{
 		for (StorageMemory terminatedMemory : terminatedMemories)
 		{
 			if (memoryData[terminatedMemory].size < size)				// search through all of the terminated memory locations to see if theres enough space in one of them to overwrite without causing overflow
 				continue;
 
-			memory = terminatedMemory;
 			memoryData[terminatedMemory].shouldBeTerminated = false;	// mark the memory location is no longer being terminated
 			terminatedMemories.erase(terminatedMemory);
-			return true;
+			return terminatedMemory;
 		}
-		return false;
+		return INVALID_HANDLE;
 	}
 
 	void WriteToBuffer(const std::vector<T>& data, StorageMemory memory)
@@ -257,18 +258,18 @@ private:
 		transferBuffer.Unmap();
 	}
 
-	void ClearBuffer(StorageMemory memory = 0)
+	void ClearBuffer(StorageMemory memory = INVALID_HANDLE)
 	{
 		const Vulkan::Context& context = Vulkan::GetContext();
 		VkDeviceSize offset = 0;
 		VkDeviceSize size = 0;
 
-		if (memory == 0)	// if no specific memory has been given the entire buffer gets cleared
+		if (memory == INVALID_HANDLE)	// if no specific memory has been given the entire buffer gets cleared
 		{
 			offset = 0;
 			size = reservedSize;
 		}
-		else				// if a specific memory is given, then only clear that part of the buffer
+		else				            // if a specific memory is given, then only clear that part of the buffer
 		{
 			StorageMemory_t& memoryInfo = memoryData[memory];
 			offset = memoryInfo.offset;
@@ -296,10 +297,9 @@ private:
 	win32::CriticalSection readWriteSection;
 	size_t size = 0;
 
-	VkDevice logicalDevice = VK_NULL_HANDLE;
 	Buffer buffer;
 
-	StorageMemory nextHandle = 0;
+	StorageMemory nextHandle = 1;
 
 	VkDeviceSize reservedSize = 0;
 	VkDeviceSize endOfBufferPointer = 0;
