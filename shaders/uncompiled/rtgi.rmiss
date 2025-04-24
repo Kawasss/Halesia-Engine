@@ -6,6 +6,8 @@ layout(location = 0) rayPayloadInEXT Payload {
 	vec3 direction;
 	vec3 color;
 
+	float pdf;
+
 	int depth;
 
 	int isActive;
