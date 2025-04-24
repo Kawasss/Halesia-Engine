@@ -7,6 +7,7 @@
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/DescriptorWriter.h"
 #include "renderer/PipelineCreator.h"
+#include "renderer/Vulkan.h"
 
 #include "io/IO.h"
 
@@ -17,7 +18,6 @@ struct Intro::Timer
 
 void Intro::Create(Swapchain* swapchain, std::string imagePath)
 {
-	const Vulkan::Context& ctx = Vulkan::GetContext();
 	this->swapchain = swapchain;
 	this->texture = new Texture(imagePath);
 	this->texture->AwaitGeneration();

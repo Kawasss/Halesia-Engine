@@ -26,6 +26,7 @@ public:
 	void Resize(size_t newSize);
 
 	void Fill(const CommandBuffer& cmdBuffer, uint32_t value, size_t writeSize, size_t offset);
+	void Fill(uint32_t value, size_t writeSize, size_t offset); // uses single time commands
 
 	template<typename T> 
 	void Write(const std::span<T>& values, size_t offset) // offset in byte count

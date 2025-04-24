@@ -5,9 +5,7 @@
 
 #include "../system/CriticalSection.h"
 
-#include "Vulkan.h"
 #include "ResizableBuffer.h"
-#include "VulkanAPIError.h"
 
 #include "../core/Console.h"
 
@@ -196,7 +194,6 @@ private:
 
 	void ClearBuffer(StorageMemory memory = INVALID_HANDLE)
 	{
-		const Vulkan::Context& context = Vulkan::GetContext();
 		VkDeviceSize offset = 0;
 		VkDeviceSize size = 0;
 
@@ -212,12 +209,7 @@ private:
 			size = memoryInfo.size;
 		}
 
-		Vulkan::ExecuteSingleTimeCommands(
-			[&](const CommandBuffer& cmdBuffer)
-			{
-				buffer.Fill(cmdBuffer.Get(), 0, size, offset);
-			}
-		);
+		buffer.Fill(0, size, offset);
 	}
 
 	bool CheckIfHandleIsValid(StorageMemory memory)

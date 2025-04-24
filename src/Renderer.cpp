@@ -18,6 +18,7 @@
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/HdrConverter.h"
+#include "renderer/VulkanAPIError.h"
 #include "renderer/Light.h"
 
 #include "system/Window.h"

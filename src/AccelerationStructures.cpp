@@ -3,6 +3,7 @@
 #include "renderer/Renderer.h"
 #include "renderer/Mesh.h"
 #include "renderer/GarbageManager.h"
+#include "renderer/VulkanAPIError.h"
 
 #include "core/Object.h"
 

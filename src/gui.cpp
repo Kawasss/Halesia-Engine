@@ -9,6 +9,7 @@
 #include "renderer/Mesh.h"
 #include "renderer/Renderer.h"
 #include "renderer/gui.h"
+#include "renderer/Vulkan.h"
 
 #include "system/Input.h"
 #include "system/Window.h"

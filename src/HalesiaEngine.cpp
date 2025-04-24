@@ -12,6 +12,7 @@
 #include "renderer/RayTracing.h"
 #include "renderer/gui.h"
 #include "renderer/AnimationManager.h"
+#include "renderer/Vulkan.h"
 
 #include "tools/CameraInjector.h"
 #include "physics/Physics.h"

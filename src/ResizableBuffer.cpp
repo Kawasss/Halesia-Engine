@@ -148,6 +148,16 @@ void ResizableBuffer::Fill(const CommandBuffer& cmdBuffer, uint32_t value, size_
 	cmdBuffer.FillBuffer(buffer.Get(), offset, writeSize, value);
 }
 
+void ResizableBuffer::Fill(uint32_t value, size_t writeSize, size_t offset)
+{
+	Vulkan::ExecuteSingleTimeCommands(
+		[&](const CommandBuffer& cmdBuffer)
+		{
+			cmdBuffer.FillBuffer(buffer.Get(), offset, writeSize, value);
+		}
+	);
+}
+
 bool ResizableBuffer::Resized()
 {
 	bool ret = resized;

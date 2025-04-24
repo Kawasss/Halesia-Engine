@@ -7,6 +7,7 @@
 #include "renderer/Vulkan.h"
 #include "renderer/DescriptorWriter.h"
 #include "renderer/GarbageManager.h"
+#include "renderer/VulkanAPIError.h"
 
 #include "system/Input.h"
 #include "system/Window.h"
