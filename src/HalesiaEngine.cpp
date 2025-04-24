@@ -234,7 +234,7 @@ void HalesiaEngine::PlayIntro()
 		return;
 
     UniquePointer intro = new Intro();
-	intro->Create(core.renderer->swapchain, "textures/floor.png");
+	intro->Create(core.renderer->swapchain, "textures/white.png");
 
 	core.renderer->RenderIntro(intro.Get());
 	intro->Destroy();
