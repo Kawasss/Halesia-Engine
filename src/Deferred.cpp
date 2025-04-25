@@ -39,6 +39,12 @@ struct DeferredPipeline::TAAConstants
 	int maxSampleCount;
 };
 
+struct DeferredPipeline::SpatialConstants
+{
+	int width;
+	int height;
+};
+
 struct DeferredPipeline::InstanceData
 {
 	InstanceData() = default;
@@ -132,6 +138,9 @@ void DeferredPipeline::ReloadShaders(const Payload& payload)
 	Renderer::CompileShaderToSpirv("shaders/uncompiled/rtgi.rchit");
 	Renderer::CompileShaderToSpirv("shaders/uncompiled/rtgi.rmiss");
 
+	Renderer::CompileShaderToSpirv("shaders/uncompiled/taa.comp");
+	Renderer::CompileShaderToSpirv("shaders/uncompiled/spatial.comp");
+	
 	CreateAndPreparePipelines(payload);
 
 	if (skybox != nullptr)
@@ -310,6 +319,7 @@ void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass seco
 void DeferredPipeline::CreateTAAPipeline()
 {
 	taaPipeline = std::make_unique<ComputeShader>("shaders/spirv/taa.comp.spv");
+	spatialPipeline = std::make_unique<ComputeShader>("shaders/spirv/spatial.comp.spv");
 }
 
 void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)
@@ -327,8 +337,11 @@ void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)
 	prevRtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, prevUsageFlags, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
 	prevRtgiView  = Vulkan::CreateImageView(prevRtgiImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
-	denoisedRtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	denoisedRtgiImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
 	denoisedRtgiView = Vulkan::CreateImageView(denoisedRtgiImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT);
+
+	spatialDenoisedImage = Vulkan::CreateImage(width, height, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0);
+	spatialDenoisedView = Vulkan::CreateImageView(spatialDenoisedImage.Get(), VK_IMAGE_VIEW_TYPE_2D, 1, 1, GBUFFER_RTGI_FORMAT, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	Vulkan::ExecuteSingleTimeCommands([&](const CommandBuffer& cmdBuffer)
 		{
@@ -354,6 +367,10 @@ void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)
 			transitioner.image = denoisedRtgiImage.Get();
 
 			transitioner.Transition(cmdBuffer);
+
+			transitioner.image = spatialDenoisedImage.Get();
+
+			transitioner.Transition(cmdBuffer);
 		}
 	);
 }
@@ -368,6 +385,14 @@ void DeferredPipeline::BindTAAResources()
 	taaPipeline->BindImageToName("resultImage", denoisedRtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL);
 	
 	taaPipeline->BindBufferToName("sampleCountBuffer", TAASampleBuffer);
+
+	// !!!!
+	// should use the denoised image as input
+
+	spatialPipeline->BindImageToName("depthImage", framebuffer.GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	spatialPipeline->BindImageToName("inputImage", rtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL); 
+	spatialPipeline->BindImageToName("normalImage", GetNormalView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	spatialPipeline->BindImageToName("outputImage", spatialDenoisedView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL);
 }
 
 void DeferredPipeline::ResizeTAA(uint32_t width, uint32_t height)
@@ -392,6 +417,12 @@ void DeferredPipeline::ResizeTAA(uint32_t width, uint32_t height)
 
 	if (TAASampleBuffer.IsValid())
 		TAASampleBuffer.Destroy();
+
+	if (spatialDenoisedImage.IsValid())
+		spatialDenoisedImage.Destroy();
+
+	if (spatialDenoisedView != VK_NULL_HANDLE)
+		vgm::Delete(spatialDenoisedView);
 
 	CreateTAAResources(width, height);
 	BindTAAResources();
@@ -512,7 +543,7 @@ void DeferredPipeline::CopyDenoisedToRTGI(const CommandBuffer& cmdBuffer)
 	copy.srcSubresource.layerCount = 1;
 	copy.srcSubresource.mipLevel = 0;
 
-	cmdBuffer.CopyImage(denoisedRtgiImage.Get(), VK_IMAGE_LAYOUT_GENERAL, rtgiImage.Get(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy);
+	cmdBuffer.CopyImage(spatialDenoisedImage.Get(), VK_IMAGE_LAYOUT_GENERAL, rtgiImage.Get(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy);
 }
 
 void DeferredPipeline::PushTAAConstants(const CommandBuffer& cmdBuffer, const Camera* camera)
@@ -532,6 +563,12 @@ void DeferredPipeline::PushTAAConstants(const CommandBuffer& cmdBuffer, const Ca
 
 	prevView = view;
 	prevProj = proj;
+
+	SpatialConstants sConstants{};
+	sConstants.width = GetRTGIWidth();
+	sConstants.height = GetRTGIHeight();
+
+	spatialPipeline->PushConstant(cmdBuffer, sConstants, VK_SHADER_STAGE_COMPUTE_BIT);
 }
 
 Skybox* DeferredPipeline::CreateNewSkybox(const std::string& path)
@@ -643,6 +680,7 @@ void DeferredPipeline::PerformRayTracedRendering(const CommandBuffer& cmdBuffer,
 	PushTAAConstants(cmdBuffer, payload.camera);
 
 	taaPipeline->Execute(cmdBuffer, GetRTGIWidth() / 8, GetRTGIHeight() / 8, 1);
+	spatialPipeline->Execute(cmdBuffer, GetRTGIWidth() / 8, GetRTGIHeight() / 8, 1);
 
 	CopyDenoisedToRTGI(cmdBuffer);
 	CopyResourcesForNextTAA(cmdBuffer);
@@ -832,4 +870,5 @@ DeferredPipeline::~DeferredPipeline()
 	vgm::Delete(prevRtgiView);
 	vgm::Delete(prevDepthView);
 	vgm::Delete(denoisedRtgiView);
+	vgm::Delete(spatialDenoisedView);
 }

@@ -41,6 +41,7 @@ private:
 	struct PushConstant;
 	struct RTGIConstants;
 	struct TAAConstants;
+	struct SpatialConstants;
 	struct InstanceData;
 
 	struct UBO
@@ -113,9 +114,13 @@ private:
 	vvm::SmartImage denoisedRtgiImage;
 	VkImageView denoisedRtgiView = VK_NULL_HANDLE;
 
+	vvm::SmartImage spatialDenoisedImage;
+	VkImageView spatialDenoisedView = VK_NULL_HANDLE;
+
 	std::unique_ptr<GraphicsPipeline> firstPipeline;
 	std::unique_ptr<GraphicsPipeline> secondPipeline;
 	std::unique_ptr<ComputeShader> taaPipeline;
+	std::unique_ptr<ComputeShader> spatialPipeline;
 	std::unique_ptr<RayTracingPipeline> rtgiPipeline;
 
 	std::unique_ptr<TopLevelAccelerationStructure> TLAS;

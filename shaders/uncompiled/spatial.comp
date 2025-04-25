@@ -1,0 +1,72 @@
+#version 460 // tysm to https://columbusutrigas.com/posts/rtgi/#spatial-denoising
+
+#define DEPTH_SIGMA 512.0
+#define NORMAL_SIGMA 32.0
+#define KERNEL_RANGE 2 // 5x5 range
+
+layout (binding = 0) uniform sampler2D depthImage;
+layout (binding = 2) uniform sampler2D normalImage;
+layout (binding = 3) uniform sampler2D inputImage;
+
+layout (binding = 4, rgba16) uniform image2D outputImage;
+
+layout (push_constant) uniform PushContant
+{
+	int width;
+	int height;
+} constant;
+
+float GetEdgeStoppingDepthWeight(float centerDepth, float neighborDepth)
+{
+	return exp(-abs(centerDepth - neighborDepth) * centerDepth * DEPTH_SIGMA);
+}
+
+float GetEdgeStoppingNormalWeight(vec3 normalP, vec3 normalQ)
+{
+	return pow(clamp(dot(normalP, normalQ), 0.0, 1.0), NORMAL_SIGMA);
+}
+
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+void main()
+{
+	const float GaussKernel5[5] = { 0.0614, 0.2448, 0.3877, 0.2448, 0.0614 };
+
+	ivec2 absCoords = ivec2(gl_GlobalInvocationID.xy);
+	ivec2 size = ivec2(constant.width, constant.height);
+
+	vec3 result = vec3(0.0);
+	float totalWeight = 0.0;
+
+	float centerDepth = texelFetch(depthImage, absCoords, 0).r;
+	vec3 centerNormal = texelFetch(normalImage, absCoords, 0).rgb;
+
+	if (centerDepth <= 0.0001 || centerDepth >= 0.9999) // skybox (could probably also check if the normal is 0, 0, 0
+	{
+		imageStore(outputImage, absCoords, vec4(0.0, 0.0, 0.0, 1.0));
+		return;
+	}
+	
+	for (int i = -KERNEL_RANGE; i <= KERNEL_RANGE; i++)
+	{
+		for (int j = -KERNEL_RANGE; j <= KERNEL_RANGE; j++)
+		{
+			ivec2 relCoords = ivec2(i, j);
+			ivec2 coords = clamp(absCoords + relCoords, ivec2(0), size - 1);
+
+			float weight = GaussKernel5[i + KERNEL_RANGE] * GaussKernel5[j * KERNEL_RANGE];
+
+			float depth = texelFetch(depthImage, coords, 0).r;
+			vec3 normal = texelFetch(normalImage, coords, 0).rgb;
+			float skyWeight = (centerDepth <= 0.0001 || centerDepth >= 0.9999) ? 0 : 1;
+
+			weight *= GetEdgeStoppingDepthWeight(centerDepth, depth);
+			weight *= GetEdgeStoppingNormalWeight(centerNormal, normal);
+			weight *= skyWeight;
+
+			result += texelFetch(inputImage, coords, 0).rgb * weight;
+			totalWeight += weight;
+		}
+	}
+	result /= totalWeight;
+	imageStore(outputImage, absCoords, vec4(result, 1.0));
+}

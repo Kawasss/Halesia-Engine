@@ -713,5 +713,8 @@
     <None Include="shaders\uncompiled\taa.comp">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="shaders\uncompiled\spatial.comp">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>
