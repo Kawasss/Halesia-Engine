@@ -17,16 +17,6 @@ if (!CheckIfHandleIsValid(memory))                                              
 	return ret;                                                                                                                                      \
 }                                                                                                                                                    \
 
-struct StorageMemory_t // not a fan of this being visible
-{
-	StorageMemory_t() = default;
-	StorageMemory_t(VkDeviceSize s, VkDeviceSize o, bool sh) : size(s), offset(o), shouldBeTerminated(sh) {}
-
-	VkDeviceSize size;
-	VkDeviceSize offset;
-	bool shouldBeTerminated;
-};
-
 using StorageMemory = unsigned long long;
 
 template<typename T> 
@@ -169,6 +159,16 @@ public:
 	}
 
 private:
+	struct StorageMemory_t
+	{
+		StorageMemory_t() = default;
+		StorageMemory_t(VkDeviceSize s, VkDeviceSize o, bool sh) : size(s), offset(o), shouldBeTerminated(sh) {}
+
+		VkDeviceSize size;
+		VkDeviceSize offset;
+		bool shouldBeTerminated;
+	};
+
 	/// <summary>
 	/// This looks for for any free space within used memories, reducing the need to create a bigger buffer since terminated spots can be reused
 	/// </summary>
