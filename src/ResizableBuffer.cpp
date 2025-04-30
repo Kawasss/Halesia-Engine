@@ -41,6 +41,8 @@ ResizableBuffer::~ResizableBuffer()
 void ResizableBuffer::Destroy()
 {
 	buffer.~Buffer();
+	if (memoryType == MemoryType::Gpu)
+		transferBuffer.~Buffer();
 }
 
 void ResizableBuffer::Init(size_t size, MemoryType memoryType, VkBufferUsageFlags usage)
@@ -51,6 +53,8 @@ void ResizableBuffer::Init(size_t size, MemoryType memoryType, VkBufferUsageFlag
 	this->size = size;
 
 	buffer.Init(size, this->usage, properties);
+	if (memoryType == MemoryType::Gpu)
+		transferBuffer.Init(size, this->usage, properties);
 }
 
 void ResizableBuffer::Write(const void* pValues, size_t writeSize, size_t offset)
@@ -117,7 +121,14 @@ void ResizableBuffer::ResizeHost(size_t newSize)
 
 void ResizableBuffer::WriteDevice(const void* pValues, size_t writeSize, size_t offset)
 {
-	Buffer transferBuffer(writeSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	if (transferSize < writeSize)
+	{
+		transferBuffer.Destroy();
+		transferBuffer.Init(writeSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+
+		transferSize = writeSize;
+	}
+
 	void* dst = transferBuffer.Map();
 
 	std::memcpy(dst, pValues, writeSize);

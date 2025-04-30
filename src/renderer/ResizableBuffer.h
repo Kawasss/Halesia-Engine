@@ -47,12 +47,15 @@ private:
 	void WriteHost(const void* pValues, size_t writeSize, size_t offset);
 	void WriteDevice(const void* pValues, size_t writeSize, size_t offset);
 
+	Buffer transferBuffer;
 	Buffer buffer;
 	size_t size = 0;
 	MemoryType memoryType = MemoryType::None;
 
 	VkBufferUsageFlags usage = 0;
 	VkMemoryPropertyFlags properties = 0;
+
+	VkDeviceSize transferSize = 0;
 
 	bool resized = false;
 };

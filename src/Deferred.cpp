@@ -483,7 +483,7 @@ void DeferredPipeline::CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer)
 	rtgiCopy.dstSubresource.mipLevel = 0;
 
 	cmdBuffer.CopyImage(framebuffer.GetDepthImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, prevDepthImage.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
-	cmdBuffer.CopyImage(rtgiImage.Get(), VK_IMAGE_LAYOUT_GENERAL, prevRtgiImage.Get(), VK_IMAGE_LAYOUT_GENERAL, 1, &rtgiCopy);
+	cmdBuffer.CopyImage(spatialDenoisedImage.Get(), VK_IMAGE_LAYOUT_GENERAL, prevRtgiImage.Get(), VK_IMAGE_LAYOUT_GENERAL, 1, &rtgiCopy);
 
 	depthTransition.Detransition(cmdBuffer);
 	prevDepthTransition.Detransition(cmdBuffer);
