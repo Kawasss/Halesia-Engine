@@ -14,6 +14,7 @@ layout (push_constant) uniform PushContant
 {
 	int width;
 	int height;
+	int stepCount;
 } constant;
 
 float GetEdgeStoppingDepthWeight(float centerDepth, float neighborDepth)
@@ -30,6 +31,7 @@ layout (local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 void main()
 {
 	const float GaussKernel5[5] = { 0.0614, 0.2448, 0.3877, 0.2448, 0.0614 };
+	const float GaussKernel7[7] = { 0.001, 0.02, 0.109, 0.172, 0.019, 0.02, 0.001 };
 
 	ivec2 absCoords = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 size = ivec2(constant.width, constant.height);
@@ -50,7 +52,7 @@ void main()
 	{
 		for (int j = -KERNEL_RANGE; j <= KERNEL_RANGE; j++)
 		{
-			ivec2 relCoords = ivec2(i, j);
+			ivec2 relCoords = ivec2(i, j) * constant.stepCount;
 			ivec2 coords = clamp(absCoords + relCoords, ivec2(0), size - 1);
 
 			float weight = GaussKernel5[i + KERNEL_RANGE] * GaussKernel5[j + KERNEL_RANGE];

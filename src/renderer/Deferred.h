@@ -139,4 +139,6 @@ private:
 	int maxSampleCountTAA = 4;
 	int rtgiSampleCount = 1;
 	int rtgiBounceCount = 2;
+
+	int spatialStepCount = 1;
 };

@@ -43,6 +43,7 @@ struct DeferredPipeline::SpatialConstants
 {
 	int width;
 	int height;
+	int stepCount;
 };
 
 struct DeferredPipeline::InstanceData
@@ -386,11 +387,8 @@ void DeferredPipeline::BindTAAResources()
 	
 	taaPipeline->BindBufferToName("sampleCountBuffer", TAASampleBuffer);
 
-	// !!!!
-	// should use the denoised image as input
-
 	spatialPipeline->BindImageToName("depthImage", framebuffer.GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	spatialPipeline->BindImageToName("inputImage", rtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL); 
+	spatialPipeline->BindImageToName("inputImage", denoisedRtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL); 
 	spatialPipeline->BindImageToName("normalImage", GetNormalView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	spatialPipeline->BindImageToName("outputImage", spatialDenoisedView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL);
 }
@@ -567,6 +565,7 @@ void DeferredPipeline::PushTAAConstants(const CommandBuffer& cmdBuffer, const Ca
 	SpatialConstants sConstants{};
 	sConstants.width = GetRTGIWidth();
 	sConstants.height = GetRTGIHeight();
+	sConstants.stepCount = spatialStepCount;
 
 	spatialPipeline->PushConstant(cmdBuffer, sConstants, VK_SHADER_STAGE_COMPUTE_BIT);
 }
@@ -762,6 +761,7 @@ std::vector<RenderPipeline::IntVariable> DeferredPipeline::GetIntVariables()
 	ret.emplace_back("taa sample count", &maxSampleCountTAA);
 	ret.emplace_back("rtgi sample count", &rtgiSampleCount);
 	ret.emplace_back("rtgi bounce count", &rtgiBounceCount);
+	ret.emplace_back("step count", &spatialStepCount);
 
 	return ret;
 }
