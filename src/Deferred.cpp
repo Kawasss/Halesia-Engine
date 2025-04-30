@@ -520,8 +520,8 @@ void DeferredPipeline::TransitionResourcesToTAA(const CommandBuffer& cmdBuffer)
 	depthTransition.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	depthTransition.srcAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
 	depthTransition.dstAccess = VK_ACCESS_MEMORY_READ_BIT;
-	depthTransition.srcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT; VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	depthTransition.dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT; VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+	depthTransition.srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	depthTransition.dstStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 	depthTransition.width = framebuffer.GetWidth();
 	depthTransition.height = framebuffer.GetHeight();
 

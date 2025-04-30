@@ -53,7 +53,7 @@ void main()
 			ivec2 relCoords = ivec2(i, j);
 			ivec2 coords = clamp(absCoords + relCoords, ivec2(0), size - 1);
 
-			float weight = GaussKernel5[i + KERNEL_RANGE] * GaussKernel5[j * KERNEL_RANGE];
+			float weight = GaussKernel5[i + KERNEL_RANGE] * GaussKernel5[j + KERNEL_RANGE];
 
 			float depth = texelFetch(depthImage, coords, 0).r;
 			vec3 normal = texelFetch(normalImage, coords, 0).rgb;
