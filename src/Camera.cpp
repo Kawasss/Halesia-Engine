@@ -113,15 +113,22 @@ void Camera::UpdateUpAndRightVectors()
 	up = glm::normalize(glm::cross(right, front));
 }
 
-glm::vec2 Camera::GetMotionVector()
+void Camera::UpdateVelocityMatrices()
 {
-	glm::vec4 NDC = GetProjectionMatrix() * GetViewMatrix() * glm::vec4(position, 1);
-	//NDC /= NDC.w + 0.000001f;
+	prevView = GetViewMatrix();
+	prevProj = GetProjectionMatrix();
+}
 
-	glm::vec2 current = glm::vec2((NDC.x + 1.0f) * 0.5f, (NDC.y + 1.0f) * 0.5f);
-	glm::vec2 ret = current - prev2D;
-	prev2D = current;
-	return ret;
+glm::vec2 Camera::GetMotionVector() const
+{
+	glm::vec4 curr = GetProjectionMatrix() * GetViewMatrix() * glm::vec4(position, 1);
+	glm::vec4 prev = prevProj * prevView * glm::vec4(position, 1);
+
+	glm::vec2 diff = glm::vec2(curr) / (curr.w + 0.001f) - glm::vec2(prev) / (prev.w + 0.001f);
+	if (diff != diff) // check for NaN
+		diff = glm::vec2(0);
+
+	return diff;
 }
 
 // orbit camera

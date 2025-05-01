@@ -705,7 +705,7 @@ void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, cons
 		glm::mat4 model = obj->transform.GetModelMatrix();
 
 		pushConstant.model = model;
-		pushConstant.velocity = obj->transform.GetMotionVector(proj, view, model);
+		pushConstant.velocity = payload.camera->GetMotionVector(); // only for static objects, otherwise: obj->transform.GetMotionVector(proj, view, model);
 		pushConstant.materialID = obj->mesh.GetMaterialIndex();
 
 		firstPipeline->PushConstant(cmdBuffer, pushConstant, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);

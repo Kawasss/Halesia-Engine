@@ -32,7 +32,9 @@ public:
 	glm::mat4 GetProjectionMatrix() const;
 	glm::mat4 GetOrthoProjectionMatrix(unsigned int width, unsigned int height) const;
 	glm::mat4 GetViewMatrix() const;
-	glm::vec2 GetMotionVector();
+	glm::vec2 GetMotionVector() const;
+
+	void UpdateVelocityMatrices();
 
 	template<typename T> T* GetScript() const;
 	
@@ -43,7 +45,8 @@ public:
 	template<typename T> void SetScript(T* script);
 
 private:
-	glm::vec2 prev2D = glm::vec2(0);
+	glm::mat4 prevView;
+	glm::mat4 prevProj;
 	void* attachedScript = nullptr;
 	
 	float nearPlane = 0.01f, farPlane = 1000, aspectRatio = Window::GetMonitorWidth() / (float)Window::GetMonitorHeight();
