@@ -1,3 +1,5 @@
+#include <Windows.h>
+
 #include "core/Rigid3DObject.h"
 
 #include "io/CreationData.h"
@@ -28,5 +30,6 @@ Rigid3DObject* Rigid3DObject::Create()
 void Rigid3DObject::Init(const ObjectCreationData& data)
 {
 	Initialize(data);
-	new(&rigid) RigidBody(Shape::GetShapeFromType(data.hitBox.shapeType, data.hitBox.extents), data.hitBox.rigidType);
+	rigid.Init(Shape::GetShapeFromType(data.hitBox.shapeType, data.hitBox.extents), data.hitBox.rigidType);
+	rigid.SetUserData(this);
 }
