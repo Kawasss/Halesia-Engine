@@ -201,6 +201,7 @@
     <ClCompile Include="src\QueryPool.cpp" />
     <ClCompile Include="src\RayTracingPipeline.cpp" />
     <ClCompile Include="src\ResizableBuffer.cpp" />
+    <ClCompile Include="src\Rigid3DObject.cpp" />
     <ClCompile Include="src\ShaderReflector.cpp" />
     <ClCompile Include="src\RayTracing.cpp" />
     <ClCompile Include="src\Input.cpp" />
@@ -253,6 +254,7 @@
     <ClInclude Include="src\core\Object.h" />
     <ClInclude Include="src\core\ObjectStreamer.h" />
     <ClInclude Include="src\core\Profiler.h" />
+    <ClInclude Include="src\core\Rigid3DObject.h" />
     <ClInclude Include="src\core\Scene.h" />
     <ClInclude Include="src\core\Transform.h" />
     <ClInclude Include="src\core\UniquePointer.h" />

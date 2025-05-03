@@ -315,6 +315,9 @@
     <ClCompile Include="src\MeshObject.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\Rigid3DObject.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -618,6 +621,9 @@
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\core\MeshObject.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\Rigid3DObject.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>

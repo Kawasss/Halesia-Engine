@@ -17,8 +17,9 @@ public:
 	};
 	static std::string TypeToString(Type type);
 
-	RigidBody() {}
+	RigidBody() = default;
 	RigidBody(Shape shape, Type type, glm::vec3 pos = glm::vec3(0), glm::quat rot = glm::quat());
+	void Init(Shape shape, Type type, glm::vec3 pos = glm::vec3(0), glm::quat rot = glm::quat());
 	~RigidBody();
 	void Destroy();
 

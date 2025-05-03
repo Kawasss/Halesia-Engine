@@ -10,7 +10,7 @@
 #include "extensions/PxDefaultSimulationFilterShader.h"
 
 #include "renderer/Mesh.h"
-#include "core/Object.h"
+#include "core/Rigid3DObject.h"
 
 constexpr float simulationStep = 1 / 60.0f;
 
@@ -196,14 +196,14 @@ void Physics::FetchAndUpdateObjects()
 	for (int i = 0; i < numActors; i++)
 	{
 		physx::PxActor* actor = actors[i];
-		Object* object = static_cast<Object*>(actor->userData);
+		Rigid3DObject* object = static_cast<Rigid3DObject*>(actor->userData);
 		
 		physx::PxTransform trans = actor->is<physx::PxRigidActor>()->getGlobalPose();
 		glm::quat quat = glm::quat(trans.q.w, trans.q.x, trans.q.y, trans.q.z);
 
 		object->transform.position = glm::vec3(trans.p.x, trans.p.y, trans.p.z);
 		object->transform.rotation = glm::degrees(glm::eulerAngles(quat));
-		//object->rigid.SetForce();
+		object->rigid.SetForce();
 	}
 }
 

@@ -4,6 +4,14 @@
 
 RigidBody::RigidBody(Shape shape, Type type, glm::vec3 pos, glm::quat rot)
 {
+	Init(shape, type, pos, rot);
+}
+
+void RigidBody::Init(Shape shape, Type type, glm::vec3 pos, glm::quat rot)
+{
+	if (type != Type::None)
+		Destroy();
+
 	this->shape = shape;
 	this->type = type;
 	physx::PxTransform transform(pos.x, pos.y, pos.z, physx::PxQuat(rot.x, rot.y, rot.z, rot.w));
@@ -30,7 +38,7 @@ RigidBody::RigidBody(Shape shape, Type type, glm::vec3 pos, glm::quat rot)
 
 RigidBody::~RigidBody()
 {
-	//Destroy();
+	Destroy();
 }
 
 void RigidBody::MovePosition(Transform& transform) // only works if the rigid is dynamic !!
@@ -66,7 +74,7 @@ void RigidBody::Destroy()
 		return;
 	physx::PxActor* actor = rigidDynamic == nullptr ? rigidStatic->is<physx::PxActor>() : rigidDynamic->is<physx::PxActor>();
 	Physics::RemoveActor(*actor);
-	type == Type::None;
+	type = Type::None;
 }
 
 glm::vec3 RigidBody::GetPosition()
