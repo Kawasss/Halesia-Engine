@@ -217,7 +217,7 @@ private:
 	static void CreateGlobalBuffers();
 
 	void GetQueryResults();
-	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects);
+	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<MeshObject*>& objects);
 	
 	void OnResize();
 	void AddExtensions();
@@ -226,7 +226,7 @@ private:
 	void CheckForInterference();
 
 	void ProcessRenderPipeline(RenderPipeline* pipeline);
-	void RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects);
+	void RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<MeshObject*>& objects);
 
 	uint32_t DetectExternalTools();
 
@@ -234,7 +234,7 @@ private:
 	static void ResetImGUI();
 
 	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
-	void RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> object, Camera* camera);
+	void RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<MeshObject*> object, Camera* camera);
 	void RenderCollisionBoxes(const std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage);
 
 	void CheckForBufferResizes();

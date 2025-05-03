@@ -68,6 +68,8 @@ void SceneLoader::RetrieveType(NodeType type, NodeSize size)
 		break;
 	case NODE_TYPE_MESH:
 	{
+		currentObject->type = ObjectCreationData::Type::Mesh;
+
 		FileMesh mesh;
 		reader >> mesh;
 		currentObject->hasMesh = true;
@@ -348,6 +350,7 @@ ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNod
 		if (i != 0 || !creationData.hasMesh)
 			continue;
 		creationData.mesh = RetrieveMeshData(mesh);
+		creationData.type = ObjectCreationData::Type::Mesh;
 	}
 	
 	if (node->mNumChildren > 0)
@@ -378,6 +381,7 @@ ObjectCreationData GenericLoader::LoadObjectFile(std::string path) // kinda funk
 	aiMesh* pMesh = scene->mMeshes[0];
 	aiMaterial* pMaterial = scene->mMaterials[pMesh->mMaterialIndex];
 	ret.mesh = GetMeshFromAssimp(pMesh);
+	ret.type = ObjectCreationData::Type::Mesh;
 
 	return ret;
 }

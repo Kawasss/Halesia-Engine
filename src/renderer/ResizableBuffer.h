@@ -39,6 +39,8 @@ public:
 	VkBuffer Get()   const { return buffer.Get(); }
 	size_t GetSize() const { return size;         }
 
+	bool IsValid() const { return buffer.IsValid(); }
+
 private:
 	void ResizeHost(size_t newSize);
 	void ResizeDevice(size_t newSize);

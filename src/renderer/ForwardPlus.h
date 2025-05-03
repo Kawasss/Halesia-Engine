@@ -20,11 +20,11 @@ public:
 	~ForwardPlusPipeline() = default;
 
 	void Start(const Payload& payload) override;
-	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
+	void Execute(const Payload& payload, const std::vector<MeshObject*>& objects) override;
 
 	// these functions can be used if the default render pipeline functions dont cut it (Execute( ... ) will call these functions)
 	void ComputeCells(CommandBuffer commandBuffer, uint32_t lightCount, Camera* camera);
-	void DrawObjects(CommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj = glm::mat4(0));
+	void DrawObjects(CommandBuffer commandBuffer, const std::vector<MeshObject*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj = glm::mat4(0));
 	void UpdateBindlessTextures();
 
 	ComputeShader* GetShader() { return computeShader.get(); }

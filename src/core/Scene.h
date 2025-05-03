@@ -16,19 +16,19 @@ public:
 	Camera* camera = defaultCamera;
 
 	template<typename T> 
-	Object* AddObject(const ObjectCreationData& creationData);
-	Object* AddObject(const ObjectCreationData& creationData);
+	Object* AddObject(const ObjectCreationData& creationData, Object* pParent = nullptr);
+	Object* AddObject(const ObjectCreationData& creationData, Object* pParent = nullptr);
 
 	template<typename T> 
-	Object* DuplicateObject(Object* objPtr, std::string name);
-	Object* DuplicateObject(Object* objPtr, std::string name);
+	Object* DuplicateObject(Object* pObject, std::string name); //!< UNSAFE, currently does not duplicate the appropriate class based on type
+	Object* DuplicateObject(Object* pObject, std::string name); //!< UNSAFE
 
 	template<typename T>
 	Camera* AddCustomCamera();
 
 	bool HasFinishedLoading();
 
-	void UpdateCamera(Window* window, float delta);
+	void UpdateCamera(Window* pWindow, float delta);
 	void UpdateScripts(float delta);
 	void CollectGarbage();
 
@@ -38,7 +38,7 @@ public:
 	/// Transfers the ownership of the child from the scene to the object. The scene can no longer access the child after the transfer,
 	/// the object will become the sole owner. The scene will no longer be responsible for deletion.
 	/// </summary>
-	void TransferObjectOwnership(Object* newOwner, Object* child);
+	void TransferObjectOwnership(Object* pNewOwner, Object* pChild);
 
 	virtual void Start() {};
 	virtual void Update(float delta) {};
@@ -56,7 +56,7 @@ public:
 	std::vector<Object*> allObjects; // this vector owns the objects
 
 private:
-	void RegisterObjectPointer(Object* objPtr);
+	void RegisterObjectPointer(Object* pObject, Object* pParent);
 
 	bool sceneIsLoading = false;
 
@@ -73,21 +73,21 @@ template<typename T> Camera* Scene::AddCustomCamera()
 	return ret;
 }
 
-template<typename T> Object* Scene::AddObject(const ObjectCreationData& creationData)
+template<typename T> Object* Scene::AddObject(const ObjectCreationData& creationData, Object* pParent)
 {
 	T* customPointer = new T();
 	Object* objPtr = customPointer;
-	RegisterObjectPointer(objPtr);
+	RegisterObjectPointer(objPtr, pParent);
 	objPtr->Initialize(creationData, customPointer);
 
 	return objPtr;
 }
 
-template<typename T> Object* Scene::DuplicateObject(Object* objPtr, std::string name)
+template<typename T> Object* Scene::DuplicateObject(Object* pObject, std::string name)
 {
 	T* tPtr = new T();
 	Object* newObjPtr = tPtr;
-	Object::Duplicate(objPtr, newObjPtr, name, tPtr);
+	Object::Duplicate(pObject, newObjPtr, name, tPtr);
 	RegisterObjectPointer(newObjPtr);
 	newObjPtr->Start();
 	

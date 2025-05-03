@@ -11,7 +11,7 @@
 #include "renderer/Skybox.h"
 #include "renderer/Vulkan.h"
 
-#include "core/Object.h"
+#include "core/MeshObject.h"
 #include "core/Camera.h"
 
 struct DeferredPipeline::PushConstant
@@ -602,7 +602,7 @@ void DeferredPipeline::LoadSkybox(const std::string& path)
 	rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
+void DeferredPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects)
 {
 	UpdateTextureBuffer(); // temp !!!
 
@@ -641,12 +641,12 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Object*
 	framebuffer.TransitionFromReadToWrite(cmdBuffer);
 }
 
-void DeferredPipeline::SetInstanceData(const std::vector<Object*>& objects)
+void DeferredPipeline::SetInstanceData(const std::vector<MeshObject*>& objects)
 {
 	std::vector<InstanceData> instances;
 	instances.reserve(objects.size());
 
-	for (Object* obj : objects)
+	for (MeshObject* obj : objects)
 	{
 		const Mesh& mesh = obj->mesh;
 
@@ -688,7 +688,7 @@ void DeferredPipeline::PerformRayTracedRendering(const CommandBuffer& cmdBuffer,
 	cmdBuffer.EndDebugUtilsLabel();
 }
 
-void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<Object*>& objects)
+void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<MeshObject*>& objects)
 {
 	cmdBuffer.BeginDebugUtilsLabel("first deferred");
 
@@ -700,7 +700,7 @@ void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, cons
 	glm::mat4 proj = payload.camera->GetProjectionMatrix();
 
 	PushConstant pushConstant{};
-	for (Object* obj : objects)
+	for (MeshObject* obj : objects)
 	{
 		glm::mat4 model = obj->transform.GetModelMatrix();
 

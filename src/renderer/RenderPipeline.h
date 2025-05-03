@@ -5,7 +5,7 @@
 
 #include "CommandBuffer.h"
 
-class Object;
+class MeshObject;
 class Window;
 class Camera;
 class Renderer;
@@ -48,7 +48,7 @@ public:
 	};
 
 	virtual void Start(const Payload& payload) = 0;
-	virtual void Execute(const Payload& payload, const std::vector<Object*>& objects) = 0;
+	virtual void Execute(const Payload& payload, const std::vector<MeshObject*>& objects) = 0;
 
 	virtual ~RenderPipeline() {}
 

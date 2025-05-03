@@ -23,7 +23,7 @@ public:
 	~RayTracingRenderPipeline();
 
 	void Start(const Payload& payload) override;
-	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
+	void Execute(const Payload& payload, const std::vector<MeshObject*>& objects) override;
 
 	void OnRenderingBufferResize(const Payload& payload) override;
 
@@ -48,7 +48,7 @@ public:
 	VkSemaphore externSemaphore;
 
 private:
-	void UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera);
+	void UpdateInstanceDataBuffer(const std::vector<MeshObject*>& objects, Camera* camera);
 	void UpdateTextureBuffer();
 	void UpdateMeshDataDescriptorSets();
 	void CreateShaderBindingTable();

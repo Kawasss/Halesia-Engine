@@ -46,7 +46,7 @@ VkDeviceAddress Buffer::GetDeviceAddress()
 
 void Buffer::SetDebugName(const char* name)
 {
-	Vulkan::SetDebugName(buffer, name);
+	Vulkan::SetDebugName(buffer.Get(), name);
 }
 
 void Buffer::Fill(VkCommandBuffer commandBuffer, uint32_t value, VkDeviceSize offset, VkDeviceSize size)

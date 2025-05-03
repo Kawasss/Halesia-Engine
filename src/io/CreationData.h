@@ -62,6 +62,12 @@ struct RigidCreationData
 
 struct ObjectCreationData
 {
+	enum class Type
+	{
+		Base = 0,
+		Mesh = 1,
+	};
+
 	std::string name = "NO_NAME";
 
 	glm::vec3 position = glm::vec3(0);
@@ -73,6 +79,8 @@ struct ObjectCreationData
 
 	bool hasMesh = false;
 	MeshCreationData mesh;
+
+	Type type = Type::Base;
 
 	std::vector<ObjectCreationData> children;
 };

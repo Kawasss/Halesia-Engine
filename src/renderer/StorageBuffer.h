@@ -69,19 +69,22 @@ public:
 			allCreatedMemory.insert(memoryHandle);
 		}
 
+		activeMemories.insert(memoryHandle);
+
 		size += data.size();
 		hasChanged = true;
 		return memoryHandle;
 	}
 
 	/// <summary>
-	/// Erases all of the data inside the buffer, this also invalidates all memory handles
+	/// Invalidates all existing handles and resets the address pointer. The data in the buffer will not be reset to 0
 	/// </summary>
-	void Erase()
+	void Reset()
 	{
 		win32::CriticalLockGuard lockGuard(readWriteSection);
 		ClearBuffer();
 		allCreatedMemory.clear();
+		activeMemories.clear();
 		terminatedMemories.clear();
 		memoryData.clear();
 		ResetAddressPointer();
@@ -99,6 +102,7 @@ public:
 		CheckHandleValidity(memory, );
 
 		ClearBuffer(memory);
+		activeMemories.erase(memory);
 	}
 
 	/// <summary>
@@ -113,9 +117,10 @@ public:
 		StorageMemory_t& memoryInfo = memoryData[memory];
 		memoryInfo.shouldBeTerminated = true;
 		terminatedMemories.insert(memory);
+		activeMemories.erase(memory);
 		size--;
 	}
-	
+
 	/// <summary>
 	/// Gives the distance between the beginning of the buffer and the location of the memory in bytes
 	/// </summary>
@@ -155,6 +160,15 @@ public:
 	void Destroy()
 	{
 		win32::CriticalLockGuard lockGuard(readWriteSection);
+
+		if (!buffer.IsValid())
+			return;
+
+		if (!activeMemories.empty())
+		{
+			Console::WriteLine("There are {} active handles at time of destruction", Console::Severity::Error, activeMemories.size());
+		}
+
 		buffer.~ResizableBuffer();
 	}
 
@@ -221,6 +235,7 @@ private:
 
 	std::set<StorageMemory> terminatedMemories;
 	std::set<StorageMemory> allCreatedMemory;
+	std::set<StorageMemory> activeMemories;
 
 	win32::CriticalSection readWriteSection;
 	size_t size = 0;

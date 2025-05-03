@@ -1,3 +1,4 @@
+#include <Windows.h>
 #include <future>
 
 #include "core/Object.h"
@@ -7,34 +8,22 @@
 
 #include "physics/Physics.h"
 
+#include "ResourceManager.h"
+
+Object::Object(InheritType type) : type(type)
+{
+	
+}
+
 void Object::AwaitGeneration()
 {
 	if (generation.valid())
 		generation.get();
-	mesh.AwaitGeneration();
-}
-
-void Object::GenerateObjectWithData(const ObjectCreationData& creationData)
-{
-	if (creationData.hasMesh)
-		mesh.Create(creationData.mesh);
-
-	if (creationData.hitBox.shapeType != Shape::Type::None && creationData.hitBox.rigidType != RigidBody::Type::None)
-	{
-		Shape shape = Shape::GetShapeFromType(creationData.hitBox.shapeType, creationData.hitBox.extents);
-		SetRigidBody(creationData.hitBox.rigidType, shape);
-		rigid.ForcePosition(transform);
-	}
-	finishedLoading = true; //maybe use mutex here or just find better solution
-
-	#ifdef _DEBUG
-	Console::WriteLine("Created new object \"" + name + '"', Console::Severity::Debug);
-	#endif
 }
 
 Object* Object::Create(const ObjectCreationData& creationData, void* customClassPointer)
 {
-	Object* ptr = new Object();
+	Object* ptr = new Object(InheritType::Base);
 	ptr->Initialize(creationData, customClassPointer);
 	return ptr;
 }
@@ -52,24 +41,13 @@ void Object::Initialize(const ObjectCreationData& creationData, void* customClas
 	transform.scale    = creationData.scale;
 
 	if (creationData.hasMesh)
-		transform = Transform(creationData.position, creationData.rotation, creationData.scale, mesh.extents, mesh.center);
-
-	GenerateObjectWithData(creationData); // maybe async??
+		transform = Transform(creationData.position, creationData.rotation, creationData.scale);
 
 	if (!creationData.children.empty())
 		children.reserve(creationData.children.size());
 
-	for (const ObjectCreationData& childData : creationData.children)
-		AddChild(childData);
-
 	Start();
 }
-
-void Object::SetMesh(const MeshCreationData& creationData)
-{
-	mesh.Create(creationData); // Create will automatically destroy old resources
-}
-
 void Object::AddChild(Object* object)
 {
 	children.push_back(object);
@@ -83,7 +61,6 @@ void Object::DeleteChild(Object* child)
 	if (iter == children.end())
 		return;
 
-	(*iter)->Destroy();
 	children.erase(iter);
 	delete child;
 }
@@ -109,15 +86,11 @@ void Object::TransferChild(Object* child, Object* destination)
 
 void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script)
 {
-	newObjPtr->mesh = oldObjPtr->mesh;
 	newObjPtr->transform = oldObjPtr->transform;
 	newObjPtr->name = name;
 	newObjPtr->finishedLoading = true;
 	newObjPtr->scriptClass = script;
 	newObjPtr->handle = ResourceManager::GenerateHandle();
-
-	if (oldObjPtr->rigid.type != RigidBody::Type::None)
-		newObjPtr->SetRigidBody(oldObjPtr->rigid.type, oldObjPtr->rigid.shape);
 
 	newObjPtr->Start();
 	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + oldObjPtr->name + "\" with" + (script == nullptr ? "out a script" : " a script"), Console::Severity::Debug);
@@ -131,14 +104,6 @@ Object* Object::AddChild(const ObjectCreationData& creationData)
 	return obj;
 }
 
-void Object::SetRigidBody(RigidBody::Type type, Shape shape)
-{
-	rigid = RigidBody(shape, type, transform.position, transform.rotation);
-	rigid.SetUserData(this);
-
-	Console::WriteLine("Created " + RigidBody::TypeToString(type) + " with " + Shape::TypeToString(shape.type) + " for object \"" + name + "\"", Console::Severity::Debug);
-}
-
 bool Object::HasFinishedLoading()
 {
 	if (generation.valid() && generation.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
@@ -146,13 +111,13 @@ bool Object::HasFinishedLoading()
 	return finishedLoading || !generation.valid();
 }
 
+bool Object::IsType(InheritType cmp) const
+{
+	return type == cmp;
+}
+
 Object::~Object()
 {
-	Destroy();
-
 	for (Object* obj : children)
 		delete obj;
-
-	mesh.Destroy();
-	rigid.Destroy();
 }

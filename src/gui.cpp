@@ -14,6 +14,7 @@
 #include "system/Input.h"
 #include "system/Window.h"
 
+#include "physics/RigidBody.h"
 #include "physics/Shapes.h"
 
 #include "core/Console.h"
@@ -253,11 +254,11 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* wind
 		if (ImGui::CollapsingHeader("Transform", flags))
 			ShowObjectTransform(objects[objectIndex]->transform);
 
-		if (ImGui::CollapsingHeader("Rigid body", flags) && objects[objectIndex]->rigid.type != RigidBody::Type::None)
+		/*if (ImGui::CollapsingHeader("Rigid body", flags) && objects[objectIndex]->rigid.type != RigidBody::Type::None)
 			ShowObjectRigidBody(objects[objectIndex]->rigid);
 
 		if (ImGui::CollapsingHeader("Meshes", flags) && objects[objectIndex]->mesh.IsValid())
-			ShowObjectMeshes(objects[objectIndex]->mesh);
+			ShowObjectMeshes(objects[objectIndex]->mesh);*/
 	}
 
 	ImGui::PopStyleVar(3);

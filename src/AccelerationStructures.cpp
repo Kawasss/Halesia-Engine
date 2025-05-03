@@ -5,7 +5,7 @@
 #include "renderer/GarbageManager.h"
 #include "renderer/VulkanAPIError.h"
 
-#include "core/Object.h"
+#include "core/MeshObject.h"
 
 inline VkAccelerationStructureGeometryTrianglesDataKHR GetTrianglesData(const Mesh& mesh)
 {
@@ -103,7 +103,7 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 	}
 }
 
-void AccelerationStructure::Destroy()
+AccelerationStructure::~AccelerationStructure()
 {
 	vgm::Delete(accelerationStructure);
 }
@@ -158,9 +158,9 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create()
 	return TLAS;
 }
 
-void TopLevelAccelerationStructure::Build(const std::vector<Object*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
+void TopLevelAccelerationStructure::Build(const std::vector<MeshObject*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
 {
-	instanceBuffer.ResetAddressPointer();
+	instanceBuffer.Reset();
 	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects, indexType); // write all of the BLAS instances to a single buffer so that vulkan can easily read all of the instances in one go
 	instanceBuffer.SubmitNewData(BLASInstances);										              // make it so that only the new BLASs get submitted instead of all of the BLASs (even the old ones). the code right now is a REALLY bad implementation
 
@@ -171,9 +171,9 @@ void TopLevelAccelerationStructure::Build(const std::vector<Object*>& objects, I
 	hasBeenBuilt = true;
 }
 
-void TopLevelAccelerationStructure::Update(const std::vector<Object*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
+void TopLevelAccelerationStructure::Update(const std::vector<MeshObject*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
 {
-	instanceBuffer.ResetAddressPointer();
+	instanceBuffer.Reset();
 	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects, indexType);
 	instanceBuffer.SubmitNewData(BLASInstances);
 
@@ -193,7 +193,7 @@ void TopLevelAccelerationStructure::GetGeometry(VkAccelerationStructureGeometryK
 	geometry.geometry.instances.data = { Vulkan::GetDeviceAddress(instanceBuffer.GetBufferHandle()) };
 }
 
-std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(const std::vector<Object*>& objects, InstanceIndexType indexType)
+std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(const std::vector<MeshObject*>& objects, InstanceIndexType indexType)
 {
 	uint32_t processedAmount = 0; // add a second counter for each processed mesh. if an object is checked, but it doesnt have a mesh it will leave an empty instance custom index, which results in data missalignment
 	std::vector<VkAccelerationStructureInstanceKHR> instances;

@@ -1,12 +1,10 @@
 #include "core/Transform.h"
 
-Transform::Transform(glm::vec3 position, glm::quat rotation, glm::vec3 scale, glm::vec3 extents, glm::vec3 center)
+Transform::Transform(glm::vec3 position, glm::quat rotation, glm::vec3 scale)
 {
 	this->position = position;
 	this->rotation = rotation;
 	this->scale = scale;
-	this->extents = extents;
-	this->center = center;
 }
 
 glm::mat4 Transform::GetModelMatrix()

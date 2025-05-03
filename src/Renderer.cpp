@@ -27,6 +27,7 @@
 #include "core/Console.h"
 #include "core/Object.h"
 #include "core/Camera.h"
+#include "core/MeshObject.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS_IMPLEMENTED
@@ -518,7 +519,7 @@ void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
 	renderPipelines.push_back(pipeline);
 }
 
-void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<Object*> objects, Camera* camera)
+void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<MeshObject*> objects, Camera* camera)
 {
 	CheckForBufferResizes();
 
@@ -571,7 +572,7 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 	commandBuffer.EndDebugUtilsLabel();
 }
 
-void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<Object*>& objects)
+void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<MeshObject*>& objects)
 {
 	VkExtent2D viewportExtent = { viewportWidth, viewportHeight };
 
@@ -738,9 +739,13 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 	submittedCount++;
 }
 
-inline bool ObjectIsValid(Object* object, bool checkBLAS)
+static bool ObjectIsValid(Object* object, bool checkBLAS)
 {
-	return object->HasFinishedLoading() && object->state == OBJECT_STATE_VISIBLE && (checkBLAS ? object->mesh.IsValid() : true) && object->mesh.HasFinishedLoading() && !object->ShouldBeDestroyed();
+	if (!object->IsType(Object::InheritType::Mesh))
+		return false;
+
+	MeshObject* obj = dynamic_cast<MeshObject*>(object);
+	return obj->MeshIsValid() && obj->mesh.HasFinishedLoading();
 }
 
 void Renderer::ResetImGUI()
@@ -797,10 +802,10 @@ void Renderer::SubmitRecording()
 	vgm::CollectGarbage();
 }
 
-static void GetAllObjectsFromObject(std::vector<Object*>& ret, Object* obj, bool checkBLAS)
+static void GetAllObjectsFromObject(std::vector<MeshObject*>& ret, Object* obj, bool checkBLAS)
 {
 	if (::ObjectIsValid(obj, checkBLAS))
-		ret.push_back(obj);
+		ret.push_back(dynamic_cast<MeshObject*>(obj));
 
 	const std::vector<Object*>& children = obj->GetChildren();
 	for (Object* object : children)
@@ -814,7 +819,7 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 	if (!testWindow->CanBeRenderedTo())
 		return;
 
-	std::vector<Object*> activeObjects;
+	std::vector<MeshObject*> activeObjects;
 	for (Object* object : objects)
 	{
 		::GetAllObjectsFromObject(activeObjects, object, canRayTrace);
@@ -884,7 +889,7 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 }
 
 std::vector<Object*> processedObjects;
-void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<Object*>& objects)
+void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<MeshObject*>& objects)
 {
 	for (int i = 0; i < Mesh::materials.size(); i++)
 	{
@@ -901,11 +906,8 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<O
 
 void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
-	for (Object* object : objects)
+	/*for (Object* object : objects)
 	{
-		if (object->rigid.shape.type != Shape::Type::Box)
-			continue;
-
 		glm::mat4 localRotationModel = glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.x), glm::vec3(1, 0, 0)) * glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.y), glm::vec3(0, 1, 0)) * glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.z), glm::vec3(0, 0, 1));
 		glm::mat4 scaleModel = glm::scale(glm::identity<glm::mat4>(), object->rigid.shape.data);
 		glm::mat4 translationModel = glm::translate(glm::identity<glm::mat4>(), object->transform.position);
@@ -913,7 +915,7 @@ void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkComma
 		
 		::vkCmdPushConstants(commandBuffer, screenPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &trans);
 		::vkCmdDraw(commandBuffer, 36, 1, 0, 0);
-	}	
+	}	*/
 }
 
 void Renderer::AddLight(const Light& light)

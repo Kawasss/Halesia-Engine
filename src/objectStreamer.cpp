@@ -65,6 +65,5 @@ void ObjectStreamer::Poll()
 void ObjectStreamer::OnChange()
 {
 	ObjectCreationData data = GenericLoader::LoadObjectFile(path);
-	obj->Destroy();
-	obj->Initialize(data);
+	obj->Initialize(data); // memory leak..?
 }

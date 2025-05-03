@@ -8,7 +8,15 @@ using FileString = std::string;
 
 struct FileObject
 {
+	enum class InheritType
+	{
+		Base = 0,
+		Mesh = 1,
+	};
+
 	FileString name;
 	FileMesh mesh;
 	FileRigidBody rigidBody;
+
+	InheritType type;
 };

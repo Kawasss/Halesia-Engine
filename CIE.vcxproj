@@ -194,6 +194,7 @@
     <ClCompile Include="src\IO.cpp" />
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
+    <ClCompile Include="src\MeshObject.cpp" />
     <ClCompile Include="src\Physics.cpp" />
     <ClCompile Include="src\PipelineCreator.cpp" />
     <ClCompile Include="src\Profiler.cpp" />
@@ -248,6 +249,7 @@
     <ClInclude Include="src\core\Camera.h" />
     <ClInclude Include="src\core\Console.h" />
     <ClInclude Include="src\core\Editor.h" />
+    <ClInclude Include="src\core\MeshObject.h" />
     <ClInclude Include="src\core\Object.h" />
     <ClInclude Include="src\core\ObjectStreamer.h" />
     <ClInclude Include="src\core\Profiler.h" />

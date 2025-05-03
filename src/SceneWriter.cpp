@@ -9,6 +9,7 @@
 
 #include "core/Scene.h"
 #include "core/Object.h"
+#include "core/MeshObject.h"
 
 void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 {
@@ -66,10 +67,12 @@ void HSFWriter::WriteObject(BinaryWriter& writer, Object* object)
 		<< object->name;
 
 	WriteTransform(writer, object->transform);
-	WriteRigidBody(writer, object->rigid);
+	//WriteRigidBody(writer, object->rigid);
 
-	writer << FileMesh::CreateFrom(object->mesh);
+	//temp fix !
+	FileMesh fileMesh = object->GetType() == Object::InheritType::Mesh ? FileMesh::CreateFrom(dynamic_cast<MeshObject*>(object)->mesh) : FileMesh::CreateFrom({});
 
+	writer << fileMesh;
 	size_t end = writer.GetBase();
 	size_t size = end - (pSize + sizeof(uint64_t));
 

@@ -9,6 +9,7 @@
 #include "core/Object.h"
 #include "core/Scene.h"
 #include "core/Console.h"
+#include "core/MeshObject.h"
 
 Camera* Scene::defaultCamera = new Camera();
 
@@ -17,10 +18,14 @@ bool Scene::HasFinishedLoading()
 	return true;
 }
 
-void Scene::RegisterObjectPointer(Object* objPtr)
+void Scene::RegisterObjectPointer(Object* pObject, Object* pParent)
 {
-	allObjects.push_back(objPtr);
-	objPtr->SetParentScene(this);
+	if (pParent == nullptr) // only accept ownership of the object of noone else has ownership
+		allObjects.push_back(pObject);
+	else
+		pParent->AddChild(pObject);
+
+	pObject->SetParentScene(this);
 }
 
 static void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberToErase)
@@ -30,27 +35,41 @@ static void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberTo
 		 vector.erase(it);
 }
 
- Object* Scene::AddObject(const ObjectCreationData& creationData)
+ Object* Scene::AddObject(const ObjectCreationData& creationData, Object* pParent)
  {
-	 Object* objPtr = Object::Create(creationData);
+	 Object* pObject = nullptr;
 
-	 RegisterObjectPointer(objPtr);
+	 switch (creationData.type)
+	 {
+	 case ObjectCreationData::Type::Base:
+		 pObject = Object::Create(creationData);
+		 break;
+	 case ObjectCreationData::Type::Mesh:
+		 pObject = MeshObject::Create(creationData);
+		 break;
+	 }
+	 assert(pObject != nullptr);
 
-	 return objPtr;
+	 RegisterObjectPointer(pObject, pParent);
+
+	 for (const ObjectCreationData& child : creationData.children)
+		 AddObject(child, pObject);
+
+	 return pObject;
  }
 
- Object* Scene::DuplicateObject(Object* objPtr, std::string name)
+ Object* Scene::DuplicateObject(Object* pObject, std::string name) // unsafe !!
  {
-	 Object* newPtr = new Object();
-	 Object::Duplicate(objPtr, newPtr, name, nullptr);
-	 RegisterObjectPointer(newPtr);
+	 Object* newPtr = new Object(pObject->GetType());
+	 Object::Duplicate(pObject, newPtr, name, nullptr);
+	 RegisterObjectPointer(newPtr, pObject->GetParent());
 
 	 return newPtr;
  }
 
-void Scene::Free(Object* object)
+void Scene::Free(Object* pObject)
 {
-	auto it = std::find(allObjects.begin(), allObjects.end(), object);
+	auto it = std::find(allObjects.begin(), allObjects.end(), pObject);
 
 	if (it == allObjects.end())
 	{
@@ -59,12 +78,12 @@ void Scene::Free(Object* object)
 	}
 
 	allObjects.erase(it);
-	object->Destroy();
+	delete pObject;
 }
 
-void Scene::UpdateCamera(Window* window, float delta)
+void Scene::UpdateCamera(Window* pWindow, float delta)
 {
-	camera->Update(window, delta);
+	camera->Update(pWindow, delta);
 	camera->UpdateVelocityMatrices();
 }
 
@@ -90,17 +109,17 @@ void Scene::CollectGarbage()
 			continue;
 
 		allObjects.erase(iter);
-		obj->Destroy();
+		delete obj;
 		iter = allObjects.begin();
 	}
 }
 
-void Scene::TransferObjectOwnership(Object* newOwner, Object* child)
+void Scene::TransferObjectOwnership(Object* pNewOwner, Object* pChild)
 {
-	std::vector<Object*>::iterator iter = std::find(allObjects.begin(), allObjects.end(), child);
+	std::vector<Object*>::iterator iter = std::find(allObjects.begin(), allObjects.end(), pChild);
 	if (iter != allObjects.end())
 		allObjects.erase(iter);
-	newOwner->AddChild(child);
+	pNewOwner->AddChild(pChild);
 }
 
 void Scene::DestroyAllObjects()

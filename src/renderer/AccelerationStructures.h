@@ -5,16 +5,15 @@
 #include "Buffer.h"
 
 struct Mesh;
-class Object;
+class MeshObject;
 
 class AccelerationStructure // or AS for short
 {
 public:
-	virtual void Destroy();
 	VkDeviceAddress GetAccelerationStructureAddress() { return ASAddress; }
 	VkAccelerationStructureKHR accelerationStructure = VK_NULL_HANDLE;
 
-	~AccelerationStructure() { Destroy(); }
+	~AccelerationStructure();
 
 protected:
 	void CreateAS(const VkAccelerationStructureGeometryKHR* pGeometry, VkAccelerationStructureTypeKHR type, uint32_t maxPrimitiveCount);
@@ -54,12 +53,12 @@ public:
 	/// <summary>
 	/// Builds the top level acceleration structure. It uses single time commands per default, but can use an external command buffer. An external command buffer is recommended if it's being rebuild with performance in mind
 	/// </summary>
-	void Build(const std::vector<Object*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
-	void Update(const std::vector<Object*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer);
+	void Build(const std::vector<MeshObject*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
+	void Update(const std::vector<MeshObject*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer);
 	bool HasBeenBuilt();
 
 private:
-	static std::vector<VkAccelerationStructureInstanceKHR> GetInstances(const std::vector<Object*>& objects, InstanceIndexType indexType);
+	static std::vector<VkAccelerationStructureInstanceKHR> GetInstances(const std::vector<MeshObject*>& objects, InstanceIndexType indexType);
 	void GetGeometry(VkAccelerationStructureGeometryKHR& geometry);
 
 	StorageBuffer<VkAccelerationStructureInstanceKHR> instanceBuffer;

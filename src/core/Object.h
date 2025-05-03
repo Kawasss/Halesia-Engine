@@ -5,16 +5,11 @@
 
 #include "Transform.h"
 
-#include "renderer/Mesh.h"
-
-#include "physics/RigidBody.h"
-#include "physics/Shapes.h"
-
 #include "../system/CriticalSection.h"
 
 class Scene;
 struct ObjectCreationData;
-typedef uint64_t Handle;
+using Handle = uint64_t;
 
 enum ObjectState : uint8_t
 {
@@ -36,6 +31,12 @@ inline extern std::string ObjectStateToString(ObjectState state);
 class Object
 {
 public:
+	enum class InheritType
+	{
+		Base = 0,
+		Mesh = 1,
+	};
+
 	/// <summary>
 	/// This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.
 	/// Be weary of accessing members in the constructor, since they don't have to be loaded in. AwaitGeneration awaits the async thread.
@@ -45,16 +46,15 @@ public:
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
 	static Object* Create(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
 
-	Object() = default;
+	Object(InheritType type);
 
 	// order of the destruction:
-	// 1. call Destroy()
+	// 1. superclass should over this destructor
 	// 2. destroy children
-	// 3. destroy any members (i.e. mesh and rigidbody)
-	~Object();
+	// 3. destroy any members
+	virtual ~Object();
 
 	virtual void Start()  {}
-	virtual void Destroy() {}
 	virtual void Update(float delta) {}
 
 	virtual void OnCollisionEnter(Object* object) {}
@@ -62,8 +62,7 @@ public:
 	virtual void OnCollisionExit(Object* object)  {}
 
 	bool HasFinishedLoading();
-	bool HasScript()    const { return scriptClass != nullptr; }
-	bool HasRigidBody() const { return rigid.type != RigidBody::Type::None; }
+	bool HasScript() const { return scriptClass != nullptr; }
 
 	void AwaitGeneration(); // Awaits the async generation process of the object and meshes
 
@@ -71,9 +70,6 @@ public:
 	T* GetScript(); // Gets the script attached to the object, if no script is attached it will return an invalid pointer
 
 	void Initialize(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
-
-	void SetRigidBody(RigidBody::Type type, Shape shape);
-	void SetMesh(const MeshCreationData& creationData);
 
 	template<typename T> 
 	Object* AddChild(const ObjectCreationData& creationData);
@@ -93,8 +89,6 @@ public:
 	win32::CriticalSection&     GetCriticalSection() { return critSection; }
 	
 	Transform transform;
-	RigidBody rigid;
-	Mesh mesh;
 	
 	ObjectState state = OBJECT_STATE_VISIBLE;
 	std::string name;
@@ -105,9 +99,15 @@ public:
 
 	bool HasChildren() const { return !children.empty(); }
 
+	InheritType GetType() const { return type; }
+	bool IsType(InheritType cmp) const;
+
+	Object* GetParent() const { return parent; }
+
 private:
 	template<typename T> void SetScript(T* script);
-	void GenerateObjectWithData(const ObjectCreationData& creationData);
+
+	InheritType type = InheritType::Base;
 
 	void* scriptClass = nullptr;
 	std::future<void> generation;

@@ -40,8 +40,9 @@ ResizableBuffer::~ResizableBuffer()
 
 void ResizableBuffer::Destroy()
 {
-	buffer.~Buffer();
-	if (memoryType == MemoryType::Gpu)
+	if (buffer.IsValid())
+		buffer.~Buffer();
+	if (transferBuffer.IsValid())
 		transferBuffer.~Buffer();
 }
 

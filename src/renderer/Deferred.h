@@ -23,7 +23,7 @@ public:
 	~DeferredPipeline();
 
 	void Start(const Payload& payload) override;
-	void Execute(const Payload& payload, const std::vector<Object*>& objects) override;
+	void Execute(const Payload& payload, const std::vector<MeshObject*>& objects) override;
 
 	void Resize(const Payload& payload) override;
 
@@ -78,12 +78,12 @@ private:
 	void ResizeRTGI(uint32_t width, uint32_t height);
 	void BindRTGIResources();
 	void SetRTGIImageLayout();
-	void SetInstanceData(const std::vector<Object*>& objects);
+	void SetInstanceData(const std::vector<MeshObject*>& objects);
 
 	void CopyDenoisedToRTGI(const CommandBuffer& cmdBuffer);
 
 	void PerformRayTracedRendering(const CommandBuffer& cmdBuffer, const Payload& payload);
-	void PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<Object*>& objects);
+	void PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<MeshObject*>& objects);
 	void PerformSecondDeferred(const CommandBuffer& cmdBuffer, const Payload& payload);
 	
 	Skybox* CreateNewSkybox(const std::string& path);

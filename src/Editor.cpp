@@ -3,6 +3,7 @@
 
 #include "core/Editor.h"
 #include "core/Object.h"
+#include "core/MeshObject.h"
 
 #include "renderer/gui.h"
 #include "renderer/RayTracing.h"
@@ -157,11 +158,16 @@ void Editor::MainThreadUpdate(float delta)
 	
 	ObjectCreationData creationData = GenericLoader::LoadObjectFile(queuedMeshChange.path);
 
-	uint32_t matIndex = obj->mesh.GetMaterialIndex();
+	if (obj->IsType(Object::InheritType::Mesh))
+	{
+		MeshObject* ptr = dynamic_cast<MeshObject*>(obj);
 
-	obj->mesh.Destroy();
-	obj->mesh.Create(creationData.mesh);
-	obj->mesh.SetMaterial(Mesh::materials[matIndex]);
+		uint32_t matIndex = ptr->mesh.GetMaterialIndex();
+
+		ptr->mesh.Destroy();
+		ptr->mesh.Create(creationData.mesh);
+		ptr->mesh.SetMaterial(Mesh::materials[matIndex]);
+	}
 
 	queuedMeshChange.isApplied = true;
 
@@ -487,11 +493,11 @@ void Editor::ShowObjectComponents()
 	if (ImGui::CollapsingHeader("Transform", flags))
 		GUI::ShowObjectTransform(selectedObj->transform);
 
-	if (ImGui::CollapsingHeader("Rigid body", flags) && selectedObj->rigid.type != RigidBody::Type::None)
-		GUI::ShowObjectRigidBody(selectedObj->rigid);
+	/*if (ImGui::CollapsingHeader("Rigid body", flags) && selectedObj->rigid.type != RigidBody::Type::None)
+		GUI::ShowObjectRigidBody(selectedObj->rigid);*/
 
-	if (ImGui::CollapsingHeader("Meshes", flags) && selectedObj->mesh.IsValid())
-		GUI::ShowObjectMeshes(selectedObj->mesh);
+	if (ImGui::CollapsingHeader("Meshes", flags) && selectedObj->IsType(Object::InheritType::Mesh))
+		GUI::ShowObjectMeshes(dynamic_cast<MeshObject*>(selectedObj)->mesh);
 
 	if (ImGui::Button("Change mesh"))
 		QueueMeshChange(selectedObj);

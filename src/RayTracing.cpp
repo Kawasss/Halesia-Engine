@@ -8,12 +8,13 @@
 #include "renderer/DescriptorWriter.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/VulkanAPIError.h"
+#include "renderer/Mesh.h"
 
 #include "system/Input.h"
 #include "system/Window.h"
 
 #include "core/Camera.h"
-#include "core/Object.h"
+#include "core/MeshObject.h"
 
 #include "io/IO.h"
 
@@ -63,7 +64,7 @@ void RayTracingRenderPipeline::Start(const Payload& payload)
 }
 
 uint32_t frameCount = 0;
-void RayTracingRenderPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
+void RayTracingRenderPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects)
 {
 	const Window* window = payload.window;
 	const Camera* camera = payload.camera;
@@ -611,7 +612,7 @@ void RayTracingRenderPipeline::UpdateTextureBuffer()
 		vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
-void RayTracingRenderPipeline::UpdateInstanceDataBuffer(const std::vector<Object*>& objects, Camera* camera)
+void RayTracingRenderPipeline::UpdateInstanceDataBuffer(const std::vector<MeshObject*>& objects, Camera* camera)
 {
 	amountOfActiveObjects = 1;
 	glm::vec2 staticMotion = camera->GetMotionVector() * glm::vec2(width, height); // this only factors in the rotation of the camera, not the changes in position
@@ -619,7 +620,7 @@ void RayTracingRenderPipeline::UpdateInstanceDataBuffer(const std::vector<Object
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
 		glm::mat4 model = objects[i]->transform.GetModelMatrix();
-		glm::vec2 ndc = objects[i]->rigid.type == RigidBody::Type::Dynamic ? objects[i]->transform.GetMotionVector(camera->GetProjectionMatrix(), camera->GetViewMatrix(), model) * glm::vec2(width, height) : staticMotion;
+		glm::vec2 ndc = camera->GetMotionVector();
 
 		Mesh& mesh = objects[i]->mesh;
 		uint32_t matIndex = mesh.GetMaterialIndex();

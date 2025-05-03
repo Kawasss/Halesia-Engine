@@ -5,7 +5,7 @@ class Transform
 {
 public:
 	Transform() = default;
-	Transform(glm::vec3 translation, glm::quat rotation, glm::vec3 scale, glm::vec3 extents, glm::vec3 center);
+	Transform(glm::vec3 translation, glm::quat rotation, glm::vec3 scale);
 
 	glm::mat4 GetModelMatrix();
 	glm::mat4 GetLocalRotation();
@@ -30,6 +30,5 @@ private:
 	glm::vec4 previousClipPosition = glm::vec4(0.0000001f);
 
 	glm::mat4 model = glm::identity<glm::mat4>(), localRotationModel = glm::identity<glm::mat4>();
-	glm::vec3 extents = glm::vec3(0), center = glm::vec3(0); //should be moved to bounding box
 	bool localRotationChanged = false;
 };

@@ -6,7 +6,7 @@
 #include "renderer/Light.h"
 
 #include "core/Camera.h"
-#include "core/Object.h"
+#include "core/MeshObject.h"
 
 struct PushConstant
 {
@@ -47,7 +47,7 @@ void ForwardPlusPipeline::CreateShader()
 	computeShader->BindBufferToName("matrices", matricesBuffer.Get());
 }
 
-void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Object*>& objects)
+void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects)
 {
 	const CommandBuffer& cmdBuffer = payload.commandBuffer;
 
@@ -88,7 +88,7 @@ void ForwardPlusPipeline::ComputeCells(CommandBuffer commandBuffer, uint32_t lig
 	commandBuffer.EndDebugUtilsLabel();
 }
 
-void ForwardPlusPipeline::DrawObjects(CommandBuffer commandBuffer, const std::vector<Object*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj)
+void ForwardPlusPipeline::DrawObjects(CommandBuffer commandBuffer, const std::vector<MeshObject*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj)
 {
 	UpdateUniformBuffer(camera, customProj, width, height);
 
@@ -100,7 +100,7 @@ void ForwardPlusPipeline::DrawObjects(CommandBuffer commandBuffer, const std::ve
 	commandBuffer.BindIndexBuffer(Renderer::g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
 
 	PushConstant pushConstant{};
-	for (Object* obj : objects)
+	for (MeshObject* obj : objects)
 	{
 		pushConstant.model      = obj->transform.GetModelMatrix();
 		pushConstant.materialID = obj->mesh.GetMaterialIndex();
