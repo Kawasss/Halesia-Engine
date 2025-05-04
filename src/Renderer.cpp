@@ -808,7 +808,6 @@ static bool ObjectIsValidLight(Object* pObject)
 	return pObject->IsType(Object::InheritType::Light) && pObject->state == OBJECT_STATE_VISIBLE;
 }
 
-
 static void GetAllObjectsFromObject(std::vector<MeshObject*>& ret, std::vector<LightObject*>& lights, Object* obj, bool checkBLAS)
 {
 	if (::ObjectIsValidMesh(obj, checkBLAS))

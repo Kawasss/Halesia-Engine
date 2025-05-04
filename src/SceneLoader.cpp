@@ -336,6 +336,7 @@ ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNod
 		creationData.lightData.pos = glm::vec3(creationData.position);
 		creationData.lightData.type = Light::Type::Point;
 		creationData.lightData.color = glm::vec3(1); // assimp cant find the lights color !! glm::vec3(assimpLight->mColorDiffuse.r, assimpLight->mColorDiffuse.g, assimpLight->mColorDiffuse.b);
+		creationData.lightData.direction = glm::vec3(0.0f);
 		creationData.type = ObjectCreationData::Type::Light;
 	}
 	else
