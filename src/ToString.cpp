@@ -5,7 +5,34 @@
 #include "core/Console.h"
 #include "core/Object.h"
 
+#include "renderer/Light.h"
+
 #include "io/FileFormat.h"
+
+Light::Type Light::StringToType(const std::string_view& str)
+{
+	if (str == "Directional")
+		return Type::Directional;
+	if (str == "Point")
+		return Type::Point;
+	if (str == "Spot")
+		return Type::Spot;
+	return Type::Spot;
+}
+
+std::string_view Light::TypeToString(Type type)
+{
+	switch (type)
+	{
+	case Type::Directional:
+		return "Directional";
+	case Type::Point:
+		return "Point";
+	case Type::Spot:
+		return "Spot";
+	}
+	return "Unknown";
+}
 
 const char* NodeTypeToString(NodeType type)
 {

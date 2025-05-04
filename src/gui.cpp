@@ -19,6 +19,9 @@
 
 #include "core/Console.h"
 #include "core/Object.h"
+#include "core/MeshObject.h"
+#include "core/Rigid3DObject.h"
+#include "core/LightObject.h"
 #include "core/Transform.h"
 #include "core/Profiler.h"
 #include "core/Scene.h"
@@ -52,27 +55,27 @@ void GUI::EndGUIWindow()
 	ImGui::End();
 }
 
-inline void ShowInputVector(glm::vec3& vector, const std::vector<const char*>& labels)
+void GUI::ShowInputVector(glm::vec3& val, const std::array<std::string_view, 3>& labels)
 {
-	if (labels.size() < 3) return;
 	float width = ImGui::CalcTextSize("w").x;
+
 	ImGui::PushItemWidth(width * 8);
-	ImGui::InputFloat(labels[0], &vector.x);
+	ImGui::InputFloat(labels[0].data(), &val.x);
 	ImGui::SameLine();
-	ImGui::InputFloat(labels[1], &vector.y);
+	ImGui::InputFloat(labels[1].data(), &val.y);
 	ImGui::SameLine();
-	ImGui::InputFloat(labels[2], &vector.z);
+	ImGui::InputFloat(labels[2].data(), &val.z);
 	ImGui::PopItemWidth();
 }
 
-inline void ShowInputVector(glm::vec2& vector, const std::vector<const char*>& labels)
+void GUI::ShowInputVector(glm::vec2& val, const std::array<std::string_view, 2>& labels)
 {
-	if (labels.size() < 2) return;
 	float width = ImGui::CalcTextSize("w").x;
+
 	ImGui::PushItemWidth(width * 8);
-	ImGui::InputFloat(labels[0], &vector.x);
+	ImGui::InputFloat(labels[0].data(), &val.x);
 	ImGui::SameLine();
-	ImGui::InputFloat(labels[1], &vector.y);
+	ImGui::InputFloat(labels[1].data(), &val.y);
 	ImGui::PopItemWidth();
 }
 
@@ -102,7 +105,7 @@ void GUI::ShowWindowData(Window* window)
 
 	ImGui::Text("mode:       ");
 	ImGui::SameLine();
-	ShowDropdownMenu(modes.data(), modes.size(), currentMode, modeIndex, "##modeSelect");
+	ShowDropdownMenu(modes, currentMode, modeIndex, "##modeSelect");
 
 	ImGui::Text("width:      ");
 	ImGui::SameLine();
@@ -199,7 +202,7 @@ void GUI::ShowObjectData(Object* object)
 
 	ImGui::Text("state:  ");
 	ImGui::SameLine();
-	ShowDropdownMenu(allStates.data(), allStates.size(), currentState, currentIndex, "##objectstate");
+	ShowDropdownMenu(allStates, currentState, currentIndex, "##objectstate");
 	object->state = stringToState[currentState];
 
 	ImGui::Text
@@ -243,7 +246,7 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* wind
 	std::vector<std::string> items; // not the most optimal way
 	for (Object* object : objects)
 		items.push_back(object->name);
-	ShowDropdownMenu(items.data(), items.size(), currentItem, objectIndex, "##ObjectComponents");
+	ShowDropdownMenu(items, currentItem, objectIndex, "##ObjectComponents");
 
 	if (objectIndex != -1)
 	{
@@ -254,11 +257,20 @@ void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* wind
 		if (ImGui::CollapsingHeader("Transform", flags))
 			ShowObjectTransform(objects[objectIndex]->transform);
 
-		/*if (ImGui::CollapsingHeader("Rigid body", flags) && objects[objectIndex]->rigid.type != RigidBody::Type::None)
-			ShowObjectRigidBody(objects[objectIndex]->rigid);
+		if (objects[objectIndex]->IsType(Object::InheritType::Rigid3D))
+		{
+			if (ImGui::CollapsingHeader("Rigid body", flags))
+				ShowObjectRigidBody(dynamic_cast<Rigid3DObject*>(objects[objectIndex])->rigid);
+		}
 
-		if (ImGui::CollapsingHeader("Meshes", flags) && objects[objectIndex]->mesh.IsValid())
-			ShowObjectMeshes(objects[objectIndex]->mesh);*/
+		else if (objects[objectIndex]->IsType(Object::InheritType::Mesh))
+		{
+			if (objects[objectIndex]->name == "ROOT")
+				__debugbreak();
+
+			if (ImGui::CollapsingHeader("Meshes", flags))
+				ShowObjectMeshes(dynamic_cast<MeshObject*>(objects[objectIndex])->mesh);
+		}
 	}
 
 	ImGui::PopStyleVar(3);
@@ -293,11 +305,11 @@ void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
 
 	ImGui::Text("type:   ");
 	ImGui::SameLine();
-	ShowDropdownMenu(allRigidTypes.data(), allRigidTypes.size(), currentRigid, rigidIndex, "##RigidType");
+	ShowDropdownMenu(allRigidTypes, currentRigid, rigidIndex, "##RigidType");
 
 	ImGui::Text("shape:  ");
 	ImGui::SameLine();
-	ShowDropdownMenu(allShapeTypes.data(), allShapeTypes.size(), currentShape, shapeIndex, "##rigidShapeMenu");
+	ShowDropdownMenu(allShapeTypes, currentShape, shapeIndex, "##rigidShapeMenu");
 
 	switch (rigidBody.shape.type)
 	{
@@ -358,15 +370,34 @@ void GUI::ShowObjectTransform(Transform& transform)
 	ShowInputVector(transform.scale, { "##scalex", "##scaley", "##scalez" });
 }
 
-void GUI::ShowDropdownMenu(std::string* items, size_t size, std::string& currentItem, int& currentIndex, const char* label)
+void GUI::ShowDropdownMenu(const std::span<std::string>& items, std::string& currentItem, int& currentIndex, const char* label)
 {
 	if (!ImGui::BeginCombo(label, currentItem.c_str()))
 		return;
 
-	for (int i = 0; i < size; i++)
+	for (int i = 0; i < items.size(); i++)
 	{
 		bool isSelected = items[i] == currentItem;
 		if (ImGui::Selectable(items[i].c_str(), &isSelected))
+		{
+			currentItem = items[i];
+			currentIndex = i;
+		}
+		if (isSelected)
+			ImGui::SetItemDefaultFocus();
+	}
+	ImGui::EndCombo();
+}
+
+void GUI::ShowDropdownMenu(const std::span<std::string_view>& items, std::string_view& currentItem, int& currentIndex, const char* label)
+{
+	if (!ImGui::BeginCombo(label, currentItem.data()))
+		return;
+
+	for (int i = 0; i < items.size(); i++)
+	{
+		bool isSelected = items[i] == currentItem;
+		if (ImGui::Selectable(items[i].data(), &isSelected))
 		{
 			currentItem = items[i];
 			currentIndex = i;

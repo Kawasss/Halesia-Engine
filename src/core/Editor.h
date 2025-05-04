@@ -6,6 +6,9 @@
 
 class Window;
 class Renderer;
+class RigidBody;
+class LightObject;
+struct Mesh;
 
 class EditorCamera : public Camera
 {
@@ -55,6 +58,9 @@ private:
 	void ShowGizmo();
 
 	void ShowObjectWithChildren(Object* object);
+	void ShowObjectRigidBody(RigidBody& rigid);
+	void ShowObjectMesh(Mesh& mesh);
+	void ShowObjectLight(LightObject* light);
 
 	void DestroyCurrentScene();
 

@@ -1,9 +1,13 @@
 #include <Windows.h>
 #include <commdlg.h>
 
+#include <hsl/StackMap.h>
+
 #include "core/Editor.h"
 #include "core/Object.h"
 #include "core/MeshObject.h"
+#include "core/Rigid3DObject.h"
+#include "core/LightObject.h"
 
 #include "renderer/gui.h"
 #include "renderer/RayTracing.h"
@@ -493,11 +497,147 @@ void Editor::ShowObjectComponents()
 	if (ImGui::CollapsingHeader("Transform", flags))
 		GUI::ShowObjectTransform(selectedObj->transform);
 
-	/*if (ImGui::CollapsingHeader("Rigid body", flags) && selectedObj->rigid.type != RigidBody::Type::None)
-		GUI::ShowObjectRigidBody(selectedObj->rigid);*/
+	if (selectedObj->IsType(Object::InheritType::Rigid3D))
+	{
+		if (ImGui::CollapsingHeader("rigid body", flags))
+			ShowObjectRigidBody(dynamic_cast<Rigid3DObject*>(selectedObj)->rigid);
+	}
 
-	if (ImGui::CollapsingHeader("Meshes", flags) && selectedObj->IsType(Object::InheritType::Mesh))
-		GUI::ShowObjectMeshes(dynamic_cast<MeshObject*>(selectedObj)->mesh);
+	if (selectedObj->IsType(Object::InheritType::Mesh))
+	{
+		if (ImGui::CollapsingHeader("mesh", flags))
+			ShowObjectMesh(dynamic_cast<MeshObject*>(selectedObj)->mesh);
+	}
+
+	if (selectedObj->IsType(Object::InheritType::Light))
+	{
+		if (ImGui::CollapsingHeader("light", flags))
+			ShowObjectLight(dynamic_cast<LightObject*>(selectedObj));
+	}
+}
+
+void Editor::ShowObjectLight(LightObject* light)
+{
+	static std::array<std::string_view, 3> lightTypes = { "Directional", "Point", "Spot" };
+
+	std::string_view curr = Light::TypeToString(light->type);
+	int currIndex = static_cast<int>(light->type);
+
+	ImGui::Text("type:         ");
+	ImGui::SameLine();
+	GUI::ShowDropdownMenu(lightTypes, curr, currIndex, "##selected_object_light");
+
+	ImGui::Text("cutoff:       ");
+	ImGui::SameLine();
+	ImGui::InputFloat("##light_cutoff", &light->cutoff);
+
+	ImGui::Text("outer cutoff: ");
+	ImGui::SameLine();
+	ImGui::InputFloat("##light_outer_cutoff", &light->outerCutoff);
+
+	ImGui::Text("color:        ");
+	ImGui::SameLine();
+	GUI::ShowInputVector(light->color, { "##color_r", "##color_g", "##color_b" });
+
+	ImGui::Text("direction:    ");
+	ImGui::SameLine();
+	GUI::ShowInputVector(light->direction, { "##direction_x", "##direction_y", "##direction_z" });
+}
+
+void Editor::ShowObjectRigidBody(RigidBody& rigid)
+{
+	static hsl::StackMap<std::string, Shape::Type, 3> stringToShape =
+	{
+		{ "SHAPE_TYPE_BOX",     Shape::Type::Box     },
+		{ "SHAPE_TYPE_SPHERE",  Shape::Type::Sphere  },
+		{ "SHAPE_TYPE_CAPSULE", Shape::Type::Capsule },
+	};
+	static hsl::StackMap<std::string, RigidBody::Type, 3> stringToRigid =
+	{
+		{ "RIGID_BODY_STATIC",    RigidBody::Type::Static    },
+		{ "RIGID_BODY_DYNAMIC",   RigidBody::Type::Dynamic   },
+		{ "RIGID_BODY_KINEMATIC", RigidBody::Type::Kinematic },
+	};
+
+	static int rigidIndex = -1;
+	static int shapeIndex = -1;
+	static std::array<std::string, 3> allShapeTypes = { "SHAPE_TYPE_BOX", "SHAPE_TYPE_SPHERE", "SHAPE_TYPE_CAPSULE" };
+	static std::array<std::string, 3> allRigidTypes = { "RIGID_BODY_DYNAMIC", "RIGID_BODY_STATIC", "RIGID_BODY_KINEMATIC" };
+
+	std::string currentRigid = RigidBody::TypeToString(rigid.type);
+	std::string currentShape = Shape::TypeToString(rigid.shape.type);
+	glm::vec3 holderExtents = rigid.shape.data;
+
+	ImGui::Text("type:   ");
+	ImGui::SameLine();
+	GUI::ShowDropdownMenu(allRigidTypes, currentRigid, rigidIndex, "##RigidType");
+
+	ImGui::Text("shape:  ");
+	ImGui::SameLine();
+	GUI::ShowDropdownMenu(allShapeTypes, currentShape, shapeIndex, "##rigidShapeMenu");
+
+	switch (rigid.shape.type)
+	{
+	case Shape::Type::Box:
+		ImGui::Text("Extents:");
+		ImGui::SameLine();
+		GUI::ShowInputVector(holderExtents, { "##extentsx", "##extentsy", "##extentsz" });
+		break;
+	case Shape::Type::Capsule:
+		ImGui::Text("Height: ");
+		ImGui::SameLine();
+		ImGui::InputFloat("##height", &holderExtents.y);
+		ImGui::Text("radius: ");
+		ImGui::SameLine();
+		if (ImGui::InputFloat("##radius", &holderExtents.x))
+			holderExtents.y += holderExtents.x; // add radius on top of the half height
+		break;
+	case Shape::Type::Sphere:
+		ImGui::Text("radius: ");
+		ImGui::SameLine();
+		ImGui::InputFloat("##radius", &holderExtents.x);
+		break;
+	}
+
+	ImGui::Text("Force:   %.1f, %.1f, %.1f", rigid.queuedUpForce.x, rigid.queuedUpForce.y, rigid.queuedUpForce.z);
+
+	// update the rigidbody shape if it has been changed via the gui
+	if (stringToShape[currentShape] != rigid.shape.type || holderExtents != rigid.shape.data)
+	{
+		Shape newShape = Shape::GetShapeFromType(stringToShape[currentShape], holderExtents);
+		rigid.ChangeShape(newShape);
+	}
+	if (stringToRigid[currentRigid] != rigid.type)
+	{
+		rigid.Destroy();
+		Object* obj = (Object*)rigid.GetUserData();
+		rigid = RigidBody(rigid.shape, stringToRigid[currentRigid], obj->transform.position, obj->transform.rotation);
+		rigid.SetUserData(obj);
+	}
+}
+
+void Editor::ShowObjectMesh(Mesh& mesh)
+{
+	ImGui::Text
+	(
+		"Memory:\n"
+		"  vertex:   %I64u\n"
+		"  d_vertex: %I64u\n"
+		"  index:    %I64u\n"
+		"BLAS:       %I64u\n"
+		"face count: %i\n\n"
+		"center:     %.2f, %.2f, %.2f\n"
+		"extents:    %.2f, %.2f, %.2f\n",
+		mesh.vertexMemory, mesh.defaultVertexMemory, mesh.indexMemory, (uint64_t)mesh.BLAS.Get(), mesh.faceCount, mesh.center.x, mesh.center.y, mesh.center.z, mesh.extents.x, mesh.extents.y, mesh.extents.z);
+
+	int index = static_cast<int>(mesh.GetMaterialIndex());
+
+	ImGui::Text("Material: ");
+	ImGui::SameLine();
+	ImGui::InputInt("##inputmeshmaterialindex", &index);
+
+	if (index != static_cast<int>(mesh.GetMaterialIndex()))
+		mesh.SetMaterialIndex(index);
 
 	if (ImGui::Button("Change mesh"))
 		QueueMeshChange(selectedObj);

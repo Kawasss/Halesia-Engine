@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <string_view>
 
 #include "../glm.h"
 
@@ -11,6 +12,8 @@ struct Light
 		Point = 1,
 		Spot = 2,
 	};
+	static Type StringToType(const std::string_view& str);
+	static std::string_view TypeToString(Type type);
 
 	std::string name;
 
