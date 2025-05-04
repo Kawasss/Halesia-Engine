@@ -123,7 +123,7 @@ void main()
 		float attenuation = GetAttenuation(light, vertex.position);
 
 		float diff = max(dot(vertex.normal, L), 0.0);
-		vec3 diffuse = diff * color * attenuation;
+		vec3 diffuse = diff * light.color.rgb * attenuation;
 
 		radiance += (ambient + diffuse) * 1 /*diff / payload.pdf*/; // very rough lighting
 	}

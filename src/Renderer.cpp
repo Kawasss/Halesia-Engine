@@ -800,12 +800,12 @@ static bool ObjectIsValidMesh(Object* pObject, bool checkBLAS)
 		return false;
 
 	MeshObject* obj = dynamic_cast<MeshObject*>(pObject);
-	return obj->MeshIsValid() && obj->mesh.HasFinishedLoading();
+	return obj->MeshIsValid() && obj->mesh.HasFinishedLoading() && obj->state == OBJECT_STATE_VISIBLE;
 }
 
 static bool ObjectIsValidLight(Object* pObject)
 {
-	return pObject->IsType(Object::InheritType::Light);
+	return pObject->IsType(Object::InheritType::Light) && pObject->state == OBJECT_STATE_VISIBLE;
 }
 
 
