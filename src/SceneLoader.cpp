@@ -304,28 +304,6 @@ void SceneLoader::LoadAssimpFile()
 
 	objects.push_back(RetrieveObject(scene, scene->mRootNode, glm::mat4(1)));
 
-	if (scene->HasLights())
-		lights.reserve(scene->mNumLights);
-
-	glm::vec3 position;
-	glm::quat filler;
-	glm::vec3 filler2;
-
-	for (int i = 0; i < scene->mNumLights; i++)
-	{
-		const aiLight* assimpLight = scene->mLights[i];
-		const aiNode* node = scene->mRootNode->FindNode(assimpLight->mName);
-
-		GetTransform(node->mTransformation, position, filler, filler2);
-
-		Light light{};
-		light.pos = glm::vec3(position);
-		light.type = Light::Type::Point;
-		light.color = glm::vec3(1);// assimp cant find the lights color !! glm::vec3(assimpLight->mColorDiffuse.r, assimpLight->mColorDiffuse.g, assimpLight->mColorDiffuse.b);
-		
-		lights.push_back(light);
-	}
-
 	if (scene->HasAnimations())
 		animations.resize(scene->mNumAnimations);
 
@@ -335,24 +313,45 @@ void SceneLoader::LoadAssimpFile()
 	}
 }
 
+static aiLight* NodeAsLight(const aiScene* scene, const aiNode* node)
+{
+	for (int i = 0; i < scene->mNumLights; i++)
+	{
+		if (node->mName == scene->mLights[i]->mName)
+			return scene->mLights[i];
+	}
+	return nullptr;
+}
+
 ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans)
 {
 	ObjectCreationData creationData;
 	creationData.name = node->mName.length == 0 ? "NO_NAME" + std::to_string(unnamedObjectCount) : node->mName.C_Str();
 
 	GetTransform(node->mTransformation, creationData.position, creationData.rotation, creationData.scale);
-	
-	for (int i = 0; i < node->mNumMeshes; i++)
-	{
-		aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-		creationData.hasMesh = node->mNumMeshes > 0;
 
-		if (i != 0 || !creationData.hasMesh)
-			continue;
-		creationData.mesh = RetrieveMeshData(mesh);
-		creationData.type = ObjectCreationData::Type::Mesh;
+	aiLight* asLight = NodeAsLight(scene, node);
+	if (asLight != nullptr)
+	{
+		creationData.lightData.pos = glm::vec3(creationData.position);
+		creationData.lightData.type = Light::Type::Point;
+		creationData.lightData.color = glm::vec3(1); // assimp cant find the lights color !! glm::vec3(assimpLight->mColorDiffuse.r, assimpLight->mColorDiffuse.g, assimpLight->mColorDiffuse.b);
+		creationData.type = ObjectCreationData::Type::Light;
 	}
-	
+	else
+	{
+		for (int i = 0; i < node->mNumMeshes; i++)
+		{
+			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
+			creationData.hasMesh = node->mNumMeshes > 0;
+
+			if (i != 0 || !creationData.hasMesh)
+				continue;
+			creationData.mesh = RetrieveMeshData(mesh);
+			creationData.type = ObjectCreationData::Type::Mesh;
+		}
+	}
+
 	if (node->mNumChildren > 0)
 		creationData.children.reserve(node->mNumChildren);
 

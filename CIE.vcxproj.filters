@@ -318,6 +318,9 @@
     <ClCompile Include="src\Rigid3DObject.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\LightObject.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -624,6 +627,9 @@
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\Rigid3DObject.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\LightObject.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
   </ItemGroup>

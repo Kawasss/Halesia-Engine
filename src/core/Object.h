@@ -36,6 +36,7 @@ public:
 		Base = 0,
 		Mesh = 1,
 		Rigid3D = 2,
+		Light = 3,
 	};
 
 	/// <summary>

@@ -5,6 +5,7 @@
 #include "../glm.h"
 
 #include "../renderer/Vertex.h"
+#include "../renderer/Light.h"
 
 #include "../physics/Shapes.h"
 #include "../physics/RigidBody.h"
@@ -66,6 +67,8 @@ struct ObjectCreationData
 	{
 		Base = 0,
 		Mesh = 1,
+		Rigid3D = 2,
+		Light = 3,
 	};
 
 	std::string name = "NO_NAME";
@@ -79,6 +82,8 @@ struct ObjectCreationData
 
 	bool hasMesh = false;
 	MeshCreationData mesh;
+	
+	Light lightData;
 
 	Type type = Type::Base;
 

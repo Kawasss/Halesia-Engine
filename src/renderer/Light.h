@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-#include "glm.h"
+#include "../glm.h"
 
 struct Light
 {

@@ -23,6 +23,7 @@ class Swapchain;
 class Image;
 class AnimationManager;
 class Window;
+class LightObject;
 class RayTracingRenderPipeline;
 class ForwardPlusPipeline;
 class GraphicsPipeline;
@@ -63,9 +64,6 @@ public:
 
 	void RenderIntro(Intro* intro);
 	void RenderObjects(const std::vector<Object*>& objects, Camera* camera);
-
-	void AddLight(const Light& light);
-	void RemoveLight(int index);
 
 	void StartRecording();
 	void SubmitRecording();
@@ -232,6 +230,9 @@ private:
 
 	static void RenderImGUI(CommandBuffer commandBuffer);
 	static void ResetImGUI();
+
+	void ResetLightBuffer();
+	void UpdateLightBuffer(const std::vector<LightObject*>& lights);
 
 	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
 	void RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<MeshObject*> object, Camera* camera);

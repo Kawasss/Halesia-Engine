@@ -28,6 +28,7 @@
 #include "core/Object.h"
 #include "core/Camera.h"
 #include "core/MeshObject.h"
+#include "core/LightObject.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS_IMPLEMENTED
@@ -739,15 +740,6 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 	submittedCount++;
 }
 
-static bool ObjectIsValid(Object* object, bool checkBLAS)
-{
-	if (!object->IsType(Object::InheritType::Mesh))
-		return false;
-
-	MeshObject* obj = dynamic_cast<MeshObject*>(object);
-	return obj->MeshIsValid() && obj->mesh.HasFinishedLoading();
-}
-
 void Renderer::ResetImGUI()
 {
 	::ImGui_ImplVulkan_NewFrame();
@@ -802,15 +794,33 @@ void Renderer::SubmitRecording()
 	vgm::CollectGarbage();
 }
 
-static void GetAllObjectsFromObject(std::vector<MeshObject*>& ret, Object* obj, bool checkBLAS)
+static bool ObjectIsValidMesh(Object* pObject, bool checkBLAS)
 {
-	if (::ObjectIsValid(obj, checkBLAS))
+	if (!pObject->IsType(Object::InheritType::Mesh))
+		return false;
+
+	MeshObject* obj = dynamic_cast<MeshObject*>(pObject);
+	return obj->MeshIsValid() && obj->mesh.HasFinishedLoading();
+}
+
+static bool ObjectIsValidLight(Object* pObject)
+{
+	return pObject->IsType(Object::InheritType::Light);
+}
+
+
+static void GetAllObjectsFromObject(std::vector<MeshObject*>& ret, std::vector<LightObject*>& lights, Object* obj, bool checkBLAS)
+{
+	if (::ObjectIsValidMesh(obj, checkBLAS))
 		ret.push_back(dynamic_cast<MeshObject*>(obj));
+
+	if (::ObjectIsValidLight(obj))
+		lights.push_back(dynamic_cast<LightObject*>(obj));
 
 	const std::vector<Object*>& children = obj->GetChildren();
 	for (Object* object : children)
 	{
-		GetAllObjectsFromObject(ret, object, checkBLAS);
+		GetAllObjectsFromObject(ret, lights, object, checkBLAS);
 	}
 }
 
@@ -820,9 +830,10 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 		return;
 
 	std::vector<MeshObject*> activeObjects;
+	std::vector<LightObject*> lightObjects;
 	for (Object* object : objects)
 	{
-		::GetAllObjectsFromObject(activeObjects, object, canRayTrace);
+		::GetAllObjectsFromObject(activeObjects, lightObjects, object, canRayTrace);
 	}
 
 	receivedObjects += objects.size();
@@ -830,7 +841,20 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 
 	win32::CriticalLockGuard lockGuard(drawingSection);
 
+	ResetLightBuffer();
+	UpdateLightBuffer(lightObjects);
+
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
+}
+
+void Renderer::UpdateLightBuffer(const std::vector<LightObject*>& lights)
+{
+	LightBuffer* buffer = lightBuffer.GetMappedPointer<LightBuffer>();
+	for (int i = 0; i < lights.size(); i++)
+	{
+		buffer->lights[i] = lights[i]->ToGPUFormat();
+	}
+	buffer->count = lights.size();
 }
 
 void Renderer::StartRenderPass(VkRenderPass renderPass, glm::vec3 clearColor, VkFramebuffer framebuffer)
@@ -918,22 +942,9 @@ void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkComma
 	}	*/
 }
 
-void Renderer::AddLight(const Light& light)
+void Renderer::ResetLightBuffer()
 {
-	LightBuffer* dst = lightBuffer.GetMappedPointer<LightBuffer>();
-	dst->lights[dst->count++] = LightGPU::CreateFromLight(light);
-}
-
-void Renderer::RemoveLight(int index)
-{
-	LightBuffer* buffer = lightBuffer.GetMappedPointer<LightBuffer>();
-	int start = index;
-
-	for (int i = start; i < buffer->count - 1; i++)
-	{
-		buffer->lights[i] = std::move(buffer->lights[i + 1]);
-	}
-	buffer->count--;
+	lightBuffer.GetMappedPointer<LightBuffer>()->count = 0;
 }
 
 void Renderer::CheckForVRAMOverflow()

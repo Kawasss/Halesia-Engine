@@ -192,6 +192,7 @@
     <ClCompile Include="src\IniFile.cpp" />
     <ClCompile Include="src\Intro.cpp" />
     <ClCompile Include="src\IO.cpp" />
+    <ClCompile Include="src\LightObject.cpp" />
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\MeshObject.cpp" />
@@ -250,6 +251,7 @@
     <ClInclude Include="src\core\Camera.h" />
     <ClInclude Include="src\core\Console.h" />
     <ClInclude Include="src\core\Editor.h" />
+    <ClInclude Include="src\core\LightObject.h" />
     <ClInclude Include="src\core\MeshObject.h" />
     <ClInclude Include="src\core\Object.h" />
     <ClInclude Include="src\core\ObjectStreamer.h" />

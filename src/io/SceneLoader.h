@@ -32,8 +32,6 @@ public:
 	std::vector<ObjectCreationData> objects;
 	std::vector<MaterialCreationData> materials;
 
-	std::vector<Light> lights;
-
 	// animations
 	std::vector<Animation> animations;
 	std::map<std::string, BoneInfo> boneInfoMap;
