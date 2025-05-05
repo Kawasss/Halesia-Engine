@@ -59,6 +59,21 @@ void Mesh::Recreate()
 		BLAS = hsl::Reference<BottomLevelAccelerationStructure>::Create(*this);
 }
 
+void Mesh::CopyFrom(const Mesh& mesh)
+{
+	vertices = mesh.vertices;
+	indices = mesh.indices;
+
+	BLAS = mesh.BLAS;
+
+	if (vertices.empty() || indices.empty())
+		return;
+
+	vertexMemory = Renderer::g_vertexBuffer.SubmitNewData(vertices);
+	indexMemory = Renderer::g_indexBuffer.SubmitNewData(indices);
+	defaultVertexMemory = Renderer::g_defaultVertexBuffer.SubmitNewData(vertices);
+}
+
 void Mesh::ResetMaterial()
 {
 	materialIndex = 0;

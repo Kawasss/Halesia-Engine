@@ -87,7 +87,7 @@ public:
 
 	void TransferChild(Object* child, Object* destination); // this removes the child from this objects children and adds to the destinations children
 
-	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script);
+	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script); // does not duplicate children
 
 	void SetParentScene(Scene* parent) { scene = parent; }
 
@@ -134,6 +134,19 @@ protected:
 	}
 
 	void Free() { shouldBeDestroyed = true; }
+
+	/// <summary>
+	/// instance must create a copy of all of its data into pObject. Implementations can assume that pObject is the same superclass is the instance.
+	/// base class data is copied seperately.
+	/// </summary>
+	/// <param name="pObject"></param>
+	virtual void DuplicateDataTo(Object* pObject) const;
+
+	/// <summary>
+	/// duplicate all data of the base to pObject
+	/// </summary>
+	/// <param name="pObject"></param>
+	void DuplicateBaseDataTo(Object* pObject) const;
 
 	Scene* GetParentScene() { return scene; }
 };

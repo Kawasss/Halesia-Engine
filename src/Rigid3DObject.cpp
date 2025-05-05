@@ -33,3 +33,9 @@ void Rigid3DObject::Init(const ObjectCreationData& data)
 	rigid.Init(Shape::GetShapeFromType(data.hitBox.shapeType, data.hitBox.extents), data.hitBox.rigidType);
 	rigid.SetUserData(this);
 }
+
+void Rigid3DObject::DuplicateDataTo(Object* pObject) const
+{
+	Rigid3DObject* pRigid = dynamic_cast<Rigid3DObject*>(pObject);
+	pRigid->rigid = RigidBody(rigid.shape, rigid.type);
+}

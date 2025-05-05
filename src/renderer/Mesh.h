@@ -22,6 +22,8 @@ struct Mesh
 	void Create(const MeshCreationData& creationData);
 	void Destroy();
 
+	void CopyFrom(const Mesh& mesh);
+
 	std::string name = "NO_NAME";
 
 	StorageMemory vertexMemory;

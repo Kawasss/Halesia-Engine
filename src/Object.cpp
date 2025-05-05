@@ -84,16 +84,29 @@ void Object::TransferChild(Object* child, Object* destination)
 	child->parent = destination;
 }
 
-void Object::Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script)
+void Object::Duplicate(Object* pOldObject, Object* pNewObject, std::string name, void* script)
 {
-	newObjPtr->transform = oldObjPtr->transform;
-	newObjPtr->name = name;
-	newObjPtr->finishedLoading = true;
-	newObjPtr->scriptClass = script;
-	newObjPtr->handle = ResourceManager::GenerateHandle();
+	assert(pOldObject->GetType() == pNewObject->GetType());
 
-	newObjPtr->Start();
-	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + oldObjPtr->name + "\" with" + (script == nullptr ? "out a script" : " a script"), Console::Severity::Debug);
+	pOldObject->DuplicateBaseDataTo(pNewObject);
+	pOldObject->DuplicateDataTo(pNewObject);
+
+	pNewObject->Start();
+	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + pNewObject->name + "\" with" + (script == nullptr ? "out a script" : " a script"), Console::Severity::Debug);
+}
+
+void Object::DuplicateDataTo(Object* pObject) const
+{
+
+}
+
+void Object::DuplicateBaseDataTo(Object* pObject) const
+{
+	pObject->transform = transform;
+	pObject->name = name;
+	pObject->finishedLoading = true;
+	pObject->scriptClass = nullptr;
+	pObject->handle = ResourceManager::GenerateHandle();
 }
 
 Object* Object::AddChild(const ObjectCreationData& creationData)

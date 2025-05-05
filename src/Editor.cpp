@@ -265,20 +265,22 @@ void Editor::ShowObjectWithChildren(Object* object)
 {
 	std::string rightClickName = "##r_" + std::to_string((uint64_t)object);
 
-	if (ImGui::BeginPopupContextItem(rightClickName.c_str(), ImGuiPopupFlags_MouseButtonRight))
+	/*if (ImGui::BeginPopupContextItem(rightClickName.c_str(), ImGuiPopupFlags_MouseButtonRight))
 	{
-		if (ImGui::MenuItem("Duplicate"))
+		std::string duplicateID = "Duplicate##" + object->name;
+		std::string deleteID = "Delete##" + object->name;
+		if (ImGui::MenuItem(duplicateID.c_str()))
 		{
 			DuplicateObject(object, "Duplicated object");
 		}
-		if (ImGui::MenuItem("Delete"))
+		if (ImGui::MenuItem(deleteID.c_str()))
 		{
 			UIFree(object);
 			ImGui::EndPopup();
 			return;
 		}
 		ImGui::EndPopup();
-	}
+	}*/
 
 	std::string nodeName = "##n_" + object->name;
 	bool success = false; // default state is that the object has no children

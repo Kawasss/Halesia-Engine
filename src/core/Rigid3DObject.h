@@ -18,4 +18,7 @@ public:
 private:
 	Rigid3DObject();
 	void Init(const ObjectCreationData& data);
+
+protected:
+	void DuplicateDataTo(Object* pObject) const override;
 };

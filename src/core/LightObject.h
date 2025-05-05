@@ -23,4 +23,7 @@ public:
 private:
 	LightObject();
 	void Init(const ObjectCreationData& data);
+
+protected:
+	void DuplicateDataTo(Object* pObject) const override;
 };

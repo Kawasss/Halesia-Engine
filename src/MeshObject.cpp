@@ -34,6 +34,12 @@ bool MeshObject::MeshIsValid() const
 	return mesh.IsValid();
 }
 
+void MeshObject::DuplicateDataTo(Object* pObject) const
+{
+	MeshObject* pMesh = dynamic_cast<MeshObject*>(pObject);
+	pMesh->mesh.CopyFrom(mesh);
+}
+
 MeshObject::~MeshObject()
 {
 	mesh.Destroy();

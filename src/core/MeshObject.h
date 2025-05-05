@@ -21,4 +21,7 @@ private:
 	MeshObject();
 
 	void Init(const ObjectCreationData& data);
+
+protected:
+	void DuplicateDataTo(Object* pObject) const override;
 };

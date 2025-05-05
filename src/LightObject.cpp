@@ -58,3 +58,14 @@ LightGPU LightObject::ToGPUFormat() const
 
 	return ret;
 }
+
+void LightObject::DuplicateDataTo(Object* pObject) const
+{
+	LightObject* pLight = dynamic_cast<LightObject*>(pObject);
+
+	pLight->type = type;
+	pLight->color = color;
+	pLight->cutoff = cutoff;
+	pLight->outerCutoff = outerCutoff;
+	pLight->direction = direction;
+}
