@@ -77,16 +77,7 @@ static void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberTo
 
 void Scene::Free(Object* pObject)
 {
-	auto it = std::find(allObjects.begin(), allObjects.end(), pObject);
-
-	if (it == allObjects.end())
-	{
-		Console::WriteLine("Failed to free an object, because it isn't registered in the scene. The given object has not been freed.", Console::Severity::Error);
-		return;
-	}
-
-	allObjects.erase(it);
-	delete pObject;
+	Object::Free(pObject);
 }
 
 void Scene::UpdateCamera(Window* pWindow, float delta)
@@ -110,15 +101,24 @@ void Scene::UpdateScripts(float delta)
 
 void Scene::CollectGarbage()
 {
-	for (auto iter = allObjects.begin(); iter < allObjects.end(); iter++)
-	{
-		Object* obj = *iter;
-		if (!obj->ShouldBeDestroyed())
-			continue;
+	CollectGarbageRecursive(allObjects);
+}
 
-		allObjects.erase(iter);
+void Scene::CollectGarbageRecursive(std::vector<Object*>& base)
+{
+	for (int i = 0; i < base.size(); i++)
+	{
+		Object* obj = base[i];
+		if (!obj->ShouldBeDestroyed())
+		{
+			CollectGarbageRecursive(obj->GetChildren());
+			continue;
+		}
+
+		base.erase(base.begin() + i);
+		i--;
+
 		delete obj;
-		iter = allObjects.begin();
 	}
 }
 

@@ -93,6 +93,12 @@ void Editor::Update(float delta)
 		return;
 	}
 		
+	if (Input::IsKeyJustPressed(VirtualKey::Backspace) && selectedObj != nullptr)
+	{
+		Object::Free(selectedObj);
+		selectedObj = nullptr;
+	}
+
 	if (UIObjects.size() != allObjects.size())
 		UIObjects.resize(allObjects.size());
 

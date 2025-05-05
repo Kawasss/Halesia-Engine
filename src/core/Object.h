@@ -91,6 +91,8 @@ public:
 
 	void SetParentScene(Scene* parent) { scene = parent; }
 
+	std::vector<Object*>& GetChildren() { return children; }
+
 	const std::vector<Object*>& GetChildren() const  { return children;    }
 	win32::CriticalSection&     GetCriticalSection() { return critSection; }
 	
@@ -110,6 +112,11 @@ public:
 
 	Object* GetParent() const { return parent; }
 
+	static void Free(Object* objPtr)
+	{
+		objPtr->shouldBeDestroyed = true;
+	}
+
 private:
 	template<typename T> void SetScript(T* script);
 
@@ -127,13 +134,6 @@ private:
 
 protected:
 	Object* parent = nullptr;
-
-	static void Free(Object* objPtr)
-	{
-		objPtr->shouldBeDestroyed = true;
-	}
-
-	void Free() { shouldBeDestroyed = true; }
 
 	/// <summary>
 	/// instance must create a copy of all of its data into pObject. Implementations can assume that pObject is the same superclass is the instance.

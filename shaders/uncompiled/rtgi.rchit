@@ -110,7 +110,7 @@ void main()
 
 	vec3 radiance = vec3(0.0);
 	vec3 color = vec3(1.0); // read the albedo here
-	vec3 ambient = 0.001 * color; // maybe use later calculated rtgi here ??
+	vec3 ambient = 0.01 * color; // maybe use later calculated rtgi here ??
 
 	for (int i = 0; i < lights.count; i++)
 	{

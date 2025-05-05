@@ -56,6 +56,8 @@ public:
 	std::vector<Object*> allObjects; // this vector owns the objects
 
 private:
+	void CollectGarbageRecursive(std::vector<Object*>& base);
+
 	void RegisterObjectPointer(Object* pObject, Object* pParent);
 
 	bool sceneIsLoading = false;
