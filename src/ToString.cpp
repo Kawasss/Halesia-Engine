@@ -9,6 +9,35 @@
 
 #include "io/FileFormat.h"
 
+std::string_view Object::InheritTypeToString(InheritType type)
+{
+	switch (type)
+	{
+	case InheritType::Base:
+		return "Base";
+	case InheritType::Light:
+		return "Light";
+	case InheritType::Mesh:
+		return "Mesh";
+	case InheritType::Rigid3D:
+		return "Rigid3D";
+	}
+	return "Unknown";
+}
+
+Object::InheritType Object::StringToInheritType(const std::string_view& str)
+{
+	if (str == "Base")
+		return InheritType::Base;
+	if (str == "Light")
+		return InheritType::Light;
+	if (str == "Mesh")
+		return InheritType::Mesh;
+	if (str == "Rigid3D")
+		return InheritType::Rigid3D;
+	return InheritType::TypeCount; // fallback value
+}
+
 Light::Type Light::StringToType(const std::string_view& str)
 {
 	if (str == "Directional")

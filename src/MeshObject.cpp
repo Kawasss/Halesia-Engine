@@ -10,8 +10,6 @@ MeshObject::MeshObject() : Object(InheritType::Mesh)
 
 MeshObject* MeshObject::Create(const ObjectCreationData& data)
 {
-	assert(data.hasMesh);
-
 	MeshObject* ret = new MeshObject();
 
 	ret->Initialize(data);
@@ -27,7 +25,8 @@ MeshObject* MeshObject::Create()
 
 void MeshObject::Init(const ObjectCreationData& data)
 {
-	mesh.Create(data.mesh);
+	if (data.hasMesh)
+		mesh.Create(data.mesh);
 }
 
 bool MeshObject::MeshIsValid() const

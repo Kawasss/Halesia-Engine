@@ -1,4 +1,5 @@
 #pragma once
+#include <string_view>
 #include <string>
 #include <vector>
 #include <future>
@@ -37,7 +38,10 @@ public:
 		Mesh = 1,
 		Rigid3D = 2,
 		Light = 3,
+		TypeCount = 4, // increment when a new type is added
 	};
+	static std::string_view InheritTypeToString(InheritType type);
+	static InheritType StringToInheritType(const std::string_view& str);
 
 	/// <summary>
 	/// This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.

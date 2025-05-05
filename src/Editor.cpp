@@ -194,8 +194,7 @@ void Editor::ShowDefaultRightClick()
 	if (!ImGui::BeginPopupContextVoid("##default_right_click"))
 		return;
 
-	if (ImGui::MenuItem("Add object"))
-		AddObject({ "new object" });
+	inAddObjectWindow = inAddObjectWindow || ImGui::MenuItem("Add object");
 
 	ImGui::SeparatorText("Gizmo");
 
@@ -223,6 +222,9 @@ void Editor::ShowUI()
 		EndRightBar();
 
 		ShowSideBars();
+
+		if (inAddObjectWindow)
+			ShowAddObjectWindow();
 	}
 
 	ShowMenuBar();
@@ -411,7 +413,7 @@ void Editor::ShowMenuBar() // add renderer variables here like taa sample count
 	}
 	if (ImGui::BeginMenu("Add"))
 	{
-		if (ImGui::MenuItem("Object")) addObject = true;
+		if (ImGui::MenuItem("Object")) inAddObjectWindow = true;
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("misc."))
@@ -522,10 +524,14 @@ void Editor::ShowObjectLight(LightObject* light)
 
 	std::string_view curr = Light::TypeToString(light->type);
 	int currIndex = static_cast<int>(light->type);
+	int nextIndex = currIndex;
 
 	ImGui::Text("type:         ");
 	ImGui::SameLine();
-	GUI::ShowDropdownMenu(lightTypes, curr, currIndex, "##selected_object_light");
+	GUI::ShowDropdownMenu(lightTypes, curr, nextIndex, "##selected_object_light");
+
+	if (currIndex != nextIndex)
+		light->type = Light::StringToType(curr);
 
 	ImGui::Text("cutoff:       ");
 	ImGui::SameLine();
@@ -641,6 +647,29 @@ void Editor::ShowObjectMesh(Mesh& mesh)
 
 	if (ImGui::Button("Change mesh"))
 		QueueMeshChange(selectedObj);
+}
+
+void Editor::ShowAddObjectWindow()
+{
+	ImGui::Begin("Add object");
+
+	int typeCount = static_cast<int>(Object::InheritType::TypeCount);
+	for (int i = 0; i < typeCount; i++)
+	{
+		Object::InheritType type = static_cast<Object::InheritType>(i);
+		std::string_view typeAsString = Object::InheritTypeToString(type);
+
+		if (!ImGui::Selectable(typeAsString.data()))
+			continue;
+
+		ObjectCreationData data{};
+		data.type = static_cast<ObjectCreationData::Type>(type); // should always convert correctly
+		AddObject(data);
+
+		inAddObjectWindow = false;
+	}
+
+	ImGui::End();
 }
 
 void Editor::ShowLowerBar()

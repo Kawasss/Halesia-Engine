@@ -62,6 +62,8 @@ private:
 	void ShowObjectMesh(Mesh& mesh);
 	void ShowObjectLight(LightObject* light);
 
+	void ShowAddObjectWindow();
+
 	void DestroyCurrentScene();
 
 	static std::string GetFile(const char* desc, const char* type);
@@ -76,6 +78,8 @@ private:
 	bool loadFile = false;
 	bool save = false;
 	bool showUI = true;
+
+	bool inAddObjectWindow = false;
 
 	std::string src;
 
