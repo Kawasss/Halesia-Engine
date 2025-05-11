@@ -132,6 +132,7 @@ public:
 
     static void                               ExecuteSingleTimeCommands(std::function<void(const CommandBuffer&)>&& commands);
 
+    static void                               Init();
     static void                               Destroy();
 
 private:

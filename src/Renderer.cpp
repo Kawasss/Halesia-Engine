@@ -275,6 +275,8 @@ void Renderer::InitVulkan()
 	RecompileShaders();
 	#endif
 
+	Vulkan::Init();
+
 	CreatePhysicalDevice();
 
 	CheckForInterference();

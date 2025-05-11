@@ -12,6 +12,18 @@
 
 #include "io/CreationData.h"
 
+class HeapChecker
+{
+public:
+	HeapChecker() = default;
+	~HeapChecker()
+	{
+		_CrtDumpMemoryLeaks();
+	}
+};
+
+HeapChecker checker;
+
 int main(int argc, char** argv)
 {
 	Window::CreateInfo windowInfo{};
@@ -41,6 +53,11 @@ int main(int argc, char** argv)
 	deferred->LoadSkybox("textures/skybox/park.hdr");
 
 	instance->Run();
+
+	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
+	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
+	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDOUT);
 
 	return EXIT_SUCCESS;
 }

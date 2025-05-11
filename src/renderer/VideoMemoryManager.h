@@ -69,6 +69,10 @@ namespace vvm
 			this->Destroy();
 		}
 	};
+	
+	struct Segment;
+	struct MemoryBlock;
+	struct MemoryCore;
 
 	extern void Destroy(VkImage image);
 	extern void Destroy(VkBuffer buffer);
@@ -86,4 +90,7 @@ namespace vvm
 	extern void UnmapBuffer(Buffer buffer);
 
 	extern void ForceDestroy();
+
+	extern void Init();
+	extern void ShutDown(); // completely shut downs the manager, rendering it unusable until it is initialized again
 };

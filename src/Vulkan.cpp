@@ -497,9 +497,14 @@ vvm::Buffer Vulkan::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, Vk
     return vvm::AllocateBuffer(buffer, properties, optionalMemoryAllocationFlags);
 }
 
+void Vulkan::Init()
+{
+    vvm::Init();
+}
+
 void Vulkan::Destroy()
 {
-    vvm::ForceDestroy();
+    vvm::ShutDown();
 }
 
 uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, PhysicalDevice physicalDevice)

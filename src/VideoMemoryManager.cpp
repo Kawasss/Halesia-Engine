@@ -2,6 +2,7 @@
 #include <string>
 #include <map>
 #include <set>
+#include <cassert>
 
 #include "renderer/VideoMemoryManager.h"
 #include "renderer/GarbageManager.h"
@@ -30,7 +31,7 @@ constexpr VkDeviceSize STANDARD_MEMORY_BLOCK_SIZE = 1024 * 1024; // 1 mb
 // buffer 1  buffer 2    image 1       image 2
 
 
-struct Segment
+struct vvm::Segment
 {
 	bool empty = true;
 	VkDeviceSize begin = 0, end = 0;
@@ -39,7 +40,7 @@ struct Segment
 	VkDeviceSize GetSize() const    { return end - begin; }
 };
 
-struct MemoryBlock
+struct vvm::MemoryBlock
 {
 	MemoryBlock() = default;
 	MemoryBlock(VkMemoryPropertyFlags p, VkDeviceSize s, VkDeviceSize a, VkDeviceMemory m) : properties(p), size(s), alignment(a), memory(m) {}
@@ -125,11 +126,16 @@ struct MemoryBlock
 	bool IsUnused() const { return segments.size() == 0; }
 };
 
-win32::CriticalSection blockGuard;
-std::vector<MemoryBlock*> blocks;
+struct vvm::MemoryCore
+{
+	win32::CriticalSection blockGuard;
+	std::vector<vvm::MemoryBlock*> blocks;
 
-std::map<VkBuffer, MemoryBlock*> bufferToBlock; // the buffer and image blocks are seperated into 2 maps, so that for example image look-up will stay fast, even if there are a lot of buffers.
-std::map<VkImage,  MemoryBlock*> imageToBlock;
+	std::map<VkBuffer, vvm::MemoryBlock*> bufferToBlock; // the buffer and image blocks are seperated into 2 maps, so that for example image look-up will stay fast, even if there are a lot of buffers.
+	std::map<VkImage,  vvm::MemoryBlock*> imageToBlock;
+};
+
+vvm::MemoryCore* core = nullptr;
 
 static VkDeviceSize FitSizeToAlignment(VkDeviceSize size, VkDeviceSize alignment)
 {
@@ -160,34 +166,34 @@ static VkDeviceMemory AllocateMemory(VkMemoryRequirements& requirements, VkMemor
 	return memory;
 }
 
-static MemoryBlock* FindRelevantMemoryBlock(VkBuffer buffer)
+static vvm::MemoryBlock* FindRelevantMemoryBlock(VkBuffer buffer)
 {
-	if (bufferToBlock.find(buffer) == bufferToBlock.end())
+	if (core->bufferToBlock.find(buffer) == core->bufferToBlock.end())
 		throw VulkanAPIError("Failed to find a relevant memory for the given handle");
-	return bufferToBlock[buffer];
+	return core->bufferToBlock[buffer];
 }
 
-static MemoryBlock* FindRelevantMemoryBlock(VkImage image)
+static vvm::MemoryBlock* FindRelevantMemoryBlock(VkImage image)
 {
-	if (imageToBlock.find(image) == imageToBlock.end())
+	if (core->imageToBlock.find(image) == core->imageToBlock.end())
 		throw VulkanAPIError("Failed to find a relevant memory for the given handle");
-	return imageToBlock[image];
+	return core->imageToBlock[image];
 }
 
-static MemoryBlock* AllocateNewBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
+static vvm::MemoryBlock* AllocateNewBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
 {
 	VkDeviceMemory memory = AllocateMemory(requirements, properties, pNext);
-	MemoryBlock* block = new MemoryBlock(properties, requirements.size, requirements.alignment, memory);
+	vvm::MemoryBlock* block = new vvm::MemoryBlock(properties, requirements.size, requirements.alignment, memory);
 
-	blocks.push_back(block);
+	core->blocks.push_back(block);
 	return block;
 }
 
-static MemoryBlock* GetMemoryBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
+static vvm::MemoryBlock* GetMemoryBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
 {
-	for (int i = 0; i < blocks.size(); i++)
+	for (int i = 0; i < core->blocks.size(); i++)
 	{
-		MemoryBlock* block = blocks[i];
+		vvm::MemoryBlock* block = core->blocks[i];
 		if (block->properties == properties && block->CanFit(requirements.size) && block->alignment == requirements.alignment)
 			return block;
 	}
@@ -195,7 +201,7 @@ static MemoryBlock* GetMemoryBlock(VkMemoryRequirements& requirements, VkMemoryP
 }
 
 template<typename T>
-static void CheckBlockStatus(MemoryBlock* block, std::map<T, MemoryBlock*>& map)
+static void CheckBlockStatus(vvm::MemoryBlock* block, std::map<T, vvm::MemoryBlock*>& map)
 {
 	if (!block->IsEmpty())
 		return;
@@ -208,14 +214,28 @@ static void CheckBlockStatus(MemoryBlock* block, std::map<T, MemoryBlock*>& map)
 		map.erase(it);
 		break;
 	}
-	blocks.erase(std::find(blocks.begin(), blocks.end(), block));
+	core->blocks.erase(std::find(core->blocks.begin(), core->blocks.end(), block));
 	block->Destroy();
 	delete block;
 }
 
+void vvm::Init()
+{
+	assert(core == nullptr);
+	core = new MemoryCore();
+}
+
+void vvm::ShutDown()
+{
+	assert(core != nullptr);
+
+	ForceDestroy();
+	delete core;
+}
+
 vvm::Image vvm::AllocateImage(VkImage image, VkMemoryPropertyFlags properties)
 {
-	win32::CriticalLockGuard guard(blockGuard);
+	win32::CriticalLockGuard guard(core->blockGuard);
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	VkMemoryRequirements requirements;
@@ -240,13 +260,13 @@ vvm::Image vvm::AllocateImage(VkImage image, VkMemoryPropertyFlags properties)
 
 	vkBindImageMemory(ctx.logicalDevice, image, block->memory, block->segments[handle].begin);
 
-	imageToBlock[image] = block;
+	core->imageToBlock[image] = block;
 	return Image(image);
 }
 
 vvm::Buffer vvm::AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFlags properties, void* pNext)
 {
-	win32::CriticalLockGuard guard(blockGuard);
+	win32::CriticalLockGuard guard(core->blockGuard);
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	VkMemoryRequirements requirements;
@@ -270,13 +290,13 @@ vvm::Buffer vvm::AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFlags propertie
 
 	vkBindBufferMemory(ctx.logicalDevice, buffer, block->memory, block->segments[handle].begin);
 
-	bufferToBlock[buffer] = block;
+	core->bufferToBlock[buffer] = block;
 	return Buffer(buffer);
 }
 
 void* vvm::MapBuffer(Buffer buffer, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags)
 {
-	win32::CriticalLockGuard guard(blockGuard);
+	win32::CriticalLockGuard guard(core->blockGuard);
 
 	MemoryBlock* block = FindRelevantMemoryBlock(buffer.Get());
 	block->CheckedMap(size, offset, flags);
@@ -290,7 +310,7 @@ void* vvm::MapBuffer(Buffer buffer, VkDeviceSize offset, VkDeviceSize size, VkMe
 
 void vvm::UnmapBuffer(Buffer buffer)
 {
-	win32::CriticalLockGuard guard(blockGuard);
+	win32::CriticalLockGuard guard(core->blockGuard);
 
 	MemoryBlock* block = FindRelevantMemoryBlock(buffer.Get());
 	block->CheckedUnmap();
@@ -298,30 +318,30 @@ void vvm::UnmapBuffer(Buffer buffer)
 
 void vvm::Destroy(VkImage image)
 {
-	win32::CriticalLockGuard guard(blockGuard);
+	win32::CriticalLockGuard guard(core->blockGuard);
 	uint64_t handle = reinterpret_cast<uint64_t>(image);
 
 	vgm::Delete(image);
 	MemoryBlock* block = FindRelevantMemoryBlock(image);
 	block->FreeSegment(handle);
-	CheckBlockStatus(block, imageToBlock);
+	CheckBlockStatus(block, core->imageToBlock);
 }
 
 void vvm::Destroy(VkBuffer buffer)
 {
-	win32::CriticalLockGuard guard(blockGuard);
+	win32::CriticalLockGuard guard(core->blockGuard);
 	uint64_t handle = reinterpret_cast<uint64_t>(buffer);
 
 	vgm::Delete(buffer);
 	MemoryBlock* block = FindRelevantMemoryBlock(buffer);
 	block->FreeSegment(handle);
-	CheckBlockStatus(block, bufferToBlock);
+	CheckBlockStatus(block, core->bufferToBlock);
 }
 
 void vvm::ForceDestroy()
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
-	for (MemoryBlock* block : blocks)
+	for (MemoryBlock* block : core->blocks)
 	{
 		block->Destroy();
 		delete block;
