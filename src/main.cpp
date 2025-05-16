@@ -12,18 +12,6 @@
 
 #include "io/CreationData.h"
 
-class HeapChecker
-{
-public:
-	HeapChecker() = default;
-	~HeapChecker()
-	{
-		_CrtDumpMemoryLeaks();
-	}
-};
-
-HeapChecker checker;
-
 int main(int argc, char** argv)
 {
 	Window::CreateInfo windowInfo{};

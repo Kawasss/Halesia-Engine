@@ -3,6 +3,7 @@
 #include "renderer/ComputeShader.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/Renderer.h"
+#include "renderer/Texture.h"
 #include "renderer/Light.h"
 
 #include "core/Camera.h"
@@ -154,7 +155,7 @@ void ForwardPlusPipeline::UpdateBindlessTextures()
 {
 	constexpr size_t MAX_PROCESSED_COUNT = 5;
 
-	const size_t pbrSize = PBRMaterialTextures.size();
+	const size_t pbrSize = Material::pbrTextures.size();
 	const size_t maxSize = pbrSize * MAX_PROCESSED_COUNT;
 
 	std::vector<VkDescriptorImageInfo> imageInfos(maxSize);
@@ -179,7 +180,7 @@ void ForwardPlusPipeline::UpdateBindlessTextures()
 
 			VkDescriptorImageInfo& imageInfo = imageInfos[index];
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = Mesh::materials[i][PBRMaterialTextures[j]]->imageView;
+			imageInfo.imageView = Mesh::materials[i][Material::pbrTextures[j]]->imageView;
 			imageInfo.sampler = Renderer::defaultSampler;
 
 			VkWriteDescriptorSet& writeSet = writeSets[index];

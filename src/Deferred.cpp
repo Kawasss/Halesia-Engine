@@ -8,6 +8,7 @@
 #include "renderer/PipelineCreator.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/ImageTransitioner.h"
+#include "renderer/Texture.h"
 #include "renderer/Skybox.h"
 #include "renderer/Vulkan.h"
 
@@ -770,7 +771,7 @@ void DeferredPipeline::UpdateTextureBuffer()
 {
 	constexpr size_t MAX_PROCESSED_COUNT = 5;
 
-	const size_t pbrSize = PBRMaterialTextures.size();
+	const size_t pbrSize = Material::pbrTextures.size();
 	const size_t maxSize = pbrSize * MAX_PROCESSED_COUNT;
 
 	std::vector<uint64_t>& processedMaterials = processedMats[FIF::frameIndex];
@@ -797,7 +798,7 @@ void DeferredPipeline::UpdateTextureBuffer()
 
 			VkDescriptorImageInfo& imageInfo = imageInfos[index];
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = Mesh::materials[i][PBRMaterialTextures[j]]->imageView;
+			imageInfo.imageView = Mesh::materials[i][Material::pbrTextures[j]]->imageView;
 			imageInfo.sampler = Renderer::defaultSampler;
 
 			VkWriteDescriptorSet& writeSet = writeSets[index];

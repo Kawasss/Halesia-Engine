@@ -4,6 +4,7 @@
 #include "renderer/AccelerationStructures.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/RayTracing.h"
+#include "renderer/Texture.h"
 #include "renderer/Vulkan.h"
 #include "renderer/DescriptorWriter.h"
 #include "renderer/GarbageManager.h"
@@ -579,7 +580,7 @@ void RayTracingRenderPipeline::OnRenderingBufferResize(const Payload& payload)
 
 void RayTracingRenderPipeline::UpdateTextureBuffer()
 {
-	uint32_t amountOfTexturesPerMaterial = rayTracingMaterialTextures.size();
+	uint32_t amountOfTexturesPerMaterial = Material::pbrTextures.size();
 	std::vector<VkDescriptorImageInfo> imageInfos(Mesh::materials.size() * amountOfTexturesPerMaterial);
 	std::vector<VkWriteDescriptorSet> writeSets;
 	for (int i = 0; i < Mesh::materials.size(); i++)
@@ -593,7 +594,7 @@ void RayTracingRenderPipeline::UpdateTextureBuffer()
 
 			VkDescriptorImageInfo& imageInfo = imageInfos[index];
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = Mesh::materials[i][rayTracingMaterialTextures[j]]->imageView;
+			imageInfo.imageView = Mesh::materials[i][Material::pbrTextures[j]]->imageView;
 			imageInfo.sampler = Renderer::defaultSampler;
 
 			VkWriteDescriptorSet writeSet{};

@@ -1,23 +1,20 @@
 #pragma once
-#include "Texture.h"
-#include "../ResourceManager.h"
+#include <array>
+#include <string>
 
 #include "../io/FwdDclCreationData.h"
 
+class Texture;
 using Handle = uint64_t;
 
-enum MaterialTexture
+enum class TextureType
 {
-	MATERIAL_TEXTURE_ALBEDO,
-	MATERIAL_TEXTURE_NORMAL,
-	MATERIAL_TEXTURE_METALLIC,
-	MATERIAL_TEXTURE_ROUGHNESS,
-	MATERIAL_TEXTURE_AMBIENT_OCCLUSION
+	Albedo,
+	Normal,
+	Metallic,
+	Roughness,
+	AmbientOcclusion,
 };
-
-inline const std::vector<MaterialTexture> rayTracingMaterialTextures = { MATERIAL_TEXTURE_ALBEDO, MATERIAL_TEXTURE_NORMAL, MATERIAL_TEXTURE_ROUGHNESS, MATERIAL_TEXTURE_METALLIC };
-inline const std::vector<MaterialTexture> deferredMaterialTextures = { MATERIAL_TEXTURE_ALBEDO, MATERIAL_TEXTURE_NORMAL };
-inline const std::vector<MaterialTexture> PBRMaterialTextures = { MATERIAL_TEXTURE_ALBEDO, MATERIAL_TEXTURE_NORMAL, MATERIAL_TEXTURE_METALLIC, MATERIAL_TEXTURE_ROUGHNESS, MATERIAL_TEXTURE_AMBIENT_OCCLUSION };
 
 struct MaterialCreateInfo
 {
@@ -31,11 +28,13 @@ struct MaterialCreateInfo
 
 struct Material
 {
+	static std::array<TextureType, 5> pbrTextures;
+
 	static Material Create(const MaterialCreateInfo& createInfo);
 	static Material Create(const MaterialCreationData& createInfo);
 
-	Material() = default;
-	Material(Texture* al, Texture* no, Texture* me, Texture* ro, Texture* ao) : albedo(al), normal(no), metallic(me), roughness(ro), ambientOcclusion(ao) {}
+	Material();
+	Material(Texture* al, Texture* no, Texture* me, Texture* ro, Texture* ao);
 
 	bool HasFinishedLoading();
 
@@ -45,20 +44,20 @@ struct Material
 	void AddReference();
 	void RemoveReference(); // the material will automatically self destruct if referenceCount is 0
 
-	int GetReferenceCount() { return referenceCount; }
-	void OverrideReferenceCount(int val) { referenceCount = val; } // should only be called by the renderer itself
+	int GetReferenceCount() const;
+	void OverrideReferenceCount(int val); // should only be called by the renderer itself
 
 	Texture* operator[](size_t i);
-	Texture* operator[](MaterialTexture materialTexture);
+	Texture* operator[](TextureType materialTexture);
 
 	Handle handle = 0;
 
 	// dont know if dynamically allocated is necessary since the material will always be used for the lifetime of the mesh, the class is sort of big so not so sure if copying is cheap
-	Texture* albedo           = Texture::placeholderAlbedo;
-	Texture* normal           = Texture::placeholderNormal;
-	Texture* metallic         = Texture::placeholderMetallic;
-	Texture* roughness        = Texture::placeholderRoughness;
-	Texture* ambientOcclusion = Texture::placeholderAmbientOcclusion;
+	Texture* albedo = nullptr;
+	Texture* normal = nullptr;
+	Texture* metallic = nullptr;
+	Texture* roughness = nullptr;
+	Texture* ambientOcclusion = nullptr;
 
 	bool isLight = false;
 	

@@ -921,9 +921,9 @@ void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<M
 		if (processedMaterials.count(i) > 0 && processedMaterials[i] == Mesh::materials[i].handle)
 			continue;
 
-		for (int j = 0; j < deferredMaterialTextures.size(); j++)
+		for (int j = 0; j < Material::pbrTextures.size(); j++)
 		{
-			DescriptorWriter::WriteImage(screenPipeline->GetDescriptorSets()[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, Mesh::materials[i][deferredMaterialTextures[j]]->imageView, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); // dont have any test to run this on, so I just hope this works
+			DescriptorWriter::WriteImage(screenPipeline->GetDescriptorSets()[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, Mesh::materials[i][Material::pbrTextures[j]]->imageView, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); // dont have any test to run this on, so I just hope this works
 		}
 		processedMaterials[i] = Mesh::materials[i].handle;
 	}

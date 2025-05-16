@@ -1,6 +1,30 @@
 #include "renderer/Material.h"
+#include "renderer/Texture.h"
 
 #include "io/CreationData.h"
+
+std::array<TextureType, 5> Material::pbrTextures =
+{
+	TextureType::Albedo,
+	TextureType::Normal,
+	TextureType::Metallic,
+	TextureType::Roughness,
+	TextureType::AmbientOcclusion,
+};
+
+Material::Material()
+{
+	albedo = Texture::placeholderAlbedo;
+	normal = Texture::placeholderNormal;
+	metallic = Texture::placeholderMetallic;
+	roughness = Texture::placeholderRoughness;
+	ambientOcclusion = Texture::placeholderAmbientOcclusion;
+}
+
+Material::Material(Texture* al, Texture* no, Texture* me, Texture* ro, Texture* ao) : albedo(al), normal(no), metallic(me), roughness(ro), ambientOcclusion(ao)
+{
+
+}
 
 Material Material::Create(const MaterialCreateInfo& createInfo)
 {
@@ -64,16 +88,16 @@ Texture* Material::operator[](size_t i)
 	}
 }
 
-Texture* Material::operator[](MaterialTexture materialTexture)
+Texture* Material::operator[](TextureType materialTexture)
 {
 	switch (materialTexture)
 	{
-	case MATERIAL_TEXTURE_ALBEDO:            return albedo;
-	case MATERIAL_TEXTURE_NORMAL:            return normal;
-	case MATERIAL_TEXTURE_METALLIC:          return metallic;
-	case MATERIAL_TEXTURE_ROUGHNESS:         return roughness;
-	case MATERIAL_TEXTURE_AMBIENT_OCCLUSION: return ambientOcclusion;
-	default:                                 return albedo; // not returning nullptr because that could crash the program
+	case TextureType::Albedo:           return albedo;
+	case TextureType::Normal:           return normal;
+	case TextureType::Metallic:         return metallic;
+	case TextureType::Roughness:        return roughness;
+	case TextureType::AmbientOcclusion: return ambientOcclusion;
+	default:                            return albedo;
 	}
 }
 
@@ -118,6 +142,16 @@ void Material::RemoveReference()
 	referenceCount--;
 	if (referenceCount <= 0)
 		Destroy();
+}
+
+int Material::GetReferenceCount() const
+{
+	return referenceCount;
+}
+
+void Material::OverrideReferenceCount(int val)
+{ 
+	referenceCount = val;
 }
 
 bool operator==(const Material& lMaterial, const Material& rMaterial)
