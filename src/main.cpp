@@ -42,11 +42,6 @@ int main(int argc, char** argv)
 
 	instance->Run();
 
-	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
-	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
-	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_FILE);
-	_CrtSetReportFile(_CRT_ERROR, _CRTDBG_FILE_STDOUT);
-
 	return EXIT_SUCCESS;
 }
 

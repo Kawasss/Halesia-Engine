@@ -47,6 +47,7 @@ public:
 private:
 	glm::mat4 prevView;
 	glm::mat4 prevProj;
+	glm::vec3 prevPos;
 	void* attachedScript = nullptr;
 	
 	float nearPlane = 0.01f, farPlane = 1000, aspectRatio = Window::GetMonitorWidth() / (float)Window::GetMonitorHeight();
