@@ -120,16 +120,26 @@ void Camera::UpdateVelocityMatrices()
 	prevPos = position;
 }
 
-glm::vec2 Camera::GetMotionVector() const
+glm::vec2 Camera::GetMotionVector() const // deprecated
 {
 	glm::vec4 curr = GetProjectionMatrix() * GetViewMatrix() * glm::vec4(position, 1);
-	glm::vec4 prev = prevProj * prevView * glm::vec4(prevPos, 1);
+	glm::vec4 prev = prevProj * prevView * glm::vec4(position, 1);
 
 	glm::vec2 diff = glm::vec2(curr) / (curr.w + 0.001f) - glm::vec2(prev) / (prev.w + 0.001f);
 	if (diff != diff) // check for NaN
 		diff = glm::vec2(0);
 
 	return diff;
+}
+
+glm::mat4 Camera::GetPreviousViewMatrix() const
+{
+	return prevView;
+}
+
+glm::mat4 Camera::GetPreviousProjectionMatrix() const
+{
+	return prevProj;
 }
 
 // orbit camera

@@ -9,17 +9,20 @@ layout (location = 0) out vec3 position;
 layout (location = 1) out vec3 normal;
 layout (location = 2) out vec2 texCoords;
 layout (location = 3) out vec3 camPos;
+layout (location = 4) out vec4 prevPosition;
+layout (location = 5) out vec4 currPosition;
 
 layout(set = 0, binding = 0) uniform sceneInfo {
     vec3 camPos;
     mat4 view;
     mat4 proj;
+    mat4 prevView;
+    mat4 prevProj;
 } ubo;
 
 layout(push_constant) uniform constant
 {
     mat4 model;
-    vec2 velocity;
     int materialID;
 } Constant;
 
@@ -30,5 +33,7 @@ void main()
     texCoords = inTexCoords;
     camPos = ubo.camPos;
 
-    gl_Position = ubo.proj * ubo.view * vec4(position, 1);
+    prevPosition = ubo.prevProj * ubo.prevView * vec4(position, 1.0);
+    currPosition = ubo.proj * ubo.view * vec4(position, 1.0);
+    gl_Position = currPosition;
 }

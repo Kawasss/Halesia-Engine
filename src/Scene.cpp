@@ -82,8 +82,8 @@ void Scene::Free(Object* pObject)
 
 void Scene::UpdateCamera(Window* pWindow, float delta)
 {
-	camera->Update(pWindow, delta);
 	camera->UpdateVelocityMatrices();
+	camera->Update(pWindow, delta);
 }
 
 void Scene::UpdateScripts(float delta)

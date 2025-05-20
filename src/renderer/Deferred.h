@@ -49,6 +49,8 @@ private:
 		glm::vec4 camPos;
 		glm::mat4 view;
 		glm::mat4 proj;
+		glm::mat4 prevView;
+		glm::mat4 prevProj;
 	};
 
 	void UpdateTextureBuffer();

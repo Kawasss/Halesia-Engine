@@ -3,6 +3,8 @@ layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 texCoords;
 layout (location = 3) in vec3 camPos;
+layout (location = 4) in vec4 prevPosition;
+layout (location = 5) in vec4 currPosition;
 
 layout (location = 0) out vec4 positionColor;
 layout (location = 1) out vec4 albedoColor;
@@ -13,7 +15,6 @@ layout (location = 4) out vec4 velocityColor;
 layout(push_constant) uniform constant
 {
     mat4 model;
-    vec2 velocity;
     int materialID;
 } Constant;
 
@@ -46,7 +47,10 @@ void main()
     positionColor = vec4(position, 1.0);
     normalColor   = vec4(GetNormalFromMap(), 1.0);
 
-    velocityColor = vec4(Constant.velocity, 0.0, 1.0);
+    vec2 prevClip = prevPosition.xy / prevPosition.w;
+    vec2 currClip = currPosition.xy / currPosition.w;
+
+    velocityColor = vec4(currClip - prevClip, 0.0, 1.0);
 
     metallicRoughnessAOColor.r = texture(textures[Constant.materialID * 5 + 2], texCoords).r;
     metallicRoughnessAOColor.g = texture(textures[Constant.materialID * 5 + 3], texCoords).g;

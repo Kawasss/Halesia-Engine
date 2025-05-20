@@ -18,7 +18,6 @@
 struct DeferredPipeline::PushConstant
 {
 	glm::mat4 model;
-	glm::vec2 velocity;
 	int materialID;
 };
 
@@ -706,7 +705,6 @@ void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, cons
 		glm::mat4 model = obj->transform.GetModelMatrix();
 
 		pushConstant.model = model;
-		pushConstant.velocity = payload.camera->GetMotionVector(); // only for static objects, otherwise: obj->transform.GetMotionVector(proj, view, model);
 		pushConstant.materialID = obj->mesh.GetMaterialIndex();
 
 		firstPipeline->PushConstant(cmdBuffer, pushConstant, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -849,8 +847,10 @@ void DeferredPipeline::UpdateUBO(Camera* cam)
 	UBO* ubo = uboBuffer.GetMappedPointer<UBO>();
 
 	ubo->camPos = glm::vec4(cam->position, 1.0f);
-	ubo->proj = cam->GetProjectionMatrix();
 	ubo->view = cam->GetViewMatrix();
+	ubo->proj = cam->GetProjectionMatrix();
+	ubo->prevView = cam->GetPreviousViewMatrix();
+	ubo->prevProj = cam->GetPreviousProjectionMatrix();
 }
 
 uint32_t DeferredPipeline::GetRTGIWidth() const

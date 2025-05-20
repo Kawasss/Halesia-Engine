@@ -34,6 +34,9 @@ public:
 	glm::mat4 GetViewMatrix() const;
 	glm::vec2 GetMotionVector() const;
 
+	glm::mat4 GetPreviousViewMatrix() const;
+	glm::mat4 GetPreviousProjectionMatrix() const;
+
 	void UpdateVelocityMatrices();
 
 	template<typename T> T* GetScript() const;
