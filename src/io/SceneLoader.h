@@ -57,8 +57,10 @@ private:
 	int unnamedObjectCount = 0; // used for creating uniques names for unnamed objects
 };
 
-namespace GenericLoader
+namespace assetImport
 {
 	glm::vec3 LoadHitBox(std::string path);
 	ObjectCreationData LoadObjectFile(std::string path);
+
+	MeshCreationData LoadFirstMesh(const std::string& file);
 }

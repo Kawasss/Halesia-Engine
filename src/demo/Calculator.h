@@ -259,7 +259,7 @@ class CalculatorScene : public Scene
 		MaterialCreateInfo lampInfo{};
 		lampInfo.isLight = true;
 		
-		Object* lamp = AddObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		Object* lamp = AddObject(assetImport::LoadObjectFile("stdObj/cube.obj"));
 		Material lampMat = Material::Create(lampInfo);
 		lampMat.AwaitGeneration();
 		lamp->mesh.SetMaterial(lampMat);

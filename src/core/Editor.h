@@ -42,6 +42,12 @@ private:
 		std::string path;
 	};
 
+	struct ObjectSelectionData
+	{
+		Object* parent = nullptr;
+		bool show = false;
+	};
+
 	void ShowUI();
 	void ShowMenuBar();
 	void ShowSideBars();
@@ -72,20 +78,19 @@ private:
 
 	void QueueMeshChange(Object* object);
 
-	void UIFree(Object* obj);
-
+	bool inSelectPopup = false;
 	bool addObject = false;
 	bool loadFile = false;
 	bool save = false;
 	bool showUI = true;
-
-	bool inAddObjectWindow = false;
+	
+	int mouseX = 0;
+	int mouseY = 0;
 
 	std::string src;
 
-	std::vector<Object*> UIObjects; // the objects in the UI are seperate from the actual objects, because UpdateGUI and Update run at the same time and can clash
-
-	MeshChangeData queuedMeshChange;
+	MeshChangeData queuedMeshChange{};
+	ObjectSelectionData selectionData{};
 	GizmoMode gizmoMode;
 	Object* selectedObj;
 

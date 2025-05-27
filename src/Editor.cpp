@@ -34,6 +34,8 @@ constexpr float LOWER_BAR_HEIGHT = 0.2f;
 constexpr float VIEWPORT_WIDTH = 1.0f - BAR_WIDTH * 2.0f;
 constexpr float VIEWPORT_HEIGHT = 1.0f - LOWER_BAR_HEIGHT;
 
+constexpr std::string_view SUPPORTED_MESH_FILES = "*.obj;*.glb;*.fbx;";
+
 void EditorCamera::Update(Window* window, float delta)
 {
 	int viewportWidth  = window->GetWidth()  * VIEWPORT_WIDTH;
@@ -87,22 +89,11 @@ void Editor::Update(float delta)
 		addObject = false;
 	}
 
-	if (allObjects.empty())
-	{
-		UIObjects.clear();
-		return;
-	}
-		
 	if (Input::IsKeyJustPressed(VirtualKey::Backspace) && selectedObj != nullptr)
 	{
 		Object::Free(selectedObj);
 		selectedObj = nullptr;
 	}
-
-	if (UIObjects.size() != allObjects.size())
-		UIObjects.resize(allObjects.size());
-
-	memcpy(UIObjects.data(), allObjects.data(), sizeof(Object*) * allObjects.size());
 }
 
 void Editor::UpdateGUI(float delta)
@@ -155,7 +146,7 @@ void Editor::MainThreadUpdate(float delta)
 	}
 
 	if (!queuedMeshChange.isApplied)
-		queuedMeshChange.path = GetFile("Object file (.obj)", "*.obj;");
+		queuedMeshChange.path = GetFile("Mesh file", SUPPORTED_MESH_FILES.data());
 	else return;
 
 	if (queuedMeshChange.path.empty())
@@ -166,7 +157,7 @@ void Editor::MainThreadUpdate(float delta)
 
 	Object* obj = queuedMeshChange.object;
 	
-	ObjectCreationData creationData = GenericLoader::LoadObjectFile(queuedMeshChange.path);
+	MeshCreationData creationData = assetImport::LoadFirstMesh(queuedMeshChange.path);
 
 	if (obj->IsType(Object::InheritType::Mesh))
 	{
@@ -175,7 +166,7 @@ void Editor::MainThreadUpdate(float delta)
 		uint32_t matIndex = ptr->mesh.GetMaterialIndex();
 
 		ptr->mesh.Destroy();
-		ptr->mesh.Create(creationData.mesh);
+		ptr->mesh.Create(creationData);
 		ptr->mesh.SetMaterial(Mesh::materials[matIndex]);
 	}
 
@@ -200,7 +191,7 @@ void Editor::ShowDefaultRightClick()
 	if (!ImGui::BeginPopupContextVoid("##default_right_click"))
 		return;
 
-	inAddObjectWindow = inAddObjectWindow || ImGui::MenuItem("Add object");
+	selectionData.show = selectionData.show || ImGui::MenuItem("Add object");
 
 	ImGui::SeparatorText("Gizmo");
 
@@ -229,7 +220,7 @@ void Editor::ShowUI()
 
 		ShowSideBars();
 
-		if (inAddObjectWindow)
+		if (selectionData.show)
 			ShowAddObjectWindow();
 	}
 
@@ -256,13 +247,14 @@ void Editor::ShowSideBars()
 	ImGui::Begin("scene graph", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 	ImGui::BeginChild(1);
 
-	for (int i = 0; i < UIObjects.size(); i++)
+	inSelectPopup = false;
+	for (int i = 0; i < allObjects.size(); i++)
 	{
-		ShowObjectWithChildren(UIObjects[i]);
+		ShowObjectWithChildren(allObjects[i]);
 	}
 	ImGui::EndChild();
 	ImGui::End();
-
+	
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
 }
@@ -271,22 +263,7 @@ void Editor::ShowObjectWithChildren(Object* object)
 {
 	std::string rightClickName = "##r_" + std::to_string((uint64_t)object);
 
-	/*if (ImGui::BeginPopupContextItem(rightClickName.c_str(), ImGuiPopupFlags_MouseButtonRight))
-	{
-		std::string duplicateID = "Duplicate##" + object->name;
-		std::string deleteID = "Delete##" + object->name;
-		if (ImGui::MenuItem(duplicateID.c_str()))
-		{
-			DuplicateObject(object, "Duplicated object");
-		}
-		if (ImGui::MenuItem(deleteID.c_str()))
-		{
-			UIFree(object);
-			ImGui::EndPopup();
-			return;
-		}
-		ImGui::EndPopup();
-	}*/
+	ImVec2 first = ImGui::GetWindowPos() + ImGui::GetCursorPos();
 
 	std::string nodeName = "##n_" + object->name;
 	bool success = false; // default state is that the object has no children
@@ -298,6 +275,31 @@ void Editor::ShowObjectWithChildren(Object* object)
 
 	if (ImGui::Selectable(object->name.c_str()))
 		selectedObj = object;
+	
+	ImVec2 end = ImGui::GetWindowPos() + ImGui::GetCursorPos() + ImVec2(ImGui::GetWindowWidth(), 0.0f);
+	ImVec2 mousePos = ImGui::GetMousePos();
+
+	if (!inSelectPopup && !selectionData.show && first.x <= mousePos.x && mousePos.x <= end.x && first.y <= mousePos.y && mousePos.y <= end.y)
+	{
+		if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoReopen))
+		{
+			inSelectPopup = true;
+			if (ImGui::MenuItem("add object"))
+			{
+				selectionData.parent = object;
+				selectionData.show = true;
+			}
+
+			if (ImGui::MenuItem("delete"))
+			{
+				Free(object);
+				ImGui::EndPopup();
+				return;
+			}
+
+			ImGui::EndPopup();
+		}
+	}
 
 	if (!success)
 		return;
@@ -355,20 +357,6 @@ void Editor::ShowMaterialWindow()
 	ImGui::End();
 }
 
-void Editor::UIFree(Object* obj)
-{
-	// first, remove all references to the object inside the editor
-	if (obj == selectedObj)
-		selectedObj = nullptr;
-
-	auto it = std::find(UIObjects.begin(), UIObjects.end(), obj);
-	if (it != UIObjects.end())
-		UIObjects.erase(it);
-
-	// then, let the engine take care of removing the object from its structures
-	Free(obj);
-}
-
 void Editor::ShowMenuBar() // add renderer variables here like taa sample count
 {
 	HalesiaEngine* engine = HalesiaEngine::GetInstance();
@@ -386,7 +374,7 @@ void Editor::ShowMenuBar() // add renderer variables here like taa sample count
 		if (ImGui::MenuItem("Load object"))
 		{
 			std::string file = GetFile("Object file", "*.obj;");
-			ObjectCreationData data = GenericLoader::LoadObjectFile(file);
+			ObjectCreationData data = assetImport::LoadObjectFile(file);
 
 			AddObject(data);
 		}
@@ -421,7 +409,7 @@ void Editor::ShowMenuBar() // add renderer variables here like taa sample count
 	}
 	if (ImGui::BeginMenu("Add"))
 	{
-		if (ImGui::MenuItem("Object")) inAddObjectWindow = true;
+		if (ImGui::MenuItem("Object")) selectionData.show = true;
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("misc."))
@@ -672,9 +660,9 @@ void Editor::ShowAddObjectWindow()
 
 		ObjectCreationData data{};
 		data.type = static_cast<ObjectCreationData::Type>(type); // should always convert correctly
-		AddObject(data);
+		AddObject(data, selectionData.parent);
 
-		inAddObjectWindow = false;
+		selectionData.show = false;
 	}
 
 	ImGui::End();
@@ -739,7 +727,7 @@ void Editor::DestroyCurrentScene()
 
 	for (int i = 1; i < Mesh::materials.size(); i++)
 		Mesh::materials[i].Destroy();
-	Mesh::materials.clear();
+	Mesh::materials.resize(1);
 }
 
 void Editor::LoadFile()

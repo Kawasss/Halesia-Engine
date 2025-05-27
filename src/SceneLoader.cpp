@@ -362,7 +362,7 @@ ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNod
 	return creationData;
 }
 
-ObjectCreationData GenericLoader::LoadObjectFile(std::string path) // kinda funky now, maybe make the funcion return multiple objects instead of one
+ObjectCreationData assetImport::LoadObjectFile(std::string path) // kinda funky now, maybe make the funcion return multiple objects instead of one
 {
 	ObjectCreationData ret{};
 
@@ -386,7 +386,7 @@ ObjectCreationData GenericLoader::LoadObjectFile(std::string path) // kinda funk
 	return ret;
 }
 
-glm::vec3 GenericLoader::LoadHitBox(std::string path)
+glm::vec3 assetImport::LoadHitBox(std::string path)
 {
 	const aiScene* scene = aiImportFile(path.c_str(), aiProcessPreset_TargetRealtime_Fast);
 
@@ -395,4 +395,14 @@ glm::vec3 GenericLoader::LoadHitBox(std::string path)
 	if (scene->mNumMeshes <= 0)
 		throw std::runtime_error("Cannot get the hitbox from a file: there are no meshes to get data from");
 	return GetExtentsFromMesh(scene->mMeshes[0]);
+}
+
+MeshCreationData assetImport::LoadFirstMesh(const std::string& file)
+{
+	const aiScene* scene = aiImportFile(file.c_str(), aiProcessPreset_TargetRealtime_Fast | aiPostProcessSteps::aiProcess_OptimizeMeshes);
+
+	if (scene == nullptr || scene->mNumMeshes <= 0)
+		return {};
+
+	return GetMeshFromAssimp(scene->mMeshes[0]);
 }

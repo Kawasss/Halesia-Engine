@@ -249,14 +249,14 @@ class Topdown : public Scene
 	{
 		camera = AddCustomCamera<FollowCam>();
 
-		Object* ship = AddObject<Ship>(GenericLoader::LoadObjectFile("stdObj/ship.obj"));
+		Object* ship = AddObject<Ship>(assetImport::LoadObjectFile("stdObj/ship.obj"));
 		ship->name = "ship";
 		ship->AwaitGeneration();
 		Shape shape = Box(ship->mesh.extents);
 		//ship->AddRigidBody(RIGID_BODY_KINEMATIC, shape);
 		camera->GetScript<FollowCam>()->objToFollow = ship;
 
-		Object* floor = AddObject(GenericLoader::LoadObjectFile("stdObj/cube.obj"));
+		Object* floor = AddObject(assetImport::LoadObjectFile("stdObj/cube.obj"));
 		floor->AwaitGeneration();
 		floor->name = "floor";
 		floor->transform.scale = glm::vec3(20, 1, 20);
@@ -293,7 +293,7 @@ class Topdown : public Scene
 		bulletInfo.isLight = true;
 		Material bulletMat = Material::Create(bulletInfo);
 
-		baseBullet = AddObject<Bullet>(GenericLoader::LoadObjectFile("stdObj/bullet.obj"));
+		baseBullet = AddObject<Bullet>(assetImport::LoadObjectFile("stdObj/bullet.obj"));
 		baseBullet->name = "bullet";
 		baseBullet->SetRigidBody(RigidBody::Type::Kinematic, Box(baseBullet->mesh.extents));
 		baseBullet->state = OBJECT_STATE_DISABLED;

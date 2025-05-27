@@ -53,7 +53,7 @@ void FileStreamer::GetTime()
 
 ObjectStreamer::ObjectStreamer(Scene* scene, std::string path) : FileStreamer(path)
 {
-	ObjectCreationData creationData = GenericLoader::LoadObjectFile(path);
+	ObjectCreationData creationData = assetImport::LoadObjectFile(path);
 	obj = scene->AddObject(creationData); // only static objects!
 }
 
@@ -64,6 +64,6 @@ void ObjectStreamer::Poll()
 
 void ObjectStreamer::OnChange()
 {
-	ObjectCreationData data = GenericLoader::LoadObjectFile(path);
+	ObjectCreationData data = assetImport::LoadObjectFile(path);
 	obj->Initialize(data); // memory leak..?
 }
