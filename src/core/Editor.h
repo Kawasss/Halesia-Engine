@@ -78,6 +78,8 @@ private:
 
 	void QueueMeshChange(Object* object);
 
+	void UIFree(Object* pObject);
+
 	bool inSelectPopup = false;
 	bool addObject = false;
 	bool loadFile = false;
@@ -92,7 +94,8 @@ private:
 	MeshChangeData queuedMeshChange{};
 	ObjectSelectionData selectionData{};
 	GizmoMode gizmoMode;
-	Object* selectedObj;
+	Object* selectedObj = nullptr;
+	Object* rightClickedObj = nullptr;
 
 	Renderer* renderer;
 

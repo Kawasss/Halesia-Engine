@@ -91,8 +91,7 @@ void Editor::Update(float delta)
 
 	if (Input::IsKeyJustPressed(VirtualKey::Backspace) && selectedObj != nullptr)
 	{
-		Object::Free(selectedObj);
-		selectedObj = nullptr;
+		UIFree(selectedObj);
 	}
 }
 
@@ -118,6 +117,7 @@ void Editor::ShowGizmo()
 	}
 
 	Object* obj = selectedObj;
+
 	if (obj == nullptr)
 		return;
 
@@ -247,14 +247,13 @@ void Editor::ShowSideBars()
 	ImGui::Begin("scene graph", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 	ImGui::BeginChild(1);
 
-	inSelectPopup = false;
 	for (int i = 0; i < allObjects.size(); i++)
 	{
 		ShowObjectWithChildren(allObjects[i]);
 	}
 	ImGui::EndChild();
 	ImGui::End();
-	
+
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
 }
@@ -279,26 +278,23 @@ void Editor::ShowObjectWithChildren(Object* object)
 	ImVec2 end = ImGui::GetWindowPos() + ImGui::GetCursorPos() + ImVec2(ImGui::GetWindowWidth(), 0.0f);
 	ImVec2 mousePos = ImGui::GetMousePos();
 
-	if (!inSelectPopup && !selectionData.show && first.x <= mousePos.x && mousePos.x <= end.x && first.y <= mousePos.y && mousePos.y <= end.y)
+	if (ImGui::BeginPopupContextItem(nodeName.c_str(), ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoReopen))
 	{
-		if (ImGui::BeginPopupContextWindow(nullptr, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoReopen))
+		inSelectPopup = true;
+		if (ImGui::MenuItem("add object"))
 		{
-			inSelectPopup = true;
-			if (ImGui::MenuItem("add object"))
-			{
-				selectionData.parent = object;
-				selectionData.show = true;
-			}
-
-			if (ImGui::MenuItem("delete"))
-			{
-				Free(object);
-				ImGui::EndPopup();
-				return;
-			}
-
-			ImGui::EndPopup();
+			selectionData.parent = object;
+			selectionData.show = true;
 		}
+
+		if (ImGui::MenuItem("delete"))
+		{
+			UIFree(object);
+			ImGui::EndPopup();
+			return;
+		}
+
+		ImGui::EndPopup();
 	}
 
 	if (!success)
@@ -754,4 +750,15 @@ std::string Editor::GetFile(const char* desc, const char* type)
 	filter.fileType = type;
 	
 	return FileDialog::RequestFile(filter);
+}
+
+void Editor::UIFree(Object* pObject)
+{
+	if (selectedObj == pObject)
+		selectedObj = nullptr;
+
+	if (rightClickedObj == pObject)
+		rightClickedObj = nullptr;
+
+	Free(pObject);
 }
