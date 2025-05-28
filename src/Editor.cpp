@@ -297,6 +297,7 @@ void Editor::ShowObjectWithChildren(Object* object)
 		{
 			UIFree(object);
 			ImGui::EndPopup();
+			ImGui::TreePop();
 			return;
 		}
 
@@ -305,7 +306,7 @@ void Editor::ShowObjectWithChildren(Object* object)
 
 	if (!success)
 		return;
-	
+
 	const std::vector<Object*>& children = object->GetChildren();
 	for (Object* child : children)
 	{
