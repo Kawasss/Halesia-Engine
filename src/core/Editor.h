@@ -96,6 +96,7 @@ private:
 	GizmoMode gizmoMode;
 	Object* selectedObj = nullptr;
 	Object* rightClickedObj = nullptr;
+	Object* pObjectToCopy = nullptr;
 
 	Renderer* renderer;
 

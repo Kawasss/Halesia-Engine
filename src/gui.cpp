@@ -174,7 +174,7 @@ void GUI::ShowObjectMeshes(Mesh& mesh)
 		"face count: %i\n\n"
 		"center:     %.2f, %.2f, %.2f\n"
 		"extents:    %.2f, %.2f, %.2f\n",
-	mesh.vertexMemory, mesh.defaultVertexMemory, mesh.indexMemory, (uint64_t)mesh.BLAS.Get(), mesh.faceCount, mesh.center.x, mesh.center.y, mesh.center.z, mesh.extents.x, mesh.extents.y, mesh.extents.z);
+	mesh.vertexMemory, mesh.defaultVertexMemory, mesh.indexMemory, (uint64_t)mesh.BLAS.get(), mesh.faceCount, mesh.center.x, mesh.center.y, mesh.center.z, mesh.extents.x, mesh.extents.y, mesh.extents.z);
 
 	int index = static_cast<int>(mesh.GetMaterialIndex());
 
@@ -209,9 +209,10 @@ void GUI::ShowObjectData(Object* object)
 	(
 		"Handle:  %I64u\n"
 		"Script:  %I64u\n"
+		"Type:    %s\n"
 		"\n"
 		"loading: %i\n"
-	, object->handle, object->GetScript<Object*>(), !object->FinishedLoading());
+	, object->handle, object->GetScript<Object*>(), Object::InheritTypeToString(object->GetType()).data(), !object->FinishedLoading());
 }
 
 void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* window, int index)

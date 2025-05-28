@@ -87,7 +87,7 @@ public:
 
 	void TransferChild(Object* child, Object* destination); // this removes the child from this objects children and adds to the destinations children
 
-	static void Duplicate(Object* oldObjPtr, Object* newObjPtr, std::string name, void* script); // does not duplicate children
+	Object* CreateShallowCopy() const; // creates a copy of the object and assigns it to the same parent, but does not copy its children (also registers it to the scene)
 
 	void SetParentScene(Scene* parent) { scene = parent; }
 
@@ -129,7 +129,7 @@ private:
 	win32::CriticalSection critSection;
 	std::vector<Object*> children;
 
-	bool finishedLoading = false;
+	bool finishedLoading = true;
 	bool shouldBeDestroyed = false;
 
 protected:

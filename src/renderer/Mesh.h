@@ -1,6 +1,6 @@
 #pragma once
 #include <mutex>
-#include <hsl/Reference.h>
+#include <memory>
 
 #include "Material.h"
 #include "Vertex.h"
@@ -30,7 +30,7 @@ struct Mesh
 	StorageMemory indexMemory;
 	StorageMemory defaultVertexMemory;
 
-	hsl::Reference<BottomLevelAccelerationStructure> BLAS;
+	std::shared_ptr<BottomLevelAccelerationStructure> BLAS;
 
 	std::vector<Vertex> vertices;
 	std::vector<uint16_t> indices;

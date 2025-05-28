@@ -56,7 +56,7 @@ void Mesh::Recreate()
 	defaultVertexMemory = Renderer::g_defaultVertexBuffer.SubmitNewData(vertices);
 
 	if (Renderer::canRayTrace)
-		BLAS = hsl::Reference<BottomLevelAccelerationStructure>::Create(*this);
+		BLAS = std::make_shared<BottomLevelAccelerationStructure>(*this);
 }
 
 void Mesh::CopyFrom(const Mesh& mesh)
@@ -66,12 +66,21 @@ void Mesh::CopyFrom(const Mesh& mesh)
 
 	BLAS = mesh.BLAS;
 
+	faceCount = mesh.faceCount;
+
+	min = mesh.min;
+	max = mesh.max;	
+	center = mesh.center;
+	extents = mesh.extents;
+
+	finished = true;
+
 	if (vertices.empty() || indices.empty())
 		return;
 
-	vertexMemory = Renderer::g_vertexBuffer.SubmitNewData(vertices);
-	indexMemory = Renderer::g_indexBuffer.SubmitNewData(indices);
-	defaultVertexMemory = Renderer::g_defaultVertexBuffer.SubmitNewData(vertices);
+	vertexMemory = mesh.vertexMemory;
+	indexMemory = mesh.indexMemory;
+	defaultVertexMemory = mesh.defaultVertexMemory;
 }
 
 void Mesh::ResetMaterial()

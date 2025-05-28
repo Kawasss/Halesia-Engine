@@ -66,13 +66,13 @@ static void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberTo
 	 return pObject;
  }
 
- Object* Scene::DuplicateObject(Object* pObject, std::string name) // unsafe !!
+ Object* Scene::DuplicateObject(Object* pObject, std::string name)
  {
-	 Object* newPtr = new Object(pObject->GetType());
-	 Object::Duplicate(pObject, newPtr, name, nullptr);
-	 RegisterObjectPointer(newPtr, pObject->GetParent());
+	 Object* pCopy = pObject->CreateShallowCopy();
+	 pCopy->name = name;
 
-	 return newPtr;
+	 RegisterObjectPointer(pCopy, pObject->GetParent());
+	 return pCopy;
  }
 
 void Scene::Free(Object* pObject)

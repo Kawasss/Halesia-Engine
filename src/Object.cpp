@@ -3,6 +3,7 @@
 
 #include "core/Object.h"
 #include "core/Console.h"
+#include "core/Scene.h"
 
 #include "io/CreationData.h"
 
@@ -84,15 +85,17 @@ void Object::TransferChild(Object* child, Object* destination)
 	child->parent = destination;
 }
 
-void Object::Duplicate(Object* pOldObject, Object* pNewObject, std::string name, void* script)
+Object* Object::CreateShallowCopy() const
 {
-	assert(pOldObject->GetType() == pNewObject->GetType());
+	ObjectCreationData creationData{};
+	creationData.type = static_cast<ObjectCreationData::Type>(type);
 
-	pOldObject->DuplicateBaseDataTo(pNewObject);
-	pOldObject->DuplicateDataTo(pNewObject);
+	Object* pCopy = scene->AddObject(creationData, parent);
 
-	pNewObject->Start();
-	Console::WriteLine("Duplicated object \"" + name + "\" from object \"" + pNewObject->name + "\" with" + (script == nullptr ? "out a script" : " a script"), Console::Severity::Debug);
+	DuplicateBaseDataTo(pCopy);
+	DuplicateDataTo(pCopy);
+
+	return pCopy;
 }
 
 void Object::DuplicateDataTo(Object* pObject) const
@@ -102,8 +105,10 @@ void Object::DuplicateDataTo(Object* pObject) const
 
 void Object::DuplicateBaseDataTo(Object* pObject) const
 {
+	pObject->type = type;
 	pObject->transform = transform;
-	pObject->name = name;
+	pObject->name = name + "_copy";
+	pObject->state = state;
 	pObject->finishedLoading = true;
 	pObject->scriptClass = nullptr;
 	pObject->handle = ResourceManager::GenerateHandle();
