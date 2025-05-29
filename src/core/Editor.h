@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <map>
 
 #include "Scene.h"
 #include "Camera.h"
@@ -8,7 +9,10 @@ class Window;
 class Renderer;
 class RigidBody;
 class LightObject;
+struct MaterialCreateInfo;
 struct Mesh;
+
+using Handle = uint64_t;
 
 class EditorCamera : public Camera
 {
@@ -48,6 +52,18 @@ private:
 		bool show = false;
 	};
 
+	struct AdditionalMaterialData
+	{
+		AdditionalMaterialData() = default;
+		AdditionalMaterialData(const MaterialCreateInfo& createInfo);
+
+		std::string albedoSource = "d_albedo";
+		std::string normalSource = "d_normal";
+		std::string metallicSource = "d_metallic";
+		std::string roughnessSource = "d_roughness";
+		std::string ambOcclSource = "d_amb_occl";
+	};
+
 	void ShowUI();
 	void ShowMenuBar();
 	void ShowSideBars();
@@ -55,8 +71,8 @@ private:
 	void ShowObjectComponents();
 	void ShowSelectedObject();
 	void ShowDefaultRightClick();
-	void ShowMaterialWindow();
 	void ShowRenderPipelines();
+	void ShowMaterials();
 
 	void StartRightBar();
 	void EndRightBar();
@@ -80,6 +96,7 @@ private:
 
 	void UIFree(Object* pObject);
 
+	bool showMaterialCreateWindow = false;
 	bool inSelectPopup = false;
 	bool addObject = false;
 	bool loadFile = false;
@@ -90,6 +107,8 @@ private:
 	int mouseY = 0;
 
 	std::string src;
+
+	std::map<Handle, AdditionalMaterialData> materialToData;
 
 	MeshChangeData queuedMeshChange{};
 	ObjectSelectionData selectionData{};

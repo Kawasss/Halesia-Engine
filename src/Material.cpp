@@ -75,7 +75,22 @@ Material Material::Create(const MaterialCreationData& createInfo)
 	return ret;
 }
 
-Texture* Material::operator[](size_t i)
+const Texture* Material::operator[](size_t i) const
+{
+	return GetTexture(i);
+}
+
+const Texture* Material::operator[](TextureType materialTexture) const
+{
+	return this->operator[](static_cast<size_t>(materialTexture));
+}
+
+Texture*& Material::GetTexture(size_t i)
+{
+	return GetTexture(i);
+}
+
+const Texture* const& Material::GetTexture(size_t i) const
 {
 	switch (i)
 	{
@@ -85,19 +100,6 @@ Texture* Material::operator[](size_t i)
 	case 3:  return roughness;
 	case 4:  return ambientOcclusion;
 	default: return albedo;
-	}
-}
-
-Texture* Material::operator[](TextureType materialTexture)
-{
-	switch (materialTexture)
-	{
-	case TextureType::Albedo:           return albedo;
-	case TextureType::Normal:           return normal;
-	case TextureType::Metallic:         return metallic;
-	case TextureType::Roughness:        return roughness;
-	case TextureType::AmbientOcclusion: return ambientOcclusion;
-	default:                            return albedo;
 	}
 }
 

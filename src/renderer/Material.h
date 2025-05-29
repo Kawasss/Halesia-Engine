@@ -9,11 +9,11 @@ using Handle = uint64_t;
 
 enum class TextureType
 {
-	Albedo,
-	Normal,
-	Metallic,
-	Roughness,
-	AmbientOcclusion,
+	Albedo = 0,
+	Normal = 1,
+	Metallic = 2,
+	Roughness = 3,
+	AmbientOcclusion = 4,
 };
 
 struct MaterialCreateInfo
@@ -47,8 +47,8 @@ struct Material
 	int GetReferenceCount() const;
 	void OverrideReferenceCount(int val); // should only be called by the renderer itself
 
-	Texture* operator[](size_t i);
-	Texture* operator[](TextureType materialTexture);
+	const Texture* operator[](size_t i) const;
+	const Texture* operator[](TextureType materialTexture) const;
 
 	Handle handle = 0;
 
@@ -62,6 +62,9 @@ struct Material
 	bool isLight = false;
 	
 private:
+	const Texture* const& GetTexture(size_t i) const;
+	Texture*& GetTexture(size_t i);
+
 	int referenceCount = 0;
 };
 

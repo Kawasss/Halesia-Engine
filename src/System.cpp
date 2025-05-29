@@ -1,4 +1,6 @@
 #include <Windows.h>
+#include <shellapi.h>
+#include <filesystem>
 
 #include "system/System.h"
 
@@ -32,6 +34,15 @@ namespace sys
 
 		::CloseHandle(procInfo.hProcess);
 		::CloseHandle(procInfo.hThread);
+		return true;
+	}
+
+	bool OpenFile(const std::string_view& file)
+	{
+		if (!std::filesystem::exists(file))
+			return false;
+
+		ShellExecuteA(NULL, NULL, file.data(), 0, 0, SW_HIDE);
 		return true;
 	}
 }

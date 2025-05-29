@@ -17,6 +17,7 @@
 
 #include "system/Input.h"
 #include "system/FileDialog.h"
+#include "system/System.h"
 
 #include "HalesiaEngine.h"
 
@@ -215,6 +216,7 @@ void Editor::ShowUI()
 		StartRightBar();
 
 		ShowRenderPipelines();
+		ShowMaterials();
 		ShowSelectedObject();
 
 		EndRightBar();
@@ -228,7 +230,6 @@ void Editor::ShowUI()
 	ShowMenuBar();
 	ShowGizmo();
 	ShowDefaultRightClick();
-	ShowMaterialWindow();
 }
 
 void Editor::ShowSideBars()
@@ -315,49 +316,132 @@ void Editor::ShowObjectWithChildren(Object* object)
 	ImGui::TreePop();
 }
 
-void Editor::ShowMaterialWindow()
+Editor::AdditionalMaterialData::AdditionalMaterialData(const MaterialCreateInfo& createInfo)
+{
+	if (!createInfo.albedo.empty())
+		albedoSource = createInfo.albedo;
+	if (!createInfo.normal.empty())
+		normalSource = createInfo.normal;
+	if (!createInfo.metallic.empty())
+		metallicSource = createInfo.metallic;
+	if (!createInfo.roughness.empty())
+		roughnessSource = createInfo.roughness;
+	if (!createInfo.ambientOcclusion.empty())
+		ambOcclSource = createInfo.ambientOcclusion;
+}
+
+void Editor::ShowMaterials()
 {
 	static MaterialCreateInfo createInfo{};
 
-	ImGui::SetNextWindowSize(ImVec2(-1, -1));
-	ImGui::Begin("Material creator");
+	if (!ImGui::CollapsingHeader("materials"))
+		return;
 
-	ImGui::Text("Albedo:    ");
-	ImGui::SameLine();
-	if (ImGui::Button(createInfo.albedo.empty() ? "Set path ##albedo_path" : createInfo.albedo.c_str()))
-		createInfo.albedo = GetFile("Image file", "*.png;*.jpg;");
+	if (ImGui::Button("Add material"))
+		showMaterialCreateWindow = true;
 
-	ImGui::Text("Normal:    ");
-	ImGui::SameLine();
-	if (ImGui::Button(createInfo.normal.empty() ? "Set path ##normal_path" : createInfo.normal.c_str()))
-		createInfo.normal = GetFile("Image file", "*.png;*.jpg;");
-
-	ImGui::Text("Roughness: ");
-	ImGui::SameLine();
-	if (ImGui::Button(createInfo.roughness.empty() ? "Set path ##roughness_path" : createInfo.roughness.c_str()))
-		createInfo.roughness = GetFile("Image file", "*.png;*.jpg;");
-
-	ImGui::Text("Metallic:  ");
-	ImGui::SameLine();
-	if (ImGui::Button(createInfo.metallic.empty() ? "Set path ##metallic_path" : createInfo.metallic.c_str()))
-		createInfo.metallic = GetFile("Image file", "*.png;*.jpg;");
-
-	ImGui::Text("Amb. occl.:");
-	ImGui::SameLine();
-	if (ImGui::Button(createInfo.ambientOcclusion.empty() ? "Set path ##ambient_occlusion_path" : createInfo.ambientOcclusion.c_str()))
-		createInfo.ambientOcclusion = GetFile("Image file", "*.png;*.jpg;");
-
-	if (ImGui::Button("Create material"))
+	if (showMaterialCreateWindow)
 	{
-		Mesh::AddMaterial(Material::Create(createInfo));
+		ImGui::Text("Albedo:    ");
+		ImGui::SameLine();
+		if (ImGui::Button(createInfo.albedo.empty() ? "Set path ##albedo_path" : createInfo.albedo.c_str()))
+			createInfo.albedo = GetFile("Image file", "*.png;*.jpg;");
 
-		createInfo.albedo.clear();
-		createInfo.normal.clear();
-		createInfo.roughness.clear();
-		createInfo.metallic.clear();
-		createInfo.ambientOcclusion.clear();
+		ImGui::Text("Normal:    ");
+		ImGui::SameLine();
+		if (ImGui::Button(createInfo.normal.empty() ? "Set path ##normal_path" : createInfo.normal.c_str()))
+			createInfo.normal = GetFile("Image file", "*.png;*.jpg;");
+
+		ImGui::Text("Roughness: ");
+		ImGui::SameLine();
+		if (ImGui::Button(createInfo.roughness.empty() ? "Set path ##roughness_path" : createInfo.roughness.c_str()))
+			createInfo.roughness = GetFile("Image file", "*.png;*.jpg;");
+
+		ImGui::Text("Metallic:  ");
+		ImGui::SameLine();
+		if (ImGui::Button(createInfo.metallic.empty() ? "Set path ##metallic_path" : createInfo.metallic.c_str()))
+			createInfo.metallic = GetFile("Image file", "*.png;*.jpg;");
+
+		ImGui::Text("Amb. occl.:");
+		ImGui::SameLine();
+		if (ImGui::Button(createInfo.ambientOcclusion.empty() ? "Set path ##ambient_occlusion_path" : createInfo.ambientOcclusion.c_str()))
+			createInfo.ambientOcclusion = GetFile("Image file", "*.png;*.jpg;");
+		
+		if (ImGui::Button("create material"))
+		{
+			Mesh::AddMaterial(Material::Create(createInfo));
+
+			materialToData[Mesh::materials.back().handle] = AdditionalMaterialData(createInfo);
+
+			createInfo.albedo.clear();
+			createInfo.normal.clear();
+			createInfo.roughness.clear();
+			createInfo.metallic.clear();
+			createInfo.ambientOcclusion.clear();
+
+			showMaterialCreateWindow = false;
+		}
 	}
-	ImGui::End();
+
+	for (const Material& mat : Mesh::materials)
+	{
+		std::string handleString = std::to_string(mat.handle);
+		std::string treeLabel = "material " + handleString;
+		if (!ImGui::TreeNode(treeLabel.c_str()))
+			continue;
+
+		if (materialToData.contains(mat.handle))
+		{
+			AdditionalMaterialData data = materialToData[mat.handle];
+
+			ImGui::Text("albedo:     %s\n", data.albedoSource.c_str());
+			if (data.albedoSource != "d_albedo")
+			{
+				if (ImGui::Button(("open##" + handleString + "_al").c_str()))
+					sys::OpenFile(data.albedoSource);
+			}
+
+			ImGui::Text("normal:     %s\n", data.normalSource.c_str());
+			if (data.normalSource != "d_normal")
+			{
+				if (ImGui::Button(("open##" + handleString + "_no").c_str()))
+					sys::OpenFile(data.normalSource);
+			}
+
+			ImGui::Text("metallic:   %s\n", data.metallicSource.c_str());
+			if (data.metallicSource != "d_metallic")
+			{
+				if (ImGui::Button(("open##" + handleString + "_me").c_str()))
+					sys::OpenFile(data.metallicSource);
+			}
+
+			ImGui::Text("roughness:  %s\n", data.roughnessSource.c_str());
+			if (data.roughnessSource != "d_roughness")
+			{
+				if (ImGui::Button(("open##" + handleString + "_ro").c_str()))
+					sys::OpenFile(data.roughnessSource);
+			}
+
+			ImGui::Text("amb. occl.: %s\n\n", data.ambOcclSource.c_str());
+			if (data.ambOcclSource != "d_amb_occl")
+			{
+				if (ImGui::Button(("open##" + handleString + "_am").c_str()))
+					sys::OpenFile(data.ambOcclSource);
+			}
+		}
+		else
+		{
+			ImGui::Text
+			(
+				"albedo:     d_albedo\n"
+				"normal:     d_normal\n"
+				"metallic:   d_metallic\n"
+				"roughness:  d_rougness\n"
+				"amb. occl.: d_amb_occl\n\n"
+			);
+		}
+		ImGui::TreePop();
+	}
 }
 
 void Editor::ShowMenuBar() // add renderer variables here like taa sample count
