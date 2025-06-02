@@ -6,17 +6,6 @@
 
 #include "io/CreationData.h"
 
-std::vector<Material> Mesh::materials;
-std::mutex Mesh::materialMutex;
-
-void Mesh::AddMaterial(const Material& material)
-{
-	materials.push_back(material);
-	
-	Material& mat = materials.back();
-	mat.handle = reinterpret_cast<Handle>(&mat);
-}
-
 void Mesh::ProcessMaterial(const MaterialCreationData& creationData)
 {
 	if (materialIndex != 0) // if this mesh already has a material, then dont replace that with this one
@@ -130,12 +119,12 @@ void Mesh::SetMaterialIndex(uint32_t index)
 
 bool Mesh::HasFinishedLoading() const
 {
-	return materials[materialIndex].HasFinishedLoading() && finished;
+	return finished;
 }
 
 void Mesh::AwaitGeneration()
 {
-	materials[materialIndex].AwaitGeneration();
+	
 }
 
 bool Mesh::IsValid() const
@@ -157,12 +146,4 @@ void Mesh::Destroy()
 	indices.clear();
 	vertices.clear();
 	//delete this;
-}
-
-uint32_t Mesh::FindUnusedMaterial() // a material is unused if it is not the default material and all textures are the default texture
-{
-	const Material& unusedMaterialTemplate = materials.front(); // the default material (which is at the front) will compare true to an unused material
-	auto it = std::find(materials.begin() + 1, materials.end(), unusedMaterialTemplate);
-
-	return it - materials.begin();
 }

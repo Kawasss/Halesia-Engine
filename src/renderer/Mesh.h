@@ -1,5 +1,4 @@
 #pragma once
-#include <mutex>
 #include <memory>
 
 #include "Material.h"
@@ -15,10 +14,6 @@ using StorageMemory = unsigned long long;
 
 struct Mesh
 {
-	static void AddMaterial(const Material& material);
-
-	static std::vector<Material> materials;
-
 	void Create(const MeshCreationData& creationData);
 	void Destroy();
 
@@ -57,10 +52,6 @@ struct Mesh
 	Material& GetMaterial();
 
 private:
-	static uint32_t FindUnusedMaterial(); // returns the index to the material
-
 	uint32_t materialIndex = 0;
-
-	static std::mutex materialMutex;
 	bool finished = false;
 };

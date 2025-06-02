@@ -169,7 +169,7 @@ void Editor::MainThreadUpdate(float delta)
 
 		ptr->mesh.Destroy();
 		ptr->mesh.Create(creationData);
-		ptr->mesh.SetMaterial(Mesh::materials[matIndex]);
+		ptr->mesh.SetMaterial(renderer->GetMaterial(matIndex));
 	}
 
 	queuedMeshChange.isApplied = true;
@@ -369,9 +369,9 @@ void Editor::ShowMaterials()
 		
 		if (ImGui::Button("create material"))
 		{
-			Mesh::AddMaterial(Material::Create(createInfo));
+			Handle handle = renderer->AddMaterial(Material::Create(createInfo));
 
-			materialToData[Mesh::materials.back().handle] = AdditionalMaterialData(createInfo);
+			materialToData[handle] = AdditionalMaterialData(createInfo);
 
 			createInfo.albedo.clear();
 			createInfo.normal.clear();
@@ -383,7 +383,7 @@ void Editor::ShowMaterials()
 		}
 	}
 
-	for (const Material& mat : Mesh::materials)
+	for (const Material& mat : renderer->GetMaterials())
 	{
 		std::string handleString = std::to_string(mat.handle);
 		std::string treeLabel = "material " + handleString;
@@ -826,7 +826,7 @@ void Editor::LoadFile()
 		AddObject(data);
 
 	for (const MaterialCreationData& data : loader.materials)
-		Mesh::AddMaterial(Material::Create(data));
+		renderer->AddMaterial(Material::Create(data));
 }
 
 void Editor::SaveToFile()

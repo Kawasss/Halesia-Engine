@@ -78,8 +78,11 @@ public:
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
 
-	void AddMaterial(const Material& material);
+	Handle AddMaterial(const Material& material); // returns the handle if the material
 	void DestroyMaterial(Handle handle); // invalidates the material vector if the material is removed inside a loop
+	void DestroyAllMaterials(); // does NOT destroy the first material, since thats the fallback material. all material handles, except the first one, will be invalid
+
+	const Material& GetMaterial(uint32_t index) const;
 
 	const std::vector<Material>& GetMaterials() const;
 
@@ -238,7 +241,6 @@ private:
 	static void CreateGlobalBuffers();
 
 	void GetQueryResults();
-	void UpdateBindlessTextures(uint32_t currentFrame, const std::vector<MeshObject*>& objects);
 	
 	void OnResize();
 	void AddExtensions();

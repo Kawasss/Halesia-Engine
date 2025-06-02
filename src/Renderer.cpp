@@ -100,10 +100,10 @@ void Renderer::Destroy()
 
 	lightBuffer.~Buffer();
 
-	for (Material& mat : Mesh::materials)
+	for (Material& mat : materials)
 		mat.Destroy();
 
-	Mesh::materials.clear();
+	materials.clear();
 
 	g_defaultVertexBuffer.Destroy();
 	g_vertexBuffer.Destroy();
@@ -361,8 +361,8 @@ void Renderer::CreateDefaultObjects() // default objects are objects that are al
 
 	Texture::GeneratePlaceholderTextures();
 
-	Mesh::AddMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
-	Mesh::materials.front().OverrideReferenceCount(INT_MAX);
+	AddMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
+	materials.front().OverrideReferenceCount(INT_MAX);
 
 	if (defaultSampler == VK_NULL_HANDLE)
 		CreateTextureSampler();
@@ -591,7 +591,7 @@ void Renderer::RendererManagedSet::Destroy()
 	vkDestroyDescriptorPool(ctx.logicalDevice, pool, nullptr);
 }
 
-void Renderer::AddMaterial(const Material& material)
+Handle Renderer::AddMaterial(const Material& material)
 {
 	constexpr size_t materialSize = Material::pbrTextures.size();
 
@@ -618,13 +618,8 @@ void Renderer::AddMaterial(const Material& material)
 
 	Material& mat = materials.back();
 	mat.handle = reinterpret_cast<Handle>(&mat);
-}
 
-void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
-{
-	pipeline->renderPass = renderPass;
-	pipeline->Start(GetPipelinePayload(GetActiveCommandBuffer(), nullptr));
-	renderPipelines.push_back(pipeline);
+	return mat.handle;
 }
 
 void Renderer::DestroyMaterial(Handle handle)
@@ -637,6 +632,7 @@ void Renderer::DestroyMaterial(Handle handle)
 
 	int index = static_cast<int>(it - materials.begin());
 
+	it->Destroy();
 	materials.erase(it); // 'it' is invalid after this point
 
 	if (index >= materials.size())
@@ -648,12 +644,9 @@ void Renderer::DestroyMaterial(Handle handle)
 
 	for (size_t i = 0; i < writeCount; i++)
 	{
-		size_t oldIndex = index + i + 1;
-		size_t newIndex = index + i;
-
 		for (size_t j = 0; j < pbrSize; j++)
 		{
-			size_t textureIndex = i * j;
+			size_t textureIndex = (index - 1 + i) * pbrSize + j;
 
 			imageInfos[textureIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			imageInfos[textureIndex].imageView = materials[i][j]->imageView;
@@ -671,6 +664,20 @@ void Renderer::DestroyMaterial(Handle handle)
 	writeSet.pImageInfo = imageInfos.data();
 
 	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
+}
+
+void Renderer::DestroyAllMaterials()
+{
+	for (int i = 1; i < materials.size(); i++)
+		materials[i].Destroy();
+	materials.resize(1);
+}
+
+void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
+{
+	pipeline->renderPass = renderPass;
+	pipeline->Start(GetPipelinePayload(GetActiveCommandBuffer(), nullptr));
+	renderPipelines.push_back(pipeline);
 }
 
 void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<MeshObject*> objects, Camera* camera)
@@ -1064,22 +1071,6 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 	DescriptorWriter::Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
 }
 
-std::vector<Object*> processedObjects;
-void Renderer::UpdateBindlessTextures(uint32_t currentFrame, const std::vector<MeshObject*>& objects)
-{
-	for (int i = 0; i < Mesh::materials.size(); i++)
-	{
-		if (processedMaterials.count(i) > 0 && processedMaterials[i] == Mesh::materials[i].handle)
-			continue;
-
-		for (int j = 0; j < Material::pbrTextures.size(); j++)
-		{
-			DescriptorWriter::WriteImage(screenPipeline->GetDescriptorSets()[currentFrame], VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2, Mesh::materials[i][Material::pbrTextures[j]]->imageView, defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL); // dont have any test to run this on, so I just hope this works
-		}
-		processedMaterials[i] = Mesh::materials[i].handle;
-	}
-}
-
 void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage)
 {
 	/*for (Object* object : objects)
@@ -1292,6 +1283,11 @@ const std::vector<RenderPipeline*>& Renderer::GetAllRenderPipelines() const
 const std::vector<Material>& Renderer::GetMaterials() const
 {
 	return materials;
+}
+
+const Material& Renderer::GetMaterial(uint32_t index) const
+{
+	return materials[index];
 }
 
 bool Renderer::CompletedFIFCyle()
