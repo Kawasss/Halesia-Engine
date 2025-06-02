@@ -77,6 +77,9 @@ std::vector<VkDescriptorPoolSize> ShaderGroupReflector::GetDescriptorPoolSize() 
 
 	for (const auto& [set, bindings] : setLayoutBindings)
 	{
+		if (removedSets.contains(set))
+			continue;
+
 		for (const VkDescriptorSetLayoutBinding& binding : bindings)
 		{
 			auto it = typeIndex.find(binding.descriptorType);
@@ -183,9 +186,9 @@ void ShaderGroupReflector::WriteToDescriptorSet(VkDevice logicalDevice, VkDescri
 	vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
 }
 
-void ShaderGroupReflector::ExcludeBinding(uint32_t set, uint32_t binding)
+void ShaderGroupReflector::ExcludeSet(uint32_t set)
 {
-	removedBindings.emplace(set, binding);
+	removedSets.emplace(set);
 }
 
 ShaderGroupReflector::~ShaderGroupReflector()

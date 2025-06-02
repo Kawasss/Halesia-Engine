@@ -29,7 +29,7 @@ public:
 	ShaderGroupReflector(const std::vector<std::vector<char>>& sourceCodes);
 	~ShaderGroupReflector();
 
-	void ExcludeBinding(uint32_t set, uint32_t binding);
+	void ExcludeSet(uint32_t set);
 
 	std::vector<VkDescriptorSetLayoutBinding> GetLayoutBindingsOfSet(uint32_t setIndex) const;
 	std::vector<VkDescriptorPoolSize>         GetDescriptorPoolSize() const;
@@ -47,7 +47,7 @@ public:
 private:
 	void ProcessLayoutBindings();
 
-	std::set<Binding> removedBindings;
+	std::set<uint32_t> removedSets;
 	std::vector<SpvReflectShaderModule> modules;
 	std::map<uint32_t, std::vector<VkDescriptorSetLayoutBinding>> setLayoutBindings;
 };

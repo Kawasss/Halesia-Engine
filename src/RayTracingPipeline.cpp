@@ -4,6 +4,7 @@
 #include "renderer/CommandBuffer.h"
 #include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
+#include "renderer/Renderer.h"
 
 #include "io/IO.h"
 
@@ -20,10 +21,13 @@ RayTracingPipeline::RayTracingPipeline(const std::string& rgen, const std::strin
 		IO::ReadFile(rmiss),
 	};
 	ShaderGroupReflector reflector(shaders);
+	reflector.ExcludeSet(Renderer::RESERVED_DESCRIPTOR_SET);
 
 	InitializeBase(reflector);
 	CreatePipeline(reflector, shaders);
 	CreateShaderBindingTable();
+
+
 
 	bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
 }

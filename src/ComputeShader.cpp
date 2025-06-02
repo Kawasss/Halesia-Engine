@@ -5,6 +5,7 @@
 #include "renderer/GarbageManager.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/VulkanAPIError.h"
+#include "renderer/Renderer.h"
 
 #include "io/IO.h"
 
@@ -12,6 +13,8 @@ ComputeShader::ComputeShader(const std::string& path)
 {
 	std::vector<char> code = IO::ReadFile(path);
 	ShaderGroupReflector reflector(code);
+	reflector.ExcludeSet(Renderer::RESERVED_DESCRIPTOR_SET);
+
 	VkShaderModule module = Vulkan::CreateShaderModule(code);
 
 	InitializeBase(reflector);

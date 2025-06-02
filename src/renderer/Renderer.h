@@ -30,6 +30,7 @@ class GraphicsPipeline;
 class RenderPipeline;
 struct Mesh;
 struct Light;
+struct Material;
 
 using HANDLE = void*;
 using Handle = unsigned long long;
@@ -52,6 +53,9 @@ public:
 	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT	= FIF::FRAME_COUNT;
 	static constexpr uint32_t MAX_TLAS_INSTANCES	= MAX_MESHES;
 
+	static constexpr uint32_t RESERVED_DESCRIPTOR_SET = 4;
+	static constexpr uint32_t MATERIAL_BUFFER_BINDING = 0;
+
 	static StorageBuffer<Vertex>   g_vertexBuffer;
 	static StorageBuffer<uint16_t> g_indexBuffer;
 	static StorageBuffer<Vertex>   g_defaultVertexBuffer;
@@ -73,6 +77,11 @@ public:
 
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
+
+	void AddMaterial(const Material& material);
+	void DestroyMaterial(Handle handle); // invalidates the material vector if the material is removed inside a loop
+
+	const std::vector<Material>& GetMaterials() const;
 
 	std::map<std::string, uint64_t> GetTimestamps() const;
 
@@ -144,6 +153,16 @@ public:
 private:
 	struct LightBuffer;
 
+	struct RendererManagedSet
+	{
+		void Create();
+		void Destroy();
+
+		VkDescriptorPool pool;
+		VkDescriptorSet set;
+		VkDescriptorSetLayout layout;
+	};
+
 	VkInstance instance					 = VK_NULL_HANDLE;
 	VkDevice logicalDevice				 = VK_NULL_HANDLE;
 	VkRenderPass renderPass				 = VK_NULL_HANDLE;
@@ -156,6 +175,8 @@ private:
 	VkQueue computeQueue                 = VK_NULL_HANDLE;
 	VkSampler resultSampler              = VK_NULL_HANDLE; // does not need to be destroyed
 	QueryPool queryPool;
+
+	RendererManagedSet managedSet;
 
 	Framebuffer framebuffer;
 
@@ -175,6 +196,8 @@ private:
 	win32::CriticalSection drawingSection;
 
 	std::vector<RenderPipeline*> renderPipelines; // owns the pointers !!
+
+	std::vector<Material> materials;
 
 	PhysicalDevice physicalDevice;
 	Surface surface;

@@ -121,6 +121,8 @@ void Renderer::Destroy()
 	HdrConverter::End();
 	//delete rayTracer;
 
+	managedSet.Destroy();
+
 	::ImGui_ImplVulkan_Shutdown();
 	::vkDestroyDescriptorPool(logicalDevice, imGUIDescriptorPool, nullptr);
 
@@ -305,8 +307,8 @@ void Renderer::CheckForInterference()
 
 void Renderer::InitializeViewport()
 {
-	viewportWidth  = testWindow->GetWidth()  * internalScale;
-	viewportHeight = testWindow->GetHeight() * internalScale;
+	viewportWidth  = static_cast<uint32_t>(testWindow->GetWidth()  * internalScale);
+	viewportHeight = static_cast<uint32_t>(testWindow->GetHeight() * internalScale);
 
 	UpdateScreenShaderTexture(0);
 }
@@ -373,6 +375,8 @@ void Renderer::CreateDefaultObjects() // default objects are objects that are al
 	lightBuffer.MapPermanently();
 
 	HdrConverter::Start();
+
+	managedSet.Create();
 }
 
 void Renderer::CreateContext()
@@ -424,7 +428,7 @@ uint32_t Renderer::DetectExternalTools()
 
 	std::vector<VkPhysicalDeviceToolProperties> properties(numTools);
 	::vkGetPhysicalDeviceToolProperties(physicalDevice.Device(), &numTools, properties.data());
-	for (int i = 0; i < numTools; i++)
+	for (unsigned int i = 0; i < numTools; i++)
 	{
 		Console::WriteLine("  name: {}\n  version: {}\n  purposes: {}\n  description: {}", properties[i].name, properties[i].version, ::string_VkToolPurposeFlags(properties[i].purposes), properties[i].description);
 	}
@@ -515,11 +519,158 @@ void Renderer::CreateCommandBuffer()
 	#endif
 }
 
+void Renderer::RendererManagedSet::Create()
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	VkPhysicalDeviceProperties props{};
+	vkGetPhysicalDeviceProperties(ctx.physicalDevice.Device(), &props);
+
+	uint32_t imageCount = props.limits.maxDescriptorSetSampledImages < MAX_BINDLESS_TEXTURES ? props.limits.maxDescriptorSetSampledImages : MAX_BINDLESS_TEXTURES;
+
+	VkDescriptorPoolSize poolSize{};
+	poolSize.descriptorCount = imageCount;
+	poolSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+
+	VkDescriptorPoolCreateInfo poolCreateInfo{};
+	poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolCreateInfo.maxSets = 1;
+	poolCreateInfo.poolSizeCount = 1;
+	poolCreateInfo.pPoolSizes = &poolSize;
+
+	VkResult result = vkCreateDescriptorPool(ctx.logicalDevice, &poolCreateInfo, nullptr, &pool);
+	CheckVulkanResult("Failed to create the renderer managed descriptor pool", result);
+
+	VkDescriptorSetLayoutBinding layoutBinding{};
+	layoutBinding.binding = MATERIAL_BUFFER_BINDING;
+	layoutBinding.descriptorCount = MAX_BINDLESS_TEXTURES;
+	layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
+	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutCreateInfo.bindingCount = 1;
+	layoutCreateInfo.pBindings = &layoutBinding;
+
+	result = vkCreateDescriptorSetLayout(ctx.logicalDevice, &layoutCreateInfo, nullptr, &layout);
+	CheckVulkanResult("Failed to create renderer managed set layout", result);
+
+	VkDescriptorSetAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateInfo.descriptorPool = pool;
+	allocateInfo.descriptorSetCount = 1;
+	allocateInfo.pSetLayouts = &layout;
+
+	result = vkAllocateDescriptorSets(ctx.logicalDevice, &allocateInfo, &set);
+	CheckVulkanResult("Failed to allocate renderer managed descriptor sets", result);
+
+	VkDescriptorImageInfo imageInfo{};
+	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	imageInfo.imageView = VK_NULL_HANDLE;
+	imageInfo.sampler = defaultSampler;
+
+	std::vector<VkDescriptorImageInfo> imageInfos(MAX_BINDLESS_TEXTURES, imageInfo);
+
+	VkWriteDescriptorSet writeSet{};
+	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writeSet.descriptorCount = MAX_BINDLESS_TEXTURES;
+	writeSet.dstBinding = MATERIAL_BUFFER_BINDING;
+	writeSet.pImageInfo = imageInfos.data();
+	writeSet.dstArrayElement = 0;
+	writeSet.dstSet = set;
+	
+	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
+}
+
+void Renderer::RendererManagedSet::Destroy()
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	vkDestroyDescriptorSetLayout(ctx.logicalDevice, layout, nullptr);
+	vkDestroyDescriptorPool(ctx.logicalDevice, pool, nullptr);
+}
+
+void Renderer::AddMaterial(const Material& material)
+{
+	constexpr size_t materialSize = Material::pbrTextures.size();
+
+	std::array<VkDescriptorImageInfo, materialSize> imageInfos{};
+	for (int i = 0; i < Material::pbrTextures.size(); i++)
+	{
+		imageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		imageInfos[i].imageView = material[i]->imageView;
+		imageInfos[i].sampler = defaultSampler;
+	}
+
+	VkWriteDescriptorSet writeSet{};
+	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writeSet.descriptorCount = materialSize;
+	writeSet.dstBinding = MATERIAL_BUFFER_BINDING;
+	writeSet.pImageInfo = imageInfos.data();
+	writeSet.dstArrayElement = materials.size() * materialSize;
+	writeSet.dstSet = managedSet.set;
+
+	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
+
+	materials.push_back(material);
+
+	Material& mat = materials.back();
+	mat.handle = reinterpret_cast<Handle>(&mat);
+}
+
 void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
 {
 	pipeline->renderPass = renderPass;
 	pipeline->Start(GetPipelinePayload(GetActiveCommandBuffer(), nullptr));
 	renderPipelines.push_back(pipeline);
+}
+
+void Renderer::DestroyMaterial(Handle handle)
+{
+	auto it = std::find_if(materials.begin(), materials.end(), [&](const Material& mat) { return mat.handle == handle; });
+	if (it == materials.end())
+		return;
+
+	// update the descriptor set
+
+	int index = static_cast<int>(it - materials.begin());
+
+	materials.erase(it); // 'it' is invalid after this point
+
+	if (index >= materials.size())
+		return; // no need to push any textures to the front if only the last material was removed
+
+	constexpr int pbrSize = Material::pbrTextures.size();
+	int writeCount = materials.size() - index - 1;
+	std::vector<VkDescriptorImageInfo> imageInfos(writeCount * pbrSize);
+
+	for (int i = 0; i < writeCount; i++)
+	{
+		int oldIndex = index + i + 1;
+		int newIndex = index + i;
+
+		for (int j = 0; j < pbrSize; j++)
+		{
+			size_t textureIndex = static_cast<size_t>(i) * j;
+
+			imageInfos[textureIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfos[textureIndex].imageView = materials[i][j]->imageView;
+			imageInfos[textureIndex].sampler = defaultSampler;
+		}
+	}
+
+	VkWriteDescriptorSet writeSet{};
+	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	writeSet.dstArrayElement = index * pbrSize;
+	writeSet.dstBinding = MATERIAL_BUFFER_BINDING;
+	writeSet.dstSet = managedSet.set;
+	writeSet.descriptorCount = imageInfos.size();
+	writeSet.pImageInfo = imageInfos.data();
+
+	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
 }
 
 void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<MeshObject*> objects, Camera* camera)
@@ -683,8 +834,8 @@ void Renderer::OnResize()
 		return;
 	}
 
-	viewportWidth  = testWindow->GetWidth()  * viewportTransModifiers.x * internalScale;
-	viewportHeight = testWindow->GetHeight() * viewportTransModifiers.y * internalScale;
+	viewportWidth  = static_cast<uint32_t>(testWindow->GetWidth()  * viewportTransModifiers.x * internalScale);
+	viewportHeight = static_cast<uint32_t>(testWindow->GetHeight() * viewportTransModifiers.y * internalScale);
 
 	swapchain->Recreate(GUIRenderPass, false);
 
@@ -837,8 +988,8 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 		::GetAllObjectsFromObject(activeObjects, lightObjects, object, canRayTrace);
 	}
 
-	receivedObjects += objects.size();
-	renderedObjects += activeObjects.size();
+	receivedObjects += static_cast<uint32_t>(objects.size());
+	renderedObjects += static_cast<uint32_t>(activeObjects.size());
 
 	win32::CriticalLockGuard lockGuard(drawingSection);
 
@@ -855,7 +1006,7 @@ void Renderer::UpdateLightBuffer(const std::vector<LightObject*>& lights)
 	{
 		buffer->lights[i] = lights[i]->ToGPUFormat();
 	}
-	buffer->count = lights.size();
+	buffer->count = static_cast<int>(lights.size());
 }
 
 void Renderer::StartRenderPass(VkRenderPass renderPass, glm::vec3 clearColor, VkFramebuffer framebuffer)
@@ -1136,6 +1287,11 @@ const FIF::Buffer& Renderer::GetLightBuffer() const
 const std::vector<RenderPipeline*>& Renderer::GetAllRenderPipelines() const
 {
 	return renderPipelines; 
+}
+
+const std::vector<Material>& Renderer::GetMaterials() const
+{
+	return materials;
 }
 
 bool Renderer::CompletedFIFCyle()

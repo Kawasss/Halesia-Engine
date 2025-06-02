@@ -4,6 +4,7 @@
 #include "renderer/PipelineCreator.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/VulkanAPIError.h"
+#include "renderer/Renderer.h"
 
 #include "io/IO.h"
 
@@ -15,6 +16,7 @@ GraphicsPipeline::GraphicsPipeline(const CreateInfo& createInfo)
 		IO::ReadFile(createInfo.fragmentShader), // frag is [1]
 	};
 	ShaderGroupReflector reflector(shaderCodes);
+	reflector.ExcludeSet(Renderer::RESERVED_DESCRIPTOR_SET);
 
 	InitializeBase(reflector);
 
