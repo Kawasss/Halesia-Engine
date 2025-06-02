@@ -650,8 +650,8 @@ void DeferredPipeline::SetInstanceData(const std::vector<MeshObject*>& objects)
 	{
 		const Mesh& mesh = obj->mesh;
 
-		uint32_t vOffset = Renderer::g_vertexBuffer.GetItemOffset(mesh.vertexMemory);
-		uint32_t iOffset = Renderer::g_indexBuffer.GetItemOffset(mesh.indexMemory);
+		uint32_t vOffset = static_cast<uint32_t>(Renderer::g_vertexBuffer.GetItemOffset(mesh.vertexMemory));
+		uint32_t iOffset = static_cast<uint32_t>(Renderer::g_indexBuffer.GetItemOffset(mesh.indexMemory));
 
 		instances.emplace_back(vOffset, iOffset, mesh.GetMaterialIndex());
 	}
@@ -803,7 +803,7 @@ void DeferredPipeline::UpdateTextureBuffer()
 			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			writeSet.descriptorCount = 1;
-			writeSet.dstArrayElement = index;
+			writeSet.dstArrayElement = static_cast<uint32_t>(index);
 			writeSet.dstBinding = 2;
 			writeSet.dstSet = firstPipeline->GetDescriptorSets()[0];
 			writeSet.pImageInfo = &imageInfos[index];

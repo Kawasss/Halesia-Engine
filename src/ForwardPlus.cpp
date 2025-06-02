@@ -187,7 +187,7 @@ void ForwardPlusPipeline::UpdateBindlessTextures()
 			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			writeSet.descriptorCount = 1;
-			writeSet.dstArrayElement = index;
+			writeSet.dstArrayElement = static_cast<uint32_t>(index);
 			writeSet.dstBinding = 5;
 			writeSet.dstSet = graphicsPipeline->GetDescriptorSets()[0];
 			writeSet.pImageInfo = &imageInfos[index];

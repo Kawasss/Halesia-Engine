@@ -609,7 +609,7 @@ void Renderer::AddMaterial(const Material& material)
 	writeSet.descriptorCount = materialSize;
 	writeSet.dstBinding = MATERIAL_BUFFER_BINDING;
 	writeSet.pImageInfo = imageInfos.data();
-	writeSet.dstArrayElement = materials.size() * materialSize;
+	writeSet.dstArrayElement = static_cast<uint32_t>(materials.size() * materialSize);
 	writeSet.dstSet = managedSet.set;
 
 	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
@@ -642,18 +642,18 @@ void Renderer::DestroyMaterial(Handle handle)
 	if (index >= materials.size())
 		return; // no need to push any textures to the front if only the last material was removed
 
-	constexpr int pbrSize = Material::pbrTextures.size();
-	int writeCount = materials.size() - index - 1;
+	constexpr size_t pbrSize = Material::pbrTextures.size();
+	size_t writeCount = materials.size() - index - 1;
 	std::vector<VkDescriptorImageInfo> imageInfos(writeCount * pbrSize);
 
-	for (int i = 0; i < writeCount; i++)
+	for (size_t i = 0; i < writeCount; i++)
 	{
-		int oldIndex = index + i + 1;
-		int newIndex = index + i;
+		size_t oldIndex = index + i + 1;
+		size_t newIndex = index + i;
 
-		for (int j = 0; j < pbrSize; j++)
+		for (size_t j = 0; j < pbrSize; j++)
 		{
-			size_t textureIndex = static_cast<size_t>(i) * j;
+			size_t textureIndex = i * j;
 
 			imageInfos[textureIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			imageInfos[textureIndex].imageView = materials[i][j]->imageView;
@@ -664,10 +664,10 @@ void Renderer::DestroyMaterial(Handle handle)
 	VkWriteDescriptorSet writeSet{};
 	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	writeSet.dstArrayElement = index * pbrSize;
+	writeSet.dstArrayElement = static_cast<uint32_t>(index * pbrSize);
 	writeSet.dstBinding = MATERIAL_BUFFER_BINDING;
 	writeSet.dstSet = managedSet.set;
-	writeSet.descriptorCount = imageInfos.size();
+	writeSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
 	writeSet.pImageInfo = imageInfos.data();
 
 	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
