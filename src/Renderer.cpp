@@ -100,7 +100,7 @@ void Renderer::Destroy()
 
 	lightBuffer.~Buffer();
 
-	for (Material& mat : materials)
+	for (Material& mat : Mesh::materials)
 		mat.Destroy();
 
 	materials.clear();
@@ -361,8 +361,8 @@ void Renderer::CreateDefaultObjects() // default objects are objects that are al
 
 	Texture::GeneratePlaceholderTextures();
 
-	AddMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
-	materials.front().OverrideReferenceCount(INT_MAX);
+	Mesh::AddMaterial({ Texture::placeholderAlbedo, Texture::placeholderNormal, Texture::placeholderMetallic, Texture::placeholderRoughness, Texture::placeholderAmbientOcclusion });
+	Mesh::materials.front().OverrideReferenceCount(INT_MAX);
 
 	if (defaultSampler == VK_NULL_HANDLE)
 		CreateTextureSampler();
@@ -530,7 +530,7 @@ void Renderer::RendererManagedSet::Create()
 
 	VkDescriptorPoolSize poolSize{};
 	poolSize.descriptorCount = imageCount;
-	poolSize.type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
 	VkDescriptorPoolCreateInfo poolCreateInfo{};
 	poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -544,7 +544,7 @@ void Renderer::RendererManagedSet::Create()
 	VkDescriptorSetLayoutBinding layoutBinding{};
 	layoutBinding.binding = MATERIAL_BUFFER_BINDING;
 	layoutBinding.descriptorCount = MAX_BINDLESS_TEXTURES;
-	layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+	layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
@@ -581,6 +581,9 @@ void Renderer::RendererManagedSet::Create()
 	writeSet.dstSet = set;
 	
 	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
+
+	Pipeline::globalSetLayouts.push_back(layout);
+	Pipeline::globalDescriptorSets.push_back(set);
 }
 
 void Renderer::RendererManagedSet::Destroy()
@@ -591,86 +594,49 @@ void Renderer::RendererManagedSet::Destroy()
 	vkDestroyDescriptorPool(ctx.logicalDevice, pool, nullptr);
 }
 
-Handle Renderer::AddMaterial(const Material& material)
+void Renderer::UpdateMaterialBuffer()
 {
-	constexpr size_t materialSize = Material::pbrTextures.size();
+	uint32_t min = static_cast<uint32_t>(std::min(Mesh::materials.size(), materials.size()));
+	uint32_t differentIndex = 0; // the index where the mesh::materials and materials start to differ
+	bool different = false;
 
-	std::array<VkDescriptorImageInfo, materialSize> imageInfos{};
-	for (int i = 0; i < Material::pbrTextures.size(); i++)
+	for (; differentIndex < min; differentIndex++)
 	{
-		imageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		imageInfos[i].imageView = material[i]->imageView;
-		imageInfos[i].sampler = defaultSampler;
+		if (Mesh::materials[differentIndex].handle != materials[differentIndex])
+		{
+			different = true;
+			break;
+		}
 	}
 
-	VkWriteDescriptorSet writeSet{};
-	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	writeSet.descriptorCount = materialSize;
-	writeSet.dstBinding = MATERIAL_BUFFER_BINDING;
-	writeSet.pImageInfo = imageInfos.data();
-	writeSet.dstArrayElement = static_cast<uint32_t>(materials.size() * materialSize);
-	writeSet.dstSet = managedSet.set;
-
-	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
-
-	materials.push_back(material);
-
-	Material& mat = materials.back();
-	mat.handle = reinterpret_cast<Handle>(&mat);
-
-	return mat.handle;
-}
-
-void Renderer::DestroyMaterial(Handle handle)
-{
-	auto it = std::find_if(materials.begin(), materials.end(), [&](const Material& mat) { return mat.handle == handle; });
-	if (it == materials.end())
+	if (Mesh::materials.size() <= materials.size() && !different)
 		return;
 
-	// update the descriptor set
+	const size_t pbrSize = Material::pbrTextures.size();
 
-	int index = static_cast<int>(it - materials.begin());
+	std::vector<VkDescriptorImageInfo> imageInfos((Mesh::materials.size() - differentIndex) * pbrSize);
 
-	it->Destroy();
-	materials.erase(it); // 'it' is invalid after this point
-
-	if (index >= materials.size())
-		return; // no need to push any textures to the front if only the last material was removed
-
-	constexpr size_t pbrSize = Material::pbrTextures.size();
-	size_t writeCount = materials.size() - index - 1;
-	std::vector<VkDescriptorImageInfo> imageInfos(writeCount * pbrSize);
-
-	for (size_t i = 0; i < writeCount; i++)
+	materials.resize(differentIndex + 1);
+	for (uint32_t i = differentIndex; i < Mesh::materials.size(); i++)
 	{
 		for (size_t j = 0; j < pbrSize; j++)
 		{
-			size_t textureIndex = (index - 1 + i) * pbrSize + j;
-
-			imageInfos[textureIndex].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfos[textureIndex].imageView = materials[i][j]->imageView;
-			imageInfos[textureIndex].sampler = defaultSampler;
+			imageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfos[i].imageView = Mesh::materials[i][j]->imageView;
+			imageInfos[i].sampler = defaultSampler;
 		}
 	}
 
 	VkWriteDescriptorSet writeSet{};
 	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	writeSet.dstArrayElement = static_cast<uint32_t>(index * pbrSize);
+	writeSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
+	writeSet.dstArrayElement = differentIndex;
 	writeSet.dstBinding = MATERIAL_BUFFER_BINDING;
 	writeSet.dstSet = managedSet.set;
-	writeSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
 	writeSet.pImageInfo = imageInfos.data();
 
 	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
-}
-
-void Renderer::DestroyAllMaterials()
-{
-	for (int i = 1; i < materials.size(); i++)
-		materials[i].Destroy();
-	materials.resize(1);
 }
 
 void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
@@ -1278,16 +1244,6 @@ const FIF::Buffer& Renderer::GetLightBuffer() const
 const std::vector<RenderPipeline*>& Renderer::GetAllRenderPipelines() const
 {
 	return renderPipelines; 
-}
-
-const std::vector<Material>& Renderer::GetMaterials() const
-{
-	return materials;
-}
-
-const Material& Renderer::GetMaterial(uint32_t index) const
-{
-	return materials[index];
 }
 
 bool Renderer::CompletedFIFCyle()

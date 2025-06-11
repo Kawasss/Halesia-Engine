@@ -48,7 +48,7 @@ public:
 		NoFilteringOnResult   = 1 << 3,
 	};
 
-	static constexpr uint32_t MAX_MESHES			= 1000U; //should be more than enough
+	static constexpr uint32_t MAX_MESHES			= 200U; //should be more than enough
 	static constexpr uint32_t MAX_BINDLESS_TEXTURES = MAX_MESHES * 5; //amount of pbr textures per mesh
 	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT	= FIF::FRAME_COUNT;
 	static constexpr uint32_t MAX_TLAS_INSTANCES	= MAX_MESHES;
@@ -77,14 +77,6 @@ public:
 
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
-
-	Handle AddMaterial(const Material& material); // returns the handle if the material
-	void DestroyMaterial(Handle handle); // invalidates the material vector if the material is removed inside a loop
-	void DestroyAllMaterials(); // does NOT destroy the first material, since thats the fallback material. all material handles, except the first one, will be invalid
-
-	const Material& GetMaterial(uint32_t index) const;
-
-	const std::vector<Material>& GetMaterials() const;
 
 	std::map<std::string, uint64_t> GetTimestamps() const;
 
@@ -194,13 +186,11 @@ private:
 
 	CommandBuffer activeCmdBuffer = VK_NULL_HANDLE;
 
-	std::map<int, Handle> processedMaterials;
-
 	win32::CriticalSection drawingSection;
 
 	std::vector<RenderPipeline*> renderPipelines; // owns the pointers !!
 
-	std::vector<Material> materials;
+	std::vector<Handle> materials;
 
 	PhysicalDevice physicalDevice;
 	Surface surface;
@@ -239,6 +229,8 @@ private:
 	void InitializeViewport();
 
 	static void CreateGlobalBuffers();
+
+	void UpdateMaterialBuffer();
 
 	void GetQueryResults();
 	

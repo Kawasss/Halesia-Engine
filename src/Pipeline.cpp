@@ -9,6 +9,9 @@
 #include "renderer/Buffer.h"
 #include "renderer/Vulkan.h"
 
+std::vector<VkDescriptorSetLayout> Pipeline::globalSetLayouts;
+std::vector<VkDescriptorSet> Pipeline::globalDescriptorSets;
+
 void Pipeline::InitializeBase(const ShaderGroupReflector& reflector)
 {
 	CreateDescriptorPool(reflector);
@@ -65,6 +68,9 @@ void Pipeline::CreateSetLayouts(const ShaderGroupReflector& reflector)
 			bindingLayout.binding = binding;
 		}
 	}
+
+	if (!globalSetLayouts.empty())
+		setLayouts.insert(setLayouts.end(), globalSetLayouts.begin(), globalSetLayouts.end());
 }
 
 void Pipeline::AllocateDescriptorSets(uint32_t amount)
@@ -83,6 +89,12 @@ void Pipeline::AllocateDescriptorSets(uint32_t amount)
 		VkResult result = vkAllocateDescriptorSets(ctx.logicalDevice, &allocInfo, descriptorSets[i].data());
 		CheckVulkanResult("Failed to allocate descriptor sets for a graphics pipeline", result);
 	}
+
+	if (globalDescriptorSets.empty())
+		return;
+
+	for (std::vector<VkDescriptorSet>& sets : descriptorSets)
+		sets.insert(sets.end(), globalDescriptorSets.begin(), globalDescriptorSets.end());
 }
 
 void Pipeline::Destroy()

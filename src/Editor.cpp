@@ -165,11 +165,9 @@ void Editor::MainThreadUpdate(float delta)
 	{
 		MeshObject* ptr = dynamic_cast<MeshObject*>(obj);
 
-		uint32_t matIndex = ptr->mesh.GetMaterialIndex();
-
 		ptr->mesh.Destroy();
 		ptr->mesh.Create(creationData);
-		ptr->mesh.SetMaterial(renderer->GetMaterial(matIndex));
+		ptr->mesh.SetMaterial(ptr->mesh.GetMaterial());
 	}
 
 	queuedMeshChange.isApplied = true;
@@ -369,7 +367,7 @@ void Editor::ShowMaterials()
 		
 		if (ImGui::Button("create material"))
 		{
-			Handle handle = renderer->AddMaterial(Material::Create(createInfo));
+			Handle handle = Mesh::AddMaterial(Material::Create(createInfo));
 
 			materialToData[handle] = AdditionalMaterialData(createInfo);
 
@@ -383,7 +381,7 @@ void Editor::ShowMaterials()
 		}
 	}
 
-	for (const Material& mat : renderer->GetMaterials())
+	for (const Material& mat : Mesh::materials)
 	{
 		std::string handleString = std::to_string(mat.handle);
 		std::string treeLabel = "material " + handleString;
@@ -826,7 +824,7 @@ void Editor::LoadFile()
 		AddObject(data);
 
 	for (const MaterialCreationData& data : loader.materials)
-		renderer->AddMaterial(Material::Create(data));
+		Mesh::AddMaterial(Material::Create(data));
 }
 
 void Editor::SaveToFile()

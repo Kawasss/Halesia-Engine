@@ -48,6 +48,9 @@ public:
 	void BindImageToName(const std::string& name, VkImageView view, VkSampler sampler, VkImageLayout layout);
 	void BindImageToName(const std::string& name, uint32_t index, VkImageView view, VkSampler sampler, VkImageLayout layout);
 
+	static std::vector<VkDescriptorSetLayout> globalSetLayouts;
+	static std::vector<VkDescriptorSet> globalDescriptorSets;
+
 protected:
 	void InitializeBase(const ShaderGroupReflector& reflector);
 

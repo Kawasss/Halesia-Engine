@@ -604,7 +604,7 @@ void DeferredPipeline::LoadSkybox(const std::string& path)
 
 void DeferredPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects)
 {
-	UpdateTextureBuffer(); // temp !!!
+	//UpdateTextureBuffer(); // temp !!!
 
 	if (Renderer::canRayTrace)
 	{

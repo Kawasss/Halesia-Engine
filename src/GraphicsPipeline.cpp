@@ -18,10 +18,16 @@ GraphicsPipeline::GraphicsPipeline(const CreateInfo& createInfo)
 	ShaderGroupReflector reflector(shaderCodes);
 	reflector.ExcludeSet(Renderer::RESERVED_DESCRIPTOR_SET);
 
+	if (createInfo.fragmentShader == "shaders/spirv/deferredFirst.frag.spv")
+		__debugbreak();
+
 	InitializeBase(reflector);
 
 	CreatePipelineLayout(reflector);
 	CreateGraphicsPipeline(shaderCodes, createInfo, reflector.GetOutputVariableCount(1));
+
+	if (createInfo.fragmentShader == "shaders/spirv/deferredFirst.frag.spv")
+		__debugbreak();
 
 	bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 }
