@@ -2,7 +2,6 @@
 #include <vector>
 #include <string>
 #include <map>
-#include <filesystem>
 #include <vulkan/vulkan.h>
 
 #include "PhysicalDevice.h"
@@ -117,10 +116,6 @@ public:
 	Type* AddRenderPipeline(const char* name = "unnamed pipeline"); // returns the created pipeline
 
 	RenderPipeline* GetRenderPipeline(const std::string_view& name);
-
-	void RecompileShaders();
-	static void ForceCompileShaderToSpirv(const std::filesystem::path& file);
-	static bool CompileShaderToSpirv(const std::filesystem::path& file); //!< returns true if the shader is compiled, false if the shader didnt need to be compiled
 	
 	Swapchain* swapchain; // better to keep it private
 	AnimationManager* animationManager;

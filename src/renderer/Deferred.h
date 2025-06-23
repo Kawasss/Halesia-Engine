@@ -53,8 +53,6 @@ private:
 		glm::mat4 prevProj;
 	};
 
-	void UpdateTextureBuffer();
-	void SetTextureBuffer();
 	void UpdateUBO(Camera* cam);
 	void CreateBuffers();
 	void BindResources(const FIF::Buffer& lightBuffer);

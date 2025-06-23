@@ -129,19 +129,6 @@ void DeferredPipeline::ReloadShaders(const Payload& payload)
 	secondPipeline.reset();
 	rtgiPipeline.reset();
 
-	Renderer::CompileShaderToSpirv("shaders/uncompiled/deferredFirst.vert");
-	Renderer::CompileShaderToSpirv("shaders/uncompiled/deferredFirst.frag");
-	Renderer::CompileShaderToSpirv("shaders/uncompiled/deferredSecond.vert");
-	Renderer::CompileShaderToSpirv("shaders/uncompiled/deferredSecond.frag");
-	Renderer::CompileShaderToSpirv("shaders/uncompiled/deferredSecondRT.frag");
-
-	Renderer::CompileShaderToSpirv("shaders/uncompiled/rtgi.rgen");
-	Renderer::CompileShaderToSpirv("shaders/uncompiled/rtgi.rchit");
-	Renderer::CompileShaderToSpirv("shaders/uncompiled/rtgi.rmiss");
-
-	Renderer::CompileShaderToSpirv("shaders/uncompiled/taa.comp");
-	Renderer::CompileShaderToSpirv("shaders/uncompiled/spatial.comp");
-	
 	CreateAndPreparePipelines(payload);
 
 	if (skybox != nullptr)
@@ -763,83 +750,6 @@ std::vector<RenderPipeline::IntVariable> DeferredPipeline::GetIntVariables()
 	ret.emplace_back("step count", &spatialStepCount);
 
 	return ret;
-}
-
-void DeferredPipeline::UpdateTextureBuffer()
-{
-	constexpr size_t MAX_PROCESSED_COUNT = 5;
-
-	const size_t pbrSize = Material::pbrTextures.size();
-	const size_t maxSize = pbrSize * MAX_PROCESSED_COUNT;
-
-	std::vector<uint64_t>& processedMaterials = processedMats[FIF::frameIndex];
-
-	std::vector<VkDescriptorImageInfo> imageInfos(maxSize);
-	std::vector<VkWriteDescriptorSet>  writeSets(maxSize);
-
-	int processedCount = 0;
-
-	if (processedMaterials.size() < Mesh::materials.size())
-		processedMaterials.resize(Mesh::materials.size());
-
-	for (int i = 0; i < Mesh::materials.size(); i++)
-	{
-		if (processedCount >= MAX_PROCESSED_COUNT)
-			break;
-
-		if (processedMaterials[i] == Mesh::materials[i].handle)
-			continue;
-
-		for (int j = 0; j < pbrSize; j++)
-		{
-			size_t index = i * pbrSize + j;
-
-			VkDescriptorImageInfo& imageInfo = imageInfos[index];
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = Mesh::materials[i][Material::pbrTextures[j]]->imageView;
-			imageInfo.sampler = Renderer::defaultSampler;
-
-			VkWriteDescriptorSet& writeSet = writeSets[index];
-			writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			writeSet.descriptorCount = 1;
-			writeSet.dstArrayElement = static_cast<uint32_t>(index);
-			writeSet.dstBinding = 2;
-			writeSet.dstSet = firstPipeline->GetDescriptorSets()[0];
-			writeSet.pImageInfo = &imageInfos[index];
-		}
-		processedMaterials.push_back(Mesh::materials[i].handle);
-		processedCount++;
-	}
-
-	if (processedCount > 0)
-		vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, static_cast<uint32_t>(processedCount * pbrSize), writeSets.data(), 0, nullptr);
-}
-
-void DeferredPipeline::SetTextureBuffer()
-{
-	VkDescriptorImageInfo imageInfo{};
-	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	imageInfo.imageView = VK_NULL_HANDLE;
-	imageInfo.sampler = Renderer::defaultSampler;
-
-	std::vector<VkDescriptorImageInfo> imageInfos(500, imageInfo);
-
-	std::array<VkWriteDescriptorSet, FIF::FRAME_COUNT> writeSets{};
-
-	for (int i = 0; i < FIF::FRAME_COUNT; i++)
-	{
-		VkWriteDescriptorSet& writeSet = writeSets[i];
-		writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writeSet.dstSet = firstPipeline->GetAllDescriptorSets()[i][0];
-		writeSet.pImageInfo = imageInfos.data();
-		writeSet.descriptorCount = 500;
-		writeSet.dstArrayElement = 0;
-		writeSet.dstBinding = 0;
-	}
-
-	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, FIF::FRAME_COUNT, writeSets.data(), 0, nullptr);
 }
 
 void DeferredPipeline::UpdateUBO(Camera* cam)

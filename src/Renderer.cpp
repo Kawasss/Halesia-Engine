@@ -215,68 +215,8 @@ void Renderer::CreateImGUI()
 	ResetImGUI();
 }
 
-void Renderer::RecompileShaders()
-{
-	if (flags & NoShaderRecompilation)
-	{
-		Console::WriteLine("Cannot recompile shaders because the flag NO_SHADER_RECOMPILATION was set");
-		return;
-	}
-
-	Console::WriteLine("Debug mode detected, recompiling all shaders found in directory \"shaders\"...", Console::Severity::Normal);
-	for (const fs::path& file : fs::directory_iterator("shaders/uncompiled"))
-	{
-		if (!fs::is_directory(file))
-			CompileShaderToSpirv(file);
-	}
-}
-
-bool Renderer::CompileShaderToSpirv(const std::filesystem::path& file)
-{
-	if (!fs::exists(file))
-	{
-		std::cout << "Could not compile " << file << '\n';
-		return false;
-	}
-		
-	fs::path spirv = "shaders/spirv/" + file.filename().string() + ".spv";
-
-	if (fs::exists(spirv)) // the file has been compiled before, check if the compiled version is out of date
-	{
-		fs::file_time_type sourceWriteTime = fs::last_write_time(file);
-		fs::file_time_type spirvWriteTime  = fs::last_write_time(spirv);
-
-		if (sourceWriteTime < spirvWriteTime) // the source is older than the compiled version, so we do not recompile it
-		{
-			std::cout << "skipped compilation of " << file << '\n';
-			return false;
-		}
-	}
-
-	ForceCompileShaderToSpirv(file);
-	return true;
-}
-
-void Renderer::ForceCompileShaderToSpirv(const std::filesystem::path& file)
-{
-	std::cout << "compiling " << file << "...\n";
-
-	std::string compiler = sys::GetEnvVariable("VK_SDK_PATH") + "\\Bin\\glslc.exe";
-
-	if (!fs::exists(compiler))
-		return; // vulkan SDK (and glslc) is missing
-
-	std::string args = std::format("-i {} -o shaders/spirv/{}.spv --target-env=vulkan1.4", file.string(), file.filename().string()); // can compile with -O for optimisations
-
-	sys::StartProcess(compiler, args);
-}
-
 void Renderer::InitVulkan()
 {
-	#ifdef _DEBUG
-	RecompileShaders();
-	#endif
-
 	Vulkan::Init();
 
 	CreatePhysicalDevice();
