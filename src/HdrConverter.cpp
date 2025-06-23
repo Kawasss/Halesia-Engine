@@ -49,8 +49,8 @@ static void CreateRenderPass()
 static void CreatePipeline()
 {
 	GraphicsPipeline::CreateInfo createInfo{};
-	createInfo.vertexShader   = "shaders/spirv/cubemapConv.vert.spv";
-	createInfo.fragmentShader = "shaders/spirv/cubemapConv.frag.spv";
+	createInfo.vertexShader   = "shaders/uncompiled/cubemapConv.vert";
+	createInfo.fragmentShader = "shaders/uncompiled/cubemapConv.frag";
 
 	createInfo.renderPass = renderPass;
 	createInfo.noVertices = true;

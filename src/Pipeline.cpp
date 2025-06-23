@@ -103,7 +103,8 @@ void Pipeline::Destroy()
 	vgm::Delete(layout);
 
 	for (const VkDescriptorSetLayout& setLayout : setLayouts)
-		vgm::Delete(setLayout);
+		if (std::find(globalSetLayouts.begin(), globalSetLayouts.end(), setLayout) == globalSetLayouts.end())
+			vgm::Delete(setLayout);
 
 	vgm::Delete(pool);
 }

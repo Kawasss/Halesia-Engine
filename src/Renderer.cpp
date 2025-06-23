@@ -324,8 +324,8 @@ void Renderer::CreateSwapchain()
 	swapchain->CreateFramebuffers(GUIRenderPass);
 
 	GraphicsPipeline::CreateInfo createInfo{}; // the pipeline used to draw to the swapchain
-	createInfo.vertexShader   = "shaders/spirv/screen.vert.spv";
-	createInfo.fragmentShader = "shaders/spirv/screen.frag.spv";
+	createInfo.vertexShader   = "shaders/uncompiled/screen.vert";
+	createInfo.fragmentShader = "shaders/uncompiled/screen.frag";
 	createInfo.renderPass = GUIRenderPass;
 	createInfo.noVertices = true;
 
@@ -584,6 +584,9 @@ void Renderer::RendererManagedSet::Create()
 
 	Pipeline::globalSetLayouts.push_back(layout);
 	Pipeline::globalDescriptorSets.push_back(set);
+
+	Vulkan::SetDebugName(layout, "global set layout");
+	Vulkan::SetDebugName(set, "global set");
 }
 
 void Renderer::RendererManagedSet::Destroy()
@@ -617,13 +620,17 @@ void Renderer::UpdateMaterialBuffer()
 	std::vector<VkDescriptorImageInfo> imageInfos((Mesh::materials.size() - differentIndex) * pbrSize);
 
 	materials.resize(differentIndex + 1);
+	for (uint32_t i = min; i < materials.size(); i++)
+		materials[i] = Mesh::materials[i].handle;
+
 	for (uint32_t i = differentIndex; i < Mesh::materials.size(); i++)
 	{
 		for (size_t j = 0; j < pbrSize; j++)
 		{
-			imageInfos[i].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfos[i].imageView = Mesh::materials[i][j]->imageView;
-			imageInfos[i].sampler = defaultSampler;
+			size_t index = i * pbrSize + j;
+			imageInfos[index].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			imageInfos[index].imageView = Mesh::materials[i][j]->imageView;
+			imageInfos[index].sampler = defaultSampler;
 		}
 	}
 
@@ -701,6 +708,8 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 
 void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<MeshObject*>& objects)
 {
+	UpdateMaterialBuffer();
+
 	VkExtent2D viewportExtent = { viewportWidth, viewportHeight };
 
 	RenderPipeline::Payload payload = GetPipelinePayload(commandBuffer, camera);

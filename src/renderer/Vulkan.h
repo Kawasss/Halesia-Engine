@@ -5,6 +5,7 @@
 #include <set>
 #include <mutex>
 #include <map>
+#include <span>
 
 #include "PhysicalDevice.h"
 #include "CommandBuffer.h"
@@ -73,7 +74,7 @@ public:
     static VkImageView                        CreateImageView(VkImage image, VkImageViewType viewType, uint32_t mipLevels, uint32_t layerCount, VkFormat format, VkImageAspectFlags aspectFlags);
     static void                               TransitionColorImage(VkCommandBuffer commandBuffer, VkImage image, VkImageLayout oldLayout, VkImageLayout newLayout, VkAccessFlags src, VkAccessFlags dst, VkPipelineStageFlags srcPipe, VkPipelineStageFlags dstPipe); // no mipmaps or layers !!
 
-    static VkShaderModule                     CreateShaderModule(const std::vector<char>& code);
+    static VkShaderModule                     CreateShaderModule(const std::span<const char>& code);
     static VkPipelineShaderStageCreateInfo    GetGenericShaderStageCreateInfo(VkShaderModule module, VkShaderStageFlagBits shaderStageBit, const char* name = "main");
 
     static VkCommandBuffer                    BeginSingleTimeCommands(VkCommandPool commandPool);
@@ -200,6 +201,18 @@ template<>
 inline void Vulkan::SetDebugName<VkCommandBuffer>(VkCommandBuffer object, const char* name)
 {
     DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_COMMAND_BUFFER, name);
+}
+
+template<>
+inline void Vulkan::SetDebugName<VkDescriptorSetLayout>(VkDescriptorSetLayout object, const char* name)
+{
+    DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, name);
+}
+
+template<>
+inline void Vulkan::SetDebugName<VkDescriptorSet>(VkDescriptorSet object, const char* name)
+{
+    DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_DESCRIPTOR_SET, name);
 }
 
 #define VULKAN_TRACK_MEMORY

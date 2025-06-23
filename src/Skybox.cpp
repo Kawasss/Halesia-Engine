@@ -49,8 +49,8 @@ Skybox::Skybox()
 	renderPass = builder.Build();
 
 	GraphicsPipeline::CreateInfo createInfo{};
-	createInfo.vertexShader   = "shaders/spirv/skybox.vert.spv";
-	createInfo.fragmentShader = "shaders/spirv/skybox.frag.spv";
+	createInfo.vertexShader   = "shaders/uncompiled/skybox.vert";
+	createInfo.fragmentShader = "shaders/uncompiled/skybox.frag";
 
 	createInfo.renderPass = renderPass;
 	createInfo.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;

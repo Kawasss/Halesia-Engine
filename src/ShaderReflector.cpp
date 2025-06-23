@@ -4,7 +4,7 @@
 #include "renderer/ShaderReflector.h"
 #include "renderer/VulkanAPIError.h"
 
-ShaderGroupReflector::ShaderGroupReflector(const std::vector<char>& sourceCode)
+ShaderGroupReflector::ShaderGroupReflector(const std::span<char>& sourceCode)
 {
 	modules.resize(1);
 	SpvReflectResult result = spvReflectCreateShaderModule(sourceCode.size(), sourceCode.data(), &modules[0]);
@@ -13,7 +13,19 @@ ShaderGroupReflector::ShaderGroupReflector(const std::vector<char>& sourceCode)
 	ProcessLayoutBindings();
 }
 
-ShaderGroupReflector::ShaderGroupReflector(const std::vector<std::vector<char>>& sourceCodes)
+ShaderGroupReflector::ShaderGroupReflector(const std::span<std::vector<char>>& sourceCodes)
+{
+	modules.resize(sourceCodes.size());
+	for (int i = 0; i < sourceCodes.size(); i++)
+	{
+		SpvReflectResult result = spvReflectCreateShaderModule(sourceCodes[i].size(), sourceCodes[i].data(), &modules[i]);
+		if (result != SPV_REFLECT_RESULT_SUCCESS)
+			throw VulkanAPIError("Cannot reflect on a given shader (code: " + std::to_string((int)result) + ')');
+	}
+	ProcessLayoutBindings();
+}
+
+ShaderGroupReflector::ShaderGroupReflector(const std::span<std::span<char>>& sourceCodes)
 {
 	modules.resize(sourceCodes.size());
 	for (int i = 0; i < sourceCodes.size(); i++)
@@ -126,7 +138,7 @@ std::vector<VkPushConstantRange> ShaderGroupReflector::GetPushConstants() const
 
 uint32_t ShaderGroupReflector::GetDescriptorSetCount() const
 {
-	return static_cast<uint32_t>(setLayoutBindings.size());
+	return static_cast<uint32_t>(setLayoutBindings.size() - removedSets.size());
 }
 
 uint32_t ShaderGroupReflector::GetOutputVariableCount(uint32_t index) const
@@ -188,7 +200,8 @@ void ShaderGroupReflector::WriteToDescriptorSet(VkDevice logicalDevice, VkDescri
 
 void ShaderGroupReflector::ExcludeSet(uint32_t set)
 {
-	removedSets.emplace(set);
+	if (setLayoutBindings.find(set) != setLayoutBindings.end())
+		removedSets.emplace(set);
 }
 
 ShaderGroupReflector::~ShaderGroupReflector()

@@ -120,7 +120,7 @@ void DeferredPipeline::CreateAndPreparePipelines(const Payload& payload)
 	CreateTAAResources(payload.width, payload.height);
 	BindTAAResources();
 
-	SetTextureBuffer();
+	//SetTextureBuffer();
 }
 
 void DeferredPipeline::ReloadShaders(const Payload& payload)
@@ -303,14 +303,14 @@ void DeferredPipeline::CreateRenderPass(const std::array<VkFormat, GBUFFER_COUNT
 void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass secondPass)
 {
 	GraphicsPipeline::CreateInfo createInfo{};
-	createInfo.vertexShader   = "shaders/spirv/deferredFirst.vert.spv";
-	createInfo.fragmentShader = "shaders/spirv/deferredFirst.frag.spv";
+	createInfo.vertexShader   = "shaders/uncompiled/deferredFirst.vert";
+	createInfo.fragmentShader = "shaders/uncompiled/deferredFirst.frag";
 	createInfo.renderPass = firstPass;
 	
 	firstPipeline = std::make_unique<GraphicsPipeline>(createInfo);
 
-	createInfo.vertexShader   = "shaders/spirv/deferredSecond.vert.spv";
-	createInfo.fragmentShader = Renderer::canRayTrace ? "shaders/spirv/deferredSecondRT.frag.spv" : "shaders/spirv/deferredSecond.frag.spv";
+	createInfo.vertexShader   = "shaders/uncompiled/deferredSecond.vert";
+	createInfo.fragmentShader = Renderer::canRayTrace ? "shaders/uncompiled/deferredSecondRT.frag" : "shaders/spirv/deferredSecond.frag";
 	createInfo.renderPass = secondPass;
 	createInfo.noVertices = true;
 
@@ -836,7 +836,7 @@ void DeferredPipeline::SetTextureBuffer()
 		writeSet.pImageInfo = imageInfos.data();
 		writeSet.descriptorCount = 500;
 		writeSet.dstArrayElement = 0;
-		writeSet.dstBinding = 2;
+		writeSet.dstBinding = 0;
 	}
 
 	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, FIF::FRAME_COUNT, writeSets.data(), 0, nullptr);

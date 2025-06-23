@@ -1,6 +1,8 @@
 #version 460
 #include "include/layouts.glsl"
 
+DECLARE_EXTERNAL_SET(1)
+
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
 layout (location = 2) in vec2 texCoords;
@@ -20,7 +22,7 @@ layout(push_constant) uniform constant
     int materialID;
 } Constant;
 
-layout(bindless_textures) uniform sampler2D[bindless_texture_size] textures;
+layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_texture_size] textures;
 
 vec3 GetNormalFromMap()
 {

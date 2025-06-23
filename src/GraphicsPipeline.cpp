@@ -4,19 +4,30 @@
 #include "renderer/PipelineCreator.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/VulkanAPIError.h"
+#include "renderer/ShaderCompiler.h"
 #include "renderer/Renderer.h"
 
 #include "io/IO.h"
 
 GraphicsPipeline::GraphicsPipeline(const CreateInfo& createInfo)
 {
-	std::vector<std::vector<char>> shaderCodes =
+	std::expected<CompiledShader, bool> vertex   = ShaderCompiler::Compile(createInfo.vertexShader);
+	std::expected<CompiledShader, bool> fragment = ShaderCompiler::Compile(createInfo.fragmentShader);
+
+	if (!vertex.has_value() || !fragment.has_value())
+		return; // throw..?
+
+	std::array<std::span<char>, 2> shaderCodes =
 	{
-		IO::ReadFile(createInfo.vertexShader),   // vert is [0]
-		IO::ReadFile(createInfo.fragmentShader), // frag is [1]
+		vertex->code,
+		fragment->code,
 	};
+
 	ShaderGroupReflector reflector(shaderCodes);
-	reflector.ExcludeSet(Renderer::RESERVED_DESCRIPTOR_SET);
+	for (uint32_t set : vertex->externalSets)
+		reflector.ExcludeSet(set);
+	for (uint32_t set : fragment->externalSets)
+		reflector.ExcludeSet(set);
 
 	if (createInfo.fragmentShader == "shaders/spirv/deferredFirst.frag.spv")
 		__debugbreak();
@@ -48,7 +59,7 @@ void GraphicsPipeline::CreatePipelineLayout(const ShaderGroupReflector& reflecto
 	CheckVulkanResult("Failed to create a pipeline layout for a graphics pipeline", result);
 }
 
-void GraphicsPipeline::CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, const CreateInfo& createInfo, uint32_t attachmentCount)
+void GraphicsPipeline::CreateGraphicsPipeline(const std::span<std::span<char>>& shaders, const CreateInfo& createInfo, uint32_t attachmentCount)
 {
 	VkShaderModule vertModule = Vulkan::CreateShaderModule(shaders[0]);
 	VkShaderModule fragModule = Vulkan::CreateShaderModule(shaders[1]);

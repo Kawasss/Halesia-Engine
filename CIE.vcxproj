@@ -105,7 +105,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;_DEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\imgui-1.91.7;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -135,7 +135,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpp20</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -203,6 +203,7 @@
     <ClCompile Include="src\RayTracingPipeline.cpp" />
     <ClCompile Include="src\ResizableBuffer.cpp" />
     <ClCompile Include="src\Rigid3DObject.cpp" />
+    <ClCompile Include="src\ShaderCompiler.cpp" />
     <ClCompile Include="src\ShaderReflector.cpp" />
     <ClCompile Include="src\RayTracing.cpp" />
     <ClCompile Include="src\Input.cpp" />
@@ -288,6 +289,7 @@
     <ClInclude Include="src\renderer\AnimationManager.h" />
     <ClInclude Include="src\renderer\Bone.h" />
     <ClInclude Include="src\renderer\CommandBuffer.h" />
+    <ClInclude Include="src\renderer\CompiledShader.h" />
     <ClInclude Include="src\renderer\ComputeShader.h" />
     <ClInclude Include="src\renderer\Deferred.h" />
     <ClInclude Include="src\renderer\Denoiser.h" />
@@ -310,6 +312,7 @@
     <ClInclude Include="src\renderer\RayTracingPipeline.h" />
     <ClInclude Include="src\renderer\RenderPipeline.h" />
     <ClInclude Include="src\renderer\ResizableBuffer.h" />
+    <ClInclude Include="src\renderer\ShaderCompiler.h" />
     <ClInclude Include="src\renderer\ShaderReflector.h" />
     <ClInclude Include="src\renderer\RayTracing.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />

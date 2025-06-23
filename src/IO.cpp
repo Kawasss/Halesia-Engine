@@ -4,16 +4,16 @@
 
 namespace IO
 {
-	void WriteFile(const std::string& path)
+	void WriteFile(const std::string_view& path)
 	{
 
 	}
 
-	std::vector<char> ReadFile(const std::string& path, bool nullTerm)
+	std::vector<char> ReadFile(const std::string_view& path, bool nullTerm)
 	{
-		std::ifstream file(path, std::ios::ate | std::ios::binary);
+		std::ifstream file(path.data(), std::ios::ate | std::ios::binary);
 		if (!file.is_open())
-			throw std::runtime_error("Failed to open the file at " + path);
+			throw std::runtime_error("Failed to open the file");
 
 		size_t fileSize = (size_t)file.tellg();
 		std::vector<char> buffer(fileSize + (nullTerm ? 1 : 0));

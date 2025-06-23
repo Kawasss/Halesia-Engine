@@ -359,7 +359,7 @@ HANDLE Vulkan::GetWin32MemoryHandle(VkDeviceMemory memory)
     return handle;
 }
 
-VkShaderModule Vulkan::CreateShaderModule(const std::vector<char>& code)
+VkShaderModule Vulkan::CreateShaderModule(const std::span<const char>& code)
 {
     VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

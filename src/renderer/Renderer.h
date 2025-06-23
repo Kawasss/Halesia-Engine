@@ -53,7 +53,7 @@ public:
 	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT	= FIF::FRAME_COUNT;
 	static constexpr uint32_t MAX_TLAS_INSTANCES	= MAX_MESHES;
 
-	static constexpr uint32_t RESERVED_DESCRIPTOR_SET = 4;
+	static constexpr uint32_t RESERVED_DESCRIPTOR_SET = 3;
 	static constexpr uint32_t MATERIAL_BUFFER_BINDING = 0;
 
 	static StorageBuffer<Vertex>   g_vertexBuffer;

@@ -2,6 +2,7 @@
 #include <set>
 #include <vector>
 #include <map>
+#include <span>
 
 #include <vulkan/vulkan.h>
 #include <spirv-reflect/spirv_reflect.h>
@@ -25,8 +26,9 @@ public:
 		bool operator< (const Binding& other) const { return full <  other.full; }
 	};
 
-	ShaderGroupReflector(const std::vector<char>& sourceCode);
-	ShaderGroupReflector(const std::vector<std::vector<char>>& sourceCodes);
+	ShaderGroupReflector(const std::span<char>& sourceCode);
+	ShaderGroupReflector(const std::span<std::vector<char>>& sourceCodes);
+	ShaderGroupReflector(const std::span<std::span<char>>& sourceCodes);
 	~ShaderGroupReflector();
 
 	void ExcludeSet(uint32_t set);

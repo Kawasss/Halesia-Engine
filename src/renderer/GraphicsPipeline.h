@@ -1,7 +1,7 @@
 #pragma once
 #include <vulkan/vulkan.h>
 #include <string>
-#include <vector>
+#include <span>
 
 #include "Pipeline.h"
 
@@ -35,5 +35,5 @@ public:
 
 private:
 	void CreatePipelineLayout(const ShaderGroupReflector& reflector);
-	void CreateGraphicsPipeline(const std::vector<std::vector<char>>& shaders, const CreateInfo& createInfo, uint32_t attachmentCount);
+	void CreateGraphicsPipeline(const std::span<std::span<char>>& shaders, const CreateInfo& createInfo, uint32_t attachmentCount);
 };
