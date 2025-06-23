@@ -474,6 +474,7 @@ void Renderer::RendererManagedSet::Create()
 
 	VkDescriptorPoolCreateInfo poolCreateInfo{};
 	poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 	poolCreateInfo.maxSets = 1;
 	poolCreateInfo.poolSizeCount = 1;
 	poolCreateInfo.pPoolSizes = &poolSize;
@@ -487,11 +488,20 @@ void Renderer::RendererManagedSet::Create()
 	layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+	VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+
+	VkDescriptorSetLayoutBindingFlagsCreateInfo flagCreateInfo{};
+	flagCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+	flagCreateInfo.bindingCount = 1;
+	flagCreateInfo.pBindingFlags = &flags;
+
 	VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
 	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+	layoutCreateInfo.pNext = &flagCreateInfo;
 	layoutCreateInfo.bindingCount = 1;
 	layoutCreateInfo.pBindings = &layoutBinding;
-
+	
 	result = vkCreateDescriptorSetLayout(ctx.logicalDevice, &layoutCreateInfo, nullptr, &layout);
 	CheckVulkanResult("Failed to create renderer managed set layout", result);
 
@@ -561,15 +571,21 @@ void Renderer::UpdateMaterialBuffer()
 
 	materials.resize(differentIndex + 1);
 	for (uint32_t i = min; i < materials.size(); i++)
+	{
+		if (!Mesh::materials[i].HasFinishedLoading())
+			return;
 		materials[i] = Mesh::materials[i].handle;
+	}
 
 	for (uint32_t i = differentIndex; i < Mesh::materials.size(); i++)
 	{
 		for (size_t j = 0; j < pbrSize; j++)
 		{
-			size_t index = i * pbrSize + j;
+			const Texture* tex = Mesh::materials[i][j];
+
+			size_t index = (i - differentIndex) * pbrSize + j;
 			imageInfos[index].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfos[index].imageView = Mesh::materials[i][j]->imageView;
+			imageInfos[index].imageView = tex->imageView;
 			imageInfos[index].sampler = defaultSampler;
 		}
 	}
@@ -578,7 +594,7 @@ void Renderer::UpdateMaterialBuffer()
 	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	writeSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
-	writeSet.dstArrayElement = differentIndex;
+	writeSet.dstArrayElement = differentIndex * pbrSize;
 	writeSet.dstBinding = MATERIAL_BUFFER_BINDING;
 	writeSet.dstSet = managedSet.set;
 	writeSet.pImageInfo = imageInfos.data();

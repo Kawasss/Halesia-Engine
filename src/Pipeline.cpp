@@ -30,6 +30,7 @@ void Pipeline::CreateDescriptorPool(const ShaderGroupReflector& reflector)
 
 	VkDescriptorPoolCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	createInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 	createInfo.maxSets = reflector.GetDescriptorSetCount() * FIF::FRAME_COUNT;
 	createInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	createInfo.pPoolSizes = poolSizes.data();
@@ -48,11 +49,19 @@ void Pipeline::CreateSetLayouts(const ShaderGroupReflector& reflector)
 	for (uint32_t index : indices)
 	{
 		std::vector<VkDescriptorSetLayoutBinding> bindings = reflector.GetLayoutBindingsOfSet(index);
+		std::vector<VkDescriptorBindingFlags> bindingFlags(bindings.size(), VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT);
+
+		VkDescriptorSetLayoutBindingFlagsCreateInfo flagCreateInfo{};
+		flagCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+		flagCreateInfo.bindingCount = static_cast<uint32_t>(bindingFlags.size());
+		flagCreateInfo.pBindingFlags = bindingFlags.data();
 
 		VkDescriptorSetLayoutCreateInfo createInfo{};
 		createInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+		createInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
 		createInfo.bindingCount = static_cast<uint32_t>(bindings.size());
 		createInfo.pBindings = bindings.data();
+		createInfo.pNext = &flagCreateInfo;
 
 		VkDescriptorSetLayout setLayout = VK_NULL_HANDLE;
 		VkResult result = vkCreateDescriptorSetLayout(ctx.logicalDevice, &createInfo, nullptr, &setLayout);

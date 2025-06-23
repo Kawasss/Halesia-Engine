@@ -38,8 +38,8 @@ public:
 
 	void GenerateEmptyImages(int width, int height, int amount);
 	void ChangeData(uint8_t* data, uint32_t size, TextureFormat format);
-	void AwaitGeneration();
-	bool HasFinishedLoading();
+	void AwaitGeneration() const;
+	bool HasFinishedLoading() const;
 	void Destroy();
 
 	int GetWidth();
@@ -60,7 +60,7 @@ public:
 	~Image() { Destroy(); }
 
 protected:
-	std::future<void> generation;
+	mutable std::future<void> generation;
 
 	int				width = 0, height = 0;
 	uint32_t		mipLevels = 1, layerCount = 0;

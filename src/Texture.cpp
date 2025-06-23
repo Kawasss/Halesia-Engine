@@ -188,13 +188,13 @@ std::vector<char> Image::GetImageData()
 	return ret;
 }
 
-void Image::AwaitGeneration()
+void Image::AwaitGeneration() const
 {
 	if (generation.valid())
 		generation.get();
 }
 
-bool Image::HasFinishedLoading()
+bool Image::HasFinishedLoading() const
 {
 	if (generation.valid() && generation.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
 		generation.get(); // change the status of the image if it it done loading
