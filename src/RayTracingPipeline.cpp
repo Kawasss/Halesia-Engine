@@ -1,9 +1,12 @@
+#include <array>
+
 #include "renderer/RayTracingPipeline.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/FramesInFlight.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
+#include "renderer/ShaderCompiler.h"
 #include "renderer/Renderer.h"
 
 #include "io/IO.h"
@@ -14,25 +17,32 @@ VkStridedDeviceAddressRegionKHR fallbackShaderBinding{};
 
 RayTracingPipeline::RayTracingPipeline(const std::string& rgen, const std::string& rchit, const std::string& rmiss)
 {
-	std::vector<std::vector<char>> shaders =
+	std::expected<CompiledShader, bool> cRgen  = ShaderCompiler::Compile(rgen);
+	std::expected<CompiledShader, bool> cRchit = ShaderCompiler::Compile(rchit);
+	std::expected<CompiledShader, bool> cRmiss = ShaderCompiler::Compile(rmiss);
+
+	std::array<std::span<char>, 3> shaders =
 	{
-		IO::ReadFile(rgen),
-		IO::ReadFile(rchit),
-		IO::ReadFile(rmiss),
+		cRgen->code,
+		cRchit->code,
+		cRmiss->code,
 	};
 	ShaderGroupReflector reflector(shaders);
-	reflector.ExcludeSet(Renderer::RESERVED_DESCRIPTOR_SET);
+	for (uint32_t set : cRgen->externalSets)
+		reflector.ExcludeSet(set);
+	for (uint32_t set : cRchit->externalSets)
+		reflector.ExcludeSet(set);
+	for (uint32_t set : cRmiss->externalSets)
+		reflector.ExcludeSet(set);
 
 	InitializeBase(reflector);
 	CreatePipeline(reflector, shaders);
 	CreateShaderBindingTable();
 
-
-
 	bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
 }
 
-void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, const std::vector<std::vector<char>>& shaders)
+void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, const std::span<std::span<char>>& shaders)
 {
 	// shaders[0] = rgen, [1] = rchit, [2] = rmiss
 	const Vulkan::Context& ctx = Vulkan::GetContext();

@@ -139,7 +139,7 @@ void DeferredPipeline::CreateAndBindRTGI(const Payload& payload)
 {
 	constexpr VkDeviceSize MAX_INSTANCE_COUNT = 500ULL;
 
-	rtgiPipeline = std::make_unique<RayTracingPipeline>("shaders/spirv/rtgi.rgen.spv", "shaders/spirv/rtgi.rchit.spv", "shaders/spirv/rtgi.rmiss.spv");
+	rtgiPipeline = std::make_unique<RayTracingPipeline>("shaders/uncompiled/rtgi.rgen", "shaders/uncompiled/rtgi.rchit", "shaders/uncompiled/rtgi.rmiss");
 
 	instanceBuffer.Init(sizeof(InstanceData) * MAX_INSTANCE_COUNT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	instanceBuffer.MapPermanently();
@@ -306,8 +306,8 @@ void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass seco
 
 void DeferredPipeline::CreateTAAPipeline()
 {
-	taaPipeline = std::make_unique<ComputeShader>("shaders/spirv/taa.comp.spv");
-	spatialPipeline = std::make_unique<ComputeShader>("shaders/spirv/spatial.comp.spv");
+	taaPipeline = std::make_unique<ComputeShader>("shaders/uncompiled/taa.comp");
+	spatialPipeline = std::make_unique<ComputeShader>("shaders/uncompiled/spatial.comp");
 }
 
 void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)

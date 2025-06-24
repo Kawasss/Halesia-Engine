@@ -177,7 +177,7 @@ void AnimationManager::CreateShader()
 	std::vector<glm::mat4> defaultValue(500, glm::mat4(1.0f));
 	memcpy(mat4BufferPtr, defaultValue.data(), 500 * sizeof(glm::mat4));
 
-	computeShader = new ComputeShader("shaders/spirv/anim.comp.spv");
+	computeShader = new ComputeShader("shaders/uncompiled/anim.comp");
 
 	computeShader->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
 	computeShader->BindBufferToName("vertexBuffer", Renderer::g_vertexBuffer.GetBufferHandle());

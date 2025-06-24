@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include <vector>
+#include <span>
 
 #include "Pipeline.h"
 #include "Buffer.h"
@@ -15,7 +15,7 @@ public:
 	void Execute(const CommandBuffer& cmdBuffer, uint32_t width, uint32_t height, uint32_t depth) const;
 
 private:
-	void CreatePipeline(const ShaderGroupReflector& reflector, const std::vector<std::vector<char>>& shaders);
+	void CreatePipeline(const ShaderGroupReflector& reflector, const std::span<std::span<char>>& shaders);
 	void CreateShaderBindingTable();
 
 	VkStridedDeviceAddressRegionKHR rchitShaderBinding{};

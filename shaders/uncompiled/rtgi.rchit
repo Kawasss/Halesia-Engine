@@ -4,6 +4,9 @@
 #extension GL_EXT_shader_16bit_storage : enable
 
 #include "include/light.glsl"
+#include "include/layouts.glsl"
+
+DECLARE_EXTERNAL_SET(1)
 
 layout(location = 0) rayPayloadInEXT Payload {
 	vec3 origin;
@@ -27,7 +30,7 @@ layout(push_constant) uniform Camera
 
 hitAttributeEXT vec2 hitCoordinate;
 
-layout (binding = 6) readonly buffer Lights
+layout (binding = 6, set = 0) readonly buffer Lights
 {
 	int count;
 	Light data[];
@@ -42,12 +45,12 @@ struct Vertex
 	vec4 weights1;
 };
 
-layout (binding = 7) readonly buffer IndexBuffer 
+layout (binding = 7, set = 0) readonly buffer IndexBuffer 
 { 
 	uint16_t data[];
 } indexBuffer;
 
-layout (binding = 8) readonly buffer VertexBuffer 
+layout (binding = 8, set = 0) readonly buffer VertexBuffer 
 { 
 	Vertex data[]; 
 } vertexBuffer;
@@ -59,10 +62,12 @@ struct InstanceData
 	int material;
 };
 
-layout (binding = 9) readonly buffer InstanceDataBuffer
+layout (binding = 9, set = 0) readonly buffer InstanceDataBuffer
 {
 	InstanceData data[];
 } instanceBuffer;
+
+layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_texture_size] textures;
 
 mat4 GetModelMatrix()
 {
@@ -109,8 +114,8 @@ void main()
 	payload.origin = vertex.position;
 
 	vec3 radiance = vec3(0.0);
-	vec3 color = vec3(1.0); // read the albedo here
-	vec3 ambient = 0.01 * color; // maybe use later calculated rtgi here ??
+	vec3 color = texture(textures[instance.material * 5], vertex.textureCoordinates).rgb; // read the albedo here
+	vec3 ambient = 0.1 * color; // maybe use later calculated rtgi here ??
 
 	for (int i = 0; i < lights.count; i++)
 	{
@@ -123,7 +128,7 @@ void main()
 		float attenuation = GetAttenuation(light, vertex.position);
 
 		float diff = max(dot(vertex.normal, L), 0.0);
-		vec3 diffuse = diff * light.color.rgb * attenuation;
+		vec3 diffuse = diff * color * light.color.rgb * attenuation;
 
 		radiance += (ambient + diffuse) * 1 /*diff / payload.pdf*/; // very rough lighting
 	}

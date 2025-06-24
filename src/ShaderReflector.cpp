@@ -61,13 +61,13 @@ void ShaderGroupReflector::ProcessLayoutBindings()
 			auto it = std::find(layoutBinding.begin(), layoutBinding.end(), bindingID); // do not add duplicates
 			if (it != layoutBinding.end())
 			{
-				it->stageFlags |= modules[i].shader_stage;
+				it->stageFlags = VK_SHADER_STAGE_ALL;//|= modules[i].shader_stage;
 				continue;
 			}
 				
 			VkDescriptorSetLayoutBinding binding{};
 			binding.descriptorType = (VkDescriptorType)current.descriptor_type;
-			binding.stageFlags = modules[i].shader_stage;
+			binding.stageFlags = VK_SHADER_STAGE_ALL;//modules[i].shader_stage;
 			binding.binding = current.binding;
 			binding.pImmutableSamplers = nullptr;
 			binding.descriptorCount = current.count;

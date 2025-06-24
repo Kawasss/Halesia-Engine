@@ -5,17 +5,22 @@
 #include "renderer/GarbageManager.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/VulkanAPIError.h"
+#include "renderer/ShaderCompiler.h"
 #include "renderer/Renderer.h"
 
 #include "io/IO.h"
 
 ComputeShader::ComputeShader(const std::string& path)
 {
-	std::vector<char> code = IO::ReadFile(path);
-	ShaderGroupReflector reflector(code);
-	reflector.ExcludeSet(Renderer::RESERVED_DESCRIPTOR_SET);
+	std::expected<CompiledShader, bool> shader = ShaderCompiler::Compile(path);
+	if (!shader.has_value())
+		return;
 
-	VkShaderModule module = Vulkan::CreateShaderModule(code);
+	ShaderGroupReflector reflector(shader->code);
+	for (uint32_t set : shader->externalSets)
+		reflector.ExcludeSet(set);
+
+	VkShaderModule module = Vulkan::CreateShaderModule(shader->code);
 
 	InitializeBase(reflector);
 

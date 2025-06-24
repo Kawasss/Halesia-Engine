@@ -486,7 +486,7 @@ void Renderer::RendererManagedSet::Create()
 	layoutBinding.binding = MATERIAL_BUFFER_BINDING;
 	layoutBinding.descriptorCount = MAX_BINDLESS_TEXTURES;
 	layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	layoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+	layoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
 
 	VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
 
