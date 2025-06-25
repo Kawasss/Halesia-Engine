@@ -130,7 +130,7 @@ void main()
 		float diff = max(dot(vertex.normal, L), 0.0);
 		vec3 diffuse = diff * color * light.color.rgb * attenuation;
 
-		radiance += (ambient + diffuse) * 1 /*diff / payload.pdf*/; // very rough lighting
+		radiance += (diffuse) * 1 /*diff / payload.pdf*/; // very rough lighting
 	}
 
 	// read the objects albedo and perform very basic lighting, then add to payload.color

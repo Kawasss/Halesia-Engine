@@ -73,6 +73,7 @@ private:
 	void TransitionResourcesToTAA(const CommandBuffer& cmdBuffer);
 	void TransitionResourcesFromTAA(const CommandBuffer& cmdBuffer);
 
+	void CreateRTGIPipeline(const Payload& payload);
 	void CreateAndBindRTGI(const Payload& payload); // maybe seperate RTGI into its own class ??
 	void PushRTGIConstants(const Payload& payload);
 	void ResizeRTGI(uint32_t width, uint32_t height);
@@ -86,6 +87,8 @@ private:
 	void PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<MeshObject*>& objects);
 	void PerformSecondDeferred(const CommandBuffer& cmdBuffer, const Payload& payload);
 	
+	void RecreatePipelines(const Payload& payload);
+
 	Skybox* CreateNewSkybox(const std::string& path);
 
 	VkImageView GetPositionView() { return framebuffer.GetViews()[0]; }

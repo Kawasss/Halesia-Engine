@@ -123,13 +123,37 @@ void DeferredPipeline::CreateAndPreparePipelines(const Payload& payload)
 	//SetTextureBuffer();
 }
 
-void DeferredPipeline::ReloadShaders(const Payload& payload)
+void DeferredPipeline::RecreatePipelines(const Payload& payload)
 {
 	firstPipeline.reset();
 	secondPipeline.reset();
 	rtgiPipeline.reset();
+	taaPipeline.reset();
 
-	CreateAndPreparePipelines(payload);
+	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
+	CreateRTGIPipeline(payload);
+	BindRTGIResources();
+	BindTLAS();
+
+	CreateTAAPipeline();
+	BindTAAResources();
+
+	BindResources(payload.renderer->GetLightBuffer());
+}
+
+void DeferredPipeline::ReloadShaders(const Payload& payload)
+{
+	RecreatePipelines(payload);
+}
+
+void DeferredPipeline::CreateRTGIPipeline(const Payload& payload)
+{
+	rtgiPipeline = std::make_unique<RayTracingPipeline>("shaders/uncompiled/rtgi.rgen", "shaders/uncompiled/rtgi.rchit", "shaders/uncompiled/rtgi.rmiss");
+
+	rtgiPipeline->BindBufferToName("instanceBuffer", instanceBuffer);
+	rtgiPipeline->BindBufferToName("lights", payload.renderer->GetLightBuffer().Get());
+	rtgiPipeline->BindBufferToName("vertexBuffer", Renderer::g_vertexBuffer.GetBufferHandle());
+	rtgiPipeline->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
 
 	if (skybox != nullptr)
 		rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -139,18 +163,10 @@ void DeferredPipeline::CreateAndBindRTGI(const Payload& payload)
 {
 	constexpr VkDeviceSize MAX_INSTANCE_COUNT = 500ULL;
 
-	rtgiPipeline = std::make_unique<RayTracingPipeline>("shaders/uncompiled/rtgi.rgen", "shaders/uncompiled/rtgi.rchit", "shaders/uncompiled/rtgi.rmiss");
-
 	instanceBuffer.Init(sizeof(InstanceData) * MAX_INSTANCE_COUNT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	instanceBuffer.MapPermanently();
 
-	rtgiPipeline->BindBufferToName("instanceBuffer", instanceBuffer);
-	rtgiPipeline->BindBufferToName("lights", payload.renderer->GetLightBuffer().Get());
-	rtgiPipeline->BindBufferToName("vertexBuffer", Renderer::g_vertexBuffer.GetBufferHandle());
-	rtgiPipeline->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
-
-	if (skybox != nullptr)
-		rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	CreateRTGIPipeline(payload);
 
 	ResizeRTGI(payload.width, payload.height);
 }
