@@ -29,7 +29,7 @@ layout(push_constant) uniform constant
 void main() 
 {
     position = (Constant.model * vec4(inPosition, 1.0)).xyz;
-    normal = mat3(transpose(inverse(Constant.model))) * inNormal;
+    normal = normalize(mat3(transpose(inverse(Constant.model))) * inNormal);
     texCoords = inTexCoords;
     camPos = ubo.camPos;
 

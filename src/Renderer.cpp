@@ -410,7 +410,7 @@ void Renderer::CreateTextureSampler()
 
 void Renderer::Create3DRenderPass()
 {
-	RenderPassBuilder builder3D(VK_FORMAT_R8G8B8A8_UNORM);
+	RenderPassBuilder builder3D(VK_FORMAT_R16G16B16A16_UNORM);
 
 	builder3D.SetInitialLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	builder3D.SetFinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -990,7 +990,7 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 {
 	if (framebuffer.Get() == VK_NULL_HANDLE)
 	{
-		framebuffer.Init(renderPass, 1, viewportWidth, viewportHeight, VK_FORMAT_R8G8B8A8_UNORM); // maybe 32 bit float instead of 8 bit ??
+		framebuffer.Init(renderPass, 1, viewportWidth, viewportHeight, VK_FORMAT_R16G16B16A16_UNORM); // maybe 32 bit float instead of 8 bit ??
 	}
 	else
 	{

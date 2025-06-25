@@ -49,7 +49,7 @@ void main()
         discard;
 
     positionColor = vec4(position, 1.0);
-    normalColor   = vec4(GetNormalFromMap(), 1.0);
+    normalColor   = vec4(normal, 1.0);
 
     vec2 prevClip = prevPosition.xy / prevPosition.w;
     vec2 currClip = currPosition.xy / currPosition.w;

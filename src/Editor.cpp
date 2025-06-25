@@ -266,7 +266,9 @@ void Editor::ShowObjectWithChildren(Object* object)
 
 	std::string nodeName = "##n_" + object->name;
 	bool success = false; // default state is that the object has no children
-	if (!object->GetChildren().empty())
+	bool noChildren = !object->GetChildren().empty();
+
+	if (noChildren)
 	{
 		success = ImGui::TreeNode(nodeName.c_str());
 		ImGui::SameLine();
@@ -295,9 +297,6 @@ void Editor::ShowObjectWithChildren(Object* object)
 		if (ImGui::MenuItem("delete"))
 		{
 			UIFree(object);
-			ImGui::EndPopup();
-			ImGui::TreePop();
-			return;
 		}
 
 		ImGui::EndPopup();
