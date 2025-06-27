@@ -359,10 +359,13 @@ void GUI::ShowObjectTransform(Transform& transform)
 	ShowInputVector(transform.position, { "##posx", "##posy", "##posz" });
 
 	glm::vec3 rot = glm::eulerAngles(transform.rotation);
+	rot = glm::degrees(rot);
 
 	ImGui::Text("rotation:");
 	ImGui::SameLine();
 	ShowInputVector(rot, { "##rotx", "##roty", "##rotz" });
+	
+	rot = glm::radians(rot);
 
 	transform.rotation = glm::quat(rot);
 

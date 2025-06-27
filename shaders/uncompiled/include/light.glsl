@@ -80,7 +80,7 @@ bool LightIsOutOfRange(Light light, vec3 lightDir)
 		return false;
 	}
 
-	float theta = dot(lightDir, -light.direction.xyz);
+	float theta = dot(lightDir, normalize(-light.direction.xyz));
 	return theta <= light.pos.w;
 }
 
@@ -91,8 +91,8 @@ float GetIntensity(Light light, vec3 lightDir)
 		return 1.0;
 	}
 
-	float theta   = dot(lightDir, -light.direction.xyz);
-	float epsilon = light.pos.w - light.direction.w;
+	float theta   = dot(lightDir, normalize(-light.direction.xyz));
+	float epsilon = light.direction.w - light.pos.w;
 
 	return clamp((theta - light.pos.w) / epsilon, 0.0, 1.0);
 }

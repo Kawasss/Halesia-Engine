@@ -104,11 +104,10 @@ void main()
 	for (int i = 0; i < lights.count; i++)
 	{
 		Light light = lights.data[i];
-
-        if (LightIsOutOfReach(light, position))
-            continue;
-
         vec3 L = GetLightDir(light, position);
+
+        if (LightIsOutOfReach(light, position) || LightIsOutOfRange(light, L))
+            continue;
 
         float dist = distance(position, light.pos.xyz);
 
@@ -131,6 +130,8 @@ void main()
         float G   = GeometrySmith(N, V, L, roughness);      
         vec3 F    = fresnelSchlick(max(dot(H, V), 0.0), F0);
            
+        float intensity = GetIntensity(light, L);
+
         vec3 numerator    = NDF * G * F; 
         float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001; // + 0.0001 to prevent divide by zero
         vec3 specular = numerator / denominator;
@@ -141,7 +142,7 @@ void main()
 
         float NdotL = max(dot(N, L), 0.0);        
 
-        Lo += (kD * albedo / PI + specular) * radiance * NdotL;
+        Lo += (kD * albedo / PI + specular) * radiance * NdotL * intensity;
 	}
 
     vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness); 

@@ -613,21 +613,24 @@ void Editor::ShowObjectLight(LightObject* light)
 	if (currIndex != nextIndex)
 		light->type = Light::StringToType(curr);
 
+	float cutoff = glm::degrees(light->cutoff);
+
 	ImGui::Text("cutoff:       ");
 	ImGui::SameLine();
-	ImGui::InputFloat("##light_cutoff", &light->cutoff);
+	ImGui::InputFloat("##light_cutoff", &cutoff);
+
+	light->cutoff = glm::radians(cutoff);
+	float outerCutoff = glm::degrees(light->outerCutoff);
 
 	ImGui::Text("outer cutoff: ");
 	ImGui::SameLine();
-	ImGui::InputFloat("##light_outer_cutoff", &light->outerCutoff);
+	ImGui::InputFloat("##light_outer_cutoff", &outerCutoff);
+
+	light->outerCutoff = glm::radians(outerCutoff);
 
 	ImGui::Text("color:        ");
 	ImGui::SameLine();
 	GUI::ShowInputVector(light->color, { "##color_r", "##color_g", "##color_b" });
-
-	ImGui::Text("direction:    ");
-	ImGui::SameLine();
-	GUI::ShowInputVector(light->direction, { "##direction_x", "##direction_y", "##direction_z" });
 }
 
 void Editor::ShowObjectRigidBody(RigidBody& rigid)

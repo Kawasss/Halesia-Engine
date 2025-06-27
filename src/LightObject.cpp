@@ -26,7 +26,7 @@ LightObject* LightObject::Create(const Light& light)
 	ret->color = light.color;
 	ret->cutoff = light.cutoff;
 	ret->outerCutoff = light.outerCutoff;
-	ret->direction = light.direction;
+	ret->transform.rotation = light.direction;
 
 	return ret;
 }
@@ -45,15 +45,15 @@ void LightObject::Init(const ObjectCreationData& data)
 	color = data.lightData.color;
 	cutoff = data.lightData.cutoff;
 	outerCutoff = data.lightData.outerCutoff;
-	direction = data.lightData.direction;
+	transform.rotation = data.lightData.direction;
 }
 
 LightGPU LightObject::ToGPUFormat() const
 {
 	LightGPU ret{};
-	ret.pos = glm::vec4(transform.position, 1.0f);
+	ret.pos = glm::vec4(transform.position, outerCutoff);
 	ret.color = color;
-	ret.direction = glm::vec4(direction, 1.0f);
+	ret.direction = glm::vec4(glm::rotate(transform.rotation, glm::vec3(0, 1, -1)), cutoff);
 	ret.type = type;
 
 	return ret;
@@ -67,5 +67,4 @@ void LightObject::DuplicateDataTo(Object* pObject) const
 	pLight->color = color;
 	pLight->cutoff = cutoff;
 	pLight->outerCutoff = outerCutoff;
-	pLight->direction = direction;
 }

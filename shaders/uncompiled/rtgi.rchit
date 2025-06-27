@@ -115,22 +115,21 @@ void main()
 
 	vec3 radiance = vec3(0.0);
 	vec3 color = texture(textures[instance.material * 5], vertex.textureCoordinates).rgb; // read the albedo here
-	vec3 ambient = 0.1 * color; // maybe use later calculated rtgi here ??
 
-	for (int i = 0; i < lights.count; i++)
+	for (int i = 0; i < lights.count; i++) // !! should ray trace against a very low poly version of the scene for shadows 
 	{
 		Light light = lights.data[i];
+		vec3 L = GetLightDir(light, vertex.position);
 
-        if (LightIsOutOfReach(light, vertex.position))
+        if (LightIsOutOfReach(light, vertex.position) || LightIsOutOfRange(light, L))
             continue;
 
-		vec3 L = GetLightDir(light, vertex.position);
 		float attenuation = GetAttenuation(light, vertex.position);
 
 		float diff = max(dot(vertex.normal, L), 0.0);
 		vec3 diffuse = diff * color * light.color.rgb * attenuation;
 
-		radiance += (diffuse) * 1 /*diff / payload.pdf*/; // very rough lighting
+		radiance += (diffuse) * 1 * GetIntensity(light, L); /*diff / payload.pdf*/; // very rough lighting
 	}
 
 	// read the objects albedo and perform very basic lighting, then add to payload.color

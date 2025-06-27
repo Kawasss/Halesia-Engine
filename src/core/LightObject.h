@@ -16,7 +16,6 @@ public:
 	float outerCutoff = .0f;
 
 	glm::vec3 color = glm::vec3(1.0f);
-	glm::vec3 direction = glm::vec3(0.0f);
 
 	LightGPU ToGPUFormat() const;
 
