@@ -79,6 +79,15 @@
     <Filter Include="Shaders\includes">
       <UniqueIdentifier>{43db2465-dce4-4284-a4be-a98a23f7a331}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\scripting">
+      <UniqueIdentifier>{de1b800e-7409-4a86-b78c-6feebe62716f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scripting">
+      <UniqueIdentifier>{5e68253f-9f15-4e01-a6dd-c0081df03280}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="scripts">
+      <UniqueIdentifier>{89b1698b-c63d-4322-b63a-7399d1183184}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\HalesiaEngine.cpp">
@@ -323,6 +332,12 @@
     </ClCompile>
     <ClCompile Include="src\ShaderCompiler.cpp">
       <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ScriptObject.cpp">
+      <Filter>Source Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Script.cpp">
+      <Filter>Source Files\scripting</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -641,6 +656,12 @@
     <ClInclude Include="src\renderer\CompiledShader.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\scripting\Script.h">
+      <Filter>Header Files\scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\ScriptObject.h">
+      <Filter>Header Files\core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="icon1.ico">
@@ -742,6 +763,15 @@
     </None>
     <None Include="shaders\uncompiled\spatial.comp">
       <Filter>Shaders</Filter>
+    </None>
+    <None Include="scripts\Transform.lua">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="scripts\vec3.lua">
+      <Filter>scripts</Filter>
+    </None>
+    <None Include="scripts\quaternion.lua">
+      <Filter>scripts</Filter>
     </None>
   </ItemGroup>
 </Project>

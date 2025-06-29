@@ -69,6 +69,7 @@ struct ObjectCreationData
 		Mesh = 1,
 		Rigid3D = 2,
 		Light = 3,
+		Script = 4,
 	};
 
 	std::string name = "NO_NAME";

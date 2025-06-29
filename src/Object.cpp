@@ -22,19 +22,18 @@ void Object::AwaitGeneration()
 		generation.get();
 }
 
-Object* Object::Create(const ObjectCreationData& creationData, void* customClassPointer)
+Object* Object::Create(const ObjectCreationData& creationData)
 {
 	Object* ptr = new Object(InheritType::Base);
-	ptr->Initialize(creationData, customClassPointer);
+	ptr->Initialize(creationData);
 	return ptr;
 }
 
-void Object::Initialize(const ObjectCreationData& creationData, void* customClassPointer)
+void Object::Initialize(const ObjectCreationData& creationData)
 {
 	handle = ResourceManager::GenerateHandle();
 
 	name = creationData.name;
-	scriptClass = customClassPointer;
 	state = (ObjectState)creationData.state;
 
 	transform.position = creationData.position;
@@ -110,7 +109,6 @@ void Object::DuplicateBaseDataTo(Object* pObject) const
 	pObject->name = name + "_copy";
 	pObject->state = state;
 	pObject->finishedLoading = true;
-	pObject->scriptClass = nullptr;
 	pObject->handle = ResourceManager::GenerateHandle();
 }
 

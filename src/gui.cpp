@@ -208,11 +208,10 @@ void GUI::ShowObjectData(Object* object)
 	ImGui::Text
 	(
 		"Handle:  %I64u\n"
-		"Script:  %I64u\n"
 		"Type:    %s\n"
 		"\n"
 		"loading: %i\n"
-	, object->handle, object->GetScript<Object*>(), Object::InheritTypeToString(object->GetType()).data(), !object->FinishedLoading());
+	, object->handle, Object::InheritTypeToString(object->GetType()).data(), !object->FinishedLoading());
 }
 
 void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* window, int index)

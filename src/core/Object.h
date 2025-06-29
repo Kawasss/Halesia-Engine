@@ -38,7 +38,8 @@ public:
 		Mesh = 1,
 		Rigid3D = 2,
 		Light = 3,
-		TypeCount = 4, // increment when a new type is added
+		Script = 4,
+		TypeCount = 5, // increment when a new type is added
 	};
 	static std::string_view InheritTypeToString(InheritType type);
 	static InheritType StringToInheritType(const std::string_view& str);
@@ -47,10 +48,9 @@ public:
 	/// This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.
 	/// Be weary of accessing members in the constructor, since they don't have to be loaded in. AwaitGeneration awaits the async thread.
 	/// </summary>
-	/// <param name="customClassInstancePointer">: A pointer to the custom class, "this" will work most of the time</param>
 	/// <param name="creationData"></param>
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
-	static Object* Create(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
+	static Object* Create(const ObjectCreationData& creationData);
 
 	Object(InheritType type);
 
@@ -68,14 +68,11 @@ public:
 	virtual void OnCollisionExit(Object* object)  {}
 
 	bool HasFinishedLoading();
-	bool HasScript() const { return scriptClass != nullptr; }
+	bool HasScript() const { return hasScript; }
 
 	void AwaitGeneration(); // Awaits the async generation process of the object and meshes
 
-	template<typename T> 
-	T* GetScript(); // Gets the script attached to the object, if no script is attached it will return an invalid pointer
-
-	void Initialize(const ObjectCreationData& creationData, void* customClassInstancePointer = nullptr);
+	void Initialize(const ObjectCreationData& creationData);
 
 	template<typename T> 
 	Object* AddChild(const ObjectCreationData& creationData);
@@ -122,7 +119,6 @@ private:
 
 	InheritType type = InheritType::Base;
 
-	void* scriptClass = nullptr;
 	std::future<void> generation;
 	
 	Scene* scene = nullptr;
@@ -149,21 +145,9 @@ protected:
 	void DuplicateBaseDataTo(Object* pObject) const;
 
 	Scene* GetParentScene() { return scene; }
+
+	bool hasScript = false;
 };
-
-template<typename T> 
-void Object::SetScript(T* script)
-{
-	static_assert(!std::is_base_of_v<T, Object>, "Cannot set the script: the typename does not have Object as a base");
-	scriptClass = script;
-}
-
-template<typename T> 
-T* Object::GetScript() 
-{ 
-	static_assert(!std::is_base_of_v<T, Object>, "Cannot get the script: the typename does not have Object as a base");
-	return static_cast<T*>(scriptClass); 
-}
 
 template<typename T> 
 Object* Object::AddChild(const ObjectCreationData& creationData)

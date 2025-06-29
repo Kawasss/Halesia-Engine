@@ -9,6 +9,7 @@ class Window;
 class Renderer;
 class RigidBody;
 class LightObject;
+class ScriptObject;
 struct MaterialCreateInfo;
 struct Mesh;
 
@@ -83,6 +84,7 @@ private:
 	void ShowObjectRigidBody(RigidBody& rigid);
 	void ShowObjectMesh(Mesh& mesh);
 	void ShowObjectLight(LightObject* light);
+	void ShowObjectScript(ScriptObject* scriptObject);
 
 	void ShowAddObjectWindow();
 

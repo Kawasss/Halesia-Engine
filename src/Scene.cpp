@@ -12,6 +12,7 @@
 #include "core/MeshObject.h"
 #include "core/Rigid3DObject.h"
 #include "core/LightObject.h"
+#include "core/ScriptObject.h"
 
 Camera* Scene::defaultCamera = new Camera();
 
@@ -55,6 +56,9 @@ static void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberTo
 	 case ObjectCreationData::Type::Light:
 		 pObject = LightObject::Create(creationData);
 		 break;
+	 case ObjectCreationData::Type::Script:
+		 pObject = ScriptObject::Create(creationData);
+		 break;
 	 }
 	 assert(pObject != nullptr);
 
@@ -62,6 +66,8 @@ static void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberTo
 
 	 for (const ObjectCreationData& child : creationData.children)
 		 AddObject(child, pObject);
+
+	 pObject->Start();
 
 	 return pObject;
  }

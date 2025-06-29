@@ -42,6 +42,10 @@ int main(int argc, char** argv)
 
 	instance->Run();
 
+	glm::quat v1;
+	glm::quat v2;
+	v1* v2;
+
 	return EXIT_SUCCESS;
 }
 

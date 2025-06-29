@@ -8,6 +8,7 @@
 #include "core/MeshObject.h"
 #include "core/Rigid3DObject.h"
 #include "core/LightObject.h"
+#include "core/ScriptObject.h"
 
 #include "renderer/gui.h"
 #include "renderer/RayTracing.h"
@@ -595,6 +596,26 @@ void Editor::ShowObjectComponents()
 	{
 		if (ImGui::CollapsingHeader("light", flags))
 			ShowObjectLight(dynamic_cast<LightObject*>(selectedObj));
+	}
+	if (selectedObj->IsType(Object::InheritType::Script))
+	{
+		if (ImGui::CollapsingHeader("script"))
+			ShowObjectScript(dynamic_cast<ScriptObject*>(selectedObj));
+	}
+}
+
+void Editor::ShowObjectScript(ScriptObject* scriptObject)
+{
+	if (ImGui::Button("Set script"))
+	{
+		std::string file = GetFile("lua", "*.lua");
+		if (!file.empty())
+			scriptObject->SetScript(file);
+	}
+
+	if (ImGui::Button("Reload"))
+	{
+		scriptObject->Reload();
 	}
 }
 

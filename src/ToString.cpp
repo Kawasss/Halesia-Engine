@@ -13,39 +13,29 @@ std::string_view Object::InheritTypeToString(InheritType type)
 {
 	switch (type)
 	{
-	case InheritType::Base:
-		return "Base";
-	case InheritType::Light:
-		return "Light";
-	case InheritType::Mesh:
-		return "Mesh";
-	case InheritType::Rigid3D:
-		return "Rigid3D";
+	case InheritType::Base:    return "Base";
+	case InheritType::Light:   return "Light";
+	case InheritType::Mesh:    return "Mesh";
+	case InheritType::Rigid3D: return "Rigid3D";
+	case InheritType::Script:  return "Script";
 	}
 	return "Unknown";
 }
 
 Object::InheritType Object::StringToInheritType(const std::string_view& str)
 {
-	if (str == "Base")
-		return InheritType::Base;
-	if (str == "Light")
-		return InheritType::Light;
-	if (str == "Mesh")
-		return InheritType::Mesh;
-	if (str == "Rigid3D")
-		return InheritType::Rigid3D;
+	if (str == "Base")    return InheritType::Base;
+	if (str == "Light")   return InheritType::Light;
+	if (str == "Mesh")    return InheritType::Mesh;
+	if (str == "Rigid3D") return InheritType::Rigid3D;
 	return InheritType::TypeCount; // fallback value
 }
 
 Light::Type Light::StringToType(const std::string_view& str)
 {
-	if (str == "Directional")
-		return Type::Directional;
-	if (str == "Point")
-		return Type::Point;
-	if (str == "Spot")
-		return Type::Spot;
+	if (str == "Directional") return Type::Directional;
+	if (str == "Point")       return Type::Point;
+	if (str == "Spot")        return Type::Spot;
 	return Type::Spot;
 }
 
@@ -53,12 +43,9 @@ std::string_view Light::TypeToString(Type type)
 {
 	switch (type)
 	{
-	case Type::Directional:
-		return "Directional";
-	case Type::Point:
-		return "Point";
-	case Type::Spot:
-		return "Spot";
+	case Type::Directional: return "Directional";
+	case Type::Point:       return "Point";
+	case Type::Spot:        return "Spot";
 	}
 	return "Unknown";
 }
