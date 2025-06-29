@@ -613,6 +613,9 @@ void Editor::ShowObjectScript(ScriptObject* scriptObject)
 			scriptObject->SetScript(file);
 	}
 
+	if (ImGui::Button("pause"))
+		scriptObject->pause = !scriptObject->pause;
+
 	if (ImGui::Button("Reload"))
 	{
 		scriptObject->Reload();

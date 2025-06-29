@@ -20,6 +20,8 @@ public:
 
 	void Reload();
 
+	bool pause = false;
+
 private:
 	ScriptObject();
 

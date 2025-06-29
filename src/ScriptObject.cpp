@@ -37,7 +37,7 @@ void ScriptObject::Start()
 
 void ScriptObject::Update(float delta)
 {
-	if (pScript == nullptr)
+	if (pScript == nullptr || pause)
 		return;
 
 	pScript->SetTransform(transform);

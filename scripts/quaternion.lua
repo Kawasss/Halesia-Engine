@@ -16,9 +16,9 @@ function Quaternion:new(x, y, z, w)
 	return ret
 end
 
-function Quaternion:FromEulerAngles(vector3)
-	local c = vec3.Cos(vector3 * 0.5)
-	local s = vec3.Sin(vector3 * 0.5)
+function Quaternion.FromEulerAngles(v)
+	local c = vec3.Cos(v * 0.5)
+	local s = vec3.Sin(v * 0.5)
 
 	local x = s.x * c.y * c.z - c.x * s.y * s.z
 	local y = c.x * s.y * c.z + s.x * c.y * s.z
