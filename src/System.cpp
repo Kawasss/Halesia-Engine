@@ -13,10 +13,21 @@ namespace sys
 
 		DWORD written = ::GetEnvironmentVariableA(name.data(), buffer, BUFFER_SIZE);
 
-		if (written > BUFFER_SIZE)
-			return ""; // the buffer is not big enough to store the variable
+		if (written == 0)
+			return "";
 
-		std::string ret = buffer;
+		std::string ret;
+
+		if (written > BUFFER_SIZE)
+		{
+			ret.resize(written);
+			::GetEnvironmentVariableA(name.data(), ret.data(), written);
+		}
+		else
+		{
+			ret = buffer;
+		}
+
 		return ret;
 	}
 
@@ -29,12 +40,17 @@ namespace sys
 		if (!success)
 			return false;
 
+		DWORD exitCode = 0;
+
 		if (waitForCompletion)
+		{
 			::WaitForSingleObject(procInfo.hProcess, INFINITE);
+			::GetExitCodeProcess(procInfo.hProcess, &exitCode);
+		}
 
 		::CloseHandle(procInfo.hProcess);
 		::CloseHandle(procInfo.hThread);
-		return true;
+		return exitCode == 0;
 	}
 
 	bool OpenFile(const std::string_view& file)
