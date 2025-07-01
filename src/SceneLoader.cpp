@@ -107,61 +107,59 @@ void SceneLoader::GetNodeHeader(NodeType& type, NodeSize& size)
 	reader >> type >> size;
 }
 
-inline glm::vec3 Min(const glm::vec3& v1, const glm::vec3& v2)
-{
-	float x = v1.x < v2.x ? v1.x : v2.x;
-	float y = v1.y < v2.y ? v1.y : v2.y;
-	float z = v1.z < v2.z ? v1.z : v2.z;
-
-	return { x, y, z };
-}
-
-inline glm::vec3 Max(const glm::vec3& v1, const glm::vec3& v2)
-{
-	float x = v1.x > v2.x ? v1.x : v2.x;
-	float y = v1.y > v2.y ? v1.y : v2.y;
-	float z = v1.z > v2.z ? v1.z : v2.z;
-
-	return { x, y, z };
-}
-
-inline glm::vec3 ConvertAiVec3(const aiVector3D& vec)
+static glm::vec3 ConvertAiVec3(const aiVector3D& vec)
 {
 	return { vec.x, vec.y, vec.z };
 }
 
-inline std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& max)
+static void RetrieveVertices(aiMesh* pMesh, std::vector<Vertex>& dst, glm::vec3& min, glm::vec3& max)
 {
-	std::vector<Vertex> ret;
-	for (int i = 0; i < pMesh->mNumVertices; i++)
+	dst.reserve(dst.size() + pMesh->mNumVertices);
+	for (unsigned int i = 0; i < pMesh->mNumVertices; i++)
 	{
 		Vertex vertex{};
 
 		vertex.position = ConvertAiVec3(pMesh->mVertices[i]);
 
-		max = Max(vertex.position, max);
-		min = Min(vertex.position, min);
-
 		if (pMesh->HasNormals())
 			vertex.normal = ConvertAiVec3(pMesh->mNormals[i]);
 
-		if (pMesh->mTextureCoords[0])
+		if (pMesh->mNumUVComponents > 0 && pMesh->mTextureCoords[0])
 			vertex.textureCoordinates = ConvertAiVec3(pMesh->mTextureCoords[0][i]);
-		ret.push_back(vertex);
+
+		min = glm::min(vertex.position, min);
+		max = glm::max(vertex.position, max);
+		
+		dst.push_back(vertex);
 	}
+}
+
+static std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& max)
+{
+	std::vector<Vertex> ret;
+	ret.reserve(pMesh->mNumVertices);
+	
+	RetrieveVertices(pMesh, ret, min, max);
+
 	return ret;
 }
 
-inline std::vector<uint16_t> RetrieveIndices(aiMesh* pMesh)
+static void RetrieveIndices(aiMesh* pMesh, std::vector<uint16_t>& dst)
 {
-	std::vector<uint16_t> ret;
+	dst.reserve(dst.size() + pMesh->mNumFaces);
 	for (int i = 0; i < pMesh->mNumFaces; i++)
 		for (int j = 0; j < pMesh->mFaces[i].mNumIndices; j++)
-			ret.push_back(pMesh->mFaces[i].mIndices[j]);
+			dst.push_back(pMesh->mFaces[i].mIndices[j]);
+}
+
+static std::vector<uint16_t> RetrieveIndices(aiMesh* pMesh)
+{
+	std::vector<uint16_t> ret;
+	RetrieveIndices(pMesh, ret);
 	return ret;
 }
 
-inline glm::mat4 GetMat4(const aiMatrix4x4& from)
+static glm::mat4 GetMat4(const aiMatrix4x4& from)
 {
 	glm::mat4 to{};
 	//the a,b,c,d in assimp is the row ; the 1,2,3,4 is the column
@@ -172,7 +170,7 @@ inline glm::mat4 GetMat4(const aiMatrix4x4& from)
 	return to;
 }
 
-inline aiMatrix4x4 GetMatrix4x4(const glm::mat4& from)
+static aiMatrix4x4 GetMatrix4x4(const glm::mat4& from)
 {
 	aiMatrix4x4 to{};
 	//the a,b,c,d in assimp is the row ; the 1,2,3,4 is the column
@@ -183,7 +181,7 @@ inline aiMatrix4x4 GetMatrix4x4(const glm::mat4& from)
 	return to;
 }
 
-inline void SetVertexBones(Vertex& vertex, int ID, float weight)
+static void SetVertexBones(Vertex& vertex, int ID, float weight)
 {
 	for (int i = 0; i < MAX_BONES_PER_VERTEX; i++)
 	{
@@ -201,24 +199,29 @@ void SceneLoader::RetrieveBoneData(MeshCreationData& creationData, const aiMesh*
 	if (!pMesh->HasBones())
 		return;
 
+	aiBone** bones = pMesh->mBones;
+
 	for (int i = 0; i < pMesh->mNumBones; i++)
 	{
 		int ID = -1;
-		std::string name = pMesh->mBones[i]->mName.C_Str();
+		std::string name = bones[i]->mName.C_Str();
 		if (boneInfoMap.find(name) == boneInfoMap.end())
 		{
 			BoneInfo info{};
 			info.index = i;
 			info.offset = GetMat4(pMesh->mBones[i]->mOffsetMatrix);
+
 			boneInfoMap[name] = info;
 			ID = i;
 		}
 		else ID = boneInfoMap[name].index;
 
-		if (ID == -1) throw std::runtime_error("Failed to retrieve bone data");
-		aiVertexWeight* weights = pMesh->mBones[i]->mWeights;
+		if (ID == -1) 
+			throw std::runtime_error("Failed to retrieve bone data");
+
+		aiVertexWeight* weights = bones[i]->mWeights;
 		
-		for (int j = 0; j < pMesh->mBones[i]->mNumWeights; j++)
+		for (int j = 0; j < bones[i]->mNumWeights; j++)
 			if (weights[j].mWeight != 0.0f)
 				SetVertexBones(creationData.vertices[weights[j].mVertexId], ID, weights[j].mWeight);
 	}
@@ -228,15 +231,11 @@ MeshCreationData SceneLoader::RetrieveMeshData(aiMesh* pMesh)
 {
 	MeshCreationData ret{};
 
-	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
 	ret.amountOfVertices = pMesh->mNumVertices;
 	ret.faceCount = pMesh->mNumFaces;
-	ret.vertices = RetrieveVertices(pMesh, min, max);
+	ret.vertices = RetrieveVertices(pMesh, ret.min, ret.max);
 	ret.indices = RetrieveIndices(pMesh);
 	RetrieveBoneData(ret, pMesh);
-
-	ret.center = (min + max) * 0.5f;
-	ret.extents = max - ret.center;
 
 	ret.name = pMesh->mName.C_Str();
 	if (ret.name.empty())
@@ -245,41 +244,9 @@ MeshCreationData SceneLoader::RetrieveMeshData(aiMesh* pMesh)
 	return ret;
 }
 
-static MeshCreationData GetMeshFromAssimp(aiMesh* pMesh)
+void SceneLoader::MergeMeshData(MeshCreationData& dst, aiMesh* pMesh)
 {
-	MeshCreationData ret{};
 
-	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
-	ret.amountOfVertices = pMesh->mNumVertices;
-	ret.faceCount = pMesh->mNumFaces;
-	ret.vertices = RetrieveVertices(pMesh, min, max);
-	ret.indices = RetrieveIndices(pMesh);
-
-	ret.center = (min + max) * 0.5f;
-	ret.extents = max - ret.center;
-
-	ret.name = pMesh->mName.C_Str();
-	if (ret.name.empty())
-		ret.name = "NO_NAME";
-
-	return ret;
-}
-
-inline glm::vec3 GetExtentsFromMesh(aiMesh* pMesh)
-{
-	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
-	for (int i = 0; i < pMesh->mNumVertices; i++)
-	{
-		max.x = pMesh->mVertices[i].x > max.x ? pMesh->mVertices[i].x : max.x;
-		max.y = pMesh->mVertices[i].y > max.y ? pMesh->mVertices[i].y : max.y;
-		max.z = pMesh->mVertices[i].z > max.z ? pMesh->mVertices[i].z : max.z;
-
-		min.x = pMesh->mVertices[i].x < min.x ? pMesh->mVertices[i].x : min.x;
-		min.y = pMesh->mVertices[i].y < min.y ? pMesh->mVertices[i].y : min.y;
-		min.z = pMesh->mVertices[i].z < min.z ? pMesh->mVertices[i].z : min.z;
-	}
-	glm::vec3 center = (min + max) * 0.5f;
-	return max - center;
 }
 
 inline void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::quat& rot, glm::vec3& scale)
@@ -365,6 +332,40 @@ ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNod
 	
 	return creationData;
 }
+
+static MeshCreationData GetMeshFromAssimp(aiMesh* pMesh)
+{
+	MeshCreationData ret{};
+
+	ret.amountOfVertices = pMesh->mNumVertices;
+	ret.faceCount = pMesh->mNumFaces;
+	ret.vertices = RetrieveVertices(pMesh, ret.min, ret.max);
+	ret.indices = RetrieveIndices(pMesh);
+
+	ret.name = pMesh->mName.C_Str();
+	if (ret.name.empty())
+		ret.name = "NO_NAME";
+
+	return ret;
+}
+
+static glm::vec3 GetExtentsFromMesh(aiMesh* pMesh)
+{
+	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
+	for (int i = 0; i < pMesh->mNumVertices; i++)
+	{
+		max.x = pMesh->mVertices[i].x > max.x ? pMesh->mVertices[i].x : max.x;
+		max.y = pMesh->mVertices[i].y > max.y ? pMesh->mVertices[i].y : max.y;
+		max.z = pMesh->mVertices[i].z > max.z ? pMesh->mVertices[i].z : max.z;
+
+		min.x = pMesh->mVertices[i].x < min.x ? pMesh->mVertices[i].x : min.x;
+		min.y = pMesh->mVertices[i].y < min.y ? pMesh->mVertices[i].y : min.y;
+		min.z = pMesh->mVertices[i].z < min.z ? pMesh->mVertices[i].z : min.z;
+	}
+	glm::vec3 center = (min + max) * 0.5f;
+	return max - center;
+}
+
 
 ObjectCreationData assetImport::LoadObjectFile(std::string path) // kinda funky now, maybe make the funcion return multiple objects instead of one
 {

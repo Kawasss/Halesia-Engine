@@ -34,8 +34,8 @@ void Mesh::Create(const MeshCreationData& creationData)
 	vertices  = creationData.vertices;
 	indices   = creationData.indices;
 	faceCount = creationData.faceCount;
-	center    = creationData.center;
-	extents   = creationData.extents;
+	center    = (creationData.min + creationData.max) * 0.5f;
+	extents   = creationData.max - center;
 	max       = extents + center;
 	min       = center * 2.f - max;
 	materialIndex = creationData.materialIndex;

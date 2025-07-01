@@ -35,8 +35,8 @@ struct MeshCreationData
 	bool hasBones = false;
 	bool hasMaterial = false;
 
-	glm::vec3 center = glm::vec3(0);
-	glm::vec3 extents = glm::vec3(0);
+	glm::vec3 min = glm::vec3(0);
+	glm::vec3 max = glm::vec3(0);
 
 	int faceCount = 0;
 	int amountOfVertices = 0;

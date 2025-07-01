@@ -47,6 +47,7 @@ private:
 
 	void RetrieveBoneData(MeshCreationData& creationData, const aiMesh* pMesh);
 	MeshCreationData RetrieveMeshData(aiMesh* pMesh);
+	void MergeMeshData(MeshCreationData& dst, aiMesh* pMesh);
 
 	void GetNodeHeader(NodeType& type, NodeSize& size);
 	void RetrieveType(NodeType type, NodeSize size);
