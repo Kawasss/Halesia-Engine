@@ -30,9 +30,7 @@ void ScriptObject::Start()
 	if (pScript == nullptr)
 		return;
 
-	pScript->SetTransform(transform);
 	pScript->Start();
-	pScript->GetTransform(transform);
 }
 
 void ScriptObject::Update(float delta)
@@ -40,9 +38,7 @@ void ScriptObject::Update(float delta)
 	if (pScript == nullptr || pause)
 		return;
 
-	pScript->SetTransform(transform);
 	pScript->Update(delta);
-	pScript->GetTransform(transform);
 }
 
 ScriptObject::~ScriptObject()
@@ -50,9 +46,7 @@ ScriptObject::~ScriptObject()
 	if (pScript == nullptr)
 		return;
 
-	pScript->SetTransform(transform);
 	pScript->Destroy();
-	pScript->GetTransform(transform);
 	delete pScript;
 }
 
@@ -67,11 +61,9 @@ void ScriptObject::SetScript(const std::string& file)
 	}
 	else
 	{
-		pScript = new Script(file);
+		pScript = new Script(file, this);
 	}
-	pScript->SetTransform(transform);
 	pScript->Start();
-	pScript->GetTransform(transform);
 	hasScript = true;
 }
 
