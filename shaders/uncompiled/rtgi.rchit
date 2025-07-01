@@ -4,7 +4,6 @@
 #extension GL_EXT_shader_16bit_storage : enable
 
 #include "include/light.glsl"
-#include "include/layouts.glsl"
 
 DECLARE_EXTERNAL_SET(1)
 

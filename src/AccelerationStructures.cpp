@@ -7,7 +7,10 @@
 
 #include "core/MeshObject.h"
 
-inline VkAccelerationStructureGeometryTrianglesDataKHR GetTrianglesData(const Mesh& mesh)
+constexpr VkBufferUsageFlags ACCELERATION_STRUCTURE_BUFFER_BITS = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+constexpr VkBufferUsageFlags SCRATCH_BUFFER_BITS = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
+
+static VkAccelerationStructureGeometryTrianglesDataKHR GetTrianglesData(const Mesh& mesh)
 {
 	VkDeviceAddress vertexBufferAddress = Vulkan::GetDeviceAddress(Renderer::g_vertexBuffer.GetBufferHandle());
 	VkDeviceAddress indexBufferAddress = Vulkan::GetDeviceAddress(Renderer::g_indexBuffer.GetBufferHandle());
@@ -36,7 +39,7 @@ void AccelerationStructure::CreateAS(const VkAccelerationStructureGeometryKHR* p
 	VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
 	buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 	buildGeometryInfo.mode = VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR;
-	buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR;
+	buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR;
 	buildGeometryInfo.type = type;
 	buildGeometryInfo.srcAccelerationStructure = VK_NULL_HANDLE;
 	buildGeometryInfo.dstAccelerationStructure = VK_NULL_HANDLE;
@@ -49,25 +52,36 @@ void AccelerationStructure::CreateAS(const VkAccelerationStructureGeometryKHR* p
 
 	vkGetAccelerationStructureBuildSizesKHR(ctx.logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildGeometryInfo, &maxPrimitiveCount, &buildSizesInfo);
 
-	ASBuffer.Init(buildSizesInfo.accelerationStructureSize, VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	size       = buildSizesInfo.accelerationStructureSize;
+	buildSize  = buildSizesInfo.buildScratchSize;
+	UpdateSize = buildSizesInfo.updateScratchSize;
+
+	ASBuffer.Init(size, ACCELERATION_STRUCTURE_BUFFER_BITS, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	VkAccelerationStructureCreateInfoKHR createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
 	createInfo.type = type;
-	createInfo.size = buildSizesInfo.accelerationStructureSize;
+	createInfo.size = size;
 	createInfo.buffer = ASBuffer.Get();
 	createInfo.offset = 0;
 
 	VkResult result = vkCreateAccelerationStructureKHR(ctx.logicalDevice, &createInfo, nullptr, &accelerationStructure);
 	CheckVulkanResult("Failed to create an acceleration structure", result);
 
+	if (type == VkAccelerationStructureTypeKHR::VK_ACCELERATION_STRUCTURE_TYPE_TOP_LEVEL_KHR)
+		Vulkan::SetDebugName(accelerationStructure, "top-level");
+	else
+		Vulkan::SetDebugName(accelerationStructure, "bottom-level");
+
 	ASAddress = Vulkan::GetDeviceAddress(accelerationStructure);
 
-	scratchBuffer.Init(buildSizesInfo.buildScratchSize, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	scratchBuffer.Init(buildSize, SCRATCH_BUFFER_BITS, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 }
 
 void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pGeometry, uint32_t primitiveCount, VkBuildAccelerationStructureModeKHR mode, VkCommandBuffer externalCommandBuffer)
 {
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
 	VkAccelerationStructureBuildGeometryInfoKHR buildGeometryInfo{};
 	buildGeometryInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_GEOMETRY_INFO_KHR;
 	buildGeometryInfo.flags = VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_UPDATE_BIT_KHR | VK_BUILD_ACCELERATION_STRUCTURE_ALLOW_DATA_ACCESS_KHR;
@@ -78,6 +92,14 @@ void AccelerationStructure::BuildAS(const VkAccelerationStructureGeometryKHR* pG
 	buildGeometryInfo.geometryCount = 1;
 	buildGeometryInfo.pGeometries = pGeometry;
 	buildGeometryInfo.scratchData = { Vulkan::GetDeviceAddress(scratchBuffer.Get()) };
+
+	VkAccelerationStructureBuildSizesInfoKHR buildSizesInfo{};
+	buildSizesInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_BUILD_SIZES_INFO_KHR;
+
+	vkGetAccelerationStructureBuildSizesKHR(ctx.logicalDevice, VK_ACCELERATION_STRUCTURE_BUILD_TYPE_DEVICE_KHR, &buildGeometryInfo, &primitiveCount, &buildSizesInfo);
+
+	if (buildSize < buildSizesInfo.buildScratchSize)
+		return; // build request too big
 
 	VkAccelerationStructureBuildRangeInfoKHR buildRangeInfo{};
 	buildRangeInfo.primitiveCount = primitiveCount;
@@ -108,7 +130,7 @@ AccelerationStructure::~AccelerationStructure()
 	vgm::Delete(accelerationStructure);
 }
 
-BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(Mesh& mesh)
+BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(const Mesh& mesh)
 {
 	VkAccelerationStructureGeometryKHR geometry{};
 	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
@@ -116,17 +138,17 @@ BottomLevelAccelerationStructure::BottomLevelAccelerationStructure(Mesh& mesh)
 	geometry.flags = VK_GEOMETRY_OPAQUE_BIT_KHR;
 	geometry.geometry.triangles = GetTrianglesData(mesh);
 
-	CreateAS(&geometry, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, mesh.faceCount);
+	CreateAS(&geometry, VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR, mesh.faceCount * 10);
 	BuildAS(&geometry, mesh.faceCount, VK_BUILD_ACCELERATION_STRUCTURE_MODE_BUILD_KHR);
 }
 
-BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(Mesh& mesh)
+BottomLevelAccelerationStructure* BottomLevelAccelerationStructure::Create(const Mesh& mesh)
 {
 	BottomLevelAccelerationStructure* BLAS = new BottomLevelAccelerationStructure(mesh);
 	return BLAS;
 }
 
-void BottomLevelAccelerationStructure::RebuildGeometry(VkCommandBuffer commandBuffer, Mesh& mesh)
+void BottomLevelAccelerationStructure::RebuildGeometry(VkCommandBuffer commandBuffer, const Mesh& mesh)
 {
 	VkAccelerationStructureGeometryKHR geometry{};
 	geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;
@@ -219,7 +241,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 	return instances;
 }
 
-bool TopLevelAccelerationStructure::HasBeenBuilt()
+bool TopLevelAccelerationStructure::HasBeenBuilt() const
 {
 	return hasBeenBuilt;
 }

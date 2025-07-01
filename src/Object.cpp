@@ -45,8 +45,6 @@ void Object::Initialize(const ObjectCreationData& creationData)
 
 	if (!creationData.children.empty())
 		children.reserve(creationData.children.size());
-
-	Start();
 }
 void Object::AddChild(Object* object)
 {

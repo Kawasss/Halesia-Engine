@@ -22,6 +22,10 @@ protected:
 	Buffer ASBuffer;
 	Buffer scratchBuffer;
 
+	VkDeviceSize size = 0;
+	VkDeviceSize buildSize = 0;
+	VkDeviceSize UpdateSize = 0;
+
 	VkDeviceAddress ASAddress = 0;
 
 private:
@@ -31,10 +35,10 @@ private:
 class BottomLevelAccelerationStructure : public AccelerationStructure
 {
 public:
-	BottomLevelAccelerationStructure(Mesh& mesh);
+	BottomLevelAccelerationStructure(const Mesh& mesh);
 
-	static BottomLevelAccelerationStructure* Create(Mesh& mesh);
-	void RebuildGeometry(VkCommandBuffer commandBuffer, Mesh& mesh);
+	static BottomLevelAccelerationStructure* Create(const Mesh& mesh);
+	void RebuildGeometry(VkCommandBuffer commandBuffer, const Mesh& mesh);
 };
 
 class TopLevelAccelerationStructure : public AccelerationStructure
@@ -55,7 +59,7 @@ public:
 	/// </summary>
 	void Build(const std::vector<MeshObject*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
 	void Update(const std::vector<MeshObject*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer);
-	bool HasBeenBuilt();
+	bool HasBeenBuilt() const;
 
 private:
 	static std::vector<VkAccelerationStructureInstanceKHR> GetInstances(const std::vector<MeshObject*>& objects, InstanceIndexType indexType);

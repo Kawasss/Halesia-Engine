@@ -370,7 +370,6 @@
     <None Include="shaders\uncompiled\rtgi.rmiss" />
     <None Include="shaders\uncompiled\pathtracing.rgen" />
     <None Include="shaders\uncompiled\pathtracing.rchit" />
-    <None Include="shaders\uncompiled\include\layouts.glsl" />
     <None Include="shaders\uncompiled\include\light.glsl" />
     <None Include="shaders\uncompiled\intro.frag" />
     <None Include="shaders\uncompiled\intro.vert" />

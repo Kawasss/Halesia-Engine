@@ -3,6 +3,7 @@
 #include <format>
 
 #include "renderer/ShaderCompiler.h"
+#include "renderer/Renderer.h"
 
 #include "io/IO.h"
 
@@ -92,7 +93,7 @@ void ShaderCompiler::CallCompiler(const fs::path& file)
 	if (!fs::exists(compiler))
 		return;
 
-	std::string args = std::format("-i {} -o shaders/spirv/{}.spv --target-env=vulkan1.4", file.string(), file.filename().string()); // can compile with -O for optimisations
+	std::string args = std::format("-i {} -o shaders/spirv/{}.spv -Dbindless_texture_size={} -Dmaterial_buffer_binding={} -DDECLARE_EXTERNAL_SET(index) --target-env=vulkan1.4", file.string(), file.filename().string(), Renderer::MAX_BINDLESS_TEXTURES, Renderer::MATERIAL_BUFFER_BINDING); // can compile with -O for optimisations
 	sys::StartProcess(compiler, args);
 }
 

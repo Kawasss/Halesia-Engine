@@ -1,5 +1,4 @@
 #version 460
-#include "include/layouts.glsl"
 
 DECLARE_EXTERNAL_SET(1)
 

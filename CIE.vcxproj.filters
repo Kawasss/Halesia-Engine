@@ -743,9 +743,6 @@
     <None Include="shaders\uncompiled\cubemapConv.vert">
       <Filter>Shaders\skybox</Filter>
     </None>
-    <None Include="shaders\uncompiled\include\layouts.glsl">
-      <Filter>Shaders\includes</Filter>
-    </None>
     <None Include="shaders\uncompiled\include\light.glsl">
       <Filter>Shaders\includes</Filter>
     </None>

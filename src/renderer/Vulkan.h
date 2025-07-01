@@ -215,6 +215,13 @@ inline void Vulkan::SetDebugName<VkDescriptorSet>(VkDescriptorSet object, const 
     DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_DESCRIPTOR_SET, name);
 }
 
+template<>
+inline void Vulkan::SetDebugName<VkAccelerationStructureKHR>(VkAccelerationStructureKHR object, const char* name)
+{
+    DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, name);
+}
+
+
 #define VULKAN_TRACK_MEMORY
 #ifdef  VULKAN_TRACK_MEMORY
 
