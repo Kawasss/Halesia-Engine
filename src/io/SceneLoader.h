@@ -3,12 +3,14 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <variant>
 
 #include "../glm.h"
 
 #include "../renderer/Bone.h"
 #include "../renderer/AnimationManager.h"
 #include "../renderer/Light.h"
+#include "../renderer/Material.h"
 
 #include "BinaryReader.h"
 #include "FileFormat.h"
@@ -30,7 +32,7 @@ public:
 	void LoadScene();
 
 	std::vector<ObjectCreationData> objects;
-	std::vector<MaterialCreationData> materials;
+	std::vector<std::variant<MaterialCreationData, MaterialCreateInfo>> materials;
 
 	// animations
 	std::vector<Animation> animations;

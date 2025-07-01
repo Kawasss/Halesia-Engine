@@ -1,11 +1,14 @@
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+
 #include <filesystem>
 
 #include "io/SceneLoader.h"
 
 #include "core/Console.h"
+
+namespace fs = std::filesystem;
 
 #pragma pack(push, 1)
 struct CompressionNode
@@ -237,6 +240,7 @@ MeshCreationData SceneLoader::RetrieveMeshData(aiMesh* pMesh)
 
 	ret.amountOfVertices = pMesh->mNumVertices;
 	ret.faceCount = pMesh->mNumFaces;
+	ret.materialIndex = pMesh->mMaterialIndex + 1; // + 1 because we already have the default material loaded in
 	ret.vertices = RetrieveVertices(pMesh, ret.min, ret.max);
 	ret.indices = RetrieveIndices(pMesh);
 	RetrieveBoneData(ret, pMesh);
@@ -289,6 +293,26 @@ void SceneLoader::LoadAssimpFile()
 		animations.push_back(Animation(scene->mAnimations[i], scene->mRootNode, boneInfoMap));
 	}
 
+	for (int i = 0; i < scene->mNumMaterials; i++)
+	{
+		MaterialCreateInfo data{};
+
+		aiString albedo{};
+		aiReturn res = scene->mMaterials[i]->GetTexture(aiTextureType_DIFFUSE, 0, &albedo);
+
+		if (res != aiReturn_SUCCESS)
+			data.albedo = "textures/white.png";
+		else
+		{
+			fs::path sourceFile = location;
+			fs::path texture = sourceFile.parent_path() / albedo.C_Str();
+
+			data.albedo = texture.string();
+		}
+
+		materials.push_back(data);
+	}
+
 	aiReleaseImport(scene);
 }
 
@@ -312,11 +336,11 @@ ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNod
 	aiLight* asLight = NodeAsLight(scene, node);
 	if (asLight != nullptr)
 	{
-		creationData.lightData.pos = glm::vec3(creationData.position);
-		creationData.lightData.type = Light::Type::Point;
-		creationData.lightData.color = glm::vec3(1); // assimp cant find the lights color !! glm::vec3(assimpLight->mColorDiffuse.r, assimpLight->mColorDiffuse.g, assimpLight->mColorDiffuse.b);
-		creationData.lightData.direction = glm::vec3(0.0f);
-		creationData.type = ObjectCreationData::Type::Light;
+		//creationData.lightData.pos = glm::vec3(creationData.position);
+		//creationData.lightData.type = Light::Type::Point;
+		//creationData.lightData.color = glm::vec3(1); // assimp cant find the lights color !! glm::vec3(assimpLight->mColorDiffuse.r, assimpLight->mColorDiffuse.g, assimpLight->mColorDiffuse.b);
+		//creationData.lightData.direction = glm::vec3(0.0f);
+		//creationData.type = ObjectCreationData::Type::Light;
 	}
 	else
 	{

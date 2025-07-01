@@ -137,7 +137,7 @@ void Editor::ShowGizmo()
 
 	glm::vec3 skew;
 	glm::vec4 pers;
-	glm::decompose(model, obj->transform.scale, obj->transform.rotation, obj->transform.position, skew, pers);
+	//glm::decompose(model, obj->transform.scale, obj->transform.rotation, obj->transform.position, skew, pers);
 }
 
 void Editor::MainThreadUpdate(float delta)
@@ -846,11 +846,16 @@ void Editor::LoadFile()
 	SceneLoader loader(src);
 	loader.LoadScene();
 
+	for (const std::variant<MaterialCreationData, MaterialCreateInfo>& data : loader.materials)
+	{
+		if (std::holds_alternative<MaterialCreationData>(data))
+			Mesh::AddMaterial(Material::Create(std::get<0>(data)));
+		else if (std::holds_alternative<MaterialCreateInfo>(data))
+			Mesh::AddMaterial(Material::Create(std::get<1>(data)));
+	}
+
 	for (const ObjectCreationData& data : loader.objects)
 		AddObject(data);
-
-	for (const MaterialCreationData& data : loader.materials)
-		Mesh::AddMaterial(Material::Create(data));
 }
 
 void Editor::SaveToFile()
