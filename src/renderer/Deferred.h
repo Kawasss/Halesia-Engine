@@ -139,8 +139,8 @@ private:
 
 	uint32_t frame = 0;
 
-	int maxSampleCountTAA = 4;
-	int rtgiSampleCount = 1;
+	int maxSampleCountTAA = 40;
+	int rtgiSampleCount = 2;
 	int rtgiBounceCount = 2;
 
 	int spatialStepCount = 1;

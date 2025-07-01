@@ -75,7 +75,7 @@ void Editor::Start()
 	renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
 	renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
 
-	src = GetFile("Scene file", "*.hsf;*.fbx;*.glb");
+	src = GetFile("Scene file", "*.hsf;*.fbx;*.glb;*.gltf");
 	if (src == "")
 		return;
 

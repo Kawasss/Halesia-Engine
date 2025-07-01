@@ -115,7 +115,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\wveen\source\repos\Halesia\lib;C:\Users\wveen\source\repos\Halesia\lib\debug-lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;assimp-vc143-mt.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;soloud_static.lib;lua.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;soloud_static.lib;lua.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>optixDenoiser.lib;PhysX_static_64.lib;PhysXCommon_static_64.lib;PhysXCooking_static_64.lib;PhysXExtensions_static_64.lib;PhysXFoundation_static_64.lib;PhysXPvdSDK_static_64.lib;assimp-vc143-mt.lib;cuda.lib;cudart_static.lib;soloud_static.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -147,7 +147,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\wveen\source\repos\Halesia\lib;C:\Users\wveen\source\repos\Halesia\lib\release-lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;assimp-vc143-mt.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;soloud_static.lib;lua.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;soloud_static.lib;lua.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

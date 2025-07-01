@@ -298,9 +298,13 @@ inline void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::quat& rot,
 
 void SceneLoader::LoadAssimpFile()
 {
-	const aiScene* scene = aiImportFile(location.c_str(), 0);
+	const aiScene* scene = aiImportFile(location.c_str(), aiPostProcessSteps::aiProcess_Triangulate);
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + location);
+
+	const char* err = aiGetErrorString();
+	if (err != nullptr && err[0] != '\0')
+		Console::WriteLine(err, Console::Severity::Error);
 
 	objects.push_back(RetrieveObject(scene, scene->mRootNode, glm::mat4(1)));
 
