@@ -51,7 +51,7 @@ struct Renderer::LightBuffer
 };
 
 StorageBuffer<Vertex>   Renderer::g_vertexBuffer;
-StorageBuffer<uint16_t> Renderer::g_indexBuffer;
+StorageBuffer<uint32_t> Renderer::g_indexBuffer;
 StorageBuffer<Vertex>   Renderer::g_defaultVertexBuffer;
 
 VkSampler Renderer::defaultSampler  = VK_NULL_HANDLE;
@@ -707,7 +707,7 @@ void Renderer::RenderImGUI(CommandBuffer commandBuffer)
 void Renderer::BindBuffersForRendering(CommandBuffer commandBuffer)
 {
 	commandBuffer.BindVertexBuffer(g_vertexBuffer.GetBufferHandle(), 0);
-	commandBuffer.BindIndexBuffer(g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT16);
+	commandBuffer.BindIndexBuffer(g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT32);
 }
 
 void Renderer::RenderMesh(CommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount)

@@ -21,7 +21,7 @@ inline VkAccelerationStructureGeometryTrianglesDataKHR GetTrianglesData(const Me
 	data.vertexFormat = VK_FORMAT_R32G32B32_SFLOAT;
 	data.vertexStride = sizeof(Vertex);
 	data.maxVertex = static_cast<uint32_t>(mesh.vertices.size());
-	data.indexType = VK_INDEX_TYPE_UINT16;
+	data.indexType = VK_INDEX_TYPE_UINT32;
 	
 	data.transformData = { 0 };
 

@@ -173,7 +173,7 @@ FileMesh FileMesh::CreateFrom(const Mesh& mesh)
 	FileMesh ret;
 
 	ret.vertices = FileArray<Vertex>::CreateFrom(mesh.vertices);
-	ret.indices = FileArray<uint16_t>::CreateFrom(mesh.indices);
+	ret.indices = FileArray<uint32_t>::CreateFrom(mesh.indices);
 	ret.materialIndex = mesh.GetMaterialIndex();
 
 	return ret;

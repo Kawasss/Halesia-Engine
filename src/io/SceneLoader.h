@@ -51,7 +51,7 @@ private:
 
 	void GetNodeHeader(NodeType& type, NodeSize& size);
 	void RetrieveType(NodeType type, NodeSize size);
-	ObjectCreationData RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans);
+	ObjectCreationData RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans); // can return multiple objects if this one node has multiple meshes, but must of the time its one object
 
 	std::vector<ObjectCreationData>::iterator currentObject{};
 

@@ -20,5 +20,5 @@ struct FileMesh : FileBase
 	uint materialIndex;
 
 	FileArray<Vertex> vertices;
-	FileArray<uint16_t> indices;
+	FileArray<uint32_t> indices;
 };

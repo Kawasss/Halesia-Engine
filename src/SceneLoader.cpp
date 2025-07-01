@@ -124,7 +124,7 @@ static void RetrieveVertices(aiMesh* pMesh, std::vector<Vertex>& dst, glm::vec3&
 		if (pMesh->HasNormals())
 			vertex.normal = ConvertAiVec3(pMesh->mNormals[i]);
 
-		if (pMesh->mNumUVComponents > 0 && pMesh->mTextureCoords[0])
+		if (pMesh->mTextureCoords[0])
 			vertex.textureCoordinates = ConvertAiVec3(pMesh->mTextureCoords[0][i]);
 
 		min = glm::min(vertex.position, min);
@@ -137,25 +137,29 @@ static void RetrieveVertices(aiMesh* pMesh, std::vector<Vertex>& dst, glm::vec3&
 static std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::vec3& max)
 {
 	std::vector<Vertex> ret;
-	ret.reserve(pMesh->mNumVertices);
-	
+
 	RetrieveVertices(pMesh, ret, min, max);
 
 	return ret;
 }
 
-static void RetrieveIndices(aiMesh* pMesh, std::vector<uint16_t>& dst)
+static void RetrieveIndices(aiMesh* pMesh, std::vector<uint32_t>& dst, uint32_t offset)
 {
-	dst.reserve(dst.size() + pMesh->mNumFaces);
+	dst.reserve(dst.size() + pMesh->mNumFaces * 3);
 	for (int i = 0; i < pMesh->mNumFaces; i++)
+	{
 		for (int j = 0; j < pMesh->mFaces[i].mNumIndices; j++)
-			dst.push_back(pMesh->mFaces[i].mIndices[j]);
+		{
+			uint32_t index = pMesh->mFaces[i].mIndices[j];
+			dst.push_back(offset + index);
+		}
+	}
 }
 
-static std::vector<uint16_t> RetrieveIndices(aiMesh* pMesh)
+static std::vector<uint32_t> RetrieveIndices(aiMesh* pMesh)
 {
-	std::vector<uint16_t> ret;
-	RetrieveIndices(pMesh, ret);
+	std::vector<uint32_t> ret;
+	RetrieveIndices(pMesh, ret, 0);
 	return ret;
 }
 
@@ -237,16 +241,18 @@ MeshCreationData SceneLoader::RetrieveMeshData(aiMesh* pMesh)
 	ret.indices = RetrieveIndices(pMesh);
 	RetrieveBoneData(ret, pMesh);
 
-	ret.name = pMesh->mName.C_Str();
-	if (ret.name.empty())
-		ret.name = "NO_NAME" + std::to_string(unnamedObjectCount++);
-
 	return ret;
 }
 
 void SceneLoader::MergeMeshData(MeshCreationData& dst, aiMesh* pMesh)
 {
+	RetrieveVertices(pMesh, dst.vertices, dst.min, dst.max);
+	RetrieveIndices(pMesh, dst.indices, dst.faceCount * 3);
 
+	RetrieveBoneData(dst, pMesh); // this is not tested enough, so it may result in weird behavior
+
+	dst.amountOfVertices += pMesh->mNumVertices;
+	dst.faceCount += pMesh->mNumFaces;
 }
 
 inline void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::quat& rot, glm::vec3& scale)
@@ -282,6 +288,8 @@ void SceneLoader::LoadAssimpFile()
 	{
 		animations.push_back(Animation(scene->mAnimations[i], scene->mRootNode, boneInfoMap));
 	}
+
+	aiReleaseImport(scene);
 }
 
 static aiLight* NodeAsLight(const aiScene* scene, const aiNode* node)
@@ -312,20 +320,28 @@ ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNod
 	}
 	else
 	{
-		for (int i = 0; i < node->mNumMeshes; i++)
-		{
-			aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-			creationData.hasMesh = node->mNumMeshes > 0;
+		creationData.hasMesh = node->mNumMeshes > 0;
 
-			if (i != 0 || !creationData.hasMesh)
-				continue;
-			creationData.mesh = RetrieveMeshData(mesh);
+		if (creationData.hasMesh)
+		{
+			creationData.mesh = RetrieveMeshData(scene->mMeshes[node->mMeshes[0]]);
 			creationData.type = ObjectCreationData::Type::Mesh;
+		}
+
+		for (int i = 1; i < node->mNumMeshes; i++)
+		{
+			ObjectCreationData child{};
+			child.name = creationData.name + std::to_string(i);
+			child.mesh = RetrieveMeshData(scene->mMeshes[node->mMeshes[i]]);
+			child.type = ObjectCreationData::Type::Mesh;
+			child.hasMesh = true;
+
+			creationData.children.push_back(child);
 		}
 	}
 
 	if (node->mNumChildren > 0)
-		creationData.children.reserve(node->mNumChildren);
+		creationData.children.reserve(creationData.children.size() + node->mNumChildren);
 
 	for (int i = 0; i < node->mNumChildren; i++)
 		creationData.children.push_back(RetrieveObject(scene, node->mChildren[i], GetMat4(node->mTransformation)));
@@ -341,10 +357,6 @@ static MeshCreationData GetMeshFromAssimp(aiMesh* pMesh)
 	ret.faceCount = pMesh->mNumFaces;
 	ret.vertices = RetrieveVertices(pMesh, ret.min, ret.max);
 	ret.indices = RetrieveIndices(pMesh);
-
-	ret.name = pMesh->mName.C_Str();
-	if (ret.name.empty())
-		ret.name = "NO_NAME";
 
 	return ret;
 }

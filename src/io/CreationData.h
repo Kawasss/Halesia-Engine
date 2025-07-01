@@ -29,7 +29,6 @@ struct MeshCreationData
 		faceCount = indices.size() / 3;
 	}
 
-	std::string name;
 	uint32_t materialIndex;
 
 	bool hasBones = false;
@@ -42,7 +41,7 @@ struct MeshCreationData
 	int amountOfVertices = 0;
 
 	std::vector<Vertex>   vertices;
-	std::vector<uint16_t> indices;
+	std::vector<uint32_t> indices;
 };
 
 struct RigidCreationData

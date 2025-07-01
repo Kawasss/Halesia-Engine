@@ -56,7 +56,7 @@ public:
 	static constexpr uint32_t MATERIAL_BUFFER_BINDING = 0;
 
 	static StorageBuffer<Vertex>   g_vertexBuffer;
-	static StorageBuffer<uint16_t> g_indexBuffer;
+	static StorageBuffer<uint32_t> g_indexBuffer;
 	static StorageBuffer<Vertex>   g_defaultVertexBuffer;
 
 	static VkSampler defaultSampler;

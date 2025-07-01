@@ -25,8 +25,6 @@ struct Mesh
 
 	void CopyFrom(const Mesh& mesh);
 
-	std::string name = "NO_NAME";
-
 	StorageMemory vertexMemory;
 	StorageMemory indexMemory;
 	StorageMemory defaultVertexMemory;
@@ -34,7 +32,7 @@ struct Mesh
 	std::shared_ptr<BottomLevelAccelerationStructure> BLAS;
 
 	std::vector<Vertex> vertices;
-	std::vector<uint16_t> indices;
+	std::vector<uint32_t> indices;
 
 	int faceCount;
 	glm::vec3 min, max, center, extents;

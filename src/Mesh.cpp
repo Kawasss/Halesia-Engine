@@ -30,7 +30,6 @@ void Mesh::ProcessMaterial(const MaterialCreationData& creationData)
 
 void Mesh::Create(const MeshCreationData& creationData)
 {
-	name      = creationData.name;
 	vertices  = creationData.vertices;
 	indices   = creationData.indices;
 	faceCount = creationData.faceCount;
