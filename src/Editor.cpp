@@ -137,7 +137,7 @@ void Editor::ShowGizmo()
 
 	glm::vec3 skew;
 	glm::vec4 pers;
-	//glm::decompose(model, obj->transform.scale, obj->transform.rotation, obj->transform.position, skew, pers);
+	glm::decompose(model, obj->transform.scale, obj->transform.rotation, obj->transform.position, skew, pers);
 }
 
 void Editor::MainThreadUpdate(float delta)

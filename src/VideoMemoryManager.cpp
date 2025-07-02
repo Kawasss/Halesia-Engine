@@ -121,9 +121,17 @@ struct vvm::MemoryBlock
 		return true;
 	}
 
-	void Destroy() const { vgm::Delete(memory); }
-
 	bool IsUnused() const { return segments.size() == 0; }
+
+	void Destroy() const
+	{
+		vgm::Delete(memory);
+	}
+
+	~MemoryBlock()
+	{
+		Destroy();
+	}
 };
 
 struct vvm::MemoryCore
@@ -215,7 +223,6 @@ static void CheckBlockStatus(vvm::MemoryBlock* block, std::map<T, vvm::MemoryBlo
 		break;
 	}
 	core->blocks.erase(std::find(core->blocks.begin(), core->blocks.end(), block));
-	block->Destroy();
 	delete block;
 }
 
@@ -343,7 +350,6 @@ void vvm::ForceDestroy()
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	for (MemoryBlock* block : core->blocks)
 	{
-		block->Destroy();
 		delete block;
 	}
 }

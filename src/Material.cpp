@@ -34,7 +34,7 @@ Material Material::Create(const MaterialCreateInfo& createInfo)
 		ret.albedo = new Texture(createInfo.albedo);
 
 	if (!createInfo.normal.empty())           
-		ret.normal = new Texture(createInfo.normal, true, TEXTURE_FORMAT_UNORM);
+		ret.normal = new Texture(createInfo.normal, true, TEXTURE_FORMAT_SRGB);
 
 	if (!createInfo.metallic.empty())         
 		ret.metallic = new Texture(createInfo.metallic);

@@ -3,6 +3,7 @@
 #include "renderer/GarbageManager.h"
 #include "renderer/VideoMemoryManager.h"
 #include "renderer/CommandBuffer.h"
+#include "renderer/VulkanAPIError.h"
 
 void Buffer::Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {
@@ -11,12 +12,8 @@ void Buffer::Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyF
 
 void Buffer::Destroy()
 {
-	if (!buffer.IsValid())
-		return;
-
-	buffer.Destroy();
-
-	buffer = VK_NULL_HANDLE;
+	if (buffer.IsValid())
+		buffer.Destroy();
 }
 
 void* Buffer::Map(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags)
@@ -115,4 +112,67 @@ namespace FIF
 				return false;
 		return true;
 	}
+}
+
+void ImmediateBuffer::Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	Vulkan::CreateBufferHandle(buffer, size, usage);
+	
+	VkMemoryRequirements requirements{};
+	vkGetBufferMemoryRequirements(ctx.logicalDevice, buffer, &requirements);
+
+	Vulkan::AllocateMemory(memory, requirements, properties);
+	vkBindBufferMemory(ctx.logicalDevice, buffer, memory, 0);
+}
+
+void ImmediateBuffer::Destroy()
+{
+	if (!IsValid())
+		return;
+
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+	vkDestroyBuffer(ctx.logicalDevice, buffer, nullptr);
+	vkFreeMemory(ctx.logicalDevice, memory, nullptr);
+
+	Invalidate();
+}
+
+void ImmediateBuffer::InheritFrom(ImmediateBuffer& parent)
+{
+	buffer = parent.buffer;
+	memory = parent.memory;
+
+	parent.Invalidate();
+}
+
+void* ImmediateBuffer::Map(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags)
+{
+	void* ret = nullptr;
+	VkResult res = vkMapMemory(Vulkan::GetContext().logicalDevice, memory, offset, size, flags, &ret);
+	CheckVulkanResult("Failed to map immediate buffer memory", res);
+
+	return ret;
+}
+
+void ImmediateBuffer::Unmap()
+{
+	vkUnmapMemory(Vulkan::GetContext().logicalDevice, memory);
+}
+
+void ImmediateBuffer::SetDebugName(const char* name)
+{
+	Vulkan::SetDebugName(buffer, name);
+}
+
+bool ImmediateBuffer::IsValid() const
+{
+	return buffer != VK_NULL_HANDLE && memory != VK_NULL_HANDLE;
+}
+
+void ImmediateBuffer::Invalidate()
+{
+	buffer = VK_NULL_HANDLE;
+	memory = VK_NULL_HANDLE;
 }

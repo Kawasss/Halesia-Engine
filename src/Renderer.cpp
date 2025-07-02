@@ -572,9 +572,7 @@ void Renderer::UpdateMaterialBuffer()
 	materials.resize(differentIndex + 1);
 	for (uint32_t i = min; i < materials.size(); i++)
 	{
-		if (!Mesh::materials[i].HasFinishedLoading())
-			return;
-		materials[i] = Mesh::materials[i].handle;
+		materials[i] = Mesh::materials[i].HasFinishedLoading() ? Mesh::materials[i].handle : 0;
 	}
 
 	for (uint32_t i = differentIndex; i < Mesh::materials.size(); i++)

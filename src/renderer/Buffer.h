@@ -86,3 +86,39 @@ namespace FIF
 		std::array<void*, FIF::FRAME_COUNT> pointers;
 	};
 }
+
+// this buffer object does not use the garbage or memory manager
+class ImmediateBuffer
+{
+public:
+	ImmediateBuffer() = default;
+	ImmediateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) { Init(size, usage, properties); }
+	~ImmediateBuffer() { Destroy(); }
+
+	void Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
+	void Destroy();
+
+	VkBuffer Get() const { return buffer; }
+
+	void InheritFrom(ImmediateBuffer& parent); // inherits the members from the parent and tells the parent to not destroy its members upon destruction (the buffer will destroy the current members first)
+
+	template<typename T>
+	T* Map(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE, VkMemoryMapFlags flags = 0);
+	void* Map(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE, VkMemoryMapFlags flags = 0);
+	void Unmap();
+
+	void SetDebugName(const char* name);
+
+	bool IsValid() const;
+	void Invalidate();
+
+private:
+	VkBuffer buffer = VK_NULL_HANDLE;
+	VkDeviceMemory memory = VK_NULL_HANDLE;
+};
+
+template<typename T>
+T* ImmediateBuffer::Map(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags)
+{
+	return static_cast<T*>(Map(offset, size, flags));
+}

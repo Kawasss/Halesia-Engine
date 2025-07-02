@@ -259,7 +259,7 @@ void SceneLoader::MergeMeshData(MeshCreationData& dst, aiMesh* pMesh)
 	dst.faceCount += pMesh->mNumFaces;
 }
 
-inline void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::quat& rot, glm::vec3& scale)
+static void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::quat& rot, glm::vec3& scale)
 {
 	glm::mat4 trans;
 	memcpy(&trans, &mat, sizeof(glm::mat4));
@@ -271,6 +271,13 @@ inline void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::quat& rot,
 	rot = glm::degrees(glm::eulerAngles(orientation));
 	//pos /= 100;
 	//scale /= 100;
+}
+
+static std::string GetTextureFile(const aiScene* scene, aiTextureType type, int i, int index, const fs::path& base)
+{
+	aiString str{};
+	aiReturn res = scene->mMaterials[i]->GetTexture(type, index, &str);
+	return res == aiReturn_SUCCESS ? (base / str.C_Str()).string() : "";
 }
 
 void SceneLoader::LoadAssimpFile()
@@ -293,21 +300,27 @@ void SceneLoader::LoadAssimpFile()
 		animations.push_back(Animation(scene->mAnimations[i], scene->mRootNode, boneInfoMap));
 	}
 
+	fs::path baseDir = fs::path(location).parent_path();
+
+	std::vector<std::string> albedos;
+
 	for (int i = 0; i < scene->mNumMaterials; i++)
 	{
 		MaterialCreateInfo data{};
 
-		aiString albedo{};
-		aiReturn res = scene->mMaterials[i]->GetTexture(aiTextureType_DIFFUSE, 0, &albedo);
+		data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
+		//data.normal = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir);
+		//data.roughness = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir);
+		//data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
+		//data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);
 
-		if (res != aiReturn_SUCCESS)
-			data.albedo = "textures/white.png";
-		else
+		if (!data.albedo.empty())
 		{
-			fs::path sourceFile = location;
-			fs::path texture = sourceFile.parent_path() / albedo.C_Str();
-
-			data.albedo = texture.string();
+			auto it = std::find(albedos.begin(), albedos.end(), data.albedo);
+			if (it == albedos.end())
+				albedos.push_back(data.albedo);
+			else
+				Console::WriteLine("duplicate albedo");
 		}
 
 		materials.push_back(data);
