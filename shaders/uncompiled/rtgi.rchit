@@ -77,7 +77,7 @@ vec3 GetNormalFromMap(vec2 uv, vec3 normal, vec3 tangent, vec3 bitangent, int ma
 	vec3 raw = normalize(texture(textures[materialIndex * 5 + 1], uv).rgb);
 	vec3 tangentNormal = normalize(raw * 2.0 - 1.0);
 
-	return normalize(tangentToWorld * tangentNormal);
+	return normalize(TBN * tangentNormal);
 }
 
 mat4 GetModelMatrix()
@@ -105,7 +105,7 @@ Vertex GetExactVertex(InstanceData data, vec3 barycentric)
 	ret.bitangent = vertex0.bitangent * barycentric.x + vertex1.bitangent * barycentric.y + vertex2.bitangent * barycentric.z;
 
 	mat4 model = GetModelMatrix();
-	mar3 normalMatrix = mat3(transpose(inverse(model)));
+	mat3 normalMatrix = mat3(transpose(inverse(model)));
 
 	ret.position = (model * vec4(ret.position, 1.0)).xyz;
 	ret.normal = normalize(normalMatrix * ret.normal);
@@ -127,6 +127,9 @@ void main()
 	Vertex vertex = GetExactVertex(instance, barycentric);
 
 	vec3 normal = GetNormalFromMap(vertex.textureCoordinates, vertex.normal, vertex.tangent, vertex.bitangent, instance.material);
+
+	if (dot(normal, vertex.normal) < 0.0)
+		normal = vertex.normal;
 
 	payload.direction = normal;
 	payload.origin = vertex.position;

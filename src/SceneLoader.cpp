@@ -310,23 +310,23 @@ void SceneLoader::LoadAssimpFile()
 
 	std::vector<std::string> albedos;
 
-	for (int i = 0; i < scene->mNumMaterials; i++)
+	for (int i = 0; i < scene->mNumMaterials / 2; i++)
 	{
 		MaterialCreateInfo data{};
 
-		//data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
+		data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
 		data.normal = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir);
 		//data.roughness = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir);
 		//data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
 		//data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);
 
-		if (!data.albedo.empty())
+		if (!data.normal.empty())
 		{
-			auto it = std::find(albedos.begin(), albedos.end(), data.albedo);
+			auto it = std::find(albedos.begin(), albedos.end(), data.normal);
 			if (it == albedos.end())
-				albedos.push_back(data.albedo);
+				albedos.push_back(data.normal);
 			else
-				Console::WriteLine("duplicate albedo");
+				Console::WriteLine("duplicate normal");
 		}
 
 		materials.push_back(data);
