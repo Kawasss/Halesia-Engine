@@ -40,6 +40,8 @@ struct Vertex
     vec3 position;
 	vec3 normal;
 	vec2 textureCoordinates;
+	vec3 tangent;
+	vec3 bitangent;
     ivec4 boneIDs1;
 	vec4 weights1;
 };
@@ -68,6 +70,16 @@ layout (binding = 9, set = 0) readonly buffer InstanceDataBuffer
 
 layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_texture_size] textures;
 
+vec3 GetNormalFromMap(vec2 uv, vec3 normal, vec3 tangent, vec3 bitangent, int materialIndex)
+{
+	mat3 TBN = mat3(tangent, bitangent, normal);
+
+	vec3 raw = normalize(texture(textures[materialIndex * 5 + 1], uv).rgb);
+	vec3 tangentNormal = normalize(raw * 2.0 - 1.0);
+
+	return normalize(tangentToWorld * tangentNormal);
+}
+
 mat4 GetModelMatrix()
 {
 	mat4 ret = transpose(mat4(gl_ObjectToWorld3x4EXT));
@@ -89,11 +101,16 @@ Vertex GetExactVertex(InstanceData data, vec3 barycentric)
 	ret.position = vertex0.position * barycentric.x + vertex1.position * barycentric.y + vertex2.position * barycentric.z;
 	ret.normal = vertex0.normal * barycentric.x + vertex1.normal * barycentric.y + vertex2.normal * barycentric.z;
 	ret.textureCoordinates = vertex0.textureCoordinates * barycentric.x + vertex1.textureCoordinates * barycentric.y + vertex2.textureCoordinates * barycentric.z;
+	ret.tangent = vertex0.tangent * barycentric.x + vertex1.tangent * barycentric.y + vertex2.tangent * barycentric.z;
+	ret.bitangent = vertex0.bitangent * barycentric.x + vertex1.bitangent * barycentric.y + vertex2.bitangent * barycentric.z;
 
 	mat4 model = GetModelMatrix();
+	mar3 normalMatrix = mat3(transpose(inverse(model)));
 
 	ret.position = (model * vec4(ret.position, 1.0)).xyz;
-	ret.normal = normalize(mat3(transpose(inverse(model))) * ret.normal);
+	ret.normal = normalize(normalMatrix * ret.normal);
+	ret.tangent = normalize(normalMatrix * ret.tangent);
+	ret.bitangent = normalize(normalMatrix * ret.bitangent);
 
 	return ret;
 }
@@ -109,7 +126,9 @@ void main()
 
 	Vertex vertex = GetExactVertex(instance, barycentric);
 
-	payload.direction = vertex.normal;
+	vec3 normal = GetNormalFromMap(vertex.textureCoordinates, vertex.normal, vertex.tangent, vertex.bitangent, instance.material);
+
+	payload.direction = normal;
 	payload.origin = vertex.position;
 
 	vec3 radiance = vec3(0.0);
@@ -125,7 +144,7 @@ void main()
 
 		float attenuation = GetAttenuation(light, vertex.position);
 
-		float diff = max(dot(vertex.normal, L), 0.0);
+		float diff = max(dot(normal, L), 0.0);
 		vec3 diffuse = diff * color * light.color.rgb * attenuation;
 
 		radiance += (diffuse) * 1 * GetIntensity(light, L); /*diff / payload.pdf*/; // very rough lighting
