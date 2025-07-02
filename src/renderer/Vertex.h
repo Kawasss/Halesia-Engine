@@ -11,6 +11,8 @@ struct Vertex
 	alignas(16) glm::vec3 position{};
 	alignas(16) glm::vec3 normal{};
 	alignas(16) glm::vec2 textureCoordinates{}; // alignas(8) doesnt get respected
+	alignas(16) glm::vec3 tangent{};
+	alignas(16) glm::vec3 biTangent{};
 	alignas(16) int boneIndices[MAX_BONES_PER_VERTEX] = { -1, -1, -1, -1 };
 	alignas(16) float boneWeights[MAX_BONES_PER_VERTEX] = { 0.0f };
 
@@ -25,9 +27,9 @@ struct Vertex
 		return bindingDescription;
 	}
 
-	static std::array<VkVertexInputAttributeDescription, 5> GetAttributeDescriptions()
+	static std::array<VkVertexInputAttributeDescription, 7> GetAttributeDescriptions()
 	{
-		std::array<VkVertexInputAttributeDescription, 5> descriptions{};
+		std::array<VkVertexInputAttributeDescription, 7> descriptions{};
 
 		descriptions[0].binding = 0;
 		descriptions[0].location = 0;
@@ -46,13 +48,23 @@ struct Vertex
 
 		descriptions[3].binding = 0;
 		descriptions[3].location = 3;
-		descriptions[3].format = VK_FORMAT_R32G32B32A32_SINT;
-		descriptions[3].offset = offsetof(Vertex, boneIndices);
+		descriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
+		descriptions[3].offset = offsetof(Vertex, tangent);
 
 		descriptions[4].binding = 0;
 		descriptions[4].location = 4;
-		descriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		descriptions[4].offset = offsetof(Vertex, boneWeights);
+		descriptions[4].format = VK_FORMAT_R32G32B32_SFLOAT;
+		descriptions[4].offset = offsetof(Vertex, biTangent);
+
+		descriptions[5].binding = 0;
+		descriptions[5].location = 5;
+		descriptions[5].format = VK_FORMAT_R32G32B32A32_SINT;
+		descriptions[5].offset = offsetof(Vertex, boneIndices);
+
+		descriptions[6].binding = 0;
+		descriptions[6].location = 6;
+		descriptions[6].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		descriptions[6].offset = offsetof(Vertex, boneWeights);
 
 		return descriptions;
 	}

@@ -300,7 +300,7 @@ Texture::Texture(int width, int height)
 void Texture::GeneratePlaceholderTextures()
 {
 	placeholderAlbedo = new Texture("textures/placeholderAlbedo.png", false);
-	placeholderNormal = new Texture("textures/placeholderNormal.png", false);
+	placeholderNormal = new Texture("textures/placeholderNormal.png", false, TEXTURE_FORMAT_UNORM);
 	placeholderMetallic = new Texture("textures/placeholderMetallic.png", false);
 	placeholderRoughness = new Texture("textures/placeholderRoughness.png", false);
 	placeholderAmbientOcclusion = new Texture("textures/placeholderAO.png", false);

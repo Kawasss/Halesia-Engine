@@ -130,6 +130,12 @@ static void RetrieveVertices(aiMesh* pMesh, std::vector<Vertex>& dst, glm::vec3&
 		if (pMesh->mTextureCoords[0])
 			vertex.textureCoordinates = ConvertAiVec3(pMesh->mTextureCoords[0][i]);
 
+		if (pMesh->HasTangentsAndBitangents())
+		{
+			vertex.tangent = ConvertAiVec3(pMesh->mTangents[i]);
+			vertex.biTangent = ConvertAiVec3(pMesh->mBitangents[i]);
+		}
+
 		min = glm::min(vertex.position, min);
 		max = glm::max(vertex.position, max);
 		
@@ -282,7 +288,7 @@ static std::string GetTextureFile(const aiScene* scene, aiTextureType type, int 
 
 void SceneLoader::LoadAssimpFile()
 {
-	const aiScene* scene = aiImportFile(location.c_str(), aiPostProcessSteps::aiProcess_Triangulate);
+	const aiScene* scene = aiImportFile(location.c_str(), aiPostProcessSteps::aiProcess_Triangulate | aiPostProcessSteps::aiProcess_CalcTangentSpace);
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + location);
 
@@ -308,8 +314,8 @@ void SceneLoader::LoadAssimpFile()
 	{
 		MaterialCreateInfo data{};
 
-		data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
-		//data.normal = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir);
+		//data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
+		data.normal = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir);
 		//data.roughness = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir);
 		//data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
 		//data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);

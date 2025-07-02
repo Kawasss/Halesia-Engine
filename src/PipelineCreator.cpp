@@ -16,7 +16,7 @@ VkPipeline PipelineBuilder::Build()
 	VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
 	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
 
-	std::array<VkVertexInputAttributeDescription, 5> attributeDescriptions = Vertex::GetAttributeDescriptions();
+	std::array<VkVertexInputAttributeDescription, 7> attributeDescriptions = Vertex::GetAttributeDescriptions();
 	VkVertexInputBindingDescription bindingDescription = Vertex::GetBindingDescription();
 	if (!options.noVertex)
 	{

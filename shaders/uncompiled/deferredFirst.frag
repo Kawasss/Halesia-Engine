@@ -8,6 +8,7 @@ layout (location = 2) in vec2 texCoords;
 layout (location = 3) in vec3 camPos;
 layout (location = 4) in vec4 prevPosition;
 layout (location = 5) in vec4 currPosition;
+layout (location = 6) in mat3 tangentToWorld;
 
 layout (location = 0) out vec4 positionColor;
 layout (location = 1) out vec4 albedoColor;
@@ -25,19 +26,10 @@ layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_te
 
 vec3 GetNormalFromMap()
 {
-    vec3 tangentNormal = texture(textures[Constant.materialID * 5 + 1], texCoords).xyz * 2.0 - 1.0;
+    vec3 raw = normalize(texture(textures[Constant.materialID * 5 + 1], texCoords).rgb);
+    vec3 tangentNormal = normalize(raw * 2.0 - 1.0);
 
-    vec3 Q1  = dFdx(position);
-    vec3 Q2  = dFdy(position);
-    vec2 st1 = dFdx(texCoords);
-    vec2 st2 = dFdy(texCoords);
-
-    vec3 N   = normalize(normal);
-    vec3 T   = normalize(Q1*st2.t - Q2*st1.t);
-    vec3 B   = -normalize(cross(N, T));
-    mat3 TBN = mat3(T, B, N);
-
-    return normalize(TBN * tangentNormal);
+    return normalize(tangentToWorld * tangentNormal);
 }
 
 void main()
@@ -48,7 +40,7 @@ void main()
         discard;
 
     positionColor = vec4(position, 1.0);
-    normalColor   = vec4(normal, 1.0);
+    normalColor   = vec4(GetNormalFromMap(), 1.0);
 
     vec2 prevClip = prevPosition.xy / prevPosition.w;
     vec2 currClip = currPosition.xy / currPosition.w;
