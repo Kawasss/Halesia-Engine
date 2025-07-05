@@ -12,6 +12,8 @@ layout(location = 0) rayPayloadInEXT Payload {
 	vec3 direction;
 	vec3 color;
 
+	vec3 normal;
+
 	float pdf;
 
 	int depth;
@@ -48,7 +50,7 @@ struct Vertex
 
 layout (binding = 7, set = 0) readonly buffer IndexBuffer 
 { 
-	uint16_t data[];
+	uint data[];
 } indexBuffer;
 
 layout (binding = 8, set = 0) readonly buffer VertexBuffer 
@@ -88,21 +90,28 @@ mat4 GetModelMatrix()
 	return ret;
 }
 
-Vertex GetExactVertex(InstanceData data, vec3 barycentric)
+vec3 GetGeometricNormal(vec3 a, vec3 b, vec3 c)
+{
+	return normalize(cross(b - a, c - a));
+}
+
+Vertex GetExactVertex(InstanceData data, vec3 barycentric, out vec3 geometricNormal)
 {
 	ivec3 indices = ivec3(indexBuffer.data[data.indexOffset + 3 * gl_PrimitiveID + 0], indexBuffer.data[data.indexOffset + 3 * gl_PrimitiveID + 1], indexBuffer.data[data.indexOffset + 3 * gl_PrimitiveID + 2]);
 	indices += ivec3(data.vertexOffset);
 
-	Vertex vertex0 = vertexBuffer.data[indices.x];
-	Vertex vertex1 = vertexBuffer.data[indices.y];
-	Vertex vertex2 = vertexBuffer.data[indices.z];
+	Vertex a = vertexBuffer.data[indices.x];
+	Vertex b = vertexBuffer.data[indices.y];
+	Vertex c = vertexBuffer.data[indices.z];
+
+	geometricNormal = GetGeometricNormal(a.position, b.position, c.position);
 
 	Vertex ret;
-	ret.position = vertex0.position * barycentric.x + vertex1.position * barycentric.y + vertex2.position * barycentric.z;
-	ret.normal = vertex0.normal * barycentric.x + vertex1.normal * barycentric.y + vertex2.normal * barycentric.z;
-	ret.textureCoordinates = vertex0.textureCoordinates * barycentric.x + vertex1.textureCoordinates * barycentric.y + vertex2.textureCoordinates * barycentric.z;
-	ret.tangent = vertex0.tangent * barycentric.x + vertex1.tangent * barycentric.y + vertex2.tangent * barycentric.z;
-	ret.bitangent = vertex0.bitangent * barycentric.x + vertex1.bitangent * barycentric.y + vertex2.bitangent * barycentric.z;
+	ret.position = a.position * barycentric.x + b.position * barycentric.y + c.position * barycentric.z;
+	ret.normal = a.normal * barycentric.x + b.normal * barycentric.y + c.normal * barycentric.z;
+	ret.textureCoordinates = a.textureCoordinates * barycentric.x + b.textureCoordinates * barycentric.y + c.textureCoordinates * barycentric.z;
+	ret.tangent = a.tangent * barycentric.x + b.tangent * barycentric.y + c.tangent * barycentric.z;
+	ret.bitangent = a.bitangent * barycentric.x + b.bitangent * barycentric.y + c.bitangent * barycentric.z;
 
 	mat4 model = GetModelMatrix();
 	mat3 normalMatrix = mat3(transpose(inverse(model)));
@@ -111,6 +120,8 @@ Vertex GetExactVertex(InstanceData data, vec3 barycentric)
 	ret.normal = normalize(normalMatrix * ret.normal);
 	ret.tangent = normalize(normalMatrix * ret.tangent);
 	ret.bitangent = normalize(normalMatrix * ret.bitangent);
+
+	geometricNormal = normalize(normalMatrix * geometricNormal);
 
 	return ret;
 }
@@ -124,14 +135,16 @@ void main()
 
 	InstanceData instance = instanceBuffer.data[gl_InstanceCustomIndexEXT];
 
-	Vertex vertex = GetExactVertex(instance, barycentric);
+	vec3 geometricNormal = vec3(0);
+
+	Vertex vertex = GetExactVertex(instance, barycentric, geometricNormal);
 
 	vec3 normal = GetNormalFromMap(vertex.textureCoordinates, vertex.normal, vertex.tangent, vertex.bitangent, instance.material);
 
 	if (dot(normal, vertex.normal) < 0.0)
 		normal = vertex.normal;
 
-	payload.direction = normal;
+	payload.normal = geometricNormal;
 	payload.origin = vertex.position;
 
 	vec3 radiance = vec3(0.0);

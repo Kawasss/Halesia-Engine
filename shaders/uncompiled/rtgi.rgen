@@ -10,6 +10,8 @@ layout(location = 0) rayPayloadEXT Payload {
 	vec3 direction;
 	vec3 color;
 
+	vec3 normal;
+
 	float pdf;
 
 	int depth;
@@ -73,8 +75,10 @@ vec3 CosineSampleHemisphereNew(vec2 random, vec3 normal) // https://www.shaderto
     return normalize(r * sin(theta) * B + sqrt(1.0 - random.x) * normal + r * cos(theta) * T);
 }
 
-vec3 UniformSampleHemisphere(vec2 random, vec3 normal)
+vec3 UniformSampleHemisphere(vec2 random, vec3 normal, out float pdf)
 {
+	pdf = 1.0;
+
     float r = sqrt(1.0 - random.x * random.x);
     float phi = TWO_PI * random.y;
     
@@ -120,25 +124,24 @@ void main()
 	for (int i = 0; i < camera.sampleCount; i++)
 	{
 		payload.isActive = 1;
-
-		vec2 random = vec2(RandomValue(state), RandomValue(state));
-		vec3 direction = CosineSampleHemisphere(random, normal, payload.pdf);
-
 		payload.origin = position;
-		payload.direction = direction;
+		payload.direction = vec3(0);
+		payload.normal = normal;
 		payload.color = vec3(0);
 		payload.depth = 0;
 
+		vec2 random = vec2(RandomValue(state), RandomValue(state));
+
 		for (int j = 0; j < camera.bounceCount; j++)
 		{
-			traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT | gl_RayFlagsCullBackFacingTrianglesEXT, 0xFF, 0, 0, 0, payload.origin, 0.001, payload.direction, 1000.0, 0);
+			payload.direction = CosineSampleHemisphere(random, payload.normal, payload.pdf);
 
+			traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT | gl_RayFlagsCullBackFacingTrianglesEXT, 0xFF, 0, 0, 0, payload.origin, 0.001, payload.direction, 1000.0, 0);
+			
 			if (payload.isActive == 0)
 				break;
 
-			vec2 random = vec2(RandomValue(state), RandomValue(state));
-			payload.direction = CosineSampleHemisphere(random, payload.direction, payload.pdf); // the normal of the current collision is communicated through the payload.direction
-			direction = payload.direction;
+			payload.pdf = max(0.0, payload.pdf);
 		}
 		color += payload.color / float(payload.depth);
 	}

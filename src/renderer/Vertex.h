@@ -8,13 +8,13 @@ constexpr uint32_t MAX_BONES_PER_VERTEX = 4;
 
 struct Vertex
 {
-	alignas(16) glm::vec3 position{};
-	alignas(16) glm::vec3 normal{};
-	alignas(16) glm::vec2 textureCoordinates{}; // alignas(8) doesnt get respected
-	alignas(16) glm::vec3 tangent{};
-	alignas(16) glm::vec3 biTangent{};
-	alignas(16) int boneIndices[MAX_BONES_PER_VERTEX] = { -1, -1, -1, -1 };
-	alignas(16) float boneWeights[MAX_BONES_PER_VERTEX] = { 0.0f };
+	glm::vec3 position{};
+	glm::vec3 normal{};
+	glm::vec2 textureCoordinates{};
+	glm::vec3 tangent{};
+	glm::vec3 biTangent{};
+	int boneIndices[MAX_BONES_PER_VERTEX] = { -1, -1, -1, -1 };
+	float boneWeights[MAX_BONES_PER_VERTEX] = { 0.0f };
 
 	static VkVertexInputBindingDescription GetBindingDescription()
 	{

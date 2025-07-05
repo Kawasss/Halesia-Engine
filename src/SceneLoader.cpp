@@ -308,26 +308,15 @@ void SceneLoader::LoadAssimpFile()
 
 	fs::path baseDir = fs::path(location).parent_path();
 
-	std::vector<std::string> albedos;
-
-	for (int i = 0; i < scene->mNumMaterials / 2; i++)
+	for (int i = 0; i < scene->mNumMaterials; i++)
 	{
 		MaterialCreateInfo data{};
 
 		data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
 		data.normal = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir);
-		//data.roughness = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir);
-		//data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
-		//data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);
-
-		if (!data.normal.empty())
-		{
-			auto it = std::find(albedos.begin(), albedos.end(), data.normal);
-			if (it == albedos.end())
-				albedos.push_back(data.normal);
-			else
-				Console::WriteLine("duplicate normal");
-		}
+		data.roughness = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir);
+		data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
+		data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);
 
 		materials.push_back(data);
 	}
