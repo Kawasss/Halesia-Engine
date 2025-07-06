@@ -36,7 +36,7 @@ constexpr float LOWER_BAR_HEIGHT = 0.2f;
 constexpr float VIEWPORT_WIDTH = 1.0f - BAR_WIDTH * 2.0f;
 constexpr float VIEWPORT_HEIGHT = 1.0f - LOWER_BAR_HEIGHT;
 
-constexpr std::string_view SUPPORTED_MESH_FILES = "*.obj;*.glb;*.fbx;";
+constexpr std::string_view SUPPORTED_MESH_FILES = "*.obj;*.glb;*.fbx;*.stl;";
 
 void EditorCamera::Update(Window* window, float delta)
 {

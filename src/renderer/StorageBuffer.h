@@ -115,10 +115,14 @@ public:
 		CheckHandleValidity(memory, );
 
 		StorageMemory_t& memoryInfo = memoryData[memory];
+		if (memoryInfo.shouldBeTerminated)
+			return;
+
 		memoryInfo.shouldBeTerminated = true;
+		size -= memoryInfo.size / sizeof(T);
+
 		terminatedMemories.insert(memory);
 		activeMemories.erase(memory);
-		size--;
 	}
 
 	/// <summary>
