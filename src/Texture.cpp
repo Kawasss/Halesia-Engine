@@ -212,7 +212,11 @@ Cubemap::Cubemap(const std::string& filePath, bool useMipMaps)
 	// this async can't use the capture list ( [&] ), because then filePath gets wiped clean (??)
 	generation = std::async([=]()
 		{
-			std::vector<char> data = IO::ReadFile(filePath);
+			std::expected<std::vector<char>, bool> fileData = IO::ReadFile(filePath);
+			if (!fileData.has_value())
+				return;
+
+			std::vector<char> data = *fileData;
 			this->GenerateImages(data, useMipMaps);
 			this->CreateLayerViews();
 		});
@@ -257,7 +261,11 @@ Texture::Texture(std::string filePath, bool useMipMaps, TextureFormat format, Te
 	// this async can't use the capture list ( [&] ), because then filePath gets wiped clean (??)
 	generation = std::async([=]()
 		{
-			std::vector<char> data = IO::ReadFile(filePath);
+			std::expected<std::vector<char>, bool> fileData = IO::ReadFile(filePath);
+			if (!fileData.has_value())
+				return;
+
+			std::vector<char> data = *fileData;
 			this->GenerateImages(data, useMipMaps, 1, format, useCase);
 		});
 }

@@ -8,7 +8,11 @@ namespace ini
 {
 	Reader::Reader(const std::string& file) // change to string_view
 	{
-		stream = IO::ReadFile(file, true);
+		std::expected<std::vector<char>, bool> fileData = IO::ReadFile(file, true);
+		if (!fileData.has_value())
+			return;
+
+		stream = *fileData;
 		stream.back() = '\r';
 
 		Parse();

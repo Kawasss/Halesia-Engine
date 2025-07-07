@@ -115,5 +115,5 @@ fs::path ShaderCompiler::SourcePathToSpirvPath(const fs::path& file)
 std::vector<char> ShaderCompiler::ReadSpirvFromSource(const fs::path& file)
 {
 	fs::path spvFile = SourcePathToSpirvPath(file);
-	return IO::ReadFile(spvFile.string());
+	return *IO::ReadFile(spvFile.string()); // the file is garantueed to exist at this point so dont check if the file could be read
 }
