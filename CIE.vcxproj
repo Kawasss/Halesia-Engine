@@ -106,7 +106,7 @@
       <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;_DEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\imgui-1.91.7;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Users\wveen\source\additionalDependencies\imgui-1.91.7;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -115,7 +115,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\wveen\source\repos\Halesia\lib;C:\Users\wveen\source\repos\Halesia\lib\debug-lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;soloud_static.lib;lua.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;soloud_static.lib;lua.lib;liblz4_static.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>optixDenoiser.lib;PhysX_static_64.lib;PhysXCommon_static_64.lib;PhysXCooking_static_64.lib;PhysXExtensions_static_64.lib;PhysXFoundation_static_64.lib;PhysXPvdSDK_static_64.lib;assimp-vc143-mt.lib;cuda.lib;cudart_static.lib;soloud_static.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -136,7 +136,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -147,7 +147,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\wveen\source\repos\Halesia\lib;C:\Users\wveen\source\repos\Halesia\lib\release-lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;soloud_static.lib;lua.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;soloud_static.lib;lua.lib;liblz4_static.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -175,6 +175,7 @@
     <ClCompile Include="src\CommandBuffer.cpp" />
     <ClCompile Include="src\ComputeShader.cpp" />
     <ClCompile Include="src\Console.cpp" />
+    <ClCompile Include="src\DataArchiveFile.cpp" />
     <ClCompile Include="src\Deferred.cpp" />
     <ClCompile Include="src\Denoiser.cpp" />
     <ClCompile Include="src\DescriptorWriter.cpp" />
@@ -201,6 +202,7 @@
     <ClCompile Include="src\Profiler.cpp" />
     <ClCompile Include="src\QueryPool.cpp" />
     <ClCompile Include="src\RayTracingPipeline.cpp" />
+    <ClCompile Include="src\ReadWriteFile.cpp" />
     <ClCompile Include="src\ResizableBuffer.cpp" />
     <ClCompile Include="src\Rigid3DObject.cpp" />
     <ClCompile Include="src\Script.cpp" />
@@ -271,6 +273,7 @@
     <ClInclude Include="src\io\BinaryReader.h" />
     <ClInclude Include="src\io\BinaryWriter.h" />
     <ClInclude Include="src\io\CreationData.h" />
+    <ClInclude Include="src\io\DataArchiveFile.h" />
     <ClInclude Include="src\io\FileArray.h" />
     <ClInclude Include="src\io\FileBase.h" />
     <ClInclude Include="src\io\FileFormat.h" />
@@ -282,6 +285,7 @@
     <ClInclude Include="src\io\FwdDclCreationData.h" />
     <ClInclude Include="src\io\IniFile.h" />
     <ClInclude Include="src\io\IO.h" />
+    <ClInclude Include="src\io\ReadWriteFile.h" />
     <ClInclude Include="src\io\SceneLoader.h" />
     <ClInclude Include="src\io\SceneWriter.h" />
     <ClInclude Include="src\math\vectors.h" />

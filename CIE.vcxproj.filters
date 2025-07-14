@@ -339,6 +339,12 @@
     <ClCompile Include="src\Script.cpp">
       <Filter>Source Files\scripting</Filter>
     </ClCompile>
+    <ClCompile Include="src\ReadWriteFile.cpp">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DataArchiveFile.cpp">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -661,6 +667,12 @@
     </ClInclude>
     <ClInclude Include="src\core\ScriptObject.h">
       <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\DataArchiveFile.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\ReadWriteFile.h">
+      <Filter>Header Files\io</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

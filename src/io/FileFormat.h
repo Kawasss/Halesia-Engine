@@ -35,6 +35,7 @@ enum NodeType : uint16_t
 	NODE_TYPE_COMPRESSION,
 	NODE_TYPE_SHAPE,
 	NODE_TYPE_IMAGE,
+	NODE_TYPE_DICTIONARY,
 };
 inline extern const char* NodeTypeToString(NodeType type);
 
@@ -127,4 +128,11 @@ constexpr uint64_t SIZE_OF_NODE_HEADER = sizeof(NodeType) + sizeof(NodeSize);
 // 64 bit value representing the uncompressed size
 // 32 bit unsigned integer representing the compression algorithm used
 // this node is ALWAYS at the start of the file
+//
+// NODE_TYPE_DICTIONARY
+// 32 bit value indicating the amount of entries in the dictionary
+// each entry consists of this data:
+// a string serving as the unique identifier
+// 64 bit value that gives the offset after the end of this dictionary
+// 64 bit value that gives the size of the data array
 //
