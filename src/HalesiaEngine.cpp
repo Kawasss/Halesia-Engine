@@ -1,6 +1,7 @@
 #include <iostream>
 #include <format>
 #include <future>
+#include <chrono>
 
 #include "HalesiaEngine.h"
 
