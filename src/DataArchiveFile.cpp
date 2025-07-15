@@ -183,20 +183,37 @@ uint64_t DataArchiveFile::GetBinarySizeOfDictionary() const
 
 DataArchiveFile::Iterator DataArchiveFile::begin()
 {
-	return Iterator(dictionary.begin());
+	return Iterator(dictionary.begin(), *this);
 }
 
 DataArchiveFile::Iterator DataArchiveFile::end()
 {
-	return Iterator(dictionary.end());
+	return Iterator(dictionary.end(), *this);
 }
 
-DataArchiveFile::Iterator::Iterator(const std::map<std::string, Metadata>::iterator& it) : internal(it)
+DataArchiveFile::Iterator::Iterator(const std::map<std::string, Metadata>::iterator& it, DataArchiveFile& parent) : internal(it), parent(parent)
 {
-	identifier = it->first;
+
 }
 
 DataArchiveFile::Iterator DataArchiveFile::Iterator::operator++()
 {
-	return Iterator(internal++);
+	return Iterator(internal++, parent);
+}
+
+DataArchiveFile::DataEntry DataArchiveFile::Iterator::operator*() const
+{
+	std::expected<std::vector<char>, bool> read = parent.ReadData(internal->first);
+
+	return read.has_value() ? DataEntry{ internal->first, *read } : DataEntry{ internal->first, {} };
+}
+
+bool DataArchiveFile::Iterator::operator!=(const Iterator& other) const
+{
+	return this->internal != other.internal;
+}
+
+bool DataArchiveFile::Iterator::operator==(const Iterator& other) const
+{
+	return this->internal == other.internal;
 }

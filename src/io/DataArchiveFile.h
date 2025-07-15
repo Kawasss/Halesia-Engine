@@ -21,18 +21,28 @@ private:
 	};
 
 public:
+	struct DataEntry
+	{
+		std::string_view identifier; // valid string as long as the DataArchiveFile is alive
+		std::vector<char> data;      // data will be empty if the read has failed
+	};
+
 	class Iterator
 	{
 	public:
-		Iterator() = default;
-		Iterator(const std::map<std::string, Metadata>::iterator& it);
+		Iterator(const std::map<std::string, Metadata>::iterator& it, DataArchiveFile& parent);
 
 		Iterator operator++();
 
-		std::string_view identifier;
+		bool operator!=(const Iterator& other) const;
+		bool operator==(const Iterator& other) const;
+
+		DataEntry operator*() const;
 
 	private:
 		std::map<std::string, Metadata>::iterator internal;
+
+		DataArchiveFile& parent;
 	};
 
 	DataArchiveFile(const std::string& file);
