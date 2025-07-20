@@ -58,6 +58,7 @@ public:
 	std::expected<std::vector<char>, bool> ReadData(const std::string& identifier);
 
 	bool IsValid() const;
+	bool HasEntry(const std::string& identifier) const;
 
 	void WriteToFile(); // writes the data that is only in RAM to disk, ignores any table entry thats already in the file
 	void ClearDictionary();

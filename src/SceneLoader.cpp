@@ -64,10 +64,18 @@ static void ReadFullObject(DataArchiveFile& file, const BinarySpan& data, std::v
 		return;
 	}
 
-	std::expected<std::vector<char>, bool> childRefs = file.ReadData(creationData.name + "_ref_children");
-	if (!childRefs.has_value()) // not an error, since its optional to have children
+	std::string references = creationData.name + "_ref_children";
+	if (!file.HasEntry(references)) // not an error, since its optional to have children
 	{
 		outDst.push_back(creationData);
+		return;
+	}
+
+	std::expected<std::vector<char>, bool> childRefs = file.ReadData(creationData.name + "_ref_children");
+	if (!childRefs.has_value())
+	{
+		outDst.push_back(creationData);
+		Console::WriteLine("failed to read child references for {}", Console::Severity::Error, creationData.name);
 		return;
 	}
 
@@ -309,15 +317,15 @@ void SceneLoader::LoadAssimpFile()
 
 	for (int i = 0; i < scene->mNumMaterials; i++)
 	{
-		MaterialCreateInfo data{};
+		//MaterialCreateInfo data{};
 
-		data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
+		//data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
 		//data.normal = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir);
 		//data.roughness = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir);
 		//data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
 		//data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);
 
-		materials.push_back(data);
+		//materials.push_back(data);
 	}
 
 	aiReleaseImport(scene);

@@ -23,6 +23,11 @@ bool DataArchiveFile::IsValid() const
 	return stream.IsValid();
 }
 
+bool DataArchiveFile::HasEntry(const std::string& identifier) const
+{
+	return dictionary.contains(identifier);
+}
+
 void DataArchiveFile::AddData(const std::string& identifier, const std::span<char const>& data)
 {
 	Metadata metadata{};
@@ -45,7 +50,7 @@ std::expected<std::vector<char>, bool> DataArchiveFile::ReadData(const std::stri
 	if (!metadata.isOnDisk)
 		return DecompressMemory(metadata.compressed, metadata.uncompressedSize);
 
-	if (metadata.offset + metadata.size >= stream.GetFileSize())
+	if (metadata.offset + metadata.size >= stream.GetFileSize() || metadata.size == 0)
 		return std::unexpected(false);
 
 	return ReadFromDisk(metadata.offset, metadata.size);
@@ -66,6 +71,9 @@ std::expected<std::vector<char>, bool>  DataArchiveFile::ReadFromDisk(uint64_t o
 
 std::expected<std::vector<char>, bool> DataArchiveFile::DecompressMemory(const std::span<char const>& compressed, uint64_t uncompressedSize)
 {
+	if (uncompressedSize == compressed.size())
+		return std::vector<char>(compressed.begin(), compressed.end());
+
 	int bounds = LZ4_compressBound(static_cast<int>(uncompressedSize));
 	std::vector<char> uncompressed(bounds);
 	int decompressedCount = ::LZ4_decompress_safe(compressed.data(), uncompressed.data(), static_cast<int>(compressed.size()), bounds);
@@ -82,6 +90,10 @@ std::vector<char> DataArchiveFile::CompressMemory(const std::span<char const>& u
 	int size = static_cast<int>(uncompressed.size());
 
 	int compressedCount = LZ4_compress_default(uncompressed.data(), ret.data(), size, size);
+
+	if (compressedCount == 0)
+		return std::vector<char>(uncompressed.begin(), uncompressed.end());
+
 	if (compressedCount != size)
 		ret.resize(compressedCount);
 

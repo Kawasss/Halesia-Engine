@@ -76,7 +76,7 @@ DEFINE_READ_OPERATOR(char);
 
 void BinaryStream::Read(char* dst, size_t count)
 {
-	assert(offset + count < data.size());
+	assert(offset + count <= data.size());
 	memcpy(dst, &data[offset], count);
 	offset += count;
 }
@@ -130,7 +130,7 @@ DEFINE_READ_OPERATOR(char);
 
 void BinarySpan::Read(char* dst, size_t count) const
 {
-	assert(offset + count < data.size());
+	assert(offset + count <= data.size());
 	memcpy(dst, &data[offset], count);
 	offset += count;
 }
