@@ -38,7 +38,6 @@ struct MeshCreationData
 	glm::vec3 max = glm::vec3(0);
 
 	int faceCount = 0;
-	int amountOfVertices = 0;
 
 	std::vector<Vertex>   vertices;
 	std::vector<uint32_t> indices;
@@ -88,4 +87,5 @@ struct ObjectCreationData
 	Type type = Type::Base;
 
 	std::vector<ObjectCreationData> children;
+	std::vector<char> unknownData; // unknown refers to data of which its purpose is unknown, this data can be used for i.e. superclasses that inherit from Objects (de)serialization pipeline
 };

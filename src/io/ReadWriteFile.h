@@ -13,7 +13,13 @@ public:
 		End     = 2,
 	};
 
-	ReadWriteFile(const std::string_view& file);
+	enum class OpenMethod
+	{
+		Clear,
+		Append,
+	};
+
+	ReadWriteFile(const std::string_view& file, OpenMethod method);
 	~ReadWriteFile();
 
 	bool IsValid() const;

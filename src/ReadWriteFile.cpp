@@ -3,9 +3,9 @@
 
 #include "io/ReadWriteFile.h"
 
-ReadWriteFile::ReadWriteFile(const std::string_view& file)
+ReadWriteFile::ReadWriteFile(const std::string_view& file, OpenMethod method)
 {
-	handle = ::CreateFileA(file.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+	handle = ::CreateFileA(file.data(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, nullptr, method == OpenMethod::Append ? OPEN_ALWAYS : CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 }
 
 ReadWriteFile::~ReadWriteFile()

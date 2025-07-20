@@ -9,6 +9,8 @@ class BinaryWriter;
 
 namespace HSFWriter
 {
+	extern void WriteSceneToArchive(const std::string& file, Scene* scene);
+
 	inline extern void WriteHSFScene(Scene* scene, std::string destination);
 	inline extern void WriteObject(BinaryWriter& writer, Object* object);
 }

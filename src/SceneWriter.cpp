@@ -6,10 +6,58 @@
 #include "io/CreationData.h"
 #include "io/SceneWriter.h"
 #include "io/BinaryWriter.h"
+#include "io/DataArchiveFile.h"
+#include "io/BinaryStream.h"
 
 #include "core/Scene.h"
 #include "core/Object.h"
 #include "core/MeshObject.h"
+
+static void WriteNamedReferencesToStream(BinaryStream& stream, const std::vector<Object*>& objects)
+{
+	uint32_t referenceCount = static_cast<uint32_t>(objects.size());
+	stream << referenceCount;
+
+	for (const Object* pObject : objects)
+	{
+		uint32_t strLen = static_cast<uint32_t>(pObject->name.size());
+
+		stream << strLen;
+		stream.Write(pObject->name.data(), strLen);
+	}
+}
+
+static void WriteFullObjectToArchive(DataArchiveFile& archive, const Object* pObject)
+{
+	archive.AddData(pObject->name, pObject->Serialize());
+
+	if (!pObject->HasChildren())
+		return;
+
+	BinaryStream childReferences;
+	WriteNamedReferencesToStream(childReferences, pObject->GetChildren());
+
+	archive.AddData(pObject->name + "_ref_children", childReferences.data);
+
+	for (Object* pObject : pObject->GetChildren())
+		WriteFullObjectToArchive(archive, pObject);
+}
+
+void HSFWriter::WriteSceneToArchive(const std::string& file, Scene* scene)
+{
+	DataArchiveFile archive(file, DataArchiveFile::OpenMethod::Clear);
+	if (!archive.IsValid())
+		return;
+
+	BinaryStream rootReferences;
+	WriteNamedReferencesToStream(rootReferences, scene->allObjects);
+	archive.AddData("##object_root", rootReferences.data);
+
+	for (Object* pObject : scene->allObjects)
+		WriteFullObjectToArchive(archive, pObject);
+
+	archive.WriteToFile();
+}
 
 void HSFWriter::WriteHSFScene(Scene* scene, std::string destination)
 {

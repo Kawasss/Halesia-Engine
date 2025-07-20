@@ -5,10 +5,15 @@
 #include <filesystem>
 
 #include "io/SceneLoader.h"
+#include "io/DataArchiveFile.h"
+#include "io/BinaryStream.h"
 
 #include "core/Console.h"
+#include "core/Object.h"
 
 namespace fs = std::filesystem;
+
+constexpr std::string_view CUSTOM_FILE_EXTENSION = ".dat";
 
 #pragma pack(push, 1)
 struct CompressionNode
@@ -20,94 +25,89 @@ struct CompressionNode
 };
 #pragma pack(pop)
 
-SceneLoader::SceneLoader(std::string sceneLocation) : reader(sceneLocation), location(sceneLocation) {}
+SceneLoader::SceneLoader(std::string sceneLocation) : location(sceneLocation) {}
 
 void SceneLoader::LoadScene() 
 {
-	std::filesystem::path path = location;
-	if (path.extension() == ".hsf")
-		LoadHSFFile();
+	fs::path path = location;
+	if (path.extension() == CUSTOM_FILE_EXTENSION)
+		LoadCustomFile();
 	else
 		LoadAssimpFile();
 }
 
-void SceneLoader::LoadHSFFile()
+static std::vector<std::string> ReadNamedReferences(const BinarySpan& data) // maybe use string_view for small performance boost ??
 {
-	reader.DecompressFile();
+	uint32_t count = 0;
+	data >> count;
 
-	NodeType type = NODE_TYPE_NONE;
-	NodeSize size = 0;
+	std::vector<std::string> ret(count);
 
-	while (!reader.IsAtEndOfFile())
+	for (uint32_t i = 0; i < count; i++)
 	{
-		GetNodeHeader(type, size);
-		RetrieveType(type, size);
+		uint32_t strLen = 0;
+		data >> strLen;
+
+		ret[i].resize(strLen);
+		data.Read(ret[i].data(), strLen);
 	}
+	return ret;
 }
 
-void SceneLoader::RetrieveType(NodeType type, NodeSize size)
+// the object will only be added if it can be deserialized in its entirety (children must also be valid)
+static void ReadFullObject(DataArchiveFile& file, const BinarySpan& data, std::vector<ObjectCreationData>& outDst)
 {
-	if (reader.IsAtEndOfFile())
+	ObjectCreationData creationData{};
+	if (!Object::DeserializeIntoCreationData(data, creationData))
+	{
+		Console::WriteLine("failed to deserialize unknown object", Console::Severity::Error);
 		return;
-
-	NodeType childType = NODE_TYPE_NONE;
-	NodeSize childSize = 0;
-	switch (type)
-	{
-	case NODE_TYPE_OBJECT:
-		objects.push_back({});
-		currentObject = objects.begin() + objects.size() - 1;
-		reader >> currentObject->state;
-		GetNodeHeader(childType, childSize);
-		RetrieveType(childType, childSize); // name
-		GetNodeHeader(childType, childSize);
-		RetrieveType(childType, childSize); // transform
-		GetNodeHeader(childType, childSize);
-		RetrieveType(childType, childSize); // rigid body
-		GetNodeHeader(childType, childSize);
-		RetrieveType(childType, childSize); // mesh
-
-		currentObject->hasMesh = !currentObject->mesh.vertices.empty();
-		break;
-	case NODE_TYPE_MESH:
-	{
-		currentObject->type = ObjectCreationData::Type::Mesh;
-
-		FileMesh mesh;
-		reader >> mesh;
-		currentObject->hasMesh = true;
-		currentObject->mesh.TransferFrom(mesh);
-		break;
 	}
-	case NODE_TYPE_RIGIDBODY:
+
+	std::expected<std::vector<char>, bool> childRefs = file.ReadData(creationData.name + "_ref_children");
+	if (!childRefs.has_value()) // not an error, since its optional to have children
 	{
-		FileRigidBody rigid;
-		reader >> rigid;
-		currentObject->hitBox.TransferFrom(rigid);
-		break;
+		outDst.push_back(creationData);
+		return;
 	}
-	case NODE_TYPE_NAME:
-		reader >> currentObject->name;
-		break;
-	case NODE_TYPE_TRANSFORM:
-		reader >> currentObject->position >> currentObject->rotation >> currentObject->scale;
-		break;
-	case NODE_TYPE_MATERIAL:
-		materials.push_back({});
-		reader >> materials.back();
-		break;
-	default:
-		Console::WriteLine("Encountered an unusable node type " + std::to_string((int)type));
-		uint8_t* junk = new uint8_t[size];
-		reader.Read((char*)junk, size);
-		delete[] junk;
-		break;
+
+	BinarySpan asSpan = *childRefs;
+	std::vector<std::string> children = ReadNamedReferences(asSpan);
+
+	creationData.children.reserve(children.size());
+	for (const std::string& child : children)
+	{
+		std::expected<std::vector<char>, bool> objectData = file.ReadData(child);
+		if (objectData.has_value())
+			ReadFullObject(file, *objectData, creationData.children);
+		else
+			Console::WriteLine("failed to read child object \"{}\"", Console::Severity::Error, child);
 	}
+
+	outDst.push_back(creationData);
 }
 
-void SceneLoader::GetNodeHeader(NodeType& type, NodeSize& size)
+void SceneLoader::LoadCustomFile()
 {
-	reader >> type >> size;
+	DataArchiveFile file(location, DataArchiveFile::OpenMethod::Append);
+	std::expected<std::vector<char>, bool> root = file.ReadData("##object_root");
+	if (!root.has_value())
+	{
+		Console::WriteLine("no object root found for {}", Console::Severity::Warning, location); // scenes dont need to have objects, but itd be weird not to have any
+		return;
+	}
+
+	std::vector<std::string> childReferences = ReadNamedReferences(*root);
+	objects.reserve(childReferences.size());
+
+	for (const std::string& child : childReferences)
+	{
+		std::expected<std::vector<char>, bool> data = file.ReadData(child);
+		if (data.has_value())
+			ReadFullObject(file, *data, objects);
+		else
+			Console::WriteLine("failed to read base object \"{}\"", Console::Severity::Error, child);
+	}
 }
 
 static glm::vec3 ConvertAiVec3(const aiVector3D& vec)
@@ -244,7 +244,6 @@ MeshCreationData SceneLoader::RetrieveMeshData(aiMesh* pMesh)
 {
 	MeshCreationData ret{};
 
-	ret.amountOfVertices = pMesh->mNumVertices;
 	ret.faceCount = pMesh->mNumFaces;
 	ret.materialIndex = pMesh->mMaterialIndex + 1; // + 1 because we already have the default material loaded in
 	ret.vertices = RetrieveVertices(pMesh, ret.min, ret.max);
@@ -261,7 +260,6 @@ void SceneLoader::MergeMeshData(MeshCreationData& dst, aiMesh* pMesh)
 
 	RetrieveBoneData(dst, pMesh); // this is not tested enough, so it may result in weird behavior
 
-	dst.amountOfVertices += pMesh->mNumVertices;
 	dst.faceCount += pMesh->mNumFaces;
 }
 
@@ -296,7 +294,8 @@ void SceneLoader::LoadAssimpFile()
 	if (err != nullptr && err[0] != '\0')
 		Console::WriteLine(err, Console::Severity::Error);
 
-	objects.push_back(RetrieveObject(scene, scene->mRootNode, glm::mat4(1)));
+	ObjectCreationData root = RetrieveObject(scene, scene->mRootNode, glm::mat4(1)); // for now we ignore the root node
+	objects = std::move(root.children);
 
 	if (scene->HasAnimations())
 		animations.resize(scene->mNumAnimations);
@@ -313,10 +312,10 @@ void SceneLoader::LoadAssimpFile()
 		MaterialCreateInfo data{};
 
 		data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
-		data.normal = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir);
-		data.roughness = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir);
-		data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
-		data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);
+		//data.normal = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir);
+		//data.roughness = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir);
+		//data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
+		//data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);
 
 		materials.push_back(data);
 	}
@@ -385,7 +384,6 @@ static MeshCreationData GetMeshFromAssimp(aiMesh* pMesh)
 {
 	MeshCreationData ret{};
 
-	ret.amountOfVertices = pMesh->mNumVertices;
 	ret.faceCount = pMesh->mNumFaces;
 	ret.vertices = RetrieveVertices(pMesh, ret.min, ret.max);
 	ret.indices = RetrieveIndices(pMesh);

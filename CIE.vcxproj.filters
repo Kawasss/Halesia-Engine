@@ -345,6 +345,9 @@
     <ClCompile Include="src\DataArchiveFile.cpp">
       <Filter>Source Files\io</Filter>
     </ClCompile>
+    <ClCompile Include="src\BinaryStream.cpp">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -672,6 +675,9 @@
       <Filter>Header Files\io</Filter>
     </ClInclude>
     <ClInclude Include="src\io\ReadWriteFile.h">
+      <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\io\BinaryStream.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
   </ItemGroup>

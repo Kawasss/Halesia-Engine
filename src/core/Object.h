@@ -9,6 +9,8 @@
 #include "../system/CriticalSection.h"
 
 class Scene;
+class BinaryStream;
+class BinarySpan;
 struct ObjectCreationData;
 using Handle = uint64_t;
 
@@ -40,13 +42,14 @@ public:
 		Light = 3,
 		Script = 4,
 		TypeCount = 5, // increment when a new type is added
+		Invalid = TypeCount + 1,
 	};
 	static std::string_view InheritTypeToString(InheritType type);
 	static InheritType StringToInheritType(const std::string_view& str);
 
 	/// <summary>
 	/// This wont pause the program while its loading, so async loaded objects must be checked with HasFinishedLoading before calling a function.
-	/// Be weary of accessing members in the constructor, since they don't have to be loaded in. AwaitGeneration awaits the async thread.
+	/// Be wary of accessing members in the constructor, since they don't have to be loaded in. AwaitGeneration awaits the async thread.
 	/// </summary>
 	/// <param name="creationData"></param>
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
@@ -88,6 +91,13 @@ public:
 
 	void SetParentScene(Scene* parent) { scene = parent; }
 
+	std::vector<char> Serialize() const; // when serializing, the children of an object will be serialized by the object itself.
+	void Deserialize(const BinarySpan& stream); // assumes that the object is already the correct type, also assumes that the inheritType at the beginning of the stream is already read (a.k.a. 'GetInheritTypeFromStream(...)' is already called)
+
+	static bool DeserializeIntoCreationData(const BinarySpan& stream, ObjectCreationData& ret);
+
+	static InheritType GetInheritTypeFromStream(const BinarySpan& stream); // this function should only be called when deserializing an object and the inherit type is needed to create the correct object
+
 	std::vector<Object*>& GetChildren() { return children; }
 
 	const std::vector<Object*>& GetChildren() const  { return children;    }
@@ -117,6 +127,17 @@ public:
 private:
 	template<typename T> void SetScript(T* script);
 
+	void SerializeHeader(BinaryStream& stream) const;
+	void SerializeName(BinaryStream& stream) const;
+	void SerializeTransform(BinaryStream& stream) const;
+
+	void SerializeChildren(BinaryStream& stream) const;
+
+	void DeserializeName(const BinarySpan& stream);
+	void DeserializeTransform(const BinarySpan& stream);
+
+	void SerializeIntoStream(BinaryStream& stream) const;
+
 	InheritType type = InheritType::Base;
 
 	std::future<void> generation;
@@ -143,6 +164,10 @@ protected:
 	/// </summary>
 	/// <param name="pObject"></param>
 	void DuplicateBaseDataTo(Object* pObject) const;
+
+	// base object data is already (de)serialized before this call is made
+	virtual void SerializeSelf(BinaryStream& stream) const;
+	virtual void DeserializeSelf(const BinarySpan& stream);
 
 	Scene* GetParentScene() { return scene; }
 

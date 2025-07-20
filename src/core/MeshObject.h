@@ -24,4 +24,7 @@ private:
 
 protected:
 	void DuplicateDataTo(Object* pObject) const override;
+
+	void SerializeSelf(BinaryStream& stream) const override;
+	void DeserializeSelf(const BinarySpan& stream) override;
 };

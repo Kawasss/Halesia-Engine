@@ -6,8 +6,7 @@
 #include "core/Scene.h"
 
 #include "io/CreationData.h"
-
-#include "physics/Physics.h"
+#include "io/BinaryStream.h"
 
 #include "ResourceManager.h"
 
@@ -45,6 +44,9 @@ void Object::Initialize(const ObjectCreationData& creationData)
 
 	if (!creationData.children.empty())
 		children.reserve(creationData.children.size());
+
+	if (!creationData.unknownData.empty())
+		DeserializeSelf(creationData.unknownData);
 }
 void Object::AddChild(Object* object)
 {
@@ -128,6 +130,122 @@ bool Object::HasFinishedLoading()
 bool Object::IsType(InheritType cmp) const
 {
 	return type == cmp;
+}
+
+std::vector<char> Object::Serialize() const
+{
+	BinaryStream stream;
+	SerializeIntoStream(stream);
+	return stream.data;
+}
+
+void Object::SerializeIntoStream(BinaryStream& stream) const
+{
+	SerializeHeader(stream);
+	SerializeName(stream);
+	SerializeTransform(stream);
+
+	SerializeSelf(stream);
+
+	//SerializeChildren(stream);
+}
+
+void Object::SerializeHeader(BinaryStream& stream) const
+{
+	stream << static_cast<std::underlying_type_t<InheritType>>(type);
+}
+
+void Object::SerializeName(BinaryStream& stream) const
+{
+	stream << static_cast<uint32_t>(name.size());
+	for (char ch : name)
+		stream << ch;
+}
+
+void Object::SerializeTransform(BinaryStream& stream) const
+{
+	stream << transform.position.x << transform.position.y << transform.position.z;
+	stream << transform.scale.x << transform.scale.y << transform.scale.z;
+	stream << transform.rotation.w << transform.rotation.x << transform.rotation.y << transform.rotation.z;
+}
+
+void Object::SerializeChildren(BinaryStream& stream) const
+{
+	size_t childCount = children.size();
+	stream << childCount;
+
+	for (Object* pChild : children)
+	{
+		pChild->SerializeIntoStream(stream);
+	}
+}
+
+void Object::Deserialize(const BinarySpan& stream)
+{
+	DeserializeName(stream);
+	DeserializeTransform(stream);
+
+	DeserializeSelf(stream);
+}
+
+void Object::DeserializeName(const BinarySpan& stream)
+{
+	uint32_t size = 0;
+	stream >> size;
+
+	name.resize(size);
+	for (char ch : name)
+		stream >> ch;
+}
+
+void Object::DeserializeTransform(const BinarySpan& stream)
+{
+	stream >> transform.position.x >> transform.position.y >> transform.position.z;
+	stream >> transform.scale.x >> transform.scale.y >> transform.scale.z;
+	stream >> transform.rotation.w >> transform.rotation.x >> transform.rotation.y >> transform.rotation.z;
+}
+
+bool Object::DeserializeIntoCreationData(const BinarySpan& stream, ObjectCreationData& ret)
+{
+	if (stream.data.size() < 4)
+		return false;
+
+	InheritType type = GetInheritTypeFromStream(stream);
+	if (type == InheritType::Invalid)
+		return false;
+
+	ret.type = static_cast<ObjectCreationData::Type>(type);
+
+	uint32_t strLen = 0;
+	stream >> strLen;
+
+	ret.name.resize(strLen);
+	stream.Read(ret.name.data(), strLen);
+
+	stream >> ret.position.x >> ret.position.y >> ret.position.z;
+	stream >> ret.scale.x >> ret.scale.y >> ret.scale.z;
+	stream >> ret.rotation.w >> ret.rotation.x >> ret.rotation.y >> ret.rotation.z;
+
+	ret.unknownData = std::vector<char>(stream.data.begin() + stream.GetOffset(), stream.data.end());
+	return true;
+}
+
+Object::InheritType Object::GetInheritTypeFromStream(const BinarySpan& stream)
+{
+	int intermediary = 0;
+	stream >> intermediary;
+
+	return intermediary >= 0 && intermediary < static_cast<int>(InheritType::TypeCount) ? static_cast<InheritType>(intermediary) : InheritType::Invalid;
+}
+
+void Object::SerializeSelf(BinaryStream& stream) const
+{
+
+}
+
+void Object::DeserializeSelf(const BinarySpan& stream)
+{
+
 }
 
 Object::~Object()

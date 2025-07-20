@@ -13,7 +13,7 @@
 //   uncompressed size of the data: unsigned 64 bit
 // every data block starts with a 64 bit value showing the uncompressed size
 
-DataArchiveFile::DataArchiveFile(const std::string& file) : stream(file)
+DataArchiveFile::DataArchiveFile(const std::string& file, OpenMethod method) : stream(file, static_cast<ReadWriteFile::OpenMethod>(method))
 {
 	ReadDictionaryFromDisk();
 }
@@ -23,7 +23,7 @@ bool DataArchiveFile::IsValid() const
 	return stream.IsValid();
 }
 
-void DataArchiveFile::AddData(const std::string& identifier, const std::span<char>& data)
+void DataArchiveFile::AddData(const std::string& identifier, const std::span<char const>& data)
 {
 	Metadata metadata{};
 	metadata.isOnDisk = false;
@@ -64,7 +64,7 @@ std::expected<std::vector<char>, bool>  DataArchiveFile::ReadFromDisk(uint64_t o
 	return DecompressMemory(read, uncompressedSize);
 }
 
-std::expected<std::vector<char>, bool> DataArchiveFile::DecompressMemory(const std::span<char>& compressed, uint64_t uncompressedSize)
+std::expected<std::vector<char>, bool> DataArchiveFile::DecompressMemory(const std::span<char const>& compressed, uint64_t uncompressedSize)
 {
 	int bounds = LZ4_compressBound(static_cast<int>(uncompressedSize));
 	std::vector<char> uncompressed(bounds);
@@ -76,7 +76,7 @@ std::expected<std::vector<char>, bool> DataArchiveFile::DecompressMemory(const s
 	return uncompressed;
 }
 
-std::vector<char> DataArchiveFile::CompressMemory(const std::span<char>& uncompressed)
+std::vector<char> DataArchiveFile::CompressMemory(const std::span<char const>& uncompressed)
 {
 	std::vector<char> ret(uncompressed.size());
 	int size = static_cast<int>(uncompressed.size());
@@ -117,6 +117,11 @@ void DataArchiveFile::ReadDictionaryFromDisk()
 
 		dictionary[identifier] = metadata;
 	}
+}
+
+void DataArchiveFile::ClearDictionary()
+{
+	dictionary.clear();
 }
 
 void DataArchiveFile::WriteToFile()

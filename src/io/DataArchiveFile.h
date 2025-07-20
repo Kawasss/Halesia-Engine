@@ -45,15 +45,22 @@ public:
 		DataArchiveFile& parent;
 	};
 
-	DataArchiveFile(const std::string& file);
+	enum class OpenMethod
+	{
+		Clear  = ReadWriteFile::OpenMethod::Clear, // clear the file upon opening
+		Append = ReadWriteFile::OpenMethod::Append, // do not clear the file
+	};
+
+	DataArchiveFile(const std::string& file, OpenMethod method);
 
 	// will override any previous data assigned to the identifier
-	void AddData(const std::string& identifier, const std::span<char>& data);
+	void AddData(const std::string& identifier, const std::span<char const>& data);
 	std::expected<std::vector<char>, bool> ReadData(const std::string& identifier);
 
 	bool IsValid() const;
 
 	void WriteToFile(); // writes the data that is only in RAM to disk, ignores any table entry thats already in the file
+	void ClearDictionary();
 
 	Iterator begin();
 	Iterator end();
@@ -69,8 +76,8 @@ private:
 
 	void ReadDictionaryFromDisk();
 
-	static std::expected<std::vector<char>, bool> DecompressMemory(const std::span<char>& compressed, uint64_t uncompressedSize);
-	static std::vector<char> CompressMemory(const std::span<char>& uncompressed);
+	static std::expected<std::vector<char>, bool> DecompressMemory(const std::span<char const>& compressed, uint64_t uncompressedSize);
+	static std::vector<char> CompressMemory(const std::span<char const>& uncompressed);
 
 	std::map<std::string, Metadata> dictionary;
 	ReadWriteFile stream;

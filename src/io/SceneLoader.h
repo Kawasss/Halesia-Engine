@@ -12,7 +12,6 @@
 #include "../renderer/Light.h"
 #include "../renderer/Material.h"
 
-#include "BinaryReader.h"
 #include "FileFormat.h"
 #include "CreationData.h"
 
@@ -42,9 +41,8 @@ private:
 	// file specific info
 	std::string header;
 	std::string location;
-	BinaryReader reader;
 
-	void LoadHSFFile();
+	void LoadCustomFile();
 	void LoadAssimpFile();
 
 	void RetrieveBoneData(MeshCreationData& creationData, const aiMesh* pMesh);

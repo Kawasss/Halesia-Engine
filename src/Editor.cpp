@@ -15,6 +15,7 @@
 
 #include "io/SceneLoader.h"
 #include "io/SceneWriter.h"
+#include "io/DataArchiveFile.h"
 
 #include "system/Input.h"
 #include "system/FileDialog.h"
@@ -75,7 +76,7 @@ void Editor::Start()
 	renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
 	renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
 
-	src = GetFile("Scene file", "*.hsf;*.fbx;*.glb;*.gltf");
+	src = GetFile("Scene file", "*.dat;*.fbx;*.glb;*.gltf");
 	if (src == "")
 		return;
 
@@ -860,7 +861,15 @@ void Editor::LoadFile()
 
 void Editor::SaveToFile()
 {
-	HSFWriter::WriteHSFScene(this, src);
+	FileDialog::Filter filter{};
+	filter.description = "folder to store the file in.";
+	filter.fileType = "*.;";
+
+	std::string path = FileDialog::RequestFolder(filter);
+	if (path.empty())
+		return;
+
+	HSFWriter::WriteSceneToArchive(path + "\\test_save.dat", this);
 }
 
 std::string Editor::GetFile(const char* desc, const char* type)
