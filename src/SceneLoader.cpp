@@ -95,9 +95,8 @@ static void ReadFullObject(DataArchiveFile& file, const BinarySpan& data, std::v
 	outDst.push_back(creationData);
 }
 
-void SceneLoader::LoadCustomFile()
+void SceneLoader::LoadObjectsFromArchive(DataArchiveFile& file)
 {
-	DataArchiveFile file(location, DataArchiveFile::OpenMethod::Append);
 	std::expected<std::vector<char>, bool> root = file.ReadData("##object_root");
 	if (!root.has_value())
 	{
@@ -116,6 +115,64 @@ void SceneLoader::LoadCustomFile()
 		else
 			Console::WriteLine("failed to read base object \"{}\"", Console::Severity::Error, child);
 	}
+}
+
+static FileImage DeserializeImage(const BinarySpan& span)
+{
+	FileImage ret{};
+	span >> ret.width >> ret.height;
+
+	size_t size = ret.width * ret.height * 4;
+
+	if (size == 0)
+		return ret;
+
+	ret.data.data.resize(size);
+	span.Read(ret.data.data.data(), size);
+
+	return ret;
+}
+
+static MaterialCreationData DeserializeMaterial(const BinarySpan& data)
+{
+	MaterialCreationData ret{};
+	ret.albedo = DeserializeImage(data);
+	ret.normal = DeserializeImage(data);
+	ret.metallic = DeserializeImage(data);
+	ret.roughness = DeserializeImage(data);
+	ret.ambientOccl = DeserializeImage(data);
+
+	return ret;
+}
+
+void SceneLoader::LoadMaterialsFromArchive(DataArchiveFile& file)
+{
+	std::expected<std::vector<char>, bool> root = file.ReadData("##material_root");
+	if (!root.has_value())
+	{
+		Console::WriteLine("no material root found for {}", Console::Severity::Warning, location);
+		return;
+	}
+
+	std::vector<std::string> references = ReadNamedReferences(*root);
+	materials.reserve(references.size());
+
+	for (const std::string& materialName : references)
+	{
+		std::expected<std::vector<char>, bool> data = file.ReadData(materialName);
+		if (data.has_value())
+			materials.push_back(DeserializeMaterial(*data));
+		else
+			Console::WriteLine("failed to read material {}", Console::Severity::Error, materialName);
+	}
+}
+
+void SceneLoader::LoadCustomFile()
+{
+	DataArchiveFile file(location, DataArchiveFile::OpenMethod::Append);
+
+	LoadObjectsFromArchive(file);
+	LoadMaterialsFromArchive(file);
 }
 
 static glm::vec3 ConvertAiVec3(const aiVector3D& vec)
@@ -317,15 +374,15 @@ void SceneLoader::LoadAssimpFile()
 
 	for (int i = 0; i < scene->mNumMaterials; i++)
 	{
-		//MaterialCreateInfo data{};
+		MaterialCreateInfo data{};
 
-		//data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
+		data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
 		//data.normal = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir);
 		//data.roughness = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir);
 		//data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
 		//data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);
 
-		//materials.push_back(data);
+		materials.push_back(data);
 	}
 
 	aiReleaseImport(scene);

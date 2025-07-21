@@ -13,6 +13,8 @@
 #include "core/Object.h"
 #include "core/MeshObject.h"
 
+#include "renderer/Texture.h"
+
 static void WriteNamedReferencesToStream(BinaryStream& stream, const std::vector<Object*>& objects)
 {
 	uint32_t referenceCount = static_cast<uint32_t>(objects.size());
@@ -43,6 +45,57 @@ static void WriteFullObjectToArchive(DataArchiveFile& archive, const Object* pOb
 		WriteFullObjectToArchive(archive, pObject);
 }
 
+static void WriteTextureToStream(BinaryStream& stream, const Texture* pTexture)
+{
+	uint32_t width = 0, height = 0;
+
+	width  = pTexture->GetWidth();
+	height = pTexture->GetHeight();
+
+	stream << width << height;
+
+	if (width == 0 && height == 0)
+		return;
+
+	std::vector<char> data = pTexture->GetImageData();
+	stream.Write(data.data(), data.size() * sizeof(char));
+}
+
+static void WriteMaterialsToArchive(DataArchiveFile& file)
+{
+	BinaryStream stream;
+	uint32_t matCount = static_cast<uint32_t>(Mesh::materials.size());
+	stream << matCount;
+
+	for (uint32_t i = 1; i < matCount; i++)
+	{
+		std::string name = "##material" + std::to_string(i);
+		uint32_t strLen = static_cast<uint32_t>(name.size());
+		stream << strLen;
+
+		stream.Write(name.data(), strLen);
+	}
+
+	file.AddData("##material_root", stream.data);	
+
+	for (int i = 1; i < Mesh::materials.size(); i++)
+	{
+		stream.Clear();
+
+		std::string name = "##material" + std::to_string(i);
+		
+		const Material& mat = Mesh::materials[i];
+
+		WriteTextureToStream(stream, mat.albedo);
+		WriteTextureToStream(stream, mat.normal);
+		WriteTextureToStream(stream, mat.metallic);
+		WriteTextureToStream(stream, mat.roughness);
+		WriteTextureToStream(stream, mat.ambientOcclusion);
+
+		file.AddData(name, stream.data);
+	}
+}
+
 void HSFWriter::WriteSceneToArchive(const std::string& file, Scene* scene)
 {
 	DataArchiveFile archive(file, DataArchiveFile::OpenMethod::Clear);
@@ -55,6 +108,8 @@ void HSFWriter::WriteSceneToArchive(const std::string& file, Scene* scene)
 
 	for (Object* pObject : scene->allObjects)
 		WriteFullObjectToArchive(archive, pObject);
+
+	WriteMaterialsToArchive(archive);
 
 	archive.WriteToFile();
 }

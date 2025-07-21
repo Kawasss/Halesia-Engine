@@ -86,6 +86,12 @@ void BinaryStream::Write(const char* src, size_t count)
 	data.insert(data.end(), src, src + count);
 }
 
+void BinaryStream::Clear()
+{
+	data.clear();
+	offset = 0;
+}
+
 size_t BinaryStream::GetOffset() const
 {
 	return offset;

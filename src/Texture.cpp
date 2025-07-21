@@ -132,7 +132,7 @@ void Image::ChangeData(uint8_t* data, uint32_t size, TextureFormat format)
 	CopyBufferToImage(stagingBuffer.Get());
 }
 
-std::vector<char> Image::GetImageData()
+std::vector<char> Image::GetImageData() const
 {
 	AwaitGeneration();
 
@@ -544,17 +544,17 @@ void Image::GenerateMipMaps(VkFormat imageFormat)
 	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 }
 
-int Image::GetWidth()
+int Image::GetWidth() const
 {
 	return width;
 }
 
-int Image::GetHeight()
+int Image::GetHeight() const
 {
 	return height;
 }
 
-int Image::GetMipLevels()
+int Image::GetMipLevels() const
 {
 	return mipLevels;
 }

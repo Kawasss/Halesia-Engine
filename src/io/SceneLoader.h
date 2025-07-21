@@ -22,6 +22,8 @@ struct aiMesh;
 struct aiNode;
 struct aiScene;
 
+class DataArchiveFile;
+
 class SceneLoader
 {
 public:
@@ -44,6 +46,9 @@ private:
 
 	void LoadCustomFile();
 	void LoadAssimpFile();
+
+	void LoadObjectsFromArchive(DataArchiveFile& file);
+	void LoadMaterialsFromArchive(DataArchiveFile& file);
 
 	void RetrieveBoneData(MeshCreationData& creationData, const aiMesh* pMesh);
 	MeshCreationData RetrieveMeshData(aiMesh* pMesh);

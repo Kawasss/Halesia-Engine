@@ -42,14 +42,14 @@ public:
 	bool HasFinishedLoading() const;
 	void Destroy();
 
-	int GetWidth();
-	int GetHeight();
-	int GetMipLevels();
+	int GetWidth() const;
+	int GetHeight() const;
+	int GetMipLevels() const;
 
 	void TransitionForShaderWrite(VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 	void TransitionForShaderRead(VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 
-	std::vector<char> GetImageData();
+	std::vector<char> GetImageData() const;
 
 	static bool TexturesHaveChanged();
 
