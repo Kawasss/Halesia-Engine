@@ -69,6 +69,9 @@ float GetAttenuation(Light light, vec3 pos)
 
 bool LightIsOutOfReach(Light light, vec3 pos)
 {
+	if (light.type.x == LIGHT_TYPE_DIRECTIONAL)
+		return false;
+
 	float attenuation = GetAttenuation(light, pos);
 	return attenuation < LIGHT_OUT_OF_REACH_TRESHOLD;
 }
