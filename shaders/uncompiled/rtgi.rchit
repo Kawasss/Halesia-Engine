@@ -1,11 +1,13 @@
 #version 460
 #extension GL_EXT_ray_tracing : require
-#extension GL_EXT_ray_tracing_position_fetch : require
+#extension GL_EXT_ray_query : require
 #extension GL_EXT_shader_16bit_storage : enable
 
 #include "include/light.glsl"
 
 DECLARE_EXTERNAL_SET(1)
+
+layout (binding = 0, set = 0) uniform accelerationStructureEXT TLAS;
 
 layout(location = 0) rayPayloadInEXT Payload {
 	vec3 origin;
@@ -138,6 +140,7 @@ void main()
 	vec3 geometricNormal = vec3(0);
 
 	Vertex vertex = GetExactVertex(instance, barycentric, geometricNormal);
+	vec3 position = vertex.position; // copy this to a variable to prevent expensive struct memory reads
 
 	vec3 normal = GetNormalFromMap(vertex.textureCoordinates, vertex.normal, vertex.tangent, vertex.bitangent, instance.material);
 
@@ -145,7 +148,8 @@ void main()
 		normal = vertex.normal;
 
 	payload.normal = geometricNormal;
-	payload.origin = vertex.position;
+	payload.origin = position;
+	
 
 	vec3 radiance = vec3(0.0);
 	vec3 color = texture(textures[instance.material * 5], vertex.textureCoordinates).rgb; // read the albedo here
@@ -153,12 +157,25 @@ void main()
 	for (int i = 0; i < lights.count; i++) // !! should ray trace against a very low poly version of the scene for shadows 
 	{
 		Light light = lights.data[i];
-		vec3 L = GetLightDir(light, vertex.position);
+		vec3 L = GetLightDir(light, position);
 
-        if (LightIsOutOfReach(light, vertex.position) || LightIsOutOfRange(light, L))
+        if (LightIsOutOfReach(light, position) || LightIsOutOfRange(light, L))
             continue;
 
-		float attenuation = GetAttenuation(light, vertex.position);
+		float dist = GetDistanceToLight(light, position);
+
+        rayQueryEXT rq;
+
+        rayQueryInitializeEXT(rq, TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, position, 0.0001, L, dist);
+
+        rayQueryProceedEXT(rq);
+
+        if (rayQueryGetIntersectionTypeEXT(rq, true) != gl_RayQueryCommittedIntersectionNoneEXT)
+        {
+            continue;
+        }
+
+		float attenuation = GetAttenuation(light, position);
 
 		float diff = max(dot(normal, L), 0.0);
 		vec3 diffuse = diff * color * light.color.rgb * attenuation;
