@@ -29,6 +29,7 @@ vec3 normalize(float);
 float length(float);
 float dot(vec3, float);
 float clamp(float, float, float);
+float distance(vec3, float);
 
 float operator-(float v1, vec3 v2);
 
@@ -41,6 +42,18 @@ struct Light
 	vec4 direction; // only for spot lights (if type is LIGHT_TYPE_SPOT the w is for the cutoff, the outer cutoff is placed inside pos.w)
 	ivec4 type; // w is padding
 };
+
+float GetDistanceToLight(Light light, vec3 pos)
+{
+	if (light.type.x == LIGHT_TYPE_DIRECTIONAL)
+	{
+		return 1000.0f; // arbitrarily high number
+	}
+	else
+	{
+		return distance(pos, light.pos.xyz);
+	}
+}
 
 vec3 GetLightDir(Light light, vec3 pos)
 {

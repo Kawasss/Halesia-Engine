@@ -109,7 +109,7 @@ void main()
         if (LightIsOutOfReach(light, position) || LightIsOutOfRange(light, L))
             continue;
 
-        float dist = distance(position, light.pos.xyz);
+        float dist = GetDistanceToLight(light, position);
 
         rayQueryEXT rq;
 
