@@ -360,14 +360,14 @@ void SceneLoader::LoadAssimpFile()
 		Console::WriteLine(err, Console::Severity::Error);
 
 	ObjectCreationData root = RetrieveObject(scene, scene->mRootNode, glm::mat4(1)); // for now we ignore the root node
-	objects = std::move(root.children);
+	objects.push_back(root);
 
 	if (scene->HasAnimations())
 		animations.resize(scene->mNumAnimations);
 
 	for (int i = 0; i < scene->mNumAnimations; i++)
 	{
-		animations.push_back(Animation(scene->mAnimations[i], scene->mRootNode, boneInfoMap));
+		animations.emplace_back(scene->mAnimations[i], scene->mRootNode, boneInfoMap);
 	}
 
 	fs::path baseDir = fs::path(location).parent_path();

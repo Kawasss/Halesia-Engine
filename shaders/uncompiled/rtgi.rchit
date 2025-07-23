@@ -13,6 +13,7 @@ layout(location = 0) rayPayloadInEXT Payload {
 	vec3 origin;
 	vec3 direction;
 	vec3 color;
+	vec3 mixedAlbedo;
 
 	vec3 normal;
 
@@ -149,10 +150,11 @@ void main()
 
 	payload.normal = geometricNormal;
 	payload.origin = position;
-	
 
 	vec3 radiance = vec3(0.0);
 	vec3 color = texture(textures[instance.material * 5], vertex.textureCoordinates).rgb; // read the albedo here
+
+	payload.mixedAlbedo *= color;
 
 	for (int i = 0; i < lights.count; i++) // !! should ray trace against a very low poly version of the scene for shadows 
 	{

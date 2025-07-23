@@ -9,6 +9,7 @@ layout(location = 0) rayPayloadEXT Payload {
 	vec3 origin;
 	vec3 direction;
 	vec3 color;
+	vec3 mixedAlbedo;
 
 	vec3 normal;
 
@@ -123,12 +124,13 @@ void main()
 
 	for (int i = 0; i < camera.sampleCount; i++)
 	{
-		payload.isActive = 1;
 		payload.origin = position;
 		payload.direction = vec3(0);
-		payload.normal = normal;
 		payload.color = vec3(0);
+		payload.mixedAlbedo = vec3(1);
+		payload.normal = normal;
 		payload.depth = 0;
+		payload.isActive = 1;
 
 		vec2 random = vec2(RandomValue(state), RandomValue(state));
 
@@ -143,7 +145,7 @@ void main()
 
 			payload.pdf = max(0.0, payload.pdf);
 		}
-		color += payload.color / float(payload.depth);
+		color += payload.color * payload.mixedAlbedo / float(payload.depth);
 	}
 
 	vec3 result = color / float(camera.sampleCount);
