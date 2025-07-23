@@ -53,7 +53,7 @@ void EditorCamera::Update(Window* window, float delta)
 	window->GetAbsoluteCursorPosition(mouseX, mouseY);
 
 	bool isInViewport    = (mouseX > viewportX && mouseX < (viewportX + viewportWidth)) && (mouseY > viewportY && mouseY < (viewportY + viewportHeight));
-	bool buttonIsPressed = Input::IsKeyPressed(VirtualKey::MiddleMouseButton);
+	bool buttonIsPressed = Input::IsKeyPressed(VirtualKey::RightMouseButton);
 
 	if (isInViewport && buttonIsPressed)
 		active = true;
@@ -189,6 +189,26 @@ void Editor::MainThreadUpdate(float delta)
 void Editor::ShowDefaultRightClick()
 {
 	static bool gizmoButton = false;
+	static bool pressedLast = false;
+	static ImVec2 rightClickPos{};
+	static ImVec2 endPosition{};
+
+	bool isPressed = Input::IsKeyPressed(VirtualKey::RightMouseButton);
+
+	if (!gizmoButton && isPressed)
+	{
+		gizmoButton = true;
+		rightClickPos = ImGui::GetMousePos();
+	}
+
+	else if (gizmoButton && !isPressed)
+	{
+		gizmoButton = false;
+		endPosition = ImGui::GetMousePos();
+	}
+
+	if (!gizmoButton && rightClickPos != endPosition)
+		return;
 
 	if (!ImGui::BeginPopupContextVoid("##default_right_click"))
 		return;
