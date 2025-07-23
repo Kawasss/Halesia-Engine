@@ -53,6 +53,8 @@ public:
 
 	void FillBuffer(VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data) const;
 
+	void SetCullMode(VkCullModeFlags cullMode) const;
+
 	void SetCheckpoint(const void* pCheckpointMarker) const;
 
 	VkCommandBuffer& Get() { return commandBuffer; }

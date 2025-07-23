@@ -702,9 +702,17 @@ void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, cons
 	glm::mat4 view = payload.camera->GetViewMatrix();
 	glm::mat4 proj = payload.camera->GetProjectionMatrix();
 
+	bool currentlyCulling = true; // the renderer always resets the cull mode to back faced culling when a render pipeline is called
+
 	PushConstant pushConstant{};
 	for (MeshObject* obj : objects)
 	{
+		if (currentlyCulling != obj->mesh.cullBackFaces)
+		{
+			currentlyCulling = obj->mesh.cullBackFaces;
+			cmdBuffer.SetCullMode(currentlyCulling ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE);
+		}
+
 		glm::mat4 model = obj->transform.GetModelMatrix();
 
 		pushConstant.model = model;

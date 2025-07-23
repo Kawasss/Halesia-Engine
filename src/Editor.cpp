@@ -741,8 +741,10 @@ void Editor::ShowObjectMesh(Mesh& mesh)
 		"BLAS:       %I64u\n"
 		"face count: %i\n\n"
 		"center:     %.2f, %.2f, %.2f\n"
-		"extents:    %.2f, %.2f, %.2f\n",
+		"extents:    %.2f, %.2f, %.2f\n\n",
 		mesh.vertexMemory, mesh.defaultVertexMemory, mesh.indexMemory, (uint64_t)mesh.BLAS.get(), mesh.faceCount, mesh.center.x, mesh.center.y, mesh.center.z, mesh.extents.x, mesh.extents.y, mesh.extents.z);
+
+	ImGui::Checkbox("cull faces", &mesh.cullBackFaces);
 
 	int index = static_cast<int>(mesh.GetMaterialIndex());
 

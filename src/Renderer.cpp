@@ -676,6 +676,8 @@ void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, c
 		SetViewport(commandBuffer, viewportExtent);
 		SetScissors(commandBuffer, viewportExtent);
 
+		commandBuffer.SetCullMode(VK_CULL_MODE_BACK_BIT);
+
 		renderPipeline->Execute(payload, objects);
 		commandBuffer.EndDebugUtilsLabel();
 

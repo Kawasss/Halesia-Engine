@@ -145,6 +145,13 @@ void main()
 
 	vec3 normal = GetNormalFromMap(vertex.textureCoordinates, vertex.normal, vertex.tangent, vertex.bitangent, instance.material);
 
+	if (dot(normal, payload.direction) > 0.0)
+	{
+		vertex.normal = -vertex.normal;
+		geometricNormal = -geometricNormal;
+		normal = -normal;
+	}
+
 	if (dot(normal, vertex.normal) < 0.0)
 		normal = vertex.normal;
 

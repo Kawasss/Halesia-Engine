@@ -121,6 +121,8 @@ void HdrConverter::ConvertTextureIntoCubemap(const CommandBuffer& cmdBuffer, con
 
 	pipeline->Bind(cmdBuffer);
 
+	cmdBuffer.SetCullMode(VK_CULL_MODE_BACK_BIT);
+
 	for (int i = 0; i < views.size(); i++)
 	{
 		int actual = i;

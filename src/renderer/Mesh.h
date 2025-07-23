@@ -34,7 +34,9 @@ struct Mesh
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 
-	int faceCount;
+	bool cullBackFaces = true;
+
+	int faceCount = 0;
 	glm::vec3 min, max, center, extents;
 
 	void ResetMaterial(); // should make it so that it also deletes the material if no other mesh references it

@@ -161,6 +161,11 @@ void CommandBuffer::FillBuffer(VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDev
     ::vkCmdFillBuffer(commandBuffer, dstBuffer, dstOffset, size, data);
 }
 
+void CommandBuffer::SetCullMode(VkCullModeFlags cullMode) const
+{
+    ::vkCmdSetCullMode(commandBuffer, cullMode);
+}
+
 void CommandBuffer::SetCheckpoint(const void* pCheckpointMarker) const
 {
     ::vkCmdSetCheckpointNV(commandBuffer, pCheckpointMarker);

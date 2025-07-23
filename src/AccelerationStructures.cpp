@@ -229,7 +229,10 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 		VkAccelerationStructureInstanceKHR instance{};
 		instance.instanceCustomIndex = indexType == InstanceIndexType::Identifier ? processedAmount : objects[i]->mesh.GetMaterialIndex();
 		instance.mask = 0xFF;
-		//instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+
+		if (!objects[i]->mesh.cullBackFaces)
+			instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
+
 		instance.accelerationStructureReference = objects[i]->mesh.BLAS->GetAccelerationStructureAddress();
 			
 		glm::mat4 transform = glm::transpose(objects[i]->transform.GetModelMatrix());

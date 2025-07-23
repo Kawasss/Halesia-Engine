@@ -22,6 +22,14 @@ layout(push_constant) uniform constant
     int materialID;
 } Constant;
 
+layout(set = 0, binding = 0) uniform sceneInfo {
+    vec3 camPos;
+    mat4 view;
+    mat4 proj;
+    mat4 prevView;
+    mat4 prevProj;
+} ubo;
+
 layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_texture_size] textures;
 
 vec3 GetNormalFromMap()
@@ -39,8 +47,14 @@ void main()
     if (albedoColor.a == 0.0)
         discard;
 
+    vec3 viewDir = normalize(position - ubo.camPos);
+
+    vec3 N = normal;
+    if (dot(N, viewDir) > 0.0)
+        N = -N;
+
     positionColor = vec4(position, 1.0);
-    normalColor   = vec4(normal, 1.0);
+    normalColor   = vec4(N, 1.0);
 
     vec2 prevClip = prevPosition.xy / prevPosition.w;
     vec2 currClip = currPosition.xy / currPosition.w;

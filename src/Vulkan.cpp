@@ -51,6 +51,7 @@ std::vector<VkDynamicState> Vulkan::dynamicStates =
 {
     VK_DYNAMIC_STATE_VIEWPORT,
     VK_DYNAMIC_STATE_SCISSOR,
+    VK_DYNAMIC_STATE_CULL_MODE,
 };
 
 Vulkan::Context Vulkan::context{};
@@ -233,7 +234,7 @@ std::vector<uint64_t> Vulkan::GetQueryPoolResults(VkQueryPool queryPool, uint32_
 
 VkPipelineDynamicStateCreateInfo Vulkan::GetDynamicStateCreateInfo(std::vector<VkDynamicState>& dynamicStates)
 {
-    return VkPipelineDynamicStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0, (uint32_t)dynamicStates.size(), dynamicStates.data() };
+    return VkPipelineDynamicStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO, nullptr, 0, static_cast<uint32_t>(dynamicStates.size()), dynamicStates.data() };
 }
 
 VkPipelineViewportStateCreateInfo  Vulkan::GetDefaultViewportStateCreateInfo(VkViewport& viewport, VkRect2D& scissors, VkExtent2D extents)
