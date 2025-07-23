@@ -472,6 +472,10 @@ void Editor::ShowMenuBar() // add renderer variables here like taa sample count
 
 		ImGui::Separator();
 
+		if (ImGui::MenuItem("Clear scene")) DestroyCurrentScene();
+
+		ImGui::Separator();
+
 		if (ImGui::MenuItem("Exit"))
 			HalesiaEngine::Exit();
 		ImGui::EndMenu();
@@ -837,7 +841,7 @@ void Editor::QueueMeshChange(Object* object)
 void Editor::DestroyCurrentScene()
 {
 	for (Object* obj : allObjects)
-		delete obj;
+		Free(obj);
 
 	for (int i = 1; i < Mesh::materials.size(); i++)
 		Mesh::materials[i].Destroy();

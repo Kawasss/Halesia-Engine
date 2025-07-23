@@ -146,7 +146,8 @@ bool Mesh::IsValid() const
 
 void Mesh::Destroy()
 {
-	materials[materialIndex].RemoveReference();
+	if (materialIndex < materials.size())
+		materials[materialIndex].RemoveReference();
 
 	// should also delete the material in materials here (if no other meshes are referencing that material)
 	if (vertexMemory != 0)
