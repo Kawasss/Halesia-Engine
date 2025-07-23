@@ -133,8 +133,11 @@ void Editor::ShowGizmo()
 
 	glm::mat4 model = obj->transform.GetModelMatrix();
 
+	bool useSnap = Input::IsKeyPressed(VirtualKey::LeftControl);
+	glm::vec3 snaps = glm::vec3(1);
+
 	ImGuizmo::SetRect(off.x * width, off.y * height, mod.x * width, mod.y * height);
-	ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), mode, ImGuizmo::WORLD, glm::value_ptr(model));
+	ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), mode, ImGuizmo::WORLD, glm::value_ptr(model), NULL, useSnap ? glm::value_ptr(snaps) : NULL);
 
 	glm::vec3 skew;
 	glm::vec4 pers;
@@ -189,7 +192,6 @@ void Editor::MainThreadUpdate(float delta)
 void Editor::ShowDefaultRightClick()
 {
 	static bool gizmoButton = false;
-	static bool pressedLast = false;
 	static ImVec2 rightClickPos{};
 	static ImVec2 endPosition{};
 
