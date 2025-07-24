@@ -30,13 +30,15 @@ void Mesh::ProcessMaterial(const MaterialCreationData& creationData)
 
 void Mesh::Create(const MeshCreationData& creationData)
 {
-	vertices  = creationData.vertices;
-	indices   = creationData.indices;
-	faceCount = creationData.faceCount;
-	center    = (creationData.min + creationData.max) * 0.5f;
-	extents   = creationData.max - center;
-	max       = extents + center;
-	min       = center * 2.f - max;
+	vertices      = creationData.vertices;
+	indices       = creationData.indices;
+	faceCount     = creationData.faceCount;
+	cullBackFaces = creationData.cullBackFaces;
+	center        = (creationData.min + creationData.max) * 0.5f;
+	extents       = creationData.max - center;
+	max           = extents + center;
+	min           = center * 2.f - max;
+
 	SetMaterialIndex(creationData.materialIndex);
 
 	Recreate();

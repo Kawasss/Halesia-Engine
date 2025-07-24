@@ -745,6 +745,14 @@ void DeferredPipeline::PerformSecondDeferred(const CommandBuffer& cmdBuffer, con
 	cmdBuffer.EndDebugUtilsLabel();
 }
 
+void DeferredPipeline::CopyDeferredDepthToResultDepth(const CommandBuffer& cmdBuffer, const Payload& payload)
+{
+	ImageTransitioner deferredTrans(framebuffer.GetDepthImage());
+	ImageTransitioner resultTrans(payload.renderer->GetFramebuffer().GetDepthImage());
+
+
+}
+
 void DeferredPipeline::Resize(const Payload& payload)
 {
 	framebuffer.Resize(payload.width, payload.height);

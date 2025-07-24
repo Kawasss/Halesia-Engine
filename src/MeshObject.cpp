@@ -43,6 +43,7 @@ void MeshObject::DuplicateDataTo(Object* pObject) const
 
 void MeshObject::SerializeSelf(BinaryStream& stream) const
 {
+	stream << mesh.cullBackFaces;
 	stream << mesh.GetMaterialIndex();
 
 	size_t vertexCount = mesh.vertices.size();
@@ -57,6 +58,7 @@ void MeshObject::SerializeSelf(BinaryStream& stream) const
 void MeshObject::DeserializeSelf(const BinarySpan& stream)
 {
 	MeshCreationData creationData{};
+	stream >> creationData.cullBackFaces;
 	stream >> creationData.materialIndex;
 
 	size_t vertexCount = 0;

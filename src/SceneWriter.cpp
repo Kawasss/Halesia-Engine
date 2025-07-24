@@ -64,10 +64,10 @@ static void WriteTextureToStream(BinaryStream& stream, const Texture* pTexture)
 static void WriteMaterialsToArchive(DataArchiveFile& file)
 {
 	BinaryStream stream;
-	uint32_t matCount = static_cast<uint32_t>(Mesh::materials.size());
+	uint32_t matCount = static_cast<uint32_t>(Mesh::materials.size() - 1);
 	stream << matCount;
 
-	for (uint32_t i = 1; i < matCount; i++)
+	for (uint32_t i = 1; i < matCount + 1; i++)
 	{
 		std::string name = "##material" + std::to_string(i);
 		uint32_t strLen = static_cast<uint32_t>(name.size());

@@ -22,6 +22,7 @@ public:
 	DECLARE_WRITE_OPERATOR(int8_t);
 
 	DECLARE_WRITE_OPERATOR(float);
+	DECLARE_WRITE_OPERATOR(bool);
 	DECLARE_WRITE_OPERATOR(char);
 
 	DECLARE_READ_OPERATOR(uint64_t);
@@ -35,6 +36,7 @@ public:
 	DECLARE_READ_OPERATOR(int8_t);
 
 	DECLARE_READ_OPERATOR(float);
+	DECLARE_READ_OPERATOR(bool);
 	DECLARE_READ_OPERATOR(char);
 
 	void Read(char* dst, size_t count);
@@ -72,6 +74,7 @@ public:
 	DECLARE_READ_OPERATOR(int8_t);
 
 	DECLARE_READ_OPERATOR(float);
+	DECLARE_READ_OPERATOR(bool);
 	DECLARE_READ_OPERATOR(char);
 
 	void Read(char* dst, size_t count) const;

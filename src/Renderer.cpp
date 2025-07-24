@@ -410,6 +410,8 @@ void Renderer::CreateTextureSampler()
 
 void Renderer::Create3DRenderPass()
 {
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
 	RenderPassBuilder builder3D(VK_FORMAT_R16G16B16A16_UNORM);
 
 	builder3D.SetInitialLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);

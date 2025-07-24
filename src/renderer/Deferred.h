@@ -87,6 +87,8 @@ private:
 	void PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<MeshObject*>& objects);
 	void PerformSecondDeferred(const CommandBuffer& cmdBuffer, const Payload& payload);
 	
+	void CopyDeferredDepthToResultDepth(const CommandBuffer& cmdBuffer, const Payload& payload);
+
 	void RecreatePipelines(const Payload& payload);
 
 	Skybox* CreateNewSkybox(const std::string& path);

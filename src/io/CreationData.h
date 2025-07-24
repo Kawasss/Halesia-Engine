@@ -33,6 +33,7 @@ struct MeshCreationData
 
 	bool hasBones = false;
 	bool hasMaterial = false;
+	bool cullBackFaces = true;
 
 	glm::vec3 min = glm::vec3(0);
 	glm::vec3 max = glm::vec3(0);
