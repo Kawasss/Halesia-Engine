@@ -992,6 +992,7 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 {
 	if (framebuffer.Get() == VK_NULL_HANDLE)
 	{
+		framebuffer.SetImageUsage(1, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 		framebuffer.Init(renderPass, 1, viewportWidth, viewportHeight, VK_FORMAT_R16G16B16A16_UNORM); // maybe 32 bit float instead of 8 bit ??
 	}
 	else

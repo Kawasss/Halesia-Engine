@@ -742,15 +742,58 @@ void DeferredPipeline::PerformSecondDeferred(const CommandBuffer& cmdBuffer, con
 
 	cmdBuffer.EndRenderPass();
 
+	CopyDeferredDepthToResultDepth(cmdBuffer, payload);
+
 	cmdBuffer.EndDebugUtilsLabel();
 }
 
 void DeferredPipeline::CopyDeferredDepthToResultDepth(const CommandBuffer& cmdBuffer, const Payload& payload)
 {
-	ImageTransitioner deferredTrans(framebuffer.GetDepthImage());
-	ImageTransitioner resultTrans(payload.renderer->GetFramebuffer().GetDepthImage());
+	VkImage deferredImage = framebuffer.GetDepthImage();
+	VkImage resultImage = payload.renderer->GetFramebuffer().GetDepthImage();
 
+	ImageTransitioner deferredTrans(deferredImage);
+	deferredTrans.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+	deferredTrans.srcAccess = VK_ACCESS_SHADER_READ_BIT;
+	deferredTrans.dstAccess = VK_ACCESS_TRANSFER_READ_BIT;
+	deferredTrans.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	deferredTrans.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+	deferredTrans.srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	deferredTrans.dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	deferredTrans.width = payload.width;
+	deferredTrans.height = payload.height;
 
+	ImageTransitioner resultTrans(resultImage);
+	resultTrans.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+	resultTrans.srcAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT; 
+	resultTrans.dstAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
+	resultTrans.oldLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+	resultTrans.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	resultTrans.srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	resultTrans.dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	resultTrans.width = payload.width;
+	resultTrans.height = payload.height;
+
+	deferredTrans.Transition(cmdBuffer);
+	resultTrans.Transition(cmdBuffer);
+
+	VkImageCopy copy{};
+	copy.dstOffset = { 0, 0 };
+	copy.srcOffset = { 0, 0 };
+	copy.extent = { payload.width, payload.height, 1 };
+	copy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	copy.srcSubresource.baseArrayLayer = 0;
+	copy.srcSubresource.layerCount = 1;
+	copy.srcSubresource.mipLevel = 0;
+	copy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+	copy.dstSubresource.baseArrayLayer = 0;
+	copy.dstSubresource.layerCount = 1;
+	copy.dstSubresource.mipLevel = 0;
+	
+	cmdBuffer.CopyImage(deferredImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, resultImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+	
+	resultTrans.Detransition(cmdBuffer);
+	deferredTrans.Detransition(cmdBuffer);
 }
 
 void DeferredPipeline::Resize(const Payload& payload)
