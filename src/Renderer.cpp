@@ -1083,6 +1083,13 @@ void Renderer::SetInternalResolutionScale(float scale)
 	shouldResize = true;
 }
 
+void Renderer::SetRenderMode(RenderMode mode)
+{
+	renderMode = mode;
+	for (RenderPipeline* pRenderPipeline : renderPipelines)
+		pRenderPipeline->SetRenderMode(mode);
+}
+
 float Renderer::GetInternalResolutionScale()
 {
 	return internalScale;
@@ -1212,6 +1219,11 @@ const FIF::Buffer& Renderer::GetLightBuffer() const
 const std::vector<RenderPipeline*>& Renderer::GetAllRenderPipelines() const
 {
 	return renderPipelines; 
+}
+
+RenderMode Renderer::GetRenderMode() const
+{
+	return renderMode;
 }
 
 bool Renderer::CompletedFIFCyle()

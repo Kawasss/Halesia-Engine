@@ -11,17 +11,20 @@ class Camera;
 class Renderer;
 struct Light;
 
-enum class RenderMode : uint8_t // this enum is used as a suggestion
+enum class RenderMode : int // this enum is used as a suggestion
 {
-	DontCare,
-	Albedo,
-	Normal,
-	Metallic,
-	Roughness,
-	AmbientOcclusion,
-	Polygon,
-	UV,
+	DontCare = 0,
+	Albedo = 1,
+	Normal = 2,
+	Metallic = 3,
+	Roughness = 4,
+	AmbientOcclusion = 5,
+	Polygon = 6,
+	UV = 7,
+	ModeCount = 8, // this value is used for reflection / iteration and should never be used in code
 };
+
+extern std::string_view RenderModeToString(RenderMode mode);
 
 class RenderPipeline
 {

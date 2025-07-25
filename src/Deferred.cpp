@@ -56,6 +56,12 @@ struct DeferredPipeline::InstanceData
 	int material;
 };
 
+struct DeferredPipeline::SecondConstants
+{
+	glm::vec3 camPos;
+	int renderMode;
+};
+
 constexpr VkFormat GBUFFER_POSITION_FORMAT = VK_FORMAT_R32G32B32A32_SFLOAT; // 32 bit format takes a lot of performance compared to an 8 bit format
 constexpr VkFormat GBUFFER_ALBEDO_FORMAT   = VK_FORMAT_R8G8B8A8_UNORM;
 constexpr VkFormat GBUFFER_NORMAL_FORMAT   = VK_FORMAT_R16G16B16A16_SFLOAT; // 16 bit instead of 8 bit to allow for negative normals
@@ -736,7 +742,11 @@ void DeferredPipeline::PerformSecondDeferred(const CommandBuffer& cmdBuffer, con
 
 	secondPipeline->Bind(cmdBuffer);
 
-	secondPipeline->PushConstant(cmdBuffer, payload.camera->position, VK_SHADER_STAGE_FRAGMENT_BIT);
+	SecondConstants constants{};
+	constants.camPos = payload.camera->position;
+	constants.renderMode = static_cast<std::underlying_type_t<RenderMode>>(renderMode);
+
+	secondPipeline->PushConstant(cmdBuffer, constants, VK_SHADER_STAGE_FRAGMENT_BIT);
 
 	cmdBuffer.Draw(6, 1, 0, 0);
 

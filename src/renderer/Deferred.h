@@ -43,6 +43,7 @@ private:
 	struct TAAConstants;
 	struct SpatialConstants;
 	struct InstanceData;
+	struct SecondConstants;
 
 	struct UBO
 	{

@@ -99,6 +99,9 @@ public:
 
 	int GetLightCount() const;
 
+	void SetRenderMode(RenderMode mode);
+	RenderMode GetRenderMode() const;
+
 	void SetInternalResolutionScale(float scale);
 	static float GetInternalResolutionScale();
 
@@ -201,6 +204,8 @@ private:
 	
 	RayTracingRenderPipeline* rayTracer;
 	ForwardPlusPipeline* fwdPlus;
+
+	RenderMode renderMode = RenderMode::DontCare;
 
 	bool shouldResize = false; // this uses a bool so that other threads can request the renderer to resize
 

@@ -12,6 +12,7 @@
 
 #include "renderer/gui.h"
 #include "renderer/RayTracing.h"
+#include "renderer/RenderPipeline.h"
 
 #include "io/SceneLoader.h"
 #include "io/SceneWriter.h"
@@ -510,9 +511,19 @@ void Editor::ShowMenuBar() // add renderer variables here like taa sample count
 	}
 	if (ImGui::BeginMenu("renderer"))
 	{
-		if (ImGui::MenuItem("show albedo"))  RayTracingRenderPipeline::showAlbedo = !RayTracingRenderPipeline::showAlbedo;
-		if (ImGui::MenuItem("show normals")) RayTracingRenderPipeline::showNormals = !RayTracingRenderPipeline::showNormals;
-		if (ImGui::MenuItem("show unique"))  RayTracingRenderPipeline::showUniquePrimitives = !RayTracingRenderPipeline::showUniquePrimitives;
+		if (ImGui::BeginMenu("render mode"))
+		{
+			int count = static_cast<int>(RenderMode::ModeCount);
+			for (int i = 0; i < count; i++)
+			{
+				RenderMode mode = static_cast<RenderMode>(i);
+				std::string_view text = RenderModeToString(mode);
+				
+				if (ImGui::MenuItem(text.data()))
+					renderer->SetRenderMode(mode);
+			}
+			ImGui::EndMenu();
+		}
 		ImGui::Separator();
 		if (ImGui::MenuItem("show collision boxes")) Renderer::shouldRenderCollisionBoxes = !Renderer::shouldRenderCollisionBoxes;
 		ImGui::Separator();

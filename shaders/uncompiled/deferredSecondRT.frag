@@ -5,6 +5,15 @@
 
 #define PI 3.14159265359
 
+#define RENDER_MODE_DONT_CARE 0
+#define RENDER_MODE_ALBEDO 1
+#define RENDER_MODE_NORMAL 2
+#define RENDER_MODE_METALLIC 3
+#define RENDER_MODE_ROUGHNESS 4
+#define RENDER_MODE_AMBIENT_OCCLUSION 5
+#define RENDER_MODE_POLYGON 6
+#define RENDER_MODE_UV 7
+
 layout (location = 0) in vec2 uvCoord;
 
 layout (location = 0) out vec4 fragColor;
@@ -27,6 +36,8 @@ layout (binding = 6) uniform sampler2D globalIlluminationImage;
 layout (push_constant) uniform Constant
 {
     vec3 camPos;
+    float padding;
+    int renderMode;
 } constant;
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)
@@ -92,6 +103,31 @@ void main()
 	float metallic         = metallicRoughnessAO.r;
 	float roughness        = metallicRoughnessAO.g;
 	float ambientOcclusion = metallicRoughnessAO.b;
+
+    switch (constant.renderMode)
+    {
+    case RENDER_MODE_ALBEDO:
+        fragColor = vec4(albedo, 1.0);
+        return;
+    case RENDER_MODE_NORMAL:
+        fragColor = vec4(normal, 1.0);
+        return;
+    case RENDER_MODE_METALLIC:
+        fragColor = vec4(metallic, metallic, metallic, 1.0);
+        return;
+    case RENDER_MODE_ROUGHNESS:
+        fragColor = vec4(roughness, roughness, roughness, 1.0);
+        return;
+    case RENDER_MODE_AMBIENT_OCCLUSION:
+        fragColor = vec4(ambientOcclusion, ambientOcclusion, ambientOcclusion, 1.0);
+        return;
+
+    case RENDER_MODE_UV:
+    case RENDER_MODE_DONT_CARE:
+    case RENDER_MODE_POLYGON:
+    default:
+        break;
+    }
 
     vec3 N = normal;
     vec3 V = normalize(constant.camPos - position);

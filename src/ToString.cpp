@@ -6,8 +6,25 @@
 #include "core/Object.h"
 
 #include "renderer/Light.h"
+#include "renderer/RenderPipeline.h"
 
 #include "io/FileFormat.h"
+
+std::string_view RenderModeToString(RenderMode mode)
+{
+	switch (mode)
+	{
+	case RenderMode::DontCare:         return "DontCare";
+	case RenderMode::Albedo:           return "Albedo";
+	case RenderMode::Normal:           return "Normal";
+	case RenderMode::Metallic:         return "Metallic";
+	case RenderMode::Roughness:        return "Roughness";
+	case RenderMode::AmbientOcclusion: return "AmbientOcclusion";
+	case RenderMode::Polygon:          return "Polygon";
+	case RenderMode::UV:               return "UV";
+	}
+	return "Unknown";
+}
 
 std::string_view Object::InheritTypeToString(InheritType type)
 {
