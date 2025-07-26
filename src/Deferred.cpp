@@ -68,6 +68,7 @@ constexpr VkFormat GBUFFER_NORMAL_FORMAT   = VK_FORMAT_R16G16B16A16_SFLOAT; // 1
 constexpr VkFormat GBUFFER_MRAO_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;      // Metallic, Roughness and Ambient Occlusion
 constexpr VkFormat GBUFFER_RTGI_FORMAT     = VK_FORMAT_R16G16B16A16_UNORM;
 constexpr VkFormat GBUFFER_VELOCITY_FORMAT = VK_FORMAT_R16G16_SFLOAT;
+constexpr VkFormat GBUFFER_GNORMAL_FORMAT  = GBUFFER_NORMAL_FORMAT;
 
 constexpr TopLevelAccelerationStructure::InstanceIndexType RTGI_TLAS_INDEX_TYPE = TopLevelAccelerationStructure::InstanceIndexType::Identifier;
 
@@ -75,13 +76,14 @@ constexpr uint32_t RTGI_RESOLUTION_UPSCALE = 1;
 
 void DeferredPipeline::Start(const Payload& payload)
 {
-	std::array<VkFormat, GBUFFER_COUNT> formats = 
-	{ 
+	std::array<VkFormat, GBUFFER_COUNT> formats =
+	{
 		GBUFFER_POSITION_FORMAT,
-		GBUFFER_ALBEDO_FORMAT, 
-		GBUFFER_NORMAL_FORMAT, 
+		GBUFFER_ALBEDO_FORMAT,
+		GBUFFER_NORMAL_FORMAT,
 		GBUFFER_MRAO_FORMAT,
 		GBUFFER_VELOCITY_FORMAT,
+		GBUFFER_GNORMAL_FORMAT,
 	};
 
 	CreateBuffers();
@@ -109,6 +111,7 @@ void DeferredPipeline::CreateAndPreparePipelines(const Payload& payload)
 		GBUFFER_NORMAL_FORMAT,
 		GBUFFER_MRAO_FORMAT,
 		GBUFFER_VELOCITY_FORMAT,
+		GBUFFER_GNORMAL_FORMAT,
 	};
 
 	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
@@ -237,6 +240,7 @@ void DeferredPipeline::BindRTGIResources()
 	rtgiPipeline->BindImageToName("albedoImage", GetAlbedoView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	rtgiPipeline->BindImageToName("normalImage", GetNormalView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	rtgiPipeline->BindImageToName("positionImage", GetPositionView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	rtgiPipeline->BindImageToName("geometricNormalImage", GetGeometricNormal(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	secondPipeline->BindImageToName("globalIlluminationImage", rtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL);
 }

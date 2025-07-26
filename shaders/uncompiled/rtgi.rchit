@@ -16,6 +16,7 @@ layout(location = 0) rayPayloadInEXT Payload {
 	vec3 mixedAlbedo;
 
 	vec3 normal;
+	vec3 geometricNormal;
 
 	float pdf;
 
@@ -152,10 +153,11 @@ void main()
 		normal = -normal;
 	}
 
-	if (dot(normal, vertex.normal) < 0.0)
-		normal = vertex.normal;
+	if (dot(normal, geometricNormal) < 0.0) // prevent the normal from clipping through the surface
+		normal = -normal;
 
-	payload.normal = geometricNormal;
+	payload.normal = normal;
+	payload.geometricNormal = geometricNormal;
 	payload.origin = position;
 
 	vec3 radiance = vec3(0.0);

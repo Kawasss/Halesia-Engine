@@ -36,7 +36,7 @@ public:
 	std::vector<IntVariable> GetIntVariables() override;
 
 private:
-	static constexpr size_t GBUFFER_COUNT = 5;
+	static constexpr size_t GBUFFER_COUNT = 6;
 
 	struct PushConstant;
 	struct RTGIConstants;
@@ -94,11 +94,12 @@ private:
 
 	Skybox* CreateNewSkybox(const std::string& path);
 
-	VkImageView GetPositionView() { return framebuffer.GetViews()[0]; }
-	VkImageView GetAlbedoView()   { return framebuffer.GetViews()[1]; }
-	VkImageView GetNormalView()   { return framebuffer.GetViews()[2]; }
-	VkImageView GetMRAOView()     { return framebuffer.GetViews()[3]; }
-	VkImageView GetVelocityView() { return framebuffer.GetViews()[4]; }
+	VkImageView GetPositionView()    { return framebuffer.GetViews()[0]; }
+	VkImageView GetAlbedoView()      { return framebuffer.GetViews()[1]; }
+	VkImageView GetNormalView()      { return framebuffer.GetViews()[2]; }
+	VkImageView GetMRAOView()        { return framebuffer.GetViews()[3]; }
+	VkImageView GetVelocityView()    { return framebuffer.GetViews()[4]; }
+	VkImageView GetGeometricNormal() { return framebuffer.GetViews()[5]; }
 
 	uint32_t GetRTGIWidth()  const;
 	uint32_t GetRTGIHeight() const;

@@ -8,6 +8,7 @@ layout(location = 0) rayPayloadInEXT Payload {
 	vec3 mixedAlbedo;
 
 	vec3 normal;
+	vec3 geometricNormal;
 
 	float pdf;
 

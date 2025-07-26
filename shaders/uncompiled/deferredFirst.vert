@@ -13,7 +13,8 @@ layout (location = 2) out vec2 texCoords;
 layout (location = 3) out vec3 camPos;
 layout (location = 4) out vec4 prevPosition;
 layout (location = 5) out vec4 currPosition;
-layout (location = 6) out mat3 tangentToWorld;
+layout (location = 6) out vec3 tangent;
+layout (location = 7) out vec3 bitangent;
 
 layout(set = 0, binding = 0) uniform sceneInfo {
     vec3 camPos;
@@ -34,13 +35,9 @@ void main()
     position = (Constant.model * vec4(inPosition, 1.0)).xyz;
 
     mat3 normalMatrix = transpose(inverse(mat3(Constant.model)));
-    vec3 T = normalize(normalMatrix * inTangent);
-    vec3 B = normalize(normalMatrix * inBiTangent);
-    vec3 N = normalize(normalMatrix * inNormal);
-
-    tangentToWorld = mat3(T, B, N);
-
-    normal = N;
+    tangent   = normalize(normalMatrix * inTangent);
+    bitangent = normalize(normalMatrix * inBiTangent);
+    normal    = normalize(normalMatrix * inNormal);
 
     texCoords = inTexCoords;
     camPos = ubo.camPos;

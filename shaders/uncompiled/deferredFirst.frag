@@ -8,13 +8,15 @@ layout (location = 2) in vec2 texCoords;
 layout (location = 3) in vec3 camPos;
 layout (location = 4) in vec4 prevPosition;
 layout (location = 5) in vec4 currPosition;
-layout (location = 6) in mat3 tangentToWorld;
+layout (location = 6) in vec3 tangent;
+layout (location = 7) in vec3 bitangent;
 
 layout (location = 0) out vec4 positionColor;
 layout (location = 1) out vec4 albedoColor;
 layout (location = 2) out vec4 normalColor;
 layout (location = 3) out vec4 metallicRoughnessAOColor;
 layout (location = 4) out vec4 velocityColor;
+layout (location = 5) out vec4 geometricNormalColor;
 
 layout(push_constant) uniform constant
 {
@@ -34,10 +36,26 @@ layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_te
 
 vec3 GetNormalFromMap()
 {
-    vec3 raw = normalize(texture(textures[Constant.materialID * 5 + 1], texCoords).rgb);
-    vec3 tangentNormal = normalize(raw * 2.0 - 1.0);
+    //mat3 TBN = mat3(tangent, bitangent, normal);
 
-    return normalize(tangentToWorld * tangentNormal);
+    //vec3 raw = normalize(texture(textures[Constant.materialID * 5 + 1], texCoords).rgb);
+    //vec3 tangentNormal = normalize(raw * 2.0 - 1.0);
+
+    //return normalize(TBN * tangentNormal);
+
+    vec3 tangentNormal = texture(textures[Constant.materialID * 5 + 1], texCoords).rgb * 2.0 - 1.0;
+
+    vec3 Q1  = dFdx(position);
+    vec3 Q2  = dFdy(position);
+    vec2 st1 = dFdx(texCoords);
+    vec2 st2 = dFdy(texCoords);
+
+    vec3 N   = normalize(normal);
+    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);//normalize(tangent);//
+    vec3 B  = -normalize(cross(N, T));//-normalize(bitangent);//
+    mat3 TBN = mat3(T, B, N);
+
+    return normalize(TBN * tangentNormal);
 }
 
 void main()
@@ -49,7 +67,9 @@ void main()
 
     vec3 viewDir = normalize(position - ubo.camPos);
 
-    vec3 N = normal;
+    geometricNormalColor = dot(normal, viewDir) > 0.0 ?  geometricNormalColor = vec4(-normal, 1.0) : vec4(normal, 1.0);
+
+    vec3 N = GetNormalFromMap();
     if (dot(N, viewDir) > 0.0)
         N = -N;
 

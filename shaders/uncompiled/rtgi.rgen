@@ -12,6 +12,7 @@ layout(location = 0) rayPayloadEXT Payload {
 	vec3 mixedAlbedo;
 
 	vec3 normal;
+	vec3 geometricNormal;
 
 	float pdf;
 
@@ -34,6 +35,7 @@ layout(binding = 1, set = 0, rgba8) uniform image2D globalIlluminationImage;
 layout(binding = 2, set = 0) uniform sampler2D albedoImage;
 layout(binding = 3, set = 0) uniform sampler2D normalImage;
 layout(binding = 4, set = 0) uniform sampler2D positionImage;
+layout(binding = 10, set = 0) uniform sampler2D geometricNormalImage;
 
 vec3 CosineSampleHemisphereLocal(vec2 random, out float pdf) // https://github.com/boksajak/brdf/blob/master/brdf.h
 {
@@ -111,14 +113,19 @@ void main()
 
 	vec2 relCoors = vec2(gl_LaunchIDEXT.xy) / vec2(gl_LaunchSizeEXT.xy);
 
-	vec3 normal   = normalize(texture(normalImage, relCoors).xyz);
-	vec3 position = texture(positionImage, relCoors).xyz;
+	vec3 normal   = normalize(texture(normalImage, relCoors).rgb);
+	vec3 position = texture(positionImage, relCoors).rgb;
 
 	if (normal == vec3(0))
 	{
 		imageStore(globalIlluminationImage, ivec2(gl_LaunchIDEXT.xy), vec4(0, 0, 0, 1));
 		return;
 	}
+
+	vec3 geometricNormal = normalize(texture(geometricNormalImage, relCoors).rgb);
+
+	if (dot(normal, geometricNormal) < 0.0) // prevent the normal from clipping through the surface
+		normal = -normal;
 
 	vec3 color = vec3(0);
 
@@ -129,6 +136,7 @@ void main()
 		payload.color = vec3(0);
 		payload.mixedAlbedo = vec3(1);
 		payload.normal = normal;
+		payload.geometricNormal = geometricNormal;
 		payload.depth = 0;
 		payload.isActive = 1;
 
@@ -137,6 +145,8 @@ void main()
 		for (int j = 0; j < camera.bounceCount; j++)
 		{
 			payload.direction = CosineSampleHemisphere(random, payload.normal, payload.pdf);
+			if (dot(payload.direction, payload.geometricNormal) < 0.0)
+				payload.direction = -payload.direction;
 
 			traceRayEXT(topLevelAS, gl_RayFlagsOpaqueEXT | gl_RayFlagsCullBackFacingTrianglesEXT, 0xFF, 0, 0, 0, payload.origin, 0.001, payload.direction, 1000.0, 0);
 			
