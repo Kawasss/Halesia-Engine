@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <string>
 #include <Windows.h>
+#include <execution>
 #include <compressapi.h>
 
 #include "io/CreationData.h"
@@ -47,10 +48,8 @@ static void WriteFullObjectToArchive(DataArchiveFile& archive, const Object* pOb
 
 static void WriteTextureToStream(BinaryStream& stream, const Texture* pTexture)
 {
-	uint32_t width = 0, height = 0;
-
-	width  = pTexture->GetWidth();
-	height = pTexture->GetHeight();
+	uint32_t width  = pTexture->GetWidth();
+	uint32_t height = pTexture->GetHeight();
 
 	stream << width << height;
 
@@ -58,6 +57,10 @@ static void WriteTextureToStream(BinaryStream& stream, const Texture* pTexture)
 		return;
 
 	std::vector<char> data = pTexture->GetImageData();
+	data = Texture::Encode(data, width, height);
+
+	stream << data.size();
+
 	stream.Write(data.data(), data.size() * sizeof(char));
 }
 
@@ -78,22 +81,30 @@ static void WriteMaterialsToArchive(DataArchiveFile& file)
 
 	file.AddData("##material_root", stream.data);	
 
-	for (int i = 1; i < Mesh::materials.size(); i++)
-	{
-		stream.Clear();
+	std::vector<int> indices(matCount);
+	for (int i = 0; i < indices.size(); i++)
+		indices[i] = i + 1;
 
-		std::string name = "##material" + std::to_string(i);
-		
-		const Material& mat = Mesh::materials[i];
+	win32::CriticalSection critSection;
 
-		WriteTextureToStream(stream, mat.albedo);
-		WriteTextureToStream(stream, mat.normal);
-		WriteTextureToStream(stream, mat.metallic);
-		WriteTextureToStream(stream, mat.roughness);
-		WriteTextureToStream(stream, mat.ambientOcclusion);
+	std::for_each(std::execution::par_unseq, indices.begin(), indices.end(),
+		[&](int i)
+		{
+			BinaryStream matStream;
 
-		file.AddData(name, stream.data);
-	}
+			std::string name = "##material" + std::to_string(i);
+			const Material& mat = Mesh::materials[i];
+
+			WriteTextureToStream(matStream, mat.albedo);
+			WriteTextureToStream(matStream, mat.normal);
+			WriteTextureToStream(matStream, mat.metallic);
+			WriteTextureToStream(matStream, mat.roughness);
+			WriteTextureToStream(matStream, mat.ambientOcclusion);
+
+			win32::CriticalLockGuard lockGuard(critSection);
+			file.AddData(name, matStream.data);
+		}
+	);
 }
 
 void HSFWriter::WriteSceneToArchive(const std::string& file, Scene* scene)

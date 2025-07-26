@@ -2,7 +2,10 @@
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
+#include <execution>
 #include <filesystem>
+
+#include "renderer/Texture.h"
 
 #include "io/SceneLoader.h"
 #include "io/DataArchiveFile.h"
@@ -127,9 +130,15 @@ static FileImage DeserializeImage(const BinarySpan& span)
 	if (size == 0)
 		return ret;
 
-	ret.data.data.resize(size);
-	span.Read(ret.data.data.data(), size);
+	int holder = 0;
 
+	size_t encodedSize = 0;
+	span >> encodedSize;
+
+	ret.data.data.resize(encodedSize);
+	span.Read(ret.data.data.data(), encodedSize);
+	ret.data.data = Texture::Decode(ret.data.data, holder, holder, Image::DecodeOptions::None);
+	
 	return ret;
 }
 
@@ -155,8 +164,25 @@ void SceneLoader::LoadMaterialsFromArchive(DataArchiveFile& file)
 	}
 
 	std::vector<std::string> references = ReadNamedReferences(*root);
-	materials.reserve(references.size());
+	materials.resize(references.size());
 
+	std::vector<int> indices(references.size());
+	for (int i = 0; i < indices.size(); i++)
+		indices[i] = i;
+
+	win32::CriticalSection critSection;
+
+	std::for_each(std::execution::par_unseq, indices.begin(), indices.end(),
+		[&](int i)
+		{
+			critSection.Lock();
+			std::expected<std::vector<char>, bool> data = file.ReadData(references[i]);
+			critSection.Unlock();
+
+			materials[i] = DeserializeMaterial(*data);
+		}
+	);
+	/*materials.reserve(references.size());
 	for (const std::string& materialName : references)
 	{
 		std::expected<std::vector<char>, bool> data = file.ReadData(materialName);
@@ -164,7 +190,7 @@ void SceneLoader::LoadMaterialsFromArchive(DataArchiveFile& file)
 			materials.push_back(DeserializeMaterial(*data));
 		else
 			Console::WriteLine("failed to read material {}", Console::Severity::Error, materialName);
-	}
+	}*/
 }
 
 void SceneLoader::LoadCustomFile()

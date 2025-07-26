@@ -3,6 +3,7 @@
 #include <string>
 #include <future>
 #include <array>
+#include <span>
 
 #include "PhysicalDevice.h"
 #include "VideoMemoryManager.h"
@@ -24,14 +25,22 @@ struct Color
 	explicit Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) : r(r), g(g), b(b), a(a) {}
 	explicit Color(float r, float g, float b, float a = 1.0f) : r(uint8_t(r * 255)), g(uint8_t(g * 255)), b(uint8_t(b * 255)), a(uint8_t(a * 255)) {}
 	uint8_t* GetData() const;
-	
-private:
+
 	uint8_t r, g, b, a;
 };
 
 class Image
 {
 public:
+	enum class DecodeOptions
+	{
+		None = 0,
+		Flip = 1,
+	};
+
+	static std::vector<char> Encode(const std::span<const char>& raw, int width, int height);
+	static std::vector<char> Decode(const std::span<const char>& encoded, int& outWidth, int& outHeight, DecodeOptions options);
+
 	void GenerateImages(const std::vector<char>& textureData, bool useMipMaps = true, int amount = 1, TextureFormat format = TEXTURE_FORMAT_SRGB, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
 	void GenerateImage(const char* data, bool useMipMaps = true, TextureFormat format = TEXTURE_FORMAT_SRGB, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
 	void GenerateCubemap(const char* data, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);

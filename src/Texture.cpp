@@ -23,7 +23,41 @@ Texture* Texture::placeholderAmbientOcclusion = nullptr;
 
 uint8_t* Color::GetData() const
 {
-	return (uint8_t*)this;
+	return const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(this));
+}
+
+struct StbiDeleter
+{
+	void operator()(void* pData) const
+	{
+		STBI_FREE(pData);
+	}
+};
+
+std::vector<char> Image::Encode(const std::span<const char>& raw, int width, int height)
+{
+	int len = 0;
+	unsigned char* unowned = stbi_write_png_to_mem(reinterpret_cast<const unsigned char*>(raw.data()), width * 4, width, height, 4, &len);
+	std::unique_ptr<char, StbiDeleter> encoded(reinterpret_cast<char*>(unowned));
+
+	if (len == 0 || unowned == nullptr)
+		return std::vector<char>();
+
+	return std::vector<char>(unowned, unowned + len);
+}
+
+std::vector<char> Image::Decode(const std::span<const char>& encoded, int& outWidth, int& outHeight, DecodeOptions options)
+{
+	stbi_set_flip_vertically_on_load(options == DecodeOptions::Flip ? 1 : 0);
+
+	int comp = 0;
+	stbi_uc* data = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(encoded.data()), static_cast<int>(encoded.size()), &outWidth, &outHeight, &comp, 4);
+	std::unique_ptr<char, StbiDeleter> decoded(reinterpret_cast<char*>(data));
+
+	if (outWidth == 0 || outHeight == 0 || data == nullptr)
+		return std::vector<char>();
+
+	return std::vector<char>(data, data + outWidth * outHeight * 4);
 }
 
 bool Image::TexturesHaveChanged()
@@ -38,19 +72,13 @@ void Image::GenerateImages(const std::vector<char>& textureData, bool useMipMaps
 	this->format = format;
 
 	layerCount = static_cast<uint32_t>(amount);
-	int textureChannels = 0;
 
-	stbi_set_flip_vertically_on_load(1);
-	// read every side of the cubemap
-	stbi_uc* pixels = nullptr;
-	pixels = stbi_load_from_memory((unsigned char*)textureData.data(), (int)textureData.size(), &width, &height, &textureChannels, STBI_rgb_alpha);
+	std::vector<char> pixels = Decode(textureData, width, height, DecodeOptions::Flip);
 
 	if (useMipMaps)
 		CalculateMipLevels();
 	
-	WritePixelsToBuffer(pixels, useMipMaps, format, (VkImageLayout)useCase);
-
-	stbi_image_free(pixels);
+	WritePixelsToBuffer(reinterpret_cast<uint8_t*>(pixels.data()), useMipMaps, format, (VkImageLayout)useCase);
 }
 
 void Image::GenerateEmptyImages(int width, int height, int amount)
@@ -139,7 +167,7 @@ std::vector<char> Image::GetImageData() const
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
 
-	Buffer copyBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	ImmediateBuffer copyBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
 	VkBufferImageCopy imageCopy{};
 	imageCopy.imageExtent = { (uint32_t)width, (uint32_t)height, 1 };
