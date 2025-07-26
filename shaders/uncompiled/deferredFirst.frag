@@ -36,23 +36,12 @@ layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_te
 
 vec3 GetNormalFromMap()
 {
-    //mat3 TBN = mat3(tangent, bitangent, normal);
-
-    //vec3 raw = normalize(texture(textures[Constant.materialID * 5 + 1], texCoords).rgb);
-    //vec3 tangentNormal = normalize(raw * 2.0 - 1.0);
-
-    //return normalize(TBN * tangentNormal);
-
     vec3 tangentNormal = texture(textures[Constant.materialID * 5 + 1], texCoords).rgb * 2.0 - 1.0;
 
-    vec3 Q1  = dFdx(position);
-    vec3 Q2  = dFdy(position);
-    vec2 st1 = dFdx(texCoords);
-    vec2 st2 = dFdy(texCoords);
-
-    vec3 N   = normalize(normal);
-    vec3 T  = normalize(Q1*st2.t - Q2*st1.t);//normalize(tangent);//
-    vec3 B  = -normalize(cross(N, T));//-normalize(bitangent);//
+    vec3 T   =  normalize(tangent);
+    vec3 B   = -normalize(bitangent);
+    vec3 N   =  normalize(normal);
+    
     mat3 TBN = mat3(T, B, N);
 
     return normalize(TBN * tangentNormal);

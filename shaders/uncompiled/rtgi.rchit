@@ -78,12 +78,15 @@ layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_te
 
 vec3 GetNormalFromMap(vec2 uv, vec3 normal, vec3 tangent, vec3 bitangent, int materialIndex)
 {
-	mat3 TBN = mat3(tangent, bitangent, normal);
+	vec3 tangentNormal = texture(textures[materialIndex * 5 + 1], uv).rgb * 2.0 - 1.0;
 
-	vec3 raw = normalize(texture(textures[materialIndex * 5 + 1], uv).rgb);
-	vec3 tangentNormal = normalize(raw * 2.0 - 1.0);
+    vec3 T   =  normalize(tangent);
+    vec3 B   = -normalize(bitangent);
+    vec3 N   =  normalize(normal);
+    
+    mat3 TBN = mat3(T, B, N);
 
-	return normalize(TBN * tangentNormal);
+    return normalize(TBN * tangentNormal);
 }
 
 mat4 GetModelMatrix()
@@ -118,11 +121,11 @@ Vertex GetExactVertex(InstanceData data, vec3 barycentric, out vec3 geometricNor
 	ret.bitangent = a.bitangent * barycentric.x + b.bitangent * barycentric.y + c.bitangent * barycentric.z;
 
 	mat4 model = GetModelMatrix();
-	mat3 normalMatrix = mat3(transpose(inverse(model)));
+	mat3 normalMatrix = transpose(inverse(mat3(model)));
 
 	ret.position = (model * vec4(ret.position, 1.0)).xyz;
-	ret.normal = normalize(normalMatrix * ret.normal);
-	ret.tangent = normalize(normalMatrix * ret.tangent);
+	ret.normal    = normalize(normalMatrix * ret.normal);
+	ret.tangent   = normalize(normalMatrix * ret.tangent);
 	ret.bitangent = normalize(normalMatrix * ret.bitangent);
 
 	geometricNormal = normalize(normalMatrix * geometricNormal);

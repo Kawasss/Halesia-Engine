@@ -34,7 +34,9 @@ void main()
 {
     position = (Constant.model * vec4(inPosition, 1.0)).xyz;
 
-    mat3 normalMatrix = transpose(inverse(mat3(Constant.model)));
+    mat3 model3x3 = mat3(Constant.model);
+
+    mat3 normalMatrix = transpose(inverse(model3x3));
     tangent   = normalize(normalMatrix * inTangent);
     bitangent = normalize(normalMatrix * inBiTangent);
     normal    = normalize(normalMatrix * inNormal);
