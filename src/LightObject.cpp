@@ -3,6 +3,7 @@
 #include "core/LightObject.h"
 
 #include "io/CreationData.h"
+#include "io/BinaryStream.h"
 
 LightObject::LightObject() : Object(InheritType::Light)
 {
@@ -45,7 +46,6 @@ void LightObject::Init(const ObjectCreationData& data)
 	color = data.lightData.color;
 	cutoff = data.lightData.cutoff;
 	outerCutoff = data.lightData.outerCutoff;
-	transform.rotation = data.lightData.direction;
 }
 
 LightGPU LightObject::ToGPUFormat() const
@@ -67,4 +67,20 @@ void LightObject::DuplicateDataTo(Object* pObject) const
 	pLight->color = color;
 	pLight->cutoff = cutoff;
 	pLight->outerCutoff = outerCutoff;
+}
+
+void LightObject::SerializeSelf(BinaryStream& stream) const
+{
+	stream << static_cast<std::underlying_type_t<Light::Type>>(type);
+	stream << cutoff << outerCutoff << color.x << color.y << color.z;
+}
+
+void LightObject::DeserializeSelf(const BinarySpan& stream)
+{
+	std::underlying_type_t<Light::Type> intermediary = 0;
+	stream >> intermediary;
+
+	type = static_cast<Light::Type>(intermediary);
+	
+	stream >> cutoff >> outerCutoff >> color.x >> color.y >> color.z;
 }
