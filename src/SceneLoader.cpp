@@ -130,15 +130,18 @@ static FileImage DeserializeImage(const BinarySpan& span)
 	if (size == 0)
 		return ret;
 
-	int holder = 0;
+	int width = 0, height = 0;
 
 	size_t encodedSize = 0;
 	span >> encodedSize;
 
 	ret.data.data.resize(encodedSize);
 	span.Read(ret.data.data.data(), encodedSize);
-	ret.data.data = Texture::Decode(ret.data.data, holder, holder, Image::DecodeOptions::None);
+	ret.data.data = Texture::Decode(ret.data.data, width, height, Image::DecodeOptions::None, 0.5f);
 	
+	ret.width = width;
+	ret.height = height;
+
 	return ret;
 }
 

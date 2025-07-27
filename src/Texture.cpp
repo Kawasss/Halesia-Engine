@@ -2,6 +2,8 @@
 #include "stb/stb_image_write.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb/stb_image_resize2.h"
 
 #include "renderer/Vulkan.h"
 #include "renderer/physicalDevice.h"
@@ -46,7 +48,7 @@ std::vector<char> Image::Encode(const std::span<const char>& raw, int width, int
 	return std::vector<char>(unowned, unowned + len);
 }
 
-std::vector<char> Image::Decode(const std::span<const char>& encoded, int& outWidth, int& outHeight, DecodeOptions options)
+std::vector<char> Image::Decode(const std::span<const char>& encoded, int& outWidth, int& outHeight, DecodeOptions options, float scale)
 {
 	stbi_set_flip_vertically_on_load(options == DecodeOptions::Flip ? 1 : 0);
 
@@ -57,7 +59,20 @@ std::vector<char> Image::Decode(const std::span<const char>& encoded, int& outWi
 	if (outWidth == 0 || outHeight == 0 || data == nullptr)
 		return std::vector<char>();
 
-	return std::vector<char>(data, data + outWidth * outHeight * 4);
+	int scaledWidth  = std::ceil(outWidth * scale);
+	int scaledHeight = std::ceil(outHeight * scale);
+
+	if (scaledWidth == outWidth && scaledHeight == outHeight)
+		return std::vector<char>(data, data + outWidth * outHeight * 4);
+
+	std::vector<char> resized(scaledWidth * scaledHeight * 4);
+
+	stbir_resize_uint8_linear(data, outWidth, outHeight, outWidth * 4, reinterpret_cast<unsigned char*>(resized.data()), scaledWidth, scaledHeight, scaledWidth * 4, STBIR_RGBA);
+
+	outWidth = scaledWidth;
+	outHeight = scaledHeight;
+
+	return std::vector<char>(resized.data(), resized.data() + outWidth * outHeight * 4);
 }
 
 bool Image::TexturesHaveChanged()
@@ -73,7 +88,7 @@ void Image::GenerateImages(const std::vector<char>& textureData, bool useMipMaps
 
 	layerCount = static_cast<uint32_t>(amount);
 
-	std::vector<char> pixels = Decode(textureData, width, height, DecodeOptions::Flip);
+	std::vector<char> pixels = Decode(textureData, width, height, DecodeOptions::Flip, 1.0f);
 
 	if (useMipMaps)
 		CalculateMipLevels();
