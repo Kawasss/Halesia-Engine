@@ -14,14 +14,15 @@ std::string_view RenderModeToString(RenderMode mode)
 {
 	switch (mode)
 	{
-	case RenderMode::DontCare:         return "DontCare";
-	case RenderMode::Albedo:           return "Albedo";
-	case RenderMode::Normal:           return "Normal";
-	case RenderMode::Metallic:         return "Metallic";
-	case RenderMode::Roughness:        return "Roughness";
-	case RenderMode::AmbientOcclusion: return "AmbientOcclusion";
-	case RenderMode::Polygon:          return "Polygon";
-	case RenderMode::UV:               return "UV";
+	case RenderMode::DontCare:           return "DontCare";
+	case RenderMode::Albedo:             return "Albedo";
+	case RenderMode::Normal:             return "Normal";
+	case RenderMode::Metallic:           return "Metallic";
+	case RenderMode::Roughness:          return "Roughness";
+	case RenderMode::AmbientOcclusion:   return "AmbientOcclusion";
+	case RenderMode::Polygon:            return "Polygon";
+	case RenderMode::UV:                 return "UV";
+	case RenderMode::GlobalIllumination: return "GlobalIllumation";
 	}
 	return "Unknown";
 }

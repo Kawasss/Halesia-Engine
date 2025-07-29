@@ -14,6 +14,7 @@ layout(location = 0) rayPayloadEXT Payload {
 	vec3 normal;
 	vec3 geometricNormal;
 
+	float directionBias;
 	float pdf;
 
 	int depth;
@@ -137,6 +138,7 @@ void main()
 		payload.mixedAlbedo = vec3(1);
 		payload.normal = normal;
 		payload.geometricNormal = geometricNormal;
+		payload.directionBias = 0;
 		payload.depth = 0;
 		payload.isActive = 1;
 
@@ -144,7 +146,11 @@ void main()
 
 		for (int j = 0; j < camera.bounceCount; j++)
 		{
+			vec3 perfectReflection = reflect(payload.direction, payload.normal);
 			payload.direction = CosineSampleHemisphere(random, payload.normal, payload.pdf);
+
+			payload.direction = mix(payload.direction, perfectReflection, payload.directionBias);
+
 			if (dot(payload.direction, payload.geometricNormal) < 0.0)
 				payload.direction = -payload.direction;
 

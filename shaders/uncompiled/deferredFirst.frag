@@ -38,9 +38,9 @@ vec3 GetNormalFromMap()
 {
     vec3 tangentNormal = texture(textures[Constant.materialID * 5 + 1], texCoords).rgb * 2.0 - 1.0;
 
-    vec3 T   =  normalize(tangent);
-    vec3 B   = -normalize(bitangent);
-    vec3 N   =  normalize(normal);
+    vec3 T = normalize(tangent);
+    vec3 B = normalize(bitangent);
+    vec3 N = normalize(normal);
     
     mat3 TBN = mat3(T, B, N);
 

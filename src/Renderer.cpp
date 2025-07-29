@@ -994,10 +994,12 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 	{
 		framebuffer.SetImageUsage(1, VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 		framebuffer.Init(renderPass, 1, viewportWidth, viewportHeight, VK_FORMAT_R16G16B16A16_UNORM); // maybe 32 bit float instead of 8 bit ??
+		Vulkan::SetDebugName(framebuffer.Get(), "presentation framebuffer");
 	}
 	else
 	{
 		framebuffer.Resize(viewportWidth, viewportHeight); // recreating the framebuffer will use single time commands, even if it is resized inside a render loop, causing wasted time (fix !!)
+		Vulkan::SetDebugName(framebuffer.Get(), "presentation framebuffer");
 	}
 
 	imageView = (shouldRasterize || !canRayTrace || rayTracer == nullptr) ? framebuffer.GetViews()[0] : rayTracer->gBufferViews[0];

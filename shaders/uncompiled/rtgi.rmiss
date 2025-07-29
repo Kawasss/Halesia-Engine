@@ -10,6 +10,7 @@ layout(location = 0) rayPayloadInEXT Payload {
 	vec3 normal;
 	vec3 geometricNormal;
 
+	float directionBias;
 	float pdf;
 
 	int depth;

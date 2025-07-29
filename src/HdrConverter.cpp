@@ -12,6 +12,7 @@
 #include "renderer/Texture.h"
 #include "renderer/Vulkan.h"
 #include "renderer/Buffer.h"
+#include "renderer/Skybox.h"
 
 struct PushConstantConverter
 {
@@ -68,8 +69,8 @@ static void CreateFramebuffer()
 	imageInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENT_IMAGE_INFO;
 	imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 	imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	imageInfo.width = 1024;
-	imageInfo.height = 1024;
+	imageInfo.width = Skybox::WIDTH;
+	imageInfo.height = Skybox::HEIGHT;
 	imageInfo.layerCount = 1;
 	imageInfo.viewFormatCount = 1;
 	imageInfo.pViewFormats = &format;
@@ -83,8 +84,8 @@ static void CreateFramebuffer()
 	createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 	createInfo.flags = VK_FRAMEBUFFER_CREATE_IMAGELESS_BIT;
 	createInfo.pNext = &attachInfo;
-	createInfo.width = 1024;
-	createInfo.height = 1024;
+	createInfo.width = Skybox::WIDTH;
+	createInfo.height = Skybox::HEIGHT;
 	createInfo.layers = 1;
 	createInfo.attachmentCount = 1;
 	createInfo.renderPass = renderPass;
@@ -109,8 +110,8 @@ void HdrConverter::End()
 
 void HdrConverter::ConvertTextureIntoCubemap(const CommandBuffer& cmdBuffer, const Texture* texture, Cubemap* cubemap)
 {
-	Renderer::SetViewport(cmdBuffer, { 1024, 1024 });
-	Renderer::SetScissors(cmdBuffer, { 1024, 1024 });
+	Renderer::SetViewport(cmdBuffer, { Skybox::WIDTH, Skybox::HEIGHT });
+	Renderer::SetScissors(cmdBuffer, { Skybox::WIDTH, Skybox::HEIGHT });
 
 	pipeline->BindImageToName("equirectangularMap", texture->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	DescriptorWriter::Write();
@@ -149,7 +150,7 @@ void HdrConverter::ConvertTextureIntoCubemap(const CommandBuffer& cmdBuffer, con
 		renderPassBeginInfo.renderPass = renderPass;
 		renderPassBeginInfo.framebuffer = framebuffer;
 		renderPassBeginInfo.renderArea.offset = { 0, 0 };
-		renderPassBeginInfo.renderArea.extent = { 1024, 1024 };
+		renderPassBeginInfo.renderArea.extent = { Skybox::WIDTH, Skybox::HEIGHT };
 		renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
 		renderPassBeginInfo.pClearValues = clearColors.data();
 

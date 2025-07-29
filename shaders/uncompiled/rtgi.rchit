@@ -18,6 +18,7 @@ layout(location = 0) rayPayloadInEXT Payload {
 	vec3 normal;
 	vec3 geometricNormal;
 
+	float directionBias;
 	float pdf;
 
 	int depth;
@@ -76,13 +77,18 @@ layout (binding = 9, set = 0) readonly buffer InstanceDataBuffer
 
 layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_texture_size] textures;
 
+float GetRoughness(vec2 uv, int index)
+{
+	return texture(textures[index * 5 + 2], uv).g;
+}
+
 vec3 GetNormalFromMap(vec2 uv, vec3 normal, vec3 tangent, vec3 bitangent, int materialIndex)
 {
 	vec3 tangentNormal = texture(textures[materialIndex * 5 + 1], uv).rgb * 2.0 - 1.0;
 
-    vec3 T   =  normalize(tangent);
-    vec3 B   = -normalize(bitangent);
-    vec3 N   =  normalize(normal);
+    vec3 T = normalize(tangent);
+    vec3 B = normalize(bitangent);
+    vec3 N = normalize(normal);
     
     mat3 TBN = mat3(T, B, N);
 
@@ -148,6 +154,9 @@ void main()
 	vec3 position = vertex.position; // copy this to a variable to prevent expensive struct memory reads
 
 	vec3 normal = GetNormalFromMap(vertex.textureCoordinates, vertex.normal, vertex.tangent, vertex.bitangent, instance.material);
+	float roughness = GetRoughness(vertex.textureCoordinates, instance.material);
+
+	payload.directionBias = 1.0 - roughness;
 
 	if (dot(normal, payload.direction) > 0.0)
 	{

@@ -1,3 +1,5 @@
+#include <vulkan/vk_enum_string_helper.h>
+
 #include "renderer/Deferred.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/ComputeShader.h"
@@ -63,9 +65,9 @@ struct DeferredPipeline::SecondConstants
 };
 
 constexpr VkFormat GBUFFER_POSITION_FORMAT = VK_FORMAT_R32G32B32A32_SFLOAT; // 32 bit format takes a lot of performance compared to an 8 bit format
-constexpr VkFormat GBUFFER_ALBEDO_FORMAT   = VK_FORMAT_R8G8B8A8_UNORM;
+constexpr VkFormat GBUFFER_ALBEDO_FORMAT   = VK_FORMAT_R16G16B16A16_UNORM;
 constexpr VkFormat GBUFFER_NORMAL_FORMAT   = VK_FORMAT_R16G16B16A16_SFLOAT; // 16 bit instead of 8 bit to allow for negative normals
-constexpr VkFormat GBUFFER_MRAO_FORMAT     = VK_FORMAT_R8G8B8A8_UNORM;      // Metallic, Roughness and Ambient Occlusion
+constexpr VkFormat GBUFFER_MRAO_FORMAT     = VK_FORMAT_R16G16B16A16_UNORM;  // Metallic, Roughness and Ambient Occlusion
 constexpr VkFormat GBUFFER_RTGI_FORMAT     = VK_FORMAT_R16G16B16A16_UNORM;
 constexpr VkFormat GBUFFER_VELOCITY_FORMAT = VK_FORMAT_R16G16_SFLOAT;
 constexpr VkFormat GBUFFER_GNORMAL_FORMAT  = GBUFFER_NORMAL_FORMAT;
@@ -95,6 +97,11 @@ void DeferredPipeline::Start(const Payload& payload)
 	framebuffer.SetImageUsage(formats.size(), VK_IMAGE_USAGE_TRANSFER_SRC_BIT); // the depth buffer is to be transferred for TAA
 
 	framebuffer.Init(renderPass, payload.width, payload.height, formats, 1.0f);
+
+	Vulkan::SetDebugName(framebuffer.Get(), "deferred framebuffer");
+
+	for (int i = 0; i < formats.size(); i++)
+		Vulkan::SetDebugName(framebuffer.GetImages()[i].Get(), (std::string("gbuffer") + std::to_string(i) + "_" + string_VkFormat(formats[i])).c_str());
 
 	if (Renderer::canRayTrace)
 		TLAS.reset(TopLevelAccelerationStructure::Create());
@@ -311,6 +318,8 @@ void DeferredPipeline::CreateRenderPass(const std::array<VkFormat, GBUFFER_COUNT
 	builder.ClearOnLoad(true);
 
 	renderPass = builder.Build();
+
+	Vulkan::SetDebugName(renderPass, "deferred first render pass");
 }
 
 void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass secondPass)

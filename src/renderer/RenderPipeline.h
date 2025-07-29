@@ -21,7 +21,8 @@ enum class RenderMode : int // this enum is used as a suggestion
 	AmbientOcclusion = 5,
 	Polygon = 6,
 	UV = 7,
-	ModeCount = 8, // this value is used for reflection / iteration and should never be used in code
+	GlobalIllumination = 8,
+	ModeCount = 9, // this value is used for reflection / iteration and should never be used in code
 };
 
 extern std::string_view RenderModeToString(RenderMode mode);

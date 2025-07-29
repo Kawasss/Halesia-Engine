@@ -13,6 +13,7 @@
 #define RENDER_MODE_AMBIENT_OCCLUSION 5
 #define RENDER_MODE_POLYGON 6
 #define RENDER_MODE_UV 7
+#define RENDER_MODE_GLOBAL_ILLUMINATION 8
 
 layout (location = 0) in vec2 uvCoord;
 
@@ -120,6 +121,9 @@ void main()
         return;
     case RENDER_MODE_AMBIENT_OCCLUSION:
         fragColor = vec4(ambientOcclusion, ambientOcclusion, ambientOcclusion, 1.0);
+        return;
+    case RENDER_MODE_GLOBAL_ILLUMINATION:
+        fragColor = vec4(globalIllumination, 1.0);
         return;
 
     case RENDER_MODE_UV:

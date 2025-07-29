@@ -27,7 +27,7 @@ Skybox* Skybox::ReadFromHDR(const std::string& path, const CommandBuffer& cmdBuf
 	std::unique_ptr<Texture> flat = std::make_unique<Texture>(path, false);
 	flat->AwaitGeneration();
 
-	ret->cubemap = new Cubemap(1024, 1024);
+	ret->cubemap = new Cubemap(WIDTH, HEIGHT);
 
 	HdrConverter::ConvertTextureIntoCubemap(cmdBuffer, flat.get(), ret->cubemap);
 
@@ -38,7 +38,7 @@ Skybox* Skybox::ReadFromHDR(const std::string& path, const CommandBuffer& cmdBuf
 
 Skybox::Skybox()
 {
-	RenderPassBuilder builder(VK_FORMAT_R8G8B8A8_UNORM);
+	RenderPassBuilder builder(VK_FORMAT_R16G16B16A16_UNORM);
 
 	builder.SetInitialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
 	builder.SetFinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -63,7 +63,7 @@ Skybox::Skybox()
 
 void Skybox::CreateFramebuffer(uint32_t width, uint32_t height)
 {
-	constexpr VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
+	constexpr VkFormat format = VK_FORMAT_R16G16B16A16_UNORM;
 	const VkFormat depthFormat = Vulkan::GetContext().physicalDevice.GetDepthFormat();
 
 	VkFramebufferAttachmentImageInfo imageInfos[2]{};

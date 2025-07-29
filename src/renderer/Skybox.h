@@ -11,6 +11,9 @@ class Camera;
 class Skybox
 {
 public:
+	static constexpr int WIDTH = 2048;
+	static constexpr int HEIGHT = WIDTH;
+
 	static Skybox* ReadFromHDR(const std::string& path, const CommandBuffer& cmdBuffer);
 
 	~Skybox()
