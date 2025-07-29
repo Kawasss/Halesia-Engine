@@ -65,6 +65,7 @@ layout (binding = 8, set = 0) readonly buffer VertexBuffer
 
 struct InstanceData
 {
+	float uvScale;
 	uint vertexOffset;
 	uint indexOffset;
 	int material;
@@ -152,6 +153,7 @@ void main()
 
 	Vertex vertex = GetExactVertex(instance, barycentric, geometricNormal);
 	vec3 position = vertex.position; // copy this to a variable to prevent expensive struct memory reads
+	vertex.textureCoordinates *= instance.uvScale;
 
 	vec3 normal = GetNormalFromMap(vertex.textureCoordinates, vertex.normal, vertex.tangent, vertex.bitangent, instance.material);
 	float roughness = GetRoughness(vertex.textureCoordinates, instance.material);

@@ -22,6 +22,7 @@ layout(push_constant) uniform constant
 {
     mat4 model;
     int materialID;
+    float uvScale;
 } Constant;
 
 layout(set = 0, binding = 0) uniform sceneInfo {
@@ -34,9 +35,9 @@ layout(set = 0, binding = 0) uniform sceneInfo {
 
 layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_texture_size] textures;
 
-vec3 GetNormalFromMap()
+vec3 GetNormalFromMap(vec2 uv)
 {
-    vec3 tangentNormal = texture(textures[Constant.materialID * 5 + 1], texCoords).rgb * 2.0 - 1.0;
+    vec3 tangentNormal = texture(textures[Constant.materialID * 5 + 1], uv).rgb * 2.0 - 1.0;
 
     vec3 T = normalize(tangent);
     vec3 B = normalize(bitangent);
@@ -49,7 +50,9 @@ vec3 GetNormalFromMap()
 
 void main()
 {
-	albedoColor = texture(textures[Constant.materialID * 5 + 0], texCoords);
+    vec2 uv = texCoords * Constant.uvScale;
+
+	albedoColor = texture(textures[Constant.materialID * 5 + 0], uv);
 
     if (albedoColor.a == 0.0)
         discard;
@@ -58,7 +61,7 @@ void main()
 
     geometricNormalColor = dot(normal, viewDir) > 0.0 ?  geometricNormalColor = vec4(-normal, 1.0) : vec4(normal, 1.0);
 
-    vec3 N = GetNormalFromMap();
+    vec3 N = GetNormalFromMap(uv);
     if (dot(N, viewDir) > 0.0)
         N = -N;
 
@@ -70,8 +73,8 @@ void main()
 
     velocityColor = vec4(currClip - prevClip, 0.0, 1.0);
 
-    metallicRoughnessAOColor.r = texture(textures[Constant.materialID * 5 + 2], texCoords).r;
-    metallicRoughnessAOColor.g = texture(textures[Constant.materialID * 5 + 3], texCoords).g;
-    metallicRoughnessAOColor.b = texture(textures[Constant.materialID * 5 + 4], texCoords).b;
+    metallicRoughnessAOColor.r = texture(textures[Constant.materialID * 5 + 2], uv).r;
+    metallicRoughnessAOColor.g = texture(textures[Constant.materialID * 5 + 3], uv).g;
+    metallicRoughnessAOColor.b = texture(textures[Constant.materialID * 5 + 4], uv).b;
     metallicRoughnessAOColor.a = 1.0;
 }

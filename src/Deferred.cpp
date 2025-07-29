@@ -21,6 +21,7 @@ struct DeferredPipeline::PushConstant
 {
 	glm::mat4 model;
 	int materialID;
+	float uvScale;
 };
 
 struct DeferredPipeline::RTGIConstants
@@ -51,8 +52,9 @@ struct DeferredPipeline::SpatialConstants
 struct DeferredPipeline::InstanceData
 {
 	InstanceData() = default;
-	InstanceData(uint32_t v, uint32_t i, uint32_t m) : vertexOffset(v), indexOffset(i), material(m) {}
+	InstanceData(float u, uint32_t v, uint32_t i, uint32_t m) : uvScale(u), vertexOffset(v), indexOffset(i), material(m) {}
 
+	float uvScale;
 	uint32_t vertexOffset;
 	uint32_t indexOffset;
 	int material;
@@ -675,7 +677,7 @@ void DeferredPipeline::SetInstanceData(const std::vector<MeshObject*>& objects)
 		uint32_t vOffset = static_cast<uint32_t>(Renderer::g_vertexBuffer.GetItemOffset(mesh.vertexMemory));
 		uint32_t iOffset = static_cast<uint32_t>(Renderer::g_indexBuffer.GetItemOffset(mesh.indexMemory));
 
-		instances.emplace_back(vOffset, iOffset, mesh.GetMaterialIndex());
+		instances.emplace_back(mesh.uvScale, vOffset, iOffset, mesh.GetMaterialIndex());
 	}
 	std::memcpy(instanceBuffer.GetMappedPointer(), instances.data(), sizeof(InstanceData) * instances.size());
 }
@@ -736,6 +738,7 @@ void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, cons
 
 		pushConstant.model = model;
 		pushConstant.materialID = obj->mesh.GetMaterialIndex();
+		pushConstant.uvScale = obj->mesh.uvScale;
 
 		firstPipeline->PushConstant(cmdBuffer, pushConstant, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 

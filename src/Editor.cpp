@@ -792,6 +792,10 @@ void Editor::ShowObjectMesh(Mesh& mesh)
 	if (index != static_cast<int>(mesh.GetMaterialIndex()))
 		mesh.SetMaterialIndex(index);
 
+	ImGui::Text("UV scale: ");
+	ImGui::SameLine();
+	ImGui::InputFloat("##uv_input", &mesh.uvScale);
+
 	if (ImGui::Button("Change mesh"))
 		QueueMeshChange(selectedObj);
 }
@@ -901,14 +905,14 @@ void Editor::LoadFile()
 void Editor::SaveToFile()
 {
 	FileDialog::Filter filter{};
-	filter.description = "folder to store the file in.";
-	filter.fileType = "*.;";
+	filter.description = "file to store data in";
+	filter.fileType = "*.dat;";
 
-	std::string path = FileDialog::RequestFolder(filter);
+	std::string path = FileDialog::RequestFileSaveLocation(filter);
 	if (path.empty())
 		return;
 
-	HSFWriter::WriteSceneToArchive(path + "\\test_save.dat", this);
+	HSFWriter::WriteSceneToArchive(path, this);
 }
 
 std::string Editor::GetFile(const char* desc, const char* type)

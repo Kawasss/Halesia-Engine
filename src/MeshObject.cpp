@@ -43,6 +43,7 @@ void MeshObject::DuplicateDataTo(Object* pObject) const
 
 void MeshObject::SerializeSelf(BinaryStream& stream) const
 {
+	stream << mesh.uvScale;
 	stream << mesh.cullBackFaces;
 	stream << mesh.GetMaterialIndex();
 
@@ -57,7 +58,10 @@ void MeshObject::SerializeSelf(BinaryStream& stream) const
 
 void MeshObject::DeserializeSelf(const BinarySpan& stream)
 {
+	float uvScale = 1.0f;
+
 	MeshCreationData creationData{};
+	stream >> uvScale;
 	stream >> creationData.cullBackFaces;
 	stream >> creationData.materialIndex;
 
@@ -76,6 +80,7 @@ void MeshObject::DeserializeSelf(const BinarySpan& stream)
 	creationData.faceCount = creationData.indices.size() / 3;
 
 	mesh.Create(creationData);
+	mesh.uvScale = uvScale;
 }
 
 MeshObject::~MeshObject()

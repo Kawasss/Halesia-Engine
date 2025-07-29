@@ -38,7 +38,7 @@ static std::string WideToASCII(const std::wstring& str)
 	return ret;
 }
 
-std::vector<std::string> RequestDialog(const FileDialog::Filter& filter, const std::string& start, FILEOPENDIALOGOPTIONS foptions)
+static std::vector<std::string> RequestOpenDialog(const FileDialog::Filter& filter, const std::string& start, FILEOPENDIALOGOPTIONS foptions)
 {
 	std::vector<std::string> ret;
 
@@ -49,7 +49,7 @@ std::vector<std::string> RequestDialog(const FileDialog::Filter& filter, const s
 	WideFilter wFilter(filter);
 	COMDLG_FILTERSPEC winfilter = wFilter.GetSystemFilter();
 	CComPtr<IFileOpenDialog> dialog;
-
+	
 	hr = dialog.CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_INPROC_SERVER);
 	if (!SUCCEEDED(hr))
 		return ret;
@@ -108,9 +108,67 @@ std::vector<std::string> RequestDialog(const FileDialog::Filter& filter, const s
 	return ret;
 }
 
+static std::string RequestSaveDialog(const FileDialog::Filter& filter, const std::string& start, FILEOPENDIALOGOPTIONS foptions)
+{
+	std::string ret;
+
+	HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+	if (!SUCCEEDED(hr))
+		return ret;
+
+	WideFilter wFilter(filter);
+	COMDLG_FILTERSPEC winfilter = wFilter.GetSystemFilter();
+	CComPtr<IFileSaveDialog> dialog;
+
+	hr = dialog.CoCreateInstance(CLSID_FileSaveDialog, NULL, CLSCTX_INPROC_SERVER);
+	if (!SUCCEEDED(hr))
+		return ret;
+
+	dialog->SetFileTypes(1, &winfilter);
+
+	std::wstring wdir = std::wstring(start.begin(), start.end());
+
+	IShellItem* pFolder = nullptr;
+	if (start.empty())
+	{
+		hr = SHCreateItemFromParsingName(wdir.c_str(), NULL, IID_PPV_ARGS(&pFolder));
+		if (!SUCCEEDED(hr))
+		{
+			CoUninitialize();
+			return ret;
+		}
+	}
+
+	DWORD options = 0;
+	dialog->GetOptions(&options);
+	dialog->SetOptions(options | foptions);
+
+	dialog->SetFolder(pFolder);
+	if (pFolder)
+		pFolder->Release();
+
+	dialog->Show(NULL);
+
+	IShellItem* item = nullptr; // i dont know if i have to release these items too ??
+	hr = dialog->GetResult(&item);
+	if (!SUCCEEDED(hr) || item == nullptr)
+		return ret;
+
+	wchar_t* wpath = nullptr;
+	item->GetDisplayName(SIGDN_FILESYSPATH, &wpath);
+	if (wpath == nullptr)
+		return ret;
+
+	ret = WideToASCII(wpath);
+
+	CoTaskMemFree(wpath);
+	CoUninitialize();
+	return ret;
+}
+
 std::vector<std::string> FileDialog::RequestFiles(const Filter& filter, const std::string& start)
 {
-	auto ret = RequestDialog(filter, start, FOS_ALLOWMULTISELECT | FOS_STRICTFILETYPES);
+	std::vector<std::string> ret = RequestOpenDialog(filter, start, FOS_ALLOWMULTISELECT | FOS_STRICTFILETYPES);
 	if (ret.empty())
 		ret.push_back("");
 	return ret;
@@ -118,7 +176,7 @@ std::vector<std::string> FileDialog::RequestFiles(const Filter& filter, const st
 
 std::vector<std::string> FileDialog::RequestFolders(const Filter& filter, const std::string& start)
 {
-	auto ret = RequestDialog(filter, start, FOS_ALLOWMULTISELECT | FOS_PICKFOLDERS);
+	std::vector<std::string> ret = RequestOpenDialog(filter, start, FOS_ALLOWMULTISELECT | FOS_PICKFOLDERS);
 	if (ret.empty())
 		ret.push_back("");
 	return ret;
@@ -126,12 +184,18 @@ std::vector<std::string> FileDialog::RequestFolders(const Filter& filter, const 
 
 std::string FileDialog::RequestFile(const Filter& filter, const std::string& start)
 {
-	auto ret = RequestDialog(filter, start, FOS_STRICTFILETYPES);
+	std::vector<std::string> ret = RequestOpenDialog(filter, start, FOS_STRICTFILETYPES);
 	return ret.empty() ? "" : ret[0];
 }
 
 std::string FileDialog::RequestFolder(const Filter& filter, const std::string& start)
 {
-	auto ret = RequestDialog(filter, start, FOS_PICKFOLDERS);
+	std::vector<std::string> ret = RequestOpenDialog(filter, start, FOS_PICKFOLDERS);
 	return ret.empty() ? "" : ret[0];
+}
+
+std::string FileDialog::RequestFileSaveLocation(const Filter& filter, const std::string& start)
+{
+	std::string ret = RequestSaveDialog(filter, start, FOS_STRICTFILETYPES);
+	return ret.empty() ? "" : ret;
 }

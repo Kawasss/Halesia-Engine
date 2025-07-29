@@ -39,6 +39,8 @@ struct Mesh
 	int faceCount = 0;
 	glm::vec3 min, max, center, extents;
 
+	float uvScale = 1.0f;
+
 	void ResetMaterial(); // should make it so that it also deletes the material if no other mesh references it
 	void ProcessMaterial(const MaterialCreationData& creationData);
 	void Recreate();
