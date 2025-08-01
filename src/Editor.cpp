@@ -133,16 +133,26 @@ void Editor::ShowGizmo()
 	glm::vec2 off = renderer->GetViewportOffset();
 
 	glm::mat4 model = obj->transform.GetModelMatrix();
+	glm::mat4 delta = glm::mat4();
 
 	bool useSnap = Input::IsKeyPressed(VirtualKey::LeftControl);
 	glm::vec3 snaps = glm::vec3(1);
 
 	ImGuizmo::SetRect(off.x * width, off.y * height, mod.x * width, mod.y * height);
-	ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), mode, ImGuizmo::WORLD, glm::value_ptr(model), NULL, useSnap ? glm::value_ptr(snaps) : NULL);
+	ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj), mode, ImGuizmo::WORLD, glm::value_ptr(model), glm::value_ptr(delta), useSnap ? glm::value_ptr(snaps) : NULL);
+
+	glm::vec3 position = glm::vec3();
+	glm::vec3 scale = glm::vec3(1);
+	glm::quat rotation = glm::quat();
 
 	glm::vec3 skew;
 	glm::vec4 pers;
-	glm::decompose(model, obj->transform.scale, obj->transform.rotation, obj->transform.position, skew, pers);
+	glm::decompose(delta, scale, rotation, position, skew, pers);
+
+	Transform& trans = obj->transform;
+	trans.position += position;
+	trans.scale += scale - glm::vec3(1);
+	trans.rotation *= rotation;
 }
 
 void Editor::MainThreadUpdate(float delta)
@@ -480,22 +490,13 @@ void Editor::ShowMenuBar() // add renderer variables here like taa sample count
 
 	if (ImGui::BeginMenu("file"))
 	{
-		if (ImGui::MenuItem("Load object"))
-		{
-			std::string file = GetFile("Object file", "*.obj;");
-			ObjectCreationData data = assetImport::LoadObjectFile(file);
-
-			AddObject(data);
-		}
-
-		ImGui::Separator();
-
 		if (ImGui::MenuItem("Load file")) loadFile = true;
 		if (ImGui::MenuItem("Save file")) save = true;
 
 		ImGui::Separator();
 
-		if (ImGui::MenuItem("Clear scene")) DestroyCurrentScene();
+		if (ImGui::MenuItem("Clear scene")) 
+			DestroyCurrentScene();
 
 		ImGui::Separator();
 
@@ -648,7 +649,7 @@ void Editor::ShowObjectScript(ScriptObject* scriptObject)
 	{
 		std::string file = GetFile("lua", "*.lua");
 		if (!file.empty())
-			scriptObject->SetScript(file);
+			scriptObject->SetScriptFile(file);
 	}
 
 	if (ImGui::Button("pause"))

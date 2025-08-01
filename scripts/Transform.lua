@@ -8,12 +8,12 @@ local Transform = {
 }
 Transform.__index = Transform
 
-function Transform:new(position, rotation, scale)
+function Transform.new(position, rotation, scale)
 	local ret = setmetatable({}, Transform)
 	
-	ret.position = position or vec3:new()
-	ret.rotation = rotation or Quaternion:new()
-	ret.scale    = scale    or vec3:new()
+	ret.position = position or vec3.new()
+	ret.rotation = rotation or Quaternion.new()
+	ret.scale    = scale    or vec3.new(1, 1, 1)
 
 	return ret
 end

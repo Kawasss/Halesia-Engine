@@ -3,15 +3,16 @@
 
 #include "core/Transform.h"
 #include "core/Object.h"
+#include "core/Console.h"
 
-Script::Script(const std::string& file, Object* pOwner)
+Script::Script(const std::string& code, Object* pOwner)
 {
 	assert(pOwner != nullptr);
 	this->pOwner = pOwner;
 
 	PerformSetup();
 
-	state.script_file(file);
+	state.script(code);
 }
 
 void Script::Start()
@@ -42,7 +43,21 @@ void Script::Destroy()
 }
 
 template<typename T>
-static void WriteVec3(const T& table, glm::vec3 value)
+static float EnsureValueValidity(const T& table, const std::string_view& name)
+{
+	if (table.valid())
+	{
+		return static_cast<float>(table);
+	}
+	else
+	{
+		Console::WriteLine("table '{}' is nil", Console::Severity::Error, name);
+		return 0.0f;
+	}
+}
+
+template<typename T>
+static void WriteVec3(const T& table, const glm::vec3& value)
 {
 	table["x"] = value.x;
 	table["y"] = value.y;
@@ -52,11 +67,11 @@ static void WriteVec3(const T& table, glm::vec3 value)
 template<typename T>
 static glm::vec3 ReadVec3(const T& table)
 {
-	return glm::vec3(table["x"], table["y"], table["z"]);
+	return glm::vec3(EnsureValueValidity(table["x"], "vec3.x"), EnsureValueValidity(table["y"], "vec3.y"), EnsureValueValidity(table["z"], "vec3.z"));
 }
 
 template<typename T>
-static void WriteQuat(const T& table, glm::quat value)
+static void WriteQuat(const T& table, const glm::quat& value)
 {
 	table["x"] = value.x;
 	table["y"] = value.y;
@@ -67,12 +82,12 @@ static void WriteQuat(const T& table, glm::quat value)
 template<typename T>
 static glm::quat ReadQuat(const T& table)
 {
-	return glm::quat(table["w"], table["x"], table["y"], table["z"]);
+	return glm::quat(EnsureValueValidity(table["w"], "Quaternion.w"), EnsureValueValidity(table["x"], "Quaternion.x"), EnsureValueValidity(table["y"], "Quaternion.y"), EnsureValueValidity(table["z"], "Quaternion.z"));
 }
 
 void Script::SetTransform(const Transform& transform)
 {
-	state["transform"] = GetTransformAsTable();
+	WriteTransformToState(transform);
 }
 
 void Script::GetTransform(Transform& transform)
@@ -84,9 +99,9 @@ void Script::GetTransform(Transform& transform)
 	transform.rotation = ReadQuat(luaTransform["rotation"]);
 }
 
-void Script::Reset(const std::string& file)
+void Script::Reset(const std::string& code)
 {
-	if (!file.empty())
+	if (!code.empty())
 	{
 		state.~state(); // i dont know a better way to reset this without making it a pointer
 		new(&state) sol::state();
@@ -94,26 +109,25 @@ void Script::Reset(const std::string& file)
 
 	PerformSetup();
 
-	state.script_file(file);
+	state.script(code);
 }
 
 void Script::PerformSetup()
 {
 	state.open_libraries();
 	state.script("package.path = 'scripts/?.lua'");
-	state.script("local Transform = require 'Transform'\ntransform = Transform:new()");
+	state.script("Transform = require 'Transform'\ntransform = Transform.new()");
 }
 
-sol::table Script::GetTransformAsTable()
+void Script::WriteTransformToState(const Transform& transform)
 {
-	auto vecNew = state["vec3"]["new"];
-	auto quatNew = state["Quaternion"]["new"];
+	auto trans = state["transform"];
+	if (!trans.valid())
+		return;
 
-	auto position = vecNew(pOwner->transform.position.x, pOwner->transform.position.y, pOwner->transform.position.z);
-	auto scale = vecNew(pOwner->transform.scale.x, pOwner->transform.scale.y, pOwner->transform.scale.z);
-	auto rotation = quatNew(pOwner->transform.rotation.x, pOwner->transform.rotation.y, pOwner->transform.rotation.z);
+	auto vec3New = state["vec3"]["new"];
 
-	auto table = state["Transform"]["new"](position, rotation, scale);
-
-	return table;
+	trans["position"] = vec3New(transform.position.x, transform.position.y, transform.position.z);
+	trans["scale"] = vec3New(transform.scale.x, transform.scale.y, transform.scale.z);
+	trans["rotation"] = state["Quaternion"]["new"](transform.rotation.w, transform.rotation.x, transform.rotation.y, transform.rotation.z);
 }

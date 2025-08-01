@@ -9,21 +9,21 @@ class Object;
 class Script
 {
 public:
-	Script(const std::string& file, Object* pOwner);
+	Script(const std::string& code, Object* pOwner);
 
 	void Start();
 	void Update(float delta);
 	void Destroy();
 
-	void Reset(const std::string& file);
+	void Reset(const std::string& code);
 
 private:
+	void WriteTransformToState(const Transform& transform);
+
 	void SetTransform(const Transform& transform);
 	void GetTransform(Transform& transform);
 
 	void PerformSetup();
-
-	sol::table GetTransformAsTable();
 
 	Object* pOwner = nullptr; // this pointer is garantueed safe by the constructor
 

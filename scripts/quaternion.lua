@@ -1,17 +1,17 @@
 local Quaternion = {
+	w,
 	x,
 	y,
 	z,
-	w,
 }
 
-function Quaternion:new(x, y, z, w)
+function Quaternion.new(w, x, y, z)
 	local ret = setmetatable({}, Quaternion)
 
+	ret.w = w or 0
 	ret.x = x or 0
 	ret.y = y or 0
 	ret.z = z or 0
-	ret.w = w or 0
 
 	return ret
 end
@@ -25,7 +25,7 @@ function Quaternion.FromEulerAngles(v)
 	local z = c.x * c.y * s.z - s.x * s.y * c.z
 	local w = c.x * c.y * c.z + s.x * s.y * s.z
 
-	return Quaternion:new(x, y, z, w)
+	return Quaternion.new(w, x, y, z)
 end
 
 function Quaternion.__mul(p, q)
@@ -34,7 +34,7 @@ function Quaternion.__mul(p, q)
 	local y = p.w * q.y + p.y * q.w + p.z * q.x - p.x * q.z
 	local z = p.w * q.z + p.z * q.w + p.x * q.y - p.y * q.x
 
-	return Quaternion:new(x, y, z, w)
+	return Quaternion.new(w, x, y, z)
 end
 
 return Quaternion

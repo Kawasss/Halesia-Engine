@@ -16,7 +16,8 @@ public:
 
 	~ScriptObject() override;
 
-	void SetScript(const std::string& file);
+	void SetScriptFile(const std::string& file);
+	void SetScriptCode(const std::string& code);
 
 	void Reload();
 
@@ -27,6 +28,13 @@ private:
 
 	void Init(const ObjectCreationData& data);
 
+	void InitializeScript(); // does NOT call pScript->Start()
+
+	void DuplicateDataTo(Object* pObject) const override;
+
+	void SerializeSelf(BinaryStream& stream) const override;
+	void DeserializeSelf(const BinarySpan& stream) override;
+
 	Script* pScript = nullptr;
-	std::string sourceFile;
+	std::string sourceCode;
 };
