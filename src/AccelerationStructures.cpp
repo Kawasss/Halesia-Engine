@@ -223,7 +223,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 	for (int i = 0; i < objects.size(); i++)
 	{
 		win32::CriticalLockGuard lockGuard(objects[i]->GetCriticalSection());
-		if (!objects[i]->HasFinishedLoading() || objects[i]->state != OBJECT_STATE_VISIBLE || !objects[i]->mesh.IsValid()) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
+		if (!objects[i]->HasFinishedLoading() || objects[i]->state != OBJECT_STATE_VISIBLE || !objects[i]->mesh.IsValid() || !objects[i]->mesh.CanBeRayTraced()) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
 			continue;
 
 		VkAccelerationStructureInstanceKHR instance{};

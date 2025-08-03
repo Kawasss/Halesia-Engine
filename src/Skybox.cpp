@@ -1,4 +1,5 @@
 #include <memory>
+#include <filesystem>
 
 #include "glm.h"
 
@@ -22,6 +23,9 @@ struct PushConstantSkybox
 
 Skybox* Skybox::ReadFromHDR(const std::string& path, const CommandBuffer& cmdBuffer)
 {
+	if (!std::filesystem::exists(path))
+		return nullptr;
+
 	Skybox* ret = new Skybox();
 
 	std::unique_ptr<Texture> flat = std::make_unique<Texture>(path, false);

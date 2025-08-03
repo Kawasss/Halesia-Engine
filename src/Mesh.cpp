@@ -38,6 +38,7 @@ void Mesh::Create(const MeshCreationData& creationData)
 	extents       = creationData.max - center;
 	max           = extents + center;
 	min           = center * 2.f - max;
+	flags         = static_cast<MeshFlags>(creationData.flags);
 
 	SetMaterialIndex(creationData.materialIndex);
 
@@ -144,6 +145,29 @@ void Mesh::AwaitGeneration()
 bool Mesh::IsValid() const
 {
 	return !vertices.empty() && !indices.empty();
+}
+
+bool Mesh::CanBeRayTraced() const
+{
+	return !(flags & MESH_FLAG_NO_RAY_TRACING) && BLAS != nullptr;
+}
+
+MeshOptionFlags Mesh::GetFlags() const
+{
+	return flags;
+}
+
+void Mesh::SetFlags(MeshOptionFlags flags)
+{
+	if (this->flags == flags)
+		return;
+
+	if (flags & MESH_FLAG_NO_RAY_TRACING)
+		BLAS.reset();
+	else
+		BLAS = std::make_shared<BottomLevelAccelerationStructure>(*this);
+
+	this->flags = flags;
 }
 
 void Mesh::Destroy()

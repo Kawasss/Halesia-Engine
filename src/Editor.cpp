@@ -784,6 +784,18 @@ void Editor::ShowObjectMesh(Mesh& mesh)
 
 	ImGui::Checkbox("cull faces", &mesh.cullBackFaces);
 
+	MeshOptionFlags flags = mesh.GetFlags();
+	bool useRayTracing = !(flags & MESH_FLAG_NO_RAY_TRACING);
+
+	ImGui::Checkbox("use in ray-tracing", &useRayTracing);
+
+	if (useRayTracing)
+		flags &= ~(MESH_FLAG_NO_RAY_TRACING);
+	else
+		flags |= MESH_FLAG_NO_RAY_TRACING;
+
+	mesh.SetFlags(flags);
+
 	int index = static_cast<int>(mesh.GetMaterialIndex());
 
 	ImGui::Text("Material: ");

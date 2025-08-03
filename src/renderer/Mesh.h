@@ -14,6 +14,13 @@ struct MeshCreationData;
 
 using StorageMemory = unsigned long long;
 
+enum MeshFlags : int
+{
+	MESH_FLAG_NONE = 0,
+	MESH_FLAG_NO_RAY_TRACING = 1 << 1,
+};
+using MeshOptionFlags = std::underlying_type_t<MeshFlags>;
+
 struct Mesh
 {
 	static Handle AddMaterial(const Material& material); // returns the handle to the material
@@ -46,7 +53,12 @@ struct Mesh
 	void Recreate();
 	bool HasFinishedLoading() const;
 	void AwaitGeneration();
+
 	bool IsValid() const;
+	bool CanBeRayTraced() const;
+
+	MeshOptionFlags GetFlags() const;
+	void SetFlags(MeshOptionFlags flags);
 
 	uint32_t GetMaterialIndex() const;
 	void SetMaterialIndex(uint32_t index);
@@ -63,6 +75,8 @@ private:
 	static uint32_t FindUnusedMaterial(); // returns the index to the material
 
 	uint32_t materialIndex = 0;
+
+	MeshOptionFlags flags = MESH_FLAG_NONE;
 
 	static std::mutex materialMutex;
 	bool finished = false;
