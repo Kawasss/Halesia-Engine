@@ -29,16 +29,10 @@ GraphicsPipeline::GraphicsPipeline(const CreateInfo& createInfo)
 	for (uint32_t set : fragment->externalSets)
 		reflector.ExcludeSet(set);
 
-	if (createInfo.fragmentShader == "shaders/spirv/deferredFirst.frag.spv")
-		__debugbreak();
-
 	InitializeBase(reflector);
 
 	CreatePipelineLayout(reflector);
 	CreateGraphicsPipeline(shaderCodes, createInfo, reflector.GetOutputVariableCount(1));
-
-	if (createInfo.fragmentShader == "shaders/spirv/deferredFirst.frag.spv")
-		__debugbreak();
 
 	bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 }

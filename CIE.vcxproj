@@ -187,6 +187,7 @@
     <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\GarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
+    <ClCompile Include="src\Grid.cpp" />
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\HalesiaEngine.cpp" />
     <ClCompile Include="src\HdrConverter.cpp" />
@@ -308,6 +309,7 @@
     <ClInclude Include="src\renderer\FramesInFlight.h" />
     <ClInclude Include="src\renderer\GarbageManager.h" />
     <ClInclude Include="src\renderer\GraphicsPipeline.h" />
+    <ClInclude Include="src\renderer\Grid.h" />
     <ClInclude Include="src\renderer\gui.h" />
     <ClInclude Include="src\renderer\HdrConverter.h" />
     <ClInclude Include="src\renderer\ImageTransitioner.h" />
@@ -371,6 +373,8 @@
     <None Include="shaders\uncompiled\deferredSecond.vert" />
     <None Include="shaders\uncompiled\deferredSecondRT.frag" />
     <None Include="shaders\uncompiled\forwardPlus.comp" />
+    <None Include="shaders\uncompiled\grid.frag" />
+    <None Include="shaders\uncompiled\grid.vert" />
     <None Include="shaders\uncompiled\rtgi.rchit" />
     <None Include="shaders\uncompiled\rtgi.rgen" />
     <None Include="shaders\uncompiled\rtgi.rmiss" />

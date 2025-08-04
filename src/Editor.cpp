@@ -863,9 +863,12 @@ void Editor::ShowRenderPipelines()
 		std::string name = renderer->GetRenderPipelineName(pipeline);
 		std::string msg = name + ": ";
 
+		std::string identifier = "##" + name;
+		std::string reload = "Reload" + identifier;
+
 		ImGui::Text(msg.c_str());
 		ImGui::SameLine();
-		if (ImGui::Button("Reload"))
+		if (ImGui::Button(reload.c_str()))
 			pipeline->ReloadShaders(renderer->GetPipelinePayload(renderer->GetActiveCommandBuffer(), camera));
 
 		std::vector<RenderPipeline::IntVariable> vars = pipeline->GetIntVariables();

@@ -5,6 +5,7 @@
 #include "renderer/RayTracingPipeline.h"
 #include "renderer/AccelerationStructures.h"
 #include "renderer/ComputeShader.h"
+#include "renderer/Grid.h"
 
 #include "core/Editor.h"
 
@@ -39,6 +40,8 @@ int main(int argc, char** argv)
 
 	DeferredPipeline* deferred = renderer->AddRenderPipeline<DeferredPipeline>("deferred"); // choose the deferred pipeline for rendering
 	deferred->LoadSkybox("textures/skybox/park.hdr");
+
+	renderer->AddRenderPipeline<GridPipeline>("grid");
 
 	instance->Run();
 

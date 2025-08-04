@@ -417,7 +417,8 @@ void Renderer::Create3DRenderPass()
 	builder3D.SetInitialLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 	builder3D.SetFinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	builder3D.ClearOnLoad(true);
+	builder3D.ClearOnLoad(false);
+	builder3D.DontClearDepth(true);
 
 	renderPass = builder3D.Build();
 
