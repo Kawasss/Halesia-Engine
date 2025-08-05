@@ -26,8 +26,14 @@ MeshObject* MeshObject::Create()
 
 void MeshObject::Init(const ObjectCreationData& data)
 {
-	if (data.hasMesh)
-		mesh.Create(data.mesh);
+	if (!data.hasMesh)
+		return;
+
+	mesh.Create(data.mesh);
+
+	glm::mat4 model = transform.GetModelMatrix();
+	if (model != glm::identity<glm::mat4>())
+		mesh.UpdateMinMax(model);
 }
 
 bool MeshObject::MeshIsValid() const
@@ -81,6 +87,10 @@ void MeshObject::DeserializeSelf(const BinarySpan& stream)
 
 	mesh.Create(creationData);
 	mesh.uvScale = uvScale;
+
+	glm::mat4 model = transform.GetModelMatrix();
+	if (model != glm::identity<glm::mat4>())
+		mesh.UpdateMinMax(transform.GetModelMatrix());
 }
 
 MeshObject::~MeshObject()

@@ -905,6 +905,9 @@ static bool ObjectIsValidLight(Object* pObject)
 
 static void GetAllObjectsFromObject(std::vector<MeshObject*>& ret, std::vector<LightObject*>& lights, Object* obj, bool checkBLAS)
 {
+	if (obj->state != OBJECT_STATE_VISIBLE)
+		return;
+
 	if (::ObjectIsValidMesh(obj, checkBLAS))
 		ret.push_back(dynamic_cast<MeshObject*>(obj));
 

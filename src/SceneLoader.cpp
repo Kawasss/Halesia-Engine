@@ -1,6 +1,7 @@
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <assimp/config.h>
 
 #include <execution>
 #include <filesystem>
@@ -380,7 +381,9 @@ static std::string GetTextureFile(const aiScene* scene, aiTextureType type, int 
 
 void SceneLoader::LoadAssimpFile()
 {
-	const aiScene* scene = aiImportFile(location.c_str(), aiPostProcessSteps::aiProcess_Triangulate | aiPostProcessSteps::aiProcess_CalcTangentSpace);
+	
+	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes);
+	AI_CONFIG_PP_RVC_FLAGS;
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + location);
 
