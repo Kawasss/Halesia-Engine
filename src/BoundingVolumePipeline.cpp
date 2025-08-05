@@ -15,7 +15,7 @@ struct BoundingVolumePipeline::UniformData
 {
 	glm::mat4 view;
 	glm::mat4 proj;
-	glm::mat4 model;
+	glm::mat4 models[Renderer::MAX_MESHES];
 };
 
 void BoundingVolumePipeline::Start(const Payload& payload)
@@ -25,7 +25,7 @@ void BoundingVolumePipeline::Start(const Payload& payload)
 	CreateMesh();
 }
 
-void BoundingVolumePipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects) // !!!! itd be a lot better to do instanced rendering here
+void BoundingVolumePipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects)
 {
 	const CommandBuffer& cmdBuffer = payload.commandBuffer;
 
@@ -40,25 +40,28 @@ void BoundingVolumePipeline::Execute(const Payload& payload, const std::vector<M
 
 	uint32_t offset = static_cast<uint32_t>(Renderer::g_vertexBuffer.GetItemOffset(box.vertexMemory));
 
-	for (MeshObject* pMesh : objects)
+	for (int i = 0; i < objects.size(); i++)
 	{
-		glm::mat4 model = pMesh->transform.GetModelMatrix();
+		MeshObject* pMesh = objects[i];
 
+		glm::mat4 model = pMesh->transform.GetModelMatrix();
+		
 		glm::vec3 pos, scale, skew;
 		glm::vec4 perspective;
 		glm::quat rot;
 
 		glm::decompose(model, scale, rot, pos, skew, perspective);
 
-		pMesh->mesh.UpdateMinMax(model);
+		//pMesh->mesh.UpdateMinMax(model);
 
 		glm::vec3 center = (pMesh->mesh.max + pMesh->mesh.min) * 0.5f;
 		glm::vec3 extents = pMesh->mesh.max - center;
 
-		pipeline->PushConstant(cmdBuffer, glm::translate(pos) * glm::scale(extents), VK_SHADER_STAGE_VERTEX_BIT);
-		cmdBuffer.Draw(BOX_LINE_COUNT, 1, offset, 0);
+		pData->models[i] = glm::translate(pos) * glm::scale(extents);
 	}
 	
+	cmdBuffer.Draw(BOX_LINE_COUNT, static_cast<uint32_t>(objects.size()), offset, 0);
+
 	cmdBuffer.EndRenderPass();
 }
 
@@ -87,7 +90,7 @@ void BoundingVolumePipeline::CreatePipeline()
 
 void BoundingVolumePipeline::CreateBuffer()
 {
-	constants.Init(sizeof(UniformData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	constants.Init(sizeof(UniformData), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	constants.MapPermanently();
 }
 

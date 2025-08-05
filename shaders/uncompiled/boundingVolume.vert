@@ -7,18 +7,14 @@ layout (location = 4) in  vec3 inBiTangent;
 layout (location = 5) in ivec4 inBoneIDs;
 layout (location = 6) in  vec4 inBoneWeights;
 
-layout (binding = 0) uniform UniformData
+layout (binding = 0) buffer UniformData
 {
 	mat4 view;
 	mat4 proj;
+	mat4 models[];
 } constants;
-
-layout(push_constant) uniform PushConstant
-{
-	mat4 model;
-} pushConstant;
 
 void main()
 {
-	gl_Position = constants.proj * constants.view * pushConstant.model * vec4(inPosition, 1.0);
+	gl_Position = constants.proj * constants.view * constants.models[gl_InstanceIndex] * vec4(inPosition, 1.0);
 }
