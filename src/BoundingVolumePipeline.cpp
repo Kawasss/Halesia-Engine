@@ -44,20 +44,12 @@ void BoundingVolumePipeline::Execute(const Payload& payload, const std::vector<M
 	{
 		MeshObject* pMesh = objects[i];
 
-		glm::mat4 model = pMesh->transform.GetModelMatrix();
-		
-		glm::vec3 pos, scale, skew;
-		glm::vec4 perspective;
-		glm::quat rot;
-
-		glm::decompose(model, scale, rot, pos, skew, perspective);
-
-		//pMesh->mesh.UpdateMinMax(model);
+		pMesh->mesh.UpdateMinMax(pMesh->transform.position, pMesh->transform.scale);
 
 		glm::vec3 center = (pMesh->mesh.max + pMesh->mesh.min) * 0.5f;
 		glm::vec3 extents = pMesh->mesh.max - center;
 
-		pData->models[i] = glm::translate(pos) * glm::scale(extents);
+		pData->models[i] = glm::translate(pMesh->transform.position) * glm::scale(extents);
 	}
 	
 	cmdBuffer.Draw(BOX_LINE_COUNT, static_cast<uint32_t>(objects.size()), offset, 0);

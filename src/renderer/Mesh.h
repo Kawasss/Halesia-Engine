@@ -63,7 +63,7 @@ struct Mesh
 	uint32_t GetMaterialIndex() const;
 	void SetMaterialIndex(uint32_t index);
 
-	void UpdateMinMax(const glm::mat4& model);
+	void UpdateMinMax(const glm::vec3& translation, const glm::vec3& scale);
 
 	/// <summary>
 	/// Sets the material for this mesh, any old mesh will be overridden.
@@ -79,6 +79,8 @@ private:
 	uint32_t materialIndex = 0;
 
 	MeshOptionFlags flags = MESH_FLAG_NONE;
+
+	float originalAABBDistance = 0.0f;
 
 	static std::mutex materialMutex;
 	bool finished = false;
