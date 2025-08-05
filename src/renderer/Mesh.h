@@ -63,6 +63,8 @@ struct Mesh
 	uint32_t GetMaterialIndex() const;
 	void SetMaterialIndex(uint32_t index);
 
+	void UpdateMinMax(const glm::mat4& model);
+
 	/// <summary>
 	/// Sets the material for this mesh, any old mesh will be overridden.
 	/// </summary>

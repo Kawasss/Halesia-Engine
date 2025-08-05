@@ -105,12 +105,6 @@ void Renderer::Destroy()
 
 	materials.clear();
 
-	g_defaultVertexBuffer.Destroy();
-	g_vertexBuffer.Destroy();
-	g_indexBuffer.Destroy();
-
-	queryPool.Destroy();
-
 	for (RenderPipeline* renderPipeline : renderPipelines)
 	{
 		delete renderPipeline;
@@ -120,6 +114,12 @@ void Renderer::Destroy()
 
 	HdrConverter::End();
 	//delete rayTracer;
+
+	g_defaultVertexBuffer.Destroy();
+	g_vertexBuffer.Destroy();
+	g_indexBuffer.Destroy();
+
+	queryPool.Destroy();
 
 	managedSet.Destroy();
 
@@ -415,7 +415,7 @@ void Renderer::Create3DRenderPass()
 	RenderPassBuilder builder3D(VK_FORMAT_R16G16B16A16_UNORM);
 
 	builder3D.SetInitialLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-	builder3D.SetFinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	builder3D.SetFinalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
 	builder3D.ClearOnLoad(false);
 	builder3D.DontClearDepth(true);
@@ -656,8 +656,6 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 	RenderImGUI(commandBuffer);
 	commandBuffer.EndRenderPass();
 
-	framebuffer.TransitionFromReadToWrite(commandBuffer);
-
 	queryPool.EndTimestamp(commandBuffer, "final pass");
 
 	commandBuffer.EndDebugUtilsLabel();
@@ -672,6 +670,9 @@ void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, c
 	RenderPipeline::Payload payload = GetPipelinePayload(commandBuffer, camera);
 	for (RenderPipeline* renderPipeline : renderPipelines)
 	{
+		if (!renderPipeline->active)
+			continue;
+
 		Vulkan::StartDebugLabel(commandBuffer.Get(), dbgPipelineNames[renderPipeline] + "::Execute");
 
 		queryPool.BeginTimestamp(commandBuffer, dbgPipelineNames[renderPipeline]);

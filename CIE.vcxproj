@@ -171,6 +171,7 @@
     <ClCompile Include="src\BinaryStream.cpp" />
     <ClCompile Include="src\BinaryWriter.cpp" />
     <ClCompile Include="src\Bone.cpp" />
+    <ClCompile Include="src\BoundingVolumePipeline.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\CameraInjector.cpp" />
     <ClCompile Include="src\CommandBuffer.cpp" />
@@ -224,6 +225,7 @@
     <ClCompile Include="src\SceneWriter.cpp" />
     <ClCompile Include="src\Shapes.cpp" />
     <ClCompile Include="src\objectStreamer.cpp" />
+    <ClCompile Include="src\SimpleMesh.cpp" />
     <ClCompile Include="src\Skybox.cpp" />
     <ClCompile Include="src\Pipeline.cpp" />
     <ClCompile Include="src\Surface.cpp" />
@@ -298,6 +300,7 @@
     <ClInclude Include="src\renderer\AccelerationStructures.h" />
     <ClInclude Include="src\renderer\AnimationManager.h" />
     <ClInclude Include="src\renderer\Bone.h" />
+    <ClInclude Include="src\renderer\BoundingVolumePipeline.h" />
     <ClInclude Include="src\renderer\CommandBuffer.h" />
     <ClInclude Include="src\renderer\CompiledShader.h" />
     <ClInclude Include="src\renderer\ComputeShader.h" />
@@ -334,6 +337,7 @@
     <ClInclude Include="src\renderer\Swapchain.h" />
     <ClInclude Include="src\renderer\Texture.h" />
     <ClInclude Include="src\renderer\Vertex.h" />
+    <ClInclude Include="src\renderer\SimpleMesh.h" />
     <ClInclude Include="src\renderer\VideoMemoryManager.h" />
     <ClInclude Include="src\renderer\Vulkan.h" />
     <ClInclude Include="src\renderer\Buffer.h" />
@@ -365,6 +369,8 @@
     <None Include="scripts\Transform.lua" />
     <None Include="scripts\vec3.lua" />
     <None Include="shaders\uncompiled\anim.comp" />
+    <None Include="shaders\uncompiled\boundingVolume.frag" />
+    <None Include="shaders\uncompiled\boundingVolume.vert" />
     <None Include="shaders\uncompiled\cubemapConv.frag" />
     <None Include="shaders\uncompiled\cubemapConv.vert" />
     <None Include="shaders\uncompiled\deferredFirst.frag" />

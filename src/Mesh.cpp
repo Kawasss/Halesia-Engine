@@ -61,6 +61,12 @@ void Mesh::Recreate()
 
 	if (Renderer::canRayTrace)
 		BLAS = std::make_shared<BottomLevelAccelerationStructure>(*this);
+
+	for (const Vertex& vertex : vertices) // better if this is precalculated
+	{
+		min = glm::min(vertex.position, min);
+		max = glm::max(vertex.position, max);
+	}
 }
 
 void Mesh::CopyFrom(const Mesh& mesh)
@@ -193,4 +199,20 @@ uint32_t Mesh::FindUnusedMaterial() // a material is unused if it is not the def
 	auto it = std::find(materials.begin() + 1, materials.end(), unusedMaterialTemplate);
 
 	return it - materials.begin();
+}
+
+void Mesh::UpdateMinMax(const glm::mat4& model)
+{
+	min = glm::vec3(FLT_MAX);
+	max = glm::vec3(FLT_MIN);
+
+	glm::mat3 mat = model;
+
+	for (Vertex& vertex : vertices)
+	{
+		glm::vec3 position = mat * vertex.position;
+
+		min = glm::min(position, min);
+		max = glm::max(position, max);
+	}
 }

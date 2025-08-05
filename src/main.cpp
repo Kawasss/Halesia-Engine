@@ -3,6 +3,7 @@
 #include "renderer/Skybox.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/RayTracingPipeline.h"
+#include "renderer/BoundingVolumePipeline.h"
 #include "renderer/AccelerationStructures.h"
 #include "renderer/ComputeShader.h"
 #include "renderer/Grid.h"
@@ -41,13 +42,11 @@ int main(int argc, char** argv)
 	DeferredPipeline* deferred = renderer->AddRenderPipeline<DeferredPipeline>("deferred"); // choose the deferred pipeline for rendering
 	deferred->LoadSkybox("textures/skybox/park.hdr");
 
-	renderer->AddRenderPipeline<GridPipeline>("grid");
+	
+	renderer->AddRenderPipeline<BoundingVolumePipeline>("boundingVolume");
+	renderer->AddRenderPipeline<GridPipeline>("grid"); // this should always be last due to transparency
 
 	instance->Run();
-
-	glm::quat v1;
-	glm::quat v2;
-	v1* v2;
 
 	return EXIT_SUCCESS;
 }

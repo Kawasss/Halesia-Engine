@@ -8,6 +8,9 @@ constexpr uint32_t MAX_BONES_PER_VERTEX = 4;
 
 struct Vertex
 {
+	Vertex() = default;
+	Vertex(glm::vec3 pos) : position(pos) {}
+
 	glm::vec3 position{};
 	glm::vec3 normal{};
 	glm::vec2 textureCoordinates{};

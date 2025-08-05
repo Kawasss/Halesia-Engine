@@ -70,6 +70,7 @@ void GraphicsPipeline::CreateGraphicsPipeline(const std::span<std::span<char>>& 
 	builder.attachmentCount = attachmentCount;
 	builder.renderPass = createInfo.renderPass;
 	builder.depthCompareOp = createInfo.depthCompareOp;
+	builder.topology = createInfo.topology;
 
 	builder.DisableVertices(createInfo.noVertices);
 	builder.DisableDepth(createInfo.noDepth);

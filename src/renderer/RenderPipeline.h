@@ -62,13 +62,15 @@ public:
 
 	virtual void OnRenderingBufferResize(const Payload& payload) {}
 
-	virtual void ReloadShaders(const Payload& payload) {}
+	virtual void ReloadShaders(const Payload& payload) = 0;
 
 	virtual std::vector<IntVariable> GetIntVariables() { return {}; }
 
 	template<typename T> T* GetChild() { return reinterpret_cast<T*>(this); }
 
 	VkRenderPass renderPass = VK_NULL_HANDLE;
+
+	bool active = true;
 
 private:
 

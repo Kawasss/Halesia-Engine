@@ -26,8 +26,6 @@ void GridPipeline::Execute(const Payload& payload, const std::vector<MeshObject*
 {
 	const CommandBuffer& cmdBuffer = payload.commandBuffer;
 
-	payload.renderer->GetFramebuffer().TransitionFromReadToWrite(cmdBuffer);
-
 	PushConstant* pConstant = constants.GetMappedPointer<PushConstant>();
 	pConstant->projection = payload.camera->GetProjectionMatrix();
 	pConstant->view = payload.camera->GetViewMatrix();

@@ -40,7 +40,7 @@ public:
 	/// </summary>
 	/// <param name="data">data to append</param>
 	/// <returns></returns>
-	StorageMemory SubmitNewData(const std::span<T>& data)
+	StorageMemory SubmitNewData(const std::span<const T>& data)
 	{
 		if (data.empty())
 			return 0;
@@ -203,7 +203,7 @@ private:
 		return INVALID_HANDLE;
 	}
 
-	void WriteToBuffer(const std::span<T>& data, StorageMemory memory)
+	void WriteToBuffer(const std::span<const T>& data, StorageMemory memory)
 	{
 		buffer.Write(data, memoryData[memory].offset);
 	}

@@ -11,8 +11,8 @@ glm::mat4 Transform::GetModelMatrix()
 {
 	if (!localRotationChanged)
 		localRotationModel = glm::toMat4(rotation);
-	glm::mat4 scaleModel = glm::scale(glm::identity<glm::mat4>(), scale);
-	glm::mat4 translationModel = glm::translate(glm::identity<glm::mat4>(), position);
+	glm::mat4 scaleModel = glm::scale(scale);
+	glm::mat4 translationModel = glm::translate(position);
 	model = translationModel * localRotationModel * scaleModel;
 	localRotationChanged = false;
 	return parent == nullptr ? model : parent->GetModelMatrix() * model;

@@ -28,7 +28,7 @@ VkPipeline PipelineBuilder::Build()
 
 	VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
 	inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	inputAssembly.topology = topology;
 	inputAssembly.primitiveRestartEnable = false;
 
 	VkPipelineViewportStateCreateInfo viewportState = Vulkan::GetDynamicViewportStateCreateInfo();
@@ -51,7 +51,7 @@ VkPipeline PipelineBuilder::Build()
 	rasterizer.depthBiasEnable = VK_FALSE;
 	rasterizer.depthClampEnable = VK_FALSE;
 	rasterizer.rasterizerDiscardEnable = VK_FALSE;
-	rasterizer.lineWidth = 2;
+	rasterizer.lineWidth = 1;
 
 	VkPipelineMultisampleStateCreateInfo multisampling{};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;

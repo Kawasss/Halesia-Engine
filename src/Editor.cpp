@@ -857,9 +857,13 @@ void Editor::ShowRenderPipelines()
 	if (!ImGui::CollapsingHeader("Render pipelines"))
 		return;
 
-	const std::vector<RenderPipeline*> pipelines = renderer->GetAllRenderPipelines();
-	for (RenderPipeline* pipeline : pipelines)
+	const std::vector<RenderPipeline*>& pipelines = renderer->GetAllRenderPipelines();
+	for (int i = 0; i < pipelines.size(); i++)
 	{
+		if (i != 0)
+			ImGui::Separator();
+
+		RenderPipeline* pipeline = pipelines[i];
 		std::string name = renderer->GetRenderPipelineName(pipeline);
 		std::string msg = name + ": ";
 
@@ -870,6 +874,8 @@ void Editor::ShowRenderPipelines()
 		ImGui::SameLine();
 		if (ImGui::Button(reload.c_str()))
 			pipeline->ReloadShaders(renderer->GetPipelinePayload(renderer->GetActiveCommandBuffer(), camera));
+
+		ImGui::Checkbox(("active" + identifier).c_str(), &pipeline->active);
 
 		std::vector<RenderPipeline::IntVariable> vars = pipeline->GetIntVariables();
 		if (vars.empty())

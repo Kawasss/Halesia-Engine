@@ -17,6 +17,7 @@ public:
 		std::string fragmentShader;
 		VkRenderPass renderPass = VK_NULL_HANDLE;
 		VkCompareOp depthCompareOp = VK_COMPARE_OP_LESS;
+		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 		//maybe just flags ??
 		bool noVertices  = false;
