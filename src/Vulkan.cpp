@@ -325,6 +325,8 @@ void Vulkan::YieldCommandPool(uint32_t index, VkCommandPool commandPool)
 {
     win32::CriticalLockGuard lockGuard(commandPoolSection);
 
+    vkResetCommandPool(context.logicalDevice, commandPool, VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
+
     if (queueCommandPools.count(index) == 0)
         throw VulkanAPIError("Failed to yield a command pool, no matching queue family index could be found");
     queueCommandPools[index].push_back(commandPool);
