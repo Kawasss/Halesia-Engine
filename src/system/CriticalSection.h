@@ -10,11 +10,20 @@ namespace win32
 		CriticalSection()
 		{
 			InitializeCriticalSection(&section);
+			valid = true;
 		}
 
 		~CriticalSection()
 		{
-			DeleteCriticalSection(&section);
+			Destroy();
+		}
+
+		CriticalSection(CriticalSection&& c) noexcept
+		{
+			Destroy();
+
+			std::swap(this->section, c.section);
+			std::swap(this->valid, c.valid);
 		}
 
 		CriticalSection(const CriticalSection&) = delete;
@@ -22,15 +31,27 @@ namespace win32
 
 		void Lock()
 		{
-			EnterCriticalSection(&section);
+			if (valid)
+			 EnterCriticalSection(&section);
 		}
 
 		void Unlock()
 		{
-			LeaveCriticalSection(&section);
+			if (valid)
+			 LeaveCriticalSection(&section);
 		}
 
 	private:
+		void Destroy()
+		{
+			if (!valid)
+				return;
+
+			DeleteCriticalSection(&section);
+			valid = false;
+		}
+
+		bool valid = false;
 		CRITICAL_SECTION section;
 	};
 

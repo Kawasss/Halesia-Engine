@@ -51,6 +51,8 @@ public:
 
     static void                               DisableValidationLayers();
 
+    static win32::CriticalSection&            GetQueueCriticalSection(VkQueue queue); // ff the queue has no critical section, it will create one
+
     static std::mutex&                        FetchLogicalDeviceMutex(VkDevice logicalDevice);
     static VkCommandPool                      FetchNewCommandPool(uint32_t queueIndex);
     static void                               YieldCommandPool(uint32_t queueFamilyIndex, VkCommandPool commandPool);
@@ -143,6 +145,7 @@ private:
 
     static std::map<uint32_t, std::vector<VkCommandPool>> queueCommandPools;
     static std::map<VkDevice, std::mutex>                 logicalDeviceMutexes;
+    static std::map<VkQueue, win32::CriticalSection>      queueSections;
 
     static std::vector<const char*> requiredLogicalDeviceExtensions;
     static std::vector<const char*> requiredInstanceExtensions;
@@ -221,6 +224,11 @@ inline void Vulkan::SetDebugName<VkAccelerationStructureKHR>(VkAccelerationStruc
     DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, name);
 }
 
+template<>
+inline void Vulkan::SetDebugName<VkCommandPool>(VkCommandPool object, const char* name)
+{
+    DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_COMMAND_POOL, name);
+}
 
 #define VULKAN_TRACK_MEMORY
 #ifdef  VULKAN_TRACK_MEMORY

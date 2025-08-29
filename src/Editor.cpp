@@ -912,22 +912,25 @@ void Editor::DestroyCurrentScene()
 		Mesh::materials[i].Destroy();
 	Mesh::materials.resize(1);
 }
-
+std::future<void> fut;
 void Editor::LoadFile()
 {
-	SceneLoader loader(src);
-	loader.LoadScene();
+	fut = std::async([&]()
+		{
+			SceneLoader loader(src);
+			loader.LoadScene();
 
-	for (const std::variant<MaterialCreationData, MaterialCreateInfo>& data : loader.materials)
-	{
-		if (std::holds_alternative<MaterialCreationData>(data))
-			Mesh::AddMaterial(Material::Create(std::get<0>(data)));
-		else if (std::holds_alternative<MaterialCreateInfo>(data))
-			Mesh::AddMaterial(Material::Create(std::get<1>(data)));
-	}
+			for (const ObjectCreationData& data : loader.objects)
+				AddObject(data);
 
-	for (const ObjectCreationData& data : loader.objects)
-		AddObject(data);
+			for (const std::variant<MaterialCreationData, MaterialCreateInfo>& data : loader.materials)
+			{
+				if (std::holds_alternative<MaterialCreationData>(data))
+					Mesh::AddMaterial(Material::Create(std::get<0>(data)));
+				else if (std::holds_alternative<MaterialCreateInfo>(data))
+					Mesh::AddMaterial(Material::Create(std::get<1>(data)));
+			}
+		});
 }
 
 void Editor::SaveToFile()

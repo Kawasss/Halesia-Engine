@@ -828,7 +828,11 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[frameIndex];
 
-	win32::CriticalLockGuard lockGuard(Vulkan::graphicsQueueSection);
+	win32::CriticalSection& section = Vulkan::GetQueueCriticalSection(graphicsQueue);
+	//win32::CriticalLockGuard guard(section);
+
+	section.Lock();
+
 	VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]);
 	CheckVulkanResult("Failed to submit the queue", result);
 
@@ -855,6 +859,9 @@ void Renderer::StartRecording()
 	CheckVulkanResult("Failed to wait for fences", result);
 	result = vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
 	CheckVulkanResult("Failed to reset fences", result);
+
+	win32::CriticalSection& section = Vulkan::GetQueueCriticalSection(graphicsQueue);
+	section.Unlock();
 
 	Vulkan::DeleteSubmittedObjects();
 	GetQueryResults();

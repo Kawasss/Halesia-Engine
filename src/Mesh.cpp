@@ -135,13 +135,12 @@ Material& Mesh::GetMaterial()
 
 uint32_t Mesh::GetMaterialIndex() const // the mesh will fall back to the default material if its actual material for some reason doesnt exist anymore
 {
-	return materialIndex;
+	return materialIndex >= materials.size() ? 0 : materialIndex;
 }
 
 void Mesh::SetMaterialIndex(uint32_t index)
 {
-	if (index < materials.size())
-		materialIndex = index;
+	materialIndex = index;
 }
 
 bool Mesh::HasFinishedLoading() const

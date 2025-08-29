@@ -22,6 +22,7 @@ VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 
 std::map<uint32_t, std::vector<VkCommandPool>> Vulkan::queueCommandPools;
 std::map<VkDevice, std::mutex>                 Vulkan::logicalDeviceMutexes;
+std::map<VkQueue, win32::CriticalSection>      Vulkan::queueSections;
 
 win32::CriticalSection Vulkan::graphicsQueueSection;
 win32::CriticalSection commandPoolSection;
@@ -57,6 +58,11 @@ std::vector<VkDynamicState> Vulkan::dynamicStates =
 Vulkan::Context Vulkan::context{};
 std::string forcedGPU;
 
+win32::CriticalSection& Vulkan::GetQueueCriticalSection(VkQueue queue)
+{
+    return queueSections[queue];
+}
+
 void Vulkan::ExecuteSingleTimeCommands(std::function<void(const CommandBuffer&)>&& commands) // uses the graphics queue, maybe a parameter to specify the queue to use
 {
     VkCommandPool commandPool = FetchNewCommandPool(context.graphicsIndex);
@@ -64,8 +70,8 @@ void Vulkan::ExecuteSingleTimeCommands(std::function<void(const CommandBuffer&)>
 
     commands(cmdBuffer);
 
-    YieldCommandPool(context.graphicsIndex, commandPool);
     EndSingleTimeCommands(context.graphicsQueue, cmdBuffer.Get(), commandPool);
+    YieldCommandPool(context.graphicsIndex, commandPool);
 }
 
 void Vulkan::AllocateCommandBuffers(const VkCommandBufferAllocateInfo& allocationInfo, std::vector<CommandBuffer>& commandBuffers)
@@ -303,6 +309,9 @@ VkCommandPool Vulkan::FetchNewCommandPool(uint32_t queueIndex)
 
         VkResult result = vkCreateCommandPool(context.logicalDevice, &createInfo, nullptr, &commandPool);
         CheckVulkanResult("Failed to create a command pool for the storage buffer", result);
+
+        std::string name = std::format("global command pool (queue {}:{})", queueIndex, commandPools.capacity());
+        SetDebugName(commandPool, name.c_str());
     }
     else // if there are idle command pools, get the last one and remove that from the vector
     {
@@ -323,6 +332,8 @@ void Vulkan::YieldCommandPool(uint32_t index, VkCommandPool commandPool)
 
 void Vulkan::DestroyAllCommandPools()
 {
+    win32::CriticalLockGuard lockGuard(commandPoolSection);
+
     for (const auto& [index, commandPools] : queueCommandPools)
         for (VkCommandPool commandPool : commandPools)
             vkDestroyCommandPool(context.logicalDevice, commandPool, nullptr);
@@ -403,7 +414,6 @@ void Vulkan::CopyBuffer(VkCommandPool commandPool, VkQueue queue, VkBuffer sourc
     Vulkan::EndSingleTimeCommands(context.graphicsQueue, localCommandBuffer, commandPool);
 }
 
-win32::CriticalSection endCommandCritSection;
 void Vulkan::EndSingleTimeCommands(VkQueue queue, VkCommandBuffer commandBuffer, VkCommandPool commandPool)
 {
     VkResult result = vkEndCommandBuffer(commandBuffer);
@@ -414,12 +424,18 @@ void Vulkan::EndSingleTimeCommands(VkQueue queue, VkCommandBuffer commandBuffer,
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    win32::CriticalLockGuard guard(endCommandCritSection);
+    win32::CriticalSection& section = GetQueueCriticalSection(queue);
+    win32::CriticalLockGuard guard(section);
+
+    section.Lock();
+
     result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
     CheckVulkanResult("Failed to submit the single time commands queue", result);
     
     result = vkQueueWaitIdle(queue);
     CheckVulkanResult("Failed to wait for the queue idle", result);
+
+    section.Unlock();
 
     vkFreeCommandBuffers(context.logicalDevice, commandPool, 1, &commandBuffer);
 }
