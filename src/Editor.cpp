@@ -920,8 +920,7 @@ void Editor::LoadFile()
 			SceneLoader loader(src);
 			loader.LoadScene();
 
-			for (const ObjectCreationData& data : loader.objects)
-				AddObject(data);
+			std::for_each(loader.objects.begin(), loader.objects.end(), [&](const ObjectCreationData& data) { AddObject(data); });
 
 			for (const std::variant<MaterialCreationData, MaterialCreateInfo>& data : loader.materials)
 			{

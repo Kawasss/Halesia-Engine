@@ -58,13 +58,13 @@ std::expected<std::vector<char>, bool> DataArchiveFile::ReadData(const std::stri
 
 std::expected<std::vector<char>, bool>  DataArchiveFile::ReadFromDisk(uint64_t offset, uint64_t size) const
 {
-	stream.SeekG(static_cast<int64_t>(offset), ReadWriteFile::Method::Begin);
+	AsyncReadSession session = stream.BeginAsyncRead();
 
 	uint64_t uncompressedSize = 0;
-	stream.Read(reinterpret_cast<char*>(&uncompressedSize), sizeof(uncompressedSize));
+	session.Read(reinterpret_cast<char*>(&uncompressedSize), static_cast<long long>(offset), sizeof(uncompressedSize));
 
 	std::vector<char> read(size);
-	stream.Read(read.data(), static_cast<unsigned long>(size));
+	session.Read(read.data(), static_cast<long long>(offset + sizeof(uncompressedSize)), static_cast<unsigned long>(size));
 
 	return DecompressMemory(read, uncompressedSize);
 }
