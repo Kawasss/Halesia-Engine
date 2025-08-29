@@ -230,6 +230,12 @@ inline void Vulkan::SetDebugName<VkCommandPool>(VkCommandPool object, const char
     DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_COMMAND_POOL, name);
 }
 
+template<>
+inline void Vulkan::SetDebugName<VkDeviceMemory>(VkDeviceMemory object, const char* name)
+{
+    DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_DEVICE_MEMORY, name);
+}
+
 #define VULKAN_TRACK_MEMORY
 #ifdef  VULKAN_TRACK_MEMORY
 

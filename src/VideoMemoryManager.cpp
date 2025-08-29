@@ -3,6 +3,7 @@
 #include <map>
 #include <set>
 #include <cassert>
+#include <format>
 
 #include "renderer/VideoMemoryManager.h"
 #include "renderer/GarbageManager.h"
@@ -71,7 +72,7 @@ struct vvm::MemoryBlock
 
 		VkResult result = VK_SUCCESS;
 
-		// map the entire block, because multiple segments can be mapped at the same time: vulkan only allows mapping a memory once, so the offset must be 0 and the size must be VK_WHOLE_SIZE.
+		// map the entire block, because multiple segments cant be mapped at the same time: vulkan only allows mapping a memory once, so the offset must be 0 and the size must be VK_WHOLE_SIZE.
 		// an optimisation: if a memory block is consumed entirely by one segment, then only map the required parts. A segment that uses the entire block removes to need to check for multiple mappings.
 		if (segments.size() == 1 && segments.begin()->second.GetSize() == size)
 			result = vkMapMemory(ctx.logicalDevice, memory, offset, size, flags, &mapped);
@@ -123,6 +124,11 @@ struct vvm::MemoryBlock
 
 	bool IsUnused() const { return segments.size() == 0; }
 
+	void Name(const std::string_view& name) const
+	{
+		Vulkan::SetDebugName(memory, name.data());
+	}
+
 	void Destroy() const
 	{
 		vgm::Delete(memory);
@@ -159,7 +165,7 @@ static VkDeviceMemory AllocateMemory(VkMemoryRequirements& requirements, VkMemor
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
-	requirements.size = GetAppropriateBlockSize(requirements.size);
+	requirements.size = ::GetAppropriateBlockSize(requirements.size);
 
 	VkMemoryAllocateInfo allocateInfo{};
 	allocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -190,7 +196,7 @@ static vvm::MemoryBlock* FindRelevantMemoryBlock(VkImage image)
 
 static vvm::MemoryBlock* AllocateNewBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
 {
-	VkDeviceMemory memory = AllocateMemory(requirements, properties, pNext);
+	VkDeviceMemory memory = ::AllocateMemory(requirements, properties, pNext);
 	vvm::MemoryBlock* block = new vvm::MemoryBlock(properties, requirements.size, requirements.alignment, memory);
 
 	core->blocks.push_back(block);
@@ -205,7 +211,7 @@ static vvm::MemoryBlock* GetMemoryBlock(VkMemoryRequirements& requirements, VkMe
 		if (block->properties == properties && block->CanFit(requirements.size) && block->alignment == requirements.alignment)
 			return block;
 	}
-	return AllocateNewBlock(requirements, properties, pNext);
+	return ::AllocateNewBlock(requirements, properties, pNext);
 }
 
 template<typename T>
@@ -244,12 +250,12 @@ vvm::Image vvm::AllocateImage(VkImage image, VkMemoryPropertyFlags properties)
 {
 	win32::CriticalLockGuard guard(core->blockGuard);
 	const Vulkan::Context& ctx = Vulkan::GetContext();
-
+	
 	VkMemoryRequirements requirements;
 	vkGetImageMemoryRequirements(ctx.logicalDevice, image, &requirements);
-	requirements.size = FitSizeToAlignment(requirements.size, requirements.alignment);
+	requirements.size = ::FitSizeToAlignment(requirements.size, requirements.alignment);
 
-	MemoryBlock* block = GetMemoryBlock(requirements, properties);
+	MemoryBlock* block = ::GetMemoryBlock(requirements, properties);
 
 	uint64_t handle = reinterpret_cast<uint64_t>(image);
 	auto it = block->FindUsableSegment(requirements.size);
@@ -267,6 +273,8 @@ vvm::Image vvm::AllocateImage(VkImage image, VkMemoryPropertyFlags properties)
 
 	vkBindImageMemory(ctx.logicalDevice, image, block->memory, block->segments[handle].begin);
 
+	block->Name(std::format("image_mem_block:{}", block->size));
+
 	core->imageToBlock[image] = block;
 	return Image(image);
 }
@@ -279,7 +287,7 @@ vvm::Buffer vvm::AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFlags propertie
 	VkMemoryRequirements requirements;
 	vkGetBufferMemoryRequirements(ctx.logicalDevice, buffer, &requirements);
 
-	MemoryBlock* block = GetMemoryBlock(requirements, properties, pNext);
+	MemoryBlock* block = ::GetMemoryBlock(requirements, properties, pNext);
 
 	uint64_t handle = reinterpret_cast<uint64_t>(buffer);
 	auto it = block->FindUsableSegment(requirements.size);
@@ -297,6 +305,8 @@ vvm::Buffer vvm::AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFlags propertie
 
 	vkBindBufferMemory(ctx.logicalDevice, buffer, block->memory, block->segments[handle].begin);
 
+	block->Name(std::format("buffer_mem_block:{}", block->size));
+
 	core->bufferToBlock[buffer] = block;
 	return Buffer(buffer);
 }
@@ -305,7 +315,7 @@ void* vvm::MapBuffer(Buffer buffer, VkDeviceSize offset, VkDeviceSize size, VkMe
 {
 	win32::CriticalLockGuard guard(core->blockGuard);
 
-	MemoryBlock* block = FindRelevantMemoryBlock(buffer.Get());
+	MemoryBlock* block = ::FindRelevantMemoryBlock(buffer.Get());
 	block->CheckedMap(size, offset, flags);
 
 	uint64_t handle = reinterpret_cast<uint64_t>(buffer.Get());
@@ -319,7 +329,7 @@ void vvm::UnmapBuffer(Buffer buffer)
 {
 	win32::CriticalLockGuard guard(core->blockGuard);
 
-	MemoryBlock* block = FindRelevantMemoryBlock(buffer.Get());
+	MemoryBlock* block = ::FindRelevantMemoryBlock(buffer.Get());
 	block->CheckedUnmap();
 }
 
@@ -329,9 +339,9 @@ void vvm::Destroy(VkImage image)
 	uint64_t handle = reinterpret_cast<uint64_t>(image);
 
 	vgm::Delete(image);
-	MemoryBlock* block = FindRelevantMemoryBlock(image);
+	MemoryBlock* block = ::FindRelevantMemoryBlock(image);
 	block->FreeSegment(handle);
-	CheckBlockStatus(block, core->imageToBlock);
+	::CheckBlockStatus(block, core->imageToBlock);
 }
 
 void vvm::Destroy(VkBuffer buffer)
@@ -340,14 +350,13 @@ void vvm::Destroy(VkBuffer buffer)
 	uint64_t handle = reinterpret_cast<uint64_t>(buffer);
 
 	vgm::Delete(buffer);
-	MemoryBlock* block = FindRelevantMemoryBlock(buffer);
+	MemoryBlock* block = ::FindRelevantMemoryBlock(buffer);
 	block->FreeSegment(handle);
-	CheckBlockStatus(block, core->bufferToBlock);
+	::CheckBlockStatus(block, core->bufferToBlock);
 }
 
 void vvm::ForceDestroy()
 {
-	const Vulkan::Context& ctx = Vulkan::GetContext();
 	for (MemoryBlock* block : core->blocks)
 	{
 		delete block;
