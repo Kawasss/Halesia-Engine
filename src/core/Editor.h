@@ -10,6 +10,8 @@ class Renderer;
 class RigidBody;
 class LightObject;
 class ScriptObject;
+class GridPipeline;
+class BoundingVolumePipeline;
 struct MaterialCreateInfo;
 struct Mesh;
 
@@ -120,6 +122,9 @@ private:
 	Object* pObjectToCopy = nullptr;
 
 	Renderer* renderer;
+
+	BoundingVolumePipeline* boundingVolumePipeline;
+	GridPipeline* gridPipeline;
 
 	int width = 0, height = 0;
 };

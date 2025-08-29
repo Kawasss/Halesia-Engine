@@ -42,10 +42,6 @@ int main(int argc, char** argv)
 	DeferredPipeline* deferred = renderer->AddRenderPipeline<DeferredPipeline>("deferred"); // choose the deferred pipeline for rendering
 	deferred->LoadSkybox("textures/skybox/park.hdr");
 
-	
-	renderer->AddRenderPipeline<BoundingVolumePipeline>("boundingVolume");
-	renderer->AddRenderPipeline<GridPipeline>("grid"); // this should always be last due to transparency
-
 	instance->Run();
 
 	return EXIT_SUCCESS;

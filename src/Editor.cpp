@@ -13,6 +13,9 @@
 #include "renderer/gui.h"
 #include "renderer/RayTracing.h"
 #include "renderer/RenderPipeline.h"
+#include "renderer/GraphicsPipeline.h"
+#include "renderer/BoundingVolumePipeline.h"
+#include "renderer/Grid.h"
 
 #include "io/SceneLoader.h"
 #include "io/SceneWriter.h"
@@ -71,6 +74,9 @@ void Editor::Start()
 	EngineCore& core = HalesiaEngine::GetInstance()->GetEngineCore();
 
 	renderer = core.renderer;
+
+	boundingVolumePipeline = renderer->AddRenderPipeline<BoundingVolumePipeline>("boundingVolume");
+	gridPipeline = renderer->AddRenderPipeline<GridPipeline>("grid");
 
 	camera = AddCustomCamera<EditorCamera>();
 
