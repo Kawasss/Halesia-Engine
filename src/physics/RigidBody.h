@@ -15,7 +15,8 @@ public:
 		Dynamic   = 2,
 		Kinematic = 3,
 	};
-	static std::string TypeToString(Type type);
+	static std::string_view TypeToString(Type type);
+	static Type StringToType(const std::string_view& str);
 
 	RigidBody() = default;
 	RigidBody(Shape shape, Type type, glm::vec3 pos = glm::vec3(0), glm::quat rot = glm::quat());

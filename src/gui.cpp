@@ -162,30 +162,6 @@ void GUI::ShowWindowData(Window* window)
 		ImGui::End();
 }
 
-void GUI::ShowObjectMeshes(Mesh& mesh)
-{
-	ImGui::Text
-	(
-		"Memory:\n"
-		"  vertex:   %I64u\n"
-		"  d_vertex: %I64u\n"
-		"  index:    %I64u\n"
-		"BLAS:       %I64u\n"
-		"face count: %i\n\n"
-		"center:     %.2f, %.2f, %.2f\n"
-		"extents:    %.2f, %.2f, %.2f\n",
-	mesh.vertexMemory, mesh.defaultVertexMemory, mesh.indexMemory, (uint64_t)mesh.BLAS.get(), mesh.faceCount, mesh.center.x, mesh.center.y, mesh.center.z, mesh.extents.x, mesh.extents.y, mesh.extents.z);
-
-	int index = static_cast<int>(mesh.GetMaterialIndex());
-
-	ImGui::Text("Material: ");
-	ImGui::SameLine();
-	ImGui::InputInt("##inputmeshmaterialindex", &index);
-
-	if (index != static_cast<int>(mesh.GetMaterialIndex()))
-		mesh.SetMaterialIndex(index);
-}
-
 void GUI::ShowObjectData(Object* object)
 {
 	static std::array<std::string, 3> allStates = { "OBJECT_STATE_VISIBLE", "OBJECT_STATE_INVISIBLE", "OBJECT_STATE_DISABLED" };
@@ -214,143 +190,6 @@ void GUI::ShowObjectData(Object* object)
 	, object->handle, Object::InheritTypeToString(object->GetType()).data(), !object->FinishedLoading());
 }
 
-void GUI::ShowObjectComponents(const std::vector<Object*>& objects, Window* window, int index)
-{
-	static std::string currentItem = "None";
-	static int objectIndex = -1;
-	if (objectIndex >= objects.size())
-		objectIndex = -1;
-	if (index != -1)
-		objectIndex = index;
-
-	ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.03f, 0.03f, 0.03f, 1));
-	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.03f, 0.03f, 0.03f, 1));
-	ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
-
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 5);
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
-	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5);
-
-	ImGuiStyle& style = ImGui::GetStyle();
-	ImVec4* colors = style.Colors;
-	colors[ImGuiCol_TitleBgActive] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-	colors[ImGuiCol_Header] = ImVec4(0.06f, 0.06f, 0.06f, 1);
-	colors[ImGuiCol_FrameBg] = ImVec4(0.06f, 0.06f, 0.06f, 1);
-	colors[ImGuiCol_Button] = ImVec4(0.05f, 0.05f, 0.05f, 1);
-
-	ImGui::SetNextWindowPos(ImVec2(window->GetWidth() * 7 / 8, ImGui::GetFrameHeight() + style.FramePadding.y));
-	ImGui::SetNextWindowSize(ImVec2(window->GetWidth() / 8, window->GetHeight() - ImGui::GetFrameHeight() - style.FramePadding.y));
-	if (createWindow)
-		ImGui::Begin("components", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
-
-	std::vector<std::string> items; // not the most optimal way
-	for (Object* object : objects)
-		items.push_back(object->name);
-	ShowDropdownMenu(items, currentItem, objectIndex, "##ObjectComponents");
-
-	if (objectIndex != -1)
-	{
-		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
-		if (ImGui::CollapsingHeader("Metadata", flags))
-			ShowObjectData(objects[objectIndex]);
-
-		if (ImGui::CollapsingHeader("Transform", flags))
-			ShowObjectTransform(objects[objectIndex]->transform);
-
-		if (objects[objectIndex]->IsType(Object::InheritType::Rigid3D))
-		{
-			if (ImGui::CollapsingHeader("Rigid body", flags))
-				ShowObjectRigidBody(dynamic_cast<Rigid3DObject*>(objects[objectIndex])->rigid);
-		}
-
-		else if (objects[objectIndex]->IsType(Object::InheritType::Mesh))
-		{
-			if (objects[objectIndex]->name == "ROOT")
-				__debugbreak();
-
-			if (ImGui::CollapsingHeader("Meshes", flags))
-				ShowObjectMeshes(dynamic_cast<MeshObject*>(objects[objectIndex])->mesh);
-		}
-	}
-
-	ImGui::PopStyleVar(3);
-	ImGui::PopStyleColor(3);
-	if (createWindow)
-		ImGui::End();
-}
-
-void GUI::ShowObjectRigidBody(RigidBody& rigidBody)
-{
-	static hsl::StackMap<std::string, Shape::Type, 3> stringToShape =
-	{
-		{ "SHAPE_TYPE_BOX",     Shape::Type::Box     },
-		{ "SHAPE_TYPE_SPHERE",  Shape::Type::Sphere  },
-		{ "SHAPE_TYPE_CAPSULE", Shape::Type::Capsule },
-	};
-	static hsl::StackMap<std::string, RigidBody::Type, 3> stringToRigid =
-	{
-		{ "RIGID_BODY_STATIC",    RigidBody::Type::Static    },
-		{ "RIGID_BODY_DYNAMIC",   RigidBody::Type::Dynamic   },
-		{ "RIGID_BODY_KINEMATIC", RigidBody::Type::Kinematic },
-	};
-
-	static int rigidIndex = -1;
-	static int shapeIndex = -1;
-	static std::array<std::string, 3> allShapeTypes = { "SHAPE_TYPE_BOX", "SHAPE_TYPE_SPHERE", "SHAPE_TYPE_CAPSULE" };
-	static std::array<std::string, 3> allRigidTypes = { "RIGID_BODY_DYNAMIC", "RIGID_BODY_STATIC", "RIGID_BODY_KINEMATIC" };
-
-	std::string currentRigid = RigidBody::TypeToString(rigidBody.type);
-	std::string currentShape = Shape::TypeToString(rigidBody.shape.type);
-	glm::vec3 holderExtents = rigidBody.shape.data;
-
-	ImGui::Text("type:   ");
-	ImGui::SameLine();
-	ShowDropdownMenu(allRigidTypes, currentRigid, rigidIndex, "##RigidType");
-
-	ImGui::Text("shape:  ");
-	ImGui::SameLine();
-	ShowDropdownMenu(allShapeTypes, currentShape, shapeIndex, "##rigidShapeMenu");
-
-	switch (rigidBody.shape.type)
-	{
-	case Shape::Type::Box:
-		ImGui::Text("Extents:");
-		ImGui::SameLine();
-		ShowInputVector(holderExtents, { "##extentsx", "##extentsy", "##extentsz" });
-		break;
-	case Shape::Type::Capsule:
-		ImGui::Text("Height: ");
-		ImGui::SameLine();
-		ImGui::InputFloat("##height", &holderExtents.y);
-		ImGui::Text("radius: ");
-		ImGui::SameLine();
-		if (ImGui::InputFloat("##radius", &holderExtents.x))
-			holderExtents.y += holderExtents.x; // add radius on top of the half height
-		break;
-	case Shape::Type::Sphere:
-		ImGui::Text("radius: ");
-		ImGui::SameLine();
-		ImGui::InputFloat("##radius", &holderExtents.x);
-		break;
-	}
-
-	ImGui::Text("Force:   %.1f, %.1f, %.1f", rigidBody.queuedUpForce.x, rigidBody.queuedUpForce.y, rigidBody.queuedUpForce.z);
-
-	// update the rigidbody shape if it has been changed via the gui
-	if (stringToShape[currentShape] != rigidBody.shape.type || holderExtents != rigidBody.shape.data)
-	{
-		Shape newShape = Shape::GetShapeFromType(stringToShape[currentShape], holderExtents);
-		rigidBody.ChangeShape(newShape);
-	}
-	if (stringToRigid[currentRigid] != rigidBody.type)
-	{
-		rigidBody.Destroy();
-		Object* obj = (Object*)rigidBody.GetUserData();
-		rigidBody = RigidBody(rigidBody.shape, stringToRigid[currentRigid], obj->transform.position, obj->transform.rotation);
-		rigidBody.SetUserData(obj);
-	}
-}
-
 void GUI::ShowObjectTransform(Transform& transform)
 {
 	ImGui::Text("position:");
@@ -373,7 +212,7 @@ void GUI::ShowObjectTransform(Transform& transform)
 	ShowInputVector(transform.scale, { "##scalex", "##scaley", "##scalez" });
 }
 
-void GUI::ShowDropdownMenu(const std::span<std::string>& items, std::string& currentItem, int& currentIndex, const char* label)
+void GUI::ShowDropdownMenu(const std::span<const std::string>& items, std::string& currentItem, int& currentIndex, const char* label)
 {
 	if (!ImGui::BeginCombo(label, currentItem.c_str()))
 		return;
@@ -392,7 +231,7 @@ void GUI::ShowDropdownMenu(const std::span<std::string>& items, std::string& cur
 	ImGui::EndCombo();
 }
 
-void GUI::ShowDropdownMenu(const std::span<std::string_view>& items, std::string_view& currentItem, int& currentIndex, const char* label)
+void GUI::ShowDropdownMenu(const std::span<const std::string_view>& items, std::string_view& currentItem, int& currentIndex, const char* label)
 {
 	if (!ImGui::BeginCombo(label, currentItem.data()))
 		return;

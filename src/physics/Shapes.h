@@ -1,4 +1,6 @@
 #pragma once
+#include <string_view>
+
 #include "../glm.h"
 
 namespace physx
@@ -17,7 +19,8 @@ public:
 		Capsule = 3,
 		Plane   = 4,
 	};
-	static std::string TypeToString(Type type);
+	static std::string_view TypeToString(Type type);
+	static Type StringToType(const std::string_view& str);
 
 	static Shape GetShapeFromType(Type type, glm::vec3 extents);
 	physx::PxShape* GetShape();

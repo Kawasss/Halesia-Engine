@@ -88,6 +88,8 @@ private:
 	void ShowObjectLight(LightObject* light);
 	void ShowObjectScript(ScriptObject* scriptObject);
 
+	void ShowRigidBodyShape(RigidBody& rigid);
+
 	void ShowAddObjectWindow();
 
 	void DestroyCurrentScene();

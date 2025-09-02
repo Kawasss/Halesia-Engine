@@ -1171,13 +1171,10 @@ int Renderer::GetLightCount() const
 	return lightBuffer.GetMappedPointer<LightBuffer>()->count;
 }
 
-const std::string& Renderer::GetRenderPipelineName(RenderPipeline* renderPipeline) const
+std::string_view Renderer::GetRenderPipelineName(RenderPipeline* renderPipeline) const
 {
-	for (const auto& [pipeline, name] : dbgPipelineNames)
-		if (renderPipeline == pipeline)
-			return name;
-	__debugbreak();
-	return "";
+	auto it = dbgPipelineNames.find(renderPipeline);
+	return it == dbgPipelineNames.end() ? "error_unnamed_pipeline" : it->second.c_str();
 }
 
 glm::vec2 Renderer::GetViewportOffset() const

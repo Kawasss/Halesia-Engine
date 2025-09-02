@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <string_view>
 #include <map>
 #include <vulkan/vulkan.h>
 
@@ -95,7 +96,7 @@ public:
 	const FIF::Buffer& GetLightBuffer() const;
 
 	const std::vector<RenderPipeline*>& GetAllRenderPipelines() const;
-	const std::string& GetRenderPipelineName(RenderPipeline* renderPipeline) const;
+	std::string_view GetRenderPipelineName(RenderPipeline* renderPipeline) const;
 
 	int GetLightCount() const;
 

@@ -100,7 +100,7 @@ std::string HalesiaEngine::ExitCodeToString(HalesiaEngine::ExitCode exitCode)
 	return "HalesiaEngine::ExitCode::Unknown";
 }
 
-std::string RigidBody::TypeToString(Type type)
+std::string_view RigidBody::TypeToString(Type type)
 {
 	switch (type)
 	{
@@ -112,17 +112,38 @@ std::string RigidBody::TypeToString(Type type)
 	return "RigidBody::Type::Unknown";
 }
 
-std::string Shape::TypeToString(Shape::Type type)
+RigidBody::Type RigidBody::StringToType(const std::string_view& str)
+{
+	if (str == "RigidBody::Type::Dynamic") return Type::Dynamic;
+	else if (str == "RigidBody::Type::Kinematic") return Type::Kinematic;
+	else if (str == "RigidBody::Type::Static") return Type::Static;
+	else if (str == "RigidBody::Type::None") return Type::None;
+
+	return Type::None;
+}
+
+std::string_view Shape::TypeToString(Shape::Type type)
 {
 	switch (type)
 	{
-	case Shape::Type::Box:     return "SHAPE_TYPE_BOX";
-	case Shape::Type::Capsule: return "SHAPE_TYPE_CAPSULE";
-	case Shape::Type::None:    return "SHAPE_TYPE_NONE";
-	case Shape::Type::Plane:   return "SHAPE_TYPE_PLANE";
-	case Shape::Type::Sphere:  return "SHAPE_TYPE_SPHERE";
+	case Shape::Type::Box:     return "Shape::Type::Box";
+	case Shape::Type::Capsule: return "Shape::Type::Capsule";
+	case Shape::Type::None:    return "Shape::Type::None";
+	case Shape::Type::Plane:   return "Shape::Type::Plane";
+	case Shape::Type::Sphere:  return "Shape::Type::Sphere";
 	}
-	return "SHAPE_TYPE_UNKNOWN";
+	return "Shape::Type::Unknown";
+}
+
+Shape::Type Shape::StringToType(const std::string_view& str)
+{
+	if (str == "Shape::Type::Box") return Type::Box;
+	else if (str == "Shape::Type::Capsule") return Type::Capsule;
+	else if (str == "Shape::Type::None") return Type::None;
+	else if (str == "Shape::Type::Plane") return Type::Plane;
+	else if (str == "Shape::Type::Sphere") return Type::Sphere;
+
+	return Type::None;
 }
 
 std::string Console::SeverityToString(Severity severity)

@@ -1,8 +1,6 @@
 #include <Windows.h>
 #include <commdlg.h>
 
-#include <hsl/StackMap.h>
-
 #include "core/Editor.h"
 #include "core/Object.h"
 #include "core/MeshObject.h"
@@ -704,31 +702,37 @@ void Editor::ShowObjectLight(LightObject* light)
 
 void Editor::ShowObjectRigidBody(RigidBody& rigid)
 {
-	static hsl::StackMap<std::string, Shape::Type, 3> stringToShape =
-	{
-		{ "SHAPE_TYPE_BOX",     Shape::Type::Box     },
-		{ "SHAPE_TYPE_SPHERE",  Shape::Type::Sphere  },
-		{ "SHAPE_TYPE_CAPSULE", Shape::Type::Capsule },
-	};
-	static hsl::StackMap<std::string, RigidBody::Type, 3> stringToRigid =
-	{
-		{ "RIGID_BODY_STATIC",    RigidBody::Type::Static    },
-		{ "RIGID_BODY_DYNAMIC",   RigidBody::Type::Dynamic   },
-		{ "RIGID_BODY_KINEMATIC", RigidBody::Type::Kinematic },
-	};
-
 	static int rigidIndex = -1;
-	static int shapeIndex = -1;
-	static std::array<std::string, 3> allShapeTypes = { "SHAPE_TYPE_BOX", "SHAPE_TYPE_SPHERE", "SHAPE_TYPE_CAPSULE" };
-	static std::array<std::string, 3> allRigidTypes = { "RIGID_BODY_DYNAMIC", "RIGID_BODY_STATIC", "RIGID_BODY_KINEMATIC" };
+	static std::array<std::string_view, 3> allRigidTypes = { "RIGID_BODY_DYNAMIC", "RIGID_BODY_STATIC", "RIGID_BODY_KINEMATIC" };
 
-	std::string currentRigid = RigidBody::TypeToString(rigid.type);
-	std::string currentShape = Shape::TypeToString(rigid.shape.type);
-	glm::vec3 holderExtents = rigid.shape.data;
-
+	std::string_view currentRigid = RigidBody::TypeToString(rigid.type);
+	
 	ImGui::Text("type:   ");
 	ImGui::SameLine();
 	GUI::ShowDropdownMenu(allRigidTypes, currentRigid, rigidIndex, "##RigidType");
+
+	ShowRigidBodyShape(rigid);
+
+	ImGui::Text("Force:   %.1f, %.1f, %.1f", rigid.queuedUpForce.x, rigid.queuedUpForce.y, rigid.queuedUpForce.z);
+
+	RigidBody::Type currRigidAsType = RigidBody::StringToType(currentRigid);
+
+	if (currRigidAsType != rigid.type)
+	{
+		rigid.Destroy();
+		Object* obj = reinterpret_cast<Object*>(rigid.GetUserData());
+		rigid = RigidBody(rigid.shape, currRigidAsType, obj->transform.position, obj->transform.rotation);
+		rigid.SetUserData(obj);
+	}
+}
+
+void Editor::ShowRigidBodyShape(RigidBody& rigid)
+{
+	static int shapeIndex = -1;
+	static std::array<std::string_view, 3> allShapeTypes = { "SHAPE_TYPE_BOX", "SHAPE_TYPE_SPHERE", "SHAPE_TYPE_CAPSULE" };
+
+	std::string_view currentShape = Shape::TypeToString(rigid.shape.type);
+	glm::vec3 holderExtents = rigid.shape.data;
 
 	ImGui::Text("shape:  ");
 	ImGui::SameLine();
@@ -757,20 +761,12 @@ void Editor::ShowObjectRigidBody(RigidBody& rigid)
 		break;
 	}
 
-	ImGui::Text("Force:   %.1f, %.1f, %.1f", rigid.queuedUpForce.x, rigid.queuedUpForce.y, rigid.queuedUpForce.z);
+	Shape::Type currShapeAsType = Shape::StringToType(currentShape);
 
-	// update the rigidbody shape if it has been changed via the gui
-	if (stringToShape[currentShape] != rigid.shape.type || holderExtents != rigid.shape.data)
+	if (currShapeAsType != rigid.shape.type || holderExtents != rigid.shape.data)
 	{
-		Shape newShape = Shape::GetShapeFromType(stringToShape[currentShape], holderExtents);
+		Shape newShape = Shape::GetShapeFromType(currShapeAsType, holderExtents);
 		rigid.ChangeShape(newShape);
-	}
-	if (stringToRigid[currentRigid] != rigid.type)
-	{
-		rigid.Destroy();
-		Object* obj = (Object*)rigid.GetUserData();
-		rigid = RigidBody(rigid.shape, stringToRigid[currentRigid], obj->transform.position, obj->transform.rotation);
-		rigid.SetUserData(obj);
 	}
 }
 
@@ -870,7 +866,7 @@ void Editor::ShowRenderPipelines()
 			ImGui::Separator();
 
 		RenderPipeline* pipeline = pipelines[i];
-		std::string name = renderer->GetRenderPipelineName(pipeline);
+		std::string name = renderer->GetRenderPipelineName(pipeline).data();
 		std::string msg = name + ": ";
 
 		std::string identifier = "##" + name;

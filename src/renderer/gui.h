@@ -30,14 +30,11 @@ public:
 	static void ShowGraph(const std::vector<float>& buffer, const char* label, float max = 100.0f);
 	static void ShowPieGraph(std::vector<float>& data, const char* label = nullptr);
 	static void ShowChartGraph(size_t item, size_t max, const char* label);
-	static void ShowDropdownMenu(const std::span<std::string>& items, std::string& currentItem, int& currentIndex, const char* label);
-	static void ShowDropdownMenu(const std::span<std::string_view>& items, std::string_view& currentItem, int& currentIndex, const char* label);
+	static void ShowDropdownMenu(const std::span<const std::string>& items, std::string& currentItem, int& currentIndex, const char* label);
+	static void ShowDropdownMenu(const std::span<const std::string_view>& items, std::string_view& currentItem, int& currentIndex, const char* label);
 
-	static void ShowObjectComponents(const std::vector<Object*>& objects, Window* window, int index);
-	static void ShowObjectTransform(Transform& transform);
-	static void ShowObjectRigidBody(RigidBody& rigidBody);
 	static void ShowObjectData(Object* object);
-	static void ShowObjectMeshes(Mesh& mesh);
+	static void ShowObjectTransform(Transform& transform);
 
 	static void ShowWindowData(Window* window);
 	static void ShowCameraData(Camera* camera);
