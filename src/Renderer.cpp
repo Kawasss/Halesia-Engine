@@ -307,16 +307,16 @@ void Renderer::CreateDefaultObjects() // default objects are objects that are al
 	if (defaultSampler == VK_NULL_HANDLE)
 		CreateTextureSampler();
 
-	animationManager = AnimationManager::Get();
-
 	queryPool.Create(VK_QUERY_TYPE_TIMESTAMP, 10);
 
 	lightBuffer.Init(sizeof(LightBuffer), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	lightBuffer.MapPermanently();
 
-	HdrConverter::Start();
-
 	managedSet.Create();
+	PermanentlyBindLightBuffer();
+
+	HdrConverter::Start();
+	animationManager = AnimationManager::Get();
 }
 
 void Renderer::CreateContext()
@@ -462,7 +462,7 @@ void Renderer::CreateCommandBuffer()
 	#endif
 }
 
-void Renderer::RendererManagedSet::Create()
+void Renderer::ManagedSet::Create()
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
@@ -471,51 +471,28 @@ void Renderer::RendererManagedSet::Create()
 
 	uint32_t imageCount = props.limits.maxDescriptorSetSampledImages < MAX_BINDLESS_TEXTURES ? props.limits.maxDescriptorSetSampledImages : MAX_BINDLESS_TEXTURES;
 
-	VkDescriptorPoolSize poolSize{};
-	poolSize.descriptorCount = imageCount;
-	poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	std::array<VkDescriptorPoolSize, 2> poolSizes{};
+	poolSizes[0].descriptorCount = imageCount;
+	poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+
+	poolSizes[1].descriptorCount = 1 * FIF::FRAME_COUNT;
+	poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 
 	VkDescriptorPoolCreateInfo poolCreateInfo{};
 	poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
-	poolCreateInfo.maxSets = 1;
-	poolCreateInfo.poolSizeCount = 1;
-	poolCreateInfo.pPoolSizes = &poolSize;
+	poolCreateInfo.maxSets = 3;
+	poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+	poolCreateInfo.pPoolSizes = poolSizes.data();
 
 	VkResult result = vkCreateDescriptorPool(ctx.logicalDevice, &poolCreateInfo, nullptr, &pool);
 	CheckVulkanResult("Failed to create the renderer managed descriptor pool", result);
 
-	VkDescriptorSetLayoutBinding layoutBinding{};
-	layoutBinding.binding = MATERIAL_BUFFER_BINDING;
-	layoutBinding.descriptorCount = MAX_BINDLESS_TEXTURES;
-	layoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	layoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+	CreateSingleLayout();
+	AllocateSingleSets();
 
-	VkDescriptorBindingFlags flags = VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
-
-	VkDescriptorSetLayoutBindingFlagsCreateInfo flagCreateInfo{};
-	flagCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-	flagCreateInfo.bindingCount = 1;
-	flagCreateInfo.pBindingFlags = &flags;
-
-	VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
-	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-	layoutCreateInfo.pNext = &flagCreateInfo;
-	layoutCreateInfo.bindingCount = 1;
-	layoutCreateInfo.pBindings = &layoutBinding;
-	
-	result = vkCreateDescriptorSetLayout(ctx.logicalDevice, &layoutCreateInfo, nullptr, &layout);
-	CheckVulkanResult("Failed to create renderer managed set layout", result);
-
-	VkDescriptorSetAllocateInfo allocateInfo{};
-	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocateInfo.descriptorPool = pool;
-	allocateInfo.descriptorSetCount = 1;
-	allocateInfo.pSetLayouts = &layout;
-
-	result = vkAllocateDescriptorSets(ctx.logicalDevice, &allocateInfo, &set);
-	CheckVulkanResult("Failed to allocate renderer managed descriptor sets", result);
+	CreateFIFLayout();
+	AllocateFIFSets();
 
 	VkDescriptorImageInfo imageInfo{};
 	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -531,23 +508,136 @@ void Renderer::RendererManagedSet::Create()
 	writeSet.dstBinding = MATERIAL_BUFFER_BINDING;
 	writeSet.pImageInfo = imageInfos.data();
 	writeSet.dstArrayElement = 0;
-	writeSet.dstSet = set;
-	
+	writeSet.dstSet = singleSet;
+
 	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
 
-	Pipeline::globalSetLayouts.push_back(layout);
-	Pipeline::globalDescriptorSets.push_back(set);
+	Pipeline::globalSetLayouts.push_back(singleLayout);
+	Pipeline::globalSetLayouts.push_back(fifLayout);
 
-	Vulkan::SetDebugName(layout, "global set layout");
-	Vulkan::SetDebugName(set, "global set");
+	Pipeline::AppendGlobalDescriptorSet(singleSet);
+	Pipeline::AppendGlobalFIFDescriptorSet(fifSets);
+
+	Vulkan::SetDebugName(singleLayout, "global set layout");
+	Vulkan::SetDebugName(singleSet, "global single set");
+	Vulkan::SetDebugName(fifLayout, "global FIF set layout");
+
+	for (int i = 0; i < fifSets.size(); i++)
+		Vulkan::SetDebugName(fifSets[i], std::format("global FIF set {}", i).c_str());
 }
 
-void Renderer::RendererManagedSet::Destroy()
+void Renderer::ManagedSet::CreateSingleLayout()
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
-	vkDestroyDescriptorSetLayout(ctx.logicalDevice, layout, nullptr);
+	std::array<VkDescriptorBindingFlags, 1> flags = { VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT };
+
+	std::array<VkDescriptorSetLayoutBinding, 1> layoutBindings{};
+	layoutBindings[0].binding = MATERIAL_BUFFER_BINDING;
+	layoutBindings[0].descriptorCount = MAX_BINDLESS_TEXTURES;
+	layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	layoutBindings[0].stageFlags = VK_SHADER_STAGE_ALL;
+
+	VkDescriptorSetLayoutBindingFlagsCreateInfo flagCreateInfo{};
+	flagCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+	flagCreateInfo.bindingCount = static_cast<uint32_t>(flags.size());
+	flagCreateInfo.pBindingFlags = flags.data();
+
+	VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
+	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+	layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
+	layoutCreateInfo.pBindings = layoutBindings.data();
+	layoutCreateInfo.pNext = &flagCreateInfo;
+
+	VkResult result = vkCreateDescriptorSetLayout(ctx.logicalDevice, &layoutCreateInfo, nullptr, &singleLayout);
+	CheckVulkanResult("Failed to create renderer managed set layout", result);
+}
+
+void Renderer::ManagedSet::AllocateSingleSets()
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	VkDescriptorSetAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateInfo.descriptorPool = pool;
+	allocateInfo.descriptorSetCount = 1;
+	allocateInfo.pSetLayouts = &singleLayout;
+
+	VkResult result = vkAllocateDescriptorSets(ctx.logicalDevice, &allocateInfo, &singleSet);
+	CheckVulkanResult("Failed to allocate renderer managed descriptor sets", result);
+}
+
+void Renderer::ManagedSet::CreateFIFLayout()
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	std::array<VkDescriptorSetLayoutBinding, 1> layoutBindings{};
+	layoutBindings[0].binding = LIGHT_BUFFER_BINDING;
+	layoutBindings[0].descriptorCount = 1;
+	layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	layoutBindings[0].stageFlags = VK_SHADER_STAGE_ALL;
+
+	VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
+	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+	layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
+	layoutCreateInfo.pBindings = layoutBindings.data();
+
+	VkResult result = vkCreateDescriptorSetLayout(ctx.logicalDevice, &layoutCreateInfo, nullptr, &fifLayout);
+	CheckVulkanResult("Failed to create renderer managed set layout", result);
+}
+
+void Renderer::ManagedSet::AllocateFIFSets()
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	VkDescriptorSetAllocateInfo allocateInfo{};
+	allocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+	allocateInfo.descriptorPool = pool;
+	allocateInfo.descriptorSetCount = 1;
+	allocateInfo.pSetLayouts = &fifLayout;
+
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+	{
+		VkResult result = vkAllocateDescriptorSets(ctx.logicalDevice, &allocateInfo, &fifSets[i]);
+		CheckVulkanResult("Failed to allocate renderer managed descriptor sets", result);
+	}
+}
+
+void Renderer::ManagedSet::Destroy()
+{
+	const Vulkan::Context& ctx = Vulkan::GetContext();
+
+	vkDestroyDescriptorSetLayout(ctx.logicalDevice, singleLayout, nullptr);
+	vkDestroyDescriptorSetLayout(ctx.logicalDevice, fifLayout, nullptr);
 	vkDestroyDescriptorPool(ctx.logicalDevice, pool, nullptr);
+}
+
+void Renderer::PermanentlyBindLightBuffer()
+{
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+	{
+		VkDescriptorBufferInfo info{};
+		info.buffer = lightBuffer[i];
+		info.offset = 0;
+		info.range = VK_WHOLE_SIZE;
+
+		VkWriteDescriptorSet writeSet{};
+		writeSet.descriptorCount = 1;
+		writeSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		writeSet.dstArrayElement = 0;
+		writeSet.dstBinding = LIGHT_BUFFER_BINDING;
+		writeSet.dstSet = managedSet.fifSets[i];
+		writeSet.pBufferInfo = &info;
+		writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+
+		vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
+
+		//DescriptorWriter::WriteBuffer(managedSet.fifSets[i], lightBuffer[i], VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, LIGHT_BUFFER_BINDING);
+	}
+
+	DescriptorWriter::Write();
 }
 
 void Renderer::UpdateMaterialBuffer()
@@ -597,7 +687,7 @@ void Renderer::UpdateMaterialBuffer()
 	writeSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
 	writeSet.dstArrayElement = differentIndex * pbrSize;
 	writeSet.dstBinding = MATERIAL_BUFFER_BINDING;
-	writeSet.dstSet = managedSet.set;
+	writeSet.dstSet = managedSet.singleSet;
 	writeSet.pImageInfo = imageInfos.data();
 
 	vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);

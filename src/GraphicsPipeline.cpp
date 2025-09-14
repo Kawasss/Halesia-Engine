@@ -35,6 +35,9 @@ GraphicsPipeline::GraphicsPipeline(const CreateInfo& createInfo)
 	CreateGraphicsPipeline(shaderCodes, createInfo, reflector.GetOutputVariableCount(1));
 
 	bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+
+	Vulkan::SetDebugName(pipeline, "graphics pipeline");
+	Vulkan::SetDebugName(layout, "graphics pipeline layout");
 }
 
 void GraphicsPipeline::CreatePipelineLayout(const ShaderGroupReflector& reflector)

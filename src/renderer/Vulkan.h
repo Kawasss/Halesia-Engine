@@ -236,6 +236,18 @@ inline void Vulkan::SetDebugName<VkDeviceMemory>(VkDeviceMemory object, const ch
     DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_DEVICE_MEMORY, name);
 }
 
+template<>
+inline void Vulkan::SetDebugName<VkPipeline>(VkPipeline object, const char* name)
+{
+    DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_PIPELINE, name);
+}
+
+template<>
+inline void Vulkan::SetDebugName<VkPipelineLayout>(VkPipelineLayout object, const char* name)
+{
+    DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_PIPELINE_LAYOUT, name);
+}
+
 #define VULKAN_TRACK_MEMORY
 #ifdef  VULKAN_TRACK_MEMORY
 

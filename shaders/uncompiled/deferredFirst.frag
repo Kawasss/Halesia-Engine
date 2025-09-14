@@ -1,6 +1,8 @@
 #version 460
+#include "include/light.glsl"
 
 DECLARE_EXTERNAL_SET(1)
+DECLARE_EXTERNAL_SET(2)
 
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
@@ -34,6 +36,12 @@ layout(set = 0, binding = 0) uniform sceneInfo {
 } ubo;
 
 layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_texture_size] textures;
+
+layout(set = 2, binding = light_buffer_binding) readonly buffer lightBuffer
+{
+	int count;
+	Light data[];
+} lightsBuffer;
 
 vec3 GetNormalFromMap(vec2 uv)
 {

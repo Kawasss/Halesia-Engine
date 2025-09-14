@@ -40,6 +40,9 @@ RayTracingPipeline::RayTracingPipeline(const std::string& rgen, const std::strin
 	CreateShaderBindingTable();
 
 	bindPoint = VK_PIPELINE_BIND_POINT_RAY_TRACING_KHR;
+
+	Vulkan::SetDebugName(pipeline, "ray-tracing pipeline");
+	Vulkan::SetDebugName(layout, "ray-tracing pipeline layout");
 }
 
 void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, const std::span<std::span<char>>& shaders)

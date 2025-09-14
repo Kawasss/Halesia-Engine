@@ -30,6 +30,7 @@ void DescriptorWriter::WriteBuffer(VkDescriptorSet set, VkBuffer buffer, VkDescr
 	writeSet.dstSet = set;
 	writeSet.dstBinding = binding;
 	writeSet.descriptorCount = descriptorCount;
+	writeSet.dstArrayElement = 0;
 	writeSet.pBufferInfo = &info;
 
 	infoSize++;

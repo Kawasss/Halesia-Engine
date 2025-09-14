@@ -151,7 +151,8 @@ std::set<uint32_t> ShaderGroupReflector::GetDescriptorSetIndices() const
 	std::set<uint32_t> ret;
 	for (const auto& [index, bindings] : setLayoutBindings)
 	{
-		ret.insert(index);
+		if (!removedSets.contains(index))
+			ret.insert(index);
 	}
 	return ret;
 }

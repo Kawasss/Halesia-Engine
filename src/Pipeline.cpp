@@ -9,8 +9,10 @@
 #include "renderer/Buffer.h"
 #include "renderer/Vulkan.h"
 
+#include "core/Console.h"
+
 std::vector<VkDescriptorSetLayout> Pipeline::globalSetLayouts;
-std::vector<VkDescriptorSet> Pipeline::globalDescriptorSets;
+std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT> Pipeline::globalDescriptorSets;
 
 void Pipeline::InitializeBase(const ShaderGroupReflector& reflector)
 {
@@ -44,7 +46,7 @@ void Pipeline::CreateSetLayouts(const ShaderGroupReflector& reflector)
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	std::set<uint32_t> indices = reflector.GetDescriptorSetIndices();
 
-	setLayouts.reserve(indices.size());
+	setLayouts.reserve(indices.size() + globalSetLayouts.size());
 
 	for (uint32_t index : indices)
 	{
@@ -99,11 +101,19 @@ void Pipeline::AllocateDescriptorSets(uint32_t amount)
 		CheckVulkanResult("Failed to allocate descriptor sets for a graphics pipeline", result);
 	}
 
-	if (globalDescriptorSets.empty())
+	if (globalDescriptorSets[0].empty())
 		return;
 
-	for (std::vector<VkDescriptorSet>& sets : descriptorSets)
-		sets.insert(sets.end(), globalDescriptorSets.begin(), globalDescriptorSets.end());
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+	{
+		if (globalDescriptorSets[i].empty())
+			continue;
+
+		std::vector<VkDescriptorSet>& sets = descriptorSets[i];
+		const std::vector<VkDescriptorSet>& globalSets = globalDescriptorSets[i];
+
+		sets.insert(sets.end(), globalSets.begin(), globalSets.end());
+	}
 }
 
 void Pipeline::Destroy()
@@ -135,7 +145,13 @@ void Pipeline::PushConstant(CommandBuffer commandBuffer, const void* value, VkSh
 
 void Pipeline::BindBufferToName(const std::string& name, VkBuffer buffer)
 {
-	const BindingLayout& binding = nameToLayout[name];
+	if (!nameToLayout.contains(name))
+	{
+		Console::WriteLine("attempted to bind buffer to non-existing name \"{}\"", Console::Severity::Warning, name);
+		return;
+	}
+
+	const BindingLayout& binding = nameToLayout.at(name);
 
 	for (int i = 0; i < FIF::FRAME_COUNT; i++)
 		DescriptorWriter::WriteBuffer(descriptorSets[i][binding.set], buffer, binding.binding.descriptorType, binding.binding.binding);
@@ -143,7 +159,13 @@ void Pipeline::BindBufferToName(const std::string& name, VkBuffer buffer)
 
 void Pipeline::BindBufferToName(const std::string& name, const FIF::Buffer& buffer)
 {
-	const BindingLayout& binding = nameToLayout[name];
+	if (!nameToLayout.contains(name))
+	{
+		Console::WriteLine("attempted to bind FIF buffer to non-existing name \"{}\"", Console::Severity::Warning, name);
+		return;
+	}
+
+	const BindingLayout& binding = nameToLayout.at(name);
 
 	for (int i = 0; i < FIF::FRAME_COUNT; i++)
 		DescriptorWriter::WriteBuffer(descriptorSets[i][binding.set], buffer[i], binding.binding.descriptorType, binding.binding.binding);
@@ -151,7 +173,13 @@ void Pipeline::BindBufferToName(const std::string& name, const FIF::Buffer& buff
 
 void Pipeline::BindImageToName(const std::string& name, VkImageView view, VkSampler sampler, VkImageLayout layout)
 {
-	const BindingLayout& binding = nameToLayout[name];
+	if (!nameToLayout.contains(name))
+	{
+		Console::WriteLine("attempted to bind image to non-existing name \"{}\"", Console::Severity::Warning, name);
+		return;
+	}
+
+	const BindingLayout& binding = nameToLayout.at(name);
 
 	for (int i = 0; i < FIF::FRAME_COUNT; i++)
 		DescriptorWriter::WriteImage(descriptorSets[i][binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout);
@@ -159,8 +187,46 @@ void Pipeline::BindImageToName(const std::string& name, VkImageView view, VkSamp
 
 void Pipeline::BindImageToName(const std::string& name, uint32_t index, VkImageView view, VkSampler sampler, VkImageLayout layout)
 {
-	const BindingLayout& binding = nameToLayout[name];
+	if (!nameToLayout.contains(name))
+	{
+		Console::WriteLine("attempted to bind image to non-existing name \"{}\"", Console::Severity::Warning, name);
+		return;
+	}
+
+	const BindingLayout& binding = nameToLayout.at(name);
 
 	for (int i = 0; i < FIF::FRAME_COUNT; i++)
 		DescriptorWriter::WriteImage(descriptorSets[i][binding.set], binding.binding.descriptorType, binding.binding.binding, view, sampler, layout, 1, index);
+}
+
+void Pipeline::AppendGlobalFIFDescriptorSets(const std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT>& sets)
+{
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+	{
+		const std::vector<VkDescriptorSet>& src = sets[i];
+		std::vector<VkDescriptorSet>& dst = globalDescriptorSets[i];
+
+		dst.insert(dst.end(), src.begin(), src.end());
+	}
+}
+
+void Pipeline::AppendGlobalFIFDescriptorSet(const std::array<VkDescriptorSet, FIF::FRAME_COUNT>& sets)
+{
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+		globalDescriptorSets[i].push_back(sets[i]);
+}
+
+void Pipeline::AppendGlobalDescriptorSets(const std::span<const VkDescriptorSet>& sets)
+{
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+	{
+		std::vector<VkDescriptorSet>& dst = globalDescriptorSets[i];
+		dst.insert(dst.end(), sets.begin(), sets.end());
+	}
+}
+
+void Pipeline::AppendGlobalDescriptorSet(VkDescriptorSet set)
+{
+	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+		globalDescriptorSets[i].push_back(set);
 }

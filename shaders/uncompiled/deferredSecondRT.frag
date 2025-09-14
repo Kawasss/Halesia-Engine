@@ -15,6 +15,9 @@
 #define RENDER_MODE_UV 7
 #define RENDER_MODE_GLOBAL_ILLUMINATION 8
 
+DECLARE_EXTERNAL_SET(1)
+DECLARE_EXTERNAL_SET(2)
+
 layout (location = 0) in vec2 uvCoord;
 
 layout (location = 0) out vec4 fragColor;
@@ -26,7 +29,9 @@ layout (binding = 3) uniform sampler2D metallicRoughnessAOImage;
 
 layout (binding = 4) uniform accelerationStructureEXT TLAS;
 
-layout (binding = 5) readonly buffer Lights
+layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_texture_size] textures;
+
+layout(set = 2, binding = light_buffer_binding) readonly buffer lightBuffer
 {
 	int count;
 	Light data[];

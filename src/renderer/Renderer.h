@@ -53,8 +53,8 @@ public:
 	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT	= FIF::FRAME_COUNT;
 	static constexpr uint32_t MAX_TLAS_INSTANCES	= MAX_MESHES;
 
-	static constexpr uint32_t RESERVED_DESCRIPTOR_SET = 3;
 	static constexpr uint32_t MATERIAL_BUFFER_BINDING = 0;
+	static constexpr uint32_t LIGHT_BUFFER_BINDING = 0;
 
 	static StorageBuffer<Vertex>   g_vertexBuffer;
 	static StorageBuffer<uint32_t> g_indexBuffer;
@@ -147,14 +147,24 @@ public:
 private:
 	struct LightBuffer;
 
-	struct RendererManagedSet
+	struct ManagedSet
 	{
 		void Create();
 		void Destroy();
 
 		VkDescriptorPool pool;
-		VkDescriptorSet set;
-		VkDescriptorSetLayout layout;
+		
+		VkDescriptorSetLayout singleLayout;
+		VkDescriptorSetLayout fifLayout;
+		VkDescriptorSet singleSet;
+		std::array<VkDescriptorSet, FIF::FRAME_COUNT> fifSets;
+
+	private:
+		void CreateSingleLayout();
+		void CreateFIFLayout();
+
+		void AllocateSingleSets();
+		void AllocateFIFSets();
 	};
 
 	VkInstance instance					 = VK_NULL_HANDLE;
@@ -170,7 +180,7 @@ private:
 	VkSampler resultSampler              = VK_NULL_HANDLE; // does not need to be destroyed
 	QueryPool queryPool;
 
-	RendererManagedSet managedSet;
+	ManagedSet managedSet;
 
 	Framebuffer framebuffer;
 
@@ -226,6 +236,8 @@ private:
 	void CreateSwapchain();
 	void CreateImGUI();
 	void CreateDefaultObjects();
+
+	void PermanentlyBindLightBuffer();
 
 	void InitializeViewport();
 

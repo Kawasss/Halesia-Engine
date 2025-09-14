@@ -125,7 +125,7 @@ void DeferredPipeline::CreateAndPreparePipelines(const Payload& payload)
 
 	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
 
-	BindResources(payload.renderer->GetLightBuffer());
+	BindResources();
 
 	if (Renderer::canRayTrace)
 	{
@@ -156,7 +156,7 @@ void DeferredPipeline::RecreatePipelines(const Payload& payload)
 	CreateTAAPipeline();
 	BindTAAResources();
 
-	BindResources(payload.renderer->GetLightBuffer());
+	BindResources();
 }
 
 void DeferredPipeline::ReloadShaders(const Payload& payload)
@@ -169,7 +169,6 @@ void DeferredPipeline::CreateRTGIPipeline(const Payload& payload)
 	rtgiPipeline = std::make_unique<RayTracingPipeline>("shaders/uncompiled/rtgi.rgen", "shaders/uncompiled/rtgi.rchit", "shaders/uncompiled/rtgi.rmiss");
 
 	rtgiPipeline->BindBufferToName("instanceBuffer", instanceBuffer);
-	rtgiPipeline->BindBufferToName("lights", payload.renderer->GetLightBuffer().Get());
 	rtgiPipeline->BindBufferToName("vertexBuffer", Renderer::g_vertexBuffer.GetBufferHandle());
 	rtgiPipeline->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
 
@@ -289,10 +288,9 @@ void DeferredPipeline::BindTLAS()
 	}
 }
 
-void DeferredPipeline::BindResources(const FIF::Buffer& lightBuffer)
+void DeferredPipeline::BindResources()
 {
 	firstPipeline->BindBufferToName("ubo", uboBuffer.Get());
-	secondPipeline->BindBufferToName("lights", lightBuffer.Get());
 
 	BindGBuffers();
 }

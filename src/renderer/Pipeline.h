@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <array>
+#include <span>
 #include <map>
 
 #include "FramesInFlight.h"
@@ -48,8 +49,13 @@ public:
 	void BindImageToName(const std::string& name, VkImageView view, VkSampler sampler, VkImageLayout layout);
 	void BindImageToName(const std::string& name, uint32_t index, VkImageView view, VkSampler sampler, VkImageLayout layout);
 
+	static void AppendGlobalFIFDescriptorSets(const std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT>& sets);
+	static void AppendGlobalFIFDescriptorSet(const std::array<VkDescriptorSet, FIF::FRAME_COUNT>& sets);
+	static void AppendGlobalDescriptorSets(const std::span<const VkDescriptorSet>& sets);
+	static void AppendGlobalDescriptorSet(VkDescriptorSet set);
+
 	static std::vector<VkDescriptorSetLayout> globalSetLayouts;
-	static std::vector<VkDescriptorSet> globalDescriptorSets;
+	static std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT> globalDescriptorSets;
 
 protected:
 	void InitializeBase(const ShaderGroupReflector& reflector);

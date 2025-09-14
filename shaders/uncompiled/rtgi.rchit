@@ -6,6 +6,7 @@
 #include "include/light.glsl"
 
 DECLARE_EXTERNAL_SET(1)
+DECLARE_EXTERNAL_SET(2)
 
 layout (binding = 0, set = 0) uniform accelerationStructureEXT TLAS;
 
@@ -35,12 +36,6 @@ layout(push_constant) uniform Camera
 } camera;
 
 hitAttributeEXT vec2 hitCoordinate;
-
-layout (binding = 6, set = 0) readonly buffer Lights
-{
-	int count;
-	Light data[];
-} lights;
 
 struct Vertex
 {
@@ -77,6 +72,12 @@ layout (binding = 9, set = 0) readonly buffer InstanceDataBuffer
 } instanceBuffer;
 
 layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_texture_size] textures;
+
+layout(set = 2, binding = light_buffer_binding) readonly buffer lightBuffer
+{
+	int count;
+	Light data[];
+} lights;
 
 float GetRoughness(vec2 uv, int index)
 {

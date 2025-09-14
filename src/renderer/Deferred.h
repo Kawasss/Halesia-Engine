@@ -56,7 +56,7 @@ private:
 
 	void UpdateUBO(Camera* cam);
 	void CreateBuffers();
-	void BindResources(const FIF::Buffer& lightBuffer);
+	void BindResources();
 	void BindTLAS();
 	void BindGBuffers();
 
