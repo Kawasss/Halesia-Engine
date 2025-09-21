@@ -7,14 +7,34 @@ layout (location = 4) in  vec3 inBiTangent;
 layout (location = 5) in ivec4 inBoneIDs;
 layout (location = 6) in  vec4 inBoneWeights;
 
+DECLARE_EXTERNAL_SET(2)
+
 layout (binding = 0) buffer UniformData
 {
-	mat4 view;
-	mat4 proj;
 	mat4 models[];
 } constants;
 
+layout(set = 2, binding = scene_data_buffer_binding) uniform SceneData
+{
+    mat4 view;
+    mat4 proj;
+
+    mat4 prevView;
+    mat4 prevProj;
+    
+    mat4 viewInv;
+    mat4 projInv;
+
+    vec2 viewportSize;
+
+    float zNear;
+    float zFar;
+
+    vec3 camPosition;
+    uint frameCount;
+} sceneData;
+
 void main()
 {
-	gl_Position = constants.proj * constants.view * constants.models[gl_InstanceIndex] * vec4(inPosition, 1.0);
+	gl_Position = sceneData.proj * sceneData.view * constants.models[gl_InstanceIndex] * vec4(inPosition, 1.0);
 }

@@ -73,8 +73,8 @@ void Editor::Start()
 
 	renderer = core.renderer;
 
-	boundingVolumePipeline = renderer->AddRenderPipeline<BoundingVolumePipeline>("boundingVolume");
-	gridPipeline = renderer->AddRenderPipeline<GridPipeline>("grid");
+	//boundingVolumePipeline = renderer->AddRenderPipeline<BoundingVolumePipeline>("boundingVolume");
+	//gridPipeline = renderer->AddRenderPipeline<GridPipeline>("grid");
 
 	camera = AddCustomCamera<EditorCamera>();
 

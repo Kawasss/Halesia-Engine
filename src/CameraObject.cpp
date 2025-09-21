@@ -40,7 +40,8 @@ glm::mat4 CameraObject::GetPreviousProjectionMatrix() const
 
 void CameraObject::CalculateView()
 {
-	view = glm::lookAt(transform.position, transform.position + transform.GetForward(), transform.GetUp());
+	glm::vec3 position = transform.GetGlobalPosition();
+	view = glm::lookAt(position, position + transform.GetForward(), transform.GetUp());
 }
 
 void CameraObject::CalculateProjection()
@@ -49,7 +50,7 @@ void CameraObject::CalculateProjection()
 
 	float width  = pRenderer->GetInternalWidth();
 	float height = pRenderer->GetInternalHeight();
-
-	proj = glm::perspective(width / height, aspectRatio, nearPlane, farPlane);
+	
+	proj = glm::perspective(width / height, aspectRatio, zNear, zFar);
 	proj[1][1] *= -1.0f;
 }

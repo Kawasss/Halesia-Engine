@@ -13,7 +13,7 @@ public:
 	glm::vec3 GetBackward();
 	glm::vec3 GetForward();
 	glm::vec3 GetGlobalScale();
-	glm::vec3 GetFullPosition();
+	glm::vec3 GetGlobalPosition();
 
 	float GetPitch();
 	float GetYaw();

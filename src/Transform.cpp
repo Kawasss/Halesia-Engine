@@ -46,13 +46,9 @@ glm::vec3 Transform::GetGlobalScale()
 	return glm::vec3(glm::length(GetRight()), glm::length(GetUp()), glm::length(GetBackward()));
 }
 
-glm::vec3 Transform::GetFullPosition() // prefer to not use recursion
+glm::vec3 Transform::GetGlobalPosition()
 {
-	glm::vec3 ret{};
-	for (Transform* pTrans = this; pTrans != nullptr; pTrans = pTrans->parent)
-		ret += pTrans->position;
-
-	return ret;
+	return glm::vec3(model[3][0], model[3][1], model[3][2]);
 }
 
 float Transform::GetYaw()

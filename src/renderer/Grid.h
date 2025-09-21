@@ -15,10 +15,7 @@ public:
 	void ReloadShaders(const Payload& payload) override;
 
 private:
-	struct PushConstant;
-
 	void CreatePipeline();
 
 	std::unique_ptr<GraphicsPipeline> pipeline;
-	FIF::Buffer constants;
 };

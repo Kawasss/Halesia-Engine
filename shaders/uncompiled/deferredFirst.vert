@@ -10,15 +10,14 @@ layout (location = 6) in  vec4 inBoneWeights;
 layout (location = 0) out vec3 position;
 layout (location = 1) out vec3 normal;
 layout (location = 2) out vec2 texCoords;
-layout (location = 3) out vec3 camPos;
-layout (location = 4) out vec4 prevPosition;
-layout (location = 5) out vec4 currPosition;
-layout (location = 6) out vec3 tangent;
-layout (location = 7) out vec3 bitangent;
+layout (location = 3) out vec4 prevPosition;
+layout (location = 4) out vec4 currPosition;
+layout (location = 5) out vec3 tangent;
+layout (location = 6) out vec3 bitangent;
 
-DECLARE_EXTERNAL_SET(2)
+DECLARE_EXTERNAL_SET(1)
 
-layout(set = 2, binding = scene_data_buffer_binding) uniform SceneData
+layout(set = 1, binding = scene_data_buffer_binding) uniform SceneData
 {
     mat4 view;
     mat4 proj;
@@ -56,7 +55,6 @@ void main()
     normal    = normalize(normalMatrix * inNormal);
 
     texCoords = inTexCoords;
-    camPos = sceneData.camPosition;
 
     prevPosition = sceneData.prevProj * sceneData.prevView * vec4(position, 1.0);
     currPosition = sceneData.proj * sceneData.view * vec4(position, 1.0);

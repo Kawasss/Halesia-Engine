@@ -429,15 +429,11 @@ void Vulkan::EndSingleTimeCommands(VkQueue queue, VkCommandBuffer commandBuffer,
     win32::CriticalSection& section = GetQueueCriticalSection(queue);
     win32::CriticalLockGuard guard(section);
 
-    section.Lock();
-
     result = vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
     CheckVulkanResult("Failed to submit the single time commands queue", result);
     
     result = vkQueueWaitIdle(queue);
     CheckVulkanResult("Failed to wait for the queue idle", result);
-
-    section.Unlock();
 
     vkFreeCommandBuffers(context.logicalDevice, commandPool, 1, &commandBuffer);
 }

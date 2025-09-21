@@ -54,6 +54,7 @@ struct Renderer::SceneData // if supporting vr, then turn all camera matrices in
 {
 	glm::mat4 view;
 	glm::mat4 proj;
+
 	glm::mat4 prevView;
 	glm::mat4 prevProj;
 
@@ -917,6 +918,9 @@ void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
 	}
 	else CheckVulkanResult("Failed to present the swap chain image", result);
 
+	win32::CriticalSection& section = Vulkan::GetQueueCriticalSection(graphicsQueue);
+	section.Unlock();
+
 	frameCount++;
 }
 
@@ -965,9 +969,6 @@ void Renderer::StartRecording()
 	CheckVulkanResult("Failed to wait for fences", result);
 	result = vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
 	CheckVulkanResult("Failed to reset fences", result);
-
-	win32::CriticalSection& section = Vulkan::GetQueueCriticalSection(graphicsQueue);
-	section.Unlock();
 
 	Vulkan::DeleteSubmittedObjects();
 	GetQueryResults();

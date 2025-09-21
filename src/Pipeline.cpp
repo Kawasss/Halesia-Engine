@@ -27,6 +27,9 @@ void Pipeline::CreateDescriptorPool(const ShaderGroupReflector& reflector)
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	std::vector<VkDescriptorPoolSize> poolSizes = reflector.GetDescriptorPoolSize();
 
+	if (poolSizes.empty())
+		return;
+
 	for (VkDescriptorPoolSize& size : poolSizes)
 		size.descriptorCount *= FIF::FRAME_COUNT;
 
@@ -45,6 +48,12 @@ void Pipeline::CreateSetLayouts(const ShaderGroupReflector& reflector)
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 	std::set<uint32_t> indices = reflector.GetDescriptorSetIndices();
+
+	if (indices.empty())
+	{
+		InsertGlobalLayouts();
+		return;
+	}
 
 	setLayouts.reserve(indices.size() + globalSetLayouts.size());
 
@@ -80,27 +89,40 @@ void Pipeline::CreateSetLayouts(const ShaderGroupReflector& reflector)
 		}
 	}
 
-	if (!globalSetLayouts.empty())
-		setLayouts.insert(setLayouts.end(), globalSetLayouts.begin(), globalSetLayouts.end());
+	InsertGlobalLayouts();
 }
 
 void Pipeline::AllocateDescriptorSets(uint32_t amount)
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
-	VkDescriptorSetAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	allocInfo.descriptorSetCount = amount;
-	allocInfo.descriptorPool = pool;
-	allocInfo.pSetLayouts = setLayouts.data();
-
-	for (int i = 0; i < FIF::FRAME_COUNT; i++)
+	if (pool != VK_NULL_HANDLE)
 	{
-		descriptorSets[i].resize(amount);
-		VkResult result = vkAllocateDescriptorSets(ctx.logicalDevice, &allocInfo, descriptorSets[i].data());
-		CheckVulkanResult("Failed to allocate descriptor sets for a graphics pipeline", result);
+		VkDescriptorSetAllocateInfo allocInfo{};
+		allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		allocInfo.descriptorSetCount = amount;
+		allocInfo.descriptorPool = pool;
+		allocInfo.pSetLayouts = setLayouts.data();
+
+		for (int i = 0; i < FIF::FRAME_COUNT; i++)
+		{
+			descriptorSets[i].resize(amount);
+			VkResult result = vkAllocateDescriptorSets(ctx.logicalDevice, &allocInfo, descriptorSets[i].data());
+			CheckVulkanResult("Failed to allocate descriptor sets for a graphics pipeline", result);
+		}
 	}
 
+	InsertGlobalSets();
+}
+
+void Pipeline::InsertGlobalLayouts()
+{
+	if (!globalSetLayouts.empty())
+		setLayouts.insert(setLayouts.end(), globalSetLayouts.begin(), globalSetLayouts.end());
+}
+
+void Pipeline::InsertGlobalSets()
+{
 	if (globalDescriptorSets[0].empty())
 		return;
 

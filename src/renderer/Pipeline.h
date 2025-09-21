@@ -84,4 +84,7 @@ private:
 	void CreateDescriptorPool(const ShaderGroupReflector& reflector);
 	void CreateSetLayouts(const ShaderGroupReflector& reflector);
 	void AllocateDescriptorSets(uint32_t amount);
+
+	void InsertGlobalLayouts();
+	void InsertGlobalSets();
 };

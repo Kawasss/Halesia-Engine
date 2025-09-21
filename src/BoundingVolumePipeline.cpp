@@ -30,8 +30,6 @@ void BoundingVolumePipeline::Execute(const Payload& payload, const std::vector<M
 	const CommandBuffer& cmdBuffer = payload.commandBuffer;
 
 	UniformData* pData = constants.GetMappedPointer<UniformData>();
-	pData->view = payload.camera->GetViewMatrix();
-	pData->proj = payload.camera->GetProjectionMatrix();
 
 	payload.renderer->StartRenderPass(renderPass);
 

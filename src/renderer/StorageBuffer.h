@@ -225,7 +225,7 @@ private:
 			size = memoryInfo.size;
 		}
 
-		buffer.Fill(0, size, offset);
+		//buffer.Fill(0, size, offset);
 	}
 
 	bool CheckIfHandleIsValid(StorageMemory memory)

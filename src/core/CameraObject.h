@@ -12,15 +12,13 @@ public:
 	void Start() override;
 	void Update(float delta) override;
 
-	~CameraObject();
-
 	glm::mat4 GetViewMatrix() const;
 	glm::mat4 GetProjectionMatrix() const;
 
 	glm::mat4 GetPreviousViewMatrix() const;
 	glm::mat4 GetPreviousProjectionMatrix() const;
 
-	float nearPlane = 0.01f, farPlane = 1000;
+	float zNear = 0.01f, zFar = 1000;
 
 private:
 	void CalculateView();
@@ -30,5 +28,4 @@ private:
 	glm::mat4 proj, prevProj;
 
 	float aspectRatio = 0.0f;
-
 };
