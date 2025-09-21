@@ -50,6 +50,25 @@ struct Renderer::LightBuffer
 	LightGPU lights[1024];
 };
 
+struct Renderer::SceneData // if supporting vr, then turn all camera matrices into an array for 2
+{
+	glm::mat4 view;
+	glm::mat4 proj;
+	glm::mat4 prevView;
+	glm::mat4 prevProj;
+
+	glm::mat4 viewInv;
+	glm::mat4 projInv;
+
+	glm::vec2 viewportSize;
+
+	float zNear;
+	float zFar;
+
+	glm::vec3 camPosition;
+	uint32_t frameCount;
+};
+
 StorageBuffer<Vertex>   Renderer::g_vertexBuffer;
 StorageBuffer<uint32_t> Renderer::g_indexBuffer;
 StorageBuffer<Vertex>   Renderer::g_defaultVertexBuffer;
@@ -99,6 +118,7 @@ void Renderer::Destroy()
 		return;
 
 	lightBuffer.~Buffer();
+	sceneBuffer.~Buffer();
 
 	for (Material& mat : Mesh::materials)
 		mat.Destroy();
@@ -312,8 +332,11 @@ void Renderer::CreateDefaultObjects() // default objects are objects that are al
 	lightBuffer.Init(sizeof(LightBuffer), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	lightBuffer.MapPermanently();
 
+	sceneBuffer.Init(sizeof(SceneData), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	sceneBuffer.MapPermanently();
+
 	managedSet.Create();
-	PermanentlyBindLightBuffer();
+	PermanentlyBindGlobalBuffers();
 
 	HdrConverter::Start();
 	animationManager = AnimationManager::Get();
@@ -471,12 +494,15 @@ void Renderer::ManagedSet::Create()
 
 	uint32_t imageCount = props.limits.maxDescriptorSetSampledImages < MAX_BINDLESS_TEXTURES ? props.limits.maxDescriptorSetSampledImages : MAX_BINDLESS_TEXTURES;
 
-	std::array<VkDescriptorPoolSize, 2> poolSizes{};
+	std::array<VkDescriptorPoolSize, 3> poolSizes{};
 	poolSizes[0].descriptorCount = imageCount;
 	poolSizes[0].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
 	poolSizes[1].descriptorCount = 1 * FIF::FRAME_COUNT;
 	poolSizes[1].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+
+	poolSizes[2].descriptorCount = 1 * FIF::FRAME_COUNT;
+	poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 
 	VkDescriptorPoolCreateInfo poolCreateInfo{};
 	poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -572,11 +598,16 @@ void Renderer::ManagedSet::CreateFIFLayout()
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
-	std::array<VkDescriptorSetLayoutBinding, 1> layoutBindings{};
+	std::array<VkDescriptorSetLayoutBinding, 2> layoutBindings{};
 	layoutBindings[0].binding = LIGHT_BUFFER_BINDING;
 	layoutBindings[0].descriptorCount = 1;
 	layoutBindings[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	layoutBindings[0].stageFlags = VK_SHADER_STAGE_ALL;
+
+	layoutBindings[1].binding = SCENE_DATA_BUFFER_BINDING;
+	layoutBindings[1].descriptorCount = 1;
+	layoutBindings[1].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	layoutBindings[1].stageFlags = VK_SHADER_STAGE_ALL;
 
 	VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
 	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -614,27 +645,12 @@ void Renderer::ManagedSet::Destroy()
 	vkDestroyDescriptorPool(ctx.logicalDevice, pool, nullptr);
 }
 
-void Renderer::PermanentlyBindLightBuffer()
+void Renderer::PermanentlyBindGlobalBuffers()
 {
 	for (int i = 0; i < FIF::FRAME_COUNT; i++)
 	{
-		VkDescriptorBufferInfo info{};
-		info.buffer = lightBuffer[i];
-		info.offset = 0;
-		info.range = VK_WHOLE_SIZE;
-
-		VkWriteDescriptorSet writeSet{};
-		writeSet.descriptorCount = 1;
-		writeSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		writeSet.dstArrayElement = 0;
-		writeSet.dstBinding = LIGHT_BUFFER_BINDING;
-		writeSet.dstSet = managedSet.fifSets[i];
-		writeSet.pBufferInfo = &info;
-		writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-
-		vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, 1, &writeSet, 0, nullptr);
-
-		//DescriptorWriter::WriteBuffer(managedSet.fifSets[i], lightBuffer[i], VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, LIGHT_BUFFER_BINDING);
+		DescriptorWriter::WriteBuffer(managedSet.fifSets[i], lightBuffer[i], VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, LIGHT_BUFFER_BINDING);
+		DescriptorWriter::WriteBuffer(managedSet.fifSets[i], sceneBuffer[i], VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, SCENE_DATA_BUFFER_BINDING);
 	}
 
 	DescriptorWriter::Write();
@@ -1037,6 +1053,7 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera
 
 	ResetLightBuffer();
 	UpdateLightBuffer(lightObjects);
+	UpdateSceneData(camera);
 
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 }
@@ -1049,6 +1066,23 @@ void Renderer::UpdateLightBuffer(const std::vector<LightObject*>& lights)
 		buffer->lights[i] = lights[i]->ToGPUFormat();
 	}
 	buffer->count = static_cast<int>(lights.size());
+}
+
+void Renderer::UpdateSceneData(Camera* camera)
+{
+	SceneData* pData = sceneBuffer.GetMappedPointer<SceneData>();
+
+	pData->view = camera->GetViewMatrix();
+	pData->proj = camera->GetProjectionMatrix();
+	pData->prevView = camera->GetPreviousViewMatrix();
+	pData->prevProj = camera->GetPreviousProjectionMatrix();
+	pData->viewInv = glm::inverse(pData->view);
+	pData->projInv = glm::inverse(pData->proj);
+	pData->viewportSize = glm::vec2(GetInternalWidth(), GetInternalHeight());
+	pData->zNear = 0.01f; // set real value !!
+	pData->zFar = 1000.0f;
+	pData->camPosition = camera->position;
+	pData->frameCount = frameCount;
 }
 
 void Renderer::StartRenderPass(VkRenderPass renderPass, glm::vec3 clearColor, VkFramebuffer framebuffer)

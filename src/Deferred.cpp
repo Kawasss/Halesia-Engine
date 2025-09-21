@@ -178,11 +178,6 @@ void DeferredPipeline::CreateRTGIPipeline(const Payload& payload)
 
 void DeferredPipeline::CreateAndBindRTGI(const Payload& payload)
 {
-	constexpr VkDeviceSize MAX_INSTANCE_COUNT = 500ULL;
-
-	instanceBuffer.Init(sizeof(InstanceData) * MAX_INSTANCE_COUNT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	instanceBuffer.MapPermanently();
-
 	CreateRTGIPipeline(payload);
 
 	ResizeRTGI(payload.width, payload.height);
@@ -255,8 +250,10 @@ void DeferredPipeline::BindRTGIResources()
 
 void DeferredPipeline::CreateBuffers()
 {
-	uboBuffer.Init(sizeof(UBO), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-	uboBuffer.MapPermanently();
+	constexpr VkDeviceSize MAX_INSTANCE_COUNT = 500ULL;
+
+	instanceBuffer.Init(sizeof(InstanceData) * MAX_INSTANCE_COUNT, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+	instanceBuffer.MapPermanently();
 }
 
 void DeferredPipeline::BindTLAS()
@@ -290,8 +287,6 @@ void DeferredPipeline::BindTLAS()
 
 void DeferredPipeline::BindResources()
 {
-	firstPipeline->BindBufferToName("ubo", uboBuffer.Get());
-
 	BindGBuffers();
 }
 
@@ -636,8 +631,6 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<MeshObj
 			TLAS->Update(objects, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
 	}
 
-	UpdateUBO(payload.camera);
-
 	const CommandBuffer cmdBuffer = payload.commandBuffer;
 	Renderer* renderer = payload.renderer;
 
@@ -849,17 +842,6 @@ std::vector<RenderPipeline::IntVariable> DeferredPipeline::GetIntVariables()
 	ret.emplace_back("step count", &spatialStepCount);
 
 	return ret;
-}
-
-void DeferredPipeline::UpdateUBO(Camera* cam)
-{
-	UBO* ubo = uboBuffer.GetMappedPointer<UBO>();
-
-	ubo->camPos = glm::vec4(cam->position, 1.0f);
-	ubo->view = cam->GetViewMatrix();
-	ubo->proj = cam->GetProjectionMatrix();
-	ubo->prevView = cam->GetPreviousViewMatrix();
-	ubo->prevProj = cam->GetPreviousProjectionMatrix();
 }
 
 uint32_t DeferredPipeline::GetRTGIWidth() const

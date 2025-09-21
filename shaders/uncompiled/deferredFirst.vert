@@ -16,13 +16,27 @@ layout (location = 5) out vec4 currPosition;
 layout (location = 6) out vec3 tangent;
 layout (location = 7) out vec3 bitangent;
 
-layout(set = 0, binding = 0) uniform sceneInfo {
-    vec3 camPos;
+DECLARE_EXTERNAL_SET(2)
+
+layout(set = 2, binding = scene_data_buffer_binding) uniform SceneData
+{
     mat4 view;
     mat4 proj;
+
     mat4 prevView;
     mat4 prevProj;
-} ubo;
+    
+    mat4 viewInv;
+    mat4 projInv;
+
+    vec2 viewportSize;
+
+    float zNear;
+    float zFar;
+
+    vec3 camPosition;
+    uint frameCount;
+} sceneData;
 
 layout(push_constant) uniform constant
 {
@@ -42,9 +56,9 @@ void main()
     normal    = normalize(normalMatrix * inNormal);
 
     texCoords = inTexCoords;
-    camPos = ubo.camPos;
+    camPos = sceneData.camPosition;
 
-    prevPosition = ubo.prevProj * ubo.prevView * vec4(position, 1.0);
-    currPosition = ubo.proj * ubo.view * vec4(position, 1.0);
+    prevPosition = sceneData.prevProj * sceneData.prevView * vec4(position, 1.0);
+    currPosition = sceneData.proj * sceneData.view * vec4(position, 1.0);
     gl_Position = currPosition;
 }

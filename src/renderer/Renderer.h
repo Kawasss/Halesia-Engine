@@ -55,6 +55,7 @@ public:
 
 	static constexpr uint32_t MATERIAL_BUFFER_BINDING = 0;
 	static constexpr uint32_t LIGHT_BUFFER_BINDING = 0;
+	static constexpr uint32_t SCENE_DATA_BUFFER_BINDING = 1;
 
 	static StorageBuffer<Vertex>   g_vertexBuffer;
 	static StorageBuffer<uint32_t> g_indexBuffer;
@@ -146,6 +147,7 @@ public:
 
 private:
 	struct LightBuffer;
+	struct SceneData;
 
 	struct ManagedSet
 	{
@@ -185,6 +187,7 @@ private:
 	Framebuffer framebuffer;
 
 	FIF::Buffer lightBuffer;
+	FIF::Buffer sceneBuffer;
 
 	std::map<RenderPipeline*, std::string> dbgPipelineNames;
 
@@ -237,7 +240,7 @@ private:
 	void CreateImGUI();
 	void CreateDefaultObjects();
 
-	void PermanentlyBindLightBuffer();
+	void PermanentlyBindGlobalBuffers();
 
 	void InitializeViewport();
 
@@ -263,6 +266,8 @@ private:
 
 	void ResetLightBuffer();
 	void UpdateLightBuffer(const std::vector<LightObject*>& lights);
+
+	void UpdateSceneData(Camera* camera);
 
 	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
 	void RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<MeshObject*> object, Camera* camera);
