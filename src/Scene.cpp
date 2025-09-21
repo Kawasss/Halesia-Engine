@@ -92,6 +92,19 @@ void Scene::UpdateCamera(Window* pWindow, float delta)
 	camera->Update(pWindow, delta);
 }
 
+void Scene::PrepareObjectsForUpdate()
+{
+	if (!HasFinishedLoading())
+		return;
+
+	for (Object* pObject : allObjects)
+	{
+		if (pObject->ShouldBeDestroyed() || pObject->state == OBJECT_STATE_DISABLED)
+			continue;
+		pObject->FullUpdateTransform();
+	}
+}
+
 void Scene::UpdateScripts(float delta)
 {
 	if (!HasFinishedLoading())
@@ -99,9 +112,9 @@ void Scene::UpdateScripts(float delta)
 
 	for (int i = 0; i < allObjects.size(); i++)
 	{
-		if (!allObjects[i]->HasScript() || allObjects[i]->ShouldBeDestroyed() || allObjects[i]->state == OBJECT_STATE_DISABLED)
+		if (allObjects[i]->ShouldBeDestroyed() || allObjects[i]->state == OBJECT_STATE_DISABLED)
 			continue;
-		allObjects[i]->Update(delta);
+		allObjects[i]->FullUpdate(delta); // can optimize away empty function calls here
 	}
 }
 

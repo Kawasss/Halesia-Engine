@@ -36,6 +36,7 @@ std::string_view Object::InheritTypeToString(InheritType type)
 	case InheritType::Mesh:    return "Mesh";
 	case InheritType::Rigid3D: return "Rigid3D";
 	case InheritType::Script:  return "Script";
+	case InheritType::Camera:  return "Camera";
 	}
 	return "Unknown";
 }
@@ -46,6 +47,8 @@ Object::InheritType Object::StringToInheritType(const std::string_view& str)
 	if (str == "Light")   return InheritType::Light;
 	if (str == "Mesh")    return InheritType::Mesh;
 	if (str == "Rigid3D") return InheritType::Rigid3D;
+	if (str == "Script")  return InheritType::Script;
+	if (str == "Camera")  return InheritType::Camera;
 	return InheritType::TypeCount; // fallback value
 }
 

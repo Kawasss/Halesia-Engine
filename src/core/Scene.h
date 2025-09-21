@@ -32,6 +32,8 @@ public:
 	void UpdateScripts(float delta);
 	void CollectGarbage();
 
+	void PrepareObjectsForUpdate();
+
 	void DestroyAllObjects();
 
 	/// <summary>

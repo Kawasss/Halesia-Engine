@@ -41,7 +41,8 @@ public:
 		Rigid3D = 2,
 		Light = 3,
 		Script = 4,
-		TypeCount = 5, // increment when a new type is added
+		Camera = 5,
+		TypeCount = 6, // increment when a new type is added
 		Invalid = TypeCount + 1,
 	};
 	static std::string_view InheritTypeToString(InheritType type);
@@ -64,11 +65,32 @@ public:
 	virtual ~Object();
 
 	virtual void Start()  {}
-	virtual void Update(float delta) {}
+
+	/// <summary>
+	/// only update this object, ignores its children
+	/// </summary>
+	/// <param name="delta">time passed since last update</param>
+	void ShallowUpdate(float delta);
 
 	virtual void OnCollisionEnter(Object* object) {}
 	virtual void OnCollisionStay(Object* object)  {}
 	virtual void OnCollisionExit(Object* object)  {}
+
+	/// <summary>
+	/// update this object and its children
+	/// </summary>
+	/// /// <param name="delta">time passed since last update</param>
+	void FullUpdate(float delta);
+
+	/// <summary>
+	/// Update the transform matrices of this object and its children
+	/// </summary>
+	void FullUpdateTransform();
+
+	/// <summary>
+	/// update the transform matrices of only this object, not its children
+	/// </summary>
+	void ShallowUpdateTransform();
 
 	bool HasFinishedLoading();
 	bool HasScript() const { return hasScript; }
@@ -151,6 +173,8 @@ private:
 
 protected:
 	Object* parent = nullptr;
+
+	virtual void Update(float delta) {}
 
 	/// <summary>
 	/// instance must create a copy of all of its data into pObject. Implementations can assume that pObject is the same superclass is the instance.

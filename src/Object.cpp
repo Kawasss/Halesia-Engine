@@ -15,6 +15,30 @@ Object::Object(InheritType type) : type(type)
 	
 }
 
+void Object::ShallowUpdate(float delta)
+{
+	this->Update(delta);
+}
+
+void Object::FullUpdate(float delta)
+{
+	this->Update(delta);
+	for (Object* pChild : children)
+		pChild->FullUpdate(delta);
+}
+
+void Object::ShallowUpdateTransform()
+{
+	transform.CalculateModelMatrix();
+}
+
+void Object::FullUpdateTransform()
+{
+	this->ShallowUpdateTransform();
+	for (Object* pChild : children)
+		pChild->FullUpdateTransform();
+}
+
 void Object::AwaitGeneration()
 {
 	if (generation.valid())

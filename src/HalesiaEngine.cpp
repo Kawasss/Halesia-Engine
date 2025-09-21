@@ -267,6 +267,8 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 			Physics::Simulate(frameDelta);
 			Physics::FetchAndUpdateObjects();
 
+			core.scene->PrepareObjectsForUpdate();
+
 			asyncScripts = std::async(&HalesiaEngine::UpdateScene, this, frameDelta);
 			asyncRenderer = std::async(&HalesiaEngine::UpdateRenderer, this, frameDelta);
 

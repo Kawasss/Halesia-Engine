@@ -7,15 +7,19 @@ Transform::Transform(glm::vec3 position, glm::quat rotation, glm::vec3 scale)
 	this->scale = scale;
 }
 
-glm::mat4 Transform::GetModelMatrix()
+void Transform::CalculateModelMatrix()
 {
-	if (!localRotationChanged)
-		localRotationModel = glm::toMat4(rotation);
 	glm::mat4 scaleModel = glm::scale(scale);
 	glm::mat4 translationModel = glm::translate(position);
-	model = translationModel * localRotationModel * scaleModel;
-	localRotationChanged = false;
-	return parent == nullptr ? model : parent->GetModelMatrix() * model;
+
+	glm::mat4 local = translationModel * glm::toMat4(rotation) * scaleModel;
+
+	model = parent == nullptr ? local : parent->GetModelMatrix() * local;
+}
+
+glm::mat4 Transform::GetModelMatrix() const
+{
+	return model;
 }
 
 glm::vec3 Transform::GetRight()
@@ -26,11 +30,6 @@ glm::vec3 Transform::GetRight()
 glm::vec3 Transform::GetUp()
 {
 	return glm::vec3(model[1][0], model[1][1], model[1][2]);
-}
-
-glm::vec3 Transform::GetLocalUp()
-{
-	return glm::vec3(localRotationModel[1][0], localRotationModel[1][1], localRotationModel[1][2]);
 }
 
 glm::vec3 Transform::GetBackward()
@@ -47,6 +46,15 @@ glm::vec3 Transform::GetGlobalScale()
 	return glm::vec3(glm::length(GetRight()), glm::length(GetUp()), glm::length(GetBackward()));
 }
 
+glm::vec3 Transform::GetFullPosition() // prefer to not use recursion
+{
+	glm::vec3 ret{};
+	for (Transform* pTrans = this; pTrans != nullptr; pTrans = pTrans->parent)
+		ret += pTrans->position;
+
+	return ret;
+}
+
 float Transform::GetYaw()
 {
 	return atan2(GetForward()[1], GetForward()[0]);
@@ -55,28 +63,4 @@ float Transform::GetYaw()
 float Transform::GetPitch()
 {
 	return -asin(GetForward()[2]);//atan2(-model[3][1], sqrt(model[3][2]*model[3][2] + model[3][3]*model[3][3]));
-}
-
-glm::mat4 Transform::GetLocalRotation()
-{
-	return localRotationModel;
-}
-
-void Transform::SetLocalRotation(glm::mat4 newLocalRotation)
-{
-	localRotationModel = newLocalRotation;
-	localRotationChanged = true;
-}
-
-glm::vec2 Transform::GetMotionVector(glm::mat4 projection, glm::mat4 view, glm::mat4 model)
-{
-	glm::vec4 currentClipSpace = projection * view * model * glm::vec4(position, 1);
-
-	glm::vec2 difference = glm::vec2(currentClipSpace) / (currentClipSpace.w + 0.001f) - glm::vec2(previousClipPosition) / (previousClipPosition.w + 0.001f);
-
-	if (difference != difference) // if the player is at 0, 0 ret will be NaN, according to IEEE NaN cannot be equal to NaN so this checks for that
-		difference = glm::vec2(0);
-	
-	previousClipPosition = currentClipSpace;
-	return difference;
 }
