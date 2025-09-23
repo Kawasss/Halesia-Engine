@@ -3,7 +3,7 @@
 #include <vector>
 
 class Object;
-class Camera;
+class CameraObject;
 class Window;
 
 struct ObjectCreationData;
@@ -11,9 +11,9 @@ struct ObjectCreationData;
 class Scene 
 {
 public:
-	static Camera* defaultCamera;
+	static CameraObject* defaultCamera;
 
-	Camera* camera = defaultCamera;
+	CameraObject* camera = defaultCamera;
 
 	template<typename T> 
 	Object* AddObject(const ObjectCreationData& creationData, Object* pParent = nullptr);
@@ -23,8 +23,7 @@ public:
 	Object* DuplicateObject(Object* pObject, std::string name); //!< UNSAFE, currently does not duplicate the appropriate class based on type
 	Object* DuplicateObject(Object* pObject, std::string name); //!< UNSAFE
 
-	template<typename T>
-	Camera* AddCustomCamera();
+	void SetActiveCamera(CameraObject* pCamera);
 
 	bool HasFinishedLoading();
 
@@ -67,15 +66,6 @@ private:
 protected:
 	void Free(Object* object);
 };
-
-template<typename T> Camera* Scene::AddCustomCamera()
-{
-	T* custom = new T();
-	Camera* ret = custom;
-	ret->SetScript(custom);
-	ret->Start();
-	return ret;
-}
 
 template<typename T> Object* Scene::AddObject(const ObjectCreationData& creationData, Object* pParent)
 {

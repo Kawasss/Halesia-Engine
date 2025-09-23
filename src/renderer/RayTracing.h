@@ -12,7 +12,7 @@ class BottomLevelAccelerationStructure;
 class TopLevelAccelerationStructure;
 class Window;
 class Object;
-class Camera;
+class CameraObject;
 class Denoiser;
 class ShaderGroupReflector;
 struct InstanceMeshData;
@@ -48,7 +48,7 @@ public:
 	VkSemaphore externSemaphore;
 
 private:
-	void UpdateInstanceDataBuffer(const std::vector<MeshObject*>& objects, Camera* camera);
+	void UpdateInstanceDataBuffer(const std::vector<MeshObject*>& objects, CameraObject* camera);
 	void UpdateTextureBuffer();
 	void UpdateMeshDataDescriptorSets();
 	void CreateShaderBindingTable();

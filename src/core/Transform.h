@@ -8,15 +8,15 @@ public:
 	Transform(glm::vec3 translation, glm::quat rotation, glm::vec3 scale);
 
 	glm::mat4 GetModelMatrix() const; // does NOT calculate the matrix, call CalculateModelMatrix for that
-	glm::vec3 GetRight();
-	glm::vec3 GetUp();
-	glm::vec3 GetBackward();
-	glm::vec3 GetForward();
-	glm::vec3 GetGlobalScale();
-	glm::vec3 GetGlobalPosition();
+	glm::vec3 GetRight() const;
+	glm::vec3 GetUp() const;
+	glm::vec3 GetBackward() const;
+	glm::vec3 GetForward() const;
+	glm::vec3 GetGlobalScale() const;
+	glm::vec3 GetGlobalPosition() const;
 
-	float GetPitch();
-	float GetYaw();
+	float GetPitch() const;
+	float GetYaw() const;
 
 	void CalculateModelMatrix();
 

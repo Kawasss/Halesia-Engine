@@ -22,41 +22,41 @@ glm::mat4 Transform::GetModelMatrix() const
 	return model;
 }
 
-glm::vec3 Transform::GetRight()
+glm::vec3 Transform::GetRight() const
 {
-	return glm::vec3(model[0][0], model[0][1], model[0][2]);
+	return glm::normalize(glm::vec3(model[0][0], model[0][1], model[0][2]));
 }
 
-glm::vec3 Transform::GetUp()
+glm::vec3 Transform::GetUp() const
 {
-	return glm::vec3(model[1][0], model[1][1], model[1][2]);
+	return glm::normalize(glm::vec3(model[1][0], model[1][1], model[1][2]));
 }
 
-glm::vec3 Transform::GetBackward()
+glm::vec3 Transform::GetBackward() const
 {
-	return glm::vec3(model[2][0], model[2][1], model[2][2]);
+	return glm::normalize(glm::vec3(model[2][0], model[2][1], model[2][2]));
 }
-glm::vec3 Transform::GetForward()
+glm::vec3 Transform::GetForward() const
 {
-	return -glm::vec3(model[2][0], model[2][1], model[2][2]);
+	return glm::normalize(-glm::vec3(model[2][0], model[2][1], model[2][2]));
 }
 
-glm::vec3 Transform::GetGlobalScale()
+glm::vec3 Transform::GetGlobalScale() const
 {
 	return glm::vec3(glm::length(GetRight()), glm::length(GetUp()), glm::length(GetBackward()));
 }
 
-glm::vec3 Transform::GetGlobalPosition()
+glm::vec3 Transform::GetGlobalPosition() const
 {
 	return glm::vec3(model[3][0], model[3][1], model[3][2]);
 }
 
-float Transform::GetYaw()
+float Transform::GetYaw() const
 {
 	return atan2(GetForward()[1], GetForward()[0]);
 }
 
-float Transform::GetPitch()
+float Transform::GetPitch() const
 {
 	return -asin(GetForward()[2]);//atan2(-model[3][1], sqrt(model[3][2]*model[3][2] + model[3][3]*model[3][3]));
 }

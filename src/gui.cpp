@@ -25,7 +25,7 @@
 #include "core/Transform.h"
 #include "core/Profiler.h"
 #include "core/Scene.h"
-#include "core/Camera.h"
+#include "core/CameraObject.h"
 
 #include "HalesiaEngine.h"
 #include <hsl/StackMap.h>
@@ -446,20 +446,9 @@ void GUI::ShowChartGraph(size_t item, size_t max, const char* label)
 		ImGui::End();
 }
 
-void GUI::ShowCameraData(Camera* camera)
+void GUI::ShowCameraData(CameraObject* camera)
 {
-	float width = ImGui::CalcTextSize("w").x;
-	ImGui::Text("position:");
-	ImGui::SameLine();
-	ShowInputVector(camera->position, { "##camposx", "##camposy", "##camposz" });
-	ImGui::Text("front:   ");
-	ImGui::SameLine();
-	ShowInputVector(camera->front, { "##frontx", "##fronty", "##frontz" });
-	InputFloat("pitch:   ", camera->pitch, width); // all in radians
-	ImGui::SameLine();
-	InputFloat("yaw:", camera->yaw, width);
-	InputFloat("FOV:     ", camera->fov, width);
-	InputFloat("speed:   ", camera->cameraSpeed, width);
+	
 }
 
 void GUI::ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePercentLow)

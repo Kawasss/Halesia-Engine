@@ -15,7 +15,7 @@
 #include "renderer/Vulkan.h"
 
 #include "core/MeshObject.h"
-#include "core/Camera.h"
+#include "core/CameraObject.h"
 
 struct DeferredPipeline::PushConstant
 {
@@ -189,7 +189,7 @@ void DeferredPipeline::PushRTGIConstants(const Payload& payload)
 	constants.frame = frame++;
 	constants.sampleCount = rtgiSampleCount;
 	constants.bounceCount = rtgiBounceCount;
-	constants.position = payload.camera->position;
+	constants.position = payload.camera->transform.GetGlobalPosition();
 
 	rtgiPipeline->PushConstant(payload.commandBuffer, constants, VK_SHADER_STAGE_RAYGEN_BIT_KHR | VK_SHADER_STAGE_CLOSEST_HIT_BIT_KHR);
 }
@@ -561,7 +561,7 @@ void DeferredPipeline::CopyDenoisedToRTGI(const CommandBuffer& cmdBuffer)
 	cmdBuffer.CopyImage(spatialDenoisedImage.Get(), VK_IMAGE_LAYOUT_GENERAL, rtgiImage.Get(), VK_IMAGE_LAYOUT_GENERAL, 1, &copy);
 }
 
-void DeferredPipeline::PushTAAConstants(const CommandBuffer& cmdBuffer, const Camera* camera)
+void DeferredPipeline::PushTAAConstants(const CommandBuffer& cmdBuffer, const CameraObject* camera)
 {
 	glm::mat4 view = camera->GetViewMatrix();
 	glm::mat4 proj = camera->GetProjectionMatrix();
@@ -750,7 +750,7 @@ void DeferredPipeline::PerformSecondDeferred(const CommandBuffer& cmdBuffer, con
 	secondPipeline->Bind(cmdBuffer);
 
 	SecondConstants constants{};
-	constants.camPos = payload.camera->position;
+	constants.camPos = payload.camera->transform.GetGlobalPosition();
 	constants.renderMode = static_cast<std::underlying_type_t<RenderMode>>(renderMode);
 
 	secondPipeline->PushConstant(cmdBuffer, constants, VK_SHADER_STAGE_FRAGMENT_BIT);

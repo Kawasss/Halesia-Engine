@@ -10,7 +10,7 @@ class Window;
 class Transform;
 class RigidBody;
 class Profiler;
-class Camera;
+class CameraObject;
 class Renderer;
 struct Mesh;
 
@@ -37,7 +37,7 @@ public:
 	static void ShowObjectTransform(Transform& transform);
 
 	static void ShowWindowData(Window* window);
-	static void ShowCameraData(Camera* camera);
+	static void ShowCameraData(CameraObject* camera);
 
 	static void ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePercentLow);
 

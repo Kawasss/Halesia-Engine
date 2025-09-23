@@ -1,4 +1,6 @@
 #pragma once
+#include <Windows.h>
+
 #include "Object.h"
 
 #include "../glm.h"
@@ -10,7 +12,8 @@ public:
 	static CameraObject* Create();
 
 	void Start() override;
-	void Update(float delta) override;
+
+	void UpdateMatrices();
 
 	glm::mat4 GetViewMatrix() const;
 	glm::mat4 GetProjectionMatrix() const;
@@ -19,6 +22,9 @@ public:
 	glm::mat4 GetPreviousProjectionMatrix() const;
 
 	float zNear = 0.01f, zFar = 1000;
+
+protected:
+	CameraObject();
 
 private:
 	void CalculateView();

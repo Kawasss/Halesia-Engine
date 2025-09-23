@@ -2,8 +2,6 @@
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/Renderer.h"
 
-#include "core/Camera.h"
-
 #include "glm.h"
 
 void GridPipeline::Start(const Payload& payload)

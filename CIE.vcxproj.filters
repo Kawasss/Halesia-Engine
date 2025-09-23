@@ -171,9 +171,6 @@
     <ClCompile Include="src\Bone.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\Camera.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
     <ClCompile Include="src\Console.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
@@ -233,9 +230,6 @@
     </ClCompile>
     <ClCompile Include="src\Editor.cpp">
       <Filter>Source Files\core</Filter>
-    </ClCompile>
-    <ClCompile Include="src\CameraInjector.cpp">
-      <Filter>Source Files\tools</Filter>
     </ClCompile>
     <ClCompile Include="src\Skybox.cpp">
       <Filter>Source Files\Renderer</Filter>
@@ -416,9 +410,6 @@
     <ClInclude Include="src\physics\Shapes.h">
       <Filter>Header Files\physics</Filter>
     </ClInclude>
-    <ClInclude Include="src\tools\CameraInjector.h">
-      <Filter>Header Files\tools</Filter>
-    </ClInclude>
     <ClInclude Include="src\tools\common.h">
       <Filter>Header Files\tools</Filter>
     </ClInclude>
@@ -445,9 +436,6 @@
     </ClInclude>
     <ClInclude Include="src\renderer\Denoiser.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\Camera.h">
-      <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\Console.h">
       <Filter>Header Files\core</Filter>

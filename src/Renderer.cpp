@@ -26,7 +26,7 @@
 
 #include "core/Console.h"
 #include "core/Object.h"
-#include "core/Camera.h"
+#include "core/CameraObject.h"
 #include "core/MeshObject.h"
 #include "core/LightObject.h"
 
@@ -717,8 +717,11 @@ void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
 	renderPipelines.push_back(pipeline);
 }
 
-void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<MeshObject*> objects, Camera* camera)
+void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<MeshObject*> objects, CameraObject* camera)
 {
+	if (camera == nullptr)
+		return;
+
 	CheckForBufferResizes();
 
 	Vulkan::InsertDebugLabel(commandBuffer.Get(), "drawing buffer");
@@ -726,8 +729,6 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 	queryPool.Reset(commandBuffer);
 
 	//animationManager->ApplyAnimations(commandBuffer); // not good
-
-	camera->SetAspectRatio((float)viewportWidth / (float)viewportHeight);
 
 	RunRenderPipelines(commandBuffer, camera, objects);
 
@@ -768,7 +769,7 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 	commandBuffer.EndDebugUtilsLabel();
 }
 
-void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<MeshObject*>& objects)
+void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, CameraObject* camera, const std::vector<MeshObject*>& objects)
 {
 	UpdateMaterialBuffer();
 
@@ -1035,7 +1036,7 @@ static void GetAllObjectsFromObject(std::vector<MeshObject*>& ret, std::vector<L
 	}
 }
 
-void Renderer::RenderObjects(const std::vector<Object*>& objects, Camera* camera)
+void Renderer::RenderObjects(const std::vector<Object*>& objects, CameraObject* camera)
 {
 	if (!testWindow->CanBeRenderedTo())
 		return;
@@ -1069,7 +1070,7 @@ void Renderer::UpdateLightBuffer(const std::vector<LightObject*>& lights)
 	buffer->count = static_cast<int>(lights.size());
 }
 
-void Renderer::UpdateSceneData(Camera* camera)
+void Renderer::UpdateSceneData(CameraObject* camera)
 {
 	SceneData* pData = sceneBuffer.GetMappedPointer<SceneData>();
 
@@ -1082,7 +1083,7 @@ void Renderer::UpdateSceneData(Camera* camera)
 	pData->viewportSize = glm::vec2(GetInternalWidth(), GetInternalHeight());
 	pData->zNear = 0.01f; // set real value !!
 	pData->zFar = 1000.0f;
-	pData->camPosition = camera->position;
+	pData->camPosition = camera->transform.GetGlobalPosition();
 	pData->frameCount = frameCount;
 }
 
@@ -1268,7 +1269,7 @@ uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
 	return imageIndex;
 }
 
-RenderPipeline::Payload Renderer::GetPipelinePayload(CommandBuffer commandBuffer, Camera* camera)
+RenderPipeline::Payload Renderer::GetPipelinePayload(CommandBuffer commandBuffer, CameraObject* camera)
 {
 	RenderPipeline::Payload ret{};
 	ret.renderer = this;

@@ -15,10 +15,9 @@
 #include "renderer/AnimationManager.h"
 #include "renderer/Vulkan.h"
 
-#include "tools/CameraInjector.h"
 #include "physics/Physics.h"
 
-#include "core/Camera.h"
+#include "core/CameraObject.h"
 #include "core/Console.h"
 #include "core/Profiler.h"
 #include "core/Behavior.h"
@@ -143,20 +142,6 @@ void HalesiaEngine::LoadScene(Scene* newScene)
 	core.scene = newScene;
 }
 
-static void ManageCameraInjector(Scene* scene, bool pauseGame)
-{
-	static CameraInjector cameraInjector;
-	static UniquePointer orbitCamera = new OrbitCamera();
-
-	if (pauseGame && !cameraInjector.IsInjected())
-	{
-		cameraInjector = CameraInjector{ scene };
-		cameraInjector.Inject(orbitCamera.Get());
-	}
-	else if (!pauseGame && cameraInjector.IsInjected())
-		cameraInjector.Eject();
-}
-
 EngineCore& HalesiaEngine::GetEngineCore()
 {
 	return core;
@@ -167,8 +152,6 @@ void HalesiaEngine::UpdateScene(float delta)
 	SetThreadDescription(GetCurrentThread(), L"SceneUpdatingThread");
 
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
-
-	ManageCameraInjector(core.scene, pauseGame);
 
 	core.scene->UpdateCamera(core.window, delta);
 	if (!pauseGame || playOneFrame)

@@ -3,7 +3,7 @@
 #include <map>
 
 #include "Scene.h"
-#include "Camera.h"
+#include "CameraObject.h"
 
 class Window;
 class Renderer;
@@ -17,12 +17,22 @@ struct Mesh;
 
 using Handle = uint64_t;
 
-class EditorCamera : public Camera
+class EditorCamera : public CameraObject
 {
 public:
-	void Update(Window* window, float delta) override;
+	EditorCamera(Window* pWindow);
+
+	Window* window = nullptr;
+
+protected:
+	void Update(float delta) override;
 
 private:
+	void MovementLogic(float delta);
+
+	glm::vec2 rotation;
+
+	int prevX = -1, prevY = -1;
 	bool active = false;
 };
 
@@ -124,6 +134,7 @@ private:
 	Object* pObjectToCopy = nullptr;
 
 	Renderer* renderer;
+	Window* window = nullptr;
 
 	BoundingVolumePipeline* boundingVolumePipeline;
 	GridPipeline* gridPipeline;

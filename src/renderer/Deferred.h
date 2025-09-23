@@ -59,7 +59,7 @@ private:
 	void BindTAAResources();
 	void ResizeTAA(uint32_t width, uint32_t height);
 	void CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer);
-	void PushTAAConstants(const CommandBuffer& cmdBuffer, const Camera* camera);
+	void PushTAAConstants(const CommandBuffer& cmdBuffer, const CameraObject* camera);
 
 	void TransitionResourcesToTAA(const CommandBuffer& cmdBuffer);
 	void TransitionResourcesFromTAA(const CommandBuffer& cmdBuffer);

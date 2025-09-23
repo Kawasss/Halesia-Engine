@@ -7,7 +7,7 @@
 
 class MeshObject;
 class Window;
-class Camera;
+class CameraObject;
 class Renderer;
 struct Light;
 
@@ -35,7 +35,7 @@ public:
 		CommandBuffer commandBuffer;
 		Renderer* renderer;
 		Window* window;
-		Camera* camera;
+		CameraObject* camera;
 		uint32_t width;
 		uint32_t height;
 	};

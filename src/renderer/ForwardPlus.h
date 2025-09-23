@@ -10,7 +10,7 @@
 #include "Buffer.h"
 
 class ComputeShader;
-class Camera;
+class CameraObject;
 class GraphicsPipeline;
 struct Light;
 
@@ -23,8 +23,8 @@ public:
 	void Execute(const Payload& payload, const std::vector<MeshObject*>& objects) override;
 
 	// these functions can be used if the default render pipeline functions dont cut it (Execute( ... ) will call these functions)
-	void ComputeCells(CommandBuffer commandBuffer, uint32_t lightCount, Camera* camera);
-	void DrawObjects(CommandBuffer commandBuffer, const std::vector<MeshObject*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj = glm::mat4(0));
+	void ComputeCells(CommandBuffer commandBuffer, uint32_t lightCount, CameraObject* camera);
+	void DrawObjects(CommandBuffer commandBuffer, const std::vector<MeshObject*>& objects, CameraObject* camera, uint32_t width, uint32_t height, glm::mat4 customProj = glm::mat4(0));
 	void UpdateBindlessTextures();
 
 	ComputeShader* GetShader() { return computeShader.get(); }
@@ -34,7 +34,7 @@ private:
 	void Allocate();
 	void CreateShader();
 	void PrepareGraphicsPipeline();
-	void UpdateUniformBuffer(Camera* cam, glm::mat4 proj, uint32_t width, uint32_t height);
+	void UpdateUniformBuffer(CameraObject* cam, glm::mat4 proj, uint32_t width, uint32_t height);
 
 	static constexpr int MAX_LIGHT_INDICES = 7;
 	static constexpr int MAX_LIGHTS = 1024;

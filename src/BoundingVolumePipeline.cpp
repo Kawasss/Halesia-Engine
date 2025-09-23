@@ -5,7 +5,7 @@
 #include "renderer/Renderer.h"
 
 #include "core/MeshObject.h"
-#include "core/Camera.h"
+#include "core/CameraObject.h"
 
 #include "glm.h"
 

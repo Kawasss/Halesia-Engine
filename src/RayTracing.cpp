@@ -14,7 +14,7 @@
 #include "system/Input.h"
 #include "system/Window.h"
 
-#include "core/Camera.h"
+#include "core/CameraObject.h"
 #include "core/MeshObject.h"
 
 #include "io/IO.h"
@@ -68,7 +68,7 @@ uint32_t frameCount = 0;
 void RayTracingRenderPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects)
 {
 	const Window* window = payload.window;
-	const Camera* camera = payload.camera;
+	const CameraObject* camera = payload.camera;
 	const VkCommandBuffer& cmdBuffer = payload.commandBuffer.Get();
 
 	if (payload.width == 0 || payload.height == 0)
@@ -101,7 +101,7 @@ void RayTracingRenderPipeline::Execute(const Payload& payload, const std::vector
 		frameCount = 0;
 
 	if (showNormals && showUniquePrimitives) showNormals = false; // can't have 2 variables changing colors at once
-	uniformBufferMemPtr->cameraPosition = { camera->position, 1 };
+	uniformBufferMemPtr->cameraPosition = { camera->transform.GetGlobalPosition(), 1};
 	uniformBufferMemPtr->viewInverse = glm::inverse(camera->GetViewMatrix());
 	uniformBufferMemPtr->projectionInverse = glm::inverse(camera->GetProjectionMatrix());
 	uniformBufferMemPtr->mouseXY = glm::uvec2((uint32_t)(absX * Renderer::internalScale), (uint32_t)(absY * Renderer::internalScale));
@@ -613,15 +613,15 @@ void RayTracingRenderPipeline::UpdateTextureBuffer()
 		vkUpdateDescriptorSets(logicalDevice, (uint32_t)writeSets.size(), writeSets.data(), 0, nullptr);
 }
 
-void RayTracingRenderPipeline::UpdateInstanceDataBuffer(const std::vector<MeshObject*>& objects, Camera* camera)
+void RayTracingRenderPipeline::UpdateInstanceDataBuffer(const std::vector<MeshObject*>& objects, CameraObject* camera)
 {
 	amountOfActiveObjects = 1;
-	glm::vec2 staticMotion = camera->GetMotionVector() * glm::vec2(width, height); // this only factors in the rotation of the camera, not the changes in position
+	glm::vec2 staticMotion = glm::vec2() * glm::vec2(width, height); // this only factors in the rotation of the camera, not the changes in position
 
 	for (int32_t i = 0; i < objects.size(); i++, amountOfActiveObjects++)
 	{
 		glm::mat4 model = objects[i]->transform.GetModelMatrix();
-		glm::vec2 ndc = camera->GetMotionVector();
+		glm::vec2 ndc = glm::vec2();
 
 		Mesh& mesh = objects[i]->mesh;
 		uint32_t matIndex = mesh.GetMaterialIndex();

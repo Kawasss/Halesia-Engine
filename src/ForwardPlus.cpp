@@ -6,7 +6,7 @@
 #include "renderer/Texture.h"
 #include "renderer/Light.h"
 
-#include "core/Camera.h"
+#include "core/CameraObject.h"
 #include "core/MeshObject.h"
 
 struct PushConstant
@@ -66,7 +66,7 @@ void ForwardPlusPipeline::Execute(const Payload& payload, const std::vector<Mesh
 	cmdBuffer.EndRenderPass();
 }
 
-void ForwardPlusPipeline::ComputeCells(CommandBuffer commandBuffer, uint32_t lightCount, Camera* camera)
+void ForwardPlusPipeline::ComputeCells(CommandBuffer commandBuffer, uint32_t lightCount, CameraObject* camera)
 {
 	matrices->projection = camera->GetProjectionMatrix();
 	matrices->view = camera->GetViewMatrix();
@@ -89,7 +89,7 @@ void ForwardPlusPipeline::ComputeCells(CommandBuffer commandBuffer, uint32_t lig
 	commandBuffer.EndDebugUtilsLabel();
 }
 
-void ForwardPlusPipeline::DrawObjects(CommandBuffer commandBuffer, const std::vector<MeshObject*>& objects, Camera* camera, uint32_t width, uint32_t height, glm::mat4 customProj)
+void ForwardPlusPipeline::DrawObjects(CommandBuffer commandBuffer, const std::vector<MeshObject*>& objects, CameraObject* camera, uint32_t width, uint32_t height, glm::mat4 customProj)
 {
 	UpdateUniformBuffer(camera, customProj, width, height);
 
@@ -200,9 +200,9 @@ void ForwardPlusPipeline::UpdateBindlessTextures()
 		vkUpdateDescriptorSets(Vulkan::GetContext().logicalDevice, static_cast<uint32_t>(processedCount * pbrSize), writeSets.data(), 0, nullptr);
 }
 
-void ForwardPlusPipeline::UpdateUniformBuffer(Camera* cam, glm::mat4 proj, uint32_t width, uint32_t height)
+void ForwardPlusPipeline::UpdateUniformBuffer(CameraObject* cam, glm::mat4 proj, uint32_t width, uint32_t height)
 {
-	uniformBufferMapped->cameraPos = cam->position;
+	uniformBufferMapped->cameraPos = cam->transform.GetGlobalPosition();
 	uniformBufferMapped->projection = proj == glm::mat4(0) ? cam->GetProjectionMatrix() : proj;
 	uniformBufferMapped->view = cam->GetViewMatrix();
 	uniformBufferMapped->width = width;

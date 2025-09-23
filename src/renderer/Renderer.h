@@ -17,7 +17,7 @@
 #include "CommandBuffer.h"
 
 class Intro;
-class Camera;
+class CameraObject;
 class Object;
 class Swapchain;
 class Image;
@@ -68,7 +68,7 @@ public:
 	~Renderer();
 
 	void RenderIntro(Intro* intro);
-	void RenderObjects(const std::vector<Object*>& objects, Camera* camera);
+	void RenderObjects(const std::vector<Object*>& objects, CameraObject* camera);
 
 	void StartRecording();
 	void SubmitRecording();
@@ -115,7 +115,7 @@ public:
 
 	static bool CompletedFIFCyle();
 
-	RenderPipeline::Payload GetPipelinePayload(CommandBuffer commandBuffer, Camera* camera);
+	RenderPipeline::Payload GetPipelinePayload(CommandBuffer commandBuffer, CameraObject* camera);
 
 	template<typename Type> 
 	Type* AddRenderPipeline(const char* name = "unnamed pipeline"); // returns the created pipeline
@@ -257,7 +257,7 @@ private:
 	void CheckForInterference();
 
 	void ProcessRenderPipeline(RenderPipeline* pipeline);
-	void RunRenderPipelines(CommandBuffer commandBuffer, Camera* camera, const std::vector<MeshObject*>& objects);
+	void RunRenderPipelines(CommandBuffer commandBuffer, CameraObject* camera, const std::vector<MeshObject*>& objects);
 
 	uint32_t DetectExternalTools();
 
@@ -267,10 +267,10 @@ private:
 	void ResetLightBuffer();
 	void UpdateLightBuffer(const std::vector<LightObject*>& lights);
 
-	void UpdateSceneData(Camera* camera);
+	void UpdateSceneData(CameraObject* camera);
 
 	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
-	void RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<MeshObject*> object, Camera* camera);
+	void RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<MeshObject*> object, CameraObject* camera);
 	void RenderCollisionBoxes(const std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage);
 
 	void CheckForBufferResizes();

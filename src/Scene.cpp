@@ -5,7 +5,7 @@
 #include "io/SceneLoader.h"
 #include "system/Window.h"
 
-#include "core/Camera.h"
+#include "core/CameraObject.h"
 #include "core/Object.h"
 #include "core/Scene.h"
 #include "core/Console.h"
@@ -14,7 +14,12 @@
 #include "core/LightObject.h"
 #include "core/ScriptObject.h"
 
-Camera* Scene::defaultCamera = new Camera();
+CameraObject* Scene::defaultCamera = nullptr;
+
+void Scene::SetActiveCamera(CameraObject* pCamera)
+{
+	camera = pCamera;
+}
 
 bool Scene::HasFinishedLoading()
 {
@@ -88,8 +93,9 @@ void Scene::Free(Object* pObject)
 
 void Scene::UpdateCamera(Window* pWindow, float delta)
 {
-	camera->UpdateVelocityMatrices();
-	camera->Update(pWindow, delta);
+	camera->transform.CalculateModelMatrix();
+	camera->UpdateMatrices();
+	camera->FullUpdate(delta);
 }
 
 void Scene::PrepareObjectsForUpdate()

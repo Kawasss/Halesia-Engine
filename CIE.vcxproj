@@ -172,8 +172,6 @@
     <ClCompile Include="src\BinaryWriter.cpp" />
     <ClCompile Include="src\Bone.cpp" />
     <ClCompile Include="src\BoundingVolumePipeline.cpp" />
-    <ClCompile Include="src\Camera.cpp" />
-    <ClCompile Include="src\CameraInjector.cpp" />
     <ClCompile Include="src\CameraObject.cpp" />
     <ClCompile Include="src\CommandBuffer.cpp" />
     <ClCompile Include="src\ComputeShader.cpp" />
@@ -258,7 +256,6 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="src\Audio.h" />
     <ClInclude Include="src\core\Behavior.h" />
-    <ClInclude Include="src\core\Camera.h" />
     <ClInclude Include="src\core\CameraObject.h" />
     <ClInclude Include="src\core\Console.h" />
     <ClInclude Include="src\core\Editor.h" />
@@ -353,7 +350,6 @@
     <ClInclude Include="src\system\System.h" />
     <ClInclude Include="src\system\SystemMetrics.h" />
     <ClInclude Include="src\system\Window.h" />
-    <ClInclude Include="src\tools\CameraInjector.h" />
     <ClInclude Include="src\tools\common.h" />
     <ClInclude Include="src\tools\RefPointer.h" />
     <ClInclude Include="src\tools\Timer.h" />

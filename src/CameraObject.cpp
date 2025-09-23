@@ -1,15 +1,23 @@
-#include <Windows.h>
-
 #include "core/CameraObject.h"
 
 #include "HalesiaEngine.h"
+
+CameraObject* CameraObject::Create()
+{
+	return new CameraObject();
+}
+
+CameraObject::CameraObject() : Object(InheritType::Camera)
+{
+
+}
 
 void CameraObject::Start()
 {
 
 }
 
-void CameraObject::Update(float delta)
+void CameraObject::UpdateMatrices()
 {
 	prevView = view;
 	prevProj = proj;
@@ -51,6 +59,6 @@ void CameraObject::CalculateProjection()
 	float width  = pRenderer->GetInternalWidth();
 	float height = pRenderer->GetInternalHeight();
 	
-	proj = glm::perspective(width / height, aspectRatio, zNear, zFar);
+	proj = glm::perspective(width / height, glm::radians(90.0f), zNear, zFar);
 	proj[1][1] *= -1.0f;
 }

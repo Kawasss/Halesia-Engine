@@ -6,7 +6,7 @@
 class Cubemap;
 class GraphicsPipeline;
 class CommandBuffer;
-class Camera;
+class CameraObject;
 
 class Skybox
 {
@@ -24,7 +24,7 @@ public:
 	Skybox(const Skybox&) = delete;
 	Skybox& operator=(Skybox&&) = delete;
 
-	void Draw(const CommandBuffer& cmdBuffer, Camera* camera);
+	void Draw(const CommandBuffer& cmdBuffer, CameraObject* camera);
 
 	void Resize(uint32_t width, uint32_t height);
 

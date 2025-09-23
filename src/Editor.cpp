@@ -41,7 +41,12 @@ constexpr float VIEWPORT_HEIGHT = 1.0f - LOWER_BAR_HEIGHT;
 
 constexpr std::string_view SUPPORTED_MESH_FILES = "*.obj;*.glb;*.fbx;*.stl;";
 
-void EditorCamera::Update(Window* window, float delta)
+EditorCamera::EditorCamera(Window* pWindow) : CameraObject()
+{
+	window = pWindow;
+}
+
+void EditorCamera::Update(float delta)
 {
 	int viewportWidth  = window->GetWidth()  * VIEWPORT_WIDTH;
 	int viewportHeight = window->GetHeight() * VIEWPORT_HEIGHT;
@@ -64,7 +69,53 @@ void EditorCamera::Update(Window* window, float delta)
 		active = false;
 
 	if (active)
-		DefaultUpdate(window, delta);
+		MovementLogic(delta);
+}
+
+void EditorCamera::MovementLogic(float delta)
+{
+	static constexpr float SENSITIVITY = 0.1f;
+
+	static constexpr glm::vec3 VEC3_UP = glm::vec3(0, 1, 0);
+	static constexpr glm::vec3 VEC3_LEFT = glm::vec3(1, 0, 0);
+
+	const glm::vec3 front = transform.GetForward();
+	const glm::vec3 up = transform.GetUp();
+	const glm::vec3 right = transform.GetRight();
+
+	if (Input::IsKeyPressed(VirtualKey::W))
+		transform.position += front * (delta * 0.001f);
+	if (Input::IsKeyPressed(VirtualKey::S))
+		transform.position -= front * (delta * 0.001f);
+	if (Input::IsKeyPressed(VirtualKey::A))
+		transform.position -= right * (delta * 0.001f);
+	if (Input::IsKeyPressed(VirtualKey::D))
+		transform.position += right * (delta * 0.001f);
+	if (Input::IsKeyPressed(VirtualKey::Space))
+		transform.position += up * (delta * 0.001f);
+	if (Input::IsKeyPressed(VirtualKey::LeftShift))
+		transform.position -= up * (delta * 0.001f);
+
+	int x = 0, y = 0;
+	Input::GetGlobalCursorPosition(x, y);
+
+	if (prevX == -1)
+		prevX = x;
+	if (prevY == -1)
+		prevY = y;
+
+	rotation.x -= (x - prevX) * SENSITIVITY;
+	rotation.y -= (y - prevY) * SENSITIVITY;
+
+	rotation.y = std::clamp(rotation.y, -89.0f, 89.0f);
+	
+	glm::quat rotX = glm::angleAxis(glm::radians(rotation.x), VEC3_UP);
+	glm::quat rotY = glm::angleAxis(glm::radians(rotation.y), VEC3_LEFT);
+
+	transform.rotation = rotX * rotY;
+
+	prevX = x;
+	prevY = y;
 }
 
 void Editor::Start()
@@ -74,9 +125,9 @@ void Editor::Start()
 	renderer = core.renderer;
 
 	//boundingVolumePipeline = renderer->AddRenderPipeline<BoundingVolumePipeline>("boundingVolume");
-	//gridPipeline = renderer->AddRenderPipeline<GridPipeline>("grid");
+	gridPipeline = renderer->AddRenderPipeline<GridPipeline>("grid");
 
-	camera = AddCustomCamera<EditorCamera>();
+	SetActiveCamera(new EditorCamera(core.window));
 
 	renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
 	renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
@@ -130,8 +181,8 @@ void Editor::ShowGizmo()
 	if (obj == nullptr)
 		return;
 
-	glm::mat4 view = glm::lookAtRH(camera->position, camera->position + camera->front, camera->up);
-	glm::mat4 proj = glm::perspectiveRH(camera->fov, (float)width / (float)height, 0.001f, 10000.0f);
+	glm::mat4 view = camera->GetViewMatrix();//glm::lookAtRH(camera->position, camera->position + camera->front, camera->up);
+	glm::mat4 proj = camera->GetProjectionMatrix();//glm::perspectiveRH(camera->fov, (float)width / (float)height, 0.001f, 10000.0f);
 
 	glm::vec2 mod = renderer->GetViewportModifier();
 	glm::vec2 off = renderer->GetViewportOffset();

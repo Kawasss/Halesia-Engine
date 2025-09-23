@@ -3,7 +3,7 @@
 
 #include "glm.h"
 
-#include "core/Camera.h"
+#include "core/CameraObject.h"
 
 #include "renderer/Skybox.h"
 #include "renderer/Texture.h"
@@ -119,7 +119,7 @@ void Skybox::Resize(uint32_t width, uint32_t height)
 	CreateFramebuffer(width, height);
 }
 
-void Skybox::Draw(const CommandBuffer& cmdBuffer, Camera* camera)
+void Skybox::Draw(const CommandBuffer& cmdBuffer, CameraObject* camera)
 {
 	VkImageView targets[2]{ targetView, depth };
 
