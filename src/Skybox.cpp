@@ -28,7 +28,7 @@ Skybox* Skybox::ReadFromHDR(const std::string& path, const CommandBuffer& cmdBuf
 
 	Skybox* ret = new Skybox();
 
-	std::unique_ptr<Texture> flat = std::make_unique<Texture>(path, false);
+	std::unique_ptr<Texture> flat(Texture::LoadFromForeignFormat(path, Texture::Type::Albedo, false));
 	flat->AwaitGeneration();
 
 	ret->cubemap = new Cubemap(WIDTH, HEIGHT);

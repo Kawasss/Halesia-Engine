@@ -1,5 +1,6 @@
 #include <Windows.h>
 #include <commdlg.h>
+#include <execution>
 
 #include "core/Editor.h"
 #include "core/Object.h"
@@ -59,6 +60,8 @@ void EditorCamera::Update(float delta)
 
 	window->GetAbsoluteCursorPosition(mouseX, mouseY);
 
+	
+
 	bool isInViewport    = (mouseX > viewportX && mouseX < (viewportX + viewportWidth)) && (mouseY > viewportY && mouseY < (viewportY + viewportHeight));
 	bool buttonIsPressed = Input::IsKeyPressed(VirtualKey::RightMouseButton);
 
@@ -82,6 +85,10 @@ void EditorCamera::MovementLogic(float delta)
 	const glm::vec3 front = transform.GetForward();
 	const glm::vec3 up = transform.GetUp();
 	const glm::vec3 right = transform.GetRight();
+
+	int wheelRotation = window->GetWheelRotation();
+
+	transform.position += front * static_cast<float>(wheelRotation) * delta * 0.00005f;
 
 	if (Input::IsKeyPressed(VirtualKey::W))
 		transform.position += front * (delta * 0.001f);
@@ -181,8 +188,9 @@ void Editor::ShowGizmo()
 	if (obj == nullptr)
 		return;
 
-	glm::mat4 view = camera->GetViewMatrix();//glm::lookAtRH(camera->position, camera->position + camera->front, camera->up);
-	glm::mat4 proj = camera->GetProjectionMatrix();//glm::perspectiveRH(camera->fov, (float)width / (float)height, 0.001f, 10000.0f);
+	const Transform& camTrans = camera->transform;
+	glm::mat4 view = glm::lookAtRH(camTrans.GetGlobalPosition(), camTrans.GetGlobalPosition() + camTrans.GetForward(), camTrans.GetUp());
+	glm::mat4 proj = glm::perspectiveRH(glm::radians(camera->fov), renderer->GetInternalWidth() / (float)renderer->GetInternalHeight(), camera->zNear, camera->zFar);
 
 	glm::vec2 mod = renderer->GetViewportModifier();
 	glm::vec2 off = renderer->GetViewportOffset();
@@ -967,15 +975,22 @@ void Editor::LoadFile()
 			SceneLoader loader(src);
 			loader.LoadScene();
 
-			std::for_each(loader.objects.begin(), loader.objects.end(), [&](const ObjectCreationData& data) { AddObject(data); });
+			Mesh::materials.resize(loader.materials.size() + 1);
 
-			for (const std::variant<MaterialCreationData, MaterialCreateInfo>& data : loader.materials)
-			{
-				if (std::holds_alternative<MaterialCreationData>(data))
-					Mesh::AddMaterial(Material::Create(std::get<0>(data)));
-				else if (std::holds_alternative<MaterialCreateInfo>(data))
-					Mesh::AddMaterial(Material::Create(std::get<1>(data)));
-			}
+			std::for_each(std::execution::par_unseq, loader.objects.begin(), loader.objects.end(), [&](const ObjectCreationData& data) { AddObject(data); });
+
+			std::vector<int> indices(loader.materials.size());
+			for (int i = 0; i < indices.size(); i++)
+				indices[i] = i;
+
+			std::for_each(std::execution::par, indices.begin(), indices.end(), [&](int i)
+				{
+					const std::variant<MaterialCreationData, MaterialCreateInfo>& data = loader.materials[i];
+					if (std::holds_alternative<MaterialCreationData>(data))
+						Mesh::InsertMaterial(i + 1, Material::Create(std::get<0>(data)));
+					else if (std::holds_alternative<MaterialCreateInfo>(data))
+						Mesh::InsertMaterial(i + 1, Material::Create(std::get<1>(data)));
+				});
 		});
 }
 

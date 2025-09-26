@@ -138,7 +138,7 @@ static FileImage DeserializeImage(const BinarySpan& span)
 
 	ret.data.data.resize(encodedSize);
 	span.Read(ret.data.data.data(), encodedSize);
-	ret.data.data = Texture::Decode(ret.data.data, width, height, Image::DecodeOptions::None, 0.5f);
+	ret.data.data = Texture::Decode(ret.data.data, width, height, Image::DecodeOptions::None, 0.5f, 4);
 	
 	ret.width = width;
 	ret.height = height;
@@ -410,9 +410,9 @@ void SceneLoader::LoadAssimpFile()
 
 		data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
 		data.normal = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir);
-		//data.roughness = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir);
-		//data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
-		//data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);
+		data.roughness = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir);
+		data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
+		data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);
 
 		materials.push_back(data);
 	}

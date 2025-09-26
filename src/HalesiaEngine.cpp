@@ -9,7 +9,6 @@
 #include "system/SystemMetrics.h"
 
 #include "renderer/Renderer.h"
-#include "renderer/Intro.h"
 #include "renderer/RayTracing.h"
 #include "renderer/gui.h"
 #include "renderer/AnimationManager.h"
@@ -212,18 +211,6 @@ void HalesiaEngine::UpdateAsyncCompletionTimes(float frameDelta)
 	asyncTimes.push_back(asyncRendererCompletionTime * 1000);
 }
 
-void HalesiaEngine::PlayIntro()
-{
-	if (!playIntro)
-		return;
-
-    UniquePointer intro = new Intro();
-	intro->Create(core.renderer->swapchain, "textures/white.png");
-
-	core.renderer->RenderIntro(intro.Get());
-	intro->Destroy();
-}
-
 HalesiaEngine::ExitCode HalesiaEngine::Run()
 {
 	if (core.renderer == nullptr || core.window == nullptr)
@@ -239,8 +226,6 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 
 		core.window->SetMaximized(true);
 
-		PlayIntro();
-		
 		core.scene->Start();
 		while (!core.window->ShouldClose())
 		{

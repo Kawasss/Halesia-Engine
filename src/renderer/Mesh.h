@@ -24,6 +24,7 @@ using MeshOptionFlags = std::underlying_type_t<MeshFlags>;
 struct Mesh
 {
 	static Handle AddMaterial(const Material& material); // returns the handle to the material
+	static Handle InsertMaterial(int index, const Material& material);
 
 	static std::vector<Material> materials;
 

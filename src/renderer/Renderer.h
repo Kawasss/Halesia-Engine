@@ -16,7 +16,6 @@
 #include "FramesInFlight.h"
 #include "CommandBuffer.h"
 
-class Intro;
 class CameraObject;
 class Object;
 class Swapchain;
@@ -67,7 +66,6 @@ public:
 	Renderer(Window* window, RendererFlags flags);
 	~Renderer();
 
-	void RenderIntro(Intro* intro);
 	void RenderObjects(const std::vector<Object*>& objects, CameraObject* camera);
 
 	void StartRecording();

@@ -6,17 +6,46 @@
 
 #include "io/CreationData.h"
 
+#include "ResourceManager.h"
+
 std::vector<Material> Mesh::materials;
 std::mutex Mesh::materialMutex;
 
 Handle Mesh::AddMaterial(const Material& material)
 {
+	std::lock_guard<std::mutex> lockGuard(materialMutex);
+
 	materials.push_back(material);
 
 	Material& mat = materials.back();
 	mat.handle = reinterpret_cast<Handle>(&mat);
 
 	return mat.handle;
+}
+
+Handle Mesh::InsertMaterial(int index, const Material& material)
+{
+	std::lock_guard<std::mutex> lockGuard(materialMutex);
+
+	Handle ret = 0;
+
+	if (index < materials.size() && index >= 0)
+	{
+		Material& dst = materials[index];
+
+		dst.Destroy();
+		dst = material;
+		ret = reinterpret_cast<Handle>(&dst);
+		dst.handle = ret;
+	}
+	else
+	{
+		materials.push_back(material);
+		Material& dst = materials.back();
+		ret = ResourceManager::GenerateHandle();
+		dst.handle = ret;
+	}
+	return ret;
 }
 
 void Mesh::ProcessMaterial(const MaterialCreationData& creationData)

@@ -22,6 +22,7 @@ public:
 	glm::mat4 GetPreviousProjectionMatrix() const;
 
 	float zNear = 0.01f, zFar = 1000;
+	float fov = 90.0f; // degrees
 
 protected:
 	CameraObject();

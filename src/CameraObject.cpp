@@ -59,6 +59,6 @@ void CameraObject::CalculateProjection()
 	float width  = pRenderer->GetInternalWidth();
 	float height = pRenderer->GetInternalHeight();
 	
-	proj = glm::perspective(width / height, glm::radians(90.0f), zNear, zFar);
+	proj = glm::perspective(width / height, glm::radians(fov), zNear, zFar);
 	proj[1][1] *= -1.0f;
 }

@@ -43,7 +43,7 @@ int main(int argc, char** argv)
 	deferred->LoadSkybox("textures/skybox/park.hdr");
 
 	instance->Run();
-
+	
 	return EXIT_SUCCESS;
 }
 

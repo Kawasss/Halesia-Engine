@@ -79,8 +79,6 @@ private:
 	void LoadVars();                                              //!< loads any variables stored on the disk
 	void OnExit();                                                //!< destroys any of the engines resources and saves certain data to the disk
 
-	void PlayIntro();                                             //!< plays the engines intro
-
 	void UpdateRenderer(float delta);                             //!< runs renderer once
 	void UpdateScene(float delta);                                //!< runs the scene once
 

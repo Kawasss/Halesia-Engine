@@ -31,19 +31,19 @@ Material Material::Create(const MaterialCreateInfo& createInfo)
 	Material ret{};
 
 	if (!createInfo.albedo.empty())           
-		ret.albedo = new Texture(createInfo.albedo);
+		ret.albedo = Texture::LoadFromForeignFormat(createInfo.albedo, Texture::Type::Albedo, false);
 
 	if (!createInfo.normal.empty())           
-		ret.normal = new Texture(createInfo.normal, true, TEXTURE_FORMAT_UNORM);
+		ret.normal = Texture::LoadFromForeignFormat(createInfo.normal, Texture::Type::Normal, false);
 
 	if (!createInfo.metallic.empty())         
-		ret.metallic = new Texture(createInfo.metallic);
+		ret.metallic = Texture::LoadFromForeignFormat(createInfo.metallic, Texture::Type::Metallic, false);
 
 	if (!createInfo.roughness.empty())        
-		ret.roughness = new Texture(createInfo.roughness);
+		ret.roughness = Texture::LoadFromForeignFormat(createInfo.roughness, Texture::Type::Roughness, false);
 
 	if (!createInfo.ambientOcclusion.empty()) 
-		ret.ambientOcclusion = new Texture(createInfo.ambientOcclusion);
+		ret.ambientOcclusion = Texture::LoadFromForeignFormat(createInfo.ambientOcclusion, Texture::Type::AmbientOcclusion, false);
 
 	ret.isLight = createInfo.isLight;
 	
@@ -58,19 +58,19 @@ Material Material::Create(const MaterialCreationData& createInfo)
 
 	ret.isLight = createInfo.isLight;
 	if (!createInfo.albedo.IsDefault())      
-		ret.albedo = new Texture(createInfo.albedo.data.data, createInfo.albedo.width, createInfo.albedo.height);
+		ret.albedo = new Texture(createInfo.albedo.data.data, createInfo.albedo.width, createInfo.albedo.height, Texture::Type::Albedo);
 
 	if (!createInfo.normal.IsDefault())      
-		ret.normal = new Texture(createInfo.normal.data.data, createInfo.normal.width, createInfo.normal.height, true, TEXTURE_FORMAT_UNORM);
+		ret.normal = new Texture(createInfo.normal.data.data, createInfo.normal.width, createInfo.normal.height, Texture::Type::Normal);
 
 	if (!createInfo.metallic.IsDefault())    
-		ret.metallic = new Texture(createInfo.metallic.data.data, createInfo.metallic.width, createInfo.metallic.height);
+		ret.metallic = new Texture(createInfo.metallic.data.data, createInfo.metallic.width, createInfo.metallic.height, Texture::Type::Metallic);
 
 	if (!createInfo.roughness.IsDefault())   
-		ret.roughness = new Texture(createInfo.roughness.data.data, createInfo.roughness.width, createInfo.roughness.height);
+		ret.roughness = new Texture(createInfo.roughness.data.data, createInfo.roughness.width, createInfo.roughness.height, Texture::Type::Roughness);
 
 	if (!createInfo.ambientOccl.IsDefault()) 
-		ret.ambientOcclusion = new Texture(createInfo.ambientOccl.data.data, createInfo.ambientOccl.width, createInfo.ambientOccl.height);
+		ret.ambientOcclusion = new Texture(createInfo.ambientOccl.data.data, createInfo.ambientOccl.width, createInfo.ambientOccl.height, Texture::Type::AmbientOcclusion);
 
 	return ret;
 }

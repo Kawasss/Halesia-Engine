@@ -186,9 +186,6 @@
     <ClCompile Include="src\Transform.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\Intro.cpp">
-      <Filter>Source Files\Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="src\ResourceManager.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
@@ -363,9 +360,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\AccelerationStructures.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Intro.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\Material.h">

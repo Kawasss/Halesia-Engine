@@ -8,7 +8,6 @@
 #include "renderer/Swapchain.h"
 #include "renderer/Surface.h"
 #include "renderer/Texture.h"
-#include "renderer/Intro.h"
 #include "renderer/Mesh.h"
 #include "renderer/RayTracing.h"
 #include "renderer/AnimationManager.h"
@@ -843,36 +842,6 @@ void Renderer::CreateSyncObjects()
 		imageAvaibleSemaphores[i] = Vulkan::CreateSemaphore();
 		renderFinishedSemaphores[i] = Vulkan::CreateSemaphore();
 		inFlightFences[i] = Vulkan::CreateFence(VK_FENCE_CREATE_SIGNALED_BIT);
-	}
-}
-
-void Renderer::RenderIntro(Intro* intro)
-{
-	std::chrono::steady_clock::time_point beginTime = std::chrono::high_resolution_clock::now();
-	float currentTime = 0;
-
-	while (currentTime < Intro::maxSeconds)
-	{
-		::vkWaitForFences(logicalDevice, 1, &inFlightFences[0], true, UINT64_MAX);
-
-		uint32_t imageIndex = GetNextSwapchainImage(0);
-
-		::vkResetFences(logicalDevice, 1, &inFlightFences[0]);
-
-		commandBuffers[0].Reset();
-		commandBuffers[0].Begin();
-
-		intro->WriteDataToBuffer(currentTime);
-		intro->RecordCommandBuffer(commandBuffers[0], imageIndex);
-
-		commandBuffers[0].End();
-
-		SubmitRenderingCommandBuffer(0, imageIndex);
-		PresentSwapchainImage(0, imageIndex);
-
-		Window::PollMessages();
-
-		currentTime = std::chrono::duration<float, std::chrono::seconds::period>(std::chrono::high_resolution_clock::now() - beginTime).count(); // get the time that elapsed from the beginning till now
 	}
 }
 
