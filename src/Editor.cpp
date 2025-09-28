@@ -60,8 +60,6 @@ void EditorCamera::Update(float delta)
 
 	window->GetAbsoluteCursorPosition(mouseX, mouseY);
 
-	
-
 	bool isInViewport    = (mouseX > viewportX && mouseX < (viewportX + viewportWidth)) && (mouseY > viewportY && mouseY < (viewportY + viewportHeight));
 	bool buttonIsPressed = Input::IsKeyPressed(VirtualKey::RightMouseButton);
 
@@ -73,6 +71,8 @@ void EditorCamera::Update(float delta)
 
 	if (active)
 		MovementLogic(delta);
+	else
+		prevX = prevY = -1;
 }
 
 void EditorCamera::MovementLogic(float delta)
@@ -104,7 +104,7 @@ void EditorCamera::MovementLogic(float delta)
 		transform.position -= up * (delta * 0.001f);
 
 	int x = 0, y = 0;
-	Input::GetGlobalCursorPosition(x, y);
+	window->GetAbsoluteCursorPosition(x, y);
 
 	if (prevX == -1)
 		prevX = x;
