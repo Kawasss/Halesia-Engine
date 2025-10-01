@@ -13,6 +13,7 @@
 #include "renderer/RayTracing.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
+#include "renderer/VideoMemoryManager.h"
 #include "renderer/BoundingVolumePipeline.h"
 #include "renderer/Grid.h"
 
@@ -321,6 +322,9 @@ void Editor::ShowUI()
 
 		if (selectionData.show)
 			ShowAddObjectWindow();
+
+		if (showVram)
+			ShowVRAM();
 	}
 
 	ShowMenuBar();
@@ -592,6 +596,10 @@ void Editor::ShowMenuBar() // add renderer variables here like taa sample count
 		if (ImGui::MenuItem("show collision boxes")) Renderer::shouldRenderCollisionBoxes = !Renderer::shouldRenderCollisionBoxes;
 		ImGui::Separator();
 		ImGui::MenuItem("view statistics");
+		if (ImGui::MenuItem("show VRAM"))
+		{
+			showVram = !showVram;
+		}
 		ImGui::EndMenu();
 	}
 	if (ImGui::BeginMenu("Add"))
@@ -622,6 +630,52 @@ void Editor::ShowMenuBar() // add renderer variables here like taa sample count
 
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
+}
+
+void Editor::ShowVRAM()
+{
+	ImGui::Begin("VRAM");
+
+	std::vector<vvm::DbgMemoryBlock> blocks = vvm::DbgGetMemoryBlocks();
+
+	ImVec2 windowSize = ImGui::GetWindowSize();
+	float blockHeight = ImGui::GetTextLineHeight();
+
+	for (int i = 0; i < blocks.size(); i++)
+	{
+		vvm::DbgMemoryBlock& block = blocks[i];
+		std::string blockName = std::format("mem_block {}%% ({} kb):", static_cast<int>(static_cast<float>(block.used) / block.size * 100), block.size / 1024);
+		ImGui::Text(blockName.c_str());
+		ImGui::SameLine();
+
+		ImVec2 cursorPos = ImGui::GetCursorPos();
+
+		ImGui::BeginChild(i + 1, { windowSize.x - cursorPos.x * 2, blockHeight }, 1);
+
+		ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+		ImVec2 blockPos = ImGui::GetWindowPos();
+		ImVec2 blockSize = ImGui::GetWindowSize();
+		
+		float xOffset = 0.0f;
+		
+		for (const vvm::DbgSegment& segment : block.segments)
+		{
+			float start = (static_cast<float>(segment.begin) / block.size) * blockSize.x;
+			float end   = (static_cast<float>(segment.end) / block.size) * blockSize.x;
+
+			ImVec2 startPos = blockPos + ImVec2(xOffset, 0.0f);
+			ImVec2 endPos = startPos + ImVec2(end, blockHeight);
+
+			drawList->AddRectFilled(startPos, endPos, IM_COL32(255, 255, 255, 255));
+
+			xOffset += end + 1.0f; // 1 for padding
+		}
+
+		ImGui::EndChild();
+	}
+
+	ImGui::End();
 }
 
 void Editor::StartRightBar()

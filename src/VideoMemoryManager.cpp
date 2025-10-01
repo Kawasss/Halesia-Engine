@@ -362,3 +362,42 @@ void vvm::ForceDestroy()
 		delete block;
 	}
 }
+
+static vvm::DbgMemoryBlock ConvertMemoryBlock(const vvm::MemoryBlock* memoryBlock)
+{
+	vvm::DbgMemoryBlock block{};
+	block.segments.reserve(memoryBlock->segments.size());
+	block.flags = memoryBlock->properties;
+	block.alignment = memoryBlock->alignment;
+	block.size = memoryBlock->size;
+
+	for (const auto& [handle, segment] : memoryBlock->segments)
+	{
+		vvm::DbgSegment dbgSegment{};
+		dbgSegment.begin = segment.begin;
+		dbgSegment.end = segment.end;
+
+		block.used += dbgSegment.end - dbgSegment.begin;
+		block.segments.push_back(std::move(dbgSegment));
+	}
+	return block;
+}
+
+std::vector<vvm::DbgMemoryBlock> vvm::DbgGetMemoryBlocks()
+{
+	win32::CriticalLockGuard guard(core->blockGuard);
+
+	std::vector<DbgMemoryBlock> ret;
+	ret.reserve(core->bufferToBlock.size() + core->imageToBlock.size());
+
+	for (const auto& [buffer, memoryBlock] : core->bufferToBlock)
+	{
+		ret.push_back(ConvertMemoryBlock(memoryBlock));
+	}
+
+	for (const auto& [image, memoryBlock] : core->imageToBlock)
+	{
+		ret.push_back(ConvertMemoryBlock(memoryBlock));
+	}
+	return ret;
+}

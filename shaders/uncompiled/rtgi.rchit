@@ -81,7 +81,7 @@ layout(set = 2, binding = light_buffer_binding) readonly buffer lightBuffer
 
 float GetRoughness(vec2 uv, int index)
 {
-	return texture(textures[index * 5 + 2], uv).g;
+	return texture(textures[index * 5 + 2], uv).r;
 }
 
 vec3 GetNormalFromMap(vec2 uv, vec3 normal, vec3 tangent, vec3 bitangent, int materialIndex)

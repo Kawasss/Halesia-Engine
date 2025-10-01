@@ -5,6 +5,28 @@
 #define TWO_PI (PI * 2)
 #define ONE_OVER_PI (1 / PI)
 
+DECLARE_EXTERNAL_SET(2)
+
+layout(set = 2, binding = scene_data_buffer_binding) uniform SceneData
+{
+    mat4 view;
+    mat4 proj;
+
+    mat4 prevView;
+    mat4 prevProj;
+    
+    mat4 viewInv;
+    mat4 projInv;
+
+    vec2 viewportSize;
+
+    float zNear;
+    float zFar;
+
+    vec3 camPosition;
+    uint frameCount;
+} sceneData;
+
 layout(location = 0) rayPayloadEXT Payload {
 	vec3 origin;
 	vec3 direction;
@@ -37,6 +59,7 @@ layout(binding = 2, set = 0) uniform sampler2D albedoImage;
 layout(binding = 3, set = 0) uniform sampler2D normalImage;
 layout(binding = 4, set = 0) uniform sampler2D positionImage;
 layout(binding = 10, set = 0) uniform sampler2D geometricNormalImage;
+layout(binding = 11, set = 0) uniform sampler2D mraoImage;
 
 vec3 CosineSampleHemisphereLocal(vec2 random, out float pdf) // https://github.com/boksajak/brdf/blob/master/brdf.h
 {
@@ -117,6 +140,8 @@ void main()
 	vec3 normal   = normalize(texture(normalImage, relCoors).rgb);
 	vec3 position = texture(positionImage, relCoors).rgb;
 
+	float roughness = texture(mraoImage, relCoors).g;
+
 	if (normal == vec3(0))
 	{
 		imageStore(globalIlluminationImage, ivec2(gl_LaunchIDEXT.xy), vec4(0, 0, 0, 1));
@@ -128,17 +153,24 @@ void main()
 	if (dot(normal, geometricNormal) < 0.0) // prevent the normal from clipping through the surface
 		normal = -normal;
 
+	vec2 center = vec2(gl_LaunchIDEXT.xy);
+    vec2 inUV = center / vec2(gl_LaunchSizeEXT.xy);
+    vec2 uv = inUV * 2.0 - 1.0;
+
+    vec4 target = sceneData.projInv * vec4(uv.x, uv.y, 1, 1);
+    vec3 camRayDirection = (sceneData.viewInv * vec4(normalize(target.xyz), 0)).xyz;
+
 	vec3 color = vec3(0);
 
 	for (int i = 0; i < camera.sampleCount; i++)
 	{
 		payload.origin = position;
-		payload.direction = vec3(0);
+		payload.direction = camRayDirection;
 		payload.color = vec3(0);
 		payload.mixedAlbedo = vec3(1);
 		payload.normal = normal;
 		payload.geometricNormal = geometricNormal;
-		payload.directionBias = 0;
+		payload.directionBias = 1 - roughness;
 		payload.depth = 0;
 		payload.isActive = 1;
 
@@ -147,9 +179,9 @@ void main()
 		for (int j = 0; j < camera.bounceCount; j++)
 		{
 			vec3 perfectReflection = reflect(payload.direction, payload.normal);
-			payload.direction = CosineSampleHemisphere(random, payload.normal, payload.pdf);
+			vec3 randomReflection = CosineSampleHemisphere(random, payload.normal, payload.pdf);
 
-			payload.direction = mix(payload.direction, perfectReflection, payload.directionBias);
+			payload.direction = mix(randomReflection, perfectReflection, payload.directionBias);
 
 			if (dot(payload.direction, payload.geometricNormal) < 0.0)
 				payload.direction = -payload.direction;

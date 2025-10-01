@@ -86,6 +86,7 @@ private:
 	void ShowDefaultRightClick();
 	void ShowRenderPipelines();
 	void ShowMaterials();
+	void ShowVRAM();
 
 	void StartRightBar();
 	void EndRightBar();
@@ -112,13 +113,14 @@ private:
 
 	void UIFree(Object* pObject);
 
+	bool showVram = false;
 	bool showMaterialCreateWindow = false;
 	bool inSelectPopup = false;
 	bool addObject = false;
 	bool loadFile = false;
 	bool save = false;
 	bool showUI = true;
-	
+
 	int mouseX = 0;
 	int mouseY = 0;
 

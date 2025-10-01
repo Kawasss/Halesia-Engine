@@ -1,6 +1,8 @@
 #pragma once
 #include <vulkan/vulkan.h>
 
+#include <vector>
+
 namespace vvm
 {
 	template<typename VulkanType>
@@ -92,5 +94,22 @@ namespace vvm
 	extern void ForceDestroy();
 
 	extern void Init();
-	extern void ShutDown(); // completely shut downs the manager, rendering it unusable until it is initialized again
+	extern void ShutDown(); // completely shuts down the manager, rendering it unusable until it is initialized again
+
+	struct DbgSegment
+	{
+		VkDeviceSize begin;
+		VkDeviceSize end;
+	};
+
+	struct DbgMemoryBlock
+	{
+		uint64_t flags;
+		VkDeviceSize size;
+		VkDeviceSize alignment;
+		VkDeviceSize used;
+		std::vector<DbgSegment> segments;
+	};
+
+	extern std::vector<DbgMemoryBlock> DbgGetMemoryBlocks();
 };
