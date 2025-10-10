@@ -144,6 +144,9 @@ void DataArchiveFile::WriteToFile()
 
 void DataArchiveFile::WriteDictionaryToDisk()
 {
+	if (!stream.IsValid())
+		return;
+
 	uint64_t totalOffset = GetBinarySizeOfDictionary();
 
 	stream.SeekG(0, ReadWriteFile::Method::Begin);
@@ -168,6 +171,9 @@ void DataArchiveFile::WriteDictionaryToDisk()
 
 void DataArchiveFile::WriteDataEntriesToDisk()
 {
+	if (!stream.IsValid())
+		return;
+
 	for (const auto& [identifier, metadata] : dictionary)
 	{
 		if (metadata.isOnDisk)

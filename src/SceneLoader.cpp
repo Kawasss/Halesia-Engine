@@ -124,24 +124,15 @@ void SceneLoader::LoadObjectsFromArchive(DataArchiveFile& file)
 static FileImage DeserializeImage(const BinarySpan& span)
 {
 	FileImage ret{};
-	span >> ret.width >> ret.height;
 
-	size_t size = ret.width * ret.height * 4;
+	size_t size = 0;
+	span >> size;
 
 	if (size == 0)
 		return ret;
 
-	int width = 0, height = 0;
-
-	size_t encodedSize = 0;
-	span >> encodedSize;
-
-	ret.data.data.resize(encodedSize);
-	span.Read(ret.data.data.data(), encodedSize);
-	ret.data.data = Texture::Decode(ret.data.data, width, height, Image::DecodeOptions::None, 0.5f, 4);
-	
-	ret.width = width;
-	ret.height = height;
+	ret.data.data.resize(size);
+	span.Read(ret.data.data.data(), size);
 
 	return ret;
 }

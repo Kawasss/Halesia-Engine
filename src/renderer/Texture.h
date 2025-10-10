@@ -54,6 +54,8 @@ public:
 
 	std::vector<char> GetImageData() const;
 
+	std::vector<char> GetAsInternalFormat() const;
+
 	static bool TexturesHaveChanged();
 
 	vvm::Image image;
@@ -117,7 +119,7 @@ public:
 	static void DestroyPlaceholderTextures();
 
 	static Texture* LoadFromForeignFormat(const std::string_view& file, Type type, bool useMipMaps = true, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
-	static Texture* LoadFromInternalFormat(const std::span<char>& data, bool useMipMaps = true, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
+	static Texture* LoadFromInternalFormat(const std::span<const char>& data, bool useMipMaps = true, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
 	static Texture* CreateEmpty(int width, int height);
 
 	Texture(int width, int height);

@@ -19,7 +19,7 @@ void FileImage::Read(BinaryReader& reader)
 	NodeType arrayType = NODE_TYPE_NONE;
 	NodeSize arraySize = 0;
 
-	reader >> width >> height >> arrayType >> arraySize;
+	reader >> arrayType >> arraySize;
 
 	if (arrayType != NODE_TYPE_ARRAY)
 		__debugbreak();
@@ -113,7 +113,7 @@ void FileRigidBody::Read(BinaryReader& reader)
 }
 void FileImage::Write(BinaryWriter& writer) const
 {
-	writer << NODE_TYPE_IMAGE << 0ULL << width << height << data;
+	writer << NODE_TYPE_IMAGE << 0ULL << data;
 }
 
 void FileMaterial::Write(BinaryWriter& writer) const
@@ -146,10 +146,7 @@ void FileRigidBody::Write(BinaryWriter& writer) const
 FileImage FileImage::CreateFrom(Texture* tex)
 {
 	FileImage ret;
-
-	ret.width  = tex->GetWidth();
-	ret.height = tex->GetHeight();
-	ret.data   = FileArray<char>::CreateFrom(tex->GetImageData());
+	ret.data = FileArray<char>::CreateFrom(tex->GetImageData());
 
 	return ret;
 }

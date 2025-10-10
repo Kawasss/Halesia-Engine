@@ -45,7 +45,7 @@ void AsyncReadSession::SeekG(int64_t offset) const
 
 ReadWriteFile::ReadWriteFile(const std::string_view& file, OpenMethod method) : file(file)
 {
-	handle = ::CreateFileA(this->file.c_str(), GENERIC_READ/* | GENERIC_WRITE*/, FILE_SHARE_READ, nullptr, method == OpenMethod::Append ? OPEN_ALWAYS : CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+	handle = ::CreateFileA(this->file.c_str(), GENERIC_READ /* | GENERIC_WRITE*/, FILE_SHARE_READ, nullptr, method == OpenMethod::Append ? OPEN_ALWAYS : CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 }
 
 ReadWriteFile::~ReadWriteFile()

@@ -11,7 +11,6 @@ using uint = unsigned int;
 
 struct FileImage : FileBase
 {
-	uint width = 0, height = 0;
 	FileArray<char> data;
 
 	static FileImage CreateFrom(Texture* tex);
@@ -21,7 +20,7 @@ struct FileImage : FileBase
 
 	bool IsDefault() const 
 	{ 
-		return width == 0 || height == 0 || data.IsEmpty();
+		return data.IsEmpty();
 	}
 };
 

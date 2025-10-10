@@ -141,6 +141,8 @@ void Image::WritePixelsToBuffer(const uint8_t* pixels, bool useMipMaps, VkFormat
 
 	if (useMipMaps)
 		CalculateMipLevels();
+	else
+		mipLevels = 1;
 
 	this->format = format;
 
@@ -249,6 +251,57 @@ std::vector<char> Image::GetImageData() const
 	copyBuffer.Unmap();
 
 	return ret;
+}
+
+std::vector<char> Image::GetAsInternalFormat() const
+{
+	std::vector<char> raw = GetImageData();
+
+	ktx_error_code_e err = KTX_SUCCESS;
+
+	ktxTextureCreateInfo createInfo{};
+	createInfo.baseDepth = 1;
+	createInfo.vkFormat = format;
+	createInfo.glInternalformat = 1;
+	createInfo.baseWidth = width;
+	createInfo.baseHeight = height;
+	createInfo.numDimensions = 2;
+	createInfo.numLayers = 1;
+	createInfo.numLevels = 1;
+	createInfo.numFaces = layerCount;
+	createInfo.isArray = KTX_FALSE;
+	createInfo.generateMipmaps = KTX_FALSE;
+
+	std::unique_ptr<ktxTexture2, KtxTextureDeleter> pTexture;
+
+	ktxTexture2* pRaw = nullptr;
+	err = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &pRaw);
+	if (err != KTX_SUCCESS || pRaw == nullptr)
+	{
+		Console::WriteLine("Failed to create a KTX texture", Console::Severity::Error);
+		return {};
+	}
+
+	pTexture.reset(pRaw);
+
+	err = ktxTexture_SetImageFromMemory(ktxTexture(pRaw), 0, 0, 0, reinterpret_cast<const uint8_t*>(raw.data()), raw.size());
+	if (err != KTX_SUCCESS)
+	{
+		Console::WriteLine("Failed to set the image of a KTX texture from memory", Console::Severity::Error);
+		return {};
+	}
+
+	uint8_t* pImageFormat = nullptr;
+	ktx_size_t size = 0;
+
+	err = ktxTexture_WriteToMemory(ktxTexture(pRaw), &pImageFormat, &size);
+	if (err != KTX_SUCCESS || pImageFormat == nullptr)
+	{
+		return {};
+	}
+
+	char* asChar = reinterpret_cast<char*>(pImageFormat);
+	return std::vector<char>(asChar, asChar + size);
 }
 
 void Image::AwaitGeneration() const
@@ -495,7 +548,7 @@ Texture* Texture::LoadFromForeignFormat(const std::string_view& file, Type type,
 {
 	Console::WriteLine("Started loading file \"{}\"", Console::Severity::Debug, file);
 
-	Texture* pTexture = new Texture();
+	std::unique_ptr<Texture> pTexture(new Texture());
 	pTexture->layerCount = 1;
 
 	int componentCount = GetComponentCount(type);
@@ -506,10 +559,7 @@ Texture* Texture::LoadFromForeignFormat(const std::string_view& file, Type type,
 
 	std::vector<char> data = Decode(*read, pTexture->width, pTexture->height, DecodeOptions::Flip, 1.0f, componentCount);
 	if (data.empty())
-	{
-		delete pTexture;
 		return nullptr;
-	}
 
 	Console::WriteLine("Started compressing file \"{}\"", Console::Severity::Debug, file);
 
@@ -522,12 +572,32 @@ Texture* Texture::LoadFromForeignFormat(const std::string_view& file, Type type,
 	pTexture->WritePixelsToBuffer(reinterpret_cast<const uint8_t*>(compressed.data()), useMipMaps, format, static_cast<VkImageLayout>(useCase), componentCount);
 	
 	Console::WriteLine("Finished loading file \"{}\"", Console::Severity::Debug, file);
-	return pTexture;
+	return pTexture.release();
 }
 
-Texture* Texture::LoadFromInternalFormat(const std::span<char>& data, bool useMipMaps, TextureUseCase useCase)
+Texture* Texture::LoadFromInternalFormat(const std::span<const char>& data, bool useMipMaps, TextureUseCase useCase)
 {
-	return nullptr;
+	ktx_error_code_e err = KTX_SUCCESS;
+
+	std::unique_ptr<Texture> pReturn(new Texture());
+	pReturn->layerCount = 1;
+
+	ktxTexture2* pRaw = nullptr;
+
+	err = ktxTexture2_CreateFromMemory(reinterpret_cast<const ktx_uint8_t*>(data.data()), data.size(), KTX_TEXTURE_CREATE_ALLOC_STORAGE, &pRaw);
+	std::unique_ptr<ktxTexture2, KtxTextureDeleter> pTexture(pRaw);
+
+	if (err != KTX_SUCCESS)
+		return nullptr;
+
+	ktx_uint32_t componentCount = 4; // can be left empty
+
+	pReturn->width = pRaw->baseWidth;
+	pReturn->height = pRaw->baseHeight;
+	pReturn->size = pRaw->dataSize;
+	pReturn->WritePixelsToBuffer(pRaw->pData, useMipMaps, static_cast<VkFormat>(pRaw->vkFormat), static_cast<VkImageLayout>(useCase), componentCount);
+
+	return pReturn.release();
 }
 
 Texture* Texture::CreateEmpty(int width, int height)

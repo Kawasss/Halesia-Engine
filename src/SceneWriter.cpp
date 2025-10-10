@@ -48,17 +48,7 @@ static void WriteFullObjectToArchive(DataArchiveFile& archive, const Object* pOb
 
 static void WriteTextureToStream(BinaryStream& stream, const Texture* pTexture)
 {
-	uint32_t width  = pTexture->GetWidth();
-	uint32_t height = pTexture->GetHeight();
-
-	stream << width << height;
-
-	if (width == 0 && height == 0)
-		return;
-
-	std::vector<char> data = pTexture->GetImageData();
-	data = Texture::Encode(data, width, height);
-
+	std::vector<char> data = pTexture->GetAsInternalFormat();
 	stream << data.size();
 
 	stream.Write(data.data(), data.size() * sizeof(char));
