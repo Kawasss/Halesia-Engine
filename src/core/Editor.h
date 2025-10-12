@@ -4,6 +4,7 @@
 
 #include "Scene.h"
 #include "CameraObject.h"
+#include "EditorProject.h"
 
 class Window;
 class Renderer;
@@ -105,11 +106,15 @@ private:
 
 	void DestroyCurrentScene();
 
+	void InitializeProject();
+	void LoadProject();
+	void LoadFile(const fs::path& path);
+
 	static std::string GetFile(const char* desc, const char* type);
-	void LoadFile();
-	void SaveToFile();
+	void BuildProject();
 
 	void QueueMeshChange(Object* object);
+	void ApplyQueuedMeshChange();
 
 	void UIFree(Object* pObject);
 
@@ -124,9 +129,9 @@ private:
 	int mouseX = 0;
 	int mouseY = 0;
 
-	std::string src;
-
 	std::map<Handle, AdditionalMaterialData> materialToData;
+
+	EditorProject project;
 
 	MeshChangeData queuedMeshChange{};
 	ObjectSelectionData selectionData{};

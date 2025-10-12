@@ -181,6 +181,7 @@
     <ClCompile Include="src\Denoiser.cpp" />
     <ClCompile Include="src\DescriptorWriter.cpp" />
     <ClCompile Include="src\Editor.cpp" />
+    <ClCompile Include="src\EditorProject.cpp" />
     <ClCompile Include="src\FileDialog.cpp" />
     <ClCompile Include="src\FileReadWrite.cpp" />
     <ClCompile Include="src\ForwardPlus.cpp" />
@@ -258,6 +259,7 @@
     <ClInclude Include="src\core\CameraObject.h" />
     <ClInclude Include="src\core\Console.h" />
     <ClInclude Include="src\core\Editor.h" />
+    <ClInclude Include="src\core\EditorProject.h" />
     <ClInclude Include="src\core\LightObject.h" />
     <ClInclude Include="src\core\MeshObject.h" />
     <ClInclude Include="src\core\Object.h" />

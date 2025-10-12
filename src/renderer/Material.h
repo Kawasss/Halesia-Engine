@@ -65,6 +65,8 @@ private:
 	const Texture* const& GetTexture(size_t i) const;
 	Texture*& GetTexture(size_t i);
 
+	void EnsurePointerSafety();
+
 	int referenceCount = 0;
 };
 

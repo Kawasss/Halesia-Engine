@@ -500,7 +500,7 @@ static std::vector<char> GetCompressedData(const std::span<const char>& data, Vk
 		return {};
 	}
 
-	err = ktxTexture2_CompressBasis(pRaw, 255);
+	err = ktxTexture2_CompressBasis(pRaw, 200);
 	if (err != KTX_SUCCESS)
 	{
 		Console::WriteLine("Failed to compress a KTX texture", Console::Severity::Error);

@@ -46,7 +46,7 @@ Material Material::Create(const MaterialCreateInfo& createInfo)
 		ret.ambientOcclusion = Texture::LoadFromForeignFormat(createInfo.ambientOcclusion, Texture::Type::AmbientOcclusion, false);
 
 	ret.isLight = createInfo.isLight;
-	
+	ret.EnsurePointerSafety();
 	return ret;
 }
 
@@ -72,6 +72,7 @@ Material Material::Create(const MaterialCreationData& createInfo)
 	if (!createInfo.ambientOccl.IsDefault()) 
 		ret.ambientOcclusion = Texture::LoadFromInternalFormat(createInfo.ambientOccl.data.data, false);
 
+	ret.EnsurePointerSafety();
 	return ret;
 }
 
@@ -154,6 +155,20 @@ int Material::GetReferenceCount() const
 void Material::OverrideReferenceCount(int val)
 { 
 	referenceCount = val;
+}
+
+void Material::EnsurePointerSafety()
+{
+	if (albedo == nullptr)
+		albedo = Texture::placeholderAlbedo;
+	if (normal == nullptr)
+		normal = Texture::placeholderNormal;
+	if (metallic == nullptr)
+		metallic = Texture::placeholderMetallic;
+	if (roughness == nullptr)
+		roughness = Texture::placeholderRoughness;
+	if (ambientOcclusion == nullptr)
+		ambientOcclusion = Texture::placeholderAmbientOcclusion;
 }
 
 bool operator==(const Material& lMaterial, const Material& rMaterial)

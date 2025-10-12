@@ -8,6 +8,7 @@
 #include "core/Rigid3DObject.h"
 #include "core/LightObject.h"
 #include "core/ScriptObject.h"
+#include "core/EditorProject.h"
 
 #include "renderer/gui.h"
 #include "renderer/RayTracing.h"
@@ -41,7 +42,7 @@ constexpr float LOWER_BAR_HEIGHT = 0.2f;
 constexpr float VIEWPORT_WIDTH = 1.0f - BAR_WIDTH * 2.0f;
 constexpr float VIEWPORT_HEIGHT = 1.0f - LOWER_BAR_HEIGHT;
 
-constexpr std::string_view SUPPORTED_MESH_FILES = "*.obj;*.glb;*.fbx;*.stl;";
+constexpr std::string_view SUPPORTED_FILES = "*.obj;*.glb;*.gltf;*.fbx;*.stl;*.dat;";
 
 EditorCamera::EditorCamera(Window* pWindow) : CameraObject()
 {
@@ -140,11 +141,32 @@ void Editor::Start()
 	renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
 	renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
 
-	src = GetFile("Scene file", "*.dat;*.fbx;*.glb;*.gltf");
-	if (src == "")
-		return;
+	
+	InitializeProject();
+	LoadProject();
+}
 
-	LoadFile();
+void Editor::InitializeProject()
+{
+	do
+	{
+		FileDialog::Filter filter{};
+		filter.description = "project file";
+		filter.fileType = "*.hproj;";
+
+		std::string projectLocation = FileDialog::RequestFileSaveLocation(filter);
+		std::expected<EditorProject, EditorProject::Result> exProject = fs::exists(projectLocation) ? EditorProject::LoadFromFile(projectLocation) : EditorProject::CreateInFile(projectLocation);
+
+		if (!exProject.has_value())
+		{
+			Console::WriteLine("Failed to load an editor project, retrying... (error: {})", Console::Severity::Error, static_cast<int>(exProject.error()));
+		}
+		else
+		{
+			project = *exProject;
+		}
+
+	} while (!project.IsValid());
 }
 
 void Editor::Update(float delta)
@@ -223,45 +245,49 @@ void Editor::MainThreadUpdate(float delta)
 {
 	if (save)
 	{
-		SaveToFile();
+		BuildProject();
 		save = false;
 	}
 
 	if (!queuedMeshChange.isApplied)
-		queuedMeshChange.path = GetFile("Mesh file", SUPPORTED_MESH_FILES.data());
-	else return;
+		ApplyQueuedMeshChange();
 
 	if (queuedMeshChange.path.empty())
 	{
 		queuedMeshChange.isApplied = true;
-		return;
 	}
-
-	Object* obj = queuedMeshChange.object;
-	
-	MeshCreationData creationData = assetImport::LoadFirstMesh(queuedMeshChange.path);
-
-	if (obj->IsType(Object::InheritType::Mesh))
-	{
-		MeshObject* ptr = dynamic_cast<MeshObject*>(obj);
-
-		ptr->mesh.Destroy();
-		ptr->mesh.Create(creationData);
-		ptr->mesh.SetMaterial(ptr->mesh.GetMaterial());
-	}
-
-	queuedMeshChange.isApplied = true;
 
 	if (loadFile)
 	{
-		src = GetFile("Scene file", "*.hsf;*.fbx;");
-		if (src != "")
+		fs::path src = GetFile("file", SUPPORTED_FILES.data());
+		if (!src.empty())
 		{
-			DestroyCurrentScene();
-			LoadFile();
+			LoadFile(src);
 		}
 		loadFile = false;
 	}
+}
+
+void Editor::ApplyQueuedMeshChange()
+{
+	queuedMeshChange.path = GetFile("Mesh file", SUPPORTED_FILES.data());
+	Object* obj = queuedMeshChange.object;
+
+	if (obj != nullptr)
+	{
+		MeshCreationData creationData = assetImport::LoadFirstMesh(queuedMeshChange.path);
+
+		if (obj->IsType(Object::InheritType::Mesh))
+		{
+			MeshObject* ptr = dynamic_cast<MeshObject*>(obj);
+
+			ptr->mesh.Destroy();
+			ptr->mesh.Create(creationData);
+			ptr->mesh.SetMaterial(ptr->mesh.GetMaterial());
+		}
+	}
+
+	queuedMeshChange.isApplied = true;
 }
 
 void Editor::ShowDefaultRightClick()
@@ -1015,24 +1041,32 @@ void Editor::QueueMeshChange(Object* object)
 void Editor::DestroyCurrentScene()
 {
 	for (Object* obj : allObjects)
-		Free(obj);
+		UIFree(obj);
 
 	for (int i = 1; i < Mesh::materials.size(); i++)
 		Mesh::materials[i].Destroy();
 	Mesh::materials.resize(1);
 }
-std::future<void> fut;
-void Editor::LoadFile()
+
+void Editor::LoadProject()
 {
-	fut = std::async([&]()
+	LoadFile(project.GetBuildFile());
+}
+
+std::future<void> fut;
+void Editor::LoadFile(const fs::path& path)
+{
+	Console::WriteLine("started loading {}...", Console::Severity::Debug, path.string());
+
+	fut = std::async([=]()
 		{
-			SceneLoader loader(src);
+			SceneLoader loader(path.string());
 			loader.LoadScene();
 
 			Mesh::materials.resize(loader.materials.size() + 1);
 
-			std::for_each(std::execution::par_unseq, loader.objects.begin(), loader.objects.end(), [&](const ObjectCreationData& data) { AddObject(data); });
-
+			std::for_each(std::execution::par_unseq, loader.objects.begin(), loader.objects.end(), [&](ObjectCreationData& data) { AddObject(data); });
+			return;
 			std::vector<int> indices(loader.materials.size());
 			for (int i = 0; i < indices.size(); i++)
 				indices[i] = i;
@@ -1046,19 +1080,12 @@ void Editor::LoadFile()
 						Mesh::InsertMaterial(i + 1, Material::Create(std::get<1>(data)));
 				});
 		});
+	fut.get();
 }
 
-void Editor::SaveToFile()
+void Editor::BuildProject()
 {
-	FileDialog::Filter filter{};
-	filter.description = "file to store data in";
-	filter.fileType = "*.dat;";
-
-	std::string path = FileDialog::RequestFileSaveLocation(filter);
-	if (path.empty())
-		return;
-
-	HSFWriter::WriteSceneToArchive(path, this);
+	project.BuildScene(this);
 }
 
 std::string Editor::GetFile(const char* desc, const char* type)

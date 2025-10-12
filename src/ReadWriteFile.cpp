@@ -3,79 +3,53 @@
 
 #include "io/ReadWriteFile.h"
 
-AsyncReadSession::AsyncReadSession(const std::string_view& file)
+void ReadWriteFile::HandleDeleter::operator()(void* ptr) const
 {
-	handle = ::CreateFileA(file.data(), GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-	DWORD err = GetLastError();
+	if (ptr != INVALID_HANDLE_VALUE)
+		::CloseHandle(ptr);
 }
 
-AsyncReadSession::AsyncReadSession(AsyncReadSession&& other) noexcept
+ReadWriteFile::ReadWriteFile(const std::string_view& file, OpenMethod method) : file(file), method(method)
 {
-	std::swap(this->handle, other.handle);
-}
 
-AsyncReadSession::~AsyncReadSession()
-{
-	if (IsValid())
-		CloseHandle(handle);
-}
-
-bool AsyncReadSession::Read(char* dst, int64_t offset, uint32_t count) const
-{
-	SeekG(offset);
-
-	DWORD readCount = 0;
-	BOOL res = ::ReadFile(handle, dst, count, &readCount, nullptr);
-
-	return res && readCount;
-}
-
-bool AsyncReadSession::IsValid() const
-{
-	return handle != INVALID_HANDLE_VALUE;
-}
-
-void AsyncReadSession::SeekG(int64_t offset) const
-{
-	LARGE_INTEGER g{};
-	g.QuadPart = offset;
-
-	::SetFilePointerEx(handle, g, nullptr, FILE_BEGIN);
-}
-
-ReadWriteFile::ReadWriteFile(const std::string_view& file, OpenMethod method) : file(file)
-{
-	handle = ::CreateFileA(this->file.c_str(), GENERIC_READ /* | GENERIC_WRITE*/, FILE_SHARE_READ, nullptr, method == OpenMethod::Append ? OPEN_ALWAYS : CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-}
-
-ReadWriteFile::~ReadWriteFile()
-{
-	if (handle != INVALID_HANDLE_VALUE)
-		CloseHandle(handle);
 }
 
 bool ReadWriteFile::IsValid() const
 {
-	return handle != INVALID_HANDLE_VALUE;
+	return handle.get() != INVALID_HANDLE_VALUE;
+}
+
+void ReadWriteFile::StartReading()
+{
+	handle.reset(::CreateFileA(this->file.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr, method == OpenMethod::Append ? OPEN_ALWAYS : CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
+}
+
+void ReadWriteFile::StopReading()
+{
+	handle.reset();
+}
+
+void ReadWriteFile::StartWriting()
+{
+	handle.reset(::CreateFileA(this->file.c_str(), GENERIC_WRITE, FILE_SHARE_READ, nullptr, method == OpenMethod::Append ? OPEN_ALWAYS : CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr));
+}
+
+void ReadWriteFile::StopWriting()
+{
+	handle.reset();
 }
 
 bool ReadWriteFile::Read(char* dst, unsigned long count) const
 {
 	DWORD readCount = 0;
-	BOOL res = ::ReadFile(handle, dst, count, &readCount, nullptr);
+	BOOL res = ::ReadFile(handle.get(), dst, count, &readCount, nullptr);
 
 	return res && readCount != 0;
 }
 
-AsyncReadSession ReadWriteFile::BeginAsyncRead() const
+bool ReadWriteFile::Write(const char* src, unsigned long count) const
 {
-	return AsyncReadSession(file);
-}
-
-void ReadWriteFile::Write(const char* src, unsigned long count) const
-{
-	BOOL res = ::WriteFile(handle, src, count, nullptr, nullptr);
-	if (res == FALSE);; // do whatever
+	return ::WriteFile(handle.get(), src, count, nullptr, nullptr);
 }
 
 int64_t ReadWriteFile::SeekG(int64_t index, ReadWriteFile::Method method) const
@@ -83,7 +57,7 @@ int64_t ReadWriteFile::SeekG(int64_t index, ReadWriteFile::Method method) const
 	LARGE_INTEGER g{}, ret{};
 	g.QuadPart = index;
 
-	::SetFilePointerEx(handle, g, &ret, static_cast<DWORD>(method));
+	::SetFilePointerEx(handle.get(), g, &ret, static_cast<DWORD>(method));
 	return ret.QuadPart;
 }
 
@@ -95,6 +69,26 @@ int64_t ReadWriteFile::GetG() const
 size_t ReadWriteFile::GetFileSize() const
 {
 	ULARGE_INTEGER size{};
-	size.LowPart = ::GetFileSize(handle, &size.HighPart);
+	size.LowPart = ::GetFileSize(handle.get(), &size.HighPart);
 	return size.QuadPart;
+}
+
+ReadSession::ReadSession(ReadWriteFile& file) : file(file)
+{
+	file.StartReading();
+}
+
+ReadSession::~ReadSession()
+{
+	file.StopReading();
+}
+
+WriteSession::WriteSession(ReadWriteFile& file) : file(file)
+{
+	file.StartWriting();
+}
+
+WriteSession::~WriteSession()
+{
+	file.StopWriting();
 }

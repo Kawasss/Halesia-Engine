@@ -97,7 +97,7 @@ static void WriteMaterialsToArchive(DataArchiveFile& file)
 	);
 }
 
-void HSFWriter::WriteSceneToArchive(const std::string& file, Scene* scene)
+void HSFWriter::WriteSceneToArchive(const std::string& file, const Scene* scene)
 {
 	DataArchiveFile archive(file, DataArchiveFile::OpenMethod::Clear);
 	if (!archive.IsValid())

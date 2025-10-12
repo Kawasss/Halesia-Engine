@@ -68,7 +68,7 @@ public:
 
 private:
 	// the presence of identifier is confirmed at this point, offset should be the offset from the start of the file
-	std::expected<std::vector<char>, bool>  ReadFromDisk(uint64_t offset, uint64_t size) const;
+	std::expected<std::vector<char>, bool> ReadFromDisk(uint64_t offset, uint64_t size);
 	uint64_t GetBinarySizeOfDictionary() const;
 
 	// these two functions should always be called together, as 'WriteDictionaryToDisk()' calculates parameters that 'WriteDataEntriesToDisk()' requires

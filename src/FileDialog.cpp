@@ -108,7 +108,7 @@ static std::vector<std::string> RequestOpenDialog(const FileDialog::Filter& filt
 	return ret;
 }
 
-static std::string RequestSaveDialog(const FileDialog::Filter& filter, const std::string& start, FILEOPENDIALOGOPTIONS foptions)
+static std::string RequestSaveDialog(const FileDialog::Filter& filter, const std::string& start, FILEOPENDIALOGOPTIONS foptions, FILEOPENDIALOGOPTIONS removeOptions)
 {
 	std::string ret;
 
@@ -141,6 +141,8 @@ static std::string RequestSaveDialog(const FileDialog::Filter& filter, const std
 
 	DWORD options = 0;
 	dialog->GetOptions(&options);
+	options = options & ~(removeOptions);
+
 	dialog->SetOptions(options | foptions);
 
 	dialog->SetFolder(pFolder);
@@ -196,6 +198,6 @@ std::string FileDialog::RequestFolder(const Filter& filter, const std::string& s
 
 std::string FileDialog::RequestFileSaveLocation(const Filter& filter, const std::string& start)
 {
-	std::string ret = RequestSaveDialog(filter, start, FOS_STRICTFILETYPES);
+	std::string ret = RequestSaveDialog(filter, start, FOS_STRICTFILETYPES, FOS_OVERWRITEPROMPT);
 	return ret.empty() ? "" : ret;
 }

@@ -56,15 +56,17 @@ std::expected<std::vector<char>, bool> DataArchiveFile::ReadData(const std::stri
 	return ReadFromDisk(metadata.offset, metadata.size);
 }
 
-std::expected<std::vector<char>, bool>  DataArchiveFile::ReadFromDisk(uint64_t offset, uint64_t size) const
+std::expected<std::vector<char>, bool>  DataArchiveFile::ReadFromDisk(uint64_t offset, uint64_t size)
 {
-	AsyncReadSession session = stream.BeginAsyncRead();
+	ReadSession session(stream);
 
 	uint64_t uncompressedSize = 0;
-	session.Read(reinterpret_cast<char*>(&uncompressedSize), static_cast<long long>(offset), sizeof(uncompressedSize));
+	stream.SeekG(offset, ReadWriteFile::Method::Begin);
+	stream.Read(reinterpret_cast<char*>(&uncompressedSize), sizeof(uncompressedSize));
 
 	std::vector<char> read(size);
-	session.Read(read.data(), static_cast<long long>(offset + sizeof(uncompressedSize)), static_cast<unsigned long>(size));
+	stream.SeekG(offset + sizeof(uncompressedSize), ReadWriteFile::Method::Begin);
+	stream.Read(read.data(), static_cast<unsigned long>(size));
 
 	return DecompressMemory(read, uncompressedSize);
 }
@@ -102,6 +104,7 @@ std::vector<char> DataArchiveFile::CompressMemory(const std::span<char const>& u
 
 void DataArchiveFile::ReadDictionaryFromDisk()
 {
+	ReadSession session(stream);
 	stream.SeekG(0, ReadWriteFile::Method::Begin);
 
 	uint32_t entryCount = 0;
@@ -138,6 +141,8 @@ void DataArchiveFile::ClearDictionary()
 
 void DataArchiveFile::WriteToFile()
 {
+	WriteSession session(stream);
+
 	WriteDictionaryToDisk();
 	WriteDataEntriesToDisk();
 }

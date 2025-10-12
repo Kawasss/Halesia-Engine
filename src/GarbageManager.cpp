@@ -3,8 +3,12 @@
 #include "renderer/GarbageManager.h"
 #include "renderer/Vulkan.h"
 
+#include "system/CriticalSection.h"
+
 namespace vgm
 {
+	win32::CriticalSection criticalSection;
+
 	struct DeleteInfo
 	{
 		DeleteInfo() = default;
@@ -40,6 +44,7 @@ namespace vgm
 
 	void DeleteObject(VkObjectType type, uint64_t handle)
 	{
+		win32::CriticalLockGuard guard(criticalSection);
 		queue.Add(type, handle);
 	}
 
@@ -78,6 +83,8 @@ namespace vgm
 
 	void CollectGarbage()
 	{
+		win32::CriticalLockGuard guard(criticalSection);
+
 		std::vector<DeleteInfo>& infos = queue.GetCurrentQueue();
 
 		for (const DeleteInfo& info : infos)
