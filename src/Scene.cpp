@@ -26,12 +26,35 @@ bool Scene::HasFinishedLoading()
 	return true;
 }
 
+bool Scene::NameExists(const std::string_view& str, Object* pOwner)
+{
+	win32::CriticalLockGuard guard(objectCriticalSection);
+	return std::find_if(flatObjects.begin(), flatObjects.end(), [&](const Object* pObj) { return pObj->name == str && pObj != pOwner; }) != flatObjects.end();
+}
+
+void Scene::EnsureValidName(std::string& name, Object* pObject)
+{
+	std::string newName = name;
+
+	for (int attemptCount = 0; NameExists(newName, pObject); attemptCount++)
+	{
+		Console::WriteLine("invalid name \"{}\": it already exists", Console::Severity::Error, newName);
+		newName = name + std::to_string(attemptCount);
+	}
+
+	name = newName;
+}
+
 void Scene::RegisterObjectPointer(Object* pObject, Object* pParent)
 {
+	win32::CriticalLockGuard guard(objectCriticalSection);
+
 	if (pParent == nullptr) // only accept ownership of the object of noone else has ownership
 		allObjects.push_back(pObject);
 	else
 		pParent->AddChild(pObject);
+
+	flatObjects.push_back(pObject);
 
 	pObject->SetParentScene(this);
 }
@@ -66,6 +89,8 @@ static void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberTo
 		 break;
 	 }
 	 assert(pObject != nullptr);
+
+	 EnsureValidName(pObject->name, pObject);
 
 	 RegisterObjectPointer(pObject, pParent);
 
@@ -141,6 +166,7 @@ void Scene::CollectGarbageRecursive(std::vector<Object*>& base)
 		}
 
 		base.erase(base.begin() + i);
+		flatObjects.erase(std::find(flatObjects.begin(), flatObjects.end(), obj));
 		i--;
 
 		delete obj;

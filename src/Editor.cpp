@@ -173,7 +173,8 @@ void Editor::Update(float delta)
 {
 	if (addObject)
 	{
-		Object* obj = AddObject({ "new object" });
+		ObjectCreationData data{ "new object" };
+		Object* obj = AddObject(data);
 
 		addObject = false;
 	}
@@ -757,7 +758,7 @@ void Editor::ShowObjectComponents()
 	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed;
 
 	if (ImGui::CollapsingHeader("Metadata", flags))
-		GUI::ShowObjectData(selectedObj);
+		ShowObjectData(selectedObj);
 
 	if (ImGui::CollapsingHeader("Transform", flags))
 		GUI::ShowObjectTransform(selectedObj->transform);
@@ -802,6 +803,39 @@ void Editor::ShowObjectScript(ScriptObject* scriptObject)
 	{
 		scriptObject->Reload();
 	}
+}
+
+void Editor::ShowObjectData(Object* pObject)
+{
+	static std::array<std::string_view, 3> allStates = { "OBJECT_STATE_VISIBLE", "OBJECT_STATE_INVISIBLE", "OBJECT_STATE_DISABLED" };
+
+	std::string_view currentState = ObjectStateToString(pObject->state);
+	int currentIndex = -1;
+
+	ImGui::Text("name:   ");
+	ImGui::SameLine();
+
+	std::string placeholderName = pObject->name;
+	ImGui::InputText("##objectname", &placeholderName);
+
+	EnsureValidName(placeholderName, pObject);
+	pObject->name = placeholderName;
+
+	if (pObject->name.empty())
+		pObject->name = "NO_NAME";
+
+	ImGui::Text("state:  ");
+	ImGui::SameLine();
+	GUI::ShowDropdownMenu(allStates, currentState, currentIndex, "##objectstate");
+	pObject->state = ObjectStateFromString(currentState);
+
+	ImGui::Text
+	(
+		"Handle:  %I64u\n"
+		"Type:    %s\n"
+		"\n"
+		"loading: %i\n"
+		, pObject->handle, Object::InheritTypeToString(pObject->GetType()).data(), !pObject->FinishedLoading());
 }
 
 void Editor::ShowObjectLight(LightObject* light)
@@ -969,6 +1003,7 @@ void Editor::ShowAddObjectWindow()
 
 		ObjectCreationData data{};
 		data.type = static_cast<ObjectCreationData::Type>(type); // should always convert correctly
+
 		AddObject(data, selectionData.parent);
 
 		selectionData.show = false;
@@ -1065,7 +1100,10 @@ void Editor::LoadFile(const fs::path& path)
 
 			Mesh::materials.resize(loader.materials.size() + 1);
 
-			std::for_each(std::execution::par_unseq, loader.objects.begin(), loader.objects.end(), [&](ObjectCreationData& data) { AddObject(data); });
+			std::for_each(std::execution::par_unseq, loader.objects.begin(), loader.objects.end(), [&](ObjectCreationData& data)
+				{ 
+					AddObject(data); 
+				});
 			return;
 			std::vector<int> indices(loader.materials.size());
 			for (int i = 0; i < indices.size(); i++)

@@ -1,6 +1,9 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <string_view>
+
+#include "../system/CriticalSection.h"
 
 class Object;
 class CameraObject;
@@ -35,6 +38,8 @@ public:
 
 	void DestroyAllObjects();
 
+	bool NameExists(const std::string_view& str, Object* pOwner);
+
 	/// <summary>
 	/// Transfers the ownership of the child from the scene to the object. The scene can no longer access the child after the transfer,
 	/// the object will become the sole owner. The scene will no longer be responsible for deletion.
@@ -65,6 +70,11 @@ private:
 
 protected:
 	void Free(Object* object);
+
+	void EnsureValidName(std::string& name, Object* pObject);
+
+	std::vector<Object*> flatObjects;
+	win32::CriticalSection objectCriticalSection;
 };
 
 template<typename T> Object* Scene::AddObject(const ObjectCreationData& creationData, Object* pParent)

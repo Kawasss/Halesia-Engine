@@ -149,7 +149,7 @@ Shape::Type Shape::StringToType(const std::string_view& str)
 	return Type::None;
 }
 
-std::string Console::SeverityToString(Severity severity)
+std::string_view Console::SeverityToString(Severity severity)
 {
 	switch (severity)
 	{
@@ -161,7 +161,7 @@ std::string Console::SeverityToString(Severity severity)
 	return "Console::Severity::Unknown";
 }
 
-std::string Console::VariableAccessToString(Access access)
+std::string_view Console::VariableAccessToString(Access access)
 {
 	switch (access)
 	{
@@ -172,7 +172,7 @@ std::string Console::VariableAccessToString(Access access)
 	return "Console::Access::Unknown";
 }
 
-std::string ObjectStateToString(ObjectState state)
+std::string_view ObjectStateToString(ObjectState state)
 {
 	switch (state)
 	{
@@ -181,4 +181,12 @@ std::string ObjectStateToString(ObjectState state)
 	case OBJECT_STATE_VISIBLE:   return "OBJECT_STATE_VISIBLE";
 	}
 	return "OBJECT_STATE_UNKNOWN";
+}
+
+ObjectState ObjectStateFromString(const std::string_view& str)
+{
+	if (str == "OBJECT_STATE_DISABLED") return OBJECT_STATE_DISABLED;
+	if (str == "OBJECT_STATE_INVISIBLE") return OBJECT_STATE_INVISIBLE;
+	if (str == "OBJECT_STATE_VISIBLE") return OBJECT_STATE_VISIBLE;
+	return OBJECT_STATE_VISIBLE;
 }

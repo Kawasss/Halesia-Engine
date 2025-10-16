@@ -33,7 +33,6 @@ public:
 	static void ShowDropdownMenu(const std::span<const std::string>& items, std::string& currentItem, int& currentIndex, const char* label);
 	static void ShowDropdownMenu(const std::span<const std::string_view>& items, std::string_view& currentItem, int& currentIndex, const char* label);
 
-	static void ShowObjectData(Object* object);
 	static void ShowObjectTransform(Transform& transform);
 
 	static void ShowWindowData(Window* window);

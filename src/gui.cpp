@@ -30,7 +30,7 @@
 #include "HalesiaEngine.h"
 #include <hsl/StackMap.h>
 
-inline void InputFloat(std::string name, float& value, float width)
+inline void InputFloat(const std::string& name, float& value, float width)
 {
 	ImGui::Text(name.c_str());
 	ImGui::SameLine();
@@ -160,34 +160,6 @@ void GUI::ShowWindowData(Window* window)
 
 	if (createWindow)
 		ImGui::End();
-}
-
-void GUI::ShowObjectData(Object* object)
-{
-	static std::array<std::string, 3> allStates = { "OBJECT_STATE_VISIBLE", "OBJECT_STATE_INVISIBLE", "OBJECT_STATE_DISABLED" };
-	static hsl::StackMap<std::string, ObjectState, 3> stringToState = { { "OBJECT_STATE_VISIBLE", OBJECT_STATE_VISIBLE }, { "OBJECT_STATE_INVISIBLE", OBJECT_STATE_INVISIBLE }, { "OBJECT_STATE_DISABLED", OBJECT_STATE_DISABLED } };
-
-	std::string currentState = ObjectStateToString(object->state);
-	int currentIndex = -1;
-
-	ImGui::Text("name:   ");
-	ImGui::SameLine();
-	ImGui::InputText("##objectname", &object->name);
-	if (object->name.size() == 0)
-		object->name = "NO_NAME";
-
-	ImGui::Text("state:  ");
-	ImGui::SameLine();
-	ShowDropdownMenu(allStates, currentState, currentIndex, "##objectstate");
-	object->state = stringToState[currentState];
-
-	ImGui::Text
-	(
-		"Handle:  %I64u\n"
-		"Type:    %s\n"
-		"\n"
-		"loading: %i\n"
-	, object->handle, Object::InheritTypeToString(object->GetType()).data(), !object->FinishedLoading());
 }
 
 void GUI::ShowObjectTransform(Transform& transform)
@@ -328,7 +300,7 @@ void GUI::ShowObjectTable(const std::vector<Object*>& objects)
 		ImGui::TableNextColumn();
 		ImGui::Text(std::to_string(currentObj->handle).c_str());
 		ImGui::TableNextColumn();
-		ImGui::Text(ObjectStateToString(currentObj->state).c_str());
+		ImGui::Text(ObjectStateToString(currentObj->state).data());
 		ImGui::TableNextColumn();
 		ImGui::Text(currentObj->HasScript() ? "true" : "false");
 		ImGui::TableNextColumn();

@@ -29,7 +29,8 @@ enum ObjectState : uint8_t
 		/// </summary>
 		OBJECT_STATE_DISABLED
 	};
-inline extern std::string ObjectStateToString(ObjectState state);
+inline extern std::string_view ObjectStateToString(ObjectState state);
+inline extern ObjectState ObjectStateFromString(const std::string_view& str);
 
 class Object
 {

@@ -99,6 +99,7 @@ private:
 	void ShowObjectMesh(Mesh& mesh);
 	void ShowObjectLight(LightObject* light);
 	void ShowObjectScript(ScriptObject* scriptObject);
+	void ShowObjectData(Object* pObject);
 
 	void ShowRigidBodyShape(RigidBody& rigid);
 

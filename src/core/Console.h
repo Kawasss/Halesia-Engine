@@ -22,7 +22,7 @@ public:
 		Error,   // red
 		Debug,   // blue
 	};
-	static std::string SeverityToString(Severity severity);
+	static std::string_view SeverityToString(Severity severity);
 
 	enum class Access
 	{
@@ -30,7 +30,7 @@ public:
 		ReadOnly,
 		WriteOnly,
 	};
-	static std::string VariableAccessToString(Access access);
+	static std::string_view VariableAccessToString(Access access);
 
 	struct Message
 	{
