@@ -260,6 +260,7 @@
     <ClInclude Include="src\core\Console.h" />
     <ClInclude Include="src\core\Editor.h" />
     <ClInclude Include="src\core\EditorProject.h" />
+    <ClInclude Include="src\core\Job.h" />
     <ClInclude Include="src\core\LightObject.h" />
     <ClInclude Include="src\core\MeshObject.h" />
     <ClInclude Include="src\core\Object.h" />

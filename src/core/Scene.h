@@ -58,7 +58,7 @@ public:
 	// 1. call Destroy()
 	// 2. destroy all objects
 	~Scene();
-	
+
 	std::vector<Object*> allObjects; // this vector owns the objects
 
 private:

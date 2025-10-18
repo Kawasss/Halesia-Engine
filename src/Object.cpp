@@ -272,8 +272,19 @@ void Object::DeserializeSelf(const BinarySpan& stream)
 
 }
 
-Object::~Object()
+Object::~Object() // destruction of the children is left to the scene
 {
-	for (Object* obj : children)
-		delete obj;
+
+}
+
+void Object::Free(Object* pObject)
+{
+	pObject->FreeSelf();
+}
+
+void Object::FreeSelf()
+{
+	shouldBeDestroyed = true;
+	for (Object* pChild : children)
+		pChild->FreeSelf();
 }

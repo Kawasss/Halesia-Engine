@@ -31,7 +31,6 @@ constexpr VkDeviceSize STANDARD_MEMORY_BLOCK_SIZE = 1024 * 1024; // 1 mb
 //   |        \             /           \
 // buffer 1  buffer 2    image 1       image 2
 
-
 struct vvm::Segment
 {
 	bool empty = true;
@@ -69,16 +68,7 @@ struct vvm::MemoryBlock
 			throw VulkanAPIError("Failed to map a memory block: it cannot be mapped due to its properties");
 
 		const Vulkan::Context& ctx = Vulkan::GetContext();
-
-		VkResult result = VK_SUCCESS;
-
-		// map the entire block, because multiple segments cant be mapped at the same time: vulkan only allows mapping a memory once, so the offset must be 0 and the size must be VK_WHOLE_SIZE.
-		// an optimisation: if a memory block is consumed entirely by one segment, then only map the required parts. A segment that uses the entire block removes to need to check for multiple mappings.
-		if (segments.size() == 1 && segments.begin()->second.GetSize() == size)
-			result = vkMapMemory(ctx.logicalDevice, memory, offset, size, flags, &mapped);
-		else                                  
-			result = vkMapMemory(ctx.logicalDevice, memory, 0, VK_WHOLE_SIZE, flags, &mapped);
-
+		VkResult result = vkMapMemory(ctx.logicalDevice, memory, 0, VK_WHOLE_SIZE, flags, &mapped);
 		CheckVulkanResult("Failed to map a memory block", result);
 	}
 
@@ -95,18 +85,41 @@ struct vvm::MemoryBlock
 		mapped = nullptr;
 	}
 
-	std::map<uint64_t, Segment>::iterator FindUsableSegment(VkDeviceSize size)
+	void AddNewSegment(uint64_t handle, const Segment& segment)
 	{
-		for (auto it = segments.begin(); it != segments.end(); it++)
-			if (it->second.empty && it->second.GetSize() >= size)
-				return it;
-
-		return segments.end();
+		segments.emplace(handle, segment);
 	}
 
-	bool CanFit(VkDeviceSize size)
+	void OverrideIterator(const std::map<uint64_t, Segment>::iterator& it, uint64_t handle, VkDeviceSize size)
 	{
-		return FindUsableSegment(size) != segments.end();
+		auto nh = segments.extract(it);
+		nh.key() = handle;
+		nh.mapped().SetSize(size);
+		nh.mapped().empty = false;
+
+		segments.insert(std::move(nh));
+	}
+
+	bool TryToFitNewSegment(uint64_t handle, VkDeviceSize size)
+	{
+		VkDeviceSize farEnd = 0;
+		for (auto it = segments.begin(); it != segments.end(); it++)
+		{
+			const Segment& segment = it->second;
+			farEnd = std::max(segment.end, farEnd);
+
+			if (!segment.empty || segment.GetSize() < size) // can try a more clever algorithm that finds the memory which size is closest to the desired memory
+				continue;
+		
+			OverrideIterator(it, handle, size);
+			return true;
+		}
+
+		if (farEnd + size > this->size)
+			return false;
+
+		AddNewSegment(handle, Segment(false, farEnd, farEnd + size));
+		return true;
 	}
 
 	void FreeSegment(uint64_t handle)
@@ -117,7 +130,7 @@ struct vvm::MemoryBlock
 	bool IsEmpty() const
 	{
 		for (const auto& [id, segment] : segments)
-			if (!segment.empty) // check if there are any used segments in this block, if no segment is used then we return true
+			if (!segment.empty)
 				return false;
 		return true;
 	}
@@ -138,6 +151,8 @@ struct vvm::MemoryBlock
 	{
 		Destroy();
 	}
+
+	private:
 };
 
 struct vvm::MemoryCore
@@ -198,20 +213,26 @@ static vvm::MemoryBlock* AllocateNewBlock(VkMemoryRequirements& requirements, Vk
 {
 	VkDeviceMemory memory = ::AllocateMemory(requirements, properties, pNext);
 	vvm::MemoryBlock* block = new vvm::MemoryBlock(properties, requirements.size, requirements.alignment, memory);
-
+	
 	core->blocks.push_back(block);
 	return block;
 }
 
-static vvm::MemoryBlock* GetMemoryBlock(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, void* pNext = nullptr)
+static vvm::MemoryBlock* FindValidBlockForSegment(VkMemoryRequirements& requirements, VkMemoryPropertyFlags properties, uint64_t handle, VkDeviceSize size, void* pNext = nullptr) // will allocate a new block if it does not find a valid one
 {
-	for (int i = 0; i < core->blocks.size(); i++)
+	for (vvm::MemoryBlock* pBlock : core->blocks)
 	{
-		vvm::MemoryBlock* block = core->blocks[i];
-		if (block->properties == properties && block->CanFit(requirements.size) && block->alignment == requirements.alignment)
-			return block;
+		if (pBlock->properties != properties || pBlock->alignment != requirements.alignment)
+			continue;
+
+		if (pBlock->TryToFitNewSegment(handle, size))
+			return pBlock;
 	}
-	return ::AllocateNewBlock(requirements, properties, pNext);
+
+	vvm::MemoryBlock* pBlock = ::AllocateNewBlock(requirements, properties, pNext);
+	if (!pBlock->TryToFitNewSegment(handle, size))
+		__debugbreak();
+	return pBlock;
 }
 
 template<typename T>
@@ -255,27 +276,16 @@ vvm::Image vvm::AllocateImage(VkImage image, VkMemoryPropertyFlags properties)
 	vkGetImageMemoryRequirements(ctx.logicalDevice, image, &requirements);
 	requirements.size = ::FitSizeToAlignment(requirements.size, requirements.alignment);
 
-	MemoryBlock* block = ::GetMemoryBlock(requirements, properties);
-
+	VkDeviceSize imageSize = requirements.size;
 	uint64_t handle = reinterpret_cast<uint64_t>(image);
-	auto it = block->FindUsableSegment(requirements.size);
 
-	if (block->IsUnused())
-		block->segments[handle] = { false, 0, requirements.size };
-	else if (it != block->segments.end())
-	{
-		auto pair = block->segments.extract(it->first); // effectively update the key and value in place
-
-		pair.key() = handle;
-		pair.mapped().SetSize(requirements.size);
-		pair.mapped().empty = false;
-	}
+	MemoryBlock* block = ::FindValidBlockForSegment(requirements, properties, handle, imageSize);//::GetMemoryBlock(requirements, properties);
 
 	vkBindImageMemory(ctx.logicalDevice, image, block->memory, block->segments[handle].begin);
 
 	block->Name(std::format("image_mem_block:{}", block->size));
 
-	core->imageToBlock[image] = block;
+	core->imageToBlock.emplace(image, block);
 	return Image(image);
 }
 
@@ -287,27 +297,16 @@ vvm::Buffer vvm::AllocateBuffer(VkBuffer buffer, VkMemoryPropertyFlags propertie
 	VkMemoryRequirements requirements;
 	vkGetBufferMemoryRequirements(ctx.logicalDevice, buffer, &requirements);
 
-	MemoryBlock* block = ::GetMemoryBlock(requirements, properties, pNext);
-
+	VkDeviceSize bufferSize = requirements.size;
 	uint64_t handle = reinterpret_cast<uint64_t>(buffer);
-	auto it = block->FindUsableSegment(requirements.size);
 
-	if (block->IsUnused())
-		block->segments[handle] = { false, 0, requirements.size };
-	else if (it != block->segments.end())
-	{
-		auto pair = block->segments.extract(it->first); // effectively update the key and value in place
-
-		pair.key() = handle;
-		pair.mapped().SetSize(requirements.size);
-		pair.mapped().empty = false;
-	}
+	MemoryBlock* block = ::FindValidBlockForSegment(requirements, properties, handle, bufferSize, pNext);//::GetMemoryBlock(requirements, properties, pNext);
 
 	vkBindBufferMemory(ctx.logicalDevice, buffer, block->memory, block->segments[handle].begin);
 
 	block->Name(std::format("buffer_mem_block:{}", block->size));
 
-	core->bufferToBlock[buffer] = block;
+	core->bufferToBlock.emplace(buffer, block);
 	return Buffer(buffer);
 }
 
@@ -357,6 +356,7 @@ void vvm::Destroy(VkBuffer buffer)
 
 void vvm::ForceDestroy()
 {
+	win32::CriticalLockGuard guard(core->blockGuard);
 	for (MemoryBlock* block : core->blocks)
 	{
 		delete block;

@@ -142,14 +142,9 @@ public:
 
 	Object* GetParent() const { return parent; }
 
-	static void Free(Object* objPtr)
-	{
-		objPtr->shouldBeDestroyed = true;
-	}
+	static void Free(Object* pObject);
 
 private:
-	template<typename T> void SetScript(T* script);
-
 	void SerializeHeader(BinaryStream& stream) const;
 	void SerializeName(BinaryStream& stream) const;
 	void SerializeTransform(BinaryStream& stream) const;
@@ -160,6 +155,8 @@ private:
 	void DeserializeTransform(const BinarySpan& stream);
 
 	void SerializeIntoStream(BinaryStream& stream) const;
+
+	void FreeSelf();
 
 	InheritType type = InheritType::Base;
 

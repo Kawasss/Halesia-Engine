@@ -156,20 +156,23 @@ void Scene::CollectGarbage()
 
 void Scene::CollectGarbageRecursive(std::vector<Object*>& base)
 {
+	win32::CriticalLockGuard guard(objectCriticalSection);
 	for (int i = 0; i < base.size(); i++)
 	{
 		Object* obj = base[i];
+		CollectGarbageRecursive(obj->GetChildren());
 		if (!obj->ShouldBeDestroyed())
-		{
-			CollectGarbageRecursive(obj->GetChildren());
 			continue;
-		}
 
 		base.erase(base.begin() + i);
-		flatObjects.erase(std::find(flatObjects.begin(), flatObjects.end(), obj));
-		i--;
+		auto it = std::find(flatObjects.begin(), flatObjects.end(), obj);
+		if (it == flatObjects.end())
+			Console::WriteLine("failed to delete objects as a flat object", Console::Severity::Error);
+		else
+			flatObjects.erase(it);
 
 		delete obj;
+		i--;
 	}
 }
 
@@ -184,7 +187,8 @@ void Scene::TransferObjectOwnership(Object* pNewOwner, Object* pChild)
 void Scene::DestroyAllObjects()
 {
 	for (Object* object : allObjects)
-		delete object;
+		Object::Free(object);
+	CollectGarbage();
 }
 
 Scene::~Scene()

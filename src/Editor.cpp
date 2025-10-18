@@ -671,7 +671,9 @@ void Editor::ShowVRAM()
 	for (int i = 0; i < blocks.size(); i++)
 	{
 		vvm::DbgMemoryBlock& block = blocks[i];
-		std::string blockName = std::format("mem_block {}%% ({} kb):", static_cast<int>(static_cast<float>(block.used) / block.size * 100), block.size / 1024);
+		bool blockIsAtleast1kb = block.used >= 1024;
+
+		std::string blockName = std::format("mem_block {}%% ({} kb, {} {} used):", static_cast<int>(static_cast<float>(block.used) / block.size * 100), block.size / 1024, blockIsAtleast1kb ? block.used / 1024 : block.used, blockIsAtleast1kb ? "kb" : "b");
 		ImGui::Text(blockName.c_str());
 		ImGui::SameLine();
 
@@ -1104,11 +1106,11 @@ void Editor::LoadFile(const fs::path& path)
 				{ 
 					AddObject(data); 
 				});
-			return;
+			
 			std::vector<int> indices(loader.materials.size());
 			for (int i = 0; i < indices.size(); i++)
 				indices[i] = i;
-
+			return;
 			std::for_each(std::execution::par, indices.begin(), indices.end(), [&](int i)
 				{
 					const std::variant<MaterialCreationData, MaterialCreateInfo>& data = loader.materials[i];
