@@ -3,6 +3,7 @@
 
 #include "RenderPipeline.h"
 #include "VideoMemoryManager.h"
+#include "Texture.h"
 #include "Buffer.h"
 
 class GraphicsPipeline;
@@ -25,16 +26,14 @@ private:
 	void CreateBuffers();
 	void UpdateBuffers();
 
+	void bindImagesToPipelines();
+	void BindBufferToPipelines();
+
 	VkFramebuffer framebuffer = VK_NULL_HANDLE;
 
-	vvm::SmartImage transmittanceLUT;
-	VkImageView transmittanceView = VK_NULL_HANDLE;
-
-	vvm::SmartImage mscatteringLUT;
-	VkImageView mscatteringView = VK_NULL_HANDLE;
-
-	vvm::SmartImage latlongMap;
-	VkImageView latlongView = VK_NULL_HANDLE;
+	Image transmittanceLUT;
+	Image mscatteringLUT;
+	Image latlongMap;
 
 	std::unique_ptr<GraphicsPipeline> transmittancePipeline;
 	std::unique_ptr<GraphicsPipeline> mscatteringPipeline;

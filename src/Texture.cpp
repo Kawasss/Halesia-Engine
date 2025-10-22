@@ -101,6 +101,16 @@ void Image::CreateWithCustomSize(uint32_t width, uint32_t height, VkDeviceSize s
 	CreateImageAndView();
 }
 
+void Image::InheritFrom(Image& other)
+{
+	Destroy();
+
+	std::swap(image, other.image);
+	std::swap(imageView, other.imageView);
+
+	SetAllAttributes(other.width, other.height, other.size, other.layerCount, other.format, other.usage);
+}
+
 void Image::SetAllAttributes(uint32_t width, uint32_t height, VkDeviceSize size, uint32_t layerCount, VkFormat format, VkImageUsageFlags usage)
 {
 	this->width = width;
@@ -136,32 +146,6 @@ void Image::UploadData(const std::span<const char>& data)
 
 	if (mipLevels != 1)
 		GenerateMipMaps();
-}
-
-struct ImageLayoutAttributes
-{
-	ImageLayoutAttributes(VkPipelineStageFlags s, VkAccessFlags a) : stage(s), access(a) {}
-
-	VkPipelineStageFlags stage;
-	VkAccessFlags access;
-};
-
-static ImageLayoutAttributes GetAttributesForLayout(VkImageLayout layout)
-{
-	switch (layout)
-	{
-	case VK_IMAGE_LAYOUT_UNDEFINED:
-		return ImageLayoutAttributes(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
-	case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-		return ImageLayoutAttributes(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT);
-	case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-		return ImageLayoutAttributes(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT);
-	case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-		return ImageLayoutAttributes(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_SHADER_READ_BIT);
-	case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-		return ImageLayoutAttributes(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-	}
-	return ImageLayoutAttributes(0, 0);
 }
 
 static bool FormatIsSRGB(VkFormat format)
@@ -745,4 +729,6 @@ void Image::Destroy()
 
 	vgm::Delete(imageView);
 	image.Destroy();
+
+	imageView = VK_NULL_HANDLE;
 }

@@ -47,6 +47,8 @@ public:
 	void Create(uint32_t width, uint32_t height, uint32_t layerCount, VkFormat format, uint32_t pixelSize, VkImageUsageFlags usage, Flags flags);
 	void CreateWithCustomSize(uint32_t width, uint32_t height, VkDeviceSize size, uint32_t layerCount, VkFormat format, VkImageUsageFlags usage, Flags flags);
 
+	void InheritFrom(Image& other); // accepts ownership of its members, then kills it
+
 	void UploadData(const std::span<const char>& data);
 
 	void TransitionTo(VkImageLayout layout, CommandBuffer cmdBuffer);
@@ -79,7 +81,6 @@ protected:
 
 	void CopyBufferToImage(VkBuffer buffer);
 	void GenerateMipMaps();
-	//void WritePixelsToBuffer(const uint8_t* pixels, bool useMipMaps, VkFormat format, VkImageLayout layout, int componentCount);
 	void CalculateMipLevels();
 	void SetAllAttributes(uint32_t width, uint32_t height, VkDeviceSize size, uint32_t layerCount, VkFormat format, VkImageUsageFlags usage);
 	void CreateImageAndView();
