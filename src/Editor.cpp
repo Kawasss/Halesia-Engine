@@ -1110,7 +1110,7 @@ void Editor::LoadFile(const fs::path& path)
 			std::vector<int> indices(loader.materials.size());
 			for (int i = 0; i < indices.size(); i++)
 				indices[i] = i;
-			return;
+			
 			std::for_each(std::execution::par, indices.begin(), indices.end(), [&](int i)
 				{
 					const std::variant<MaterialCreationData, MaterialCreateInfo>& data = loader.materials[i];

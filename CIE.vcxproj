@@ -227,6 +227,7 @@
     <ClCompile Include="src\SimpleMesh.cpp" />
     <ClCompile Include="src\Skybox.cpp" />
     <ClCompile Include="src\Pipeline.cpp" />
+    <ClCompile Include="src\SkyPipeline.cpp" />
     <ClCompile Include="src\Surface.cpp" />
     <ClCompile Include="src\Swapchain.cpp" />
     <ClCompile Include="src\System.cpp" />
@@ -332,6 +333,7 @@
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
     <ClInclude Include="src\renderer\Renderer.h" />
     <ClInclude Include="src\renderer\Skybox.h" />
+    <ClInclude Include="src\renderer\SkyPipeline.h" />
     <ClInclude Include="src\renderer\StorageBuffer.h" />
     <ClInclude Include="src\renderer\Surface.h" />
     <ClInclude Include="src\renderer\Swapchain.h" />

@@ -2,6 +2,11 @@
 #include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
 
+bool CommandBuffer::IsValid() const
+{
+    return commandBuffer != VK_NULL_HANDLE;
+}
+
 void CommandBuffer::Reset(VkCommandBufferResetFlags flags) const
 {
     ::vkResetCommandBuffer(commandBuffer, flags);
@@ -154,6 +159,11 @@ void CommandBuffer::CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t 
 void CommandBuffer::CopyImage(VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy* pRegions) const
 {
     ::vkCmdCopyImage(commandBuffer, srcImage, srcImageLayout, dstImage, dstImageLayout, regionCount, pRegions);
+}
+
+void CommandBuffer::CopyBufferToImage(VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy* pRegions) const
+{
+    ::vkCmdCopyBufferToImage(commandBuffer, srcBuffer, dstImage, dstImageLayout, regionCount, pRegions);
 }
 
 void CommandBuffer::FillBuffer(VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data) const

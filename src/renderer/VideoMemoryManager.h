@@ -2,13 +2,17 @@
 #include <vulkan/vulkan.h>
 
 #include <vector>
+#include <type_traits>
 
 namespace vvm
 {
+	template<typename T>
+	concept IsPointer = std::is_pointer_v<T>;
+
 	template<typename VulkanType>
 	using Deleter = void(*)(VulkanType);
 
-	template<typename VulkanType, Deleter<VulkanType> deleter>
+	template<IsPointer VulkanType, Deleter<VulkanType> deleter>
 	class Handle
 	{
 	public:
@@ -26,7 +30,7 @@ namespace vvm
 			if (!IsValid())
 				return;
 
-			deleter(handle);
+			destructor(handle);
 			Invalidate();
 		}
 
@@ -40,7 +44,7 @@ namespace vvm
 		VulkanType handle = VK_NULL_HANDLE;
 	};
 
-	template<typename VulkanType, Deleter<VulkanType> deleter>
+	template<IsPointer VulkanType, Deleter<VulkanType> deleter>
 	class SmartHandle : public Handle<VulkanType, deleter>
 	{
 	public:
@@ -52,6 +56,9 @@ namespace vvm
 
 		SmartHandle& operator=(HandleType&& other) noexcept
 		{
+			if (other.Get() != this->handle)
+				this->Destroy();
+
 			this->handle = other.Get();
 			other.Invalidate();
 
@@ -60,6 +67,9 @@ namespace vvm
 
 		SmartHandle& operator=(SmartType&& other) noexcept
 		{
+			if (other.handle != this->handle)
+				this->Destroy();
+
 			this->handle = other.Get();
 			other.Invalidate();
 

@@ -1,4 +1,4 @@
-#pragma once
+ #pragma once
 #include <vulkan/vulkan.h>
 #include <string>
 #include <future>
@@ -7,6 +7,8 @@
 
 #include "PhysicalDevice.h"
 #include "VideoMemoryManager.h"
+
+class CommandBuffer;
 
 enum TextureUseCase
 {
@@ -26,21 +28,29 @@ struct Color
 class Image
 {
 public:
+	enum Flags
+	{
+		None = 0,
+		UseMipMaps = 1 << 0,
+	};
+
 	enum class DecodeOptions
 	{
 		None = 0,
 		Flip = 1,
 	};
 
-	static std::vector<char> Encode(const std::span<const char>& raw, int width, int height);
-	static std::vector<char> Decode(const std::span<const char>& encoded, int& outWidth, int& outHeight, DecodeOptions options, float scale, int componentCount); // used to decode foreign image formats
+	static std::vector<char> Decode(const std::span<const char>& encoded, uint32_t& outWidth, uint32_t& outHeight, DecodeOptions options, float scale, int componentCount); // used to decode foreign image formats
 
-	void GenerateImages(const std::vector<char>& textureData, bool useMipMaps, int amount, VkFormat format, TextureUseCase useCase);
-	//void GenerateImage(const char* data, bool useMipMaps, VkFormat format, TextureUseCase useCase);
-	void GenerateCubemap(const char* data, TextureUseCase useCase);
+	//void GenerateImages(const std::vector<char>& textureData, bool useMipMaps, int amount, VkFormat format, TextureUseCase useCase);
 
-	void GenerateEmptyImages(int width, int height, int amount);
-	void ChangeData(uint8_t* data, uint32_t size, VkFormat format);
+	void Create(uint32_t width, uint32_t height, uint32_t layerCount, VkFormat format, uint32_t pixelSize, VkImageUsageFlags usage, Flags flags);
+	void CreateWithCustomSize(uint32_t width, uint32_t height, VkDeviceSize size, uint32_t layerCount, VkFormat format, VkImageUsageFlags usage, Flags flags);
+
+	void UploadData(const std::span<const char>& data);
+
+	void TransitionTo(VkImageLayout layout, CommandBuffer cmdBuffer);
+
 	void AwaitGeneration() const;
 	bool HasFinishedLoading() const;
 	void Destroy();
@@ -49,14 +59,8 @@ public:
 	int GetHeight() const;
 	int GetMipLevels() const;
 
-	void TransitionForShaderWrite(VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
-	void TransitionForShaderRead(VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
-
 	std::vector<char> GetImageData() const;
-
 	std::vector<char> GetAsInternalFormat() const;
-
-	static bool TexturesHaveChanged();
 
 	vvm::Image image;
 	VkImageView imageView = VK_NULL_HANDLE;
@@ -67,17 +71,18 @@ public:
 protected:
 	mutable std::future<void> generation;
 
-	int		 width = 0, height = 0;
-	uint32_t mipLevels = 1, layerCount = 0;
-	VkFormat format;
+	uint32_t width = 0, height = 0;
+	uint32_t mipLevels = 1, layerCount = 1;
+	VkFormat format = VK_FORMAT_MAX_ENUM;
+	VkImageUsageFlags usage = 0;
+	VkImageLayout currLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-	void TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer = VK_NULL_HANDLE);
 	void CopyBufferToImage(VkBuffer buffer);
-	void GenerateMipMaps(VkFormat imageFormat);
-	void WritePixelsToBuffer(const uint8_t* pixels, bool useMipMaps, VkFormat format, VkImageLayout layout, int componentCount);
+	void GenerateMipMaps();
+	//void WritePixelsToBuffer(const uint8_t* pixels, bool useMipMaps, VkFormat format, VkImageLayout layout, int componentCount);
 	void CalculateMipLevels();
-
-	static bool texturesHaveChanged;
+	void SetAllAttributes(uint32_t width, uint32_t height, VkDeviceSize size, uint32_t layerCount, VkFormat format, VkImageUsageFlags usage);
+	void CreateImageAndView();
 
 private:
 	static bool FormatIsCompressed(VkFormat format);
@@ -86,10 +91,7 @@ private:
 class Cubemap : public Image
 {
 public:
-	Cubemap(const std::string& filePath, bool useMipMaps = true);
-	Cubemap(std::vector<std::vector<char>> filePath, bool useMipMaps = true);
 	Cubemap(int width, int height);
-
 	~Cubemap();
 
 	std::array<VkImageView, 6> layerViews;
@@ -120,14 +122,9 @@ public:
 
 	static Texture* LoadFromForeignFormat(const std::string_view& file, Type type, bool useMipMaps = true, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
 	static Texture* LoadFromInternalFormat(const std::span<const char>& data, bool useMipMaps = true, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
-	static Texture* CreateEmpty(int width, int height);
-
-	Texture(int width, int height);
-	Texture(const std::vector<char>& imageData, uint32_t width, uint32_t height, Type type, bool useMipMaps = true, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY); // uncompressed image !!
-	Texture(const Color& color, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY); // solid color textures cannot use mip maps because theyre already 1x1
 
 private:
-	Texture() {}
+	Texture() = default;
 
 	static VkFormat GetVkFormatFromType(Type type);
 	static VkFormat GetUncompressedFormatFromFormat(VkFormat format);

@@ -16,17 +16,19 @@
 #include "renderer/Buffer.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/VulkanAPIError.h"
+#include "renderer/ImageTransitioner.h"
 
 #include "core/Console.h"
 
 #include "io/IO.h"
 
-bool Image::texturesHaveChanged = false;
 Texture* Texture::placeholderAlbedo = nullptr;
 Texture* Texture::placeholderNormal = nullptr;
 Texture* Texture::placeholderMetallic = nullptr;
 Texture* Texture::placeholderRoughness = nullptr;
 Texture* Texture::placeholderAmbientOcclusion = nullptr;
+
+constexpr VkImageUsageFlags TEXTURE_USAGE = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
 uint8_t* Color::GetData() const
 {
@@ -45,34 +47,25 @@ struct GenericDeleter
 using StbiDeleter = GenericDeleter<void*, free>;
 using KtxTextureDeleter = GenericDeleter<ktxTexture2*, ktxTexture2_Destroy>;
 
-std::vector<char> Image::Encode(const std::span<const char>& raw, int width, int height)
-{
-	int len = 0;
-	unsigned char* unowned = stbi_write_png_to_mem(reinterpret_cast<const unsigned char*>(raw.data()), width * 4, width, height, 4, &len);
-	std::unique_ptr<char, StbiDeleter> encoded(reinterpret_cast<char*>(unowned));
-
-	if (len == 0 || unowned == nullptr)
-		return std::vector<char>();
-
-	return std::vector<char>(unowned, unowned + len);
-}
-
-std::vector<char> Image::Decode(const std::span<const char>& encoded, int& outWidth, int& outHeight, DecodeOptions options, float scale, int componentCount)
+std::vector<char> Image::Decode(const std::span<const char>& encoded, uint32_t& outWidth, uint32_t& outHeight, DecodeOptions options, float scale, int componentCount)
 {
 	stbi_set_flip_vertically_on_load(options == DecodeOptions::Flip ? 1 : 0);
 
-	int comp = 0;
-	stbi_uc* data = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(encoded.data()), static_cast<int>(encoded.size()), &outWidth, &outHeight, &comp, componentCount);
+	int comp = 0, width = 0, height = 0;
+	stbi_uc* data = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(encoded.data()), static_cast<int>(encoded.size()), &width, &height, &comp, componentCount);
 	std::unique_ptr<char, StbiDeleter> decoded(reinterpret_cast<char*>(data));
 
-	if (outWidth == 0 || outHeight == 0 || data == nullptr)
+	if (width == 0 || height == 0 || data == nullptr)
 		return std::vector<char>();
 
-	int scaledWidth  = static_cast<int>(std::ceil(outWidth * scale));
-	int scaledHeight = static_cast<int>(std::ceil(outHeight * scale));
+	outWidth  = static_cast<uint32_t>(width);
+	outHeight = static_cast<uint32_t>(height);
 
-	if (scaledWidth == outWidth && scaledHeight == outHeight)
-		return std::vector<char>(data, data + outWidth * outHeight * componentCount);
+	int scaledWidth  = static_cast<int>(std::ceil(width * scale));
+	int scaledHeight = static_cast<int>(std::ceil(height * scale));
+
+	if (scaledWidth == width && scaledHeight == height)
+		return std::vector<char>(data, data + width * height * componentCount);
 
 	std::vector<char> resized(scaledWidth * scaledHeight * componentCount);
 
@@ -84,43 +77,91 @@ std::vector<char> Image::Decode(const std::span<const char>& encoded, int& outWi
 	return std::vector<char>(resized.data(), resized.data() + outWidth * outHeight * componentCount);
 }
 
-bool Image::TexturesHaveChanged()
+void Image::Create(uint32_t width, uint32_t height, uint32_t layerCount, VkFormat format, uint32_t pixelSize, VkImageUsageFlags usage, Flags flags)
 {
-	bool ret = texturesHaveChanged;
-	texturesHaveChanged = false;
-	return ret;
-}
+	SetAllAttributes(width, height, pixelSize * width * height * layerCount, layerCount, format, usage);
 
-void Image::GenerateImages(const std::vector<char>& textureData, bool useMipMaps, int amount, VkFormat format, TextureUseCase useCase)
-{
-	this->format = format;
+	if (flags & UseMipMaps)
+		CalculateMipLevels();
 
-	layerCount = static_cast<uint32_t>(amount);
-	
-	WritePixelsToBuffer(reinterpret_cast<const uint8_t*>(textureData.data()), useMipMaps, format, (VkImageLayout)useCase, 4);
-}
-
-void Image::GenerateEmptyImages(int width, int height, int amount)
-{
-	const Vulkan::Context ctx = Vulkan::GetContext();
-	this->width = width;
-	this->height = height;
-	this->layerCount = static_cast<uint32_t>(amount);
-
-	VkDeviceSize layerSize = width * height * 4;
-	VkDeviceSize imageSize = layerSize * amount;
-
-	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-	image = Vulkan::CreateImage(width, height, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags);
+	VkImageCreateFlags createFlags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
+	image = Vulkan::CreateImage(width, height, mipLevels, layerCount, format, VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, createFlags);
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 	imageView = Vulkan::CreateImageView(image.Get(), viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+}
 
-	// this transition seems like a waste of resources
-	TransitionImageLayout(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+void Image::CreateWithCustomSize(uint32_t width, uint32_t height, VkDeviceSize size, uint32_t layerCount, VkFormat format, VkImageUsageFlags usage, Flags flags)
+{
+	SetAllAttributes(width, height, size, layerCount, format, usage);
 
-	this->texturesHaveChanged = true;
+	if (flags & UseMipMaps)
+		CalculateMipLevels();
+
+	CreateImageAndView();
+}
+
+void Image::SetAllAttributes(uint32_t width, uint32_t height, VkDeviceSize size, uint32_t layerCount, VkFormat format, VkImageUsageFlags usage)
+{
+	this->width = width;
+	this->height = height;
+	this->size = size;
+	this->layerCount = layerCount;
+	this->format = format;
+	this->usage = usage;
+}
+
+void Image::CreateImageAndView()
+{
+	VkImageCreateFlags createFlags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
+	image = Vulkan::CreateImage(width, height, mipLevels, layerCount, format, VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, createFlags);
+
+	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
+	imageView = Vulkan::CreateImageView(image.Get(), viewType, mipLevels, layerCount, format, VK_IMAGE_ASPECT_COLOR_BIT);
+}
+
+void Image::UploadData(const std::span<const char>& data)
+{
+	assert(width != 0 && height != 0 && layerCount != 0 && mipLevels != 0 && usage != 0 && format != VK_FORMAT_MAX_ENUM && size != 0);
+	assert(usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT && currLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+	ImmediateBuffer stagingBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	char* pData = stagingBuffer.Map<char>();
+
+	std::memcpy(pData, data.data(), data.size());
+
+	stagingBuffer.Unmap();
+
+	CopyBufferToImage(stagingBuffer.Get());
+
+	if (mipLevels != 1)
+		GenerateMipMaps();
+}
+
+struct ImageLayoutAttributes
+{
+	ImageLayoutAttributes(VkPipelineStageFlags s, VkAccessFlags a) : stage(s), access(a) {}
+
+	VkPipelineStageFlags stage;
+	VkAccessFlags access;
+};
+
+static ImageLayoutAttributes GetAttributesForLayout(VkImageLayout layout)
+{
+	switch (layout)
+	{
+	case VK_IMAGE_LAYOUT_UNDEFINED:
+		return ImageLayoutAttributes(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0);
+	case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+		return ImageLayoutAttributes(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT);
+	case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+		return ImageLayoutAttributes(VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_READ_BIT);
+	case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+		return ImageLayoutAttributes(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, VK_ACCESS_SHADER_READ_BIT);
+	case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+		return ImageLayoutAttributes(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
+	}
+	return ImageLayoutAttributes(0, 0);
 }
 
 static bool FormatIsSRGB(VkFormat format)
@@ -131,70 +172,6 @@ static bool FormatIsSRGB(VkFormat format)
 bool Image::FormatIsCompressed(VkFormat format)
 {
 	return format == VK_FORMAT_BC7_SRGB_BLOCK || format == VK_FORMAT_BC7_UNORM_BLOCK || format == VK_FORMAT_BC3_UNORM_BLOCK || format == VK_FORMAT_BC3_SRGB_BLOCK;
-}
-
-void Image::WritePixelsToBuffer(const uint8_t* pixels, bool useMipMaps, VkFormat format, VkImageLayout layout, int componentCount)
-{
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-
-	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
-
-	if (useMipMaps)
-		CalculateMipLevels();
-	else
-		mipLevels = 1;
-
-	this->format = format;
-
-	if (size == 0)
-		size = width * height * componentCount;
-
-	if (size == 0)
-		throw std::runtime_error("Invalid image found: layer size is 0");
-
-	win32::CriticalLockGuard lockGuard(Vulkan::graphicsQueueSection);
-
-	ImmediateBuffer stagingBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-	// copy all of the different sides of the cubemap into a single buffer
-	uint8_t* data = stagingBuffer.Map<uint8_t>();
-
-	memcpy(data, pixels, static_cast<size_t>(size));
-
-	stagingBuffer.Unmap();
-
-	VkImageCreateFlags flags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
-	image = Vulkan::CreateImage(width, height, mipLevels, layerCount, format, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, flags);
-
-	TransitionImageLayout(format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	CopyBufferToImage(stagingBuffer.Get());
-
-	stagingBuffer.~ImmediateBuffer();
-	
-	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
-	imageView = Vulkan::CreateImageView(image.Get(), viewType, mipLevels, layerCount, format, VK_IMAGE_ASPECT_COLOR_BIT);
-
-	useMipMaps ? GenerateMipMaps(format) : TransitionImageLayout(format, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, layout);
-
-	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
-
-	this->texturesHaveChanged = true;
-}
-
-void Image::ChangeData(uint8_t* data, uint32_t size, VkFormat format)
-{
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-
-	Buffer stagingBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-	win32::CriticalLockGuard lockGuard(Vulkan::graphicsQueueSection);
-
-	void* ptr = stagingBuffer.Map();
-	memcpy(ptr, data, size);
-	stagingBuffer.Unmap();
-
-	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-	CopyBufferToImage(stagingBuffer.Get());
 }
 
 std::vector<char> Image::GetImageData() const
@@ -323,26 +300,9 @@ void Image::CalculateMipLevels()
 	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 }
 
-Cubemap::Cubemap(const std::string& filePath, bool useMipMaps)
-{
-	// this async can't use the capture list ( [&] ), because then filePath gets wiped clean (??)
-	generation = std::async([=]()
-		{
-			std::expected<std::vector<char>, bool> fileData = IO::ReadFile(filePath);
-			if (!fileData.has_value())
-				return;
-
-			this->layerCount = 6;
-
-			std::vector<char> data = *fileData;
-			this->GenerateImages(data, useMipMaps, 1, VK_FORMAT_R8G8B8A8_UNORM, TextureUseCase::TEXTURE_USE_CASE_READ_ONLY);
-			this->CreateLayerViews();
-		});
-}
-
 Cubemap::Cubemap(int width, int height)
 {
-	GenerateEmptyImages(width, height, 6);
+	Create(width, height, 6, VK_FORMAT_R8G8B8A8_SRGB, sizeof(uint32_t), VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, None);
 	CreateLayerViews();
 }
 
@@ -413,43 +373,6 @@ static int GetComponentCount(Texture::Type type)
 	return 4;
 }
 
-
-Texture::Texture(const std::vector<char>& imageData, uint32_t width, uint32_t height, Type type, bool useMipMaps, TextureUseCase useCase)
-{
-	if (imageData.empty())
-		throw std::runtime_error("Invalid texture size: imageData.empty()");
-
-	this->width = width;
-	this->height = height;
-	this->layerCount = 1;
-
-	//generation = std::async([](Texture* texture, std::vector<char> imageData, bool useMipMaps, TextureFormat format) 
-		//{
-			uint8_t* data = (uint8_t*)imageData.data();
-			WritePixelsToBuffer(data, useMipMaps, GetVkFormatFromType(type), (VkImageLayout)useCase, GetComponentCount(type));
-			texturesHaveChanged = true;
-		//}, this, imageData, useMipMaps, format);
-}
-
-Texture::Texture(const Color& color, TextureUseCase useCase)
-{
-	width = 1, height = 1, layerCount = 1;
-
-	generation = std::async([=]()
-		{
-			this->WritePixelsToBuffer({ color.GetData() }, false, VK_FORMAT_R8G8B8A8_UNORM, (VkImageLayout)useCase, 4);
-		});
-}
-
-Texture::Texture(int width, int height)
-{
-	this->width  = width;
-	this->height = height;
-	this->layerCount = 1;
-
-	GenerateEmptyImages(width, height, 1);
-}
-
 static ktx_transcode_fmt_e GetKtxFormat(VkFormat format)
 {
 	switch (format)
@@ -464,7 +387,7 @@ static ktx_transcode_fmt_e GetKtxFormat(VkFormat format)
 	return KTX_TF_BC7_M6_OPAQUE_ONLY;
 }
 
-static std::vector<char> GetCompressedData(const std::span<const char>& data, VkFormat format, VkFormat uncompressedFormat, int& width, int& height, int componentCount)
+static std::vector<char> GetCompressedData(const std::span<const char>& data, VkFormat format, VkFormat uncompressedFormat, uint32_t& width, uint32_t& height, int componentCount)
 {
 	ktx_error_code_e err = KTX_SUCCESS;
 
@@ -552,25 +475,29 @@ Texture* Texture::LoadFromForeignFormat(const std::string_view& file, Type type,
 	pTexture->layerCount = 1;
 
 	int componentCount = GetComponentCount(type);
+	uint32_t width = 0, height = 0;
 
 	std::expected<std::vector<char>, bool> read = IO::ReadFile(file, IO::ReadOptions::None);
 	if (!read.has_value())
 		return nullptr;
 
-	std::vector<char> data = Decode(*read, pTexture->width, pTexture->height, DecodeOptions::Flip, 1.0f, componentCount);
+	std::vector<char> data = Decode(*read, width, height, DecodeOptions::Flip, 1.0f, componentCount);
 	if (data.empty())
 		return nullptr;
 
 	Console::WriteLine("Started compressing file \"{}\"", Console::Severity::Debug, file);
 
 	VkFormat format = GetVkFormatFromType(type);
-	std::vector<char> compressed = GetCompressedData(data, format, GetUncompressedFormatFromFormat(format), pTexture->width, pTexture->height, componentCount);
+	std::vector<char> compressed = GetCompressedData(data, format, GetUncompressedFormatFromFormat(format), width, height, componentCount);
 	if (compressed.empty())
 		return nullptr;
 		
-	pTexture->size = compressed.size();
-	pTexture->WritePixelsToBuffer(reinterpret_cast<const uint8_t*>(compressed.data()), useMipMaps, format, static_cast<VkImageLayout>(useCase), componentCount);
-	
+	pTexture->CreateWithCustomSize(width, height, compressed.size(), 1, format, TEXTURE_USAGE, None); // hard-coded no mipmaps for now
+
+	pTexture->TransitionTo(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_NULL_HANDLE);
+	pTexture->UploadData(compressed);
+	pTexture->TransitionTo(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_NULL_HANDLE);
+
 	Console::WriteLine("Finished loading file \"{}\"", Console::Severity::Debug, file);
 	return pTexture.release();
 }
@@ -580,7 +507,6 @@ Texture* Texture::LoadFromInternalFormat(const std::span<const char>& data, bool
 	ktx_error_code_e err = KTX_SUCCESS;
 
 	std::unique_ptr<Texture> pReturn(new Texture());
-	pReturn->layerCount = 1;
 
 	ktxTexture2* pRaw = nullptr;
 
@@ -590,26 +516,15 @@ Texture* Texture::LoadFromInternalFormat(const std::span<const char>& data, bool
 	if (err != KTX_SUCCESS)
 		return nullptr;
 
-	ktx_uint32_t componentCount = 4; // can be left empty
+	pReturn->CreateWithCustomSize(pRaw->baseWidth, pRaw->baseHeight, pRaw->dataSize, 1, static_cast<VkFormat>(pRaw->vkFormat), TEXTURE_USAGE, None);
 
-	pReturn->width = pRaw->baseWidth;
-	pReturn->height = pRaw->baseHeight;
-	pReturn->size = pRaw->dataSize;
-	pReturn->WritePixelsToBuffer(pRaw->pData, useMipMaps, static_cast<VkFormat>(pRaw->vkFormat), static_cast<VkImageLayout>(useCase), componentCount);
+	const char* asChar = reinterpret_cast<const char*>(pRaw->pData);
+			
+	pReturn->TransitionTo(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_NULL_HANDLE);
+	pReturn->UploadData({ asChar, asChar + pRaw->dataSize });
+	pReturn->TransitionTo(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_NULL_HANDLE);
 
 	return pReturn.release();
-}
-
-Texture* Texture::CreateEmpty(int width, int height)
-{
-	Texture* pTexture = new Texture();
-	pTexture->layerCount = 1;
-
-	pTexture->width = width;
-	pTexture->height = height;
-
-	pTexture->GenerateEmptyImages(width, height, 1);
-	return pTexture;
 }
 
 void Texture::GeneratePlaceholderTextures()
@@ -636,19 +551,19 @@ void Texture::DestroyPlaceholderTextures()
 	delete placeholderAmbientOcclusion;
 }
 
-void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, VkCommandBuffer commandBuffer)
+void Image::TransitionTo(VkImageLayout newLayout, CommandBuffer cmdBuffer)
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
-	bool isSingleTime = commandBuffer == VK_NULL_HANDLE;
+	bool isSingleTime = !cmdBuffer.IsValid();
 
 	VkCommandPool commandPool = isSingleTime ? Vulkan::FetchNewCommandPool(ctx.graphicsIndex) : VK_NULL_HANDLE;
 	if (isSingleTime)
-		commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
+		cmdBuffer = CommandBuffer(Vulkan::BeginSingleTimeCommands(commandPool));
 
 	VkImageMemoryBarrier memoryBarrier{};
 	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	memoryBarrier.oldLayout = oldLayout;
+	memoryBarrier.oldLayout = currLayout;
 	memoryBarrier.newLayout = newLayout;
 	memoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	memoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
@@ -662,7 +577,7 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 	VkPipelineStageFlags sourceStage{};
 	VkPipelineStageFlags destinationStage{};
 
-	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+	if (currLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
 	{
 		memoryBarrier.srcAccessMask = 0;
 		memoryBarrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -670,7 +585,7 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	else if (currLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 	{
 		memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -678,7 +593,7 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	else if (currLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 	{
 		memoryBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 		memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -686,7 +601,7 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 		sourceStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+	else if (currLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
 	{
 		memoryBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
 		memoryBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -694,7 +609,7 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 		sourceStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		destinationStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+	else if (currLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
 	{
 		memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
@@ -704,86 +619,44 @@ void Image::TransitionImageLayout(VkFormat format, VkImageLayout oldLayout, VkIm
 	}
 	else throw std::invalid_argument("Invalid layout transition");
 
-	vkCmdPipelineBarrier(commandBuffer, sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
+	cmdBuffer.PipelineBarrier(sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
 
 	if (isSingleTime)
 	{
-		Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
+		Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, cmdBuffer.Get(), commandPool);
 		Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 	}
-}
 
-void Image::TransitionForShaderRead(VkCommandBuffer commandBuffer)
-{
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-
-	bool useSingleTime = commandBuffer == VK_NULL_HANDLE;
-	VkCommandPool commandPool = VK_NULL_HANDLE;
-	if (useSingleTime)
-	{
-		commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
-		commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
-	}
-		
-	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, commandBuffer);
-
-	if (useSingleTime)
-	{
-		Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
-		Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
-	}
-}
-
-void Image::TransitionForShaderWrite(VkCommandBuffer commandBuffer)
-{
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-
-	bool useSingleTime = commandBuffer == VK_NULL_HANDLE;
-	VkCommandPool commandPool = VK_NULL_HANDLE;
-	if (useSingleTime)
-	{
-		commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
-		commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
-	}
-
-	TransitionImageLayout((VkFormat)format, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, commandBuffer);
-
-	if (useSingleTime)
-	{
-		Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
-		Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
-	}
+	currLayout = newLayout;
 }
 
 void Image::CopyBufferToImage(VkBuffer buffer)
 {
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-	VkCommandPool commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
-	VkCommandBuffer commandBuffer = Vulkan::BeginSingleTimeCommands(commandPool);
+	Vulkan::ExecuteSingleTimeCommands(
+		[&](const CommandBuffer& cmdBuffer)
+		{
+			VkBufferImageCopy region{};
+			region.bufferOffset = 0;
+			region.bufferRowLength = 0;
+			region.bufferImageHeight = 0;
+			region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+			region.imageSubresource.mipLevel = 0;
+			region.imageSubresource.baseArrayLayer = 0;
+			region.imageSubresource.layerCount = layerCount;
+			region.imageOffset = { 0, 0, 0 };
+			region.imageExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 };
 
-	VkBufferImageCopy region{};
-	region.bufferOffset = 0;
-	region.bufferRowLength = 0;
-	region.bufferImageHeight = 0;
-	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	region.imageSubresource.mipLevel = 0;
-	region.imageSubresource.baseArrayLayer = 0;
-	region.imageSubresource.layerCount = layerCount;
-	region.imageOffset = { 0, 0, 0 };
-	region.imageExtent = { static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1 };
-
-	vkCmdCopyBufferToImage(commandBuffer, buffer, image.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
-	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, commandBuffer, commandPool);
-	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
+			cmdBuffer.CopyBufferToImage(buffer, image.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+		}
+	);
 }
 
-void Image::GenerateMipMaps(VkFormat imageFormat)
+void Image::GenerateMipMaps()
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	VkFormatProperties formatProperties;
-	vkGetPhysicalDeviceFormatProperties(ctx.physicalDevice.Device(), imageFormat, &formatProperties);
+	vkGetPhysicalDeviceFormatProperties(ctx.physicalDevice.Device(), format, &formatProperties);
 	if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT))
 		throw std::runtime_error("Failed to find support for optimal tiling with the given format");
 
@@ -869,8 +742,6 @@ int Image::GetMipLevels() const
 void Image::Destroy()
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
-
-	this->texturesHaveChanged = true;
 
 	vgm::Delete(imageView);
 	image.Destroy();

@@ -354,6 +354,9 @@
     <ClCompile Include="src\EditorProject.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\SkyPipeline.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -694,6 +697,9 @@
     </ClInclude>
     <ClInclude Include="src\core\Job.h">
       <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\SkyPipeline.h">
+      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
