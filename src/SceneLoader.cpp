@@ -19,16 +19,6 @@ namespace fs = std::filesystem;
 
 constexpr std::string_view CUSTOM_FILE_EXTENSION = ".dat";
 
-#pragma pack(push, 1)
-struct CompressionNode
-{
-	NodeType type = NODE_TYPE_NONE;
-	NodeSize nodeSize = 0;
-	uint64_t fileSize = 0; // size of the rest of the file (uncompressed)
-	uint32_t mode = 0;
-};
-#pragma pack(pop)
-
 SceneLoader::SceneLoader(std::string sceneLocation) : location(sceneLocation) {}
 
 void SceneLoader::LoadScene() 
@@ -75,7 +65,7 @@ static void ReadFullObject(DataArchiveFile& file, const BinarySpan& data, std::v
 		return;
 	}
 
-	std::expected<std::vector<char>, bool> childRefs = file.ReadData(creationData.name + "_ref_children");
+	std::expected<std::vector<char>, DataArchiveFile::Result> childRefs = file.ReadData(creationData.name + "_ref_children");
 	if (!childRefs.has_value())
 	{
 		outDst.push_back(creationData);
@@ -89,7 +79,7 @@ static void ReadFullObject(DataArchiveFile& file, const BinarySpan& data, std::v
 	creationData.children.reserve(children.size());
 	for (const std::string& child : children)
 	{
-		std::expected<std::vector<char>, bool> objectData = file.ReadData(child);
+		std::expected<std::vector<char>, DataArchiveFile::Result> objectData = file.ReadData(child);
 		if (objectData.has_value())
 			ReadFullObject(file, *objectData, creationData.children);
 		else
@@ -101,7 +91,7 @@ static void ReadFullObject(DataArchiveFile& file, const BinarySpan& data, std::v
 
 void SceneLoader::LoadObjectsFromArchive(DataArchiveFile& file)
 {
-	std::expected<std::vector<char>, bool> root = file.ReadData("##object_root");
+	std::expected<std::vector<char>, DataArchiveFile::Result> root = file.ReadData("##object_root");
 	if (!root.has_value())
 	{
 		Console::WriteLine("no object root found for {}", Console::Severity::Warning, location); // scenes dont need to have objects, but itd be weird not to have any
@@ -113,7 +103,7 @@ void SceneLoader::LoadObjectsFromArchive(DataArchiveFile& file)
 
 	for (const std::string& child : childReferences)
 	{
-		std::expected<std::vector<char>, bool> data = file.ReadData(child);
+		std::expected<std::vector<char>, DataArchiveFile::Result> data = file.ReadData(child);
 		if (data.has_value())
 			ReadFullObject(file, *data, objects);
 		else
@@ -151,7 +141,7 @@ static MaterialCreationData DeserializeMaterial(const BinarySpan& data)
 
 void SceneLoader::LoadMaterialsFromArchive(DataArchiveFile& file)
 {
-	std::expected<std::vector<char>, bool> root = file.ReadData("##material_root");
+	std::expected<std::vector<char>, DataArchiveFile::Result> root = file.ReadData("##material_root");
 	if (!root.has_value())
 	{
 		Console::WriteLine("no material root found for {}", Console::Severity::Warning, location);
@@ -171,7 +161,7 @@ void SceneLoader::LoadMaterialsFromArchive(DataArchiveFile& file)
 		[&](int i)
 		{
 			critSection.Lock();
-			std::expected<std::vector<char>, bool> data = file.ReadData(references[i]);
+			std::expected<std::vector<char>, DataArchiveFile::Result> data = file.ReadData(references[i]);
 			critSection.Unlock();
 
 			materials[i] = DeserializeMaterial(*data);

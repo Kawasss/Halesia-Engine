@@ -47,15 +47,38 @@ public:
 
 	enum class OpenMethod
 	{
-		Clear  = ReadWriteFile::OpenMethod::Clear, // clear the file upon opening
-		Append = ReadWriteFile::OpenMethod::Append, // do not clear the file
+		Clear  = ReadWriteFile::OpenMethod::Clear,  //!< clear the file upon opening
+		Append = ReadWriteFile::OpenMethod::Append, //!< do not clear the file
 	};
 
+	enum Result
+	{
+		Success,
+		IdentifierNotFound,
+		DecompressionFailed,
+		InvalidReference, //!< the data pointing to the data associated with the identifier is not valid (i.e. out of bounds)
+	};
+
+	/// <summary>
+	/// Opens a file and expects it can be written to and read from
+	/// </summary>
+	/// <param name="file">the path to the file to open</param>
+	/// <param name="method">the attribute to open the file with</param>
 	DataArchiveFile(const std::string& file, OpenMethod method);
 
-	// will override any previous data assigned to the identifier
+	/// <summary>
+	/// Adds data to the archive. This will override any data that the identifier could already be holding
+	/// </summary>
+	/// <param name="identifier">the identifier to associate the data with</param>
+	/// <param name="data">the data that should be bound to the identifier</param>
 	void AddData(const std::string& identifier, const std::span<char const>& data);
-	std::expected<std::vector<char>, bool> ReadData(const std::string& identifier);
+
+	/// <summary>
+	/// reads the data of associated with the given identifier
+	/// </summary>
+	/// <param name="identifier"></param>
+	/// <returns>if no error took place the data, otherwise an error code</returns>
+	std::expected<std::vector<char>, Result> ReadData(const std::string& identifier);
 
 	bool IsValid() const;
 	bool HasEntry(const std::string& identifier) const;
@@ -67,8 +90,8 @@ public:
 	Iterator end();
 
 private:
-	// the presence of identifier is confirmed at this point, offset should be the offset from the start of the file
-	std::expected<std::vector<char>, bool> ReadFromDisk(uint64_t offset, uint64_t size);
+	// the presence of the identifier is confirmed at this point, offset should be the offset from the start of the file
+	std::expected<std::vector<char>, Result> ReadFromDisk(uint64_t offset, uint64_t size);
 	uint64_t GetBinarySizeOfDictionary() const;
 
 	// these two functions should always be called together, as 'WriteDictionaryToDisk()' calculates parameters that 'WriteDataEntriesToDisk()' requires
@@ -77,7 +100,7 @@ private:
 
 	void ReadDictionaryFromDisk();
 
-	static std::expected<std::vector<char>, bool> DecompressMemory(const std::span<char const>& compressed, uint64_t uncompressedSize);
+	static std::expected<std::vector<char>, Result> DecompressMemory(const std::span<char const>& compressed, uint64_t uncompressedSize);
 	static std::vector<char> CompressMemory(const std::span<char const>& uncompressed);
 
 	std::map<std::string, Metadata> dictionary;

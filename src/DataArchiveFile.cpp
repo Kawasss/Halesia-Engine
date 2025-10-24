@@ -40,24 +40,27 @@ void DataArchiveFile::AddData(const std::string& identifier, const std::span<cha
 	dictionary[identifier] = metadata;
 }
 
-std::expected<std::vector<char>, bool> DataArchiveFile::ReadData(const std::string& identifier)
+std::expected<std::vector<char>, DataArchiveFile::Result> DataArchiveFile::ReadData(const std::string& identifier)
 {
 	if (!dictionary.contains(identifier))
-		return std::unexpected(false);
+		return std::unexpected(Result::IdentifierNotFound);
 
 	Metadata metadata = dictionary[identifier];
 
 	if (!metadata.isOnDisk)
 		return DecompressMemory(metadata.compressed, metadata.uncompressedSize);
 
-	if (metadata.offset + metadata.size >= stream.GetFileSize() || metadata.size == 0)
-		return std::unexpected(false);
+	if (metadata.offset + metadata.size >= stream.GetFileSize() || metadata.offset == 0)
+		return std::unexpected(Result::InvalidReference);
 
 	return ReadFromDisk(metadata.offset, metadata.size);
 }
 
-std::expected<std::vector<char>, bool>  DataArchiveFile::ReadFromDisk(uint64_t offset, uint64_t size)
+std::expected<std::vector<char>, DataArchiveFile::Result>  DataArchiveFile::ReadFromDisk(uint64_t offset, uint64_t size)
 {
+	if (size == 0)
+		return std::vector<char>();
+
 	ReadSession session(stream);
 
 	uint64_t uncompressedSize = 0;
@@ -71,7 +74,7 @@ std::expected<std::vector<char>, bool>  DataArchiveFile::ReadFromDisk(uint64_t o
 	return DecompressMemory(read, uncompressedSize);
 }
 
-std::expected<std::vector<char>, bool> DataArchiveFile::DecompressMemory(const std::span<char const>& compressed, uint64_t uncompressedSize)
+std::expected<std::vector<char>, DataArchiveFile::Result> DataArchiveFile::DecompressMemory(const std::span<char const>& compressed, uint64_t uncompressedSize)
 {
 	if (uncompressedSize == compressed.size())
 		return std::vector<char>(compressed.begin(), compressed.end());
@@ -81,7 +84,7 @@ std::expected<std::vector<char>, bool> DataArchiveFile::DecompressMemory(const s
 	int decompressedCount = ::LZ4_decompress_safe(compressed.data(), uncompressed.data(), static_cast<int>(compressed.size()), bounds);
 
 	if (decompressedCount < 0)
-		return std::unexpected(false); // cannot garantuee that the data inside the buffer is safe at this point
+		return std::unexpected(Result::DecompressionFailed); // cannot garantuee that the data inside the buffer is safe at this point
 
 	return uncompressed;
 }
@@ -231,7 +234,7 @@ DataArchiveFile::Iterator DataArchiveFile::Iterator::operator++()
 
 DataArchiveFile::DataEntry DataArchiveFile::Iterator::operator*() const
 {
-	std::expected<std::vector<char>, bool> read = parent.ReadData(internal->first);
+	std::expected<std::vector<char>, Result> read = parent.ReadData(internal->first);
 
 	return read.has_value() ? DataEntry{ internal->first, *read } : DataEntry{ internal->first, {} };
 }
