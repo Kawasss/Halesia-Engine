@@ -8,6 +8,7 @@
 #include "renderer/PipelineCreator.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/DescriptorWriter.h"
+#include "renderer/VulkanAPIError.h"
 #include "renderer/Renderer.h"
 #include "renderer/Texture.h"
 #include "renderer/Vulkan.h"
@@ -90,7 +91,8 @@ static void CreateFramebuffer()
 	createInfo.attachmentCount = 1;
 	createInfo.renderPass = renderPass;
 
-	vkCreateFramebuffer(Vulkan::GetContext().logicalDevice, &createInfo, nullptr, &framebuffer);
+	VkResult result = vkCreateFramebuffer(Vulkan::GetContext().logicalDevice, &createInfo, nullptr, &framebuffer);
+	CheckVulkanResult("Failed to create framebuffer", result);
 }
 
 void HdrConverter::Start()
@@ -113,7 +115,7 @@ void HdrConverter::ConvertTextureIntoCubemap(const CommandBuffer& cmdBuffer, con
 	Renderer::SetViewport(cmdBuffer, { Skybox::WIDTH, Skybox::HEIGHT });
 	Renderer::SetScissors(cmdBuffer, { Skybox::WIDTH, Skybox::HEIGHT });
 
-	pipeline->BindImageToName("equirectangularMap", texture->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	pipeline->BindImageToName("equirectangularMap", texture->view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	DescriptorWriter::Write();
 
 	PushConstantConverter push{};

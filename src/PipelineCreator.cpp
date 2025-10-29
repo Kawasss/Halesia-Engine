@@ -8,8 +8,8 @@
 
 VkPipeline PipelineBuilder::Build()
 {
-	if (renderPass == VK_NULL_HANDLE)
-		throw VulkanAPIError("Cannot build a pipeline: the render pass is invalid.");
+	if (renderPass == VK_NULL_HANDLE && pNext == nullptr)
+		throw VulkanAPIError("Cannot build a pipeline: the render pass is invalid and no pNext was given.");
 
 	VkPipelineDynamicStateCreateInfo dynamicState = Vulkan::GetDynamicStateCreateInfo();
 
@@ -82,6 +82,7 @@ VkPipeline PipelineBuilder::Build()
 
 	VkGraphicsPipelineCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	createInfo.pNext = pNext;
 	createInfo.stageCount = 2;
 	createInfo.pStages = stages.data();
 	createInfo.pVertexInputState = &vertexInputInfo;

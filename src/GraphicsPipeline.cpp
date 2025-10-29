@@ -67,6 +67,13 @@ void GraphicsPipeline::CreateGraphicsPipeline(const std::span<std::span<char>>& 
 		Vulkan::GetGenericShaderStageCreateInfo(fragModule, VK_SHADER_STAGE_FRAGMENT_BIT),
 	};
 
+	VkPipelineRenderingCreateInfo renderInfo{};
+	renderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+	renderInfo.colorAttachmentCount = static_cast<uint32_t>(createInfo.colorFormats.size());
+	renderInfo.pColorAttachmentFormats = createInfo.colorFormats.data();
+	renderInfo.depthAttachmentFormat = createInfo.depthStencilFormat;
+	renderInfo.stencilAttachmentFormat = createInfo.depthStencilFormat;
+
 	PipelineBuilder builder(shaderInfos);
 
 	builder.layout = layout;
@@ -74,6 +81,9 @@ void GraphicsPipeline::CreateGraphicsPipeline(const std::span<std::span<char>>& 
 	builder.renderPass = createInfo.renderPass;
 	builder.depthCompareOp = createInfo.depthCompareOp;
 	builder.topology = createInfo.topology;
+
+	if (createInfo.renderPass == VK_NULL_HANDLE)
+		builder.pNext = &renderInfo;
 
 	builder.DisableVertices(createInfo.noVertices);
 	builder.DisableDepth(createInfo.noDepth);

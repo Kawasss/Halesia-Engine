@@ -35,7 +35,7 @@ Skybox* Skybox::ReadFromHDR(const std::string& path, const CommandBuffer& cmdBuf
 
 	HdrConverter::ConvertTextureIntoCubemap(cmdBuffer, flat.get(), ret->cubemap);
 
-	ret->pipeline->BindImageToName("skybox", ret->cubemap->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	ret->pipeline->BindImageToName("skybox", ret->cubemap->view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	return ret;
 }

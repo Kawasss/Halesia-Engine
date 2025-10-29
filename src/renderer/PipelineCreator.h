@@ -26,6 +26,8 @@ public:
 
 	VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
+	void* pNext = nullptr;
+
 	VkPipeline Build();
 
 private:

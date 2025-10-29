@@ -49,6 +49,7 @@ struct Renderer::LightBuffer
 	LightGPU lights[1024];
 };
 
+#pragma pack(push, 1)
 struct Renderer::SceneData // if supporting vr, then turn all camera matrices into an array for 2
 {
 	glm::mat4 view;
@@ -66,8 +67,14 @@ struct Renderer::SceneData // if supporting vr, then turn all camera matrices in
 	float zFar;
 
 	glm::vec3 camPosition;
+	glm::vec3 camDirection;
+	glm::vec3 camRight;
+	glm::vec3 camUp;
+	float camFov;
 	uint32_t frameCount;
+	float time;
 };
+#pragma pack(pop)
 
 StorageBuffer<Vertex>   Renderer::g_vertexBuffer;
 StorageBuffer<uint32_t> Renderer::g_indexBuffer;
@@ -251,7 +258,7 @@ void Renderer::InitVulkan()
 
 	CreateImGUI();
 
-	StartRecording();
+	StartRecording(0.0f);
 }
 
 void Renderer::CheckForInterference()
@@ -692,7 +699,7 @@ void Renderer::UpdateMaterialBuffer()
 
 			size_t index = (i - differentIndex) * pbrSize + j;
 			imageInfos[index].imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfos[index].imageView = tex->imageView;
+			imageInfos[index].imageView = tex->view;
 			imageInfos[index].sampler = defaultSampler;
 		}
 	}
@@ -771,6 +778,7 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, CameraObject* camera, const std::vector<MeshObject*>& objects)
 {
 	UpdateMaterialBuffer();
+	ResizeRenderPipelines();
 
 	VkExtent2D viewportExtent = { viewportWidth, viewportHeight };
 
@@ -857,17 +865,26 @@ void Renderer::OnResize()
 	viewportHeight = static_cast<uint32_t>(testWindow->GetHeight() * viewportTransModifiers.y * internalScale);
 
 	swapchain->Recreate(GUIRenderPass, false);
+	UpdateScreenShaderTexture(currentFrame);
+
+	testWindow->resized = false;
+	shouldResize = false;
+	shouldResizePipelines = true;
+
+	Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px (" + std::to_string(int(internalScale * 100)) + "%% scale)");
+}
+
+void Renderer::ResizeRenderPipelines()
+{
+	if (!shouldResizePipelines)
+		return;
 
 	RenderPipeline::Payload payload = GetPipelinePayload(GetActiveCommandBuffer(), nullptr);
 	for (RenderPipeline* renderPipeline : renderPipelines)
 		renderPipeline->Resize(payload);
 
-	UpdateScreenShaderTexture(currentFrame);
-
-	testWindow->resized = false;
-	shouldResize = false;
-
-	Console::WriteLine("Resized to " + std::to_string(testWindow->GetWidth()) + 'x' + std::to_string(testWindow->GetHeight()) + " px (" + std::to_string(int(internalScale * 100)) + "%% scale)");
+	shouldResizePipelines = false;
+	Console::WriteLine("Resized render pipelines to most recent dimensions", Console::Severity::Debug);
 }
 
 void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
@@ -909,8 +926,6 @@ void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageI
 	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[frameIndex];
 
 	win32::CriticalSection& section = Vulkan::GetQueueCriticalSection(graphicsQueue);
-	//win32::CriticalLockGuard guard(section);
-
 	section.Lock();
 
 	VkResult result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[frameIndex]);
@@ -928,8 +943,10 @@ void Renderer::ResetImGUI()
 	ImGuizmo::BeginFrame();
 }
 
-void Renderer::StartRecording()
+void Renderer::StartRecording(float delta)
 {
+	time += delta * 0.001f;
+
 	if (!testWindow->CanBeRenderedTo())
 		return;
 
@@ -1042,7 +1059,7 @@ void Renderer::UpdateLightBuffer(const std::vector<LightObject*>& lights)
 void Renderer::UpdateSceneData(CameraObject* camera)
 {
 	SceneData* pData = sceneBuffer.GetMappedPointer<SceneData>();
-
+	constexpr auto s = offsetof(SceneData, SceneData::camFov);
 	pData->view = camera->GetViewMatrix();
 	pData->proj = camera->GetProjectionMatrix();
 	pData->prevView = camera->GetPreviousViewMatrix();
@@ -1050,10 +1067,15 @@ void Renderer::UpdateSceneData(CameraObject* camera)
 	pData->viewInv = glm::inverse(pData->view);
 	pData->projInv = glm::inverse(pData->proj);
 	pData->viewportSize = glm::vec2(GetInternalWidth(), GetInternalHeight());
-	pData->zNear = 0.01f; // set real value !!
-	pData->zFar = 1000.0f;
+	pData->zNear = camera->zNear;
+	pData->zFar = camera->zFar;
 	pData->camPosition = camera->transform.GetGlobalPosition();
+	pData->camDirection = camera->transform.GetForward();
+	pData->camRight = camera->transform.GetRight();
+	pData->camUp = camera->transform.GetUp();
+	pData->camFov = glm::radians(camera->fov);
 	pData->frameCount = frameCount;
+	pData->time = time;
 }
 
 void Renderer::StartRenderPass(VkRenderPass renderPass, glm::vec3 clearColor, VkFramebuffer framebuffer)

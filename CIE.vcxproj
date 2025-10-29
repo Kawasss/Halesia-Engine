@@ -370,6 +370,8 @@
     <None Include="scripts\Transform.lua" />
     <None Include="scripts\vec3.lua" />
     <None Include="shaders\uncompiled\anim.comp" />
+    <None Include="shaders\uncompiled\atmosphere.vert" />
+    <None Include="shaders\uncompiled\atmosRender.frag" />
     <None Include="shaders\uncompiled\boundingVolume.frag" />
     <None Include="shaders\uncompiled\boundingVolume.vert" />
     <None Include="shaders\uncompiled\cubemapConv.frag" />
@@ -382,6 +384,9 @@
     <None Include="shaders\uncompiled\forwardPlus.comp" />
     <None Include="shaders\uncompiled\grid.frag" />
     <None Include="shaders\uncompiled\grid.vert" />
+    <None Include="shaders\uncompiled\include\atmosCommon.glsl" />
+    <None Include="shaders\uncompiled\latlongMap.frag" />
+    <None Include="shaders\uncompiled\mscatteringLUT.frag" />
     <None Include="shaders\uncompiled\rtgi.rchit" />
     <None Include="shaders\uncompiled\rtgi.rgen" />
     <None Include="shaders\uncompiled\rtgi.rmiss" />
@@ -398,6 +403,7 @@
     <None Include="shaders\uncompiled\skybox.vert" />
     <None Include="shaders\uncompiled\spatial.comp" />
     <None Include="shaders\uncompiled\taa.comp" />
+    <None Include="shaders\uncompiled\transmittanceLUT.frag" />
     <None Include="shaders\uncompiled\triangle.frag" />
     <None Include="shaders\uncompiled\triangle.vert" />
   </ItemGroup>

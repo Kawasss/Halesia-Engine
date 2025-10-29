@@ -88,6 +88,9 @@
     <Filter Include="scripts">
       <UniqueIdentifier>{89b1698b-c63d-4322-b63a-7399d1183184}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\atmosphere">
+      <UniqueIdentifier>{d67d536f-4b5a-4021-92ec-f1ed1c37890a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\HalesiaEngine.cpp">
@@ -820,6 +823,24 @@
     </None>
     <None Include="shaders\uncompiled\boundingVolume.vert">
       <Filter>Shaders</Filter>
+    </None>
+    <None Include="shaders\uncompiled\atmosphere.vert">
+      <Filter>Shaders\atmosphere</Filter>
+    </None>
+    <None Include="shaders\uncompiled\transmittanceLUT.frag">
+      <Filter>Shaders\atmosphere</Filter>
+    </None>
+    <None Include="shaders\uncompiled\mscatteringLUT.frag">
+      <Filter>Shaders\atmosphere</Filter>
+    </None>
+    <None Include="shaders\uncompiled\latlongMap.frag">
+      <Filter>Shaders\atmosphere</Filter>
+    </None>
+    <None Include="shaders\uncompiled\include\atmosCommon.glsl">
+      <Filter>Shaders\includes</Filter>
+    </None>
+    <None Include="shaders\uncompiled\atmosRender.frag">
+      <Filter>Shaders\atmosphere</Filter>
     </None>
   </ItemGroup>
 </Project>

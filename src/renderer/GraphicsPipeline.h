@@ -1,5 +1,6 @@
 #pragma once
 #include <vulkan/vulkan.h>
+#include <vector>
 #include <string>
 #include <span>
 
@@ -18,6 +19,10 @@ public:
 		VkRenderPass renderPass = VK_NULL_HANDLE;
 		VkCompareOp depthCompareOp = VK_COMPARE_OP_LESS;
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+
+		// only enter when using dynamic rendering
+		std::vector<VkFormat> colorFormats;
+		VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
 
 		//maybe just flags ??
 		bool noVertices  = false;

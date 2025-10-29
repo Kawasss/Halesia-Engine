@@ -11,25 +11,24 @@ class GraphicsPipeline;
 class SkyPipeline : public RenderPipeline
 {
 public:
-	~SkyPipeline();
-
 	void Start(const Payload& payload) override;
-	void Update(const Payload& payload, const std::vector<MeshObject*>& objects);
+	void Execute(const Payload& payload, const std::vector<MeshObject*>& objects);
 
 	void ReloadShaders(const Payload& payload) override;
 	void Resize(const Payload& payload) override;
 
 private:
 	void CreatePipelines();
-	void CreateImages(uint32_t width, uint32_t height);
-	void CreateDynamicFramebuffer(uint32_t width, uint32_t height);
+	void CreateImages(const CommandBuffer& cmdBuffer, uint32_t width, uint32_t height);
 	void CreateBuffers();
 	void UpdateBuffers();
 
 	void bindImagesToPipelines();
 	void BindBufferToPipelines();
 
-	VkFramebuffer framebuffer = VK_NULL_HANDLE;
+	void BeginRenderPass(const CommandBuffer& cmdBuffer, VkImageView view, uint32_t width, uint32_t height);
+	void BeginRenderPass(const CommandBuffer& cmdBuffer, Image& image);
+	void EndRenderPass(const CommandBuffer& cmdBuffer, Image& image);
 
 	Image transmittanceLUT;
 	Image mscatteringLUT;

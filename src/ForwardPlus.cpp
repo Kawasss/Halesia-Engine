@@ -180,7 +180,7 @@ void ForwardPlusPipeline::UpdateBindlessTextures()
 
 			VkDescriptorImageInfo& imageInfo = imageInfos[index];
 			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			imageInfo.imageView = Mesh::materials[i][Material::pbrTextures[j]]->imageView;
+			imageInfo.imageView = Mesh::materials[i][Material::pbrTextures[j]]->view;
 			imageInfo.sampler = Renderer::defaultSampler;
 
 			VkWriteDescriptorSet& writeSet = writeSets[index];

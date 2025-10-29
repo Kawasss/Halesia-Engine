@@ -6,6 +6,7 @@
 #include "stb/stb_image_resize2.h"
 
 #include <vulkan/vulkan.h>
+#include <vulkan/vk_enum_string_helper.h>
 
 #include <ktx.h>
 #include <ktxvulkan.h>
@@ -88,7 +89,7 @@ void Image::Create(uint32_t width, uint32_t height, uint32_t layerCount, VkForma
 	image = Vulkan::CreateImage(width, height, mipLevels, layerCount, format, VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, createFlags);
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
-	imageView = Vulkan::CreateImageView(image.Get(), viewType, mipLevels, layerCount, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
+	view = Vulkan::CreateImageView(image.Get(), viewType, mipLevels, layerCount, format, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void Image::CreateWithCustomSize(uint32_t width, uint32_t height, VkDeviceSize size, uint32_t layerCount, VkFormat format, VkImageUsageFlags usage, Flags flags)
@@ -106,7 +107,7 @@ void Image::InheritFrom(Image& other)
 	Destroy();
 
 	std::swap(image, other.image);
-	std::swap(imageView, other.imageView);
+	std::swap(view, other.view);
 
 	SetAllAttributes(other.width, other.height, other.size, other.layerCount, other.format, other.usage);
 }
@@ -121,13 +122,25 @@ void Image::SetAllAttributes(uint32_t width, uint32_t height, VkDeviceSize size,
 	this->usage = usage;
 }
 
+void Image::ResetAllAttributes()
+{
+	width = 0;
+	height = 0;
+	size = 0;
+	layerCount = 1;
+	mipLevels = 1;
+	format = VK_FORMAT_MAX_ENUM;
+	usage = 0;
+	currLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+}
+
 void Image::CreateImageAndView()
 {
 	VkImageCreateFlags createFlags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 	image = Vulkan::CreateImage(width, height, mipLevels, layerCount, format, VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, createFlags);
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
-	imageView = Vulkan::CreateImageView(image.Get(), viewType, mipLevels, layerCount, format, VK_IMAGE_ASPECT_COLOR_BIT);
+	view = Vulkan::CreateImageView(image.Get(), viewType, mipLevels, layerCount, format, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void Image::UploadData(const std::span<const char>& data)
@@ -535,15 +548,29 @@ void Texture::DestroyPlaceholderTextures()
 	delete placeholderAmbientOcclusion;
 }
 
+void Image::SetLayout(VkImageLayout layout)
+{
+	currLayout = layout;
+}
+
 void Image::TransitionTo(VkImageLayout newLayout, CommandBuffer cmdBuffer)
 {
+	if (newLayout == currLayout)
+	{
+		Console::WriteLine("caught a redundant image transition ({})", Console::Severity::Warning, string_VkImageLayout(currLayout));
+		return;
+	}
+		
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
 	bool isSingleTime = !cmdBuffer.IsValid();
 
-	VkCommandPool commandPool = isSingleTime ? Vulkan::FetchNewCommandPool(ctx.graphicsIndex) : VK_NULL_HANDLE;
+	VkCommandPool commandPool = VK_NULL_HANDLE;
 	if (isSingleTime)
+	{
+		commandPool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
 		cmdBuffer = CommandBuffer(Vulkan::BeginSingleTimeCommands(commandPool));
+	}
 
 	VkImageMemoryBarrier memoryBarrier{};
 	memoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -568,6 +595,14 @@ void Image::TransitionTo(VkImageLayout newLayout, CommandBuffer cmdBuffer)
 
 		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (currLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+	{
+		memoryBarrier.srcAccessMask = 0;
+		memoryBarrier.dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
 	else if (currLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
 	{
@@ -601,7 +636,7 @@ void Image::TransitionTo(VkImageLayout newLayout, CommandBuffer cmdBuffer)
 		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
-	else throw std::invalid_argument("Invalid layout transition");
+	else throw std::invalid_argument(std::format("Invalid layout transition ({} -> {})", string_VkImageLayout(currLayout), string_VkImageLayout(newLayout)));
 
 	cmdBuffer.PipelineBarrier(sourceStage, destinationStage, 0, 0, nullptr, 0, nullptr, 1, &memoryBarrier);
 
@@ -708,12 +743,12 @@ void Image::GenerateMipMaps()
 	Vulkan::YieldCommandPool(ctx.graphicsIndex, commandPool);
 }
 
-int Image::GetWidth() const
+uint32_t Image::GetWidth() const
 {
 	return width;
 }
 
-int Image::GetHeight() const
+uint32_t Image::GetHeight() const
 {
 	return height;
 }
@@ -723,12 +758,18 @@ int Image::GetMipLevels() const
 	return mipLevels;
 }
 
+VkImageUsageFlags Image::GetUsage() const
+{
+	return usage;
+}
+
 void Image::Destroy()
 {
 	const Vulkan::Context& ctx = Vulkan::GetContext();
 
-	vgm::Delete(imageView);
+	vgm::Delete(view);
 	image.Destroy();
 
-	imageView = VK_NULL_HANDLE;
+	view = VK_NULL_HANDLE;
+	ResetAllAttributes();
 }

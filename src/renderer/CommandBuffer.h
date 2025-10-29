@@ -30,6 +30,9 @@ public:
 	void DrawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance) const;
 	void Dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) const;
 
+	void BeginRendering(const VkRenderingInfo& renderingInfo) const;
+	void EndRendering() const;
+
 	void BeginDebugUtilsLabel(const char* pLabelName) const; // color not supported
 	void EndDebugUtilsLabel() const;
 

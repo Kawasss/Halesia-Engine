@@ -51,7 +51,13 @@ layout(set = 1, binding = scene_data_buffer_binding) uniform SceneData
     float zFar;
 
     vec3 camPosition;
+    vec3 camDirection;
+    vec3 camRight;
+    vec3 camUp;
+    float padding;
+    float camFov;
     uint frameCount;
+    float time;
 } sceneData;
 
 vec3 GetNormalFromMap(vec2 uv)

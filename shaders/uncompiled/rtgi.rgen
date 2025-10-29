@@ -24,7 +24,13 @@ layout(set = 2, binding = scene_data_buffer_binding) uniform SceneData
     float zFar;
 
     vec3 camPosition;
+	vec3 camDirection;
+    vec3 camRight;
+    vec3 camUp;
+	float padding;
+	float camFov;
     uint frameCount;
+	float time;
 } sceneData;
 
 layout(location = 0) rayPayloadEXT Payload {

@@ -173,7 +173,7 @@ void DeferredPipeline::CreateRTGIPipeline(const Payload& payload)
 	rtgiPipeline->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
 
 	if (skybox != nullptr)
-		rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void DeferredPipeline::CreateAndBindRTGI(const Payload& payload)
@@ -617,7 +617,7 @@ void DeferredPipeline::LoadSkybox(const std::string& path)
 	skybox->targetView = GetAlbedoView();
 	skybox->depth = framebuffer.GetDepthView();
 
-	rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->imageView, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void DeferredPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects)

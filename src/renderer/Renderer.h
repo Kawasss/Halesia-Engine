@@ -2,6 +2,7 @@
 #include <vector>
 #include <string>
 #include <string_view>
+#include <type_traits>
 #include <map>
 #include <vulkan/vulkan.h>
 
@@ -34,6 +35,9 @@ struct Material;
 using HANDLE = void*;
 using Handle = unsigned long long;
 using RendererFlags = uint32_t;
+
+template<typename T>
+concept InheritsRenderPipeline = std::is_base_of_v<RenderPipeline, T>;
 
 class Renderer
 {
@@ -68,7 +72,7 @@ public:
 
 	void RenderObjects(const std::vector<Object*>& objects, CameraObject* camera);
 
-	void StartRecording();
+	void StartRecording(float delta);
 	void SubmitRecording();
 
 	void StartRenderPass(VkRenderPass renderPass, glm::vec3 clearColor = glm::vec3(0), VkFramebuffer framebuffer = VK_NULL_HANDLE);
@@ -115,7 +119,7 @@ public:
 
 	RenderPipeline::Payload GetPipelinePayload(CommandBuffer commandBuffer, CameraObject* camera);
 
-	template<typename Type> 
+	template<InheritsRenderPipeline Type> 
 	Type* AddRenderPipeline(const char* name = "unnamed pipeline"); // returns the created pipeline
 
 	RenderPipeline* GetRenderPipeline(const std::string_view& name);
@@ -220,6 +224,9 @@ private:
 	RenderMode renderMode = RenderMode::DontCare;
 
 	bool shouldResize = false; // this uses a bool so that other threads can request the renderer to resize
+	bool shouldResizePipelines = false;
+
+	float time = 0.0f;
 
 	void Destroy();
 
@@ -248,6 +255,7 @@ private:
 
 	void GetQueryResults();
 	
+	void ResizeRenderPipelines();
 	void OnResize();
 	void AddExtensions();
 	
@@ -278,7 +286,7 @@ private:
 	void SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
 };
 
-template<typename Type>
+template<InheritsRenderPipeline Type>
 Type* Renderer::AddRenderPipeline(const char* name)
 {
 	Type* actualPtr = new Type();

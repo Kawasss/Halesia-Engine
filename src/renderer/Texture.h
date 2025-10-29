@@ -52,20 +52,23 @@ public:
 	void UploadData(const std::span<const char>& data);
 
 	void TransitionTo(VkImageLayout layout, CommandBuffer cmdBuffer);
+	void SetLayout(VkImageLayout layout);
 
 	void AwaitGeneration() const;
 	bool HasFinishedLoading() const;
 	void Destroy();
 
-	int GetWidth() const;
-	int GetHeight() const;
-	int GetMipLevels() const;
+	uint32_t GetWidth()  const;
+	uint32_t GetHeight() const;
+	int GetMipLevels()   const;
+
+	VkImageUsageFlags GetUsage() const;
 
 	std::vector<char> GetImageData() const;
 	std::vector<char> GetAsInternalFormat() const;
 
 	vvm::Image image;
-	VkImageView imageView = VK_NULL_HANDLE;
+	VkImageView view = VK_NULL_HANDLE;
 	VkDeviceSize size = 0; // in bytes!
 
 	~Image() { Destroy(); }
@@ -83,6 +86,7 @@ protected:
 	void GenerateMipMaps();
 	void CalculateMipLevels();
 	void SetAllAttributes(uint32_t width, uint32_t height, VkDeviceSize size, uint32_t layerCount, VkFormat format, VkImageUsageFlags usage);
+	void ResetAllAttributes();
 	void CreateImageAndView();
 
 private:
