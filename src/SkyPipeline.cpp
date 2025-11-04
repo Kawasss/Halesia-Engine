@@ -72,7 +72,7 @@ void SkyPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>
 	cmdBuffer.EndDebugUtilsLabel();
 	cmdBuffer.BeginDebugUtilsLabel("rendering");
 
-	BeginRenderPass(cmdBuffer, payload.renderer->GetFramebuffer().GetViews()[0], payload.width, payload.height);
+	BeginPresentationRenderPass(cmdBuffer, payload.renderer, payload.width, payload.height);
 
 	//payload.renderer->SetViewport(cmdBuffer, { payload.width, payload.height });
 
@@ -120,6 +120,36 @@ void SkyPipeline::EndRenderPass(const CommandBuffer& cmdBuffer, Image& image)
 {
 	cmdBuffer.EndRendering();
 	image.TransitionTo(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmdBuffer);
+}
+
+void SkyPipeline::BeginPresentationRenderPass(const CommandBuffer& cmdBuffer, Renderer* renderer, uint32_t width, uint32_t height)
+{
+	VkRenderingAttachmentInfo attachInfo{};
+	attachInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+	attachInfo.imageView = renderer->GetFramebuffer().GetViews()[0];
+	attachInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	attachInfo.resolveMode = VK_RESOLVE_MODE_NONE;
+	attachInfo.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+	VkRenderingAttachmentInfo depthInfo{};
+	depthInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+	depthInfo.imageView = renderer->GetFramebuffer().GetDepthView();
+	depthInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+	depthInfo.resolveMode = VK_RESOLVE_MODE_NONE;
+	depthInfo.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	depthInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+	VkRenderingInfo renderInfo{};
+	renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+	renderInfo.colorAttachmentCount = 1;
+	renderInfo.layerCount = 1;
+	renderInfo.pColorAttachments = &attachInfo;
+	renderInfo.pDepthAttachment = &depthInfo;
+	renderInfo.pStencilAttachment = nullptr;
+	renderInfo.renderArea = { VkOffset2D{ 0, 0 }, VkExtent2D{ width, height } };
+
+	cmdBuffer.BeginRendering(renderInfo);
 }
 
 void SkyPipeline::ReloadShaders(const Payload& payload)
@@ -176,6 +206,7 @@ void SkyPipeline::CreatePipelines()
 	latlongPipeline = std::make_unique<GraphicsPipeline>(createInfo);
 
 	createInfo.colorFormats[0] = VK_FORMAT_R16G16B16A16_UNORM;
+	createInfo.depthStencilFormat = Vulkan::GetContext().physicalDevice.GetDepthFormat();
 	createInfo.fragmentShader = "shaders/uncompiled/atmosRender.frag";
 	atmospherePipeline = std::make_unique<GraphicsPipeline>(createInfo);
 }

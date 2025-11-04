@@ -641,8 +641,8 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<MeshObj
 
 	cmdBuffer.BeginDebugUtilsLabel("skybox");
 
-	if (skybox != nullptr)
-		skybox->Draw(cmdBuffer, payload.camera);
+	//if (skybox != nullptr)
+	//	skybox->Draw(cmdBuffer, payload.camera);
 
 	cmdBuffer.EndDebugUtilsLabel();
 

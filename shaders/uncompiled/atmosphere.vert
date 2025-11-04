@@ -12,5 +12,5 @@ void main()
 	uvCoord = (coordinates[gl_VertexIndex].xy + 1) * 0.5;
 	//uvCoord.y = 1.0 - uvCoord.y;
 
-	gl_Position = vec4(coordinates[gl_VertexIndex], 1);
+	gl_Position = vec4(coordinates[gl_VertexIndex].xy, .9999999, 1.0);
 }

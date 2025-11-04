@@ -1,5 +1,6 @@
 #version 460
 #include "include/atmosCommon.glsl"
+#include "include/light.glsl"
 
 layout(location = 0) in vec2 uvCoord;
 layout(location = 0) out vec4 fragColor;
@@ -35,6 +36,22 @@ layout(set = 2, binding = scene_data_buffer_binding) uniform SceneData
     float time;
 } sceneData;
 
+layout(set = 2, binding = light_buffer_binding) readonly buffer lightBuffer
+{
+	int count;
+	Light data[];
+} lights;
+
+vec3 GetSunDir()
+{
+    for (int i = 0; i < lights.count; i++)
+    {
+        if (lights.data[i].type.x == LIGHT_TYPE_DIRECTIONAL)
+            return GetLightDir(lights.data[i], vec3(0.0));
+    }
+    return vec3(0.0, 1.0, 0.0);
+}
+
 vec3 getValFromSkyLUT(vec3 viewPos, vec3 rayDir, vec3 sunDir) {
     float height = length(viewPos);
     vec3 up = viewPos / height;
@@ -63,7 +80,7 @@ vec3 getValFromSkyLUT(vec3 viewPos, vec3 rayDir, vec3 sunDir) {
     
     return texture(latlongMap, uv).rgb;
 }
-
+;
 vec3 jodieReinhardTonemap(vec3 c){
     // From: https://www.shadertoy.com/view/tdSXzD
     float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
@@ -89,11 +106,11 @@ void main()
     vec2 UvCoord = uvCoord;
     UvCoord.y = 1.0 - UvCoord.y;
 
-    vec3 viewPos = viewPosBase + sceneData.camPosition * 0.001;
+    vec3 viewPos = viewPosBase + sceneData.camPosition * 0.01;
 
     const vec2 size = sceneData.viewportSize;
 
-    vec3 sunDir = getSunDir(sceneData.time);
+    vec3 sunDir = GetSunDir();
 
     float camWidthScale = 2.0*tan(sceneData.camFov/2.0);
     float camHeightScale = camWidthScale*size.y/size.x;

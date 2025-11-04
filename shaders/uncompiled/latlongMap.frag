@@ -1,5 +1,6 @@
 #version 460
 #include "include/atmosCommon.glsl"
+#include "include/light.glsl"
 
 layout (location = 0) in vec2 uvCoord;
 layout (location = 0) out vec4 fragColor;
@@ -34,6 +35,22 @@ layout(set = 2, binding = scene_data_buffer_binding) uniform SceneData
     uint frameCount;
     float time;
 } sceneData;
+
+layout(set = 2, binding = light_buffer_binding) readonly buffer lightBuffer
+{
+	int count;
+	Light data[];
+} lights;
+
+vec3 GetSunDir()
+{
+    for (int i = 0; i < lights.count; i++)
+    {
+        if (lights.data[i].type.x == LIGHT_TYPE_DIRECTIONAL)
+            return GetLightDir(lights.data[i], vec3(0.0));
+    }
+    return vec3(0.0, 1.0, 0.0);
+}
 
 const int numScatteringSteps = 32;
 vec3 raymarchScattering(vec3 pos, 
@@ -80,7 +97,7 @@ vec3 raymarchScattering(vec3 pos,
 }
 
 void main()
-{
+{;
     vec2 fragCoord = uvCoord * sceneData.viewportSize;
 
     if (fragCoord.x >= (skyLUTRes.x+1.5) || fragCoord.y >= (skyLUTRes.y+1.5)) {
@@ -102,7 +119,7 @@ void main()
 		adjV = coord*coord;
 	}
     
-    vec3 viewPos = viewPosBase + sceneData.camPosition * 0.001;
+    vec3 viewPos = viewPosBase + sceneData.camPosition * 0.01;
 
     float height = length(viewPos);
     vec3 up = viewPos / height;
@@ -112,7 +129,7 @@ void main()
     float cosAltitude = cos(altitudeAngle);
     vec3 rayDir = vec3(cosAltitude*sin(azimuthAngle), sin(altitudeAngle), -cosAltitude*cos(azimuthAngle));
     
-    float sunAltitude = (0.5*PI) - acos(dot(getSunDir(sceneData.time), up));
+    float sunAltitude = (0.5*PI) - acos(dot(GetSunDir(), up));
     vec3 sunDir = vec3(0.0, sin(sunAltitude), -cos(sunAltitude));
     
     float atmoDist = rayIntersectSphere(viewPos, rayDir, atmosphereRadiusMM);

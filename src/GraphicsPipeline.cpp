@@ -72,7 +72,7 @@ void GraphicsPipeline::CreateGraphicsPipeline(const std::span<std::span<char>>& 
 	renderInfo.colorAttachmentCount = static_cast<uint32_t>(createInfo.colorFormats.size());
 	renderInfo.pColorAttachmentFormats = createInfo.colorFormats.data();
 	renderInfo.depthAttachmentFormat = createInfo.depthStencilFormat;
-	renderInfo.stencilAttachmentFormat = createInfo.depthStencilFormat;
+	renderInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;
 
 	PipelineBuilder builder(shaderInfos);
 

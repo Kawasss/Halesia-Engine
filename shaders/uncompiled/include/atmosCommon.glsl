@@ -43,7 +43,9 @@ const float PI = 3.14159265358;
 const float groundRadiusMM = 6.360;
 const float atmosphereRadiusMM = 6.460;
 
-const vec3 viewPosBase = vec3(0, groundRadiusMM, 0);
+// 200M above the ground.
+const vec3 viewPos = vec3(0.0, groundRadiusMM + 0.0002, 0.0);
+const vec3 viewPosBase = vec3(0.0, groundRadiusMM, 0.0);
 
 const vec2 tLUTRes = vec2(256.0, 64.0);
 const vec2 msLUTRes = vec2(32.0, 32.0);
@@ -65,20 +67,20 @@ const vec3 ozoneAbsorptionBase = vec3(0.650, 1.881, .085);
 /*
  * Animates the sun movement.
  */
-float getSunAltitude(float time)
-{
-    const float periodSec = 120.0;
-    const float halfPeriod = periodSec / 2.0;
-    const float sunriseShift = 0.1;
-    float cyclePoint = (1.0 - abs((mod(time, periodSec) - halfPeriod) / halfPeriod));
-    cyclePoint = (cyclePoint * (1.0 + sunriseShift)) - sunriseShift;
-    return (0.5 * PI) * cyclePoint;
-}
-vec3 getSunDir(float time)
-{
-    float altitude = getSunAltitude(time);
-    return normalize(vec3(0.0, sin(altitude), -cos(altitude)));
-}
+//float getSunAltitude(float time)
+//{
+//    const float periodSec = 120.0;
+//    const float halfPeriod = periodSec / 2.0;
+//    const float sunriseShift = 0.1;
+//    float cyclePoint = (1.0 - (mod(time, periodSec) - halfPeriod) / halfPeriod);
+//    cyclePoint = (cyclePoint * (1.0 + sunriseShift)) - sunriseShift;
+//    return (0.5 * PI) * cyclePoint;
+//}
+//vec3 getSunDir(float time)
+//{
+//    float altitude = getSunAltitude(time);
+//    return normalize(vec3(0.0, sin(altitude), -cos(altitude)));
+//}
 
 float getMiePhase(float cosTheta) {
     const float g = 0.8;
