@@ -9,7 +9,6 @@
 #include "renderer/Surface.h"
 #include "renderer/Texture.h"
 #include "renderer/Mesh.h"
-#include "renderer/RayTracing.h"
 #include "renderer/AnimationManager.h"
 #include "renderer/PipelineCreator.h"
 #include "renderer/DescriptorWriter.h"
@@ -1131,8 +1130,7 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 		Vulkan::SetDebugName(framebuffer.Get(), "presentation framebuffer");
 	}
 
-	imageView = (shouldRasterize || !canRayTrace || rayTracer == nullptr) ? framebuffer.GetViews()[0] : rayTracer->gBufferViews[0];
-	screenPipeline->BindImageToName("image", imageView, resultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	screenPipeline->BindImageToName("image", framebuffer.GetViews()[0], resultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	DescriptorWriter::Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
 }
 

@@ -211,7 +211,6 @@
     <ClCompile Include="src\ScriptObject.cpp" />
     <ClCompile Include="src\ShaderCompiler.cpp" />
     <ClCompile Include="src\ShaderReflector.cpp" />
-    <ClCompile Include="src\RayTracing.cpp" />
     <ClCompile Include="src\Input.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Object.cpp" />
@@ -329,7 +328,6 @@
     <ClInclude Include="src\renderer\ResizableBuffer.h" />
     <ClInclude Include="src\renderer\ShaderCompiler.h" />
     <ClInclude Include="src\renderer\ShaderReflector.h" />
-    <ClInclude Include="src\renderer\RayTracing.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
     <ClInclude Include="src\renderer\Renderer.h" />
     <ClInclude Include="src\renderer\Skybox.h" />

@@ -11,7 +11,6 @@
 #include "core/EditorProject.h"
 
 #include "renderer/gui.h"
-#include "renderer/RayTracing.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/VideoMemoryManager.h"

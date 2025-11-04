@@ -9,7 +9,6 @@
 #include "system/SystemMetrics.h"
 
 #include "renderer/Renderer.h"
-#include "renderer/RayTracing.h"
 #include "renderer/gui.h"
 #include "renderer/AnimationManager.h"
 #include "renderer/Vulkan.h"
@@ -352,13 +351,6 @@ void HalesiaEngine::LoadVars()
 	Renderer::shouldRenderCollisionBoxes = reader.GetBool("renderCollision");
 	Renderer::denoiseOutput              = reader.GetBool("denoiseOutput");
 
-	RayTracingRenderPipeline::raySampleCount       = reader.GetInt("raySamples");
-	RayTracingRenderPipeline::rayDepth             = reader.GetInt("rayDepth");
-	RayTracingRenderPipeline::showNormals          = reader.GetBool("showNormals");
-	RayTracingRenderPipeline::showUniquePrimitives = reader.GetBool("showUnique");
-	RayTracingRenderPipeline::showAlbedo           = reader.GetBool("showAlbedo");
-	RayTracingRenderPipeline::renderProgressive    = reader.GetBool("renderProgressive");
-
 	std::cout << "Finished loading from cfg/engine.ini\n";
 }
 
@@ -384,13 +376,6 @@ void HalesiaEngine::OnExit()
 	writer["renderCollision"] = std::to_string(Renderer::shouldRenderCollisionBoxes);
 	writer["denoiseOutput"]   = std::to_string(Renderer::denoiseOutput);
 
-	writer["raySamples"]        = std::to_string(RayTracingRenderPipeline::raySampleCount);
-	writer["rayDepth"]          = std::to_string(RayTracingRenderPipeline::rayDepth);
-	writer["showNormals"]       = std::to_string(RayTracingRenderPipeline::showNormals);
-	writer["showUnique"]        = std::to_string(RayTracingRenderPipeline::showUniquePrimitives);
-	writer["showAlbedo"]        = std::to_string(RayTracingRenderPipeline::showAlbedo);
-	writer["renderProgressive"] = std::to_string(RayTracingRenderPipeline::renderProgressive);
-
 	writer.Write();
 
 	std::cout << "Finished writing to cfg/engine.ini\n";
@@ -407,13 +392,6 @@ void HalesiaEngine::RegisterConsoleVars()
 	Console::AddCVar("playFrame",    &playOneFrame);
 	Console::AddCVar("showAsync",    &showAsyncTimes);
 	Console::AddCVar("showMetaData", &showObjectData);
-
-	Console::AddCVar("showNormals", &RayTracingRenderPipeline::showNormals);
-	Console::AddCVar("showAlbedo",  &RayTracingRenderPipeline::showAlbedo);
-	Console::AddCVar("showUnique",  &RayTracingRenderPipeline::showUniquePrimitives);
-	Console::AddCVar("renderProg",  &RayTracingRenderPipeline::renderProgressive);
-	Console::AddCVar("raySamples",  &RayTracingRenderPipeline::raySampleCount);
-	Console::AddCVar("rayDepth",    &RayTracingRenderPipeline::rayDepth);
 
 	Console::AddCVar("denoiseOutput", &Renderer::denoiseOutput);
 	Console::AddCVar("internalScale", &Renderer::internalScale);

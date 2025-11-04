@@ -24,7 +24,6 @@ class Image;
 class AnimationManager;
 class Window;
 class LightObject;
-class RayTracingRenderPipeline;
 class ForwardPlusPipeline;
 class GraphicsPipeline;
 class RenderPipeline;
@@ -217,8 +216,7 @@ private:
 	uint32_t imageIndex = 0;
 	uint32_t queueIndex = 0;
 	RendererFlags flags = Flags::None; 
-	
-	RayTracingRenderPipeline* rayTracer;
+
 	ForwardPlusPipeline* fwdPlus;
 
 	RenderMode renderMode = RenderMode::DontCare;
