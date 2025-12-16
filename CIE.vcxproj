@@ -165,7 +165,9 @@
     <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.cpp" />
     <ClCompile Include="..\..\additionalDependencies\spirv-reflect\spirv_reflect.cpp" />
     <ClCompile Include="src\AccelerationStructures.cpp" />
+    <ClCompile Include="src\Animation.cpp" />
     <ClCompile Include="src\AnimationManager.cpp" />
+    <ClCompile Include="src\Animator.cpp" />
     <ClCompile Include="src\Audio.cpp" />
     <ClCompile Include="src\BinaryReader.cpp" />
     <ClCompile Include="src\BinaryStream.cpp" />
@@ -299,7 +301,9 @@
     <ClInclude Include="src\physics\Shapes.h" />
     <ClInclude Include="src\physics\Physics.h" />
     <ClInclude Include="src\renderer\AccelerationStructures.h" />
+    <ClInclude Include="src\renderer\Animation.h" />
     <ClInclude Include="src\renderer\AnimationManager.h" />
+    <ClInclude Include="src\renderer\Animator.h" />
     <ClInclude Include="src\renderer\Bone.h" />
     <ClInclude Include="src\renderer\BoundingVolumePipeline.h" />
     <ClInclude Include="src\renderer\CommandBuffer.h" />

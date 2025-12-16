@@ -51,6 +51,9 @@ public:
 
 	static Color GetColorFromMessage(const Message& message);
 
+	static void LockMessages();
+	static void UnlockMessages();
+
 	template<typename T> 
 	static void AddCVar(const std::string& name, T* variable, Access access = Access::ReadWrite);
 

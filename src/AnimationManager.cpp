@@ -9,78 +9,6 @@
 #include "renderer/Renderer.h"
 #include "renderer/ComputeShader.h"
 
-inline glm::mat4 GetMat4(const aiMatrix4x4& from)
-{
-	glm::mat4 to{};
-	//the a,b,c,d in assimp is the row ; the 1,2,3,4 is the column
-	to[0][0] = from.a1; to[1][0] = from.a2; to[2][0] = from.a3; to[3][0] = from.a4;
-	to[0][1] = from.b1; to[1][1] = from.b2; to[2][1] = from.b3; to[3][1] = from.b4;
-	to[0][2] = from.c1; to[1][2] = from.c2; to[2][2] = from.c3; to[3][2] = from.c4;
-	to[0][3] = from.d1; to[1][3] = from.d2; to[2][3] = from.d3; to[3][3] = from.d4;
-	return to;
-}
-
-Animation::Animation(const aiAnimation* animation, const aiNode* root, std::map<std::string, BoneInfo> boneInfoMap) : duration((float)animation->mDuration), ticksPerSecond((float)animation->mTicksPerSecond), time(0), transforms(animation->mNumChannels, glm::mat4(1.0f)), boneInfo(boneInfoMap)
-{
-	ReadHierarchy(this->root, root);
-	ReadBones(animation);
-}
-
-void Animation::ReadHierarchy(HierarchyNode& node, const aiNode* source)
-{
-	node.name = source->mName.C_Str();
-	node.transformation = GetMat4(source->mTransformation);
-	node.children.resize(source->mNumChildren);
-
-	for (unsigned int i = 0; i < source->mNumChildren; i++)
-		ReadHierarchy(node.children[i], source->mChildren[i]);
-}
-
-void Animation::ReadBones(const aiAnimation* animation)
-{
-	bones.resize(animation->mNumChannels);
-	for (unsigned int i = 0; i < animation->mNumChannels; i++)
-		bones.emplace_back(animation->mChannels[i]);
-}
-
-Bone* Animation::GetBone(std::string name)
-{
-	std::vector<Bone>::iterator index = std::find_if
-	(
-		bones.begin(), bones.end(),
-		[&](const Bone& bone)
-		{
-			return bone.GetName() == name;
-		}
-	);
-	if (index == bones.end()) return nullptr;
-	return &(*index);
-}
-
-void Animation::ComputeTransform(const HierarchyNode* node, glm::mat4 parentTransform)
-{
-	Bone* bone = GetBone(node->name);
-	glm::mat4 transform = node->transformation;
-	if (bone != nullptr)
-	{
-		bone->Update(time);
-		transform = bone->GetTransform();
-	}
-
-	glm::mat4 globalTrans = parentTransform * transform;
-
-	if (boneInfo.find(node->name) != boneInfo.end())
-	{
-		BoneInfo& info = boneInfo[node->name];
-		transforms[info.index] = globalTrans * info.offset;
-		if (transforms[info.index] == glm::mat4(0.0f))
-			transforms[info.index] = glm::mat4(1.0f);
-	}
-
-	for (int i = 0; i < node->children.size(); i++)
-		ComputeTransform(&node->children[i], globalTrans);
-}
-
 AnimationManager* AnimationManager::Get()
 {
 	static AnimationManager* singleton = nullptr;
@@ -106,7 +34,7 @@ void Animation::Reset()
 	time = 0;
 }
 
-std::vector<glm::mat4> Animation::GetTransforms()
+std::vector<glm::mat4>& Animation::GetTransforms()
 {
 	return transforms;
 }
@@ -116,31 +44,34 @@ void AnimationManager::Create()
 	CreateShader();
 }
 
-void AnimationManager::AddAnimation(Animation* animation)
+void AnimationManager::AddAnimation(const Animation& animation)
 {
+	win32::CriticalLockGuard guard(section);
 	animations.push_back(animation);
 }
 
-void AnimationManager::RemoveAnimation(Animation* animation)
-{
-	std::vector<Animation*>::iterator iter = std::find_if
-	(
-		animations.begin(), animations.end(),
-		[&](Animation* ptr)
-		{
-			return animation == ptr;
-		}
-	);
-	if (iter != animations.end()) animations.erase(iter);
-}
+//void AnimationManager::RemoveAnimation(Animation* animation)
+//{
+//	std::vector<Animation*>::iterator iter = std::find_if
+//	(
+//		animations.begin(), animations.end(),
+//		[&](Animation* ptr)
+//		{
+//			return animation == ptr;
+//		}
+//	);
+//	if (iter != animations.end()) animations.erase(iter);
+//}
 
 void AnimationManager::ComputeAnimations(float delta)
 {
+	win32::CriticalLockGuard guard(section);
+
 	size_t offset = 0;
-	for (int i = 0; i < animations.size(); i++) // should be multithreaded
+	for (int i = 1; i < animations.size() && i < 2; i++) // should be multithreaded
 	{
-		animations[i]->Update(delta);
-		std::vector<glm::mat4> mats = animations[i]->GetTransforms();
+		animations[i].Update(delta);
+		std::vector<glm::mat4>& mats = animations[i].GetTransforms();
 		memcpy(mat4BufferPtr + offset, mats.data(), sizeof(glm::mat4) * mats.size());
 		offset += mats.size();
 	}
@@ -148,6 +79,7 @@ void AnimationManager::ComputeAnimations(float delta)
 
 void AnimationManager::ApplyAnimations(VkCommandBuffer commandBuffer)
 {
+	win32::CriticalLockGuard guard(section);
 	if (disable)
 	{
 		VkBufferCopy copy{};
@@ -171,13 +103,14 @@ void AnimationManager::ApplyAnimations(VkCommandBuffer commandBuffer)
 
 void AnimationManager::CreateShader()
 {
+	win32::CriticalLockGuard guard(section);
 	mat4Buffer.Init(500 * sizeof(glm::mat4), VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
 	mat4BufferPtr = mat4Buffer.Map<glm::mat4>(); // should not permanently map this large of a buffer
 
 	std::vector<glm::mat4> defaultValue(500, glm::mat4(1.0f));
 	memcpy(mat4BufferPtr, defaultValue.data(), 500 * sizeof(glm::mat4));
 
-	computeShader = new ComputeShader("shaders/uncompiled/anim.comp");
+	computeShader = std::make_unique<ComputeShader>("shaders/uncompiled/anim.comp");
 
 	computeShader->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
 	computeShader->BindBufferToName("vertexBuffer", Renderer::g_vertexBuffer.GetBufferHandle());
@@ -185,9 +118,12 @@ void AnimationManager::CreateShader()
 	computeShader->BindBufferToName("animMatrices", mat4Buffer.Get());
 }
 
-void AnimationManager::Destroy()
+void AnimationManager::AcquireLock()
 {
-	delete computeShader;
+	section.Lock();
+}
 
-	mat4Buffer.Unmap();
+void AnimationManager::ReleaseLock()
+{
+	section.Unlock();
 }

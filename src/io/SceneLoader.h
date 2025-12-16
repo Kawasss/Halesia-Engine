@@ -37,7 +37,6 @@ public:
 
 	// animations
 	std::vector<Animation> animations;
-	std::map<std::string, BoneInfo> boneInfoMap;
 
 private:
 	// file specific info

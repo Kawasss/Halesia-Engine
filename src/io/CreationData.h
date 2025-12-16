@@ -1,11 +1,13 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 
 #include "../glm.h"
 
 #include "../renderer/Vertex.h"
 #include "../renderer/Light.h"
+#include "../renderer/Bone.h"
 
 #include "../physics/Shapes.h"
 #include "../physics/RigidBody.h"
@@ -44,6 +46,8 @@ struct MeshCreationData
 
 	std::vector<Vertex>   vertices;
 	std::vector<uint32_t> indices;
+
+	std::map<std::string, BoneInfo> bones;
 };
 
 struct RigidCreationData

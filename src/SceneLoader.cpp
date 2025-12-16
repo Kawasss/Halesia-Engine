@@ -289,21 +289,22 @@ void SceneLoader::RetrieveBoneData(MeshCreationData& creationData, const aiMesh*
 		return;
 
 	aiBone** bones = pMesh->mBones;
+	std::map<std::string, BoneInfo>& bonesInfo = creationData.bones;
 
 	for (int i = 0; i < pMesh->mNumBones; i++)
 	{
 		int ID = -1;
 		std::string name = bones[i]->mName.C_Str();
-		if (boneInfoMap.find(name) == boneInfoMap.end())
+		if (bonesInfo.find(name) == bonesInfo.end())
 		{
 			BoneInfo info{};
 			info.index = i;
 			info.offset = GetMat4(pMesh->mBones[i]->mOffsetMatrix);
 
-			boneInfoMap[name] = info;
+			bonesInfo.emplace(name, info);
 			ID = i;
 		}
-		else ID = boneInfoMap[name].index;
+		else ID = bonesInfo.at(name).index;
 
 		if (ID == -1) 
 			throw std::runtime_error("Failed to retrieve bone data");
@@ -362,7 +363,6 @@ static std::string GetTextureFile(const aiScene* scene, aiTextureType type, int 
 
 void SceneLoader::LoadAssimpFile()
 {
-	
 	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes);
 	
 	if (scene == nullptr) // check if the file could be read
@@ -376,11 +376,11 @@ void SceneLoader::LoadAssimpFile()
 	objects.push_back(root);
 
 	if (scene->HasAnimations())
-		animations.resize(scene->mNumAnimations);
+		animations.reserve(scene->mNumAnimations);
 
 	for (int i = 0; i < scene->mNumAnimations; i++)
 	{
-		animations.emplace_back(scene->mAnimations[i], scene->mRootNode, boneInfoMap);
+		animations.emplace_back(scene->mAnimations[i], scene->mRootNode);
 	}
 
 	fs::path baseDir = fs::path(location).parent_path();

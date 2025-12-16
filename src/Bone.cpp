@@ -54,26 +54,29 @@ void Bone::Update(float time)
 
 int Bone::GetPositionIndex()
 {
-	for (int i = 0; i < positions.size(); i++)
+	for (int i = 0; i < positions.size() - 1; i++)
 		if (time < positions[i + 1].timeStamp)
 			return i;
-	throw std::runtime_error("Failed to fetch the position index of a bone");
+	return positions.size() - 2;
+	//throw std::runtime_error("Failed to fetch the position index of a bone");
 }
 
 int Bone::GetRotationIndex()
 {
-	for (int i = 0; i < rotations.size(); i++)
+	for (int i = 0; i < rotations.size() - 1; i++)
 		if (time < rotations[i + 1].timeStamp)
 			return i;
-	throw std::runtime_error("Failed to fetch the rotation index of a bone");
+	return rotations.size() - 2;
+	//throw std::runtime_error("Failed to fetch the rotation index of a bone");
 }
 
 int Bone::GetScaleIndex()
 {
-	for (int i = 0; i < scales.size(); i++)
+	for (int i = 0; i < scales.size() - 1; i++)
 		if (time < scales[i + 1].timeStamp)
 			return i;
-	throw std::runtime_error("Failed to fetch the scale index of a bone");
+	return scales.size() - 2;
+	//throw std::runtime_error("Failed to fetch the scale index of a bone");
 }
 
 float Bone::GetFactor(float lastTime, float nextTime)
@@ -83,11 +86,14 @@ float Bone::GetFactor(float lastTime, float nextTime)
 
 glm::mat4 Bone::InterpolatePosition()
 {
-	if (positions.size() == 1)
+	if (positions.empty())
 		return glm::translate(glm::mat4(1.0f), positions[0].position);
 
 	int currentIndex = GetPositionIndex();
 	int nextIndex = currentIndex + 1;
+
+	if (positions.size() == 1)
+		return glm::translate(positions[0].position);
 
 	float scaleFactor = GetFactor(positions[currentIndex].timeStamp, positions[nextIndex].timeStamp);
 	glm::vec3 pos = glm::mix(positions[currentIndex].position, positions[nextIndex].position, scaleFactor);
@@ -96,11 +102,14 @@ glm::mat4 Bone::InterpolatePosition()
 
 glm::mat4 Bone::InterpolateRotation()
 {
-	if (rotations.size() == 1)
+	if (rotations.empty())
 		return glm::toMat4(glm::normalize(rotations[0].orientation));
 
 	int currentIndex = GetRotationIndex();
 	int nextIndex = currentIndex + 1;
+
+	if (rotations.size() == 1)
+		return glm::toMat4(rotations[0].orientation);
 
 	float scaleFactor = GetFactor(rotations[currentIndex].timeStamp, rotations[nextIndex].timeStamp);
 	glm::quat rotation = glm::mix(rotations[currentIndex].orientation, rotations[nextIndex].orientation, scaleFactor);
@@ -110,15 +119,14 @@ glm::mat4 Bone::InterpolateRotation()
 
 glm::mat4 Bone::InterpolateScale()
 {
-	if (scales.size() == 1)
+	if (scales.empty())
 		return glm::scale(glm::mat4(1.0f), scales[0].scale);
 
 	int currentIndex = GetScaleIndex();
-
-	if (currentIndex + 1 >= scales.size())
-		currentIndex = 0;
-
 	int nextIndex = currentIndex + 1;
+
+	if (scales.size() == 1)
+		return glm::scale(scales[0].scale);
 
 	float scaleFactor = GetFactor(scales[currentIndex].timeStamp, scales[nextIndex].timeStamp);
 	glm::vec3 scale = glm::mix(scales[currentIndex].scale, scales[nextIndex].scale, scaleFactor);

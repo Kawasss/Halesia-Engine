@@ -733,7 +733,7 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 
 	queryPool.Reset(commandBuffer);
 
-	//animationManager->ApplyAnimations(commandBuffer); // not good
+	animationManager->ApplyAnimations(commandBuffer.Get()); // not good
 
 	RunRenderPipelines(commandBuffer, camera, objects);
 

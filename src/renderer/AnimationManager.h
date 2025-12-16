@@ -1,64 +1,33 @@
 #pragma once
 #include <vector>
 #include <string>
+#include <memory>
 #include <map>
 
 #include "../glm.h"
 
 #include "Bone.h"
 #include "Buffer.h"
+#include "ComputeShader.h"
+#include "Animation.h"
 
-struct aiAnimation;
-struct aiNode;
+#include "../system/CriticalSection.h"
+
 struct MeshCreationData;
 class  ComputeShader;
-
-class Animation
-{
-public:
-	Animation() = default;
-	Animation(const aiAnimation* animation, const aiNode* root, std::map<std::string, BoneInfo> boneInfoMap);
-	Bone* GetBone(std::string name);
-	std::vector<glm::mat4> GetTransforms();
-
-	void Update(float delta);
-	void Reset();
-
-	bool loop = true;
-
-private:
-	struct HierarchyNode
-	{
-		std::string name;
-		glm::mat4 transformation = glm::mat4(1.0f);
-		std::vector<HierarchyNode> children;
-	};
-
-	void ReadHierarchy(HierarchyNode& node, const aiNode* source);
-	void ReadBones(const aiAnimation* animation);
-	void ComputeTransform(const HierarchyNode* node, glm::mat4 parentTransform);
-	
-	std::map<std::string, BoneInfo> boneInfo;
-	std::vector<Bone> bones;
-	std::vector<glm::mat4> transforms;
-	HierarchyNode root;
-
-	float duration;
-	float ticksPerSecond;
-	float time;
-};
 
 class AnimationManager
 {
 public:
 	static AnimationManager* Get();
-	~AnimationManager() { Destroy(); }
 
 	void ComputeAnimations(float delta);
 	void ApplyAnimations(VkCommandBuffer commandBuffer);
-	void AddAnimation(Animation* animation);
-	void RemoveAnimation(Animation* animation);
-	void Destroy();
+	void AddAnimation(const Animation& animation);
+	//void RemoveAnimation(Animation* animation);
+
+	void AcquireLock();
+	void ReleaseLock();
 
 	bool disable = false;
 
@@ -66,9 +35,11 @@ private:
 	void Create();
 	void CreateShader();
 
-	std::vector<Animation*> animations;
+	std::vector<Animation> animations;
 
-	ComputeShader* computeShader;
+	std::unique_ptr<ComputeShader> computeShader;
 	glm::mat4* mat4BufferPtr;
 	Buffer mat4Buffer;
+
+	win32::CriticalSection section;
 };

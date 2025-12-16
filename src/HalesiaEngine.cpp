@@ -11,6 +11,7 @@
 #include "renderer/Renderer.h"
 #include "renderer/gui.h"
 #include "renderer/AnimationManager.h"
+#include "renderer/ComputeShader.h"
 #include "renderer/Vulkan.h"
 
 #include "physics/Physics.h"

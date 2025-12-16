@@ -5,7 +5,6 @@
 #include "imgui-1.91.7/imgui.h"
 #include "imgui-1.91.7/misc/cpp/imgui_stdlib.h"
 
-#include "renderer/RayTracing.h"
 #include "renderer/Mesh.h"
 #include "renderer/Renderer.h"
 #include "renderer/gui.h"
@@ -250,11 +249,13 @@ void GUI::ShowDevConsole()
 
 void GUI::ShowDevConsoleContent()
 {
+	Console::LockMessages();
 	for (const Console::Message& message : Console::messages)
 	{
 		Console::Color color = Console::GetColorFromMessage(message);
 		ImGui::TextColored(ImVec4(color.r, color.g, color.b, 1), message.text.c_str());
 	}
+	Console::UnlockMessages();
 
 	std::string result = "";
 	ImGui::InputTextWithHint("##input", "Console commands...", &result);

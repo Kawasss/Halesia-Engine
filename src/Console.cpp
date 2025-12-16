@@ -97,6 +97,16 @@ void Console::AddCVariable(const std::string& name, DataType type, void* ptr)
 	}
 }
 
+void Console::LockMessages()
+{
+	writingLinesCritSection.Lock();
+}
+
+void Console::UnlockMessages()
+{
+	writingLinesCritSection.Unlock();
+}
+
 void Console::Init()
 {
 

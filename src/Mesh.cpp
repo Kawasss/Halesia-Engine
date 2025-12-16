@@ -61,6 +61,7 @@ void Mesh::Create(const MeshCreationData& creationData)
 {
 	vertices      = creationData.vertices;
 	indices       = creationData.indices;
+	boneInfos     = creationData.bones;
 	faceCount     = creationData.faceCount;
 	cullBackFaces = creationData.cullBackFaces;
 	center        = (creationData.min + creationData.max) * 0.5f;

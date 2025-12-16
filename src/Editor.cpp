@@ -1,6 +1,7 @@
 #include <Windows.h>
 #include <commdlg.h>
 #include <execution>
+#include <functional>
 
 #include "core/Editor.h"
 #include "core/Object.h"
@@ -689,8 +690,7 @@ void Editor::ShowVRAM()
 		
 		for (const vvm::DbgSegment& segment : block.segments)
 		{
-			float start = (static_cast<float>(segment.begin) / block.size) * blockSize.x;
-			float end   = (static_cast<float>(segment.end) / block.size) * blockSize.x;
+			float end = (static_cast<float>(segment.end) / static_cast<float>(block.size)) * blockSize.x;
 
 			ImVec2 startPos = blockPos + ImVec2(xOffset, 0.0f);
 			ImVec2 endPos = startPos + ImVec2(end, blockHeight);
@@ -764,27 +764,23 @@ void Editor::ShowObjectComponents()
 	if (ImGui::CollapsingHeader("Transform", flags))
 		GUI::ShowObjectTransform(selectedObj->transform);
 
-	if (selectedObj->IsType(Object::InheritType::Rigid3D))
+	if (selectedObj->IsType(Object::InheritType::Rigid3D) && ImGui::CollapsingHeader("rigid body", flags))
 	{
-		if (ImGui::CollapsingHeader("rigid body", flags))
-			ShowObjectRigidBody(dynamic_cast<Rigid3DObject*>(selectedObj)->rigid);
+		ShowObjectRigidBody(dynamic_cast<Rigid3DObject*>(selectedObj)->rigid);
 	}
 
-	if (selectedObj->IsType(Object::InheritType::Mesh))
+	if (selectedObj->IsType(Object::InheritType::Mesh) && ImGui::CollapsingHeader("mesh", flags))
 	{
-		if (ImGui::CollapsingHeader("mesh", flags))
-			ShowObjectMesh(dynamic_cast<MeshObject*>(selectedObj)->mesh);
+		ShowObjectMesh(dynamic_cast<MeshObject*>(selectedObj)->mesh);
 	}
 
-	if (selectedObj->IsType(Object::InheritType::Light))
+	if (selectedObj->IsType(Object::InheritType::Light) && ImGui::CollapsingHeader("light", flags))
 	{
-		if (ImGui::CollapsingHeader("light", flags))
-			ShowObjectLight(dynamic_cast<LightObject*>(selectedObj));
+		ShowObjectLight(dynamic_cast<LightObject*>(selectedObj));
 	}
-	if (selectedObj->IsType(Object::InheritType::Script))
+	if (selectedObj->IsType(Object::InheritType::Script) && ImGui::CollapsingHeader("script"))
 	{
-		if (ImGui::CollapsingHeader("script"))
-			ShowObjectScript(dynamic_cast<ScriptObject*>(selectedObj));
+		ShowObjectScript(dynamic_cast<ScriptObject*>(selectedObj));
 	}
 }
 
@@ -894,7 +890,7 @@ void Editor::ShowObjectRigidBody(RigidBody& rigid)
 	if (currRigidAsType != rigid.type)
 	{
 		rigid.Destroy();
-		Object* obj = reinterpret_cast<Object*>(rigid.GetUserData());
+		Object* obj = static_cast<Object*>(rigid.GetUserData());
 		rigid = RigidBody(rigid.shape, currRigidAsType, obj->transform.position, obj->transform.rotation);
 		rigid.SetUserData(obj);
 	}
@@ -932,6 +928,9 @@ void Editor::ShowRigidBodyShape(RigidBody& rigid)
 		ImGui::Text("radius: ");
 		ImGui::SameLine();
 		ImGui::InputFloat("##radius", &holderExtents.x);
+		break;
+	case Shape::Type::None:
+	case Shape::Type::Plane:
 		break;
 	}
 
@@ -1101,10 +1100,7 @@ void Editor::LoadFile(const fs::path& path)
 
 			Mesh::materials.resize(loader.materials.size() + 1);
 
-			std::for_each(std::execution::par_unseq, loader.objects.begin(), loader.objects.end(), [&](ObjectCreationData& data)
-				{ 
-					AddObject(data); 
-				});
+			std::for_each(std::execution::par_unseq, loader.objects.begin(), loader.objects.end(), [&](const ObjectCreationData& data) { AddObject(data); });
 			
 			std::vector<int> indices(loader.materials.size());
 			for (int i = 0; i < indices.size(); i++)
@@ -1118,8 +1114,11 @@ void Editor::LoadFile(const fs::path& path)
 					else if (std::holds_alternative<MaterialCreateInfo>(data))
 						Mesh::InsertMaterial(i + 1, Material::Create(std::get<1>(data)));
 				});
+
+			for (Animation& anim : loader.animations)
+				HalesiaEngine::GetInstance()->GetEngineCore().animationManager->AddAnimation(std::move(anim));
 		});
-	fut.get();
+	//fut.get();
 }
 
 void Editor::BuildProject()
