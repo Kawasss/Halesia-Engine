@@ -100,35 +100,27 @@ Window::Window(const Window::CreateInfo& createInfo)
 
 void Window::ApplyWindowMode()
 {
-	HMONITOR monitor = MonitorFromWindow(hWindow, 0);
-
-	MONITORINFOEXA monitorInfo{};
-	monitorInfo.cbSize = sizeof(monitorInfo);
-	if (!GetMonitorInfoA(monitor, &monitorInfo))
-		throw std::runtime_error("Failed to fetch relevant monitor info");
-
-	int maxWidth  = abs(monitorInfo.rcMonitor.left - monitorInfo.rcMonitor.right);
-	int maxHeight = abs(monitorInfo.rcMonitor.top - monitorInfo.rcMonitor.bottom);
-
-	coordinates.x = monitorInfo.rcMonitor.left;
-	coordinates.y = monitorInfo.rcMonitor.top;
+	Monitor monitor = GetCurrentMonitor();
+	
+	coordinates.x = monitor.x;
+	coordinates.y = monitor.y;
 
 	if (mode == Mode::BorderlessWindowed)
 	{
-		size.x = maxWidth;
-		size.y = maxHeight;
+		size.x = monitor.width;
+		size.y = monitor.height;
 
 		SetWindowLongPtrA(hWindow, GWL_STYLE, BORDERLESS_WINDOWED);
-		if (SetWindowPos(hWindow, NULL, 0, 0, size.x, size.y, SWP_FRAMECHANGED) == 0)
+		if (SetWindowPos(hWindow, NULL, coordinates.x, coordinates.y, size.x, size.y, SWP_SHOWWINDOW) == 0)
 			throw std::runtime_error("Failed to resize the window to borderless mode: " + WinGetLastErrorAsString());
 	}
 	else if (mode == Mode::Windowed)
 	{
-		size.x = maxWidth / 2;
-		size.y = maxHeight / 2;
+		size.x = monitor.width / 2;
+		size.y = monitor.height / 2;
 
 		SetWindowLongPtrA(hWindow, GWL_STYLE, WS_OVERLAPPEDWINDOW);
-		if (SetWindowPos(hWindow, NULL, coordinates.x + size.x / 2, coordinates.y + size.y / 2, size.x, size.y, SWP_FRAMECHANGED) == 0)
+		if (SetWindowPos(hWindow, NULL, coordinates.x + size.x / 2, coordinates.y + size.y / 2, size.x, size.y, SWP_SHOWWINDOW) == 0)
 			throw std::runtime_error("Failed to resize the window to windowed mode: " + WinGetLastErrorAsString());
 	}
 	events |= EVENT_VISIBILITY_CHANGE;
@@ -239,12 +231,30 @@ std::string_view Window::ModeToString(Window::Mode mode)
 	return "Unknown";
 }
 
+Monitor Window::GetCurrentMonitor() const
+{
+	HMONITOR monitor = ::MonitorFromWindow(hWindow, MONITOR_DEFAULTTOPRIMARY);
+
+	MONITORINFO info{};
+	info.cbSize = sizeof(info);
+	BOOL _ = GetMonitorInfoA(monitor, &info); // should not fail so dont check it
+
+	Monitor ret{};
+	ret.x = info.rcMonitor.left;
+	ret.y = info.rcMonitor.top;
+
+	ret.width  = info.rcMonitor.right - info.rcMonitor.left;
+	ret.height = info.rcMonitor.bottom - info.rcMonitor.top;
+
+	return ret;
+}
+
 void Window::HandleEvents()
 {
 	if (events & EVENT_MODE_CHANGE)
 		ApplyWindowMode();
 	if (events & EVENT_RESIZE)
-		SetWindowPos(hWindow, NULL, coordinates.x, coordinates.y, size.x, size.y, SWP_FRAMECHANGED);
+		SetWindowPos(hWindow, NULL, coordinates.x, coordinates.y, size.x, size.y, SWP_SHOWWINDOW);
 	if (events & EVENT_CURSOR_CHANGE)
 		ShowCursor(lockCursor);
 	if (events & EVENT_VISIBILITY_CHANGE)
@@ -293,8 +303,20 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM 
 		break;
 
 	case WM_MOVE:
-		window->coordinates.x = LOWORD(lParam);
-		window->coordinates.y = HIWORD(lParam);
+		if (window->mode == Mode::Windowed)
+		{
+			window->coordinates.x = LOWORD(lParam);
+			window->coordinates.y = HIWORD(lParam);
+		}
+		else
+		{
+			Monitor monitor = window->GetCurrentMonitor();
+
+			window->coordinates.x = monitor.x;
+			window->coordinates.y = monitor.y;
+
+			window->SetWidthAndHeight(monitor.width, monitor.height);
+		}
 		break;
 
 	case WM_MOUSEMOVE: // when the cursor has moved

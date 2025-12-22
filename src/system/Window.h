@@ -3,6 +3,12 @@
 #include <string>
 #include <map>
 
+struct Monitor
+{
+	int x, y;
+	uint32_t width, height;
+};
+
 class Window
 {
 public:
@@ -103,6 +109,8 @@ public:
 
 	HWND GetHandle()        const { return hWindow; }
 	HINSTANCE GetInstance() const { return hInstance; }
+
+	Monitor GetCurrentMonitor() const;
 
 	void SetWidth(int value);
 	void SetHeight(int value);
