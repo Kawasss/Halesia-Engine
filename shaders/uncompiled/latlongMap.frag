@@ -119,7 +119,7 @@ void main()
 		adjV = coord*coord;
 	}
     
-    vec3 viewPos = viewPosBase + sceneData.camPosition * 0.01;
+    vec3 viewPos = viewPosBase + sceneData.camPosition * 0.000001;
 
     float height = length(viewPos);
     vec3 up = viewPos / height;

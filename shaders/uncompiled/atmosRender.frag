@@ -106,7 +106,7 @@ void main()
     vec2 UvCoord = uvCoord;
     UvCoord.y = 1.0 - UvCoord.y;
 
-    vec3 viewPos = viewPosBase + sceneData.camPosition * 0.01;
+    vec3 viewPos = viewPosBase + sceneData.camPosition * 0.000001;
 
     const vec2 size = sceneData.viewportSize;
 
