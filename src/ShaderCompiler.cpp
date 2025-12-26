@@ -37,6 +37,17 @@ static bool StringIsValidInteger(const std::string_view & str)
 	return true;
 }
 
+static std::optional<int> StringToInt(const std::string_view& str)
+{
+	const char* beg = &str[0];
+	const char* end = &str[str.size() - 1] + 1;
+
+	int ret = 0;
+	std::from_chars_result res = std::from_chars(beg, end, ret);
+
+	return res.ec == std::errc{} ? ret : std::optional<int>();
+}
+
 std::expected<CompiledShader, bool> ShaderCompiler::Compile(const std::string_view& file)
 {
 	if (!fs::exists(file))
@@ -51,7 +62,7 @@ std::expected<CompiledShader, bool> ShaderCompiler::Compile(const std::string_vi
 	return ret;
 }
 
-void ShaderCompiler::CreateSpirvFile(const std::filesystem::path& shader)
+void ShaderCompiler::CreateSpirvFile(const fs::path& shader)
 {
 	if (SpirvIsOutdated(shader))
 		CallCompiler(shader);
@@ -61,12 +72,12 @@ std::vector<uint32_t> ShaderCompiler::GetExternalSetsFromSource(const fs::path& 
 {
 	std::vector<uint32_t> ret;
 	std::ifstream stream(file);
-	while (true)
-	{
-		if (stream.eof())
-			break;
 
-		std::string line;
+	std::string line;
+
+	while (!stream.eof())
+	{
+		line.clear();
 		stream >> line;
 
 		if (!StringStartsWith(line, "DECLARE_EXTERNAL_SET(") || line.back() != ')') // "DECLARE_EXTERNAL_SET(...)" must be the only thing in that line
@@ -78,10 +89,14 @@ std::vector<uint32_t> ShaderCompiler::GetExternalSetsFromSource(const fs::path& 
 		if (begin >= end)
 			continue;
 
-		std::string indexString = line.substr(begin, end - begin);
+		std::string indexString = line.substr(begin, end - begin); // cast it to a string_view /first/, and then take the substring, since the substr function then returns a string_view instead of a heap-allocated string
 
-		if (StringIsValidInteger(indexString))
-			ret.push_back(std::stoi(indexString));
+		std::optional<int> index = StringToInt(indexString);
+		
+		if (index.has_value())
+			ret.push_back(*index);
+		else
+			Console::WriteLine("Found invalid external set index in line \"{}\" in file {}", Console::Severity::Error, line, file.string());
 	}
 	return ret;
 }
