@@ -45,7 +45,7 @@ static std::optional<int> StringToInt(const std::string_view& str)
 	int ret = 0;
 	std::from_chars_result res = std::from_chars(beg, end, ret);
 
-	return res.ec == std::errc{} ? ret : std::optional<int>();
+	return res.ec == std::errc{} && res.ptr == end ? ret : std::optional<int>();
 }
 
 std::expected<CompiledShader, bool> ShaderCompiler::Compile(const std::string_view& file)
