@@ -101,6 +101,9 @@ namespace vvm
 	extern void* MapBuffer(Buffer buffer, VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE, VkMemoryMapFlags flags = 0);
 	extern void UnmapBuffer(Buffer buffer);
 
+	extern size_t GetBlockCount();
+	extern size_t GetAllocatedByteCount();
+
 	extern void ForceDestroy();
 
 	extern void Init();

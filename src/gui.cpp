@@ -478,8 +478,15 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 
 		Vulkan::Context context = Vulkan::GetContext();
 		VkPhysicalDeviceProperties properties = context.physicalDevice.Properties();
+
+		size_t total   = Vulkan::allocatedMemory;
+		size_t managed = vvm::GetAllocatedByteCount();
+
 		ImGui::Text("GPU: %s   VRAM: %i MB", properties.deviceName, context.physicalDevice.VRAM() / 1024ULL / 1024ULL);
-		ImGui::Text("Allocated VRAM: %I64u MB", Vulkan::allocatedMemory / 1024ULL / 1024ULL);
+		ImGui::Text("Allocated VRAM: %I64u MB", total / 1024ULL / 1024ULL);
+
+		ImGui::Text("managed:   %I64u MB over %I64u blocks", managed / 1024ULL / 1024ULL, vvm::GetBlockCount());
+		ImGui::Text("unmanaged: %I64u MB", (total - managed) / 1024ULL / 1024ULL);
 		
 		std::map<std::string, uint64_t> timestamps = core.renderer->GetTimestamps();
 

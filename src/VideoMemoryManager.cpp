@@ -320,8 +320,8 @@ void* vvm::MapBuffer(Buffer buffer, VkDeviceSize offset, VkDeviceSize size, VkMe
 	uint64_t handle = reinterpret_cast<uint64_t>(buffer.Get());
 	offset += block->segments[handle].begin; // can also check for incorrect offsets here
 
-	char* data = reinterpret_cast<char*>(block->mapped);
-	return reinterpret_cast<void*>(data + offset); // add the offset afterwards, since its the entire block thats mapped and not just this instance
+	char* data = static_cast<char*>(block->mapped);
+	return static_cast<void*>(data + offset); // add the offset afterwards, since its the entire block thats mapped and not just this instance
 }
 
 void vvm::UnmapBuffer(Buffer buffer)
@@ -361,6 +361,25 @@ void vvm::ForceDestroy()
 	{
 		delete block;
 	}
+}
+
+size_t vvm::GetBlockCount()
+{
+	win32::CriticalLockGuard guard(core->blockGuard);
+	return core->blocks.size();
+}
+
+size_t vvm::GetAllocatedByteCount()
+{
+	size_t ret = 0;
+
+	win32::CriticalLockGuard guard(core->blockGuard);
+	for (const vvm::MemoryBlock* block : core->blocks)
+	{
+		ret += block->size;
+	}
+
+	return ret;
 }
 
 static vvm::DbgMemoryBlock ConvertMemoryBlock(const vvm::MemoryBlock* memoryBlock)
