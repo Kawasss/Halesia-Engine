@@ -80,10 +80,13 @@ void AnimationManager::ComputeAnimations(float delta)
 void AnimationManager::ApplyAnimations(VkCommandBuffer commandBuffer)
 {
 	win32::CriticalLockGuard guard(section);
-	if (disable)
+	if (true) // disable
 	{
 		VkBufferCopy copy{};
 		copy.size = Renderer::g_defaultVertexBuffer.GetSize() * sizeof(Vertex);
+
+		if (copy.size == 0)
+			return;
 
 		vkCmdCopyBuffer(commandBuffer, Renderer::g_defaultVertexBuffer.GetBufferHandle(), Renderer::g_vertexBuffer.GetBufferHandle(), 1, &copy);
 		return;

@@ -9,12 +9,12 @@
 #include "Framebuffer.h"
 #include "Buffer.h"
 #include "Light.h"
+#include "SkyPipeline.h"
 
 class GraphicsPipeline;
 class ComputeShader;
 class TopLevelAccelerationStructure;
 class RayTracingPipeline;
-class Skybox;
 
 class DeferredPipeline : public RenderPipeline
 {
@@ -26,8 +26,6 @@ public:
 	void Execute(const Payload& payload, const std::vector<MeshObject*>& objects) override;
 
 	void Resize(const Payload& payload) override;
-
-	void LoadSkybox(const std::string& path);
 
 	void ReloadShaders(const Payload& payload) override;
 
@@ -74,6 +72,9 @@ private:
 
 	void CopyDenoisedToRTGI(const CommandBuffer& cmdBuffer);
 
+	void StartSky(const Payload& payload);
+	void ResizeSky(const Payload& payload);
+
 	void PerformRayTracedRendering(const CommandBuffer& cmdBuffer, const Payload& payload);
 	void PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<MeshObject*>& objects);
 	void PerformSecondDeferred(const CommandBuffer& cmdBuffer, const Payload& payload);
@@ -81,8 +82,6 @@ private:
 	void CopyDeferredDepthToResultDepth(const CommandBuffer& cmdBuffer, const Payload& payload);
 
 	void RecreatePipelines(const Payload& payload);
-
-	Skybox* CreateNewSkybox(const std::string& path);
 
 	VkImageView GetPositionView()    { return framebuffer.GetViews()[0]; }
 	VkImageView GetAlbedoView()      { return framebuffer.GetViews()[1]; }
@@ -121,9 +120,9 @@ private:
 
 	std::unique_ptr<TopLevelAccelerationStructure> TLAS;
 
-	std::unique_ptr<Skybox> skybox;
-
 	std::array<std::vector<uint64_t>, FIF::FRAME_COUNT> processedMats;
+
+	SkyPipeline sky;
 
 	glm::mat4 prevView;
 	glm::mat4 prevProj;

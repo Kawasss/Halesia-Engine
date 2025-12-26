@@ -41,9 +41,8 @@ int main(int argc, char** argv)
 	Renderer*      renderer = instance->GetEngineCore().renderer;
 
 	DeferredPipeline* deferred = renderer->AddRenderPipeline<DeferredPipeline>("deferred"); // choose the deferred pipeline for rendering
-	deferred->LoadSkybox("textures/skybox/park.hdr");
 	
-	renderer->AddRenderPipeline<SkyPipeline>("atmosphere");
+	//renderer->AddRenderPipeline<SkyPipeline>("atmosphere");
 
 	instance->Run();
 	

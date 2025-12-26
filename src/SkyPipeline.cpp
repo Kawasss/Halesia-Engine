@@ -21,18 +21,13 @@ constexpr uint32_t LATLONG_MAP_HEIGHT = LATLONG_MAP_WIDTH;
 
 void SkyPipeline::Start(const Payload& payload)
 {
-	CreateBuffers();
-
 	ReloadShaders(payload);
-	//Resize(payload);
 	CreateImages(payload.commandBuffer, payload.width, payload.height);
 }
 
 void SkyPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects)
 {
 	const CommandBuffer& cmdBuffer = payload.commandBuffer;
-
-	UpdateBuffers();
 
 	cmdBuffer.BeginDebugUtilsLabel("transmittance LUT");
 
@@ -70,11 +65,31 @@ void SkyPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>
 	EndRenderPass(cmdBuffer, latlongMap);
 
 	cmdBuffer.EndDebugUtilsLabel();
+	//cmdBuffer.BeginDebugUtilsLabel("rendering");
+
+	//BeginPresentationRenderPass(cmdBuffer, payload.renderer, payload.width, payload.height);
+
+	//payload.renderer->SetViewport(cmdBuffer, { payload.width, payload.height });
+
+	//atmospherePipeline->Bind(cmdBuffer);
+	//cmdBuffer.Draw(6, 1, 0, 0);
+
+	//cmdBuffer.EndRendering();
+
+	//cmdBuffer.EndDebugUtilsLabel();
+
+	transmittanceLUT.TransitionTo(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmdBuffer);
+	mscatteringLUT.TransitionTo(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmdBuffer);
+	latlongMap.TransitionTo(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmdBuffer);
+}
+
+void SkyPipeline::Render(const Payload& payload)
+{
+	const CommandBuffer& cmdBuffer = payload.commandBuffer;
+
 	cmdBuffer.BeginDebugUtilsLabel("rendering");
 
 	BeginPresentationRenderPass(cmdBuffer, payload.renderer, payload.width, payload.height);
-
-	//payload.renderer->SetViewport(cmdBuffer, { payload.width, payload.height });
 
 	atmospherePipeline->Bind(cmdBuffer);
 	cmdBuffer.Draw(6, 1, 0, 0);
@@ -82,10 +97,6 @@ void SkyPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>
 	cmdBuffer.EndRendering();
 
 	cmdBuffer.EndDebugUtilsLabel();
-
-	transmittanceLUT.TransitionTo(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmdBuffer);
-	mscatteringLUT.TransitionTo(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmdBuffer);
-	latlongMap.TransitionTo(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmdBuffer);
 }
 
 void SkyPipeline::BeginRenderPass(const CommandBuffer& cmdBuffer, Image& image)
@@ -180,13 +191,7 @@ void SkyPipeline::CreateImages(const CommandBuffer& cmdBuffer, uint32_t width, u
 	mscatteringLUT.TransitionTo(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmdBuffer);
 	latlongMap.TransitionTo(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, cmdBuffer);
 
-	mscatteringPipeline->BindImageToName("transmittanceLUT", transmittanceLUT.view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-	latlongPipeline->BindImageToName("transmittanceLUT", transmittanceLUT.view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	latlongPipeline->BindImageToName("mscatteringLUT", mscatteringLUT.view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-	atmospherePipeline->BindImageToName("transmittanceLUT", transmittanceLUT.view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-	atmospherePipeline->BindImageToName("latlongMap", latlongMap.view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	bindImagesToPipelines();
 }
 
 void SkyPipeline::CreatePipelines()
@@ -211,22 +216,28 @@ void SkyPipeline::CreatePipelines()
 	atmospherePipeline = std::make_unique<GraphicsPipeline>(createInfo);
 }
 
-void SkyPipeline::CreateBuffers()
-{
-
-}
-
-void SkyPipeline::UpdateBuffers()
-{
-
-}
-
 void SkyPipeline::bindImagesToPipelines()
 {
+	mscatteringPipeline->BindImageToName("transmittanceLUT", transmittanceLUT.view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
+	latlongPipeline->BindImageToName("transmittanceLUT", transmittanceLUT.view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	latlongPipeline->BindImageToName("mscatteringLUT", mscatteringLUT.view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+	atmospherePipeline->BindImageToName("transmittanceLUT", transmittanceLUT.view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	atmospherePipeline->BindImageToName("latlongMap", latlongMap.view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-void SkyPipeline::BindBufferToPipelines()
+VkImageView SkyPipeline::GetTransmittanceView() const
 {
+	return transmittanceLUT.view;
+}
 
+VkImageView SkyPipeline::GetMScatteringView() const
+{
+	return mscatteringLUT.view;
+}
+
+VkImageView SkyPipeline::GetLatLongView() const
+{
+	return latlongMap.view;
 }

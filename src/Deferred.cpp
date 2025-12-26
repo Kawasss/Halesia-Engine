@@ -109,6 +109,8 @@ void DeferredPipeline::Start(const Payload& payload)
 		TLAS.reset(TopLevelAccelerationStructure::Create());
 
 	CreateAndPreparePipelines(payload);
+
+	StartSky(payload);
 }
 
 void DeferredPipeline::CreateAndPreparePipelines(const Payload& payload)
@@ -162,6 +164,7 @@ void DeferredPipeline::RecreatePipelines(const Payload& payload)
 void DeferredPipeline::ReloadShaders(const Payload& payload)
 {
 	RecreatePipelines(payload);
+	sky.ReloadShaders(payload);
 }
 
 void DeferredPipeline::CreateRTGIPipeline(const Payload& payload)
@@ -171,9 +174,6 @@ void DeferredPipeline::CreateRTGIPipeline(const Payload& payload)
 	rtgiPipeline->BindBufferToName("instanceBuffer", instanceBuffer);
 	rtgiPipeline->BindBufferToName("vertexBuffer", Renderer::g_vertexBuffer.GetBufferHandle());
 	rtgiPipeline->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
-
-	if (skybox != nullptr)
-		rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void DeferredPipeline::CreateAndBindRTGI(const Payload& payload)
@@ -588,41 +588,9 @@ void DeferredPipeline::PushTAAConstants(const CommandBuffer& cmdBuffer, const Ca
 	spatialPipeline->PushConstant(cmdBuffer, sConstants, VK_SHADER_STAGE_COMPUTE_BIT);
 }
 
-Skybox* DeferredPipeline::CreateNewSkybox(const std::string& path)
-{
-	const Vulkan::Context& ctx = Vulkan::GetContext();
-
-	VkCommandPool pool = Vulkan::FetchNewCommandPool(ctx.graphicsIndex);
-	VkCommandBuffer cmdBuffer = Vulkan::BeginSingleTimeCommands(pool);
-
-	Skybox* ret = Skybox::ReadFromHDR(path, cmdBuffer);
-
-	Vulkan::EndSingleTimeCommands(ctx.graphicsQueue, cmdBuffer, pool);
-	Vulkan::YieldCommandPool(ctx.graphicsIndex, pool);
-
-	return ret;
-}
-
-void DeferredPipeline::LoadSkybox(const std::string& path)
-{
-	skybox.reset(CreateNewSkybox(path));
-
-	skybox->targetUsageFlags |= VK_IMAGE_USAGE_SAMPLED_BIT;
-	skybox->depthUsageFlags  |= VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-
-	uint32_t width = framebuffer.GetWidth(), height = framebuffer.GetHeight();
-	if (width != 0 && height != 0)
-		skybox->Resize(width, height);
-
-	skybox->targetView = GetAlbedoView();
-	skybox->depth = framebuffer.GetDepthView();
-
-	rtgiPipeline->BindImageToName("skybox", skybox->GetCubemap()->view, Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-}
-
 void DeferredPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects)
 {
-	//UpdateTextureBuffer(); // temp !!!
+	sky.Execute(payload, objects);
 
 	if (Renderer::canRayTrace)
 	{
@@ -641,9 +609,6 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<MeshObj
 
 	cmdBuffer.BeginDebugUtilsLabel("skybox");
 
-	//if (skybox != nullptr)
-	//	skybox->Draw(cmdBuffer, payload.camera);
-
 	cmdBuffer.EndDebugUtilsLabel();
 
 	if (Renderer::canRayTrace)
@@ -655,6 +620,8 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<MeshObj
 	PerformSecondDeferred(cmdBuffer, payload);
 
 	framebuffer.TransitionFromReadToWrite(cmdBuffer);
+
+	sky.Render(payload);
 }
 
 void DeferredPipeline::SetInstanceData(const std::vector<MeshObject*>& objects)
@@ -820,12 +787,10 @@ void DeferredPipeline::Resize(const Payload& payload)
 
 	BindGBuffers();
 
-	skybox->Resize(payload.width, payload.height);
-	skybox->targetView = GetAlbedoView();
-	skybox->depth = framebuffer.GetDepthView();
-
 	ResizeRTGI(payload.width, payload.height);
 	ResizeTAA(payload.width, payload.height);
+
+	ResizeSky(payload);
 }
 
 void DeferredPipeline::OnRenderingBufferResize(const Payload& payload)
@@ -834,9 +799,24 @@ void DeferredPipeline::OnRenderingBufferResize(const Payload& payload)
 	rtgiPipeline->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
 }
 
+void DeferredPipeline::StartSky(const Payload& payload)
+{
+	sky.Start(payload);
+}
+
+void DeferredPipeline::ResizeSky(const Payload& payload)
+{
+	sky.Resize(payload);
+
+	rtgiPipeline->BindImageToName("transmittanceLUT", sky.GetTransmittanceView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	rtgiPipeline->BindImageToName("latlongMap", sky.GetLatLongView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+}
+
 std::vector<RenderPipeline::IntVariable> DeferredPipeline::GetIntVariables()
 {
 	std::vector<RenderPipeline::IntVariable> ret;
+	ret.reserve(4);
+
 	ret.emplace_back("taa sample count", &maxSampleCountTAA);
 	ret.emplace_back("rtgi sample count", &rtgiSampleCount);
 	ret.emplace_back("rtgi bounce count", &rtgiBounceCount);
