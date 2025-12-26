@@ -528,8 +528,8 @@ void Texture::GeneratePlaceholderTextures()
 {
 	placeholderAlbedo = LoadFromForeignFormat("textures/placeholderAlbedo.png", Type::Albedo, false);
 	placeholderNormal = LoadFromForeignFormat("textures/placeholderNormal.png", Type::Normal, false);
-	placeholderMetallic = LoadFromForeignFormat("textures/black.png", Type::Metallic, false);
-	placeholderRoughness = LoadFromForeignFormat("textures/black.png", Type::Roughness, false);
+	placeholderMetallic = LoadFromForeignFormat("textures/placeholderMetallic.png", Type::Metallic, false);
+	placeholderRoughness = LoadFromForeignFormat("textures/placeholderRoughness.png", Type::Roughness, false);
 	placeholderAmbientOcclusion = LoadFromForeignFormat("textures/white.png", Type::AmbientOcclusion, false);
 
 	placeholderAlbedo->AwaitGeneration();
