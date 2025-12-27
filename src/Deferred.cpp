@@ -80,6 +80,8 @@ constexpr uint32_t RTGI_RESOLUTION_UPSCALE = 1;
 
 void DeferredPipeline::Start(const Payload& payload)
 {
+	StartSky(payload);
+
 	std::array<VkFormat, GBUFFER_COUNT> formats =
 	{
 		GBUFFER_POSITION_FORMAT,
@@ -109,8 +111,6 @@ void DeferredPipeline::Start(const Payload& payload)
 		TLAS.reset(TopLevelAccelerationStructure::Create());
 
 	CreateAndPreparePipelines(payload);
-
-	StartSky(payload);
 }
 
 void DeferredPipeline::CreateAndPreparePipelines(const Payload& payload)
@@ -163,8 +163,8 @@ void DeferredPipeline::RecreatePipelines(const Payload& payload)
 
 void DeferredPipeline::ReloadShaders(const Payload& payload)
 {
-	RecreatePipelines(payload);
 	sky.ReloadShaders(payload);
+	RecreatePipelines(payload);
 }
 
 void DeferredPipeline::CreateRTGIPipeline(const Payload& payload)
@@ -174,6 +174,9 @@ void DeferredPipeline::CreateRTGIPipeline(const Payload& payload)
 	rtgiPipeline->BindBufferToName("instanceBuffer", instanceBuffer);
 	rtgiPipeline->BindBufferToName("vertexBuffer", Renderer::g_vertexBuffer.GetBufferHandle());
 	rtgiPipeline->BindBufferToName("indexBuffer", Renderer::g_indexBuffer.GetBufferHandle());
+
+	rtgiPipeline->BindImageToName("transmittanceLUT", sky.GetTransmittanceView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	rtgiPipeline->BindImageToName("latlongMap", sky.GetLatLongView(), Renderer::defaultSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
 void DeferredPipeline::CreateAndBindRTGI(const Payload& payload)

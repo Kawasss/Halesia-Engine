@@ -9,44 +9,12 @@
 
 #include "system/System.h"
 
+#include "StrUtil.h"
+
 constexpr std::string_view BASE_SPIRV_DIRECTORY = "shaders/spirv/"; // the location where all compiled shaders are stored / cached
 constexpr std::string_view SPIRV_FILE = ".spv";
 
 namespace fs = std::filesystem;
-
-static bool StringStartsWith(const std::string& str, const std::string_view& cmp)
-{
-	if (str.size() < cmp.size())
-		return false;
-
-	for (int i = 0; i < cmp.size(); i++)
-	{
-		if (str[i] != cmp[i])
-			return false;
-	}
-	return true;
-}
-
-static bool StringIsValidInteger(const std::string_view & str)
-{
-	for (char ch : str)
-	{
-		if (!std::isdigit(ch))
-			return false;
-	}
-	return true;
-}
-
-static std::optional<int> StringToInt(const std::string_view& str)
-{
-	const char* beg = &str[0];
-	const char* end = &str[str.size() - 1] + 1;
-
-	int ret = 0;
-	std::from_chars_result res = std::from_chars(beg, end, ret);
-
-	return res.ec == std::errc{} && res.ptr == end ? ret : std::optional<int>();
-}
 
 std::expected<CompiledShader, bool> ShaderCompiler::Compile(const std::string_view& file)
 {
@@ -79,8 +47,8 @@ std::vector<uint32_t> ShaderCompiler::GetExternalSetsFromSource(const fs::path& 
 	{
 		line.clear();
 		stream >> line;
-
-		if (!StringStartsWith(line, "DECLARE_EXTERNAL_SET(") || line.back() != ')') // "DECLARE_EXTERNAL_SET(...)" must be the only thing in that line
+		
+		if (!line.starts_with("DECLARE_EXTERNAL_SET(") || line.back() != ')') // "DECLARE_EXTERNAL_SET(...)" must be the only thing in that line
 			continue;
 
 		size_t begin = line.find('(') + 1;
@@ -91,7 +59,7 @@ std::vector<uint32_t> ShaderCompiler::GetExternalSetsFromSource(const fs::path& 
 
 		std::string indexString = line.substr(begin, end - begin); // cast it to a string_view /first/, and then take the substring, since the substr function then returns a string_view instead of a heap-allocated string
 
-		std::optional<int> index = StringToInt(indexString);
+		std::optional<uint32_t> index = strutil::TryStringToUInt(indexString);
 		
 		if (index.has_value())
 			ret.push_back(*index);

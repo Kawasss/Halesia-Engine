@@ -2,6 +2,7 @@
 #include <string_view>
 #include <vector>
 #include <expected>
+#include <filesystem>
 
 namespace IO
 {
@@ -12,5 +13,7 @@ namespace IO
 	};
 
 	extern void WriteFile(const std::string_view& path);
+	extern std::expected<std::vector<char>, bool> ReadFile(const std::string& path, ReadOptions options = ReadOptions::AddNullTerminator);
 	extern std::expected<std::vector<char>, bool> ReadFile(const std::string_view& path, ReadOptions options = ReadOptions::AddNullTerminator);
+	extern std::expected<std::vector<char>, bool> ReadFile(const std::filesystem::path& path, ReadOptions options = ReadOptions::AddNullTerminator);
 }

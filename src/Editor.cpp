@@ -1054,9 +1054,6 @@ void Editor::ShowRenderPipelines()
 		ImGui::Checkbox(("active" + identifier).c_str(), &pipeline->active);
 
 		std::vector<RenderPipeline::IntVariable> vars = pipeline->GetIntVariables();
-		if (vars.empty())
-			continue;
-
 		for (const RenderPipeline::IntVariable& var : vars)
 		{
 			std::string full = std::string(var.name) + ":##" + name;

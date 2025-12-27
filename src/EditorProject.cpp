@@ -4,7 +4,11 @@
 #include "core/Console.h"
 #include "core/EditorProject.h"
 #include "core/Scene.h"
+
 #include "io/SceneWriter.h"
+#include "io/IO.h"
+
+#include "StrUtil.h"
 
 namespace fs = std::filesystem;
 
@@ -20,9 +24,12 @@ std::expected<EditorProject, EditorProject::Result> EditorProject::CreateInFile(
 
 	fs::path file = EnsureCorrectExtension(path);
 	std::ofstream stream(file, std::ios::beg);
-	stream << VERSION;
+	stream 
+		<< "version=" << VERSION << "\r\n"
+		<< "workingDirectory=" << "\r\n"
+		<< "buildDirectory=" << ".halesia/\r\n";
 
-	EditorProject ret(file);
+	EditorProject ret(file, "", file.parent_path() / ".halesia");
 
 	return ret;
 }
@@ -36,17 +43,15 @@ std::expected<EditorProject, EditorProject::Result> EditorProject::LoadFromFile(
 	if (!file.has_extension() || file.extension() != EXTENSION)
 		Console::WriteLine("given editor project does not have the correct extension: expected \"{}\", but got \"{}\"", Console::Severity::Warning, EXTENSION, file.extension().string());
 
-	std::ifstream stream(file);
-
-	uint32_t version = 0;
-	stream >> version;
-
-	if (version != VERSION)
+	std::vector<char> data = *IO::ReadFile(path);
+	UncheckedFile raw = ProcessData(data.data());
+	
+	if (raw.version != VERSION)
 	{
-		Console::WriteLine("wrong version of editor project detected: expected {}, but got {}", Console::Severity::Error, VERSION, version);
+		Console::WriteLine("wrong version of editor project detected: expected {}, but got {}", Console::Severity::Error, VERSION, raw.version);
 		return std::unexpected(Result::WrongVersion);
 	}
-	return EditorProject(path);
+	return EditorProject(path, raw.workingDirectory, raw.buildDirectory);
 }
 
 static std::string GetFileNameWithoutExtension(const fs::path& file)
@@ -58,11 +63,14 @@ static std::string GetFileNameWithoutExtension(const fs::path& file)
 	return ret;
 }
 
-EditorProject::EditorProject(const fs::path& file)
+EditorProject::EditorProject(const fs::path& file, const fs::path& workingDir, const fs::path& buildDir)
 {
-	root = file.parent_path();
+	fs::path base = file.parent_path();
+
 	fileName = GetFileNameWithoutExtension(file);
-	buildDirectory = root / ".halesia";
+	root = base / workingDir;
+	buildDirectory = base / buildDir;
+
 	if (!fs::exists(buildDirectory))
 		CreateBuildDirectory();
 }
@@ -82,7 +90,55 @@ fs::path EditorProject::GetBuildFile() const
 	return buildDirectory / std::format("build_{}.dat", fileName);
 }
 
-const fs::path& EditorProject::GetRootDirectory() const
+bool EditorProject::UncheckedFile::AssignValueToIdentifier(const std::string_view& identifier, const std::string_view& value)
+{
+	if (identifier == "version")
+	{
+		std::optional<uint32_t> raw = strutil::TryStringToUInt(value);
+		if (raw.has_value())
+			version = *raw;
+
+		return raw.has_value();
+	}
+	else if (identifier == "workingDirectory")
+	{
+		workingDirectory = value;
+		return true;
+	}
+	else if (identifier == "buildDirectory")
+	{
+		buildDirectory = value;
+		return true;
+	}
+
+	return false;
+}
+
+EditorProject::UncheckedFile EditorProject::ProcessData(const std::string_view& data)
+{
+	UncheckedFile ret{};
+
+	for (size_t i = 0; i != std::string_view::npos; i = data.find("\r\n", i))
+	{
+		if (i != 0) // skip over the \r\n
+			i += 2;
+
+		size_t endLine = std::min(data.find("\r\n", i), data.size()); // for loop has to find this endline twice but oh well
+		std::string_view line = data.substr(i, endLine - i);
+
+		size_t divider = line.find('=');
+		std::string_view identifier = line.substr(0, divider);
+		std::string_view value = line.substr(divider + 1);
+
+		bool success = ret.AssignValueToIdentifier(identifier, value);
+		if (!success)
+			Console::WriteLine("Failed to assign value \"{}\" to identifier \"{}\"", Console::Severity::Error, value, identifier);
+	}
+
+	return ret;
+}
+
+const fs::path& EditorProject::GetWorkingDirectory() const
 {
 	return root;
 }

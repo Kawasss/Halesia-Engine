@@ -9,9 +9,8 @@ namespace IO
 
 	}
 
-	std::expected<std::vector<char>, bool> ReadFile(const std::string_view& path, ReadOptions options)
+	static std::expected<std::vector<char>, bool> ReadFromFileObject(std::ifstream& file, ReadOptions options)
 	{
-		std::ifstream file(path.data(), std::ios::ate | std::ios::binary);
 		if (!file.is_open())
 			return std::unexpected(false);
 
@@ -22,7 +21,7 @@ namespace IO
 		buffer.reserve(fileSize + extraSize);
 
 		buffer.resize(fileSize);
-		
+
 		file.seekg(0);
 		file.read(buffer.data(), fileSize);
 
@@ -31,5 +30,22 @@ namespace IO
 
 		file.close();
 		return buffer;
+	}
+
+	std::expected<std::vector<char>, bool> ReadFile(const std::string& path, ReadOptions options)
+	{
+		return ReadFile(std::string_view(path), options);
+	}
+
+	std::expected<std::vector<char>, bool> ReadFile(const std::string_view& path, ReadOptions options)
+	{
+		std::ifstream file(path.data(), std::ios::ate | std::ios::binary);
+		return ReadFromFileObject(file, options);
+	}
+
+	std::expected<std::vector<char>, bool> ReadFile(const std::filesystem::path& path, ReadOptions options)
+	{
+		std::ifstream file(path, std::ios::ate | std::ios::binary);
+		return ReadFromFileObject(file, options);
 	}
 }

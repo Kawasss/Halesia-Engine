@@ -229,6 +229,7 @@
     <ClCompile Include="src\Skybox.cpp" />
     <ClCompile Include="src\Pipeline.cpp" />
     <ClCompile Include="src\SkyPipeline.cpp" />
+    <ClCompile Include="src\StrUtil.cpp" />
     <ClCompile Include="src\Surface.cpp" />
     <ClCompile Include="src\Swapchain.cpp" />
     <ClCompile Include="src\System.cpp" />
@@ -349,6 +350,7 @@
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\ResourceManager.h" />
     <ClInclude Include="src\scripting\Script.h" />
+    <ClInclude Include="src\StrUtil.h" />
     <ClInclude Include="src\system\CriticalSection.h" />
     <ClInclude Include="src\system\FileDialog.h" />
     <ClInclude Include="src\system\Input.h" />
