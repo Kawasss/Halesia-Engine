@@ -39,7 +39,4 @@ public:
 	static void ShowCameraData(CameraObject* camera);
 
 	static void ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePercentLow);
-
-	static void ShowInputVector(glm::vec3& val, const std::array<std::string_view, 3>& labels);
-	static void ShowInputVector(glm::vec2& val, const std::array<std::string_view, 2>& labels);
 };

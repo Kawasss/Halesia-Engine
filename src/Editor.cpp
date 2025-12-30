@@ -867,7 +867,7 @@ void Editor::ShowObjectLight(LightObject* light)
 
 	ImGui::Text("color:        ");
 	ImGui::SameLine();
-	GUI::ShowInputVector(light->color, { "##color_r", "##color_g", "##color_b" });
+	ImGui::InputFloat3("##color", glm::value_ptr(light->color));
 }
 
 void Editor::ShowObjectRigidBody(RigidBody& rigid)
@@ -913,7 +913,7 @@ void Editor::ShowRigidBodyShape(RigidBody& rigid)
 	case Shape::Type::Box:
 		ImGui::Text("Extents:");
 		ImGui::SameLine();
-		GUI::ShowInputVector(holderExtents, { "##extentsx", "##extentsy", "##extentsz" });
+		ImGui::InputFloat3("##extents", glm::value_ptr(holderExtents));
 		break;
 	case Shape::Type::Capsule:
 		ImGui::Text("Height: ");

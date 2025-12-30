@@ -54,30 +54,6 @@ void GUI::EndGUIWindow()
 	ImGui::End();
 }
 
-void GUI::ShowInputVector(glm::vec3& val, const std::array<std::string_view, 3>& labels)
-{
-	float width = ImGui::CalcTextSize("w").x;
-
-	ImGui::PushItemWidth(width * 8);
-	ImGui::InputFloat(labels[0].data(), &val.x);
-	ImGui::SameLine();
-	ImGui::InputFloat(labels[1].data(), &val.y);
-	ImGui::SameLine();
-	ImGui::InputFloat(labels[2].data(), &val.z);
-	ImGui::PopItemWidth();
-}
-
-void GUI::ShowInputVector(glm::vec2& val, const std::array<std::string_view, 2>& labels)
-{
-	float width = ImGui::CalcTextSize("w").x;
-
-	ImGui::PushItemWidth(width * 8);
-	ImGui::InputFloat(labels[0].data(), &val.x);
-	ImGui::SameLine();
-	ImGui::InputFloat(labels[1].data(), &val.y);
-	ImGui::PopItemWidth();
-}
-
 void GUI::ShowWindowData(Window* window)
 {
 	static std::array<std::string, 2> modes = { "WINDOW_MODE_WINDOWED", "WINDOW_MODE_BORDERLESS_WINDOWED" };
