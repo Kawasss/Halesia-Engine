@@ -141,14 +141,14 @@ void GUI::ShowObjectTransform(Transform& transform)
 {
 	ImGui::Text("position:");
 	ImGui::SameLine();
-	ShowInputVector(transform.position, { "##posx", "##posy", "##posz" });
+	ImGui::InputFloat3("##pos", glm::value_ptr(transform.position));
 
 	glm::vec3 rot = glm::eulerAngles(transform.rotation);
 	rot = glm::degrees(rot);
 
 	ImGui::Text("rotation:");
 	ImGui::SameLine();
-	ShowInputVector(rot, { "##rotx", "##roty", "##rotz" });
+	ImGui::InputFloat3("##rot", glm::value_ptr(transform.rotation));
 	
 	rot = glm::radians(rot);
 
@@ -156,7 +156,7 @@ void GUI::ShowObjectTransform(Transform& transform)
 
 	ImGui::Text("scale:   ");
 	ImGui::SameLine();
-	ShowInputVector(transform.scale, { "##scalex", "##scaley", "##scalez" });
+	ImGui::InputFloat3("##scale", glm::value_ptr(transform.scale));
 }
 
 void GUI::ShowDropdownMenu(const std::span<const std::string>& items, std::string& currentItem, int& currentIndex, const char* label)
@@ -238,61 +238,6 @@ void GUI::ShowDevConsoleContent()
 
 	if (Input::IsKeyPressed(VirtualKey::Return) && !result.empty()) // if enter is pressed place the input value into the optional variable
 		Console::InterpretCommand(result);
-}
-
-void GUI::ShowObjectTable(const std::vector<Object*>& objects)
-{
-	constexpr int columnCount = 9;
-	if (createWindow)
-		ImGui::Begin("object metadata");
-	ImGui::BeginTable("Object metadata", columnCount, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit);
-	ImGui::TableHeader("object metadata");
-
-	ImGui::TableNextRow();
-	ImGui::TableNextColumn();
-	ImGui::Text("name");
-	ImGui::TableNextColumn();
-	ImGui::Text("handle");
-	ImGui::TableNextColumn();
-	ImGui::Text("state");
-	ImGui::TableNextColumn();
-	ImGui::Text("has script");
-	ImGui::TableNextColumn();
-	ImGui::Text("finished loading");
-	ImGui::TableNextColumn();
-	ImGui::Text("position");
-	ImGui::TableNextColumn();
-	ImGui::Text("rotation");
-	ImGui::TableNextColumn();
-	ImGui::Text("scale");
-	for (int i = 0; i < objects.size(); i++)
-	{
-		Object* currentObj = objects[i];
-
-		glm::vec3 rot = glm::eulerAngles(currentObj->transform.rotation);
-
-		ImGui::TableNextRow();
-		ImGui::TableNextColumn();
-		ImGui::Text(currentObj->name.c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(std::to_string(currentObj->handle).c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(ObjectStateToString(currentObj->state).data());
-		ImGui::TableNextColumn();
-		ImGui::Text(currentObj->HasScript() ? "true" : "false");
-		ImGui::TableNextColumn();
-		ImGui::Text(currentObj->HasFinishedLoading() ? "true" : "false");
-		ImGui::TableNextColumn();
-		ImGui::Text(Vec3ToString(currentObj->transform.position).c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(Vec3ToString(rot).c_str());
-		ImGui::TableNextColumn();
-		ImGui::Text(Vec3ToString(currentObj->transform.scale).c_str());
-	}
-
-	ImGui::EndTable();
-	if (createWindow)
-		ImGui::End();
 }
 
 void GUI::ShowFPS(int FPS)

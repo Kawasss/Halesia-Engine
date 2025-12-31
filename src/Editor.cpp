@@ -572,8 +572,6 @@ void Editor::ShowMaterials()
 
 void Editor::ShowMenuBar() // add renderer variables here like taa sample count
 {
-	HalesiaEngine* engine = HalesiaEngine::GetInstance();
-
 	ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.02f, 0.02f, 0.02f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.02f, 0.02f, 0.02f, 1));
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
@@ -584,79 +582,108 @@ void Editor::ShowMenuBar() // add renderer variables here like taa sample count
 
 	if (ImGui::BeginMenu("file"))
 	{
-		if (ImGui::MenuItem("Load file")) loadFile = true;
-		if (ImGui::MenuItem("Save file")) save = true;
-
-		ImGui::Separator();
-
-		if (ImGui::MenuItem("Clear scene")) 
-			DestroyCurrentScene();
-
-		ImGui::Separator();
-
-		if (ImGui::MenuItem("Exit"))
-			HalesiaEngine::Exit();
-		ImGui::EndMenu();
+		ShowFileSubmenu();
 	}
 	if (ImGui::BeginMenu("view"))
 	{
-		if (ImGui::MenuItem("object metadata")) engine->showObjectData = !engine->showObjectData;
-		if (ImGui::MenuItem("window data"))     engine->showWindowData = !engine->showWindowData;
-		ImGui::EndMenu();
+		ShowViewSubmenu();
 	}
 	if (ImGui::BeginMenu("renderer"))
 	{
-		if (ImGui::BeginMenu("render mode"))
-		{
-			int count = static_cast<int>(RenderMode::ModeCount);
-			for (int i = 0; i < count; i++)
-			{
-				RenderMode mode = static_cast<RenderMode>(i);
-				std::string_view text = RenderModeToString(mode);
-				
-				if (ImGui::MenuItem(text.data()))
-					renderer->SetRenderMode(mode);
-			}
-			ImGui::EndMenu();
-		}
-		ImGui::Separator();
-		if (ImGui::MenuItem("show collision boxes")) Renderer::shouldRenderCollisionBoxes = !Renderer::shouldRenderCollisionBoxes;
-		ImGui::Separator();
-		ImGui::MenuItem("view statistics");
-		if (ImGui::MenuItem("show VRAM"))
-		{
-			showVram = !showVram;
-		}
-		ImGui::EndMenu();
+		ShowRendererSubmenu();
 	}
 	if (ImGui::BeginMenu("Add"))
 	{
-		if (ImGui::MenuItem("Object")) selectionData.show = true;
-		ImGui::EndMenu();
+		ShowAddSubmenu();
 	}
 	if (ImGui::BeginMenu("misc."))
 	{
-		if (ImGui::MenuItem("enable/disable UI"))
-		{
-			showUI = !showUI;
-			if (showUI)
-			{
-				renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
-				renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
-			}
-			else
-			{
-				renderer->SetViewportOffsets({ 0.0f, 0.0f });
-				renderer->SetViewportModifiers({ 1.0f, 1.0f });
-			}
-		}
-		ImGui::EndMenu();
+		ShowMiscSubmenu();
 	}
 
 	ImGui::EndMainMenuBar();
 
 	ImGui::PopStyleVar(2);
 	ImGui::PopStyleColor(3);
+}
+
+void Editor::ShowFileSubmenu()
+{
+	if (ImGui::MenuItem("Load file")) loadFile = true;
+	if (ImGui::MenuItem("Save file")) save = true;
+
+	ImGui::Separator();
+
+	if (ImGui::MenuItem("Clear scene"))
+		DestroyCurrentScene();
+
+	ImGui::Separator();
+
+	if (ImGui::MenuItem("Exit"))
+		HalesiaEngine::Exit();
+	ImGui::EndMenu();
+}
+
+void Editor::ShowViewSubmenu()
+{
+	HalesiaEngine* engine = HalesiaEngine::GetInstance();
+
+	if (ImGui::MenuItem("window data"))     
+		engine->showWindowData = !engine->showWindowData;
+
+	ImGui::EndMenu();
+}
+
+void Editor::ShowRendererSubmenu()
+{
+	if (ImGui::BeginMenu("render mode"))
+	{
+		int count = static_cast<int>(RenderMode::ModeCount);
+		for (int i = 0; i < count; i++)
+		{
+			RenderMode mode = static_cast<RenderMode>(i);
+			std::string_view text = RenderModeToString(mode);
+
+			if (ImGui::MenuItem(text.data()))
+				renderer->SetRenderMode(mode);
+		}
+		ImGui::EndMenu();
+	}
+	ImGui::Separator();
+	if (ImGui::MenuItem("show collision boxes")) Renderer::shouldRenderCollisionBoxes = !Renderer::shouldRenderCollisionBoxes;
+	ImGui::Separator();
+	ImGui::MenuItem("view statistics");
+	if (ImGui::MenuItem("show VRAM"))
+	{
+		showVram = !showVram;
+	}
+	ImGui::EndMenu();
+}
+
+void Editor::ShowAddSubmenu()
+{
+	if (ImGui::MenuItem("Object"))
+		selectionData.show = true;
+	ImGui::EndMenu();
+}
+
+void Editor::ShowMiscSubmenu()
+{
+	if (ImGui::MenuItem("enable/disable UI"))
+	{
+		showUI = !showUI;
+		if (showUI)
+		{
+			renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
+			renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
+		}
+		else
+		{
+			renderer->SetViewportOffsets({ 0.0f, 0.0f });
+			renderer->SetViewportModifiers({ 1.0f, 1.0f });
+		}
+	}
+	ImGui::EndMenu();
 }
 
 void Editor::ShowVRAM()
@@ -673,7 +700,7 @@ void Editor::ShowVRAM()
 		vvm::DbgMemoryBlock& block = blocks[i];
 		bool blockIsAtleast1kb = block.used >= 1024;
 
-		std::string blockName = std::format("mem_block {}%% ({} kb, {} {} used):", static_cast<int>(static_cast<float>(block.used) / block.size * 100), block.size / 1024, blockIsAtleast1kb ? block.used / 1024 : block.used, blockIsAtleast1kb ? "kb" : "b");
+		std::string blockName = std::format("mem_block {}%% ({} kb, {} {} used):", block.used / block.size * 100, block.size / 1024, blockIsAtleast1kb ? block.used / 1024 : block.used, blockIsAtleast1kb ? "kb" : "b");
 		ImGui::Text(blockName.c_str());
 		ImGui::SameLine();
 

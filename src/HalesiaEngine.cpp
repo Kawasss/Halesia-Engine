@@ -177,8 +177,6 @@ void HalesiaEngine::UpdateRenderer(float delta)
 
 	if (showAsyncTimes)
 		GUI::ShowPieGraph(asyncTimes, "Async Times (µs)");
-	if (showObjectData)
-		GUI::ShowObjectTable(core.scene->allObjects);
 	if (showWindowData)
 		GUI::ShowWindowData(core.window);
 
@@ -392,7 +390,6 @@ void HalesiaEngine::RegisterConsoleVars()
 	Console::AddCVar("showFPS",      &showFPS);
 	Console::AddCVar("playFrame",    &playOneFrame);
 	Console::AddCVar("showAsync",    &showAsyncTimes);
-	Console::AddCVar("showMetaData", &showObjectData);
 
 	Console::AddCVar("denoiseOutput", &Renderer::denoiseOutput);
 	Console::AddCVar("internalScale", &Renderer::internalScale);

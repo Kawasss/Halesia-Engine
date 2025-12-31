@@ -89,6 +89,12 @@ private:
 	void ShowMaterials();
 	void ShowVRAM();
 
+	void ShowFileSubmenu();
+	void ShowViewSubmenu();
+	void ShowRendererSubmenu();
+	void ShowAddSubmenu();
+	void ShowMiscSubmenu();
+
 	void StartRightBar();
 	void EndRightBar();
 

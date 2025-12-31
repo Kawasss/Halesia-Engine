@@ -9,10 +9,12 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/easing.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <string>
+#include <format>
 
-inline std::string Vec3ToString(glm::vec3 vec3)
+inline std::string Vec3ToString(const glm::vec3& vec)
 {
-	return std::to_string(vec3.x) + std::to_string(vec3.y) + std::to_string(vec3.z);
+	return std::format("{}, {}, {}", vec.x, vec.y, vec.z);
 }

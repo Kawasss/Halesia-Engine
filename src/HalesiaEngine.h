@@ -67,7 +67,6 @@ public:
 	bool playOneFrame   = false;                                  //!< if and the game is paused and this is true, then one frame of game logic will be run
 	bool showFPS        = false;                                  //!< shows the games estimated fps (1 / current_frame_time)
 	bool showAsyncTimes = false;                                  //!< shows the activity of all threads used in one frame
-	bool showObjectData = false;                                  //!< shows all metadata of all objects in the scene
 	bool showWindowData = false;                                  //!< shows all data related to the games window
 
 private:

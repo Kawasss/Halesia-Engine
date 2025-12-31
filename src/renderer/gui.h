@@ -24,7 +24,6 @@ public:
 	static void ShowDebugWindow(Profiler* profiler);
 	static void ShowDevConsole();
 	static void ShowDevConsoleContent();
-	static void ShowObjectTable(const std::vector<Object*>& objects);
 	static void ShowFPS(int fps);
 	static void ShowGraph(const std::vector<uint64_t>& buffer, const char* label, float max = 100.0f);
 	static void ShowGraph(const std::vector<float>& buffer, const char* label, float max = 100.0f);
