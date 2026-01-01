@@ -61,6 +61,32 @@ struct MaterialVisitor
 	int index;
 };
 
+void Editor::ProgressBar::Progress(float add)
+{
+	progress.fetch_add(add);
+}
+
+void Editor::ProgressBar::Start()
+{
+	progress.store(0.0f);
+	isRunning.store(true);
+}
+
+void Editor::ProgressBar::Stop()
+{
+	isRunning.store(false);
+}
+
+float Editor::ProgressBar::GetProgress()
+{
+	return progress.load();
+}
+
+bool Editor::ProgressBar::IsRunning()
+{
+	return isRunning.load();
+}
+
 EditorCamera::EditorCamera(Window* pWindow) : CameraObject()
 {
 	window = pWindow;
@@ -376,7 +402,7 @@ void Editor::ShowUI()
 	ShowGizmo();
 	ShowDefaultRightClick();
 
-	if (progressBar.isRunning.load())
+	if (progressBar.IsRunning())
 		ShowProgressBar();
 }
 
@@ -791,7 +817,7 @@ void Editor::ShowProgressBar()
 {
 	static constexpr float PADDING = 5.0f;
 
-	float percentage = progressBar.progress.load();
+	float percentage = progressBar.GetProgress();
 
 	ImGuiStyle& style = ImGui::GetStyle();
 
@@ -1164,40 +1190,56 @@ void Editor::LoadFile(const fs::path& path)
 		{
 			SceneLoader loader(path.string());
 
-			progressBar.isRunning.store(true);
+			progressBar.Start();
 			loader.LoadScene();
 
 			const int itemsToLoad = loader.objects.size() + loader.materials.size() + loader.animations.size();
-			const float progressPer = 1.0f / itemsToLoad;
+			const float progressStep = 1.0f / itemsToLoad;
 
-			Mesh::materials.resize(loader.materials.size() + 1);
+			Mesh::materials.resize(loader.materials.size() + 1); // resize the materials ahead of time, even if they arent loaded yet because the material indices of the meshes will be inaccurate
 
-			std::for_each(std::execution::par_unseq, loader.objects.begin(), loader.objects.end(), 
-				[&](const ObjectCreationData& data) 
-				{ 
-					AddObject(data);
-					progressBar.progress.fetch_add(progressPer);
-				});
+			LoadObjectsParallel(loader.objects, progressStep);
+			LoadMaterialsParallel(loader.materials, progressStep);
+			LoadAnimationsParallel(loader.animations, progressStep);
+
+			progressBar.Stop();
 			
-			std::vector<int> indices(loader.materials.size());
-			for (int i = 0; i < indices.size(); i++)
-				indices[i] = i;
-			
-			std::for_each(std::execution::par, indices.begin(), indices.end(), 
-				[&](int i)
-				{
-					std::visit(MaterialVisitor(i + 1), loader.materials[i]);
-					progressBar.progress.fetch_add(progressPer);
-				});
-
-			for (Animation& anim : loader.animations)
-			{
-				HalesiaEngine::GetInstance()->GetEngineCore().animationManager->AddAnimation(std::move(anim));
-				progressBar.progress.fetch_add(progressPer);
-			}
-			progressBar.isRunning.store(false);
 		});
 	//fut.get();
+}
+
+void Editor::LoadObjectsParallel(const std::span<const ObjectCreationData>& datas, float progressStep)
+{
+	std::for_each(std::execution::par_unseq, datas.begin(), datas.end(),
+		[&](const ObjectCreationData& data)
+		{
+			AddObject(data);
+			progressBar.Progress(progressStep);
+		});
+}
+
+void Editor::LoadMaterialsParallel(const std::span<const std::variant<MaterialCreationData, MaterialCreateInfo>>& datas, float progressStep)
+{
+	std::vector<int> indices(datas.size());
+	for (int i = 0; i < indices.size(); i++)
+		indices[i] = i;
+
+	std::for_each(std::execution::par, indices.begin(), indices.end(),
+		[&](int i)
+		{
+			std::visit(MaterialVisitor(i + 1), datas[i]);
+			progressBar.Progress(progressStep);
+		});
+}
+
+void Editor::LoadAnimationsParallel(const std::span<Animation>& animations, float progressStep) // not actually parallel yet...
+{
+	AnimationManager* pAnimManager = HalesiaEngine::GetInstance()->GetEngineCore().animationManager;
+	for (Animation& anim : animations)
+	{
+		pAnimManager->AddAnimation(std::move(anim));
+		progressBar.Progress(progressStep);
+	}
 }
 
 void Editor::BuildProject()

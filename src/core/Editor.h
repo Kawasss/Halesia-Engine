@@ -2,14 +2,19 @@
 #include <string>
 #include <map>
 #include <atomic>
+#include <span>
+#include <variant>
 
 #include "Scene.h"
 #include "CameraObject.h"
 #include "EditorProject.h"
 
+#include "../io/FwdDclCreationData.h"
+
 class Window;
 class Renderer;
 class RigidBody;
+class Animation;
 class LightObject;
 class ScriptObject;
 class GridPipeline;
@@ -69,6 +74,15 @@ private:
 
 	struct ProgressBar
 	{
+		void Progress(float add);
+
+		void Start();
+		void Stop();
+
+		float GetProgress();
+		bool IsRunning();
+
+	private:
 		std::atomic<bool> isRunning;
 		std::atomic<float> progress; // 0.0 as 0%, 1.0 as 100%
 	};
@@ -117,6 +131,10 @@ private:
 	void ShowObjectData(Object* pObject);
 
 	void ShowRigidBodyShape(RigidBody& rigid);
+
+	void LoadObjectsParallel(const std::span<const ObjectCreationData>& datas, float progressStep);
+	void LoadMaterialsParallel(const std::span<const std::variant<MaterialCreationData, MaterialCreateInfo>>& datas, float progressStep);
+	void LoadAnimationsParallel(const std::span<Animation>& animations, float progressStep);
 
 	void ShowAddObjectWindow();
 
