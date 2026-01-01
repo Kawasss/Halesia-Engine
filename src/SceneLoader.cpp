@@ -49,7 +49,7 @@ static std::vector<std::string> ReadNamedReferences(const BinarySpan& data) // m
 }
 
 // the object will only be added if it can be deserialized in its entirety (children must also be valid)
-static void ReadFullObject(DataArchiveFile& file, const BinarySpan& data, std::vector<ObjectCreationData>& outDst)
+void SceneLoader::ReadFullObject(DataArchiveFile& file, const BinarySpan& data, std::vector<ObjectCreationData>& outDst)
 {
 	ObjectCreationData creationData{};
 	if (!Object::DeserializeIntoCreationData(data, creationData))
@@ -57,6 +57,8 @@ static void ReadFullObject(DataArchiveFile& file, const BinarySpan& data, std::v
 		Console::WriteLine("failed to deserialize unknown object", Console::Severity::Error);
 		return;
 	}
+
+	objectCount++;
 
 	std::string references = creationData.name + "_ref_children";
 	if (!file.HasEntry(references)) // not an error, since its optional to have children
@@ -372,6 +374,7 @@ void SceneLoader::LoadAssimpFile()
 	if (err != nullptr && err[0] != '\0')
 		Console::WriteLine(err, Console::Severity::Error);
 
+	objectCount = 1;
 	ObjectCreationData root = RetrieveObject(scene, scene->mRootNode, glm::mat4(1)); // for now we ignore the root node
 	objects.push_back(root);
 
@@ -448,6 +451,7 @@ ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNod
 			creationData.children.push_back(child);
 		}
 	}
+	objectCount++;
 
 	if (node->mNumChildren > 0)
 		creationData.children.reserve(creationData.children.size() + node->mNumChildren);

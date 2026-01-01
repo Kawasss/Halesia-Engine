@@ -44,6 +44,23 @@ constexpr float VIEWPORT_HEIGHT = 1.0f - LOWER_BAR_HEIGHT;
 
 constexpr std::string_view SUPPORTED_FILES = "*.obj;*.glb;*.gltf;*.fbx;*.stl;*.dat;";
 
+struct MaterialVisitor
+{
+	MaterialVisitor(int idx) : index(idx) {}
+
+	void operator()(const MaterialCreationData& data)
+	{
+		Mesh::InsertMaterial(index, Material::Create(data));
+	}
+
+	void operator()(const MaterialCreateInfo& data)
+	{
+		Mesh::InsertMaterial(index, Material::Create(data));
+	}
+
+	int index;
+};
+
 EditorCamera::EditorCamera(Window* pWindow) : CameraObject()
 {
 	window = pWindow;
@@ -132,6 +149,7 @@ void Editor::Start()
 	EngineCore& core = HalesiaEngine::GetInstance()->GetEngineCore();
 
 	renderer = core.renderer;
+	window = core.window;
 
 	//boundingVolumePipeline = renderer->AddRenderPipeline<BoundingVolumePipeline>("boundingVolume");
 	gridPipeline = renderer->AddRenderPipeline<GridPipeline>("grid");
@@ -357,6 +375,9 @@ void Editor::ShowUI()
 	ShowMenuBar();
 	ShowGizmo();
 	ShowDefaultRightClick();
+
+	if (progressBar.isRunning.load())
+		ShowProgressBar();
 }
 
 void Editor::ShowSideBars()
@@ -766,6 +787,28 @@ void Editor::EndRightBar()
 	ImGui::End();
 }
 
+void Editor::ShowProgressBar()
+{
+	static constexpr float PADDING = 5.0f;
+
+	float percentage = progressBar.progress.load();
+
+	ImGuiStyle& style = ImGui::GetStyle();
+
+	ImVec2 size(200, 60);
+	ImVec2 pos(style.FramePadding);
+
+	pos.y = window->GetHeight() - size.y - pos.y;
+
+	ImGui::SetNextWindowPos(pos);
+	ImGui::SetNextWindowSize(size);
+	ImGui::Begin("loading...", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings);
+
+	ImGui::ProgressBar(percentage);
+
+	ImGui::End();
+}
+
 void Editor::ShowSelectedObject()
 {
 	if (!ImGui::CollapsingHeader("Selected object"))
@@ -1120,27 +1163,39 @@ void Editor::LoadFile(const fs::path& path)
 	fut = std::async([=]()
 		{
 			SceneLoader loader(path.string());
+
+			progressBar.isRunning.store(true);
 			loader.LoadScene();
+
+			const int itemsToLoad = loader.objects.size() + loader.materials.size() + loader.animations.size();
+			const float progressPer = 1.0f / itemsToLoad;
 
 			Mesh::materials.resize(loader.materials.size() + 1);
 
-			std::for_each(std::execution::par_unseq, loader.objects.begin(), loader.objects.end(), [&](const ObjectCreationData& data) { AddObject(data); });
+			std::for_each(std::execution::par_unseq, loader.objects.begin(), loader.objects.end(), 
+				[&](const ObjectCreationData& data) 
+				{ 
+					AddObject(data);
+					progressBar.progress.fetch_add(progressPer);
+				});
 			
 			std::vector<int> indices(loader.materials.size());
 			for (int i = 0; i < indices.size(); i++)
 				indices[i] = i;
 			
-			std::for_each(std::execution::par, indices.begin(), indices.end(), [&](int i)
+			std::for_each(std::execution::par, indices.begin(), indices.end(), 
+				[&](int i)
 				{
-					const std::variant<MaterialCreationData, MaterialCreateInfo>& data = loader.materials[i];
-					if (std::holds_alternative<MaterialCreationData>(data))
-						Mesh::InsertMaterial(i + 1, Material::Create(std::get<0>(data)));
-					else if (std::holds_alternative<MaterialCreateInfo>(data))
-						Mesh::InsertMaterial(i + 1, Material::Create(std::get<1>(data)));
+					std::visit(MaterialVisitor(i + 1), loader.materials[i]);
+					progressBar.progress.fetch_add(progressPer);
 				});
 
 			for (Animation& anim : loader.animations)
+			{
 				HalesiaEngine::GetInstance()->GetEngineCore().animationManager->AddAnimation(std::move(anim));
+				progressBar.progress.fetch_add(progressPer);
+			}
+			progressBar.isRunning.store(false);
 		});
 	//fut.get();
 }

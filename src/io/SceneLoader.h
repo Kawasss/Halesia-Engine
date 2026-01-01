@@ -23,6 +23,7 @@ struct aiNode;
 struct aiScene;
 
 class DataArchiveFile;
+class BinarySpan;
 
 class SceneLoader
 {
@@ -37,6 +38,8 @@ public:
 
 	// animations
 	std::vector<Animation> animations;
+
+	size_t objectCount = 0; // the amount of objects read (not the same as objects.size(), which contains children)
 
 private:
 	// file specific info
@@ -56,6 +59,8 @@ private:
 	void GetNodeHeader(NodeType& type, NodeSize& size);
 	void RetrieveType(NodeType type, NodeSize size);
 	ObjectCreationData RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans); // can return multiple objects if this one node has multiple meshes, but must of the time its one object
+
+	void ReadFullObject(DataArchiveFile& file, const BinarySpan& data, std::vector<ObjectCreationData>& outDst);
 
 	std::vector<ObjectCreationData>::iterator currentObject{};
 

@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <map>
+#include <atomic>
 
 #include "Scene.h"
 #include "CameraObject.h"
@@ -66,6 +67,12 @@ private:
 		bool show = false;
 	};
 
+	struct ProgressBar
+	{
+		std::atomic<bool> isRunning;
+		std::atomic<float> progress; // 0.0 as 0%, 1.0 as 100%
+	};
+
 	struct AdditionalMaterialData
 	{
 		AdditionalMaterialData() = default;
@@ -99,6 +106,8 @@ private:
 	void EndRightBar();
 
 	void ShowGizmo();
+
+	void ShowProgressBar();
 
 	void ShowObjectWithChildren(Object* object);
 	void ShowObjectRigidBody(RigidBody& rigid);
@@ -140,6 +149,7 @@ private:
 
 	EditorProject project;
 
+	ProgressBar progressBar{};
 	MeshChangeData queuedMeshChange{};
 	ObjectSelectionData selectionData{};
 	GizmoMode gizmoMode;
