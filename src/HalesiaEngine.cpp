@@ -2,11 +2,14 @@
 #include <format>
 #include <future>
 #include <chrono>
+#include <thread>
+#include <print>
 
 #include "HalesiaEngine.h"
 
 #include "system/Input.h"
 #include "system/SystemMetrics.h"
+#include "system/System.h"
 
 #include "renderer/Renderer.h"
 #include "renderer/gui.h"
@@ -111,15 +114,14 @@ HalesiaEngine* HalesiaEngine::CreateInstance(CreateInfo& createInfo)
 void HalesiaEngine::LogLoadingInformation()
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
-	SystemInformation systemInfo = GetCpuInfo();
 	VkPhysicalDeviceProperties properties = context.physicalDevice.Properties();
 
 	std::cout
 		<< "\n----------------------------------------"
 		<< "\nSystem info:"
-		<< "\n  CPU:           " << systemInfo.CPUName
-		<< "\n  thread count:  " << systemInfo.processorCount
-		<< "\n  physical RAM:  " << systemInfo.installedRAM / 1024 << " MB\n"
+		<< "\n  CPU:           " << sys::GetProcessorName()
+		<< "\n  thread count:  " << std::thread::hardware_concurrency()
+		<< "\n  physical RAM:  " << sys::GetPhysicalRAMCount() / 1024 / 1024 << " MB\n"
 		<< "\n  GPU:           " << properties.deviceName
 		<< "\n  type:          " << (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")
 		<< "\n  vulkan driver: " << properties.driverVersion
@@ -218,6 +220,8 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 
 	try
 	{
+		uint64_t avaibleMemory = sys::GetPhysicalRAMCount();
+
 		float timeSinceLastDataUpdate = 0;
 		float frameDelta = 0;
 		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
@@ -227,6 +231,10 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 		core.scene->Start();
 		while (!core.window->ShouldClose())
 		{
+			uint64_t usedMemory = sys::GetMemoryUsed();
+			if (usedMemory > avaibleMemory / 2)
+				Console::WriteLine("detected high memory usage: {} MB", usedMemory / 1024 / 1024);
+
 			Input::FetchState();
 			CheckInput();
 

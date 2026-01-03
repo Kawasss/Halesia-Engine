@@ -29,4 +29,22 @@ namespace sys
 	/// <param name="file">the file to open the default application with.</param>
 	/// <returns>false if the file cannot be opened, otherwise true.</returns>
 	extern bool OpenFile(const std::string_view& file);
+
+	/// <summary>
+	/// returns the processor name
+	/// </summary>
+	/// <returns></returns>
+	extern std::string GetProcessorName();
+
+	/// <summary>
+	/// returns the amount of physical RAM, in bytes
+	/// </summary>
+	/// <returns></returns>
+	extern uint64_t GetPhysicalRAMCount();
+
+	/// <summary>
+	/// returns the memory currently used by this process, in bytes
+	/// </summary>
+	/// <returns>0 on failure, otherwise the used memory in bytes</returns>
+	extern uint64_t GetMemoryUsed();
 }

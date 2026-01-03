@@ -1,6 +1,9 @@
 #include <Windows.h>
 #include <shellapi.h>
 #include <filesystem>
+#include <intrin.h>
+#include <Psapi.h>
+#include <array>
 
 #include "system/System.h"
 
@@ -58,7 +61,47 @@ namespace sys
 		if (!std::filesystem::exists(file))
 			return false;
 
-		ShellExecuteA(NULL, NULL, file.data(), 0, 0, SW_HIDE);
+		::ShellExecuteA(NULL, NULL, file.data(), 0, 0, SW_HIDE);
 		return true;
+	}
+
+	std::string GetProcessorName()
+	{
+		std::string ret;
+
+		std::array<int, 4> integerBuffer = {};
+		std::array<char, 64> charBuffer  = {};
+
+		// https://learn.microsoft.com/en-us/cpp/intrinsics/cpuid-cpuidex?view=vs-2019
+		constexpr std::array<int, 3> functionIds = {
+			0x8000'0002, // manufacturer
+			0x8000'0003, // model
+			0x8000'0004  // clockspeed
+		};
+
+		for (int id : functionIds)
+		{
+			::__cpuid(integerBuffer.data(), id);
+			std::memcpy(charBuffer.data(), integerBuffer.data(), sizeof(integerBuffer));
+
+			ret += std::string(charBuffer.data());
+		}
+
+		return ret;
+	}
+
+	uint64_t GetPhysicalRAMCount()
+	{
+		ULONGLONG ret = 0;
+		::GetPhysicallyInstalledSystemMemory(&ret);
+		return ret * 1024;
+	}
+	
+
+	uint64_t GetMemoryUsed()
+	{
+		PROCESS_MEMORY_COUNTERS counters{};
+		bool res = ::GetProcessMemoryInfo(::GetCurrentProcess(), &counters, sizeof(counters));
+		return res ? counters.WorkingSetSize : 0;
 	}
 }

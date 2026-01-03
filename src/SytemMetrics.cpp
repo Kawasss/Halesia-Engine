@@ -78,61 +78,6 @@ std::string GetLastErrorAsString()
     return message;
 }
 
-SystemInformation GetCpuInfo()
-{
-    SystemInformation info{};
-
-    // 4 is essentially hardcoded due to the __cpuid function requirements.
-    // NOTE: Results are limited to whatever the sizeof(int) * 4 is...
-    std::array<int, 4> integerBuffer = {};
-    constexpr size_t sizeofIntegerBuffer = sizeof(int) * integerBuffer.size();
-
-    std::array<char, 64> charBuffer = {};
-
-    // The information you wanna query __cpuid for.
-    // https://learn.microsoft.com/en-us/cpp/intrinsics/cpuid-cpuidex?view=vs-2019
-    constexpr std::array<int, 3> functionIds = {
-        // Manufacturer
-        //  EX: "Intel(R) Core(TM"
-        0x8000'0002,
-        // Model
-        //  EX: ") i7-8700K CPU @"
-        0x8000'0003,
-        // Clockspeed
-        //  EX: " 3.70GHz"
-        0x8000'0004
-    };
-
-    for (int id : functionIds)
-    {
-        // Get the data for the current ID.
-        __cpuid(integerBuffer.data(), id);
-
-        // Copy the raw data from the integer buffer into the character buffer
-        std::memcpy(charBuffer.data(), integerBuffer.data(), sizeofIntegerBuffer);
-
-        // Copy that data into a std::string
-        info.CPUName += std::string(charBuffer.data());
-    }
-
-    SYSTEM_INFO systemInfo;
-    GetSystemInfo(&systemInfo);
-
-    MEMORYSTATUSEX buffer = { };
-    memset(&buffer, 0, sizeof(MEMORYSTATUSEX));
-    buffer.dwLength = sizeof(MEMORYSTATUSEX);
-    if (!GlobalMemoryStatusEx(&buffer))
-        throw std::runtime_error("Failed to acquire the physical memory from the Windows API, " + GetLastErrorAsString());
-    ULONGLONG memory{};
-    //memset(&memory, 0, sizeof(ULONGLONG));
-    GetPhysicallyInstalledSystemMemory(&memory);
-    info.processorCount = systemInfo.dwNumberOfProcessors;
-    info.RAMAmount = (uint64_t)buffer.ullTotalPhys;
-    info.installedRAM = (long)memory;
-
-    return info;
-}
-
 // https://docs.microsoft.com/en-us/windows/win32/perfctrs/enumerating-process-objects
 std::vector<std::pair<int, int>> GetGPURunningTimeProcess() {
     std::vector<std::pair<int, int>> ret;
