@@ -401,37 +401,34 @@ static std::vector<char> GetCompressedData(const std::span<const char>& data, Vk
 	createInfo.isArray = KTX_FALSE;
 	createInfo.generateMipmaps = KTX_FALSE;
 
-	std::unique_ptr<ktxTexture2, KtxTextureDeleter> pTexture;
-
 	ktxTexture2* pRaw = nullptr;
 	err = ktxTexture2_Create(&createInfo, KTX_TEXTURE_CREATE_ALLOC_STORAGE, &pRaw);
 	if (err != KTX_SUCCESS || pRaw == nullptr)
 	{
-		Console::WriteLine("Failed to create a KTX texture", Console::Severity::Error);
+		Console::WriteLine("Failed to create a KTX texture ({})", Console::Severity::Error, ktxErrorString(err));
 		return {};
 	}
-
-	pTexture.reset(pRaw);
+	std::unique_ptr<ktxTexture2, KtxTextureDeleter> pTexture(pRaw);
 
 	err = ktxTexture_SetImageFromMemory(ktxTexture(pRaw), 0, 0, 0, reinterpret_cast<const uint8_t*>(data.data()), data.size());
 	if (err != KTX_SUCCESS)
 	{
-		Console::WriteLine("Failed to set the image of a KTX texture from memory", Console::Severity::Error);
+		Console::WriteLine("Failed to set the image of a KTX texture from memory ({})", Console::Severity::Error, ktxErrorString(err));
 		return {};
 	}
 
-	err = ktxTexture2_CompressBasis(pRaw, 200);
+	err = ktxTexture2_CompressBasis(pRaw, 0);
 	if (err != KTX_SUCCESS)
 	{
-		Console::WriteLine("Failed to compress a KTX texture", Console::Severity::Error);
+		Console::WriteLine("Failed to compress a KTX texture ({})", Console::Severity::Error, ktxErrorString(err));
 		return {};
 	}
 
 	ktx_transcode_fmt_e fmt = GetKtxFormat(format);
-	err = ktxTexture2_TranscodeBasis(pRaw, fmt, KTX_TF_HIGH_QUALITY);
+	err = ktxTexture2_TranscodeBasis(pRaw, fmt, KTX_TF_TRANSCODE_ALPHA_DATA_TO_OPAQUE_FORMATS);
 	if (err != KTX_SUCCESS)
 	{
-		Console::WriteLine("Failed to transcode a KTX texture", Console::Severity::Error);
+		Console::WriteLine("Failed to transcode a KTX texture ({})", Console::Severity::Error, ktxErrorString(err));
 		return {};
 	}
 
@@ -439,14 +436,14 @@ static std::vector<char> GetCompressedData(const std::span<const char>& data, Vk
 	err = ktxTexture_GetImageOffset(ktxTexture(pRaw), 0, 0, 0, &offset);
 	if (err != KTX_SUCCESS)
 	{
-		Console::WriteLine("Failed to get image offset of a KTX texture", Console::Severity::Error);
+		Console::WriteLine("Failed to get image offset of a KTX texture ({})", Console::Severity::Error, ktxErrorString(err));
 		return {};
 	}
 		
 	const ktx_uint8_t* pData = ktxTexture_GetData(ktxTexture(pRaw));
 	if (pData == nullptr)
 	{
-		Console::WriteLine("Failed to get the data of a KTX texture", Console::Severity::Error);
+		Console::WriteLine("Failed to get the data of a KTX texture ({})", Console::Severity::Error, ktxErrorString(err));
 		return {};
 	}
 		

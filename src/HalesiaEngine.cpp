@@ -233,7 +233,7 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 		{
 			uint64_t usedMemory = sys::GetMemoryUsed();
 			if (usedMemory > avaibleMemory / 2)
-				Console::WriteLine("detected high memory usage: {} MB", usedMemory / 1024 / 1024);
+				Console::WriteLine("detected high memory usage: {} MB", Console::Severity::Warning, usedMemory / 1024 / 1024);
 
 			Input::FetchState();
 			CheckInput();

@@ -414,6 +414,25 @@ static aiLight* NodeAsLight(const aiScene* scene, const aiNode* node)
 	return nullptr;
 }
 
+static bool CanConvertAiLightType(aiLightSourceType type)
+{
+	return type == aiLightSource_DIRECTIONAL || type == aiLightSource_POINT || type == aiLightSource_SPOT;
+}
+
+static Light::Type AiTypeToInternalType(aiLightSourceType type)
+{
+	switch (type)
+	{
+	case aiLightSource_DIRECTIONAL:
+		return Light::Type::Directional;
+	case aiLightSource_POINT:
+		return Light::Type::Point;
+	case aiLightSource_SPOT:
+		return Light::Type::Spot;
+	}
+	return Light::Type::Point;
+}
+
 ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans)
 {
 	ObjectCreationData creationData;
@@ -422,13 +441,13 @@ ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNod
 	GetTransform(node->mTransformation, creationData.position, creationData.rotation, creationData.scale);
 
 	aiLight* asLight = NodeAsLight(scene, node);
-	if (asLight != nullptr)
+	if (asLight != nullptr && CanConvertAiLightType(asLight->mType))
 	{
-		//creationData.lightData.pos = glm::vec3(creationData.position);
-		//creationData.lightData.type = Light::Type::Point;
-		//creationData.lightData.color = glm::vec3(1); // assimp cant find the lights color !! glm::vec3(assimpLight->mColorDiffuse.r, assimpLight->mColorDiffuse.g, assimpLight->mColorDiffuse.b);
-		//creationData.lightData.direction = glm::vec3(0.0f);
-		//creationData.type = ObjectCreationData::Type::Light;
+		creationData.lightData.pos = glm::vec3(creationData.position);
+		creationData.lightData.type = AiTypeToInternalType(asLight->mType);
+		creationData.lightData.color = glm::vec3(1); // assimp cant find the lights color !! glm::vec3(assimpLight->mColorDiffuse.r, assimpLight->mColorDiffuse.g, assimpLight->mColorDiffuse.b);
+		creationData.lightData.direction = glm::vec3(0.0f);
+		creationData.type = ObjectCreationData::Type::Light;
 	}
 	else
 	{
