@@ -399,6 +399,18 @@
     <ClCompile Include="src\core\EditorProject.ixx">
       <Filter>Header Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\LightObject.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Profiler.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Scene.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Rigid3DObject.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -452,16 +464,10 @@
     <ClInclude Include="src\core\Object.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\Scene.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="src\renderer\Vertex.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\core\Transform.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\Profiler.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\AnimationManager.h">
@@ -609,12 +615,6 @@
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\core\MeshObject.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\Rigid3DObject.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\LightObject.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\ShaderCompiler.h">

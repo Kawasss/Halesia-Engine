@@ -1,11 +1,16 @@
-#pragma once
-import Physics.RigidBody;
+module;
+
+#include <Windows.h>
 
 #include "Object.h"
 
-#include "../io/FwdDclCreationData.h"
+#include "../io/CreationData.h"
 
-class Rigid3DObject : public Object
+export module Core.Rigid3DObject;
+
+import Physics.RigidBody;
+
+export class Rigid3DObject : public Object
 {
 public:
 	static Rigid3DObject* Create(const ObjectCreationData& data);

@@ -6,13 +6,13 @@ module;
 #include "core/Object.h"
 #include "core/Console.h"
 #include "core/MeshObject.h"
-#include "core/Rigid3DObject.h"
 #include "core/ScriptObject.h"
 
 #include "system/CriticalSection.h"
 
 module Core.Scene;
 
+import Core.Rigid3DObject;
 import Core.LightObject;
 import Core.CameraObject;
 

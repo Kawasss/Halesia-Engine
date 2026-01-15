@@ -6,7 +6,6 @@ module;
 #include "core/Object.h"
 #include "core/Transform.h"
 #include "core/MeshObject.h"
-#include "core/Rigid3DObject.h"
 #include "core/ScriptObject.h"
 
 #include "renderer/gui.h"
@@ -30,6 +29,7 @@ module Core.Editor;
 
 import std;
 
+import Core.Rigid3DObject;
 import Core.LightObject;
 import Core.EditorProject;
 
