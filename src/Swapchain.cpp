@@ -1,3 +1,4 @@
+#define VK_USE_PLATFORM_WIN32_KHR
 #include <array>
 #include <vulkan/vulkan.h>
 

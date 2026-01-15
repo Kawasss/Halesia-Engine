@@ -10,8 +10,6 @@
 #include "renderer/gui.h"
 #include "renderer/Vulkan.h"
 
-#include "system/Input.h"
-
 #include "core/Console.h"
 #include "core/Object.h"
 #include "core/MeshObject.h"
@@ -30,6 +28,7 @@ import Core.CameraObject;
 import Physics.RigidBody;
 import Physics.Shapes;
 
+import System.Input;
 import System.Window;
 
 inline void InputFloat(const std::string& name, float& value, float width)

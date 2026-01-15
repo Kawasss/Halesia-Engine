@@ -1,13 +1,8 @@
-#include "system/SystemMetrics.h"
+module;
 
+#include <Windows.h>
 #include <Psapi.h>
 #include <intrin.h>
-
-#include <chrono>
-#include <iostream>
-#include <regex>
-#include <vector>
-#include <array>
 
 #include <pdh.h>
 #include <pdhmsg.h>
@@ -16,7 +11,11 @@
 
 #pragma comment(lib, "pdh.lib")
 
-uint64_t GetPhysicalMemoryUsedByApp()
+module System.Metrics;
+
+import std;
+
+std::uint64_t GetPhysicalMemoryUsedByApp()
 {
     PROCESS_MEMORY_COUNTERS_EX memoryCounter;
     GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&memoryCounter, sizeof(memoryCounter));
@@ -166,8 +165,8 @@ std::vector<std::pair<int, int>> GetGPURunningTimeProcess() {
     return ret;
 }
 
-int64_t GetGPURunningTimeTotal() {
-    int64_t total = 0;
+std::int64_t GetGPURunningTimeTotal() {
+    std::int64_t total = 0;
     std::vector<std::pair<int, int>> list = GetGPURunningTimeProcess();
     for (const std::pair<int, int>& v : list) {
         if (v.second > 0) {
@@ -180,14 +179,14 @@ int64_t GetGPURunningTimeTotal() {
 double GetGPUUsage() {
     static std::chrono::steady_clock::time_point prev_called =
         std::chrono::steady_clock::now();
-    static int64_t prev_running_time = GetGPURunningTimeTotal();
+    static std::int64_t prev_running_time = GetGPURunningTimeTotal();
 
     std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
     std::chrono::steady_clock::duration elapsed = now - prev_called;
 
-    int64_t elapsed_sec =
+    std::int64_t elapsed_sec =
         std::chrono::duration_cast<std::chrono::nanoseconds>(elapsed).count();
-    int64_t running_time = GetGPURunningTimeTotal();
+    std::int64_t running_time = GetGPURunningTimeTotal();
 
     double percentage =
         (double)(running_time - prev_running_time) / elapsed_sec * 100;

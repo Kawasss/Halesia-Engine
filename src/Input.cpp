@@ -1,5 +1,10 @@
+module;
+
 #include <Windows.h>
-#include "system/Input.h"
+
+module System.Input;
+
+import std;
 
 struct KeyboardState
 {
@@ -14,7 +19,7 @@ public:
 
 	void CopyFrom(const KeyboardState& ks)
 	{
-		memcpy(state, ks.state, STATE_SIZE * sizeof(SHORT));
+		std::memcpy(state, ks.state, STATE_SIZE * sizeof(SHORT));
 	}
 
 	SHORT& operator[](VirtualKey key)

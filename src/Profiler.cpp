@@ -3,10 +3,10 @@
 #include "core/Profiler.h"
 #include "core/Console.h"
 
-#include "system/SystemMetrics.h"
-
 #include "renderer/Renderer.h"
 #include "renderer/gui.h"
+
+import System.Metrics;
 
 Profiler* Profiler::Get()
 {

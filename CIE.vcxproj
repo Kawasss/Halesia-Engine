@@ -103,7 +103,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>VK_USE_PLATFORM_WIN32_KHR;_DEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions);VK_USE_PLATFORM_WIN32_KHR</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;C:\Users\wveen\source\additionalDependencies\imgui-1.91.7;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
@@ -134,7 +134,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions);VK_USE_PLATFORM_WIN32_KHR</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalIncludeDirectories>C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
@@ -242,9 +242,11 @@
     <ClCompile Include="src\Swapchain.cpp" />
     <ClCompile Include="src\System.cpp" />
     <ClCompile Include="src\system\FileDialog.ixx" />
+    <ClCompile Include="src\system\Input.ixx" />
+    <ClCompile Include="src\system\Metrics.ixx" />
     <ClCompile Include="src\system\System.ixx" />
     <ClCompile Include="src\system\Window.ixx" />
-    <ClCompile Include="src\SytemMetrics.cpp" />
+    <ClCompile Include="src\Metrics.cpp" />
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\ToString.cpp" />
     <ClCompile Include="src\Transform.cpp" />
@@ -346,8 +348,6 @@
     <ClInclude Include="src\ResourceManager.h" />
     <ClInclude Include="src\scripting\Script.h" />
     <ClInclude Include="src\system\CriticalSection.h" />
-    <ClInclude Include="src\system\Input.h" />
-    <ClInclude Include="src\system\SystemMetrics.h" />
     <ClInclude Include="src\tools\common.h" />
     <ClInclude Include="src\tools\RefPointer.h" />
     <ClInclude Include="src\tools\Timer.h" />

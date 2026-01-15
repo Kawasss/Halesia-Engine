@@ -1,3 +1,4 @@
+#define VK_USE_PLATFORM_WIN32_KHR
 #include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/Surface.h"

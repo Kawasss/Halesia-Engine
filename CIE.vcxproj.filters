@@ -189,7 +189,7 @@
     <ClCompile Include="src\ResourceManager.cpp">
       <Filter>Source Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\SytemMetrics.cpp">
+    <ClCompile Include="src\Metrics.cpp">
       <Filter>Source Files\system</Filter>
     </ClCompile>
     <ClCompile Include="src\PipelineCreator.cpp">
@@ -363,9 +363,6 @@
     <ClCompile Include="src\Animator.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\StrUtil.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\physics\Physics.ixx">
       <Filter>Header Files\physics</Filter>
     </ClCompile>
@@ -375,11 +372,38 @@
     <ClCompile Include="src\physics\Shapes.ixx">
       <Filter>Header Files\physics</Filter>
     </ClCompile>
+    <ClCompile Include="src\HalesiaEngine.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\system\Metrics.ixx">
+      <Filter>Header Files\system</Filter>
+    </ClCompile>
+    <ClCompile Include="src\system\Input.ixx">
+      <Filter>Header Files\system</Filter>
+    </ClCompile>
+    <ClCompile Include="src\system\FileDialog.ixx">
+      <Filter>Header Files\system</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Behavior.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\StrUtil.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\CameraObject.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Audio.ixx">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\system\System.ixx">
+      <Filter>Header Files\system</Filter>
+    </ClCompile>
+    <ClCompile Include="src\system\Window.ixx">
+      <Filter>Header Files\system</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\HalesiaEngine.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -396,12 +420,6 @@
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\ShaderReflector.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Renderer.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\StorageBuffer.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\Surface.h">
@@ -431,20 +449,8 @@
     <ClInclude Include="src\renderer\gui.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\Window.h">
-      <Filter>Header Files\system</Filter>
-    </ClInclude>
-    <ClInclude Include="src\system\SystemMetrics.h">
-      <Filter>Header Files\system</Filter>
-    </ClInclude>
-    <ClInclude Include="src\system\Input.h">
-      <Filter>Header Files\system</Filter>
-    </ClInclude>
     <ClInclude Include="src\renderer\Denoiser.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\Console.h">
-      <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\Object.h">
       <Filter>Header Files\core</Filter>
@@ -458,12 +464,6 @@
     <ClInclude Include="src\core\Transform.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\Audio.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\demo\Calculator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\tools\RefPointer.h">
       <Filter>Header Files\tools</Filter>
     </ClInclude>
@@ -476,9 +476,6 @@
     <ClInclude Include="src\renderer\Bone.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\Behavior.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="src\io\FileFormat.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
@@ -487,9 +484,6 @@
     </ClInclude>
     <ClInclude Include="src\renderer\PipelineCreator.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\demo\Topdown.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\Framebuffer.h">
       <Filter>Header Files\Renderer</Filter>
@@ -560,9 +554,6 @@
     <ClInclude Include="src\renderer\VideoMemoryManager.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\FileDialog.h">
-      <Filter>Header Files\system</Filter>
-    </ClInclude>
     <ClInclude Include="src\io\BinaryReader.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
@@ -570,18 +561,6 @@
       <Filter>Header Files\io</Filter>
     </ClInclude>
     <ClInclude Include="src\io\CreationData.h">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="src\io\FileMesh.h">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="src\io\FileObject.h">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="src\io\FileRigidBody.h">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="src\io\FileShape.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
     <ClInclude Include="src\io\FileMaterial.h">
@@ -647,9 +626,6 @@
     <ClInclude Include="src\renderer\VulkanAPIError.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="src\system\System.h">
-      <Filter>Header Files\system</Filter>
-    </ClInclude>
     <ClInclude Include="src\renderer\ImageTransitioner.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
@@ -695,9 +671,6 @@
     <ClInclude Include="src\renderer\SimpleMesh.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\CameraObject.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\EditorProject.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
@@ -712,9 +685,6 @@
     </ClInclude>
     <ClInclude Include="src\renderer\Animation.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\StrUtil.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1,7 +1,5 @@
 module;
 
-#include "system/Input.h"
-
 #include "renderer/Renderer.h"
 
 #include "core/Scene.h"
@@ -12,6 +10,7 @@ export module HalesiaEngine;
 import std;
 
 import System.Window;
+import System.Input;
 
 export struct EngineCore
 {
