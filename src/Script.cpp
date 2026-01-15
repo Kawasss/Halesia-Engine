@@ -1,9 +1,10 @@
-#pragma once
-#include "scripting/Script.h"
+module;
 
 #include "core/Transform.h"
 #include "core/Object.h"
 #include "core/Console.h"
+
+module Scripting.Script;
 
 Script::Script(const std::string& code, Object* pOwner)
 {

@@ -1,11 +1,14 @@
-#pragma once
-#include <string>
+module;
 
 #include "Object.h"
 
-class Script;
+export module Core.ScriptObject;
 
-class ScriptObject : public Object
+import std;
+
+import Scripting.Script;
+
+export class ScriptObject : public Object
 {
 public:
 	static ScriptObject* Create(const ObjectCreationData& data);
@@ -35,6 +38,6 @@ private:
 	void SerializeSelf(BinaryStream& stream) const override;
 	void DeserializeSelf(const BinarySpan& stream) override;
 
-	Script* pScript = nullptr;
+	std::unique_ptr<Script> pScript;
 	std::string sourceCode;
 };

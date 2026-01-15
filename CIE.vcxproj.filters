@@ -411,6 +411,12 @@
     <ClCompile Include="src\core\Rigid3DObject.ixx">
       <Filter>Header Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\ScriptObject.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scripting\Script.ixx">
+      <Filter>Header Files\scripting</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -622,12 +628,6 @@
     </ClInclude>
     <ClInclude Include="src\renderer\CompiledShader.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\scripting\Script.h">
-      <Filter>Header Files\scripting</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\ScriptObject.h">
-      <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\io\DataArchiveFile.h">
       <Filter>Header Files\io</Filter>

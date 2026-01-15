@@ -7,7 +7,6 @@ module;
 #include "../glm.h"
 
 #include "Object.h"
-#include "ScriptObject.h"
 
 #include "../renderer/Renderer.h"
 #include "../renderer/Animation.h"
@@ -23,6 +22,7 @@ import System.Window;
 
 import Physics.RigidBody;
 
+import Core.ScriptObject;
 import Core.CameraObject;
 import Core.CameraObject;
 import Core.EditorProject;

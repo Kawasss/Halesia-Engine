@@ -1,9 +1,11 @@
-#include "core/ScriptObject.h"
-
-#include "scripting/Script.h"
+module;
 
 #include "io/IO.h"
 #include "io/BinaryStream.h"
+
+module Core.ScriptObject;
+
+import Scripting.Script;
 
 ScriptObject::ScriptObject() : Object(Object::InheritType::Script)
 {
@@ -50,7 +52,6 @@ ScriptObject::~ScriptObject()
 		return;
 
 	pScript->Destroy();
-	delete pScript;
 }
 
 void ScriptObject::SetScriptFile(const std::string& file)
@@ -87,7 +88,7 @@ void ScriptObject::InitializeScript()
 	}
 	else
 	{
-		pScript = new Script(sourceCode, this);
+		pScript = std::make_unique<Script>(sourceCode, this);
 	}
 }
 

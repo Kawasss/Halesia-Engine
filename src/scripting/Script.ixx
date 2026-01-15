@@ -1,14 +1,18 @@
-#pragma once
-#include <string>
+module;
 
-#include <sol.hpp>
+#include "../core/Object.h"
+#include "../core/Transform.h"
 
-class Transform;
-class Object;
+export module Scripting.Script;
 
-class Script
+import std;
+
+import <sol.hpp>;
+
+export class Script
 {
 public:
+	Script() = default;
 	Script(const std::string& code, Object* pOwner);
 
 	void Start();
