@@ -233,7 +233,6 @@
     <ClCompile Include="src\SceneLoader.cpp" />
     <ClCompile Include="src\SceneWriter.cpp" />
     <ClCompile Include="src\Shapes.cpp" />
-    <ClCompile Include="src\objectStreamer.cpp" />
     <ClCompile Include="src\SimpleMesh.cpp" />
     <ClCompile Include="src\Skybox.cpp" />
     <ClCompile Include="src\Pipeline.cpp" />
@@ -272,11 +271,9 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_truetype.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="src\core\EditorProject.h" />
-    <ClInclude Include="src\core\Job.h" />
     <ClInclude Include="src\core\LightObject.h" />
     <ClInclude Include="src\core\MeshObject.h" />
     <ClInclude Include="src\core\Object.h" />
-    <ClInclude Include="src\core\ObjectStreamer.h" />
     <ClInclude Include="src\core\Profiler.h" />
     <ClInclude Include="src\core\Rigid3DObject.h" />
     <ClInclude Include="src\core\Scene.h" />

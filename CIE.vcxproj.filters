@@ -204,9 +204,6 @@
     <ClCompile Include="src\ForwardPlus.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\objectStreamer.cpp">
-      <Filter>Source Files\core</Filter>
-    </ClCompile>
     <ClCompile Include="src\DescriptorWriter.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
@@ -497,9 +494,6 @@
     <ClInclude Include="src\renderer\ForwardPlus.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\ObjectStreamer.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\UniquePointer.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
@@ -672,9 +666,6 @@
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\core\EditorProject.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\Job.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\SkyPipeline.h">
