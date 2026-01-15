@@ -1,10 +1,11 @@
-#include <algorithm>
-
-#include "core/Profiler.h"
 #include "core/Console.h"
 
 #include "renderer/Renderer.h"
 #include "renderer/gui.h"
+
+module Core.Profiler;
+
+import std;
 
 import System.Metrics;
 

@@ -6,7 +6,6 @@ module;
 #include "renderer/Vulkan.h"
 
 #include "core/Console.h"
-#include "core/Profiler.h"
 
 #include "io/IniFile.h"
 
@@ -16,6 +15,7 @@ import std;
 
 import Audio;
 
+import Core.Profiler;
 import Core.Behavior;
 import Core.Scene;
 

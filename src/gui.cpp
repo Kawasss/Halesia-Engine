@@ -16,12 +16,12 @@
 #include "core/Rigid3DObject.h"
 #include "core/LightObject.h"
 #include "core/Transform.h"
-#include "core/Profiler.h"
 
 #include <hsl/StackMap.h>
 
 import HalesiaEngine;
 
+import Core.Profiler;
 import Core.CameraObject;
 import Core.Scene;
 

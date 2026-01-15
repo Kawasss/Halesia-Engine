@@ -1,9 +1,8 @@
-#pragma once
-#include <cstdint>
-#include <vector>
-#include <string>
+export module Core.Profiler;
 
-typedef uint32_t ProfilerOptions;
+import std;
+
+using ProfilerOptions = std::uint32_t;
 
 enum ProfilerFlags : ProfilerOptions
 {
@@ -15,24 +14,25 @@ enum ProfilerFlags : ProfilerOptions
 	PROFILE_FLAG_GPU_BUFFERS = 1 << 5,
 	PROFILE_FLAG_1P_LOW_FRAMETIME = 1 << 6,
 };
-extern std::string ProfilerFlagsToString(ProfilerOptions options);
+export std::string ProfilerFlagsToString(ProfilerOptions options);
 
-class Profiler
+export class Profiler
 {
 public:
 	static Profiler* Get();
 	void SetFlags(ProfilerOptions options);
 	void Update(float delta);
 
-	const std::vector<float>& GetCPU()        { return CPUUsage.buffer; }
-	const std::vector<float>& GetGPU()        { return GPUUsage.buffer; }
-	const std::vector<float>& GetFrameTime()  { return frameTime.buffer; }
-	const std::vector<uint64_t>& GetRAM()     { return ramUsed.buffer; }
-	const std::vector<size_t> GetVertexSize() { return vertexBufferUsage.buffer; }
-	const std::vector<size_t> GetIndexSize()  { return indexBufferUsage.buffer; }
-	float Get1PercentLowFrameTime()           { return frameTime1PLow; }
+	const std::vector<float>&         GetCPU()        { return CPUUsage.buffer;          }
+	const std::vector<float>&         GetGPU()        { return GPUUsage.buffer;          }
+	const std::vector<float>&         GetFrameTime()  { return frameTime.buffer;         }
+	const std::vector<std::uint64_t>& GetRAM()        { return ramUsed.buffer;           }
+	const std::vector<std::size_t>    GetVertexSize() { return vertexBufferUsage.buffer; }
+	const std::vector<std::size_t>    GetIndexSize()  { return indexBufferUsage.buffer;  }
 
-	static constexpr ProfilerOptions ALL_OPTIONS = UINT32_MAX;
+	float Get1PercentLowFrameTime() { return frameTime1PLow; }
+
+	static constexpr ProfilerOptions ALL_OPTIONS = std::numeric_limits<std::uint32_t>::max();
 
 private:
 	template<typename T> struct ScrollingBuffer
@@ -67,7 +67,7 @@ private:
 	ScrollingBuffer<float> CPUUsage{ 100 };
 	ScrollingBuffer<float> GPUUsage{ 100 };
 	ScrollingBuffer<float> frameTime{ 100 };
-	ScrollingBuffer<uint64_t> ramUsed{ 100 };
-	ScrollingBuffer<size_t> vertexBufferUsage{ 100 };
-	ScrollingBuffer<size_t> indexBufferUsage{ 100 };
+	ScrollingBuffer<std::uint64_t> ramUsed{ 100 };
+	ScrollingBuffer<std::size_t> vertexBufferUsage{ 100 };
+	ScrollingBuffer<std::size_t> indexBufferUsage{ 100 };
 };
