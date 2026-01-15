@@ -1,4 +1,5 @@
-#include "HalesiaEngine.h"
+#include <vulkan/vulkan.h>
+
 #include "core/Console.h"
 #include "core/Object.h"
 
@@ -7,6 +8,7 @@
 
 #include "io/FileFormat.h"
 
+import HalesiaEngine;
 import Physics.RigidBody;
 import Physics.Shapes;
 

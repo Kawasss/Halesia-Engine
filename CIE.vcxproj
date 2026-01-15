@@ -196,6 +196,7 @@
     <ClCompile Include="src\Grid.cpp" />
     <ClCompile Include="src\gui.cpp" />
     <ClCompile Include="src\HalesiaEngine.cpp" />
+    <ClCompile Include="src\HalesiaEngine.ixx" />
     <ClCompile Include="src\HdrConverter.cpp" />
     <ClCompile Include="src\ImageTransitioner.cpp" />
     <ClCompile Include="src\IniFile.cpp" />
@@ -239,6 +240,7 @@
     <ClCompile Include="src\Surface.cpp" />
     <ClCompile Include="src\Swapchain.cpp" />
     <ClCompile Include="src\System.cpp" />
+    <ClCompile Include="src\system\Window.ixx" />
     <ClCompile Include="src\SytemMetrics.cpp" />
     <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\ToString.cpp" />
@@ -264,8 +266,6 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_truetype.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="src\Audio.h" />
-    <ClInclude Include="src\core\Behavior.h" />
-    <ClInclude Include="src\core\Console.h" />
     <ClInclude Include="src\core\Editor.h" />
     <ClInclude Include="src\core\EditorProject.h" />
     <ClInclude Include="src\core\Job.h" />
@@ -282,7 +282,6 @@
     <ClInclude Include="src\demo\Calculator.h" />
     <ClInclude Include="src\demo\Topdown.h" />
     <ClInclude Include="src\glm.h" />
-    <ClInclude Include="src\HalesiaEngine.h" />
     <ClInclude Include="src\io\BinaryReader.h" />
     <ClInclude Include="src\io\BinaryStream.h" />
     <ClInclude Include="src\io\BinaryWriter.h" />
@@ -332,10 +331,8 @@
     <ClInclude Include="src\renderer\ShaderCompiler.h" />
     <ClInclude Include="src\renderer\ShaderReflector.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
-    <ClInclude Include="src\renderer\Renderer.h" />
     <ClInclude Include="src\renderer\Skybox.h" />
     <ClInclude Include="src\renderer\SkyPipeline.h" />
-    <ClInclude Include="src\renderer\StorageBuffer.h" />
     <ClInclude Include="src\renderer\Surface.h" />
     <ClInclude Include="src\renderer\Swapchain.h" />
     <ClInclude Include="src\renderer\Texture.h" />
@@ -354,7 +351,6 @@
     <ClInclude Include="src\system\Input.h" />
     <ClInclude Include="src\system\System.h" />
     <ClInclude Include="src\system\SystemMetrics.h" />
-    <ClInclude Include="src\system\Window.h" />
     <ClInclude Include="src\tools\common.h" />
     <ClInclude Include="src\tools\RefPointer.h" />
     <ClInclude Include="src\tools\Timer.h" />

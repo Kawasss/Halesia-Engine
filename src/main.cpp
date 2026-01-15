@@ -11,9 +11,10 @@
 
 #include "core/Editor.h"
 
-#include "HalesiaEngine.h"
-
 #include "io/CreationData.h"
+
+import HalesiaEngine;
+import System.Window;
 
 int main(int argc, char** argv)
 {

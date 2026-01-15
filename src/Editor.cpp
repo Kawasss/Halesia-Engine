@@ -26,8 +26,6 @@
 #include "system/FileDialog.h"
 #include "system/System.h"
 
-#include "HalesiaEngine.h"
-
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui-1.91.7/implot.h>
 #include <imgui-1.91.7/imgui.h>
@@ -35,6 +33,9 @@
 #include <imgui-1.91.7/misc/cpp/imgui_stdlib.h>
 
 #include <glm/gtc/type_ptr.hpp>
+
+import HalesiaEngine;
+import System.Window;
 
 constexpr float BAR_WIDTH = 0.15f;
 constexpr float LOWER_BAR_HEIGHT = 0.2f;

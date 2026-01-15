@@ -1,20 +1,23 @@
-#pragma once
-#include <future>
+module;
 
-#include "system/Window.h"
 #include "system/Input.h"
+
 #include "renderer/Renderer.h"
 
-class Renderer;
-class Scene;
-class Profiler;
-class AnimationManager;
+#include "core/Scene.h"
+#include "core/Profiler.h"
 
-struct EngineCore
+export module HalesiaEngine;
+
+import std;
+
+import System.Window;
+
+export struct EngineCore
 {
 	Renderer* renderer = nullptr;                 //!< the engines renderer
-	Window*   window   = nullptr;                 //!< the engines window
-	Scene*    scene    = nullptr;                 //!< the current scene, multiple scenes can exist at once, but only one is active
+	Window* window = nullptr;                 //!< the engines window
+	Scene* scene = nullptr;                 //!< the current scene, multiple scenes can exist at once, but only one is active
 	Profiler* profiler = nullptr;                 //!< the currently in use profiler
 	AnimationManager* animationManager = nullptr; //!< the renderers animation manager
 	int maxFPS = -1;                              //!< determines the fps limit of the engine
@@ -30,7 +33,7 @@ struct EngineCore
 // This call will fail if the instance has not created yet.
 //
 // the engine automatically cleans up at the end of Run().
-class HalesiaEngine
+export class HalesiaEngine
 {
 public:
 	struct CreateInfo
@@ -63,9 +66,9 @@ public:
 	void LoadScene(Scene* newScene);                              //!< this will load a new scene and replace the current scene
 	void Destroy();                                               //!< this destroys the engine
 
-	bool pauseGame      = false;                                  //!< if true, all game logic will stop running
-	bool playOneFrame   = false;                                  //!< if and the game is paused and this is true, then one frame of game logic will be run
-	bool showFPS        = false;                                  //!< shows the games estimated fps (1 / current_frame_time)
+	bool pauseGame = false;                                  //!< if true, all game logic will stop running
+	bool playOneFrame = false;                                  //!< if and the game is paused and this is true, then one frame of game logic will be run
+	bool showFPS = false;                                  //!< shows the games estimated fps (1 / current_frame_time)
 	bool showAsyncTimes = false;                                  //!< shows the activity of all threads used in one frame
 	bool showWindowData = false;                                  //!< shows all data related to the games window
 

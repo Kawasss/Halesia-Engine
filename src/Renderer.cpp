@@ -19,7 +19,6 @@
 #include "renderer/VulkanAPIError.h"
 #include "renderer/Light.h"
 
-#include "system/Window.h"
 #include "system/System.h"
 
 #include "core/Console.h"
@@ -40,6 +39,7 @@
 #include "io/IO.h"
 
 import Core.CameraObject;
+import System.Window;
 
 namespace fs = std::filesystem;
 

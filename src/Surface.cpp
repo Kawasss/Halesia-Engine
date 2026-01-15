@@ -1,7 +1,8 @@
 #include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/Surface.h"
-#include "system/Window.h"
+
+import System.Window;
 
 Surface Surface::GenerateSurface(VkInstance instance, Window* window)
 {

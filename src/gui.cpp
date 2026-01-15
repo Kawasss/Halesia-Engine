@@ -11,7 +11,6 @@
 #include "renderer/Vulkan.h"
 
 #include "system/Input.h"
-#include "system/Window.h"
 
 #include "core/Console.h"
 #include "core/Object.h"
@@ -22,13 +21,16 @@
 #include "core/Profiler.h"
 #include "core/Scene.h"
 
-#include "HalesiaEngine.h"
 #include <hsl/StackMap.h>
+
+import HalesiaEngine;
 
 import Core.CameraObject;
 
 import Physics.RigidBody;
 import Physics.Shapes;
+
+import System.Window;
 
 inline void InputFloat(const std::string& name, float& value, float width)
 {

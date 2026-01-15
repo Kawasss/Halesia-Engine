@@ -3,7 +3,6 @@
 #include <optional>
 
 #include "io/SceneLoader.h"
-#include "system/Window.h"
 
 #include "core/Object.h"
 #include "core/Scene.h"
@@ -14,6 +13,7 @@
 #include "core/ScriptObject.h"
 
 import Core.CameraObject;
+import System.Window;
 
 CameraObject* Scene::defaultCamera = nullptr;
 

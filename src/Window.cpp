@@ -1,13 +1,13 @@
-#include <iostream>
-#include <stdexcept>
-#include <vector>
+module;
 
 #include <Windows.h>
-#include <shellapi.h>
 #include <windowsx.h>
+#include <shellapi.h>
 #include <hidusage.h>
 
-#include "system/Window.h"
+module System.Window;
+
+import std;
 
 #define BORDERLESS_WINDOWED WS_POPUP
 

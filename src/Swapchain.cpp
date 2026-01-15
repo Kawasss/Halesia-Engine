@@ -2,12 +2,13 @@
 #include <vulkan/vulkan.h>
 
 #include "renderer/Swapchain.h"
-#include "system/Window.h"
 #include "renderer/Vulkan.h"
 #include "renderer/PhysicalDevice.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/Surface.h"
+
+import System.Window;
 
 Swapchain::Swapchain(Surface surface, Window* window, bool vsync)
 {

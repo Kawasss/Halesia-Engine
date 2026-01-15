@@ -1,15 +1,21 @@
-#pragma once
-#include <Windows.h>
-#include <string>
-#include <map>
+module;
 
-struct Monitor
+#include <cstdint>
+#include <Windows.h>
+
+export module System.Window;
+
+import std;
+
+export struct Monitor
 {
-	int x, y;
-	uint32_t width, height;
+	int x;
+	int y;
+	uint32_t width;
+	uint32_t height;
 };
 
-class Window
+export class Window
 {
 public:
 	enum class Mode
@@ -59,7 +65,7 @@ public:
 		std::string name;
 		std::string className = "GenericWindowClass";
 
-		int width  = DIMENSION_DEFAULT;
+		int width = DIMENSION_DEFAULT;
 		int height = DIMENSION_DEFAULT;
 
 		int x = 0;
@@ -81,30 +87,30 @@ public:
 	~Window();
 
 	static void PollMessages();
-		
+
 	static int GetMonitorWidth();
 	static int GetMonitorHeight();
 
 	static std::string_view ModeToString(Window::Mode mode);
 
 	bool resized = false;
-		
+
 	bool cursorHasMoved = false;
 
 	std::string GetDroppedFile();
 	Window::Mode GetWindowMode() const { return mode; }
 
 	bool ContainsDroppedFile() const { return containsDroppedFile; }
-	bool ShouldClose()         const { return shouldClose;         }
-	bool CursorIsLocked()      const { return lockCursor;          }
+	bool ShouldClose()         const { return shouldClose; }
+	bool CursorIsLocked()      const { return lockCursor; }
 
 	int GetX()             const { return coordinates.x; }
 	int GetY()             const { return coordinates.y; }
-	int GetWidth()         const { return size.x;        }
-	int GetHeight()        const { return size.y;        }
+	int GetWidth()         const { return size.x; }
+	int GetHeight()        const { return size.y; }
 	int GetWheelRotation() const { return wheelRotation; }
 
-	bool IsMaximized()     const { return maximized;     }
+	bool IsMaximized()     const { return maximized; }
 	bool CanBeRenderedTo() const { return size.x != 0 && size.y != 0; }
 
 	HWND GetHandle()        const { return hWindow; }
@@ -140,11 +146,11 @@ private:
 
 	enum Event : uint8_t
 	{
-		EVENT_NONE              = 0 << 0,
-		EVENT_RESIZE            = 1 << 0,
-		EVENT_CURSOR_CHANGE     = 1 << 1,
+		EVENT_NONE = 0 << 0,
+		EVENT_RESIZE = 1 << 0,
+		EVENT_CURSOR_CHANGE = 1 << 1,
 		EVENT_VISIBILITY_CHANGE = 1 << 2,
-		EVENT_MODE_CHANGE       = 1 << 3,
+		EVENT_MODE_CHANGE = 1 << 3,
 	};
 	uint8_t events = EVENT_NONE;
 
@@ -170,7 +176,7 @@ private:
 	Window::Mode mode;
 
 	bool lockCursor = false;
-	bool maximized  = true; // if this is false the window should be minimized
+	bool maximized = true; // if this is false the window should be minimized
 
 	int wheelRotation = 0;
 	bool shouldClose = false, containsDroppedFile = false;

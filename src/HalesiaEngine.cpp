@@ -1,11 +1,4 @@
-#include <iostream>
-#include <format>
-#include <future>
-#include <chrono>
-#include <thread>
-#include <print>
-
-#include "HalesiaEngine.h"
+module;
 
 #include "system/Input.h"
 #include "system/System.h"
@@ -22,6 +15,10 @@
 #include "io/IniFile.h"
 
 #include "Audio.h"
+
+module HalesiaEngine;
+
+import std;
 
 import Core.Behavior;
 
