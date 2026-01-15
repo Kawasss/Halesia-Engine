@@ -1,15 +1,12 @@
-#include <fstream>
-#include <filesystem>
-#include <format>
-
 #include "renderer/ShaderCompiler.h"
 #include "renderer/Renderer.h"
 
 #include "io/IO.h"
 
-#include "system/System.h"
-
 #include "StrUtil.h"
+
+import std;
+import System;
 
 constexpr std::string_view BASE_SPIRV_DIRECTORY = "shaders/spirv/"; // the location where all compiled shaders are stored / cached
 constexpr std::string_view SPIRV_FILE = ".spv";

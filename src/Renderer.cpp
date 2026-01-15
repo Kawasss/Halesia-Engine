@@ -1,7 +1,3 @@
-#include <vector>
-#include <array>
-#include <filesystem>
-#include <iostream>
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "renderer/Vulkan.h"
@@ -19,8 +15,6 @@
 #include "renderer/VulkanAPIError.h"
 #include "renderer/Light.h"
 
-#include "system/System.h"
-
 #include "core/Console.h"
 #include "core/Object.h"
 #include "core/MeshObject.h"
@@ -36,10 +30,12 @@
 
 #include "renderer/Renderer.h"
 
-#include "io/IO.h"
+import std;
 
 import Core.CameraObject;
+
 import System.Window;
+import System;
 
 namespace fs = std::filesystem;
 

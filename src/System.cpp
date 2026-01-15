@@ -1,17 +1,19 @@
+module;
+
 #include <Windows.h>
 #include <shellapi.h>
-#include <filesystem>
-#include <intrin.h>
 #include <Psapi.h>
-#include <array>
+#include <intrin.h>
 
-#include "system/System.h"
+module System;
+
+import std;
 
 namespace sys
 {
 	std::string GetEnvVariable(const std::string_view& name)
 	{
-		constexpr uint32_t BUFFER_SIZE = 256;
+		constexpr std::uint32_t BUFFER_SIZE = 256;
 		char buffer[BUFFER_SIZE]{};
 
 		DWORD written = ::GetEnvironmentVariableA(name.data(), buffer, BUFFER_SIZE);
@@ -90,7 +92,7 @@ namespace sys
 		return ret;
 	}
 
-	uint64_t GetPhysicalRAMCount()
+	std::uint64_t GetPhysicalRAMCount()
 	{
 		ULONGLONG ret = 0;
 		::GetPhysicallyInstalledSystemMemory(&ret);
@@ -98,7 +100,7 @@ namespace sys
 	}
 	
 
-	uint64_t GetMemoryUsed()
+	std::uint64_t GetMemoryUsed()
 	{
 		PROCESS_MEMORY_COUNTERS counters{};
 		bool res = ::GetProcessMemoryInfo(::GetCurrentProcess(), &counters, sizeof(counters));

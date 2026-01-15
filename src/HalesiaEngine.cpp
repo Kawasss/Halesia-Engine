@@ -1,7 +1,6 @@
 module;
 
 #include "system/Input.h"
-#include "system/System.h"
 
 #include "renderer/Renderer.h"
 #include "renderer/gui.h"
@@ -23,6 +22,8 @@ import std;
 import Core.Behavior;
 
 import Physics;
+
+import System;
 
 class ExitRequest : public std::exception {}; // not that great to request an exit via errors
 

@@ -1,7 +1,5 @@
 #include <Windows.h>
 #include <commdlg.h>
-#include <execution>
-#include <functional>
 
 #include "core/Editor.h"
 #include "core/Object.h"
@@ -24,7 +22,6 @@
 
 #include "system/Input.h"
 #include "system/FileDialog.h"
-#include "system/System.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui-1.91.7/implot.h>
@@ -34,8 +31,12 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
+import std;
+
 import HalesiaEngine;
+
 import System.Window;
+import System;
 
 constexpr float BAR_WIDTH = 0.15f;
 constexpr float LOWER_BAR_HEIGHT = 0.2f;

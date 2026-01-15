@@ -240,6 +240,7 @@
     <ClCompile Include="src\Surface.cpp" />
     <ClCompile Include="src\Swapchain.cpp" />
     <ClCompile Include="src\System.cpp" />
+    <ClCompile Include="src\system\System.ixx" />
     <ClCompile Include="src\system\Window.ixx" />
     <ClCompile Include="src\SytemMetrics.cpp" />
     <ClCompile Include="src\Texture.cpp" />
@@ -349,7 +350,6 @@
     <ClInclude Include="src\system\CriticalSection.h" />
     <ClInclude Include="src\system\FileDialog.h" />
     <ClInclude Include="src\system\Input.h" />
-    <ClInclude Include="src\system\System.h" />
     <ClInclude Include="src\system\SystemMetrics.h" />
     <ClInclude Include="src\tools\common.h" />
     <ClInclude Include="src\tools\RefPointer.h" />
