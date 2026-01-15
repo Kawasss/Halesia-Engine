@@ -15,7 +15,8 @@
 #include "renderer/Vulkan.h"
 
 #include "core/MeshObject.h"
-#include "core/CameraObject.h"
+
+import Core.CameraObject;
 
 struct DeferredPipeline::PushConstant
 {

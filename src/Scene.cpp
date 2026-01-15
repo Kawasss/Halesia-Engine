@@ -5,7 +5,6 @@
 #include "io/SceneLoader.h"
 #include "system/Window.h"
 
-#include "core/CameraObject.h"
 #include "core/Object.h"
 #include "core/Scene.h"
 #include "core/Console.h"
@@ -13,6 +12,8 @@
 #include "core/Rigid3DObject.h"
 #include "core/LightObject.h"
 #include "core/ScriptObject.h"
+
+import Core.CameraObject;
 
 CameraObject* Scene::defaultCamera = nullptr;
 

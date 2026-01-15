@@ -3,8 +3,6 @@
 
 #include "glm.h"
 
-#include "core/CameraObject.h"
-
 #include "renderer/Skybox.h"
 #include "renderer/Texture.h"
 #include "renderer/HdrConverter.h"
@@ -14,6 +12,8 @@
 #include "renderer/GarbageManager.h"
 #include "renderer/Renderer.h"
 #include "renderer/Vulkan.h"
+
+import Core.CameraObject;
 
 struct PushConstantSkybox
 {

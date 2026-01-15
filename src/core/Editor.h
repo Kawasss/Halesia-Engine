@@ -4,12 +4,19 @@
 #include <atomic>
 #include <span>
 #include <variant>
+#include <future>
 
 #include "Scene.h"
-#include "CameraObject.h"
 #include "EditorProject.h"
 
 #include "../io/FwdDclCreationData.h"
+
+#include "../glm.h"
+
+#include "Object.h"
+#include "Transform.h"
+
+import Core.CameraObject;
 
 class Window;
 class Renderer;

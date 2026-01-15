@@ -179,6 +179,8 @@
     <ClCompile Include="src\CommandBuffer.cpp" />
     <ClCompile Include="src\ComputeShader.cpp" />
     <ClCompile Include="src\Console.cpp" />
+    <ClCompile Include="src\core\Behavior.ixx" />
+    <ClCompile Include="src\core\CameraObject.ixx" />
     <ClCompile Include="src\DataArchiveFile.cpp" />
     <ClCompile Include="src\Deferred.cpp" />
     <ClCompile Include="src\Denoiser.cpp" />
@@ -263,7 +265,6 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="src\Audio.h" />
     <ClInclude Include="src\core\Behavior.h" />
-    <ClInclude Include="src\core\CameraObject.h" />
     <ClInclude Include="src\core\Console.h" />
     <ClInclude Include="src\core\Editor.h" />
     <ClInclude Include="src\core\EditorProject.h" />

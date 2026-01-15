@@ -2,7 +2,7 @@
 #include <vulkan/vulkan.h>
 #include <array>
 
-#include "glm.h"
+#include "../glm.h"
 
 constexpr uint32_t MAX_BONES_PER_VERTEX = 4;
 

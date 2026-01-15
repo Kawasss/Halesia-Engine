@@ -13,8 +13,6 @@
 #include "system/Input.h"
 #include "system/Window.h"
 
-#include "physics/Shapes.h"
-
 #include "core/Console.h"
 #include "core/Object.h"
 #include "core/MeshObject.h"
@@ -23,12 +21,14 @@
 #include "core/Transform.h"
 #include "core/Profiler.h"
 #include "core/Scene.h"
-#include "core/CameraObject.h"
 
 #include "HalesiaEngine.h"
 #include <hsl/StackMap.h>
 
+import Core.CameraObject;
+
 import Physics.RigidBody;
+import Physics.Shapes;
 
 inline void InputFloat(const std::string& name, float& value, float width)
 {

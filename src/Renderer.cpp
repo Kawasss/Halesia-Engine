@@ -24,7 +24,6 @@
 
 #include "core/Console.h"
 #include "core/Object.h"
-#include "core/CameraObject.h"
 #include "core/MeshObject.h"
 #include "core/LightObject.h"
 
@@ -39,6 +38,8 @@
 #include "renderer/Renderer.h"
 
 #include "io/IO.h"
+
+import Core.CameraObject;
 
 namespace fs = std::filesystem;
 

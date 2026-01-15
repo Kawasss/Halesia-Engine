@@ -1,6 +1,13 @@
-#include "core/CameraObject.h"
+module;
 
 #include "HalesiaEngine.h"
+
+#include "core/Object.h"
+#include "core/Transform.h"
+
+#include "glm.h"
+
+module Core.CameraObject;
 
 CameraObject* CameraObject::Create()
 {

@@ -5,9 +5,10 @@
 #include "renderer/Renderer.h"
 
 #include "core/MeshObject.h"
-#include "core/CameraObject.h"
 
 #include "glm.h"
+
+import Core.CameraObject;
 
 constexpr uint32_t BOX_LINE_COUNT = 24;
 

@@ -1,11 +1,12 @@
-#pragma once
-#include <Windows.h>
+module;
 
 #include "Object.h"
 
 #include "../glm.h"
 
-class CameraObject : public Object
+export module Core.CameraObject;
+
+export class CameraObject : public Object
 {
 public:
 	static CameraObject* Create(const ObjectCreationData& data);

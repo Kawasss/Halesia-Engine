@@ -6,8 +6,9 @@
 #include "renderer/Texture.h"
 #include "renderer/Light.h"
 
-#include "core/CameraObject.h"
 #include "core/MeshObject.h"
+
+import Core.CameraObject;
 
 struct PushConstant
 {

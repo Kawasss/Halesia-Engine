@@ -8,25 +8,22 @@
 #include "HalesiaEngine.h"
 
 #include "system/Input.h"
-#include "system/SystemMetrics.h"
 #include "system/System.h"
 
 #include "renderer/Renderer.h"
 #include "renderer/gui.h"
 #include "renderer/AnimationManager.h"
-#include "renderer/ComputeShader.h"
 #include "renderer/Vulkan.h"
 
-#include "core/CameraObject.h"
 #include "core/Console.h"
 #include "core/Profiler.h"
-#include "core/Behavior.h"
 #include "core/Scene.h"
-#include "core/UniquePointer.h"
 
 #include "io/IniFile.h"
 
 #include "Audio.h"
+
+import Core.Behavior;
 
 import Physics;
 
