@@ -7,14 +7,15 @@ module;
 #include "core/Console.h"
 #include "core/MeshObject.h"
 #include "core/Rigid3DObject.h"
-#include "core/LightObject.h"
 #include "core/ScriptObject.h"
 
 #include "system/CriticalSection.h"
 
 module Core.Scene;
 
+import Core.LightObject;
 import Core.CameraObject;
+
 import System.Window;
 
 CameraObject* Scene::defaultCamera = nullptr;

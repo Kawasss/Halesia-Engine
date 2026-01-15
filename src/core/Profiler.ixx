@@ -2,7 +2,7 @@ export module Core.Profiler;
 
 import std;
 
-using ProfilerOptions = std::uint32_t;
+export using ProfilerOptions = std::uint32_t;
 
 enum ProfilerFlags : ProfilerOptions
 {

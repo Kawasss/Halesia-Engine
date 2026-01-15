@@ -1,3 +1,5 @@
+module;
+
 #include "core/Console.h"
 
 #include "renderer/Renderer.h"

@@ -14,7 +14,6 @@
 #include "core/Object.h"
 #include "core/MeshObject.h"
 #include "core/Rigid3DObject.h"
-#include "core/LightObject.h"
 #include "core/Transform.h"
 
 #include <hsl/StackMap.h>
@@ -22,6 +21,7 @@
 import HalesiaEngine;
 
 import Core.Profiler;
+import Core.LightObject;
 import Core.CameraObject;
 import Core.Scene;
 

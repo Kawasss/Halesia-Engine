@@ -1,9 +1,19 @@
-#include <Windows.h>
+module;
 
-#include "core/LightObject.h"
+#include <Windows.h>
 
 #include "io/CreationData.h"
 #include "io/BinaryStream.h"
+
+#include "core/Object.h"
+
+#include "renderer/Light.h"
+
+#include "glm.h"
+
+module Core.LightObject;
+
+import std;
 
 LightObject::LightObject() : Object(InheritType::Light)
 {

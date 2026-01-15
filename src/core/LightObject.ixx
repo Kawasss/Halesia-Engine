@@ -1,9 +1,19 @@
-#pragma once
+module;
+
+#include "Windows.h"
+
 #include "Object.h"
+#include "../io/CreationData.h"
 
 #include "../renderer/Light.h"
 
-class LightObject : public Object
+#include "../glm.h"
+
+#include "../io/BinaryStream.h"
+
+export module Core.LightObject;
+
+export class LightObject : public Object
 {
 public:
 	static LightObject* Create(const ObjectCreationData& data);
