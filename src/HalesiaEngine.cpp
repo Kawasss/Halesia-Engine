@@ -7,7 +7,6 @@ module;
 
 #include "core/Console.h"
 #include "core/Profiler.h"
-#include "core/Scene.h"
 
 #include "io/IniFile.h"
 
@@ -18,6 +17,7 @@ import std;
 import Audio;
 
 import Core.Behavior;
+import Core.Scene;
 
 import Physics;
 

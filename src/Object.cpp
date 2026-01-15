@@ -3,12 +3,13 @@
 
 #include "core/Object.h"
 #include "core/Console.h"
-#include "core/Scene.h"
 
 #include "io/CreationData.h"
 #include "io/BinaryStream.h"
 
 #include "ResourceManager.h"
+
+import Core.Scene;
 
 Object::Object(InheritType type) : type(type)
 {

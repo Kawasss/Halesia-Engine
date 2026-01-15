@@ -17,13 +17,13 @@
 #include "core/LightObject.h"
 #include "core/Transform.h"
 #include "core/Profiler.h"
-#include "core/Scene.h"
 
 #include <hsl/StackMap.h>
 
 import HalesiaEngine;
 
 import Core.CameraObject;
+import Core.Scene;
 
 import Physics.RigidBody;
 import Physics.Shapes;

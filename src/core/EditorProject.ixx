@@ -1,10 +1,10 @@
 module;
 
-#include "Scene.h"
-
 export module Core.EditorProject;
 
 import std;
+
+import Core.Scene;
 
 namespace fs = std::filesystem;
 
@@ -21,15 +21,15 @@ public:
 
 	struct UncheckedFile
 	{
-		uint32_t version = 0;
+		std::uint32_t version = 0;
 		std::string workingDirectory;
 		std::string buildDirectory;
 
 		bool AssignValueToIdentifier(const std::string_view& identifier, const std::string_view& value); // returns false if the identifier is invalid or the value not be parsed
 	};
 
-	static constexpr uint32_t INVALID_VERSION = 0;
-	static constexpr uint32_t VERSION = 1;
+	static constexpr std::uint32_t INVALID_VERSION = 0;
+	static constexpr std::uint32_t VERSION = 1;
 	static constexpr std::string_view EXTENSION = ".hproj";
 
 	static std::expected<EditorProject, Result> CreateInFile(const std::string_view& path); // can only create a project in a file that does not exist

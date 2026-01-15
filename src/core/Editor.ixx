@@ -2,8 +2,6 @@ module;
 
 #include <Windows.h>
 
-#include "Scene.h"
-
 #include "../io/CreationData.h"
 
 #include "../glm.h"
@@ -28,6 +26,7 @@ import Physics.RigidBody;
 
 import Core.CameraObject;
 import Core.EditorProject;
+import Core.Scene;
 
 namespace fs = std::filesystem;
 

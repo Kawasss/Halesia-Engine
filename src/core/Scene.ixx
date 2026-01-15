@@ -1,28 +1,33 @@
-#pragma once
-#include <string>
-#include <vector>
-#include <string_view>
+module;
+
+#include <Windows.h>
 
 #include "../system/CriticalSection.h"
 
-class Object;
-class CameraObject;
-class Window;
+#include "Object.h"
 
-struct ObjectCreationData;
+#include "../io/CreationData.h"
 
-class Scene 
+export module Core.Scene;
+
+import std;
+
+import System.Window;
+
+import Core.CameraObject;
+
+export class Scene
 {
 public:
 	static CameraObject* defaultCamera;
 
 	CameraObject* camera = defaultCamera;
 
-	template<typename T> 
+	template<typename T>
 	Object* AddObject(const ObjectCreationData& creationData, Object* pParent = nullptr);
 	Object* AddObject(const ObjectCreationData& creationData, Object* pParent = nullptr);
 
-	template<typename T> 
+	template<typename T>
 	Object* DuplicateObject(Object* pObject, std::string name); //!< UNSAFE, currently does not duplicate the appropriate class based on type
 	Object* DuplicateObject(Object* pObject, std::string name); //!< UNSAFE
 
@@ -94,6 +99,6 @@ template<typename T> Object* Scene::DuplicateObject(Object* pObject, std::string
 	Object::Duplicate(pObject, newObjPtr, name, tPtr);
 	RegisterObjectPointer(newObjPtr);
 	newObjPtr->Start();
-	
+
 	return newObjPtr;
 }

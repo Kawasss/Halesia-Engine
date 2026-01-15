@@ -7,11 +7,12 @@
 #include "io/DataArchiveFile.h"
 #include "io/BinaryStream.h"
 
-#include "core/Scene.h"
 #include "core/Object.h"
 #include "core/MeshObject.h"
 
 #include "renderer/Texture.h"
+
+import Core.Scene;
 
 static void WriteNamedReferencesToStream(BinaryStream& stream, const std::vector<Object*>& objects)
 {

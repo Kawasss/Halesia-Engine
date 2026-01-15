@@ -1,16 +1,18 @@
-#include <algorithm>
-#include <execution>
-#include <optional>
+module;
 
 #include "io/SceneLoader.h"
+#include "io/CreationData.h"
 
 #include "core/Object.h"
-#include "core/Scene.h"
 #include "core/Console.h"
 #include "core/MeshObject.h"
 #include "core/Rigid3DObject.h"
 #include "core/LightObject.h"
 #include "core/ScriptObject.h"
+
+#include "system/CriticalSection.h"
+
+module Core.Scene;
 
 import Core.CameraObject;
 import System.Window;
