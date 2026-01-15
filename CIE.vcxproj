@@ -291,10 +291,6 @@
     <ClInclude Include="src\io\FileBase.h" />
     <ClInclude Include="src\io\FileFormat.h" />
     <ClInclude Include="src\io\FileMaterial.h" />
-    <ClInclude Include="src\io\FileMesh.h" />
-    <ClInclude Include="src\io\FileObject.h" />
-    <ClInclude Include="src\io\FileRigidBody.h" />
-    <ClInclude Include="src\io\FileShape.h" />
     <ClInclude Include="src\io\FwdDclCreationData.h" />
     <ClInclude Include="src\io\IniFile.h" />
     <ClInclude Include="src\io\IO.h" />

@@ -10,8 +10,6 @@
 #include "../renderer/Bone.h"
 
 #include "FileMaterial.h"
-#include "FileMesh.h"
-#include "FileRigidBody.h"
 
 import Physics.RigidBody;
 import Physics.Shapes;
@@ -22,15 +20,6 @@ using ImageCreationData    = FileImage;
 
 struct MeshCreationData
 {
-	void TransferFrom(FileMesh& mesh) // will inherit the vertices and indices of the given FileMesh
-	{
-		vertices = std::move(mesh.vertices.data);
-		indices  = std::move(mesh.indices.data);
-
-		materialIndex = mesh.materialIndex;
-		faceCount = indices.size() / 3;
-	}
-
 	uint32_t materialIndex;
 
 	bool hasBones = false;
@@ -52,14 +41,6 @@ struct MeshCreationData
 
 struct RigidCreationData
 {
-	void TransferFrom(const FileRigidBody& file) // maybe move to source file
-	{
-		rigidType = static_cast<RigidBody::Type>(file.type);
-		shapeType = static_cast<Shape::Type>(file.shape.type);
-
-		extents = { file.shape.x, file.shape.y, file.shape.z };
-	}
-
 	glm::vec3 extents = glm::vec3(0);
 
 	Shape::Type     shapeType = Shape::Type::None;
