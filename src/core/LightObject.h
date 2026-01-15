@@ -10,7 +10,7 @@ public:
 	static LightObject* Create(const Light& light);
 	static LightObject* Create();
 
-	Light::Type type;
+	Light::Type lType;
 
 	float cutoff = .0f;
 	float outerCutoff = .0f;

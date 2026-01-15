@@ -1,13 +1,15 @@
-#pragma once
-#include <string_view>
-#include <expected>
-#include <filesystem>
+module;
+
+#include "Scene.h"
+
+export module Core.EditorProject;
+
+import std;
 
 namespace fs = std::filesystem;
 
-class Scene;
 //TODO: move engine settings into this file
-class EditorProject
+export class EditorProject
 {
 public:
 	enum class Result

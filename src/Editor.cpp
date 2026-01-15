@@ -9,7 +9,6 @@ module;
 #include "core/Rigid3DObject.h"
 #include "core/LightObject.h"
 #include "core/ScriptObject.h"
-#include "core/EditorProject.h"
 
 #include "renderer/gui.h"
 #include "renderer/RenderPipeline.h"
@@ -32,12 +31,16 @@ module Core.Editor;
 
 import std;
 
+import Core.EditorProject;
+
 import HalesiaEngine;
 
 import System.Input;
 import System.FileDialog;
 import System.Window;
 import System;
+
+namespace fs = std::filesystem;
 
 constexpr float BAR_WIDTH = 0.15f;
 constexpr float LOWER_BAR_HEIGHT = 0.2f;
@@ -938,8 +941,8 @@ void Editor::ShowObjectLight(LightObject* light)
 {
 	static std::array<std::string_view, 3> lightTypes = { "Directional", "Point", "Spot" };
 
-	std::string_view curr = Light::TypeToString(light->type);
-	int currIndex = static_cast<int>(light->type);
+	std::string_view curr = Light::TypeToString(light->lType);
+	int currIndex = static_cast<int>(light->lType);
 	int nextIndex = currIndex;
 
 	ImGui::Text("type:         ");
@@ -947,7 +950,7 @@ void Editor::ShowObjectLight(LightObject* light)
 	GUI::ShowDropdownMenu(lightTypes, curr, nextIndex, "##selected_object_light");
 
 	if (currIndex != nextIndex)
-		light->type = Light::StringToType(curr);
+		light->lType = Light::StringToType(curr);
 
 	float cutoff = glm::degrees(light->cutoff);
 

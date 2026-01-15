@@ -3,7 +3,6 @@ module;
 #include <Windows.h>
 
 #include "Scene.h"
-#include "EditorProject.h"
 
 #include "../io/CreationData.h"
 
@@ -28,6 +27,9 @@ import System.Window;
 import Physics.RigidBody;
 
 import Core.CameraObject;
+import Core.EditorProject;
+
+namespace fs = std::filesystem;
 
 using Handle = uint64_t;
 

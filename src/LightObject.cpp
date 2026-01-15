@@ -23,7 +23,7 @@ LightObject* LightObject::Create(const Light& light)
 	LightObject* ret = new LightObject();
 
 	ret->transform.position = light.pos;
-	ret->type = light.type;
+	ret->lType = light.type;
 	ret->color = light.color;
 	ret->cutoff = light.cutoff;
 	ret->outerCutoff = light.outerCutoff;
@@ -42,7 +42,7 @@ void LightObject::Init(const ObjectCreationData& data)
 	Initialize(data);
 
 	transform.position = data.lightData.pos;
-	type = data.lightData.type;
+	lType = data.lightData.type;
 	color = data.lightData.color;
 	cutoff = data.lightData.cutoff;
 	outerCutoff = data.lightData.outerCutoff;
@@ -54,7 +54,7 @@ LightGPU LightObject::ToGPUFormat() const
 	ret.pos = glm::vec4(transform.position, outerCutoff);
 	ret.color = color;
 	ret.direction = glm::vec4(glm::rotate(transform.rotation, glm::vec3(0, 1, -1)), cutoff);
-	ret.type = type;
+	ret.type = lType;
 
 	return ret;
 }
@@ -63,7 +63,7 @@ void LightObject::DuplicateDataTo(Object* pObject) const
 {
 	LightObject* pLight = dynamic_cast<LightObject*>(pObject);
 
-	pLight->type = type;
+	pLight->lType = lType;
 	pLight->color = color;
 	pLight->cutoff = cutoff;
 	pLight->outerCutoff = outerCutoff;
@@ -71,7 +71,7 @@ void LightObject::DuplicateDataTo(Object* pObject) const
 
 void LightObject::SerializeSelf(BinaryStream& stream) const
 {
-	stream << static_cast<std::underlying_type_t<Light::Type>>(type);
+	stream << static_cast<std::underlying_type_t<Light::Type>>(lType);
 	stream << cutoff << outerCutoff << color.x << color.y << color.z;
 }
 
@@ -80,7 +80,7 @@ void LightObject::DeserializeSelf(const BinarySpan& stream)
 	std::underlying_type_t<Light::Type> intermediary = 0;
 	stream >> intermediary;
 
-	type = static_cast<Light::Type>(intermediary);
+	lType = static_cast<Light::Type>(intermediary);
 	
 	stream >> cutoff >> outerCutoff >> color.x >> color.y >> color.z;
 }

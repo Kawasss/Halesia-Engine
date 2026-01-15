@@ -1,12 +1,16 @@
-#include <filesystem>
-#include <fstream>
+module;
 
 #include "core/Console.h"
-#include "core/EditorProject.h"
 #include "core/Scene.h"
 
 #include "io/SceneWriter.h"
 #include "io/IO.h"
+
+module Core.EditorProject;
+
+import std;
+
+import Core.EditorProject;
 
 import StrUtil;
 

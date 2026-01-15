@@ -396,6 +396,9 @@
     <ClCompile Include="src\core\Editor.ixx">
       <Filter>Header Files\core</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\EditorProject.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -643,9 +646,6 @@
     </ClInclude>
     <ClInclude Include="src\renderer\SimpleMesh.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\EditorProject.h">
-      <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\SkyPipeline.h">
       <Filter>Header Files\Renderer</Filter>
