@@ -1,8 +1,12 @@
+module;
+
 #include <Windows.h>
 #include <ShlObj_core.h>
 #include <atlbase.h>
 
-#include "system/FileDialog.h"
+module System.FileDialog;
+
+import std;
 
 struct WideFilter
 {

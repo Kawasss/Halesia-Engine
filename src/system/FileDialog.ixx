@@ -1,8 +1,8 @@
-#pragma once
-#include <string>
-#include <vector>
+export module System.FileDialog;
 
-class FileDialog
+import std;
+
+export class FileDialog
 {
 public:
 	struct Filter

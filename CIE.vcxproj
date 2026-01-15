@@ -170,6 +170,7 @@
     <ClCompile Include="src\AnimationManager.cpp" />
     <ClCompile Include="src\Animator.cpp" />
     <ClCompile Include="src\Audio.cpp" />
+    <ClCompile Include="src\Audio.ixx" />
     <ClCompile Include="src\BinaryReader.cpp" />
     <ClCompile Include="src\BinaryStream.cpp" />
     <ClCompile Include="src\BinaryWriter.cpp" />
@@ -236,10 +237,11 @@
     <ClCompile Include="src\Skybox.cpp" />
     <ClCompile Include="src\Pipeline.cpp" />
     <ClCompile Include="src\SkyPipeline.cpp" />
-    <ClCompile Include="src\StrUtil.cpp" />
+    <ClCompile Include="src\StrUtil.ixx" />
     <ClCompile Include="src\Surface.cpp" />
     <ClCompile Include="src\Swapchain.cpp" />
     <ClCompile Include="src\System.cpp" />
+    <ClCompile Include="src\system\FileDialog.ixx" />
     <ClCompile Include="src\system\System.ixx" />
     <ClCompile Include="src\system\Window.ixx" />
     <ClCompile Include="src\SytemMetrics.cpp" />
@@ -266,7 +268,6 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_textedit.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_truetype.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.h" />
-    <ClInclude Include="src\Audio.h" />
     <ClInclude Include="src\core\Editor.h" />
     <ClInclude Include="src\core\EditorProject.h" />
     <ClInclude Include="src\core\Job.h" />
@@ -280,8 +281,6 @@
     <ClInclude Include="src\core\ScriptObject.h" />
     <ClInclude Include="src\core\Transform.h" />
     <ClInclude Include="src\core\UniquePointer.h" />
-    <ClInclude Include="src\demo\Calculator.h" />
-    <ClInclude Include="src\demo\Topdown.h" />
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\io\BinaryReader.h" />
     <ClInclude Include="src\io\BinaryStream.h" />
@@ -346,9 +345,7 @@
     <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\ResourceManager.h" />
     <ClInclude Include="src\scripting\Script.h" />
-    <ClInclude Include="src\StrUtil.h" />
     <ClInclude Include="src\system\CriticalSection.h" />
-    <ClInclude Include="src\system\FileDialog.h" />
     <ClInclude Include="src\system\Input.h" />
     <ClInclude Include="src\system\SystemMetrics.h" />
     <ClInclude Include="src\tools\common.h" />

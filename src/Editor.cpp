@@ -21,7 +21,6 @@
 #include "io/DataArchiveFile.h"
 
 #include "system/Input.h"
-#include "system/FileDialog.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui-1.91.7/implot.h>
@@ -35,6 +34,7 @@ import std;
 
 import HalesiaEngine;
 
+import System.FileDialog;
 import System.Window;
 import System;
 

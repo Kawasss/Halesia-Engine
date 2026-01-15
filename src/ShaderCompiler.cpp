@@ -3,9 +3,10 @@
 
 #include "io/IO.h"
 
-#include "StrUtil.h"
-
 import std;
+
+import StrUtil;
+
 import System;
 
 constexpr std::string_view BASE_SPIRV_DIRECTORY = "shaders/spirv/"; // the location where all compiled shaders are stored / cached
@@ -56,7 +57,7 @@ std::vector<uint32_t> ShaderCompiler::GetExternalSetsFromSource(const fs::path& 
 
 		std::string indexString = line.substr(begin, end - begin); // cast it to a string_view /first/, and then take the substring, since the substr function then returns a string_view instead of a heap-allocated string
 
-		std::optional<uint32_t> index = strutil::TryStringToUInt(indexString);
+		std::optional<std::uint32_t> index = strutil::TryStringTo<std::uint32_t>(indexString);
 		
 		if (index.has_value())
 			ret.push_back(*index);

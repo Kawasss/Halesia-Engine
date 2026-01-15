@@ -8,7 +8,7 @@
 #include "io/SceneWriter.h"
 #include "io/IO.h"
 
-#include "StrUtil.h"
+import StrUtil;
 
 namespace fs = std::filesystem;
 
@@ -94,7 +94,7 @@ bool EditorProject::UncheckedFile::AssignValueToIdentifier(const std::string_vie
 {
 	if (identifier == "version")
 	{
-		std::optional<uint32_t> raw = strutil::TryStringToUInt(value);
+		std::optional<std::uint32_t> raw = strutil::TryStringTo<std::uint32_t>(value);
 		if (raw.has_value())
 			version = *raw;
 

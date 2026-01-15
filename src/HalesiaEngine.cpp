@@ -13,11 +13,11 @@ module;
 
 #include "io/IniFile.h"
 
-#include "Audio.h"
-
 module HalesiaEngine;
 
 import std;
+
+import Audio;
 
 import Core.Behavior;
 
