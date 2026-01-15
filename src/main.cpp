@@ -9,12 +9,12 @@
 #include "renderer/SkyPipeline.h"
 #include "renderer/Grid.h"
 
-#include "core/Editor.h"
-
 #include "io/CreationData.h"
 
 import HalesiaEngine;
 import System.Window;
+
+import Core.Editor;
 
 int main(int argc, char** argv)
 {

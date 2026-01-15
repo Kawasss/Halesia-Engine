@@ -1,6 +1,10 @@
+module;
+
 #include <Windows.h>
-#include "core/Editor.h"
+#include <cstdint>
+
 #include "core/Object.h"
+#include "core/Transform.h"
 #include "core/MeshObject.h"
 #include "core/Rigid3DObject.h"
 #include "core/LightObject.h"
@@ -10,7 +14,6 @@
 #include "renderer/gui.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
-#include "renderer/VideoMemoryManager.h"
 #include "renderer/Grid.h"
 
 #include "io/SceneLoader.h"
@@ -22,6 +25,10 @@
 #include <imgui-1.91.7/misc/cpp/imgui_stdlib.h>
 
 #include <glm/gtc/type_ptr.hpp>
+
+#include "glm.h"
+
+module Core.Editor;
 
 import std;
 

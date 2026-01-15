@@ -182,6 +182,7 @@
     <ClCompile Include="src\Console.cpp" />
     <ClCompile Include="src\core\Behavior.ixx" />
     <ClCompile Include="src\core\CameraObject.ixx" />
+    <ClCompile Include="src\core\Editor.ixx" />
     <ClCompile Include="src\DataArchiveFile.cpp" />
     <ClCompile Include="src\Deferred.cpp" />
     <ClCompile Include="src\Denoiser.cpp" />
@@ -270,7 +271,6 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_textedit.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_truetype.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.h" />
-    <ClInclude Include="src\core\Editor.h" />
     <ClInclude Include="src\core\EditorProject.h" />
     <ClInclude Include="src\core\Job.h" />
     <ClInclude Include="src\core\LightObject.h" />

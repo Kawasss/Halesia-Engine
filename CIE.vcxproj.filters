@@ -402,6 +402,9 @@
     <ClCompile Include="src\system\Window.ixx">
       <Filter>Header Files\system</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\Editor.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -529,9 +532,6 @@
     </ClInclude>
     <ClInclude Include="src\renderer\FramesInFlight.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\Editor.h">
-      <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\system\CriticalSection.h">
       <Filter>Header Files\system</Filter>

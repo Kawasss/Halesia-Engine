@@ -1,37 +1,37 @@
-#pragma once
-#include <string>
-#include <map>
-#include <atomic>
-#include <span>
-#include <variant>
-#include <future>
+module;
+
+#include <Windows.h>
 
 #include "Scene.h"
 #include "EditorProject.h"
 
-#include "../io/FwdDclCreationData.h"
+#include "../io/CreationData.h"
 
 #include "../glm.h"
 
 #include "Object.h"
-#include "Transform.h"
+#include "LightObject.h"
+#include "ScriptObject.h"
+
+#include "../renderer/Renderer.h"
+#include "../renderer/Animation.h"
+#include "../renderer/Mesh.h"
+#include "../renderer/Grid.h"
+#include "../renderer/BoundingVolumePipeline.h"
+
+export module Core.Editor;
+
+import std;
+
+import System.Window;
+
+import Physics.RigidBody;
 
 import Core.CameraObject;
 
-class Window;
-class Renderer;
-class RigidBody;
-class Animation;
-class LightObject;
-class ScriptObject;
-class GridPipeline;
-class BoundingVolumePipeline;
-struct MaterialCreateInfo;
-struct Mesh;
-
 using Handle = uint64_t;
 
-class EditorCamera : public CameraObject
+export class EditorCamera : public CameraObject
 {
 public:
 	EditorCamera(Window* pWindow);
@@ -50,7 +50,7 @@ private:
 	bool active = false;
 };
 
-class Editor : public Scene
+export class Editor : public Scene
 {
 public:
 	void Start() override;
