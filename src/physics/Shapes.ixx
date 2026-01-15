@@ -1,23 +1,23 @@
-#pragma once
-#include <string_view>
+module;
+
+#include <PxShape.h>
 
 #include "../glm.h"
 
-namespace physx
-{
-	class PxShape;
-}
+export module Physics.Shapes;
 
-class Shape
+import std;
+
+export class Shape
 {
 public:
 	enum class Type : uint8_t
 	{
-		None    = 0,
-		Sphere  = 1,
-		Box     = 2,
+		None = 0,
+		Sphere = 1,
+		Box = 2,
 		Capsule = 3,
-		Plane   = 4,
+		Plane = 4,
 	};
 	static std::string_view TypeToString(Type type);
 	static Type StringToType(const std::string_view& str);
@@ -31,19 +31,19 @@ protected:
 	physx::PxShape* shape;
 };
 
-class Sphere : public Shape
+export class Sphere : public Shape
 {
 public:
 	Sphere(float radius);
 };
 
-class Box : public Shape
+export class Box : public Shape
 {
 public:
 	Box(glm::vec3 extents);
 };
 
-class Capsule : public Shape
+export class Capsule : public Shape
 {
 public:
 	/// <summary>

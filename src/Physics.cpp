@@ -1,16 +1,21 @@
+module;
+
 #define PX_PHYSX_STATIC_LIB
-#include <string>
-#include <thread>
-#include <iostream>
+#include <PxPhysicsAPI.h>
 
-#include "physics/Physics.h"
+#include <extensions/PxExtensionsAPI.h>
+#include <extensions/PxDefaultCpuDispatcher.h>
 
-#include "extensions/PxExtensionsAPI.h"
-#include "extensions/PxDefaultCpuDispatcher.h"
-#include "extensions/PxDefaultSimulationFilterShader.h"
-
-#include "renderer/Mesh.h"
 #include "core/Rigid3DObject.h"
+
+#include "core/Transform.h"
+#include "core/Object.h"
+
+module Physics;
+
+import std;
+
+import "glm.h";
 
 constexpr float simulationStep = 1 / 60.0f;
 
@@ -18,32 +23,6 @@ Physics* Physics::physics = nullptr;
 
 physx::PxMaterial* defaultMaterial        = nullptr;
 physx::PxDefaultCpuDispatcher* dispatcher = nullptr;
-
-class PhysXErrorHandler : public physx::PxErrorCallback
-{
-public:
-	void reportError(physx::PxErrorCode::Enum errorCode, const char* message, const char* file, int line) override
-	{
-		std::string error = "PhysX error: " + (std::string)message + " in file " + (std::string)file + " at line " + std::to_string(line);
-		__debugbreak();
-#ifndef PHYSICS_NO_THROWING
-		throw std::runtime_error(error);
-#endif
-	}
-};
-
-class PhysicsOnContactCallback : public physx::PxSimulationEventCallback
-{
-	void onContact(const physx::PxContactPairHeader& pairHeader, const physx::PxContactPair* pairs, physx::PxU32 nbPairs) override;
-	void onConstraintBreak(physx::PxConstraintInfo* constraints, physx::PxU32 count) override {}
-
-	void onWake(physx::PxActor** actors, physx::PxU32 count) override {}
-	void onSleep(physx::PxActor** actors, physx::PxU32 count) override {}
-	void onTrigger(physx::PxTriggerPair* pairs, physx::PxU32 count) override {}
-
-	void onAdvance(const physx::PxRigidBody* const* bodyBuffer, const physx::PxTransform* poseBuffer, const physx::PxU32 count) override {}
-
-};
 
 physx::PxFilterFlags FilterShader(physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0, physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1, physx::PxPairFlags& pairFlags, const void* constantBlock, physx::PxU32 constantBlockSize)
 {

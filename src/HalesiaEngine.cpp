@@ -17,8 +17,6 @@
 #include "renderer/ComputeShader.h"
 #include "renderer/Vulkan.h"
 
-#include "physics/Physics.h"
-
 #include "core/CameraObject.h"
 #include "core/Console.h"
 #include "core/Profiler.h"
@@ -29,6 +27,8 @@
 #include "io/IniFile.h"
 
 #include "Audio.h"
+
+import Physics;
 
 class ExitRequest : public std::exception {}; // not that great to request an exit via errors
 

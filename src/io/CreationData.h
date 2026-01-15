@@ -9,12 +9,12 @@
 #include "../renderer/Light.h"
 #include "../renderer/Bone.h"
 
-#include "../physics/Shapes.h"
-#include "../physics/RigidBody.h"
-
 #include "FileMaterial.h"
 #include "FileMesh.h"
 #include "FileRigidBody.h"
+
+import Physics.RigidBody;
+import Physics.Shapes;
 
 using MaterialCreationData = FileMaterial;
 using ImageCreationData    = FileImage;

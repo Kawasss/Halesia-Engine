@@ -1,5 +1,12 @@
-#include "physics/Shapes.h"
-#include "physics/Physics.h"
+module;
+
+#include <PxPhysicsAPI.h>
+
+#include "glm.h"
+
+module Physics.Shapes;
+
+import Physics;
 
 physx::PxShape* Shape::GetShape()
 {

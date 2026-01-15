@@ -366,6 +366,15 @@
     <ClCompile Include="src\StrUtil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\physics\Physics.ixx">
+      <Filter>Header Files\physics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\physics\RigidBody.ixx">
+      <Filter>Header Files\physics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\physics\Shapes.ixx">
+      <Filter>Header Files\physics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\HalesiaEngine.h">
@@ -406,15 +415,6 @@
     </ClInclude>
     <ClInclude Include="src\renderer\Vulkan.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\physics\Physics.h">
-      <Filter>Header Files\physics</Filter>
-    </ClInclude>
-    <ClInclude Include="src\physics\RigidBody.h">
-      <Filter>Header Files\physics</Filter>
-    </ClInclude>
-    <ClInclude Include="src\physics\Shapes.h">
-      <Filter>Header Files\physics</Filter>
     </ClInclude>
     <ClInclude Include="src\tools\common.h">
       <Filter>Header Files\tools</Filter>

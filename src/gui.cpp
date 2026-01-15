@@ -13,7 +13,6 @@
 #include "system/Input.h"
 #include "system/Window.h"
 
-#include "physics/RigidBody.h"
 #include "physics/Shapes.h"
 
 #include "core/Console.h"
@@ -28,6 +27,8 @@
 
 #include "HalesiaEngine.h"
 #include <hsl/StackMap.h>
+
+import Physics.RigidBody;
 
 inline void InputFloat(const std::string& name, float& value, float width)
 {

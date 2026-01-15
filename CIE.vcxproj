@@ -110,6 +110,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <BuildStlModules>true</BuildStlModules>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -202,6 +203,9 @@
     <ClCompile Include="src\Mesh.cpp" />
     <ClCompile Include="src\MeshObject.cpp" />
     <ClCompile Include="src\Physics.cpp" />
+    <ClCompile Include="src\physics\Physics.ixx" />
+    <ClCompile Include="src\physics\RigidBody.ixx" />
+    <ClCompile Include="src\physics\Shapes.ixx" />
     <ClCompile Include="src\PipelineCreator.cpp" />
     <ClCompile Include="src\Profiler.cpp" />
     <ClCompile Include="src\QueryPool.cpp" />
@@ -298,9 +302,6 @@
     <ClInclude Include="src\io\SceneLoader.h" />
     <ClInclude Include="src\io\SceneWriter.h" />
     <ClInclude Include="src\math\vectors.h" />
-    <ClInclude Include="src\physics\RigidBody.h" />
-    <ClInclude Include="src\physics\Shapes.h" />
-    <ClInclude Include="src\physics\Physics.h" />
     <ClInclude Include="src\renderer\AccelerationStructures.h" />
     <ClInclude Include="src\renderer\Animation.h" />
     <ClInclude Include="src\renderer\AnimationManager.h" />

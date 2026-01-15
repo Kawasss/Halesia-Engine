@@ -1,18 +1,24 @@
-#pragma once
-#include "Physics.h"
-#include "Shapes.h"
+module;
+
+#include <PxRigidDynamic.h>
+#include <PxRigidStatic.h>
+
+#include "../core/Transform.h"
+
 #include "../glm.h"
 
-class Transform;
+export module Physics.RigidBody;
 
-class RigidBody
+import Physics.Shapes;
+
+export class RigidBody
 {
 public:
 	enum class Type : uint8_t
 	{
-		None      = 0,
-		Static    = 1,
-		Dynamic   = 2,
+		None = 0,
+		Static = 1,
+		Dynamic = 2,
 		Kinematic = 3,
 	};
 	static std::string_view TypeToString(Type type);
@@ -46,6 +52,6 @@ private:
 	physx::PxTransform GetTransform(Transform& transform);
 
 	physx::PxRigidDynamic* rigidDynamic = nullptr; // a rigidbody can have either of these types
-	physx::PxRigidStatic*  rigidStatic = nullptr;
+	physx::PxRigidStatic* rigidStatic = nullptr;
 	physx::PxRigidBody* rigid = nullptr;
 };

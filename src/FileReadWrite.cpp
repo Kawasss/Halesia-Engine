@@ -12,7 +12,7 @@
 #include "renderer/Material.h"
 #include "renderer/Mesh.h"
 
-#include "physics/RigidBody.h"
+import Physics.RigidBody;
 
 void FileImage::Read(BinaryReader& reader)
 {

@@ -1,7 +1,7 @@
 #pragma once
-#include "Object.h"
+import Physics.RigidBody;
 
-#include "../physics/RigidBody.h"
+#include "Object.h"
 
 #include "../io/FwdDclCreationData.h"
 

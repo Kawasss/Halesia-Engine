@@ -1,6 +1,3 @@
-#include "physics/RigidBody.h"
-#include "physics/Shapes.h"
-
 #include "HalesiaEngine.h"
 #include "core/Console.h"
 #include "core/Object.h"
@@ -9,6 +6,9 @@
 #include "renderer/RenderPipeline.h"
 
 #include "io/FileFormat.h"
+
+import Physics.RigidBody;
+import Physics.Shapes;
 
 std::string_view RenderModeToString(RenderMode mode)
 {

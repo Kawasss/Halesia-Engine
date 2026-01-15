@@ -1,6 +1,13 @@
-#include "physics/RigidBody.h"
+module;
+
+#include <PxPhysicsAPI.h>
+
 #include "core/Transform.h"
 #include "core/Object.h"
+
+module Physics.RigidBody;
+
+import Physics;
 
 RigidBody::RigidBody(Shape shape, Type type, glm::vec3 pos, glm::quat rot)
 {

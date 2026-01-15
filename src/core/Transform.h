@@ -1,5 +1,5 @@
- #pragma once
-#include "glm.h"
+#pragma once
+#include "../glm.h"
 
 class Transform
 {
