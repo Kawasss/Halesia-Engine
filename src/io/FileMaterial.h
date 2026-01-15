@@ -1,7 +1,4 @@
 #pragma once
-#include <vector>
-
-#include "FileBase.h"
 #include "FileArray.h"
 
 class Texture;
@@ -9,14 +6,11 @@ struct Material;
 
 using uint = unsigned int;
 
-struct FileImage : FileBase
+struct FileImage
 {
 	FileArray<char> data;
 
 	static FileImage CreateFrom(Texture* tex);
-
-	void Read(BinaryReader& reader) override;
-	void Write(BinaryWriter& writer) const override;
 
 	bool IsDefault() const 
 	{ 
@@ -24,7 +18,7 @@ struct FileImage : FileBase
 	}
 };
 
-struct FileMaterial : FileBase
+struct FileMaterial
 {
 	bool isLight = false;
 
@@ -35,9 +29,6 @@ struct FileMaterial : FileBase
 	FileImage ambientOccl;
 
 	static FileMaterial CreateFrom(const Material& mat);
-
-	void Read(BinaryReader& reader) override;
-	void Write(BinaryWriter& writer) const override;
 
 	bool IsDefault() const
 	{

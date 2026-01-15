@@ -171,9 +171,7 @@
     <ClCompile Include="src\Animator.cpp" />
     <ClCompile Include="src\Audio.cpp" />
     <ClCompile Include="src\Audio.ixx" />
-    <ClCompile Include="src\BinaryReader.cpp" />
     <ClCompile Include="src\BinaryStream.cpp" />
-    <ClCompile Include="src\BinaryWriter.cpp" />
     <ClCompile Include="src\Bone.cpp" />
     <ClCompile Include="src\BoundingVolumePipeline.cpp" />
     <ClCompile Include="src\CameraObject.cpp" />
@@ -279,15 +277,11 @@
     <ClInclude Include="src\core\Scene.h" />
     <ClInclude Include="src\core\ScriptObject.h" />
     <ClInclude Include="src\core\Transform.h" />
-    <ClInclude Include="src\core\UniquePointer.h" />
     <ClInclude Include="src\glm.h" />
-    <ClInclude Include="src\io\BinaryReader.h" />
     <ClInclude Include="src\io\BinaryStream.h" />
-    <ClInclude Include="src\io\BinaryWriter.h" />
     <ClInclude Include="src\io\CreationData.h" />
     <ClInclude Include="src\io\DataArchiveFile.h" />
     <ClInclude Include="src\io\FileArray.h" />
-    <ClInclude Include="src\io\FileBase.h" />
     <ClInclude Include="src\io\FileFormat.h" />
     <ClInclude Include="src\io\FileMaterial.h" />
     <ClInclude Include="src\io\FwdDclCreationData.h" />
@@ -346,7 +340,6 @@
     <ClInclude Include="src\scripting\Script.h" />
     <ClInclude Include="src\system\CriticalSection.h" />
     <ClInclude Include="src\tools\common.h" />
-    <ClInclude Include="src\tools\RefPointer.h" />
     <ClInclude Include="src\tools\Timer.h" />
   </ItemGroup>
   <ItemGroup>
