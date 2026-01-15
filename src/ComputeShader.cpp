@@ -10,6 +10,8 @@
 
 #include "io/IO.h"
 
+import Renderer.CompiledShader;
+
 ComputeShader::ComputeShader(const std::string& path)
 {
 	std::expected<CompiledShader, bool> shader = ShaderCompiler::Compile(path);

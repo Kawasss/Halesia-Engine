@@ -9,6 +9,8 @@
 
 #include "io/IO.h"
 
+import Renderer.CompiledShader;
+
 GraphicsPipeline::GraphicsPipeline(const CreateInfo& createInfo)
 {
 	std::expected<CompiledShader, bool> vertex   = ShaderCompiler::Compile(createInfo.vertexShader);

@@ -1,12 +1,17 @@
-#include <array>
+module;
 
-#include "renderer/BoundingVolumePipeline.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/Renderer.h"
+#include "renderer/SimpleMesh.h"
+#include "renderer/RenderPipeline.h"
 
 #include "core/MeshObject.h"
 
 #include "glm.h"
+
+module Renderer.BoundingVolumePipeline;
+
+import std;
 
 import Core.CameraObject;
 

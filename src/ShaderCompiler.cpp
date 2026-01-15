@@ -9,6 +9,8 @@ import StrUtil;
 
 import System;
 
+import Renderer.CompiledShader;
+
 constexpr std::string_view BASE_SPIRV_DIRECTORY = "shaders/spirv/"; // the location where all compiled shaders are stored / cached
 constexpr std::string_view SPIRV_FILE = ".spv";
 

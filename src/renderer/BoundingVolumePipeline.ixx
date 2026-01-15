@@ -1,13 +1,16 @@
-#pragma once
-#include <memory>
+module;
 
 #include "SimpleMesh.h"
 #include "RenderPipeline.h"
 #include "Buffer.h"
 
-class GraphicsPipeline;
+#include "GraphicsPipeline.h"
 
-class BoundingVolumePipeline : public RenderPipeline
+export module Renderer.BoundingVolumePipeline;
+
+import std;
+
+export class BoundingVolumePipeline : public RenderPipeline
 {
 public:
 	void Start(const Payload& payload) override;

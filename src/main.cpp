@@ -3,7 +3,6 @@
 #include "renderer/Skybox.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/RayTracingPipeline.h"
-#include "renderer/BoundingVolumePipeline.h"
 #include "renderer/AccelerationStructures.h"
 #include "renderer/ComputeShader.h"
 #include "renderer/SkyPipeline.h"

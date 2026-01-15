@@ -220,6 +220,8 @@
     <ClCompile Include="src\QueryPool.cpp" />
     <ClCompile Include="src\RayTracingPipeline.cpp" />
     <ClCompile Include="src\ReadWriteFile.cpp" />
+    <ClCompile Include="src\renderer\BoundingVolumePipeline.ixx" />
+    <ClCompile Include="src\renderer\CompiledShader.ixx" />
     <ClCompile Include="src\ResizableBuffer.cpp" />
     <ClCompile Include="src\Rigid3DObject.cpp" />
     <ClCompile Include="src\Script.cpp" />
@@ -297,9 +299,7 @@
     <ClInclude Include="src\renderer\AnimationManager.h" />
     <ClInclude Include="src\renderer\Animator.h" />
     <ClInclude Include="src\renderer\Bone.h" />
-    <ClInclude Include="src\renderer\BoundingVolumePipeline.h" />
     <ClInclude Include="src\renderer\CommandBuffer.h" />
-    <ClInclude Include="src\renderer\CompiledShader.h" />
     <ClInclude Include="src\renderer\ComputeShader.h" />
     <ClInclude Include="src\renderer\Deferred.h" />
     <ClInclude Include="src\renderer\Denoiser.h" />

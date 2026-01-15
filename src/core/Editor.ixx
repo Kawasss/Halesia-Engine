@@ -12,7 +12,6 @@ module;
 #include "../renderer/Animation.h"
 #include "../renderer/Mesh.h"
 #include "../renderer/Grid.h"
-#include "../renderer/BoundingVolumePipeline.h"
 
 export module Core.Editor;
 
@@ -21,6 +20,8 @@ import std;
 import System.Window;
 
 import Physics.RigidBody;
+
+import Renderer.BoundingVolumePipeline;
 
 import Core.ScriptObject;
 import Core.CameraObject;

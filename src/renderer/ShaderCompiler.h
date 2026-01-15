@@ -5,7 +5,7 @@
 #include <filesystem>
 #include <expected>
 
-#include "CompiledShader.h"
+import Renderer.CompiledShader;
 
 class ShaderCompiler
 {
