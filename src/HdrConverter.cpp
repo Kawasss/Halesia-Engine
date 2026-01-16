@@ -7,7 +7,6 @@ module;
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/PipelineCreator.h"
 #include "renderer/GarbageManager.h"
-#include "renderer/DescriptorWriter.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/Renderer.h"
 #include "renderer/Texture.h"
@@ -17,6 +16,8 @@ module;
 module Renderer.HdrConverter;
 
 import std;
+
+import Renderer.DescriptorWriter;
 
 struct PushConstantConverter
 {

@@ -222,6 +222,7 @@
     <ClCompile Include="src\renderer\BoundingVolumePipeline.ixx" />
     <ClCompile Include="src\renderer\CompiledShader.ixx" />
     <ClCompile Include="src\renderer\Deferred.ixx" />
+    <ClCompile Include="src\renderer\DescriptorWriter.ixx" />
     <ClCompile Include="src\renderer\Grid.ixx" />
     <ClCompile Include="src\renderer\gui.ixx" />
     <ClCompile Include="src\renderer\HdrConverter.ixx" />
@@ -307,7 +308,6 @@
     <ClInclude Include="src\renderer\Bone.h" />
     <ClInclude Include="src\renderer\CommandBuffer.h" />
     <ClInclude Include="src\renderer\ComputeShader.h" />
-    <ClInclude Include="src\renderer\DescriptorWriter.h" />
     <ClInclude Include="src\renderer\ForwardPlus.h" />
     <ClInclude Include="src\renderer\Framebuffer.h" />
     <ClInclude Include="src\renderer\FramesInFlight.h" />

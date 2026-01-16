@@ -1,7 +1,6 @@
 #include "renderer/Vulkan.h"
 #include "renderer/ComputeShader.h"
 #include "renderer/ShaderReflector.h"
-#include "renderer/DescriptorWriter.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/VulkanAPIError.h"
@@ -11,6 +10,7 @@
 #include "io/IO.h"
 
 import Renderer.CompiledShader;
+import Renderer.DescriptorWriter;
 
 ComputeShader::ComputeShader(const std::string& path)
 {

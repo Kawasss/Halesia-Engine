@@ -7,7 +7,6 @@
 #include "renderer/Mesh.h"
 #include "renderer/AnimationManager.h"
 #include "renderer/PipelineCreator.h"
-#include "renderer/DescriptorWriter.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/GarbageManager.h"
@@ -37,6 +36,7 @@ import System.Window;
 import System;
 
 import Renderer.HdrConverter;
+import Renderer.DescriptorWriter;
 
 namespace fs = std::filesystem;
 

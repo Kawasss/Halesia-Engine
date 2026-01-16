@@ -3,13 +3,14 @@
 #include "renderer/Pipeline.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/CommandBuffer.h"
-#include "renderer/DescriptorWriter.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/Buffer.h"
 #include "renderer/Vulkan.h"
 
 #include "core/Console.h"
+
+import Renderer.DescriptorWriter;
 
 std::vector<VkDescriptorSetLayout> Pipeline::globalSetLayouts;
 std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT> Pipeline::globalDescriptorSets;

@@ -1,7 +1,10 @@
-#pragma once
+module;
+
 #include <vulkan/vulkan.h>
 
-class DescriptorWriter // the writer basically does buffered writing, the size of the buffer is determined by MAX_INFO_COUNT.
+export module Renderer.DescriptorWriter;
+
+export class DescriptorWriter // the writer basically does buffered writing, the size of the buffer is determined by MAX_INFO_COUNT.
 {
 public:
 	static void Write();
@@ -17,7 +20,7 @@ private:
 	};
 
 	static constexpr size_t MAX_INFO_COUNT = 64;
-	
+
 	static GenericDescriptorInfo infos[MAX_INFO_COUNT];
 	static VkWriteDescriptorSet  writeSets[MAX_INFO_COUNT];
 	static int infoSize;
