@@ -5,8 +5,6 @@ module;
 
 #include "core/Console.h"
 
-#include "io/IniFile.h"
-
 module HalesiaEngine;
 
 import std;
@@ -24,6 +22,8 @@ import System;
 
 import Renderer.Gui;
 import Renderer.AnimationManager;
+
+import IO.IniFile;
 
 class ExitRequest : public std::exception {}; // not that great to request an exit via errors
 

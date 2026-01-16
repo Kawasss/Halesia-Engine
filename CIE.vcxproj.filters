@@ -465,6 +465,9 @@
     <ClCompile Include="src\io\SceneWriter.ixx">
       <Filter>Header Files\io</Filter>
     </ClCompile>
+    <ClCompile Include="src\io\IniFile.ixx">
+      <Filter>Header Files\io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -582,9 +585,6 @@
       <Filter>Header Files\io</Filter>
     </ClInclude>
     <ClInclude Include="src\io\FileArray.h">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="src\io\IniFile.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imconfig.h">

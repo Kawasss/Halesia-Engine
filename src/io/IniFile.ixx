@@ -1,10 +1,8 @@
-#pragma once
-#include <string>
-#include <sstream>
-#include <vector>
-#include <map>
+export module IO.IniFile;
 
-namespace ini
+import std;
+
+export namespace ini
 {
 	class Reader
 	{

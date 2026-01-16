@@ -1,8 +1,10 @@
-#include <fstream>
-#include <list>
+module;
 
-#include "io/IniFile.h"
 #include "io/IO.h"
+
+module IO.IniFile;
+
+import std;
 
 namespace ini
 {
@@ -23,7 +25,7 @@ namespace ini
 		std::string_view data = stream.data();
 		std::string_view name, value;
 
-		for (size_t i = 0; i < stream.size(); i++)
+		for (std::size_t i = 0; i < stream.size(); i++)
 		{
 			switch (stream[i])
 			{
@@ -39,10 +41,10 @@ namespace ini
 				break;
 			default:
 			{
-				size_t divider = data.find('=', i);
-				size_t endline = data.find('\r', i);
+				std::size_t divider = data.find('=', i);
+				std::size_t endline = data.find('\r', i);
 
-				for (size_t trim = data.find(' ', i); trim < divider; trim = data.find(' ', i))
+				for (std::size_t trim = data.find(' ', i); trim < divider; trim = data.find(' ', i))
 				{
 					stream[trim] = '\0'; // trim away any excess spaces
 				}
