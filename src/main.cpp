@@ -4,7 +4,6 @@
 #include "renderer/RayTracingPipeline.h"
 #include "renderer/AccelerationStructures.h"
 #include "renderer/ComputeShader.h"
-#include "renderer/SkyPipeline.h"
 #include "renderer/Grid.h"
 
 #include "io/CreationData.h"
@@ -13,6 +12,7 @@ import HalesiaEngine;
 import System.Window;
 
 import Renderer.Deferred;
+import Renderer.SkyPipeline;
 
 import Core.Editor;
 

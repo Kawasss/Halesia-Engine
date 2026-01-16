@@ -1,14 +1,14 @@
-#pragma once
-#include <memory>
+module;
 
+#include "GraphicsPipeline.h"
 #include "RenderPipeline.h"
-#include "VideoMemoryManager.h"
 #include "Texture.h"
-#include "Buffer.h"
 
-class GraphicsPipeline;
+export module Renderer.SkyPipeline;
 
-class SkyPipeline : public RenderPipeline
+import std;
+
+export class SkyPipeline : public RenderPipeline
 {
 public:
 	void Start(const Payload& payload) override;

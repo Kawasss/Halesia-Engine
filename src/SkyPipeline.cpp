@@ -1,10 +1,19 @@
-#include "renderer/SkyPipeline.h"
+module;
+
+#include <vulkan/vulkan.h>
+
 #include "renderer/GarbageManager.h"
 #include "renderer/GraphicsPipeline.h"
-#include "renderer/VulkanAPIError.h"
-#include "renderer/PipelineCreator.h"
 #include "renderer/Renderer.h"
 #include "renderer/Vulkan.h"
+#include "renderer/GraphicsPipeline.h"
+#include "renderer/RenderPipeline.h"
+#include "renderer/CommandBuffer.h"
+#include "renderer/Texture.h"
+
+module Renderer.SkyPipeline;
+
+import std;
 
 constexpr VkFormat LUT_FORMAT = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr uint32_t LUT_FORMAT_SIZE = sizeof(uint16_t) * 4;

@@ -13,12 +13,9 @@ module;
 #include "renderer/ImageTransitioner.h"
 #include "renderer/Vulkan.h"
 #include "renderer/RenderPipeline.h"
-#include "renderer/FramesInFlight.h"
 #include "renderer/VideoMemoryManager.h"
 #include "renderer/Framebuffer.h"
 #include "renderer/Buffer.h"
-#include "renderer/Light.h"
-#include "renderer/SkyPipeline.h"
 #include "renderer/CommandBuffer.h"
 
 #include "core/MeshObject.h"
@@ -28,6 +25,8 @@ module Renderer.Deferred;
 import std;
 
 import Core.CameraObject;
+
+import Renderer.SkyPipeline;
 
 struct DeferredPipeline::PushConstant
 {

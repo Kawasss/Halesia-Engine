@@ -12,13 +12,14 @@ module;
 #include "Framebuffer.h"
 #include "Buffer.h"
 #include "Light.h"
-#include "SkyPipeline.h"
 
 export module Renderer.Deferred;
 
 import std;
 
 import Core.CameraObject;
+
+import Renderer.SkyPipeline;
 
 export class DeferredPipeline : public RenderPipeline
 {
