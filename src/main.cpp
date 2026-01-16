@@ -1,5 +1,4 @@
 #include "renderer/Renderer.h"
-#include "renderer/Deferred.h"
 #include "renderer/Skybox.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/RayTracingPipeline.h"
@@ -12,6 +11,8 @@
 
 import HalesiaEngine;
 import System.Window;
+
+import Renderer.Deferred;
 
 import Core.Editor;
 

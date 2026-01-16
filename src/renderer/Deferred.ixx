@@ -1,8 +1,11 @@
-#pragma once
-#include <array>
-#include <string>
-#include <memory>
+module;
 
+#include <vulkan/vulkan.h>
+
+#include "RayTracingPipeline.h"
+#include "AccelerationStructures.h"
+#include "ComputeShader.h"
+#include "GraphicsPipeline.h"
 #include "RenderPipeline.h"
 #include "FramesInFlight.h"
 #include "VideoMemoryManager.h"
@@ -11,12 +14,13 @@
 #include "Light.h"
 #include "SkyPipeline.h"
 
-class GraphicsPipeline;
-class ComputeShader;
-class TopLevelAccelerationStructure;
-class RayTracingPipeline;
+export module Renderer.Deferred;
 
-class DeferredPipeline : public RenderPipeline
+import std;
+
+import Core.CameraObject;
+
+export class DeferredPipeline : public RenderPipeline
 {
 public:
 	DeferredPipeline() = default;
@@ -78,16 +82,16 @@ private:
 	void PerformRayTracedRendering(const CommandBuffer& cmdBuffer, const Payload& payload);
 	void PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<MeshObject*>& objects);
 	void PerformSecondDeferred(const CommandBuffer& cmdBuffer, const Payload& payload);
-	
+
 	void CopyDeferredDepthToResultDepth(const CommandBuffer& cmdBuffer, const Payload& payload);
 
 	void RecreatePipelines(const Payload& payload);
 
-	VkImageView GetPositionView()    { return framebuffer.GetViews()[0]; }
-	VkImageView GetAlbedoView()      { return framebuffer.GetViews()[1]; }
-	VkImageView GetNormalView()      { return framebuffer.GetViews()[2]; }
-	VkImageView GetMRAOView()        { return framebuffer.GetViews()[3]; }
-	VkImageView GetVelocityView()    { return framebuffer.GetViews()[4]; }
+	VkImageView GetPositionView() { return framebuffer.GetViews()[0]; }
+	VkImageView GetAlbedoView() { return framebuffer.GetViews()[1]; }
+	VkImageView GetNormalView() { return framebuffer.GetViews()[2]; }
+	VkImageView GetMRAOView() { return framebuffer.GetViews()[3]; }
+	VkImageView GetVelocityView() { return framebuffer.GetViews()[4]; }
 	VkImageView GetGeometricNormal() { return framebuffer.GetViews()[5]; }
 
 	uint32_t GetRTGIWidth()  const;

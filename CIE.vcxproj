@@ -222,6 +222,7 @@
     <ClCompile Include="src\ReadWriteFile.cpp" />
     <ClCompile Include="src\renderer\BoundingVolumePipeline.ixx" />
     <ClCompile Include="src\renderer\CompiledShader.ixx" />
+    <ClCompile Include="src\renderer\Deferred.ixx" />
     <ClCompile Include="src\ResizableBuffer.cpp" />
     <ClCompile Include="src\Rigid3DObject.cpp" />
     <ClCompile Include="src\Script.cpp" />
@@ -301,7 +302,6 @@
     <ClInclude Include="src\renderer\Bone.h" />
     <ClInclude Include="src\renderer\CommandBuffer.h" />
     <ClInclude Include="src\renderer\ComputeShader.h" />
-    <ClInclude Include="src\renderer\Deferred.h" />
     <ClInclude Include="src\renderer\Denoiser.h" />
     <ClInclude Include="src\renderer\DescriptorWriter.h" />
     <ClInclude Include="src\renderer\ForwardPlus.h" />

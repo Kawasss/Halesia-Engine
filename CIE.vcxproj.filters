@@ -423,6 +423,9 @@
     <ClCompile Include="src\renderer\CompiledShader.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\Deferred.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -529,9 +532,6 @@
     </ClInclude>
     <ClInclude Include="src\math\vectors.h">
       <Filter>Header Files\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Deferred.h">
-      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\FramesInFlight.h">
       <Filter>Header Files\Renderer</Filter>
