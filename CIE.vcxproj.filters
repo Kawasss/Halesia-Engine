@@ -462,6 +462,9 @@
     <ClCompile Include="src\io\ReadWriteFile.ixx">
       <Filter>Header Files\io</Filter>
     </ClCompile>
+    <ClCompile Include="src\io\SceneWriter.ixx">
+      <Filter>Header Files\io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -499,9 +502,6 @@
     </ClInclude>
     <ClInclude Include="src\tools\Timer.h">
       <Filter>Header Files\tools</Filter>
-    </ClInclude>
-    <ClInclude Include="src\io\SceneWriter.h">
-      <Filter>Header Files\io</Filter>
     </ClInclude>
     <ClInclude Include="src\core\Object.h">
       <Filter>Header Files\core</Filter>

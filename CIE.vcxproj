@@ -208,6 +208,7 @@
     <ClCompile Include="src\io\DataArchiveFile.ixx" />
     <ClCompile Include="src\io\ReadWriteFile.ixx" />
     <ClCompile Include="src\io\SceneLoader.ixx" />
+    <ClCompile Include="src\io\SceneWriter.ixx" />
     <ClCompile Include="src\LightObject.cpp" />
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
@@ -302,7 +303,6 @@
     <ClInclude Include="src\io\FwdDclCreationData.h" />
     <ClInclude Include="src\io\IniFile.h" />
     <ClInclude Include="src\io\IO.h" />
-    <ClInclude Include="src\io\SceneWriter.h" />
     <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\renderer\AccelerationStructures.h" />
     <ClInclude Include="src\renderer\CommandBuffer.h" />

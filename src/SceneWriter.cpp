@@ -1,15 +1,17 @@
-#include <Windows.h>
-#include <cstdint>
-#include <string>
-#include <execution>
+module;
 
-#include "io/SceneWriter.h"
+#include <Windows.h>
+
 #include "io/BinaryStream.h"
 
 #include "core/Object.h"
 #include "core/MeshObject.h"
 
 #include "renderer/Texture.h"
+
+module IO.SceneWriter;
+
+import std;
 
 import Core.Scene;
 
@@ -96,7 +98,7 @@ static void WriteMaterialsToArchive(DataArchiveFile& file)
 	);
 }
 
-void HSFWriter::WriteSceneToArchive(const std::string& file, const Scene* scene)
+void SceneWriter::WriteSceneToArchive(const std::string& file, const Scene* scene)
 {
 	DataArchiveFile archive(file, DataArchiveFile::OpenMethod::Clear);
 	if (!archive.IsValid())
