@@ -10,8 +10,6 @@ module;
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
 
-#include "io/SceneLoader.h"
-
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui-1.91.7/implot.h>
 #include <imgui-1.91.7/imgui.h>
@@ -22,16 +20,20 @@ module;
 
 #include "glm.h"
 
+#include "io/CreationData.h"
+
 module Core.Editor;
 
 import std;
+
+import HalesiaEngine;
 
 import Core.ScriptObject;
 import Core.Rigid3DObject;
 import Core.LightObject;
 import Core.EditorProject;
 
-import HalesiaEngine;
+import IO.SceneLoader;
 
 import System.Input;
 import System.FileDialog;
@@ -40,6 +42,7 @@ import System;
 
 import Renderer.Gui;
 import Renderer.Grid;
+import Renderer.AnimationManager;
 
 namespace fs = std::filesystem;
 

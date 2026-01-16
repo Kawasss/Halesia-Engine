@@ -1,10 +1,12 @@
-#pragma once
-#include <vector>
-#include <string>
+module;
 
 #include "../glm.h"
 
-struct aiNodeAnim;
+export module Renderer.Bone;
+
+import <assimp/anim.h>;
+
+import std;
 
 struct KeyPosition
 {
@@ -30,13 +32,13 @@ struct KeyScale
     float timeStamp;
 };
 
-struct BoneInfo
+export struct BoneInfo
 {
     int index;
     glm::mat4 offset;
 };
 
-class Bone
+export class Bone
 {
 public:
     Bone() = default;
@@ -48,7 +50,7 @@ public:
 
 private:
     float time;
- 
+
     std::vector<KeyPosition> positions;
     std::vector<KeyRotation> rotations;
     std::vector<KeyScale>    scales;

@@ -1,13 +1,14 @@
-#include <vector>
-#include <algorithm>
+module;
 
-#include <assimp/cimport.h>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
-
-#include "renderer/AnimationManager.h"
 #include "renderer/Renderer.h"
 #include "renderer/ComputeShader.h"
+#include "renderer/CommandBuffer.h"
+
+module Renderer.AnimationManager;
+
+import <assimp/anim.h>;
+
+import std;
 
 AnimationManager* AnimationManager::Get()
 {
@@ -77,7 +78,7 @@ void AnimationManager::ComputeAnimations(float delta)
 	}
 }
 
-void AnimationManager::ApplyAnimations(VkCommandBuffer commandBuffer)
+void AnimationManager::ApplyAnimations(const CommandBuffer& commandBuffer)
 {
 	win32::CriticalLockGuard guard(section);
 	if (true) // disable
@@ -88,7 +89,7 @@ void AnimationManager::ApplyAnimations(VkCommandBuffer commandBuffer)
 		if (copy.size == 0)
 			return;
 
-		vkCmdCopyBuffer(commandBuffer, Renderer::g_defaultVertexBuffer.GetBufferHandle(), Renderer::g_vertexBuffer.GetBufferHandle(), 1, &copy);
+		commandBuffer.CopyBuffer(Renderer::g_defaultVertexBuffer.GetBufferHandle(), Renderer::g_vertexBuffer.GetBufferHandle(), 1, &copy);
 		return;
 	}
 
@@ -100,8 +101,8 @@ void AnimationManager::ApplyAnimations(VkCommandBuffer commandBuffer)
 	barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 	barrier.buffer = Renderer::g_vertexBuffer.GetBufferHandle();
 	barrier.size = VK_WHOLE_SIZE;
-	
-	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+
+	commandBuffer.PipelineBarrier(VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_RAY_TRACING_SHADER_BIT_KHR, 0, 0, nullptr, 1, &barrier, 0, nullptr);
 }
 
 void AnimationManager::CreateShader()

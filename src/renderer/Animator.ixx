@@ -1,7 +1,8 @@
-#pragma once
-#include "Animation.h"
+export module Renderer.Animator;
 
-class Animator
+import Renderer.Animation;
+
+export class Animator
 {
 public:
 	Animator(Animation& anim);

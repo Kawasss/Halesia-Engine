@@ -1,10 +1,13 @@
-#include <assimp/cimport.h>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
+module;
 
-#include "renderer/Animation.h"
+#include "glm.h"
 
-#include "core/Console.h"
+module Renderer.Animation;
+
+import <assimp/cimport.h>;
+import <assimp/scene.h>;
+
+import Renderer.Bone;
 
 inline glm::mat4 GetMat4(const aiMatrix4x4& from)
 {

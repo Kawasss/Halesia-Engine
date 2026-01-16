@@ -1,4 +1,6 @@
-#include "renderer/Animator.h"
+module Renderer.Animator;
+
+import Renderer.Animation;
 
 Animator::Animator(Animation& anim) : animation(anim)
 {

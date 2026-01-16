@@ -194,7 +194,6 @@
     <ClCompile Include="src\EditorProject.cpp" />
     <ClCompile Include="src\FileDialog.cpp" />
     <ClCompile Include="src\FileReadWrite.cpp" />
-    <ClCompile Include="src\ForwardPlus.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\GarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
@@ -206,6 +205,7 @@
     <ClCompile Include="src\ImageTransitioner.cpp" />
     <ClCompile Include="src\IniFile.cpp" />
     <ClCompile Include="src\IO.cpp" />
+    <ClCompile Include="src\io\SceneLoader.ixx" />
     <ClCompile Include="src\LightObject.cpp" />
     <ClCompile Include="src\Material.cpp" />
     <ClCompile Include="src\Mesh.cpp" />
@@ -219,6 +219,10 @@
     <ClCompile Include="src\QueryPool.cpp" />
     <ClCompile Include="src\RayTracingPipeline.cpp" />
     <ClCompile Include="src\ReadWriteFile.cpp" />
+    <ClCompile Include="src\renderer\Animation.ixx" />
+    <ClCompile Include="src\renderer\AnimationManager.ixx" />
+    <ClCompile Include="src\renderer\Animator.ixx" />
+    <ClCompile Include="src\renderer\Bone.ixx" />
     <ClCompile Include="src\renderer\BoundingVolumePipeline.ixx" />
     <ClCompile Include="src\renderer\CompiledShader.ixx" />
     <ClCompile Include="src\renderer\Deferred.ixx" />
@@ -298,17 +302,11 @@
     <ClInclude Include="src\io\IniFile.h" />
     <ClInclude Include="src\io\IO.h" />
     <ClInclude Include="src\io\ReadWriteFile.h" />
-    <ClInclude Include="src\io\SceneLoader.h" />
     <ClInclude Include="src\io\SceneWriter.h" />
     <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\renderer\AccelerationStructures.h" />
-    <ClInclude Include="src\renderer\Animation.h" />
-    <ClInclude Include="src\renderer\AnimationManager.h" />
-    <ClInclude Include="src\renderer\Animator.h" />
-    <ClInclude Include="src\renderer\Bone.h" />
     <ClInclude Include="src\renderer\CommandBuffer.h" />
     <ClInclude Include="src\renderer\ComputeShader.h" />
-    <ClInclude Include="src\renderer\ForwardPlus.h" />
     <ClInclude Include="src\renderer\Framebuffer.h" />
     <ClInclude Include="src\renderer\FramesInFlight.h" />
     <ClInclude Include="src\renderer\GarbageManager.h" />

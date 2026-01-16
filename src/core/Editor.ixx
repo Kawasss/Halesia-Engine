@@ -9,7 +9,6 @@ module;
 #include "Object.h"
 
 #include "../renderer/Renderer.h"
-#include "../renderer/Animation.h"
 #include "../renderer/Mesh.h"
 
 export module Core.Editor;
@@ -21,6 +20,7 @@ import System.Window;
 import Physics.RigidBody;
 
 import Renderer.BoundingVolumePipeline;
+import Renderer.Animation;
 import Renderer.Grid;
 
 import Core.ScriptObject;

@@ -1,12 +1,17 @@
-#pragma once
-#include <vector>
+module;
 
-#include "Bone.h"
+#include "../glm.h"
 
-struct aiAnimation;
-struct aiNode;
+export module Renderer.Animation;
 
-class Animation
+import <assimp/cimport.h>;
+import <assimp/scene.h>;
+
+import std;
+
+import Renderer.Bone;
+
+export class Animation
 {
 public:
 	Animation() = default;

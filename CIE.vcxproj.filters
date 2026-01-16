@@ -198,9 +198,6 @@
     <ClCompile Include="src\ComputeShader.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\ForwardPlus.cpp">
-      <Filter>Source Files\Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="src\DescriptorWriter.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
@@ -444,6 +441,21 @@
     <ClCompile Include="src\renderer\DescriptorWriter.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\Animation.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\Bone.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\AnimationManager.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\Animator.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\SceneLoader.ixx">
+      <Filter>Header Files\io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -485,9 +497,6 @@
     <ClInclude Include="src\io\SceneWriter.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
-    <ClInclude Include="src\io\SceneLoader.h">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\Object.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
@@ -496,12 +505,6 @@
     </ClInclude>
     <ClInclude Include="src\core\Transform.h">
       <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\AnimationManager.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Bone.h">
-      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\io\FileFormat.h">
       <Filter>Header Files\io</Filter>
@@ -516,9 +519,6 @@
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\ComputeShader.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\ForwardPlus.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\Buffer.h">
@@ -643,12 +643,6 @@
     </ClInclude>
     <ClInclude Include="src\io\BinaryStream.h">
       <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Animator.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Animation.h">
-      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

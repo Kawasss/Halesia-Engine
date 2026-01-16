@@ -1,13 +1,22 @@
-#include <stdexcept>
+module;
 
-#include <assimp/cimport.h>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
+#include "glm.h"
 
-#include "renderer/Bone.h"
+module Renderer.Bone;
 
-inline glm::vec3 GetVec3(aiVector3D vec) { return { vec.x, vec.y, vec.z }; }
-inline glm::quat GetQuat(aiQuaternion quat) { return { quat.w, quat.x, quat.y, quat.z }; } // if error check this
+import <assimp/anim.h>;
+
+import std;
+
+static glm::vec3 GetVec3(aiVector3D vec) 
+{ 
+	return glm::vec3(vec.x, vec.y, vec.z);
+}
+
+static glm::quat GetQuat(aiQuaternion quat) // if error check this
+{ 
+	return glm::quat(quat.w, quat.x, quat.y, quat.z);
+}
 
 
 Bone::Bone(const aiNodeAnim* animNode) : time(0), transform(glm::mat4(1.0f)), name(animNode->mNodeName.C_Str())

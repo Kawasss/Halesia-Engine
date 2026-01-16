@@ -1,7 +1,6 @@
 module;
 
 #include "renderer/Renderer.h"
-#include "renderer/AnimationManager.h"
 #include "renderer/Vulkan.h"
 
 #include "core/Console.h"
@@ -24,6 +23,7 @@ import System.Input;
 import System;
 
 import Renderer.Gui;
+import Renderer.AnimationManager;
 
 class ExitRequest : public std::exception {}; // not that great to request an exit via errors
 

@@ -1,28 +1,27 @@
-#pragma once
-#include <vector>
-#include <string>
-#include <memory>
-#include <map>
+module;
 
 #include "../glm.h"
 
-#include "Bone.h"
 #include "Buffer.h"
 #include "ComputeShader.h"
-#include "Animation.h"
+#include "CommandBuffer.h"
 
 #include "../system/CriticalSection.h"
 
-struct MeshCreationData;
-class  ComputeShader;
+export module Renderer.AnimationManager;
 
-class AnimationManager
+import std;
+
+import Renderer.Bone;
+import Renderer.Animation;
+
+export class AnimationManager
 {
 public:
 	static AnimationManager* Get();
 
 	void ComputeAnimations(float delta);
-	void ApplyAnimations(VkCommandBuffer commandBuffer);
+	void ApplyAnimations(const CommandBuffer& commandBuffer);
 	void AddAnimation(const Animation& animation);
 	//void RemoveAnimation(Animation* animation);
 

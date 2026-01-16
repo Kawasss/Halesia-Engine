@@ -1,31 +1,25 @@
-#pragma once
-#include <string>
-#include <vector>
-#include <map>
-#include <set>
-#include <variant>
+module;
 
 #include "../glm.h"
 
-#include "../renderer/Bone.h"
-#include "../renderer/AnimationManager.h"
 #include "../renderer/Light.h"
 #include "../renderer/Material.h"
 
 #include "FileFormat.h"
 #include "CreationData.h"
+#include "DataArchiveFile.h"
+#include "BinaryStream.h"
 
-constexpr int textureCoordinateOffset = 12;
-constexpr int normalOffset = 20;
+export module IO.SceneLoader;
 
-struct aiMesh;
-struct aiNode;
-struct aiScene;
+import <assimp/scene.h>;
 
-class DataArchiveFile;
-class BinarySpan;
+import std;
 
-class SceneLoader
+import Renderer.Animation;
+import Renderer.Bone;
+
+export class SceneLoader
 {
 public:
 	SceneLoader() = default;
@@ -67,7 +61,7 @@ private:
 	int unnamedObjectCount = 0; // used for creating uniques names for unnamed objects
 };
 
-namespace assetImport
+export namespace assetImport
 {
 	glm::vec3 LoadHitBox(std::string path);
 	ObjectCreationData LoadObjectFile(std::string path);

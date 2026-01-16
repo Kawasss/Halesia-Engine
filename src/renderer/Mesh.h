@@ -6,7 +6,6 @@
 #include "Material.h"
 #include "Vertex.h"
 #include "AccelerationStructures.h"
-#include "Bone.h"
 
 #include "../io/FwdDclCreationData.h"
 
@@ -42,8 +41,6 @@ struct Mesh
 
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
-
-	std::map<std::string, BoneInfo> boneInfos;
 	
 	bool cullBackFaces = true;
 

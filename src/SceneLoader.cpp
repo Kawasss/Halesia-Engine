@@ -1,19 +1,20 @@
+module;
+
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include <assimp/config.h>
 
-#include <execution>
-#include <filesystem>
-
-#include "renderer/Texture.h"
-
-#include "io/SceneLoader.h"
 #include "io/DataArchiveFile.h"
 #include "io/BinaryStream.h"
+#include "io/creationData.h"
 
 #include "core/Console.h"
 #include "core/Object.h"
+
+module IO.SceneLoader;
+
+import std;
 
 namespace fs = std::filesystem;
 
@@ -291,7 +292,7 @@ void SceneLoader::RetrieveBoneData(MeshCreationData& creationData, const aiMesh*
 		return;
 
 	aiBone** bones = pMesh->mBones;
-	std::map<std::string, BoneInfo>& bonesInfo = creationData.bones;
+	/*std::map<std::string, BoneInfo>& bonesInfo = creationData.bones;
 
 	for (int i = 0; i < pMesh->mNumBones; i++)
 	{
@@ -316,7 +317,7 @@ void SceneLoader::RetrieveBoneData(MeshCreationData& creationData, const aiMesh*
 		for (int j = 0; j < bones[i]->mNumWeights; j++)
 			if (weights[j].mWeight != 0.0f)
 				SetVertexBones(creationData.vertices[weights[j].mVertexId], ID, weights[j].mWeight);
-	}
+	}*/
 }
 
 MeshCreationData SceneLoader::RetrieveMeshData(aiMesh* pMesh)

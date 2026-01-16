@@ -5,7 +5,6 @@
 #include "renderer/Surface.h"
 #include "renderer/Texture.h"
 #include "renderer/Mesh.h"
-#include "renderer/AnimationManager.h"
 #include "renderer/PipelineCreator.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
@@ -37,6 +36,7 @@ import System;
 
 import Renderer.HdrConverter;
 import Renderer.DescriptorWriter;
+import Renderer.AnimationManager;
 
 namespace fs = std::filesystem;
 
