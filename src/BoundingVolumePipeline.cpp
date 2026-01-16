@@ -2,7 +2,6 @@ module;
 
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/Renderer.h"
-#include "renderer/SimpleMesh.h"
 #include "renderer/RenderPipeline.h"
 
 #include "core/MeshObject.h"
@@ -14,6 +13,8 @@ module Renderer.BoundingVolumePipeline;
 import std;
 
 import Core.CameraObject;
+
+import Renderer.SimpleMesh;
 
 constexpr uint32_t BOX_LINE_COUNT = 24;
 

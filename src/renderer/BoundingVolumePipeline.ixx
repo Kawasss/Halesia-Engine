@@ -1,6 +1,5 @@
 module;
 
-#include "SimpleMesh.h"
 #include "RenderPipeline.h"
 #include "Buffer.h"
 
@@ -9,6 +8,8 @@ module;
 export module Renderer.BoundingVolumePipeline;
 
 import std;
+
+import Renderer.SimpleMesh;
 
 export class BoundingVolumePipeline : public RenderPipeline
 {

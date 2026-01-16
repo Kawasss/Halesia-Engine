@@ -7,7 +7,6 @@ module;
 #include "core/Transform.h"
 #include "core/MeshObject.h"
 
-#include "renderer/gui.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/Grid.h"
@@ -39,6 +38,8 @@ import System.Input;
 import System.FileDialog;
 import System.Window;
 import System;
+
+import Renderer.Gui;
 
 namespace fs = std::filesystem;
 

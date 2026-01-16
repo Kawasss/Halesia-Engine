@@ -17,11 +17,12 @@
 #include "renderer/Buffer.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/VulkanAPIError.h"
-#include "renderer/ImageTransitioner.h"
 
 #include "core/Console.h"
 
 #include "io/IO.h"
+
+import Renderer.ImageTransitioner;
 
 Texture* Texture::placeholderAlbedo = nullptr;
 Texture* Texture::placeholderNormal = nullptr;

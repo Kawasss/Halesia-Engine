@@ -223,6 +223,9 @@
     <ClCompile Include="src\renderer\BoundingVolumePipeline.ixx" />
     <ClCompile Include="src\renderer\CompiledShader.ixx" />
     <ClCompile Include="src\renderer\Deferred.ixx" />
+    <ClCompile Include="src\renderer\gui.ixx" />
+    <ClCompile Include="src\renderer\ImageTransitioner.ixx" />
+    <ClCompile Include="src\renderer\SimpleMesh.ixx" />
     <ClCompile Include="src\renderer\SkyPipeline.ixx" />
     <ClCompile Include="src\ResizableBuffer.cpp" />
     <ClCompile Include="src\Rigid3DObject.cpp" />
@@ -311,9 +314,7 @@
     <ClInclude Include="src\renderer\GarbageManager.h" />
     <ClInclude Include="src\renderer\GraphicsPipeline.h" />
     <ClInclude Include="src\renderer\Grid.h" />
-    <ClInclude Include="src\renderer\gui.h" />
     <ClInclude Include="src\renderer\HdrConverter.h" />
-    <ClInclude Include="src\renderer\ImageTransitioner.h" />
     <ClInclude Include="src\renderer\Light.h" />
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
@@ -331,7 +332,6 @@
     <ClInclude Include="src\renderer\Swapchain.h" />
     <ClInclude Include="src\renderer\Texture.h" />
     <ClInclude Include="src\renderer\Vertex.h" />
-    <ClInclude Include="src\renderer\SimpleMesh.h" />
     <ClInclude Include="src\renderer\VideoMemoryManager.h" />
     <ClInclude Include="src\renderer\Vulkan.h" />
     <ClInclude Include="src\renderer\Buffer.h" />

@@ -1,9 +1,13 @@
-#pragma once
+module;
+
+#include <cstdint>
 #include <vulkan/vulkan.h>
 
-class CommandBuffer;
+#include "CommandBuffer.h"
 
-class ImageTransitioner
+export module Renderer.ImageTransitioner;
+
+export class ImageTransitioner
 {
 public:
 	static constexpr VkImageLayout INVALID_LAYOUT = VK_IMAGE_LAYOUT_MAX_ENUM;

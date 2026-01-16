@@ -10,7 +10,6 @@ module;
 #include "renderer/accelerationStructures.h"
 #include "renderer/PipelineCreator.h"
 #include "renderer/GarbageManager.h"
-#include "renderer/ImageTransitioner.h"
 #include "renderer/Vulkan.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/VideoMemoryManager.h"
@@ -27,6 +26,7 @@ import std;
 import Core.CameraObject;
 
 import Renderer.SkyPipeline;
+import Renderer.ImageTransitioner;
 
 struct DeferredPipeline::PushConstant
 {

@@ -1,20 +1,24 @@
-#pragma once
-#include <string_view>
-#include <string>
-#include <vector>
-#include <array>
-#include <span>
+module;
 
-class Object;
-class Window;
-class Transform;
-class RigidBody;
-class Profiler;
-class CameraObject;
-class Renderer;
-struct Mesh;
+#include <Windows.h>
 
-class GUI
+#include "../core/Object.h"
+#include "../core/Transform.h"
+
+#include "Renderer.h"
+
+export module Renderer.Gui;
+
+import std;
+
+import System.Window;
+
+import Physics.RigidBody;
+
+import Core.Profiler;
+import Core.CameraObject;
+
+export class GUI
 {
 public:
 	static void AutomaticallyCreateWindows(bool setting);

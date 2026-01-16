@@ -1,5 +1,8 @@
-#include "renderer/ImageTransitioner.h"
+module;
+
 #include "renderer/CommandBuffer.h"
+
+module Renderer.ImageTransitioner;
 
 void ImageTransitioner::Transition(const CommandBuffer& cmdBuffer) const
 {

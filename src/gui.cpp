@@ -1,13 +1,14 @@
+#include <Windows.h>
+
 //#define IMGUI_IMPLEMENTATION
 #define IMGUI_DEFINE_MATH_OPERATORS
 #define IMSPINNER_DEMO
-#include "imgui-1.91.7/implot.h"
-#include "imgui-1.91.7/imgui.h"
-#include "imgui-1.91.7/misc/cpp/imgui_stdlib.h"
+#include <imgui-1.91.7/implot.h>
+#include <imgui-1.91.7/imgui.h>
+#include <imgui-1.91.7/misc/cpp/imgui_stdlib.h>
 
 #include "renderer/Mesh.h"
 #include "renderer/Renderer.h"
-#include "renderer/gui.h"
 #include "renderer/Vulkan.h"
 
 #include "core/Console.h"
@@ -16,6 +17,10 @@
 #include "core/Transform.h"
 
 #include <hsl/StackMap.h>
+
+module Renderer.Gui;
+
+import std;
 
 import HalesiaEngine;
 

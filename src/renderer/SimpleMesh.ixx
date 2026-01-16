@@ -1,11 +1,15 @@
-#pragma once
-#include <span>
+module;
 
+#include <Windows.h>
+
+#include "StorageBuffer.h"
 #include "Vertex.h"
 
-using StorageMemory = unsigned long long;
+export module Renderer.SimpleMesh;
 
-class SimpleMesh // a mesh with only vertices, no indices, no material
+import std;
+
+export class SimpleMesh // a mesh with only vertices, no indices, no material
 {
 public:
 	SimpleMesh() = default;

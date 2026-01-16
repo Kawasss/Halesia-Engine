@@ -3,13 +3,14 @@ module;
 #include "core/Console.h"
 
 #include "renderer/Renderer.h"
-#include "renderer/gui.h"
 
 module Core.Profiler;
 
 import std;
 
 import System.Metrics;
+
+import Renderer.Gui;
 
 Profiler* Profiler::Get()
 {
