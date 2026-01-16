@@ -1,17 +1,18 @@
-#pragma once
-#include <memory>
+module;
 
 #include "RenderPipeline.h"
-#include "Buffer.h"
+#include "GraphicsPipeline.h"
 
-class GraphicsPipeline;
+export module Renderer.Grid;
 
-class GridPipeline : public RenderPipeline
+import std;
+
+export class GridPipeline : public RenderPipeline
 {
 public:
 	void Start(const Payload& payload) override;
 	void Execute(const Payload& payload, const std::vector<MeshObject*>& objects) override;
-	
+
 	void ReloadShaders(const Payload& payload) override;
 
 private:

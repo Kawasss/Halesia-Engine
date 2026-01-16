@@ -4,7 +4,6 @@
 #include "renderer/RayTracingPipeline.h"
 #include "renderer/AccelerationStructures.h"
 #include "renderer/ComputeShader.h"
-#include "renderer/Grid.h"
 
 #include "io/CreationData.h"
 

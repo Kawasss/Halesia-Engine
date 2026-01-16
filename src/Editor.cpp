@@ -9,7 +9,6 @@ module;
 
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
-#include "renderer/Grid.h"
 
 #include "io/SceneLoader.h"
 
@@ -40,6 +39,7 @@ import System.Window;
 import System;
 
 import Renderer.Gui;
+import Renderer.Grid;
 
 namespace fs = std::filesystem;
 

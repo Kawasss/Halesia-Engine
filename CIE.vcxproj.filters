@@ -156,9 +156,6 @@
     <ClCompile Include="src\Material.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\Denoiser.cpp">
-      <Filter>Source Files\Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\additionalDependencies\spirv-reflect\spirv_reflect.cpp">
       <Filter>external\spirvReflect</Filter>
     </ClCompile>
@@ -438,6 +435,12 @@
     <ClCompile Include="src\renderer\gui.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\HdrConverter.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\Grid.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -481,9 +484,6 @@
     </ClInclude>
     <ClInclude Include="src\io\SceneLoader.h">
       <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Denoiser.h">
-      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\core\Object.h">
       <Filter>Header Files\core</Filter>
@@ -581,9 +581,6 @@
     <ClInclude Include="src\io\IniFile.h">
       <Filter>Header Files\io</Filter>
     </ClInclude>
-    <ClInclude Include="src\renderer\HdrConverter.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imconfig.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
@@ -646,9 +643,6 @@
     </ClInclude>
     <ClInclude Include="src\io\BinaryStream.h">
       <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Grid.h">
-      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\Animator.h">
       <Filter>Header Files\Renderer</Filter>

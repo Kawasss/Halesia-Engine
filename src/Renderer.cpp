@@ -11,7 +11,6 @@
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/GarbageManager.h"
-#include "renderer/HdrConverter.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/Light.h"
 
@@ -36,6 +35,8 @@ import Core.CameraObject;
 
 import System.Window;
 import System;
+
+import Renderer.HdrConverter;
 
 namespace fs = std::filesystem;
 

@@ -1,9 +1,9 @@
+module;
+
 #include <vulkan/vulkan.h>
-#include <array>
 
 #include "glm.h"
 
-#include "renderer/HdrConverter.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/PipelineCreator.h"
 #include "renderer/GarbageManager.h"
@@ -12,8 +12,11 @@
 #include "renderer/Renderer.h"
 #include "renderer/Texture.h"
 #include "renderer/Vulkan.h"
-#include "renderer/Buffer.h"
 #include "renderer/Skybox.h"
+
+module Renderer.HdrConverter;
+
+import std;
 
 struct PushConstantConverter
 {

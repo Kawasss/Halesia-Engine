@@ -5,7 +5,6 @@
 
 #include "renderer/Skybox.h"
 #include "renderer/Texture.h"
-#include "renderer/HdrConverter.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/PipelineCreator.h"
@@ -14,6 +13,8 @@
 #include "renderer/Vulkan.h"
 
 import Core.CameraObject;
+
+import Renderer.HdrConverter;
 
 struct PushConstantSkybox
 {

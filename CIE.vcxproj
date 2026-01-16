@@ -189,7 +189,6 @@
     <ClCompile Include="src\core\ScriptObject.ixx" />
     <ClCompile Include="src\DataArchiveFile.cpp" />
     <ClCompile Include="src\Deferred.cpp" />
-    <ClCompile Include="src\Denoiser.cpp" />
     <ClCompile Include="src\DescriptorWriter.cpp" />
     <ClCompile Include="src\Editor.cpp" />
     <ClCompile Include="src\EditorProject.cpp" />
@@ -223,7 +222,9 @@
     <ClCompile Include="src\renderer\BoundingVolumePipeline.ixx" />
     <ClCompile Include="src\renderer\CompiledShader.ixx" />
     <ClCompile Include="src\renderer\Deferred.ixx" />
+    <ClCompile Include="src\renderer\Grid.ixx" />
     <ClCompile Include="src\renderer\gui.ixx" />
+    <ClCompile Include="src\renderer\HdrConverter.ixx" />
     <ClCompile Include="src\renderer\ImageTransitioner.ixx" />
     <ClCompile Include="src\renderer\SimpleMesh.ixx" />
     <ClCompile Include="src\renderer\SkyPipeline.ixx" />
@@ -306,15 +307,12 @@
     <ClInclude Include="src\renderer\Bone.h" />
     <ClInclude Include="src\renderer\CommandBuffer.h" />
     <ClInclude Include="src\renderer\ComputeShader.h" />
-    <ClInclude Include="src\renderer\Denoiser.h" />
     <ClInclude Include="src\renderer\DescriptorWriter.h" />
     <ClInclude Include="src\renderer\ForwardPlus.h" />
     <ClInclude Include="src\renderer\Framebuffer.h" />
     <ClInclude Include="src\renderer\FramesInFlight.h" />
     <ClInclude Include="src\renderer\GarbageManager.h" />
     <ClInclude Include="src\renderer\GraphicsPipeline.h" />
-    <ClInclude Include="src\renderer\Grid.h" />
-    <ClInclude Include="src\renderer\HdrConverter.h" />
     <ClInclude Include="src\renderer\Light.h" />
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
