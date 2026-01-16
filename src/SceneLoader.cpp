@@ -5,7 +5,6 @@ module;
 #include <assimp/scene.h>
 #include <assimp/config.h>
 
-#include "io/DataArchiveFile.h"
 #include "io/BinaryStream.h"
 #include "io/creationData.h"
 
@@ -15,6 +14,8 @@ module;
 module IO.SceneLoader;
 
 import std;
+
+import IO.DataArchiveFile;
 
 namespace fs = std::filesystem;
 

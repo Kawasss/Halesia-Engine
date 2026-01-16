@@ -205,6 +205,8 @@
     <ClCompile Include="src\ImageTransitioner.cpp" />
     <ClCompile Include="src\IniFile.cpp" />
     <ClCompile Include="src\IO.cpp" />
+    <ClCompile Include="src\io\DataArchiveFile.ixx" />
+    <ClCompile Include="src\io\ReadWriteFile.ixx" />
     <ClCompile Include="src\io\SceneLoader.ixx" />
     <ClCompile Include="src\LightObject.cpp" />
     <ClCompile Include="src\Material.cpp" />
@@ -294,14 +296,12 @@
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\io\BinaryStream.h" />
     <ClInclude Include="src\io\CreationData.h" />
-    <ClInclude Include="src\io\DataArchiveFile.h" />
     <ClInclude Include="src\io\FileArray.h" />
     <ClInclude Include="src\io\FileFormat.h" />
     <ClInclude Include="src\io\FileMaterial.h" />
     <ClInclude Include="src\io\FwdDclCreationData.h" />
     <ClInclude Include="src\io\IniFile.h" />
     <ClInclude Include="src\io\IO.h" />
-    <ClInclude Include="src\io\ReadWriteFile.h" />
     <ClInclude Include="src\io\SceneWriter.h" />
     <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\renderer\AccelerationStructures.h" />

@@ -1,17 +1,17 @@
-#pragma once
-#include <string_view>
-#include <memory>
+export module IO.ReadWriteFile;
+
+import std;
 
 using HANDLE = void*;
 
-class ReadWriteFile
+export class ReadWriteFile
 {
 public:
 	enum class Method
 	{
-		Begin   = 0,
+		Begin = 0,
 		Current = 1,
-		End     = 2,
+		End = 2,
 	};
 
 	enum class OpenMethod
@@ -33,10 +33,10 @@ public:
 	void StartWriting();
 	void StopWriting();
 
-	int64_t SeekG(int64_t index, ReadWriteFile::Method method) const;
-	int64_t GetG() const;
+	std::int64_t SeekG(std::int64_t index, ReadWriteFile::Method method) const;
+	std::int64_t GetG() const;
 
-	size_t GetFileSize() const;
+	std::size_t GetFileSize() const;
 
 private:
 	struct HandleDeleter
@@ -49,7 +49,7 @@ private:
 	std::unique_ptr<void, HandleDeleter> handle;
 };
 
-class ReadSession
+export class ReadSession
 {
 public:
 	ReadSession(ReadWriteFile& file);
@@ -59,7 +59,7 @@ private:
 	ReadWriteFile& file;
 };
 
-class WriteSession
+export class WriteSession
 {
 public:
 	WriteSession(ReadWriteFile& file);

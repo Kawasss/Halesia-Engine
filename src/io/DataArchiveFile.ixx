@@ -1,22 +1,19 @@
-#pragma once
-#include <string>
-#include <expected>
-#include <span>
-#include <vector>
-#include <map>
+export module IO.DataArchiveFile;
 
-#include "ReadWriteFile.h"
+import std;
 
-class DataArchiveFile
+import IO.ReadWriteFile;
+
+export class DataArchiveFile
 {
 private:
 	struct Metadata
 	{
 		bool isOnDisk = true;
 
-		uint64_t offset = 0;
-		uint64_t size = 0;
-		uint64_t uncompressedSize = 0; // this is only used for data that isnt written to the disk yet
+		std::uint64_t offset = 0;
+		std::uint64_t size = 0;
+		std::uint64_t uncompressedSize = 0; // this is only used for data that isnt written to the disk yet
 		std::vector<char> compressed;
 	};
 
@@ -47,7 +44,7 @@ public:
 
 	enum class OpenMethod
 	{
-		Clear  = ReadWriteFile::OpenMethod::Clear,  //!< clear the file upon opening
+		Clear = ReadWriteFile::OpenMethod::Clear,  //!< clear the file upon opening
 		Append = ReadWriteFile::OpenMethod::Append, //!< do not clear the file
 	};
 
@@ -91,8 +88,8 @@ public:
 
 private:
 	// the presence of the identifier is confirmed at this point, offset should be the offset from the start of the file
-	std::expected<std::vector<char>, Result> ReadFromDisk(uint64_t offset, uint64_t size);
-	uint64_t GetBinarySizeOfDictionary() const;
+	std::expected<std::vector<char>, Result> ReadFromDisk(std::uint64_t offset, std::uint64_t size);
+	std::uint64_t GetBinarySizeOfDictionary() const;
 
 	// these two functions should always be called together, as 'WriteDictionaryToDisk()' calculates parameters that 'WriteDataEntriesToDisk()' requires
 	void WriteDictionaryToDisk();
@@ -100,7 +97,7 @@ private:
 
 	void ReadDictionaryFromDisk();
 
-	static std::expected<std::vector<char>, Result> DecompressMemory(const std::span<char const>& compressed, uint64_t uncompressedSize);
+	static std::expected<std::vector<char>, Result> DecompressMemory(const std::span<char const>& compressed, std::uint64_t uncompressedSize);
 	static std::vector<char> CompressMemory(const std::span<char const>& uncompressed);
 
 	std::map<std::string, Metadata> dictionary;

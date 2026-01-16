@@ -1,7 +1,10 @@
-#include <filesystem>
+module;
+
 #include <Windows.h>
 
-#include "io/ReadWriteFile.h"
+module IO.ReadWriteFile;
+
+import std;
 
 void ReadWriteFile::HandleDeleter::operator()(void* ptr) const
 {

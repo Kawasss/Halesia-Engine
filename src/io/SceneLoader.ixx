@@ -7,7 +7,6 @@ module;
 
 #include "FileFormat.h"
 #include "CreationData.h"
-#include "DataArchiveFile.h"
 #include "BinaryStream.h"
 
 export module IO.SceneLoader;
@@ -15,6 +14,8 @@ export module IO.SceneLoader;
 import <assimp/scene.h>;
 
 import std;
+
+import IO.DataArchiveFile;
 
 import Renderer.Animation;
 import Renderer.Bone;

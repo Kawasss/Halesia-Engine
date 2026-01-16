@@ -456,6 +456,12 @@
     <ClCompile Include="src\io\SceneLoader.ixx">
       <Filter>Header Files\io</Filter>
     </ClCompile>
+    <ClCompile Include="src\io\DataArchiveFile.ixx">
+      <Filter>Header Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\ReadWriteFile.ixx">
+      <Filter>Header Files\io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -634,12 +640,6 @@
     </ClInclude>
     <ClInclude Include="src\renderer\ShaderCompiler.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\io\DataArchiveFile.h">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
-    <ClInclude Include="src\io\ReadWriteFile.h">
-      <Filter>Header Files\io</Filter>
     </ClInclude>
     <ClInclude Include="src\io\BinaryStream.h">
       <Filter>Header Files\io</Filter>

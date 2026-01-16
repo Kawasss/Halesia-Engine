@@ -4,7 +4,6 @@
 #include <execution>
 
 #include "io/SceneWriter.h"
-#include "io/DataArchiveFile.h"
 #include "io/BinaryStream.h"
 
 #include "core/Object.h"
@@ -13,6 +12,8 @@
 #include "renderer/Texture.h"
 
 import Core.Scene;
+
+import IO.DataArchiveFile;
 
 static void WriteNamedReferencesToStream(BinaryStream& stream, const std::vector<Object*>& objects)
 {

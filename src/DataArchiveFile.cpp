@@ -1,7 +1,9 @@
 #include <lz4/lz4.h>
 #include <cassert>
 
-#include "io/DataArchiveFile.h"
+module IO.DataArchiveFile;
+
+import std;
 
 // the dictionary is serialized like this:
 //
@@ -56,14 +58,14 @@ std::expected<std::vector<char>, DataArchiveFile::Result> DataArchiveFile::ReadD
 	return ReadFromDisk(metadata.offset, metadata.size);
 }
 
-std::expected<std::vector<char>, DataArchiveFile::Result>  DataArchiveFile::ReadFromDisk(uint64_t offset, uint64_t size)
+std::expected<std::vector<char>, DataArchiveFile::Result>  DataArchiveFile::ReadFromDisk(std::uint64_t offset, std::uint64_t size)
 {
 	if (size == 0)
 		return std::vector<char>();
 
 	ReadSession session(stream);
 
-	uint64_t uncompressedSize = 0;
+	std::uint64_t uncompressedSize = 0;
 	stream.SeekG(offset, ReadWriteFile::Method::Begin);
 	stream.Read(reinterpret_cast<char*>(&uncompressedSize), sizeof(uncompressedSize));
 
@@ -74,7 +76,7 @@ std::expected<std::vector<char>, DataArchiveFile::Result>  DataArchiveFile::Read
 	return DecompressMemory(read, uncompressedSize);
 }
 
-std::expected<std::vector<char>, DataArchiveFile::Result> DataArchiveFile::DecompressMemory(const std::span<char const>& compressed, uint64_t uncompressedSize)
+std::expected<std::vector<char>, DataArchiveFile::Result> DataArchiveFile::DecompressMemory(const std::span<char const>& compressed, std::uint64_t uncompressedSize)
 {
 	if (uncompressedSize == compressed.size())
 		return std::vector<char>(compressed.begin(), compressed.end());
@@ -117,7 +119,7 @@ void DataArchiveFile::ReadDictionaryFromDisk()
 
 	for (uint32_t i = 0; i < entryCount; i++)
 	{
-		uint32_t stringLength = 0;
+		std::uint32_t stringLength = 0;
 		std::string identifier;
 		Metadata metadata{};
 
@@ -155,16 +157,16 @@ void DataArchiveFile::WriteDictionaryToDisk()
 	if (!stream.IsValid())
 		return;
 
-	uint64_t totalOffset = GetBinarySizeOfDictionary();
+	std::uint64_t totalOffset = GetBinarySizeOfDictionary();
 
 	stream.SeekG(0, ReadWriteFile::Method::Begin);
 
-	uint32_t entryCount = static_cast<uint32_t>(dictionary.size());
+	std::uint32_t entryCount = static_cast<std::uint32_t>(dictionary.size());
 	stream.Write(reinterpret_cast<char*>(&entryCount), sizeof(entryCount));
 
 	for (auto& [identifier, metadata] : dictionary)
 	{
-		uint32_t stringLength = static_cast<uint32_t>(identifier.size());
+		std::uint32_t stringLength = static_cast<std::uint32_t>(identifier.size());
 
 		metadata.offset = totalOffset;
 
@@ -173,7 +175,7 @@ void DataArchiveFile::WriteDictionaryToDisk()
 		stream.Write(reinterpret_cast<char*>(&metadata.offset), sizeof(metadata.offset));
 		stream.Write(reinterpret_cast<char*>(&metadata.size), sizeof(metadata.size));
 
-		totalOffset += metadata.size + sizeof(uint64_t); // each entry starts with an extra 64 bits !!
+		totalOffset += metadata.size + sizeof(std::uint64_t); // each entry starts with an extra 64 bits !!
 	}
 }
 
@@ -189,7 +191,7 @@ void DataArchiveFile::WriteDataEntriesToDisk()
 
 		assert(metadata.size == metadata.compressed.size());
 
-		stream.SeekG(static_cast<int64_t>(metadata.offset), ReadWriteFile::Method::Begin);
+		stream.SeekG(static_cast<std::int64_t>(metadata.offset), ReadWriteFile::Method::Begin);
 		stream.Write(reinterpret_cast<const char*>(&metadata.uncompressedSize), sizeof(metadata.uncompressedSize));
 		stream.Write(metadata.compressed.data(), static_cast<unsigned long>(metadata.size));
 	}
@@ -197,12 +199,12 @@ void DataArchiveFile::WriteDataEntriesToDisk()
 
 static uint64_t BinarySizeOfString(const std::string_view& str)
 {
-	return str.size() * sizeof(char) + sizeof(uint32_t);
+	return str.size() * sizeof(char) + sizeof(std::uint32_t);
 }
 
-uint64_t DataArchiveFile::GetBinarySizeOfDictionary() const
+std::uint64_t DataArchiveFile::GetBinarySizeOfDictionary() const
 {
-	uint64_t size = sizeof(uint32_t);
+	std::uint64_t size = sizeof(std::uint32_t);
 	for (const auto& [identifier, metadata] : dictionary)
 	{
 		size += BinarySizeOfString(identifier);
