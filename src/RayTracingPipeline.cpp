@@ -9,8 +9,6 @@
 #include "renderer/ShaderCompiler.h"
 #include "renderer/Renderer.h"
 
-#include "io/IO.h"
-
 import Renderer.CompiledShader;
 
 constexpr uint32_t RT_GROUP_COUNT = 4;

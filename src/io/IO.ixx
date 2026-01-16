@@ -1,10 +1,8 @@
-#pragma once
-#include <string_view>
-#include <vector>
-#include <expected>
-#include <filesystem>
+export module IO;
 
-namespace IO
+import std;
+
+export namespace IO
 {
 	enum class ReadOptions
 	{

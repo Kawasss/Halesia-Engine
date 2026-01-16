@@ -2,8 +2,6 @@ module;
 
 #include "core/Console.h"
 
-#include "io/IO.h"
-
 module Core.EditorProject;
 
 import std;
@@ -12,6 +10,7 @@ import Core.EditorProject;
 import Core.Scene;
 
 import IO.SceneWriter;
+import IO;
 
 import StrUtil;
 

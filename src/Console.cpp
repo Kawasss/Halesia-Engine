@@ -10,8 +10,6 @@
 
 #include "system/CriticalSection.h"
 
-#include "io/IO.h"
-
 std::vector<Console::Message> Console::messages;
 
 std::map<std::string, float*> floatCVars;

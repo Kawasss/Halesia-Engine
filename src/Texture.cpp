@@ -20,9 +20,11 @@
 
 #include "core/Console.h"
 
-#include "io/IO.h"
+import std;
 
 import Renderer.ImageTransitioner;
+
+import IO;
 
 Texture* Texture::placeholderAlbedo = nullptr;
 Texture* Texture::placeholderNormal = nullptr;

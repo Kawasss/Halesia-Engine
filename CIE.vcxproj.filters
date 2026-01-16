@@ -468,6 +468,9 @@
     <ClCompile Include="src\io\IniFile.ixx">
       <Filter>Header Files\io</Filter>
     </ClCompile>
+    <ClCompile Include="src\io\IO.ixx">
+      <Filter>Header Files\io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -541,9 +544,6 @@
     </ClInclude>
     <ClInclude Include="src\renderer\GraphicsPipeline.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\io\IO.h">
-      <Filter>Header Files\io</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\Light.h">
       <Filter>Header Files\Renderer</Filter>

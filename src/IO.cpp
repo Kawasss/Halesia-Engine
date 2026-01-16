@@ -1,6 +1,6 @@
-#include <fstream>
+module IO;
 
-#include "io/IO.h"
+import std;
 
 namespace IO
 {

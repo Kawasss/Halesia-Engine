@@ -1,10 +1,10 @@
 module;
 
-#include "io/IO.h"
-
 module IO.IniFile;
 
 import std;
+
+import IO;
 
 namespace ini
 {
