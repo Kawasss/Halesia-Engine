@@ -195,7 +195,7 @@
     <ClCompile Include="src\FileDialog.cpp" />
     <ClCompile Include="src\FileReadWrite.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
-    <ClCompile Include="src\GarbageManager.cpp" />
+    <ClCompile Include="src\VulkanGarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
     <ClCompile Include="src\Grid.cpp" />
     <ClCompile Include="src\gui.cpp" />
@@ -233,6 +233,7 @@
     <ClCompile Include="src\renderer\CompiledShader.ixx" />
     <ClCompile Include="src\renderer\Deferred.ixx" />
     <ClCompile Include="src\renderer\DescriptorWriter.ixx" />
+    <ClCompile Include="src\renderer\VulkanGarbageManager.ixx" />
     <ClCompile Include="src\renderer\Grid.ixx" />
     <ClCompile Include="src\renderer\gui.ixx" />
     <ClCompile Include="src\renderer\HdrConverter.ixx" />
@@ -312,7 +313,6 @@
     <ClInclude Include="src\renderer\ComputeShader.h" />
     <ClInclude Include="src\renderer\Framebuffer.h" />
     <ClInclude Include="src\renderer\FramesInFlight.h" />
-    <ClInclude Include="src\renderer\GarbageManager.h" />
     <ClInclude Include="src\renderer\GraphicsPipeline.h" />
     <ClInclude Include="src\renderer\Light.h" />
     <ClInclude Include="src\renderer\Material.h" />

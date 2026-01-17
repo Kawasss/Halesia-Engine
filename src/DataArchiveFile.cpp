@@ -1,3 +1,5 @@
+module;
+
 #include <lz4/lz4.h>
 #include <cassert>
 

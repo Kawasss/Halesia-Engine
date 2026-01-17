@@ -7,7 +7,6 @@ module;
 #include "renderer/ComputeShader.h"
 #include "renderer/Renderer.h"
 #include "renderer/RayTracingPipeline.h"
-#include "renderer/GarbageManager.h"
 #include "renderer/Vulkan.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/VideoMemoryManager.h"
@@ -27,6 +26,7 @@ import Renderer.SkyPipeline;
 import Renderer.ImageTransitioner;
 import Renderer.PipelineCreator;
 import Renderer.AccelerationStructure;
+import Renderer.VulkanGarbageManager;
 
 struct DeferredPipeline::PushConstant
 {

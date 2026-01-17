@@ -15,7 +15,6 @@
 #include "renderer/physicalDevice.h"
 #include "renderer/Texture.h"
 #include "renderer/Buffer.h"
-#include "renderer/GarbageManager.h"
 #include "renderer/VulkanAPIError.h"
 
 #include "core/Console.h"
@@ -23,6 +22,7 @@
 import std;
 
 import Renderer.ImageTransitioner;
+import Renderer.VulkanGarbageManager;
 
 import IO;
 

@@ -1,7 +1,8 @@
-#pragma once
-#include <vulkan/vulkan.h>
+export module Renderer.VulkanGarbageManager;
 
-namespace vgm // vulkan garbage manager
+import <vulkan/vulkan.h>;
+
+export namespace vgm // vulkan garbage manager
 {
 	extern void DeleteObject(VkObjectType type, uint64_t handle);
 

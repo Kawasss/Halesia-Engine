@@ -3,8 +3,9 @@
 
 #include "renderer/Framebuffer.h"
 #include "renderer/Vulkan.h"
-#include "renderer/GarbageManager.h"
 #include "renderer/VulkanAPIError.h"
+
+import Renderer.VulkanGarbageManager;
 
 Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes)
 {

@@ -7,7 +7,6 @@
 #include "renderer/Mesh.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
-#include "renderer/GarbageManager.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/Light.h"
 
@@ -37,6 +36,7 @@ import Renderer.HdrConverter;
 import Renderer.DescriptorWriter;
 import Renderer.AnimationManager;
 import Renderer.PipelineCreator;
+import Renderer.VulkanGarbageManager;
 
 namespace fs = std::filesystem;
 

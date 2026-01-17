@@ -6,10 +6,11 @@
 #include "renderer/Vulkan.h"
 #include "renderer/PhysicalDevice.h"
 #include "renderer/VulkanAPIError.h"
-#include "renderer/GarbageManager.h"
 #include "renderer/Surface.h"
 
 import System.Window;
+
+import Renderer.VulkanGarbageManager;
 
 Swapchain::Swapchain(Surface surface, Window* window, bool vsync)
 {

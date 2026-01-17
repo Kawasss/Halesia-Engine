@@ -1,9 +1,10 @@
-#include <vector>
-
-#include "renderer/GarbageManager.h"
 #include "renderer/Vulkan.h"
 
 #include "system/CriticalSection.h"
+
+module Renderer.VulkanGarbageManager;
+
+import std;
 
 namespace vgm
 {

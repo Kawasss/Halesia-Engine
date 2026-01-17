@@ -225,7 +225,7 @@
     <ClCompile Include="src\CommandBuffer.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\GarbageManager.cpp">
+    <ClCompile Include="src\VulkanGarbageManager.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\VideoMemoryManager.cpp">
@@ -486,6 +486,9 @@
     <ClCompile Include="src\renderer\ShaderReflector.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\VulkanGarbageManager.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -565,9 +568,6 @@
     </ClInclude>
     <ClInclude Include="src\glm.h">
       <Filter>Header Files\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\GarbageManager.h">
-      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\VideoMemoryManager.h">
       <Filter>Header Files\Renderer</Filter>
