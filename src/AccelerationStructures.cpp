@@ -1,7 +1,5 @@
 module;
 
-#include <vulkan/vulkan.h>
-
 #include "renderer/Vulkan.h"
 #include "renderer/Renderer.h"
 #include "renderer/Mesh.h"
@@ -13,6 +11,8 @@ module;
 module Renderer.AccelerationStructure;
 
 import std;
+
+import <vulkan/vulkan.h>;
 
 constexpr VkBufferUsageFlags ACCELERATION_STRUCTURE_BUFFER_BITS = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 constexpr VkBufferUsageFlags SCRATCH_BUFFER_BITS = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;

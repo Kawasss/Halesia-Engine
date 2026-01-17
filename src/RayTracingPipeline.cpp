@@ -1,5 +1,4 @@
 #include "renderer/RayTracingPipeline.h"
-#include "renderer/ShaderReflector.h"
 #include "renderer/FramesInFlight.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/Vulkan.h"
@@ -10,6 +9,7 @@ import std;
 
 import Renderer.ShaderCompiler;
 import Renderer.CompiledShader;
+import Renderer.ShaderReflector;
 
 constexpr uint32_t RT_GROUP_COUNT = 4;
 

@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "renderer/Pipeline.h"
-#include "renderer/ShaderReflector.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/VulkanAPIError.h"
@@ -11,6 +10,7 @@
 #include "core/Console.h"
 
 import Renderer.DescriptorWriter;
+import Renderer.ShaderReflector;
 
 std::vector<VkDescriptorSetLayout> Pipeline::globalSetLayouts;
 std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT> Pipeline::globalDescriptorSets;

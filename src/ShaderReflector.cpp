@@ -1,8 +1,11 @@
-#include <algorithm>
+module;
 
 #include "renderer/Vulkan.h"
-#include "renderer/ShaderReflector.h"
 #include "renderer/VulkanAPIError.h"
+
+module Renderer.ShaderReflector;
+
+import std;
 
 ShaderGroupReflector::ShaderGroupReflector(const std::span<char>& sourceCode)
 {
@@ -37,7 +40,7 @@ ShaderGroupReflector::ShaderGroupReflector(const std::span<std::span<char>>& sou
 	ProcessLayoutBindings();
 }
 
-static uint64_t CreateUniqueID(uint32_t set, uint32_t binding)
+static std::uint64_t CreateUniqueID(std::uint32_t set, std::uint32_t binding)
 {
 	return ShaderGroupReflector::Binding(set, binding).full;
 }
@@ -51,7 +54,7 @@ void ShaderGroupReflector::ProcessLayoutBindings()
 {
 	for (int i = 0; i < modules.size(); i++)
 	{
-		for (uint32_t j = 0; j < modules[i].descriptor_binding_count; j++)
+		for (std::uint32_t j = 0; j < modules[i].descriptor_binding_count; j++)
 		{
 			SpvReflectDescriptorBinding& current = modules[i].descriptor_bindings[j];
 			Binding bindingID = { current.set, current.binding };
@@ -77,7 +80,7 @@ void ShaderGroupReflector::ProcessLayoutBindings()
 	}
 }
 
-std::vector<VkDescriptorSetLayoutBinding> ShaderGroupReflector::GetLayoutBindingsOfSet(uint32_t setIndex) const
+std::vector<VkDescriptorSetLayoutBinding> ShaderGroupReflector::GetLayoutBindingsOfSet(std::uint32_t setIndex) const
 {
 	return setLayoutBindings.find(setIndex)->second;
 }
@@ -116,7 +119,7 @@ std::vector<VkPushConstantRange> ShaderGroupReflector::GetPushConstants() const
 	std::vector<VkPushConstantRange> ret;
 	for (int i = 0; i < modules.size(); i++)
 	{
-		for (uint32_t j = 0; j < modules[i].push_constant_block_count; j++)
+		for (std::uint32_t j = 0; j < modules[i].push_constant_block_count; j++)
 		{
 			if (ret.empty())
 			{
@@ -136,19 +139,19 @@ std::vector<VkPushConstantRange> ShaderGroupReflector::GetPushConstants() const
 	return ret;
 }
 
-uint32_t ShaderGroupReflector::GetDescriptorSetCount() const
+std::uint32_t ShaderGroupReflector::GetDescriptorSetCount() const
 {
-	return static_cast<uint32_t>(setLayoutBindings.size() - removedSets.size());
+	return static_cast<std::uint32_t>(setLayoutBindings.size() - removedSets.size());
 }
 
-uint32_t ShaderGroupReflector::GetOutputVariableCount(uint32_t index) const
+std::uint32_t ShaderGroupReflector::GetOutputVariableCount(std::uint32_t index) const
 {
 	return modules[index].output_variable_count;
 }
 
-std::set<uint32_t> ShaderGroupReflector::GetDescriptorSetIndices() const
+std::set<std::uint32_t> ShaderGroupReflector::GetDescriptorSetIndices() const
 {
-	std::set<uint32_t> ret;
+	std::set<std::uint32_t> ret;
 	for (const auto& [index, bindings] : setLayoutBindings)
 	{
 		if (!removedSets.contains(index))
@@ -159,9 +162,9 @@ std::set<uint32_t> ShaderGroupReflector::GetDescriptorSetIndices() const
 
 const char* ShaderGroupReflector::GetNameOfBinding(const Binding& binding) const
 {
-	for (uint32_t i = 0; i < modules.size(); i++)
+	for (std::uint32_t i = 0; i < modules.size(); i++)
 	{
-		for (uint32_t j = 0; j < modules[i].descriptor_binding_count; j++)
+		for (std::uint32_t j = 0; j < modules[i].descriptor_binding_count; j++)
 		{
 			SpvReflectDescriptorBinding& descriptorBinding = modules[i].descriptor_bindings[j];
 			Binding currBinding(descriptorBinding.set, descriptorBinding.binding);
@@ -173,7 +176,7 @@ const char* ShaderGroupReflector::GetNameOfBinding(const Binding& binding) const
 	return nullptr;
 }
 
-void ShaderGroupReflector::WriteToDescriptorSet(VkDevice logicalDevice, VkDescriptorSet set, VkBuffer buffer, uint32_t setIndex, uint32_t binding) const
+void ShaderGroupReflector::WriteToDescriptorSet(VkDevice logicalDevice, VkDescriptorSet set, VkBuffer buffer, std::uint32_t setIndex, std::uint32_t binding) const
 {
 	std::vector<VkDescriptorSetLayoutBinding> bindings = GetLayoutBindingsOfSet(setIndex); // not the fastest way, but cleaner
 	VkDescriptorSetLayoutBinding descBinding{};
@@ -199,7 +202,7 @@ void ShaderGroupReflector::WriteToDescriptorSet(VkDevice logicalDevice, VkDescri
 	vkUpdateDescriptorSets(logicalDevice, 1, &writeSet, 0, nullptr);
 }
 
-void ShaderGroupReflector::ExcludeSet(uint32_t set)
+void ShaderGroupReflector::ExcludeSet(std::uint32_t set)
 {
 	if (setLayoutBindings.find(set) != setLayoutBindings.end())
 		removedSets.emplace(set);
