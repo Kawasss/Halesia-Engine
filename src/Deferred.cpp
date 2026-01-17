@@ -4,7 +4,6 @@ module;
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "renderer/GraphicsPipeline.h"
-#include "renderer/ComputeShader.h"
 #include "renderer/Renderer.h"
 #include "renderer/RayTracingPipeline.h"
 #include "renderer/Vulkan.h"
@@ -27,6 +26,7 @@ import Renderer.ImageTransitioner;
 import Renderer.PipelineCreator;
 import Renderer.AccelerationStructure;
 import Renderer.VulkanGarbageManager;
+import Renderer.ComputePipeline;
 
 struct DeferredPipeline::PushConstant
 {

@@ -1,16 +1,17 @@
 #include "renderer/Vulkan.h"
-#include "renderer/ComputeShader.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/VulkanAPIError.h"
+
+module Renderer.ComputePipeline;
 
 import std;
 
 import Renderer.CompiledShader;
 import Renderer.ShaderCompiler;
-import Renderer.DescriptorWriter;
 import Renderer.ShaderReflector;
+import Renderer.DescriptorWriter;
 
-ComputeShader::ComputeShader(const std::string& path)
+ComputeShader::ComputeShader(const std::string_view& path)
 {
 	std::expected<CompiledShader, bool> shader = ShaderCompiler::Compile(path);
 	if (!shader.has_value())
@@ -37,10 +38,10 @@ void ComputeShader::CreatePipelineLayout(const ShaderGroupReflector& reflector)
 
 	VkPipelineLayoutCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	createInfo.pushConstantRangeCount = static_cast<uint32_t>(ranges.size());
+	createInfo.pushConstantRangeCount = static_cast<std::uint32_t>(ranges.size());
 	createInfo.pPushConstantRanges = ranges.data();
 	createInfo.pSetLayouts = setLayouts.data();
-	createInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
+	createInfo.setLayoutCount = static_cast<std::uint32_t>(setLayouts.size());
 
 	VkResult result = vkCreatePipelineLayout(context.logicalDevice, &createInfo, nullptr, &layout);
 	CheckVulkanResult("Failed to create a pipeline layout", result);
@@ -67,7 +68,7 @@ void ComputeShader::CreateComputePipeline(VkShaderModule module)
 	vkDestroyShaderModule(context.logicalDevice, module, nullptr);
 }
 
-void ComputeShader::Execute(const CommandBuffer& commandBuffer, uint32_t x, uint32_t y, uint32_t z)
+void ComputeShader::Execute(const CommandBuffer& commandBuffer, std::uint32_t x, std::uint32_t y, std::uint32_t z)
 {
 	Bind(commandBuffer);
 	commandBuffer.Dispatch(x, y, z);

@@ -1,7 +1,6 @@
 module;
 
 #include "renderer/Renderer.h"
-#include "renderer/ComputeShader.h"
 #include "renderer/CommandBuffer.h"
 
 module Renderer.AnimationManager;
@@ -9,6 +8,8 @@ module Renderer.AnimationManager;
 import <assimp/anim.h>;
 
 import std;
+
+import Renderer.ComputePipeline;
 
 AnimationManager* AnimationManager::Get()
 {

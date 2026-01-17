@@ -1,20 +1,21 @@
-#pragma once
+module;
+
 #include <vulkan/vulkan.h>
-#include <string>
 
 #include "Pipeline.h"
 
-class ShaderGroupReflector;
-class CommandBuffer;
+export module Renderer.ComputePipeline;
 
-class ComputeShader : public Pipeline
+import std;
+
+export class ComputeShader : public Pipeline
 {
 public:
-	ComputeShader(const std::string& path);
+	ComputeShader(const std::string_view& path);
 	ComputeShader(const ComputeShader&) = delete;
 	ComputeShader& operator=(ComputeShader&&) = delete;
 
-	void Execute(const CommandBuffer& commandBuffer, uint32_t x, uint32_t y, uint32_t z);
+	void Execute(const CommandBuffer& commandBuffer, std::uint32_t x, std::uint32_t y, std::uint32_t z);
 
 private:
 	void CreatePipelineLayout(const ShaderGroupReflector& reflector);

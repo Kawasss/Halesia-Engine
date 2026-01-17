@@ -176,7 +176,7 @@
     <ClCompile Include="src\BoundingVolumePipeline.cpp" />
     <ClCompile Include="src\CameraObject.cpp" />
     <ClCompile Include="src\CommandBuffer.cpp" />
-    <ClCompile Include="src\ComputeShader.cpp" />
+    <ClCompile Include="src\ComputePipeline.cpp" />
     <ClCompile Include="src\Console.cpp" />
     <ClCompile Include="src\core\Behavior.ixx" />
     <ClCompile Include="src\core\CameraObject.ixx" />
@@ -195,6 +195,7 @@
     <ClCompile Include="src\FileDialog.cpp" />
     <ClCompile Include="src\FileReadWrite.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
+    <ClCompile Include="src\renderer\ComputePipeline.ixx" />
     <ClCompile Include="src\VulkanGarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
     <ClCompile Include="src\Grid.cpp" />
@@ -310,7 +311,6 @@
     <ClInclude Include="src\io\FwdDclCreationData.h" />
     <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\renderer\CommandBuffer.h" />
-    <ClInclude Include="src\renderer\ComputeShader.h" />
     <ClInclude Include="src\renderer\Framebuffer.h" />
     <ClInclude Include="src\renderer\FramesInFlight.h" />
     <ClInclude Include="src\renderer\GraphicsPipeline.h" />
