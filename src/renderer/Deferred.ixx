@@ -119,8 +119,8 @@ private:
 
 	std::unique_ptr<GraphicsPipeline> firstPipeline;
 	std::unique_ptr<GraphicsPipeline> secondPipeline;
-	std::unique_ptr<ComputeShader> taaPipeline;
-	std::unique_ptr<ComputeShader> spatialPipeline;
+	std::unique_ptr<ComputePipeline> taaPipeline;
+	std::unique_ptr<ComputePipeline> spatialPipeline;
 	std::unique_ptr<RayTracingPipeline> rtgiPipeline;
 
 	std::unique_ptr<TopLevelAccelerationStructure> TLAS;

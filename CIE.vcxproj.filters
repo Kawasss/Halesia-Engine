@@ -498,6 +498,9 @@
     <ClCompile Include="src\renderer\GraphicsPipeline.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\Pipeline.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -562,9 +565,6 @@
     </ClInclude>
     <ClInclude Include="src\system\CriticalSection.h">
       <Filter>Header Files\system</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Pipeline.h">
-      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\CommandBuffer.h">
       <Filter>Header Files\Renderer</Filter>

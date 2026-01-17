@@ -11,7 +11,7 @@ import Renderer.ShaderCompiler;
 import Renderer.ShaderReflector;
 import Renderer.DescriptorWriter;
 
-ComputeShader::ComputeShader(const std::string_view& path)
+ComputePipeline::ComputePipeline(const std::string_view& path)
 {
 	std::expected<CompiledShader, bool> shader = ShaderCompiler::Compile(path);
 	if (!shader.has_value())
@@ -31,7 +31,7 @@ ComputeShader::ComputeShader(const std::string_view& path)
 	bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
 }
 
-void ComputeShader::CreatePipelineLayout(const ShaderGroupReflector& reflector)
+void ComputePipeline::CreatePipelineLayout(const ShaderGroupReflector& reflector)
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 	std::vector<VkPushConstantRange> ranges = reflector.GetPushConstants();
@@ -47,7 +47,7 @@ void ComputeShader::CreatePipelineLayout(const ShaderGroupReflector& reflector)
 	CheckVulkanResult("Failed to create a pipeline layout", result);
 }
 
-void ComputeShader::CreateComputePipeline(VkShaderModule module)
+void ComputePipeline::CreateComputePipeline(VkShaderModule module)
 {
 	const Vulkan::Context& context = Vulkan::GetContext();
 
@@ -68,7 +68,7 @@ void ComputeShader::CreateComputePipeline(VkShaderModule module)
 	vkDestroyShaderModule(context.logicalDevice, module, nullptr);
 }
 
-void ComputeShader::Execute(const CommandBuffer& commandBuffer, std::uint32_t x, std::uint32_t y, std::uint32_t z)
+void ComputePipeline::Execute(const CommandBuffer& commandBuffer, std::uint32_t x, std::uint32_t y, std::uint32_t z)
 {
 	Bind(commandBuffer);
 	commandBuffer.Dispatch(x, y, z);

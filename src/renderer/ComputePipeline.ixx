@@ -1,19 +1,21 @@
 module;
 
-#include <vulkan/vulkan.h>
-
-#include "Pipeline.h"
+#include "CommandBuffer.h"
 
 export module Renderer.ComputePipeline;
 
+import <vulkan/vulkan.h>;
+
 import std;
 
-export class ComputeShader : public Pipeline
+import Renderer.Pipeline;
+
+export class ComputePipeline : public Pipeline
 {
 public:
-	ComputeShader(const std::string_view& path);
-	ComputeShader(const ComputeShader&) = delete;
-	ComputeShader& operator=(ComputeShader&&) = delete;
+	ComputePipeline(const std::string_view& path);
+	ComputePipeline(const ComputePipeline&) = delete;
+	ComputePipeline& operator=(ComputePipeline&&) = delete;
 
 	void Execute(const CommandBuffer& commandBuffer, std::uint32_t x, std::uint32_t y, std::uint32_t z);
 

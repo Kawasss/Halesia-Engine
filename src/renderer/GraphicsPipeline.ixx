@@ -1,12 +1,11 @@
-module;
-
-#include "Pipeline.h"
-
 export module Renderer.GraphicsPipeline;
+
+import <vulkan/vulkan.h>;
 
 import std;
 
 import Renderer.ShaderReflector;
+import Renderer.Pipeline;
 
 export class GraphicsPipeline : public Pipeline
 {

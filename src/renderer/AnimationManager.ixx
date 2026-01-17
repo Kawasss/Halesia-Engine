@@ -36,7 +36,7 @@ private:
 
 	std::vector<Animation> animations;
 
-	std::unique_ptr<ComputeShader> computeShader;
+	std::unique_ptr<ComputePipeline> computeShader;
 	glm::mat4* mat4BufferPtr;
 	Buffer mat4Buffer;
 

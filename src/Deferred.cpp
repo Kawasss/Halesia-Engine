@@ -351,8 +351,8 @@ void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass seco
 
 void DeferredPipeline::CreateTAAPipeline()
 {
-	taaPipeline = std::make_unique<ComputeShader>("shaders/uncompiled/taa.comp");
-	spatialPipeline = std::make_unique<ComputeShader>("shaders/uncompiled/spatial.comp");
+	taaPipeline = std::make_unique<ComputePipeline>("shaders/uncompiled/taa.comp");
+	spatialPipeline = std::make_unique<ComputePipeline>("shaders/uncompiled/spatial.comp");
 }
 
 void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)

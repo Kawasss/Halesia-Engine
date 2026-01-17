@@ -1,13 +1,16 @@
 module;
 
-#include "Pipeline.h"
 #include "Buffer.h"
+#include "CommandBuffer.h"
 
 export module Renderer.RayTracingPipeline;
+
+import <vulkan/vulkan.h>;
 
 import std;
 
 import Renderer.ShaderReflector;
+import Renderer.Pipeline;
 
 export class RayTracingPipeline : public Pipeline
 {

@@ -1,12 +1,17 @@
+module;
+
 #include <cassert>
 
-#include "renderer/Pipeline.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/Buffer.h"
 #include "renderer/Vulkan.h"
 
 #include "core/Console.h"
+
+module Renderer.Pipeline;
+
+import std;
 
 import Renderer.DescriptorWriter;
 import Renderer.ShaderReflector;
