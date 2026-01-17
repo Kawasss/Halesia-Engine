@@ -2,7 +2,6 @@
 
 #include "renderer/Texture.h"
 #include "renderer/CommandBuffer.h"
-#include "renderer/GraphicsPipeline.h"
 #include "renderer/Renderer.h"
 #include "renderer/Vulkan.h"
 
@@ -15,6 +14,7 @@ import Core.CameraObject;
 import Renderer.HdrConverter;
 import Renderer.PipelineCreator;
 import Renderer.VulkanGarbageManager;
+import Renderer.GraphicsPipeline;
 
 struct PushConstantSkybox
 {

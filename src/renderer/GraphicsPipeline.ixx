@@ -1,15 +1,14 @@
-#pragma once
-#include <vulkan/vulkan.h>
-#include <vector>
-#include <string>
-#include <span>
+module;
 
 #include "Pipeline.h"
 
-class ShaderGroupReflector;
-class Swapchain;
+export module Renderer.GraphicsPipeline;
 
-class GraphicsPipeline : public Pipeline
+import std;
+
+import Renderer.ShaderReflector;
+
+export class GraphicsPipeline : public Pipeline
 {
 public:
 	struct CreateInfo
@@ -25,14 +24,14 @@ public:
 		VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
 
 		//maybe just flags ??
-		bool noVertices  = false;
-		bool noDepth     = false;
-		bool noCulling   = false;
-		bool noBlending  = false;
-		bool cullFront   = false;
-		bool frontCW     = false;
+		bool noVertices = false;
+		bool noDepth = false;
+		bool noCulling = false;
+		bool noBlending = false;
+		bool cullFront = false;
+		bool frontCW = false;
 		bool polygonLine = false;
-		bool writeDepth  = true;
+		bool writeDepth = true;
 	};
 
 	GraphicsPipeline(const CreateInfo& createInfo);
@@ -41,5 +40,5 @@ public:
 
 private:
 	void CreatePipelineLayout(const ShaderGroupReflector& reflector);
-	void CreateGraphicsPipeline(const std::span<std::span<char>>& shaders, const CreateInfo& createInfo, uint32_t attachmentCount);
+	void CreateGraphicsPipeline(const std::span<std::span<char>>& shaders, const CreateInfo& createInfo, std::uint32_t attachmentCount);
 };

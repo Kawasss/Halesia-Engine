@@ -1,11 +1,12 @@
 module;
 
 #include "RenderPipeline.h"
-#include "GraphicsPipeline.h"
 
 export module Renderer.Grid;
 
 import std;
+
+import Renderer.GraphicsPipeline;
 
 export class GridPipeline : public RenderPipeline
 {

@@ -2,7 +2,6 @@ module;
 
 #include <vulkan/vulkan.h>
 
-#include "GraphicsPipeline.h"
 #include "RenderPipeline.h"
 #include "FramesInFlight.h"
 #include "VideoMemoryManager.h"
@@ -20,6 +19,7 @@ import Renderer.AccelerationStructure;
 import Renderer.SkyPipeline;
 import Renderer.ComputePipeline;
 import Renderer.RayTracingPipeline;
+import Renderer.GraphicsPipeline;
 
 export class DeferredPipeline : public RenderPipeline
 {

@@ -1,7 +1,9 @@
-#include "renderer/Vulkan.h"
+module;
 
-#include "renderer/GraphicsPipeline.h"
+#include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
+
+module Renderer.GraphicsPipeline;
 
 import std;
 
@@ -25,9 +27,9 @@ GraphicsPipeline::GraphicsPipeline(const CreateInfo& createInfo)
 	};
 
 	ShaderGroupReflector reflector(shaderCodes);
-	for (uint32_t set : vertex->externalSets)
+	for (std::uint32_t set : vertex->externalSets)
 		reflector.ExcludeSet(set);
-	for (uint32_t set : fragment->externalSets)
+	for (std::uint32_t set : fragment->externalSets)
 		reflector.ExcludeSet(set);
 
 	InitializeBase(reflector);
@@ -48,16 +50,16 @@ void GraphicsPipeline::CreatePipelineLayout(const ShaderGroupReflector& reflecto
 
 	VkPipelineLayoutCreateInfo createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	createInfo.pushConstantRangeCount = static_cast<uint32_t>(ranges.size());
+	createInfo.pushConstantRangeCount = static_cast<std::uint32_t>(ranges.size());
 	createInfo.pPushConstantRanges = ranges.data();
-	createInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
+	createInfo.setLayoutCount = static_cast<std::uint32_t>(setLayouts.size());
 	createInfo.pSetLayouts = setLayouts.data();
 
 	VkResult result = vkCreatePipelineLayout(ctx.logicalDevice, &createInfo, nullptr, &layout);
 	CheckVulkanResult("Failed to create a pipeline layout for a graphics pipeline", result);
 }
 
-void GraphicsPipeline::CreateGraphicsPipeline(const std::span<std::span<char>>& shaders, const CreateInfo& createInfo, uint32_t attachmentCount)
+void GraphicsPipeline::CreateGraphicsPipeline(const std::span<std::span<char>>& shaders, const CreateInfo& createInfo, std::uint32_t attachmentCount)
 {
 	VkShaderModule vertModule = Vulkan::CreateShaderModule(shaders[0]);
 	VkShaderModule fragModule = Vulkan::CreateShaderModule(shaders[1]);
@@ -70,7 +72,7 @@ void GraphicsPipeline::CreateGraphicsPipeline(const std::span<std::span<char>>& 
 
 	VkPipelineRenderingCreateInfo renderInfo{};
 	renderInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-	renderInfo.colorAttachmentCount = static_cast<uint32_t>(createInfo.colorFormats.size());
+	renderInfo.colorAttachmentCount = static_cast<std::uint32_t>(createInfo.colorFormats.size());
 	renderInfo.pColorAttachmentFormats = createInfo.colorFormats.data();
 	renderInfo.depthAttachmentFormat = createInfo.depthStencilFormat;
 	renderInfo.stencilAttachmentFormat = VK_FORMAT_UNDEFINED;

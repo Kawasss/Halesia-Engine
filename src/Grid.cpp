@@ -1,6 +1,5 @@
 module;
 
-#include "renderer/GraphicsPipeline.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/Renderer.h"
 
@@ -9,6 +8,8 @@ module;
 module Renderer.Grid;
 
 import std;
+
+import Renderer.GraphicsPipeline;
 
 void GridPipeline::Start(const Payload& payload)
 {

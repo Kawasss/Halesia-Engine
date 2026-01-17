@@ -196,6 +196,7 @@
     <ClCompile Include="src\FileReadWrite.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\renderer\ComputePipeline.ixx" />
+    <ClCompile Include="src\renderer\GraphicsPipeline.ixx" />
     <ClCompile Include="src\renderer\RayTracingPipeline.ixx" />
     <ClCompile Include="src\VulkanGarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
@@ -314,7 +315,6 @@
     <ClInclude Include="src\renderer\CommandBuffer.h" />
     <ClInclude Include="src\renderer\Framebuffer.h" />
     <ClInclude Include="src\renderer\FramesInFlight.h" />
-    <ClInclude Include="src\renderer\GraphicsPipeline.h" />
     <ClInclude Include="src\renderer\Light.h" />
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />

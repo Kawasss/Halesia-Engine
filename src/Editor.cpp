@@ -9,7 +9,6 @@ module;
 #include "core/Console.h"
 
 #include "renderer/RenderPipeline.h"
-#include "renderer/GraphicsPipeline.h"
 #include "renderer/VideoMemoryManager.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS

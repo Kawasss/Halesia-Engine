@@ -1,12 +1,13 @@
 module;
 
-#include "GraphicsPipeline.h"
 #include "RenderPipeline.h"
 #include "Texture.h"
 
 export module Renderer.SkyPipeline;
 
 import std;
+
+import Renderer.GraphicsPipeline;
 
 export class SkyPipeline : public RenderPipeline
 {
