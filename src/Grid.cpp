@@ -1,7 +1,6 @@
 module;
 
 #include "renderer/RenderPipeline.h"
-#include "renderer/Renderer.h"
 
 #include "core/MeshObject.h"
 
@@ -10,6 +9,7 @@ module Renderer.Grid;
 import std;
 
 import Renderer.GraphicsPipeline;
+import Renderer;
 
 void GridPipeline::Start(const Payload& payload)
 {

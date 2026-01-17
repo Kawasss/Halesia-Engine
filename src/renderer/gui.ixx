@@ -5,11 +5,12 @@ module;
 #include "../core/Object.h"
 #include "../core/Transform.h"
 
-#include "Renderer.h"
 
 export module Renderer.Gui;
 
 import std;
+
+import Renderer;
 
 import System.Window;
 

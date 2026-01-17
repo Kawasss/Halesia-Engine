@@ -4,7 +4,6 @@ module;
 #include "renderer/CommandBuffer.h"
 #include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
-#include "renderer/Renderer.h"
 
 module Renderer.RayTracingPipeline;
 
@@ -13,6 +12,7 @@ import std;
 import Renderer.ShaderCompiler;
 import Renderer.CompiledShader;
 import Renderer.ShaderReflector;
+import Renderer;
 
 constexpr std::uint32_t RT_GROUP_COUNT = 4;
 

@@ -8,7 +8,6 @@
 #include <imgui-1.91.7/misc/cpp/imgui_stdlib.h>
 
 #include "renderer/Mesh.h"
-#include "renderer/Renderer.h"
 #include "renderer/Vulkan.h"
 
 #include "core/Console.h"
@@ -35,6 +34,8 @@ import Physics.Shapes;
 
 import System.Input;
 import System.Window;
+
+import Renderer;
 
 inline void InputFloat(const std::string& name, float& value, float width)
 {

@@ -8,7 +8,6 @@ module;
 
 #include "Object.h"
 
-#include "../renderer/Renderer.h"
 #include "../renderer/Mesh.h"
 
 export module Core.Editor;
@@ -22,10 +21,11 @@ import Physics.RigidBody;
 import Renderer.BoundingVolumePipeline;
 import Renderer.Animation;
 import Renderer.Grid;
+import Renderer;
 
 import Core.ScriptObject;
 import Core.CameraObject;
-import Core.CameraObject;
+import Core.LightObject;
 import Core.EditorProject;
 import Core.Scene;
 

@@ -1,10 +1,4 @@
-#pragma once
-#include <vector>
-#include <string>
-#include <string_view>
-#include <type_traits>
-#include <map>
-#include <vulkan/vulkan.h>
+module;
 
 #include "PhysicalDevice.h"
 #include "Surface.h"
@@ -16,52 +10,57 @@
 #include "Framebuffer.h"
 #include "FramesInFlight.h"
 #include "CommandBuffer.h"
+#include "Swapchain.h"
+#include "Texture.h"
+#include "Mesh.h"
+#include "Light.h"
+#include "Material.h"
 
-class CameraObject;
-class Object;
-class Swapchain;
-class Image;
-class AnimationManager;
-class Window;
-class LightObject;
-class ForwardPlusPipeline;
-class GraphicsPipeline;
-class RenderPipeline;
-struct Mesh;
-struct Light;
-struct Material;
+#include "../core/Object.h"
+
+export module Renderer;
+
+import std;
+
+import Core.CameraObject;
+import Core.LightObject;
+
+import System.Window;
+
+import Renderer.AnimationManager;
+import Renderer.GraphicsPipeline;
 
 using HANDLE = void*;
 using Handle = unsigned long long;
-using RendererFlags = uint32_t;
+export using RendererFlags = std::uint32_t;
 
 template<typename T>
 concept InheritsRenderPipeline = std::is_base_of_v<RenderPipeline, T>;
 
-class Renderer
+export class Renderer
 {
 public:
 	enum Flags : RendererFlags
 	{
-		None                  = 0 << 0,
-		NoRayTracing          = 1 << 0,
+		None = 0 << 0,
+		NoRayTracing = 1 << 0,
 		NoShaderRecompilation = 1 << 1,
-		NoValidation          = 1 << 2,
-		NoFilteringOnResult   = 1 << 3,
+		NoValidation = 1 << 2,
+		NoFilteringOnResult = 1 << 3,
 	};
 
-	static constexpr uint32_t MAX_MESHES			= 1000U; //should be more than enough
-	static constexpr uint32_t MAX_BINDLESS_TEXTURES = MAX_MESHES * 5; //amount of pbr textures per mesh
-	static constexpr uint32_t MAX_FRAMES_IN_FLIGHT	= FIF::FRAME_COUNT;
-	static constexpr uint32_t MAX_TLAS_INSTANCES	= MAX_MESHES;
+	static constexpr std::uint32_t MAX_MESHES            = 1000U; //should be more than enough
+	static constexpr std::uint32_t MAX_BINDLESS_TEXTURES = MAX_MESHES * 5; //amount of pbr textures per mesh
+	static constexpr std::uint32_t MAX_FRAMES_IN_FLIGHT  = FIF::FRAME_COUNT;
+	static constexpr std::uint32_t MAX_TLAS_INSTANCES    = MAX_MESHES;
 
-	static constexpr uint32_t MATERIAL_BUFFER_BINDING = 0;
-	static constexpr uint32_t LIGHT_BUFFER_BINDING = 0;
-	static constexpr uint32_t SCENE_DATA_BUFFER_BINDING = 1;
+	static constexpr std::uint32_t MATERIAL_BUFFER_BINDING   = 0;
+	static constexpr std::uint32_t LIGHT_BUFFER_BINDING      = 0;
+	static constexpr std::uint32_t SCENE_DATA_BUFFER_BINDING = 1;
 
-	static StorageBuffer<Vertex>   g_vertexBuffer;
-	static StorageBuffer<uint32_t> g_indexBuffer;
-	static StorageBuffer<Vertex>   g_defaultVertexBuffer;
+	static StorageBuffer<Vertex>        g_vertexBuffer;
+	static StorageBuffer<std::uint32_t> g_indexBuffer;
+	static StorageBuffer<Vertex>        g_defaultVertexBuffer;
 
 	static VkSampler defaultSampler;
 	static VkSampler noFilterSampler;
@@ -80,21 +79,21 @@ public:
 	void SetViewportOffsets(glm::vec2 offsets);
 	void SetViewportModifiers(glm::vec2 modifiers);
 
-	std::map<std::string, uint64_t> GetTimestamps() const;
+	std::map<std::string, std::uint64_t> GetTimestamps() const;
 
 	VkRenderPass GetDefault3DRenderPass()   const;
 	VkRenderPass GetNonClearingRenderPass() const;
 
 	Framebuffer& GetFramebuffer();
 
-	uint32_t GetInternalWidth()  const;
-	uint32_t GetInternalHeight() const;
+	std::uint32_t GetInternalWidth()  const;
+	std::uint32_t GetInternalHeight() const;
 
 	glm::vec2 GetViewportOffset() const;
 	glm::vec2 GetViewportModifier() const;
 
 	CommandBuffer GetActiveCommandBuffer() const;
-	
+
 	const FIF::Buffer& GetLightBuffer() const;
 
 	const std::vector<RenderPipeline*>& GetAllRenderPipelines() const;
@@ -109,7 +108,7 @@ public:
 	static float GetInternalResolutionScale();
 
 	static void BindBuffersForRendering(CommandBuffer commandBuffer);
-	static void RenderMesh(CommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount = 1);
+	static void RenderMesh(CommandBuffer commandBuffer, const Mesh& mesh, std::uint32_t instanceCount = 1);
 
 	static void SetViewport(CommandBuffer commandBuffer, VkExtent2D extent);
 	static void SetScissors(CommandBuffer commandBuffer, VkExtent2D extent);
@@ -118,25 +117,23 @@ public:
 
 	RenderPipeline::Payload GetPipelinePayload(CommandBuffer commandBuffer, CameraObject* camera);
 
-	template<InheritsRenderPipeline Type> 
+	template<InheritsRenderPipeline Type>
 	Type* AddRenderPipeline(const char* name = "unnamed pipeline"); // returns the created pipeline
 
 	RenderPipeline* GetRenderPipeline(const std::string_view& name);
-	
+
 	Swapchain* swapchain; // better to keep it private
 	AnimationManager* animationManager;
 
 	static float internalScale;
 	bool shouldRasterize = false;
 	static bool canRayTrace;
-	static bool shouldRenderCollisionBoxes;
-	static bool denoiseOutput;
 	static Handle selectedHandle;
 
-	uint32_t receivedObjects = 0;
-	uint32_t renderedObjects = 0;
-	uint32_t submittedCount = 0;
-	uint32_t frameCount = 0;
+	std::uint32_t receivedObjects = 0;
+	std::uint32_t renderedObjects = 0;
+	std::uint32_t submittedCount = 0;
+	std::uint32_t frameCount = 0;
 
 	float animationTime = 0;
 	float rebuildingTime = 0;
@@ -156,7 +153,7 @@ private:
 		void Destroy();
 
 		VkDescriptorPool pool;
-		
+
 		VkDescriptorSetLayout singleLayout;
 		VkDescriptorSetLayout fifLayout;
 		VkDescriptorSet singleSet;
@@ -170,17 +167,17 @@ private:
 		void AllocateFIFSets();
 	};
 
-	VkInstance instance					 = VK_NULL_HANDLE;
-	VkDevice logicalDevice				 = VK_NULL_HANDLE;
-	VkRenderPass renderPass				 = VK_NULL_HANDLE;
-	VkRenderPass GUIRenderPass           = VK_NULL_HANDLE;
-	GraphicsPipeline* screenPipeline     = VK_NULL_HANDLE;
-	VkCommandPool commandPool			 = VK_NULL_HANDLE;
+	VkInstance instance = VK_NULL_HANDLE;
+	VkDevice logicalDevice = VK_NULL_HANDLE;
+	VkRenderPass renderPass = VK_NULL_HANDLE;
+	VkRenderPass GUIRenderPass = VK_NULL_HANDLE;
+	GraphicsPipeline* screenPipeline = VK_NULL_HANDLE;
+	VkCommandPool commandPool = VK_NULL_HANDLE;
 	VkDescriptorPool imGUIDescriptorPool = VK_NULL_HANDLE;
-	VkQueue graphicsQueue				 = VK_NULL_HANDLE;
-	VkQueue presentQueue				 = VK_NULL_HANDLE;
-	VkQueue computeQueue                 = VK_NULL_HANDLE;
-	VkSampler resultSampler              = VK_NULL_HANDLE; // does not need to be destroyed
+	VkQueue graphicsQueue = VK_NULL_HANDLE;
+	VkQueue presentQueue = VK_NULL_HANDLE;
+	VkQueue computeQueue = VK_NULL_HANDLE;
+	VkSampler resultSampler = VK_NULL_HANDLE; // does not need to be destroyed
 	QueryPool queryPool;
 
 	ManagedSet managedSet;
@@ -209,15 +206,13 @@ private:
 	Surface surface;
 	Window* testWindow;
 
-	uint32_t viewportWidth, viewportHeight;
+	std::uint32_t viewportWidth, viewportHeight;
 	glm::vec2 viewportOffsets = glm::vec2(0);
 	glm::vec2 viewportTransModifiers = glm::vec2(1);
-	uint32_t currentFrame = 0;
-	uint32_t imageIndex = 0;
-	uint32_t queueIndex = 0;
-	RendererFlags flags = Flags::None; 
-
-	ForwardPlusPipeline* fwdPlus;
+	std::uint32_t currentFrame = 0;
+	std::uint32_t imageIndex = 0;
+	std::uint32_t queueIndex = 0;
+	RendererFlags flags = Flags::None;
 
 	RenderMode renderMode = RenderMode::DontCare;
 
@@ -252,18 +247,18 @@ private:
 	void UpdateMaterialBuffer();
 
 	void GetQueryResults();
-	
+
 	void ResizeRenderPipelines();
 	void OnResize();
 	void AddExtensions();
-	
+
 	void CheckForVRAMOverflow();
 	void CheckForInterference();
 
 	void ProcessRenderPipeline(RenderPipeline* pipeline);
 	void RunRenderPipelines(CommandBuffer commandBuffer, CameraObject* camera, const std::vector<MeshObject*>& objects);
 
-	uint32_t DetectExternalTools();
+	std::uint32_t DetectExternalTools();
 
 	static void RenderImGUI(CommandBuffer commandBuffer);
 	static void ResetImGUI();
@@ -273,15 +268,14 @@ private:
 
 	void UpdateSceneData(CameraObject* camera);
 
-	void UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
-	void RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<MeshObject*> object, CameraObject* camera);
-	void RenderCollisionBoxes(const std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage);
+	void UpdateScreenShaderTexture(std::uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
+	void RecordCommandBuffer(CommandBuffer commandBuffer, std::uint32_t imageIndex, std::vector<MeshObject*> object, CameraObject* camera);
 
 	void CheckForBufferResizes();
 
-	uint32_t GetNextSwapchainImage(uint32_t frameIndex);
-	void PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex);
-	void SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageIndex);
+	std::uint32_t GetNextSwapchainImage(std::uint32_t frameIndex);
+	void PresentSwapchainImage(std::uint32_t frameIndex, std::uint32_t imageIndex);
+	void SubmitRenderingCommandBuffer(std::uint32_t frameIndex, std::uint32_t imageIndex);
 };
 
 template<InheritsRenderPipeline Type>

@@ -2,7 +2,6 @@ module;
 
 #include "core/Console.h"
 
-#include "renderer/Renderer.h"
 
 module Core.Profiler;
 
@@ -11,6 +10,7 @@ import std;
 import System.Metrics;
 
 import Renderer.Gui;
+import Renderer;
 
 Profiler* Profiler::Get()
 {

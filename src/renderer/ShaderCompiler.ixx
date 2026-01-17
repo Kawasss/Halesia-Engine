@@ -3,6 +3,7 @@ export module Renderer.ShaderCompiler;
 import std;
 
 import Renderer.CompiledShader;
+import Renderer;
 
 export class ShaderCompiler
 {

@@ -354,9 +354,6 @@
     <ClCompile Include="src\physics\Shapes.ixx">
       <Filter>Header Files\physics</Filter>
     </ClCompile>
-    <ClCompile Include="src\HalesiaEngine.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\system\Metrics.ixx">
       <Filter>Header Files\system</Filter>
     </ClCompile>
@@ -500,6 +497,12 @@
     </ClCompile>
     <ClCompile Include="src\renderer\Pipeline.ixx">
       <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\Renderer.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\HalesiaEngine.ixx">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

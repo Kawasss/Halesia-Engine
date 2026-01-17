@@ -1,13 +1,13 @@
 #include <algorithm>
 
 #include "renderer/Mesh.h"
-#include "renderer/Renderer.h"
 
 #include "io/CreationData.h"
 
 #include "ResourceManager.h"
 
 import Renderer.AccelerationStructure;
+import Renderer;
 
 std::vector<Material> Mesh::materials;
 std::mutex Mesh::materialMutex;

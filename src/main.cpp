@@ -1,4 +1,5 @@
-#include "renderer/Renderer.h"
+#include <cstdlib>
+#include <Windows.h>
 
 import HalesiaEngine;
 import System.Window;
@@ -7,6 +8,7 @@ import Renderer.Deferred;
 import Renderer.SkyPipeline;
 import Renderer.AccelerationStructure;
 import Renderer.Skybox;
+import Renderer;
 
 import Core.Editor;
 

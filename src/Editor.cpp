@@ -708,8 +708,6 @@ void Editor::ShowRendererSubmenu()
 		ImGui::EndMenu();
 	}
 	ImGui::Separator();
-	if (ImGui::MenuItem("show collision boxes")) Renderer::shouldRenderCollisionBoxes = !Renderer::shouldRenderCollisionBoxes;
-	ImGui::Separator();
 	ImGui::MenuItem("view statistics");
 	if (ImGui::MenuItem("show VRAM"))
 	{

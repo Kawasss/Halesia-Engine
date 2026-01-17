@@ -1,7 +1,11 @@
 module;
 
-#include "renderer/Renderer.h"
 #include "renderer/CommandBuffer.h"
+#include "renderer/Buffer.h"
+
+#include "system/CriticalSection.h"
+
+#include "glm.h"
 
 module Renderer.AnimationManager;
 
@@ -10,6 +14,7 @@ import <assimp/anim.h>;
 import std;
 
 import Renderer.ComputePipeline;
+import Renderer;
 
 AnimationManager* AnimationManager::Get()
 {

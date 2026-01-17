@@ -1,6 +1,6 @@
 module;
 
-#include "renderer/Renderer.h"
+#include "core/Console.h"
 
 module Renderer.ShaderCompiler;
 
@@ -11,6 +11,7 @@ import StrUtil;
 import System;
 
 import Renderer.CompiledShader;
+import Renderer;
 
 import IO;
 

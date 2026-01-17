@@ -2,7 +2,6 @@ module;
 
 #include <vulkan/vulkan.h>
 
-#include "renderer/Renderer.h"
 #include "renderer/Vulkan.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/CommandBuffer.h"
@@ -14,6 +13,7 @@ import std;
 
 import Renderer.VulkanGarbageManager;
 import Renderer.GraphicsPipeline;
+import Renderer;
 
 constexpr VkFormat LUT_FORMAT = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr uint32_t LUT_FORMAT_SIZE = sizeof(uint16_t) * 4;

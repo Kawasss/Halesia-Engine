@@ -5,7 +5,6 @@ module;
 #include "glm.h"
 
 #include "renderer/VulkanAPIError.h"
-#include "renderer/Renderer.h"
 #include "renderer/Texture.h"
 #include "renderer/Vulkan.h"
 
@@ -16,8 +15,9 @@ import std;
 import Renderer.VulkanGarbageManager;
 import Renderer.DescriptorWriter;
 import Renderer.PipelineCreator;
-import Renderer.Skybox;
 import Renderer.GraphicsPipeline;
+import Renderer.Skybox;
+import Renderer;
 
 struct PushConstantConverter
 {

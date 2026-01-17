@@ -1,6 +1,5 @@
 module;
 
-#include "renderer/Renderer.h"
 #include "renderer/RenderPipeline.h"
 
 #include "core/MeshObject.h"
@@ -15,6 +14,7 @@ import Core.CameraObject;
 
 import Renderer.SimpleMesh;
 import Renderer.GraphicsPipeline;
+import Renderer;
 
 constexpr uint32_t BOX_LINE_COUNT = 24;
 

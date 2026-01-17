@@ -1,3 +1,5 @@
+module;
+
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "renderer/Vulkan.h"
@@ -7,6 +9,7 @@
 #include "renderer/Mesh.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/VulkanAPIError.h"
+#include "renderer/FramesInFlight.h"
 #include "renderer/Light.h"
 
 #include "core/Console.h"
@@ -21,7 +24,7 @@
 #include <imgui-1.91.7/backends/imgui_impl_vulkan.h>
 #include <imgui-1.91.7/backends/imgui_impl_win32.h>
 
-#include "renderer/Renderer.h"
+module Renderer;
 
 import std;
 
@@ -68,20 +71,18 @@ struct Renderer::SceneData // if supporting vr, then turn all camera matrices in
 	glm::vec3 camRight;
 	glm::vec3 camUp;
 	float camFov;
-	uint32_t frameCount;
+	std::uint32_t frameCount;
 	float time;
 };
 #pragma pack(pop)
 
 StorageBuffer<Vertex>   Renderer::g_vertexBuffer;
-StorageBuffer<uint32_t> Renderer::g_indexBuffer;
+StorageBuffer<std::uint32_t> Renderer::g_indexBuffer;
 StorageBuffer<Vertex>   Renderer::g_defaultVertexBuffer;
 
 VkSampler Renderer::defaultSampler  = VK_NULL_HANDLE;
 VkSampler Renderer::noFilterSampler = VK_NULL_HANDLE;
 Handle    Renderer::selectedHandle = 0;
-bool      Renderer::shouldRenderCollisionBoxes = false;
-bool      Renderer::denoiseOutput = true;
 bool      Renderer::canRayTrace = false;
 float     Renderer::internalScale = 1;
 
@@ -205,7 +206,7 @@ void Renderer::CreateImGUI()
 	poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 	poolCreateInfo.maxSets = 1000;
-	poolCreateInfo.poolSizeCount = static_cast<uint32_t>(std::size(poolSizes));
+	poolCreateInfo.poolSizeCount = static_cast<std::uint32_t>(std::size(poolSizes));
 	poolCreateInfo.pPoolSizes = poolSizes;
 
 	VkResult result = ::vkCreateDescriptorPool(logicalDevice, &poolCreateInfo, nullptr, &imGUIDescriptorPool);
@@ -260,7 +261,7 @@ void Renderer::InitVulkan()
 
 void Renderer::CheckForInterference()
 {
-	uint32_t numTools = DetectExternalTools();
+	std::uint32_t numTools = DetectExternalTools();
 	if (flags & NoValidation || numTools > 0)
 	{
 		const char* reason = numTools > 0 ? "Disabled validation layers due to possible interference of external tools\n" : "Disabled validation layers because the flag NO_VALIDATION was set\n";
@@ -271,8 +272,8 @@ void Renderer::CheckForInterference()
 
 void Renderer::InitializeViewport()
 {
-	viewportWidth  = static_cast<uint32_t>(testWindow->GetWidth()  * internalScale);
-	viewportHeight = static_cast<uint32_t>(testWindow->GetHeight() * internalScale);
+	viewportWidth  = static_cast<std::uint32_t>(testWindow->GetWidth()  * internalScale);
+	viewportHeight = static_cast<std::uint32_t>(testWindow->GetHeight() * internalScale);
 
 	UpdateScreenShaderTexture(0);
 }
@@ -382,9 +383,9 @@ void Renderer::AddExtensions()
 	}
 }
 
-uint32_t Renderer::DetectExternalTools()
+std::uint32_t Renderer::DetectExternalTools()
 {
-	uint32_t numTools = 0;
+	std::uint32_t numTools = 0;
 	::vkGetPhysicalDeviceToolProperties(physicalDevice.Device(), &numTools, nullptr);
 	Console::WriteLine("Detected external tools:");
 	if (numTools == 0)
@@ -477,7 +478,7 @@ void Renderer::CreateCommandBuffer()
 	allocationInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocationInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	allocationInfo.commandPool = commandPool;
-	allocationInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
+	allocationInfo.commandBufferCount = static_cast<std::uint32_t>(commandBuffers.size());
 
 	Vulkan::AllocateCommandBuffers(allocationInfo, commandBuffers);
 
@@ -496,7 +497,7 @@ void Renderer::ManagedSet::Create()
 	VkPhysicalDeviceProperties props{};
 	vkGetPhysicalDeviceProperties(ctx.physicalDevice.Device(), &props);
 
-	uint32_t imageCount = props.limits.maxDescriptorSetSampledImages < MAX_BINDLESS_TEXTURES ? props.limits.maxDescriptorSetSampledImages : MAX_BINDLESS_TEXTURES;
+	std::uint32_t imageCount = props.limits.maxDescriptorSetSampledImages < MAX_BINDLESS_TEXTURES ? props.limits.maxDescriptorSetSampledImages : MAX_BINDLESS_TEXTURES;
 
 	std::array<VkDescriptorPoolSize, 3> poolSizes{};
 	poolSizes[0].descriptorCount = imageCount;
@@ -512,7 +513,7 @@ void Renderer::ManagedSet::Create()
 	poolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 	poolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
 	poolCreateInfo.maxSets = 3;
-	poolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+	poolCreateInfo.poolSizeCount = static_cast<std::uint32_t>(poolSizes.size());
 	poolCreateInfo.pPoolSizes = poolSizes.data();
 
 	VkResult result = vkCreateDescriptorPool(ctx.logicalDevice, &poolCreateInfo, nullptr, &pool);
@@ -570,13 +571,13 @@ void Renderer::ManagedSet::CreateSingleLayout()
 
 	VkDescriptorSetLayoutBindingFlagsCreateInfo flagCreateInfo{};
 	flagCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
-	flagCreateInfo.bindingCount = static_cast<uint32_t>(flags.size());
+	flagCreateInfo.bindingCount = static_cast<std::uint32_t>(flags.size());
 	flagCreateInfo.pBindingFlags = flags.data();
 
 	VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
 	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-	layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
+	layoutCreateInfo.bindingCount = static_cast<std::uint32_t>(layoutBindings.size());
 	layoutCreateInfo.pBindings = layoutBindings.data();
 	layoutCreateInfo.pNext = &flagCreateInfo;
 
@@ -616,7 +617,7 @@ void Renderer::ManagedSet::CreateFIFLayout()
 	VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
 	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 	layoutCreateInfo.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
-	layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
+	layoutCreateInfo.bindingCount = static_cast<std::uint32_t>(layoutBindings.size());
 	layoutCreateInfo.pBindings = layoutBindings.data();
 
 	VkResult result = vkCreateDescriptorSetLayout(ctx.logicalDevice, &layoutCreateInfo, nullptr, &fifLayout);
@@ -662,8 +663,8 @@ void Renderer::PermanentlyBindGlobalBuffers()
 
 void Renderer::UpdateMaterialBuffer()
 {
-	uint32_t min = static_cast<uint32_t>(std::min(Mesh::materials.size(), materials.size()));
-	uint32_t differentIndex = 0; // the index where the mesh::materials and materials start to differ
+	std::uint32_t min = static_cast<std::uint32_t>(std::min(Mesh::materials.size(), materials.size()));
+	std::uint32_t differentIndex = 0; // the index where the mesh::materials and materials start to differ
 	bool different = false;
 
 	for (; differentIndex < min; differentIndex++)
@@ -683,12 +684,12 @@ void Renderer::UpdateMaterialBuffer()
 	std::vector<VkDescriptorImageInfo> imageInfos((Mesh::materials.size() - differentIndex) * pbrSize);
 
 	materials.resize(differentIndex + 1);
-	for (uint32_t i = min; i < materials.size(); i++)
+	for (std::uint32_t i = min; i < materials.size(); i++)
 	{
 		materials[i] = Mesh::materials[i].HasFinishedLoading() ? Mesh::materials[i].handle : 0;
 	}
 
-	for (uint32_t i = differentIndex; i < Mesh::materials.size(); i++)
+	for (std::uint32_t i = differentIndex; i < Mesh::materials.size(); i++)
 	{
 		for (size_t j = 0; j < pbrSize; j++)
 		{
@@ -704,7 +705,7 @@ void Renderer::UpdateMaterialBuffer()
 	VkWriteDescriptorSet writeSet{};
 	writeSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	writeSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	writeSet.descriptorCount = static_cast<uint32_t>(imageInfos.size());
+	writeSet.descriptorCount = static_cast<std::uint32_t>(imageInfos.size());
 	writeSet.dstArrayElement = differentIndex * pbrSize;
 	writeSet.dstBinding = MATERIAL_BUFFER_BINDING;
 	writeSet.dstSet = managedSet.singleSet;
@@ -720,7 +721,7 @@ void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
 	renderPipelines.push_back(pipeline);
 }
 
-void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIndex, std::vector<MeshObject*> objects, CameraObject* camera)
+void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, std::uint32_t imageIndex, std::vector<MeshObject*> objects, CameraObject* camera)
 {
 	if (camera == nullptr)
 		return;
@@ -750,7 +751,7 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, uint32_t imageIn
 	renderPassBeginInfo.framebuffer = swapchain->framebuffers[imageIndex];
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = swapchain->extent;
-	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+	renderPassBeginInfo.clearValueCount = static_cast<std::uint32_t>(clearColors.size());
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
 	commandBuffer.BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -826,12 +827,12 @@ void Renderer::BindBuffersForRendering(CommandBuffer commandBuffer)
 	commandBuffer.BindIndexBuffer(g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT32);
 }
 
-void Renderer::RenderMesh(CommandBuffer commandBuffer, const Mesh& mesh, uint32_t instanceCount)
+void Renderer::RenderMesh(CommandBuffer commandBuffer, const Mesh& mesh, std::uint32_t instanceCount)
 {
-	uint32_t indexCount    = static_cast<uint32_t>(mesh.indices.size());
-	uint32_t firstIndex    = static_cast<uint32_t>(g_indexBuffer.GetItemOffset(mesh.indexMemory));
-	int32_t  vertexOffset  = static_cast<int32_t>(g_vertexBuffer.GetItemOffset(mesh.vertexMemory));
-	uint32_t firstInstance = 0;
+	std::uint32_t indexCount    = static_cast<std::uint32_t>(mesh.indices.size());
+	std::uint32_t firstIndex    = static_cast<std::uint32_t>(g_indexBuffer.GetItemOffset(mesh.indexMemory));
+	std::int32_t  vertexOffset  = static_cast<std::int32_t>(g_vertexBuffer.GetItemOffset(mesh.vertexMemory));
+	std::uint32_t firstInstance = 0;
 
 	commandBuffer.DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
@@ -858,8 +859,8 @@ void Renderer::OnResize()
 		return;
 	}
 
-	viewportWidth  = static_cast<uint32_t>(testWindow->GetWidth()  * viewportTransModifiers.x * internalScale);
-	viewportHeight = static_cast<uint32_t>(testWindow->GetHeight() * viewportTransModifiers.y * internalScale);
+	viewportWidth  = static_cast<std::uint32_t>(testWindow->GetWidth()  * viewportTransModifiers.x * internalScale);
+	viewportHeight = static_cast<std::uint32_t>(testWindow->GetHeight() * viewportTransModifiers.y * internalScale);
 
 	swapchain->Recreate(GUIRenderPass, false);
 	UpdateScreenShaderTexture(currentFrame);
@@ -884,7 +885,7 @@ void Renderer::ResizeRenderPipelines()
 	Console::WriteLine("Resized render pipelines to most recent dimensions", Console::Severity::Debug);
 }
 
-void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
+void Renderer::PresentSwapchainImage(std::uint32_t frameIndex, std::uint32_t imageIndex)
 {
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -908,7 +909,7 @@ void Renderer::PresentSwapchainImage(uint32_t frameIndex, uint32_t imageIndex)
 	frameCount++;
 }
 
-void Renderer::SubmitRenderingCommandBuffer(uint32_t frameIndex, uint32_t imageIndex)
+void Renderer::SubmitRenderingCommandBuffer(std::uint32_t frameIndex, std::uint32_t imageIndex)
 {
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1031,8 +1032,8 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, CameraObject* 
 		::GetAllObjectsFromObject(activeObjects, lightObjects, object, canRayTrace);
 	}
 
-	receivedObjects += static_cast<uint32_t>(objects.size());
-	renderedObjects += static_cast<uint32_t>(activeObjects.size());
+	receivedObjects += static_cast<std::uint32_t>(objects.size());
+	renderedObjects += static_cast<std::uint32_t>(activeObjects.size());
 
 	win32::CriticalLockGuard lockGuard(drawingSection);
 
@@ -1090,7 +1091,7 @@ void Renderer::StartRenderPass(VkRenderPass renderPass, glm::vec3 clearColor, Vk
 	renderPassBeginInfo.framebuffer = framebuffer;
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = { this->framebuffer.GetWidth(), this->framebuffer.GetHeight() };
-	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+	renderPassBeginInfo.clearValueCount = static_cast<std::uint32_t>(clearColors.size());
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
 	commandBuffers[currentFrame].BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
@@ -1108,13 +1109,13 @@ void Renderer::StartRenderPass(const Framebuffer& framebuffer, glm::vec3 clearCo
 	renderPassBeginInfo.framebuffer = framebuffer.Get();
 	renderPassBeginInfo.renderArea.offset = { 0, 0 };
 	renderPassBeginInfo.renderArea.extent = { framebuffer.GetWidth(), framebuffer.GetHeight() };
-	renderPassBeginInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+	renderPassBeginInfo.clearValueCount = static_cast<std::uint32_t>(clearColors.size());
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
 	commandBuffers[currentFrame].BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imageView)
+void Renderer::UpdateScreenShaderTexture(std::uint32_t currentFrame, VkImageView imageView)
 {
 	if (framebuffer.Get() == VK_NULL_HANDLE)
 	{
@@ -1132,20 +1133,6 @@ void Renderer::UpdateScreenShaderTexture(uint32_t currentFrame, VkImageView imag
 	DescriptorWriter::Write(); // do a forced write here since it is critical that this view gets updated as fast as possible, without any buffering from the writer
 }
 
-void Renderer::RenderCollisionBoxes(const std::vector<Object*>& objects, VkCommandBuffer commandBuffer, uint32_t currentImage)
-{
-	/*for (Object* object : objects)
-	{
-		glm::mat4 localRotationModel = glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.x), glm::vec3(1, 0, 0)) * glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.y), glm::vec3(0, 1, 0)) * glm::rotate(glm::mat4(1), glm::radians(object->transform.rotation.z), glm::vec3(0, 0, 1));
-		glm::mat4 scaleModel = glm::scale(glm::identity<glm::mat4>(), object->rigid.shape.data);
-		glm::mat4 translationModel = glm::translate(glm::identity<glm::mat4>(), object->transform.position);
-		glm::mat4 trans = translationModel * localRotationModel * scaleModel;
-		
-		::vkCmdPushConstants(commandBuffer, screenPipeline->GetLayout(), VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(glm::mat4), &trans);
-		::vkCmdDraw(commandBuffer, 36, 1, 0, 0);
-	}	*/
-}
-
 void Renderer::ResetLightBuffer()
 {
 	lightBuffer.GetMappedPointer<LightBuffer>()->count = 0;
@@ -1153,7 +1140,7 @@ void Renderer::ResetLightBuffer()
 
 void Renderer::CheckForVRAMOverflow()
 {
-	static uint64_t max = physicalDevice.VRAM();
+	static std::uint64_t max = physicalDevice.VRAM();
 	if (Vulkan::allocatedMemory > max)
 		throw VulkanAPIError("Critical error: out of VRAM");
 }
@@ -1229,22 +1216,14 @@ void Renderer::GetQueryResults()
 	animationTime = (queryPool[1] - queryPool[0]) * 0.000001f; // nanoseconds to milliseconds
 	rebuildingTime = (queryPool[3] - queryPool[2]) * 0.000001f;
 	rayTracingTime = (queryPool[5] - queryPool[4]) * 0.000001f;
-	if (denoiseOutput)
-	{
-		denoisingPrepTime = (queryPool[7] - queryPool[6]) * 0.000001f;
-		finalRenderPassTime = (queryPool[9] - queryPool[8]) * 0.000001f;
-	}
-	else
-	{
-		finalRenderPassTime = (queryPool[7] - queryPool[6]) * 0.000001f;
-		denoisingPrepTime = 0;
-		denoisingTime = 0;
-	}
+	finalRenderPassTime = (queryPool[7] - queryPool[6]) * 0.000001f;
+	denoisingPrepTime = 0;
+	denoisingTime = 0;
 }
 
-uint32_t Renderer::GetNextSwapchainImage(uint32_t frameIndex)
+std::uint32_t Renderer::GetNextSwapchainImage(std::uint32_t frameIndex)
 {
-	uint32_t imageIndex;
+	std::uint32_t imageIndex;
 	VkResult result = ::vkAcquireNextImageKHR(logicalDevice, swapchain->vkSwapchain, UINT64_MAX, imageAvaibleSemaphores[frameIndex], VK_NULL_HANDLE, &imageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
@@ -1310,17 +1289,17 @@ VkRenderPass Renderer::GetNonClearingRenderPass() const
 	return GUIRenderPass;
 }
 
-uint32_t Renderer::GetInternalWidth() const
+std::uint32_t Renderer::GetInternalWidth() const
 {
 	return viewportWidth;
 }
 
-uint32_t Renderer::GetInternalHeight() const 
+std::uint32_t Renderer::GetInternalHeight() const
 { 
 	return viewportHeight; 
 }
 
-std::map<std::string, uint64_t> Renderer::GetTimestamps() const
+std::map<std::string, std::uint64_t> Renderer::GetTimestamps() const
 {
 	return queryPool.GetTimestamps(); 
 }

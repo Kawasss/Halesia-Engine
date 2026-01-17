@@ -1,6 +1,7 @@
 module;
 
-#include "renderer/Renderer.h"
+#include <cassert>
+
 #include "renderer/Vulkan.h"
 
 #include "core/Console.h"
@@ -22,6 +23,7 @@ import System;
 
 import Renderer.Gui;
 import Renderer.AnimationManager;
+import Renderer;
 
 import IO.IniFile;
 
@@ -268,7 +270,7 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 		OnExit();
 		return ExitCode::Success;
 	}
-	catch (const ExitRequest& exit)
+	catch (const ExitRequest&)
 	{
 		OnExit();
 		return ExitCode::Success;
@@ -350,8 +352,6 @@ void HalesiaEngine::LoadVars()
 	devConsoleKey = static_cast<VirtualKey>(reader.GetFloat("consoleKey"));
 
 	core.renderer->internalScale         = reader.GetFloat("internalRes");
-	Renderer::shouldRenderCollisionBoxes = reader.GetBool("renderCollision");
-	Renderer::denoiseOutput              = reader.GetBool("denoiseOutput");
 
 	std::cout << "Finished loading from cfg/engine.ini\n";
 }
@@ -375,8 +375,6 @@ void HalesiaEngine::OnExit()
 	writer["consoleKey"] = std::to_string(static_cast<int>(devConsoleKey));
 
 	writer["internalRes"]     = std::to_string(Renderer::internalScale);
-	writer["renderCollision"] = std::to_string(Renderer::shouldRenderCollisionBoxes);
-	writer["denoiseOutput"]   = std::to_string(Renderer::denoiseOutput);
 
 	writer.Write();
 
@@ -394,7 +392,6 @@ void HalesiaEngine::RegisterConsoleVars()
 	Console::AddCVar("playFrame",    &playOneFrame);
 	Console::AddCVar("showAsync",    &showAsyncTimes);
 
-	Console::AddCVar("denoiseOutput", &Renderer::denoiseOutput);
 	Console::AddCVar("internalScale", &Renderer::internalScale);
 
 	Console::AddCVar("rasterize",         &core.renderer->shouldRasterize);
