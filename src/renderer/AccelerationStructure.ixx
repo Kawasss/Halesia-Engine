@@ -1,13 +1,18 @@
-#pragma once
+module;
+
 #include <vulkan/vulkan.h>
 
 #include "StorageBuffer.h"
 #include "Buffer.h"
+#include "Mesh.h"
 
-struct Mesh;
-class MeshObject;
+#include "../core/MeshObject.h"
 
-class AccelerationStructure // or AS for short
+export module Renderer.AccelerationStructure;
+
+import std;
+
+export class AccelerationStructure // or AS for short
 {
 public:
 	VkDeviceAddress GetAccelerationStructureAddress() { return ASAddress; }
@@ -32,7 +37,7 @@ private:
 	VkAccelerationStructureTypeKHR type = VK_ACCELERATION_STRUCTURE_TYPE_MAX_ENUM_KHR;
 };
 
-class BottomLevelAccelerationStructure : public AccelerationStructure
+export class BottomLevelAccelerationStructure : public AccelerationStructure
 {
 public:
 	BottomLevelAccelerationStructure(const Mesh& mesh);
@@ -41,7 +46,7 @@ public:
 	void RebuildGeometry(VkCommandBuffer commandBuffer, const Mesh& mesh);
 };
 
-class TopLevelAccelerationStructure : public AccelerationStructure
+export class TopLevelAccelerationStructure : public AccelerationStructure
 {
 public:
 	enum class InstanceIndexType

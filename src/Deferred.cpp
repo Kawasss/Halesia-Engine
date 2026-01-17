@@ -7,7 +7,6 @@ module;
 #include "renderer/ComputeShader.h"
 #include "renderer/Renderer.h"
 #include "renderer/RayTracingPipeline.h"
-#include "renderer/accelerationStructures.h"
 #include "renderer/GarbageManager.h"
 #include "renderer/Vulkan.h"
 #include "renderer/RenderPipeline.h"
@@ -27,6 +26,7 @@ import Core.CameraObject;
 import Renderer.SkyPipeline;
 import Renderer.ImageTransitioner;
 import Renderer.PipelineCreator;
+import Renderer.AccelerationStructure;
 
 struct DeferredPipeline::PushConstant
 {

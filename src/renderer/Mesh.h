@@ -5,7 +5,6 @@
 
 #include "Material.h"
 #include "Vertex.h"
-#include "AccelerationStructures.h"
 
 #include "../io/FwdDclCreationData.h"
 

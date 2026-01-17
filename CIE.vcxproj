@@ -224,6 +224,7 @@
     <ClCompile Include="src\QueryPool.cpp" />
     <ClCompile Include="src\RayTracingPipeline.cpp" />
     <ClCompile Include="src\ReadWriteFile.cpp" />
+    <ClCompile Include="src\renderer\AccelerationStructure.ixx" />
     <ClCompile Include="src\renderer\Animation.ixx" />
     <ClCompile Include="src\renderer\AnimationManager.ixx" />
     <ClCompile Include="src\renderer\Animator.ixx" />
@@ -306,7 +307,6 @@
     <ClInclude Include="src\io\FileMaterial.h" />
     <ClInclude Include="src\io\FwdDclCreationData.h" />
     <ClInclude Include="src\math\vectors.h" />
-    <ClInclude Include="src\renderer\AccelerationStructures.h" />
     <ClInclude Include="src\renderer\CommandBuffer.h" />
     <ClInclude Include="src\renderer\ComputeShader.h" />
     <ClInclude Include="src\renderer\Framebuffer.h" />

@@ -6,9 +6,11 @@ module;
 #include "core/Object.h"
 #include "core/Transform.h"
 #include "core/MeshObject.h"
+#include "core/Console.h"
 
 #include "renderer/RenderPipeline.h"
 #include "renderer/GraphicsPipeline.h"
+#include "renderer/VideoMemoryManager.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui-1.91.7/implot.h>

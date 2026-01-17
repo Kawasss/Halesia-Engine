@@ -480,13 +480,13 @@
     <ClCompile Include="src\renderer\Skybox.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\AccelerationStructure.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
       <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\AccelerationStructures.h">
-      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\Material.h">
       <Filter>Header Files\Renderer</Filter>

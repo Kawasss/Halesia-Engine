@@ -3,7 +3,6 @@ module;
 #include <vulkan/vulkan.h>
 
 #include "RayTracingPipeline.h"
-#include "AccelerationStructures.h"
 #include "ComputeShader.h"
 #include "GraphicsPipeline.h"
 #include "RenderPipeline.h"
@@ -20,6 +19,7 @@ import std;
 import Core.CameraObject;
 
 import Renderer.SkyPipeline;
+import Renderer.AccelerationStructure;
 
 export class DeferredPipeline : public RenderPipeline
 {
