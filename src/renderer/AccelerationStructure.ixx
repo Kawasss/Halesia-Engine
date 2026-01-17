@@ -2,7 +2,6 @@ module;
 
 #include <vulkan/vulkan.h>
 
-#include "StorageBuffer.h"
 #include "Buffer.h"
 #include "Mesh.h"
 
@@ -11,6 +10,8 @@ module;
 export module Renderer.AccelerationStructure;
 
 import std;
+
+import Renderer.StorageBuffer;
 
 export class AccelerationStructure // or AS for short
 {

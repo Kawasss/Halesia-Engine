@@ -1,14 +1,12 @@
 module;
 
-#include <Windows.h>
-
-#include "renderer/StorageBuffer.h"
 #include "renderer/Vertex.h"
 
 module Renderer.SimpleMesh;
 
 import std;
 
+import Renderer.StorageBuffer;
 import Renderer;
 
 SimpleMesh SimpleMesh::Create(const std::span<const Vertex>& vertices)

@@ -504,6 +504,9 @@
     <ClCompile Include="src\HalesiaEngine.ixx">
       <Filter>Header Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\StorageBuffer.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">

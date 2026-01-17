@@ -1,13 +1,17 @@
-#pragma once
-#include <set>
-#include <map>
-#include <span>
+module;
+
+#include <Windows.h>
+#include <vulkan/vulkan.h>
 
 #include "../system/CriticalSection.h"
 
 #include "ResizableBuffer.h"
 
 #include "../core/Console.h"
+
+export module Renderer.StorageBuffer;
+
+import std;
 
 #define CheckHandleValidity(memory, ret)                                                                                                             \
 if (!CheckIfHandleIsValid(memory))                                                                                                                   \
@@ -17,9 +21,9 @@ if (!CheckIfHandleIsValid(memory))                                              
 	return ret;                                                                                                                                      \
 }                                                                                                                                                    \
 
-using StorageMemory = unsigned long long;
+export using StorageMemory = unsigned long long;
 
-template<typename T> 
+export template<typename T>
 class StorageBuffer
 {
 public:
@@ -145,10 +149,10 @@ public:
 	/// <returns></returns>
 	VkDeviceSize GetItemOffset(StorageMemory memory) { return GetMemoryOffset(memory) / sizeof(T); }
 
-	VkDeviceSize GetBufferEnd()    { return (VkDeviceSize)endOfBufferPointer + 1; } // not sure about the + 1
+	VkDeviceSize GetBufferEnd() { return (VkDeviceSize)endOfBufferPointer + 1; } // not sure about the + 1
 	VkBuffer     GetBufferHandle() { return buffer.Get(); }
 
-	size_t GetSize()    { return size; }
+	size_t GetSize() { return size; }
 	size_t GetMaxSize() { return buffer.GetSize() / sizeof(T); }
 
 	bool HasChanged() { bool ret = hasChanged; hasChanged = false; return ret; }

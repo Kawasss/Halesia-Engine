@@ -3,7 +3,6 @@ module;
 #include "PhysicalDevice.h"
 #include "Surface.h"
 #include "Vertex.h"
-#include "StorageBuffer.h"
 #include "QueryPool.h"
 #include "Buffer.h"
 #include "RenderPipeline.h"
@@ -11,10 +10,7 @@ module;
 #include "FramesInFlight.h"
 #include "CommandBuffer.h"
 #include "Swapchain.h"
-#include "Texture.h"
 #include "Mesh.h"
-#include "Light.h"
-#include "Material.h"
 
 #include "../core/Object.h"
 
@@ -29,6 +25,7 @@ import System.Window;
 
 import Renderer.AnimationManager;
 import Renderer.GraphicsPipeline;
+import Renderer.StorageBuffer;
 
 using HANDLE = void*;
 using Handle = unsigned long long;
