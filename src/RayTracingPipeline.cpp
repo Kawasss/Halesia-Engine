@@ -1,9 +1,12 @@
-#include "renderer/RayTracingPipeline.h"
+module;
+
 #include "renderer/FramesInFlight.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/Renderer.h"
+
+module Renderer.RayTracingPipeline;
 
 import std;
 
@@ -11,7 +14,7 @@ import Renderer.ShaderCompiler;
 import Renderer.CompiledShader;
 import Renderer.ShaderReflector;
 
-constexpr uint32_t RT_GROUP_COUNT = 4;
+constexpr std::uint32_t RT_GROUP_COUNT = 4;
 
 VkStridedDeviceAddressRegionKHR fallbackShaderBinding{};
 
@@ -28,11 +31,11 @@ RayTracingPipeline::RayTracingPipeline(const std::string& rgen, const std::strin
 		cRmiss->code,
 	};
 	ShaderGroupReflector reflector(shaders);
-	for (uint32_t set : cRgen->externalSets)
+	for (std::uint32_t set : cRgen->externalSets)
 		reflector.ExcludeSet(set);
-	for (uint32_t set : cRchit->externalSets)
+	for (std::uint32_t set : cRchit->externalSets)
 		reflector.ExcludeSet(set);
-	for (uint32_t set : cRmiss->externalSets)
+	for (std::uint32_t set : cRmiss->externalSets)
 		reflector.ExcludeSet(set);
 
 	InitializeBase(reflector);
@@ -57,9 +60,9 @@ void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, c
 
 	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
 	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutCreateInfo.setLayoutCount = static_cast<uint32_t>(setLayouts.size());
+	pipelineLayoutCreateInfo.setLayoutCount = static_cast<std::uint32_t>(setLayouts.size());
 	pipelineLayoutCreateInfo.pSetLayouts = setLayouts.data();
-	pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<uint32_t>(ranges.size());
+	pipelineLayoutCreateInfo.pushConstantRangeCount = static_cast<std::uint32_t>(ranges.size());
 	pipelineLayoutCreateInfo.pPushConstantRanges = ranges.data();
 
 	VkResult result = vkCreatePipelineLayout(ctx.logicalDevice, &pipelineLayoutCreateInfo, nullptr, &layout);
@@ -79,7 +82,7 @@ void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, c
 	shaderGroupCreateInfos[0].intersectionShader = VK_SHADER_UNUSED_KHR;
 	shaderGroupCreateInfos[0].closestHitShader = 0;
 
-	for (uint32_t i = 1; i < shaderGroupCreateInfos.size(); i++)
+	for (std::uint32_t i = 1; i < shaderGroupCreateInfos.size(); i++)
 	{
 		shaderGroupCreateInfos[i].sType = VK_STRUCTURE_TYPE_RAY_TRACING_SHADER_GROUP_CREATE_INFO_KHR;
 		shaderGroupCreateInfos[i].type = VK_RAY_TRACING_SHADER_GROUP_TYPE_GENERAL_KHR;
@@ -91,9 +94,9 @@ void RayTracingPipeline::CreatePipeline(const ShaderGroupReflector& reflector, c
 
 	VkRayTracingPipelineCreateInfoKHR pipelineCreateInfo{};
 	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_RAY_TRACING_PIPELINE_CREATE_INFO_KHR;
-	pipelineCreateInfo.stageCount = static_cast<uint32_t>(stageCreateInfos.size());
+	pipelineCreateInfo.stageCount = static_cast<std::uint32_t>(stageCreateInfos.size());
 	pipelineCreateInfo.pStages = stageCreateInfos.data();
-	pipelineCreateInfo.groupCount = static_cast<uint32_t>(shaderGroupCreateInfos.size());
+	pipelineCreateInfo.groupCount = static_cast<std::uint32_t>(shaderGroupCreateInfos.size());
 	pipelineCreateInfo.pGroups = shaderGroupCreateInfos.data();
 	pipelineCreateInfo.maxPipelineRayRecursionDepth = 1;
 	pipelineCreateInfo.layout = layout;
@@ -131,7 +134,7 @@ void RayTracingPipeline::CreateShaderBindingTable()
 
 	char* shaderBindingTableMemPtr = shaderBindingTableBuffer.Map<char>(0, shaderBindingTableSize);
 
-	for (uint32_t i = 0; i < RT_GROUP_COUNT; i++)
+	for (std::uint32_t i = 0; i < RT_GROUP_COUNT; i++)
 	{
 		memcpy(shaderBindingTableMemPtr, shaderBuffer.data() + i * rtProperties.shaderGroupHandleSize, rtProperties.shaderGroupHandleSize);
 		shaderBindingTableMemPtr = shaderBindingTableMemPtr + rtProperties.shaderGroupBaseAlignment;
@@ -157,7 +160,7 @@ void RayTracingPipeline::CreateShaderBindingTable()
 	rmissShaderBinding.stride = progSize;
 }
 
-void RayTracingPipeline::Execute(const CommandBuffer& cmdBuffer, uint32_t width, uint32_t height, uint32_t depth) const
+void RayTracingPipeline::Execute(const CommandBuffer& cmdBuffer, std::uint32_t width, std::uint32_t height, std::uint32_t depth) const
 {
 	cmdBuffer.TraceRays(rgenShaderBinding, rmissShaderBinding, rchitShaderBinding, rmissShaderBinding, width, height, depth);
 }

@@ -1,18 +1,20 @@
-#pragma once
-#include <string>
-#include <span>
+module;
 
 #include "Pipeline.h"
 #include "Buffer.h"
 
-class ShaderGroupReflector;
+export module Renderer.RayTracingPipeline;
 
-class RayTracingPipeline : public Pipeline
+import std;
+
+import Renderer.ShaderReflector;
+
+export class RayTracingPipeline : public Pipeline
 {
 public:
 	RayTracingPipeline(const std::string& rgen, const std::string& rchit, const std::string& rmiss);
 
-	void Execute(const CommandBuffer& cmdBuffer, uint32_t width, uint32_t height, uint32_t depth) const;
+	void Execute(const CommandBuffer& cmdBuffer, std::uint32_t width, std::uint32_t height, std::uint32_t depth) const;
 
 private:
 	void CreatePipeline(const ShaderGroupReflector& reflector, const std::span<std::span<char>>& shaders);

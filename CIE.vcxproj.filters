@@ -492,6 +492,9 @@
     <ClCompile Include="src\ComputePipeline.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\RayTracingPipeline.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -622,9 +625,6 @@
     </ClInclude>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\implot_internal.h">
       <Filter>external\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\RayTracingPipeline.h">
-      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\VulkanAPIError.h">
       <Filter>Header Files\Renderer</Filter>

@@ -5,7 +5,6 @@ module;
 
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/Renderer.h"
-#include "renderer/RayTracingPipeline.h"
 #include "renderer/Vulkan.h"
 #include "renderer/RenderPipeline.h"
 #include "renderer/VideoMemoryManager.h"
@@ -27,6 +26,7 @@ import Renderer.PipelineCreator;
 import Renderer.AccelerationStructure;
 import Renderer.VulkanGarbageManager;
 import Renderer.ComputePipeline;
+import Renderer.RayTracingPipeline;
 
 struct DeferredPipeline::PushConstant
 {
