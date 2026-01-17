@@ -1,5 +1,4 @@
 #include "renderer/Renderer.h"
-#include "renderer/Skybox.h"
 #include "renderer/GraphicsPipeline.h"
 #include "renderer/RayTracingPipeline.h"
 #include "renderer/AccelerationStructures.h"
@@ -12,6 +11,7 @@ import System.Window;
 
 import Renderer.Deferred;
 import Renderer.SkyPipeline;
+import Renderer.Skybox;
 
 import Core.Editor;
 

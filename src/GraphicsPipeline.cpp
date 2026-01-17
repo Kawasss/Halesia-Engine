@@ -1,7 +1,6 @@
 #include "renderer/Vulkan.h"
 
 #include "renderer/GraphicsPipeline.h"
-#include "renderer/PipelineCreator.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/VulkanAPIError.h"
 
@@ -9,6 +8,7 @@ import std;
 
 import Renderer.ShaderCompiler;
 import Renderer.CompiledShader;
+import Renderer.PipelineCreator;
 
 GraphicsPipeline::GraphicsPipeline(const CreateInfo& createInfo)
 {

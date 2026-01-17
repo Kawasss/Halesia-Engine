@@ -236,8 +236,10 @@
     <ClCompile Include="src\renderer\gui.ixx" />
     <ClCompile Include="src\renderer\HdrConverter.ixx" />
     <ClCompile Include="src\renderer\ImageTransitioner.ixx" />
+    <ClCompile Include="src\renderer\PipelineCreator.ixx" />
     <ClCompile Include="src\renderer\ShaderCompiler.ixx" />
     <ClCompile Include="src\renderer\SimpleMesh.ixx" />
+    <ClCompile Include="src\renderer\Skybox.ixx" />
     <ClCompile Include="src\renderer\SkyPipeline.ixx" />
     <ClCompile Include="src\ResizableBuffer.cpp" />
     <ClCompile Include="src\Rigid3DObject.cpp" />
@@ -315,14 +317,12 @@
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
     <ClInclude Include="src\renderer\Pipeline.h" />
-    <ClInclude Include="src\renderer\PipelineCreator.h" />
     <ClInclude Include="src\renderer\QueryPool.h" />
     <ClInclude Include="src\renderer\RayTracingPipeline.h" />
     <ClInclude Include="src\renderer\RenderPipeline.h" />
     <ClInclude Include="src\renderer\ResizableBuffer.h" />
     <ClInclude Include="src\renderer\ShaderReflector.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
-    <ClInclude Include="src\renderer\Skybox.h" />
     <ClInclude Include="src\renderer\Surface.h" />
     <ClInclude Include="src\renderer\Swapchain.h" />
     <ClInclude Include="src\renderer\Texture.h" />

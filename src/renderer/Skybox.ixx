@@ -1,14 +1,18 @@
-#pragma once
-#include <string>
+module;
 
-#include "Buffer.h"
+#include <vulkan/vulkan.h>
 
-class Cubemap;
-class GraphicsPipeline;
-class CommandBuffer;
-class CameraObject;
+#include "Texture.h"
+#include "GraphicsPipeline.h"
+#include "CommandBuffer.h"
 
-class Skybox
+export module Renderer.Skybox;
+
+import std;
+
+import Core.CameraObject;
+
+export class Skybox
 {
 public:
 	static constexpr int WIDTH = 2048;
@@ -31,7 +35,7 @@ public:
 	void Destroy();
 
 	VkImageUsageFlags targetUsageFlags = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	VkImageUsageFlags depthUsageFlags  = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	VkImageUsageFlags depthUsageFlags = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
 
 	VkImageView targetView = VK_NULL_HANDLE;
 	VkImageView depth = VK_NULL_HANDLE;

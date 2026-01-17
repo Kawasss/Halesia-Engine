@@ -1,10 +1,13 @@
-#include "renderer/PipelineCreator.h"
+module;
 
 #include "renderer/Vulkan.h"
 #include "renderer/PhysicalDevice.h"
 #include "renderer/Vertex.h"
-#include "renderer/Renderer.h"
 #include "renderer/VulkanAPIError.h"
+
+module Renderer.PipelineCreator;
+
+import std;
 
 VkPipeline PipelineBuilder::Build()
 {

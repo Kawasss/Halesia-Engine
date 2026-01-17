@@ -1,9 +1,12 @@
-#pragma once
-#include <vulkan/vulkan.h>
-#include <vector>
-#include <array>
+module;
 
-class PipelineBuilder
+#include <vulkan/vulkan.h>
+
+export module Renderer.PipelineCreator;
+
+import std;
+
+export class PipelineBuilder
 {
 public:
 	PipelineBuilder(const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages) : stages(shaderStages) {}
@@ -47,7 +50,7 @@ private:
 	std::vector<VkPipelineShaderStageCreateInfo> stages;
 };
 
-class RenderPassBuilder
+export class RenderPassBuilder
 {
 public:
 	template<size_t count>
@@ -55,8 +58,8 @@ public:
 
 	RenderPassBuilder(const std::vector<VkFormat>& formats) : formats(formats) {}
 
-	RenderPassBuilder(VkFormat format) 
-	{ 
+	RenderPassBuilder(VkFormat format)
+	{
 		formats.push_back(format);
 	}
 
@@ -65,7 +68,7 @@ public:
 	void ClearOnLoad(bool val)    { options.clearOnLoad = val;    } // clear is not on by default
 
 	void SetInitialLayout(VkImageLayout layout) { initialLayout = layout; }
-	void SetFinalLayout(VkImageLayout layout)   { finalLayout   = layout; }
+	void SetFinalLayout(VkImageLayout layout)   { finalLayout = layout;   }
 
 	VkRenderPass Build();
 
@@ -77,11 +80,11 @@ private:
 		bool clearOnLoad    : 1;
 	};
 	Options options{};
-	
+
 	static constexpr VkImageLayout INVALID_LAYOUT = static_cast<VkImageLayout>(-1);
 
 	VkImageLayout initialLayout = INVALID_LAYOUT;
-	VkImageLayout finalLayout   = INVALID_LAYOUT;
+	VkImageLayout finalLayout = INVALID_LAYOUT;
 
 	std::vector<VkFormat> formats;
 };
