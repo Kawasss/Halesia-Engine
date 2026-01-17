@@ -393,9 +393,6 @@
     <ClCompile Include="src\core\EditorProject.ixx">
       <Filter>Header Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\LightObject.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\Profiler.ixx">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -471,6 +468,12 @@
     <ClCompile Include="src\io\IO.ixx">
       <Filter>Header Files\io</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\LightObject.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\ShaderCompiler.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -518,9 +521,6 @@
     <ClInclude Include="src\core\Transform.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\io\FileFormat.h">
-      <Filter>Header Files\io</Filter>
-    </ClInclude>
     <ClInclude Include="src\ResourceManager.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
@@ -543,9 +543,6 @@
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\GraphicsPipeline.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Light.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\math\vectors.h">
@@ -638,11 +635,11 @@
     <ClInclude Include="src\core\MeshObject.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\renderer\ShaderCompiler.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="src\io\BinaryStream.h">
       <Filter>Header Files\io</Filter>
+    </ClInclude>
+    <ClInclude Include="src\renderer\Light.h">
+      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

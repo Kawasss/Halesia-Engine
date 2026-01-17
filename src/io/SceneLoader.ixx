@@ -5,7 +5,6 @@ module;
 #include "../renderer/Light.h"
 #include "../renderer/Material.h"
 
-#include "FileFormat.h"
 #include "CreationData.h"
 #include "BinaryStream.h"
 
@@ -51,8 +50,6 @@ private:
 	MeshCreationData RetrieveMeshData(aiMesh* pMesh);
 	void MergeMeshData(MeshCreationData& dst, aiMesh* pMesh);
 
-	void GetNodeHeader(NodeType& type, NodeSize& size);
-	void RetrieveType(NodeType type, NodeSize size);
 	ObjectCreationData RetrieveObject(const aiScene* scene, const aiNode* node, glm::mat4 parentTrans); // can return multiple objects if this one node has multiple meshes, but must of the time its one object
 
 	void ReadFullObject(DataArchiveFile& file, const BinarySpan& data, std::vector<ObjectCreationData>& outDst);

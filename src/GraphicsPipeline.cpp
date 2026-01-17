@@ -4,8 +4,10 @@
 #include "renderer/PipelineCreator.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/VulkanAPIError.h"
-#include "renderer/ShaderCompiler.h"
 
+import std;
+
+import Renderer.ShaderCompiler;
 import Renderer.CompiledShader;
 
 GraphicsPipeline::GraphicsPipeline(const CreateInfo& createInfo)

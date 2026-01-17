@@ -236,6 +236,7 @@
     <ClCompile Include="src\renderer\gui.ixx" />
     <ClCompile Include="src\renderer\HdrConverter.ixx" />
     <ClCompile Include="src\renderer\ImageTransitioner.ixx" />
+    <ClCompile Include="src\renderer\ShaderCompiler.ixx" />
     <ClCompile Include="src\renderer\SimpleMesh.ixx" />
     <ClCompile Include="src\renderer\SkyPipeline.ixx" />
     <ClCompile Include="src\ResizableBuffer.cpp" />
@@ -300,7 +301,6 @@
     <ClInclude Include="src\io\BinaryStream.h" />
     <ClInclude Include="src\io\CreationData.h" />
     <ClInclude Include="src\io\FileArray.h" />
-    <ClInclude Include="src\io\FileFormat.h" />
     <ClInclude Include="src\io\FileMaterial.h" />
     <ClInclude Include="src\io\FwdDclCreationData.h" />
     <ClInclude Include="src\math\vectors.h" />
@@ -320,7 +320,6 @@
     <ClInclude Include="src\renderer\RayTracingPipeline.h" />
     <ClInclude Include="src\renderer\RenderPipeline.h" />
     <ClInclude Include="src\renderer\ResizableBuffer.h" />
-    <ClInclude Include="src\renderer\ShaderCompiler.h" />
     <ClInclude Include="src\renderer\ShaderReflector.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
     <ClInclude Include="src\renderer\Skybox.h" />

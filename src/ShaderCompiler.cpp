@@ -1,5 +1,8 @@
-#include "renderer/ShaderCompiler.h"
+module;
+
 #include "renderer/Renderer.h"
+
+module Renderer.ShaderCompiler;
 
 import std;
 
@@ -36,9 +39,9 @@ void ShaderCompiler::CreateSpirvFile(const fs::path& shader)
 		CallCompiler(shader);
 }
 
-std::vector<uint32_t> ShaderCompiler::GetExternalSetsFromSource(const fs::path& file)
+std::vector<std::uint32_t> ShaderCompiler::GetExternalSetsFromSource(const fs::path& file)
 {
-	std::vector<uint32_t> ret;
+	std::vector<std::uint32_t> ret;
 	std::ifstream stream(file);
 
 	std::string line;

@@ -4,9 +4,11 @@
 #include "renderer/GarbageManager.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/VulkanAPIError.h"
-#include "renderer/ShaderCompiler.h"
+
+import std;
 
 import Renderer.CompiledShader;
+import Renderer.ShaderCompiler;
 import Renderer.DescriptorWriter;
 
 ComputeShader::ComputeShader(const std::string& path)

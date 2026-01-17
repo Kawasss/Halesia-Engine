@@ -1,14 +1,14 @@
-#include <array>
-
 #include "renderer/RayTracingPipeline.h"
 #include "renderer/ShaderReflector.h"
 #include "renderer/FramesInFlight.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
-#include "renderer/ShaderCompiler.h"
 #include "renderer/Renderer.h"
 
+import std;
+
+import Renderer.ShaderCompiler;
 import Renderer.CompiledShader;
 
 constexpr uint32_t RT_GROUP_COUNT = 4;

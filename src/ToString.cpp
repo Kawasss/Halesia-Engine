@@ -6,9 +6,8 @@
 #include "renderer/Light.h"
 #include "renderer/RenderPipeline.h"
 
-#include "io/FileFormat.h"
-
 import HalesiaEngine;
+
 import Physics.RigidBody;
 import Physics.Shapes;
 
@@ -71,27 +70,6 @@ std::string_view Light::TypeToString(Type type)
 	case Type::Spot:        return "Spot";
 	}
 	return "Unknown";
-}
-
-const char* NodeTypeToString(NodeType type)
-{
-	switch (type)
-	{
-	case NODE_TYPE_NONE:      return "NODE_TYPE_NONE";
-	case NODE_TYPE_OBJECT:    return "NODE_TYPE_OBJECT";
-	case NODE_TYPE_NAME:      return "NODE_TYPE_NAME";
-	case NODE_TYPE_MESH:      return "NODE_TYPE_MESH";
-	case NODE_TYPE_RIGIDBODY: return "NODE_TYPE_RIGIDBODY";
-	case NODE_TYPE_TRANSFORM: return "NODE_TYPE_TRANSFORM";
-	case NODE_TYPE_CAMERA:    return "NODE_TYPE_CAMERA";
-	case NODE_TYPE_ARRAY:     return "NODE_TYPE_ARRAY";
-	case NODE_TYPE_TEXTURE:   return "NODE_TYPE_TEXTURE";
-	case NODE_TYPE_MATERIAL:  return "NODE_TYPE_MATERIAL";
-	case NODE_TYPE_METADATA:  return "NODE_TYPE_METADATA";
-	case NODE_TYPE_VERTICES:  return "NODE_TYPE_VERTICES";
-	case NODE_TYPE_INDICES:   return "NODE_TYPE_INDICES";
-	}
-	return "NODE_TYPE_UNKNOWN";
 }
 
 std::string HalesiaEngine::ExitCodeToString(HalesiaEngine::ExitCode exitCode)
