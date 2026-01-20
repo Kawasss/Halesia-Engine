@@ -1,11 +1,16 @@
-#pragma once
-#include <span>
+module;
+
+#include <Windows.h>
+#include <vulkan/vulkan.h>
 
 #include "Buffer.h"
+#include "CommandBuffer.h"
 
-class CommandBuffer;
+export module Renderer.ResizableBuffer;
 
-class ResizableBuffer // everything is in bytes
+import std;
+
+export class ResizableBuffer // everything is in bytes
 {
 public:
 	enum class MemoryType
@@ -20,7 +25,7 @@ public:
 
 	void Destroy();
 
-	void Init(size_t size, MemoryType memoryType,  VkBufferUsageFlags usage); // will automatically add VK_BUFFER_USAGE_TRANSFER_DST etc. if needed
+	void Init(size_t size, MemoryType memoryType, VkBufferUsageFlags usage); // will automatically add VK_BUFFER_USAGE_TRANSFER_DST etc. if needed
 
 	void Write(const void* pValues, size_t writeSize, size_t offset);
 	void Resize(size_t newSize);
@@ -28,7 +33,7 @@ public:
 	void Fill(const CommandBuffer& cmdBuffer, uint32_t value, size_t writeSize, size_t offset);
 	void Fill(uint32_t value, size_t writeSize, size_t offset); // uses single time commands
 
-	template<typename T> 
+	template<typename T>
 	void Write(const std::span<T>& values, size_t offset) // offset in byte count
 	{
 		Write(values.data(), values.size() * sizeof(T), offset);
@@ -37,7 +42,7 @@ public:
 	bool Resized();
 
 	VkBuffer Get()   const { return buffer.Get(); }
-	size_t GetSize() const { return size;         }
+	size_t GetSize() const { return size; }
 
 	bool IsValid() const { return buffer.IsValid(); }
 

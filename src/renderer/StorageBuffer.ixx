@@ -5,13 +5,13 @@ module;
 
 #include "../system/CriticalSection.h"
 
-#include "ResizableBuffer.h"
-
 #include "../core/Console.h"
 
 export module Renderer.StorageBuffer;
 
 import std;
+
+import Renderer.ResizableBuffer;
 
 #define CheckHandleValidity(memory, ret)                                                                                                             \
 if (!CheckIfHandleIsValid(memory))                                                                                                                   \
