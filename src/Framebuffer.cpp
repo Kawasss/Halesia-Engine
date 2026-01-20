@@ -1,9 +1,11 @@
-#include <algorithm>
-#include <array>
+module;
 
-#include "renderer/Framebuffer.h"
 #include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
+
+module Renderer.Framebuffer;
+
+import std;
 
 import Renderer.VulkanGarbageManager;
 

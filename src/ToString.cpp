@@ -4,12 +4,13 @@
 #include "core/Object.h"
 
 #include "renderer/Light.h"
-#include "renderer/RenderPipeline.h"
 
 import HalesiaEngine;
 
 import Physics.RigidBody;
 import Physics.Shapes;
+
+import Renderer.RenderPipeline;
 
 std::string_view RenderModeToString(RenderMode mode)
 {

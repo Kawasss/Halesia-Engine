@@ -7,7 +7,6 @@ module;
 #include "renderer/Surface.h"
 #include "renderer/Texture.h"
 #include "renderer/Mesh.h"
-#include "renderer/RenderPipeline.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/FramesInFlight.h"
 #include "renderer/Light.h"
@@ -40,6 +39,7 @@ import Renderer.AnimationManager;
 import Renderer.PipelineCreator;
 import Renderer.VulkanGarbageManager;
 import Renderer.GraphicsPipeline;
+import Renderer.RenderPipeline;
 
 namespace fs = std::filesystem;
 
@@ -716,7 +716,8 @@ void Renderer::UpdateMaterialBuffer()
 
 void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
 {
-	pipeline->renderPass = renderPass;
+	pipeline->renderPass3D = renderPass;
+	pipeline->renderPass2D = GUIRenderPass;
 	pipeline->Start(GetPipelinePayload(GetActiveCommandBuffer(), nullptr));
 	renderPipelines.push_back(pipeline);
 }
@@ -1237,15 +1238,8 @@ std::uint32_t Renderer::GetNextSwapchainImage(std::uint32_t frameIndex)
 
 RenderPipeline::Payload Renderer::GetPipelinePayload(CommandBuffer commandBuffer, CameraObject* camera)
 {
-	RenderPipeline::Payload ret{};
-	ret.renderer = this;
-	ret.camera = camera;
-	ret.commandBuffer = commandBuffer.Get() == VK_NULL_HANDLE ? activeCmdBuffer : commandBuffer;
-	ret.width = viewportWidth;
-	ret.height = viewportHeight;
-	ret.window = testWindow;
-	
-	return ret;
+	const CommandBuffer& cmdBuffer = commandBuffer.Get() == VK_NULL_HANDLE ? activeCmdBuffer : commandBuffer;
+	return RenderPipeline::Payload(cmdBuffer, testWindow, camera, framebuffer, viewportWidth, viewportHeight);
 }
 
 RenderPipeline* Renderer::GetRenderPipeline(const std::string_view& name)

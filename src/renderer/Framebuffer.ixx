@@ -1,12 +1,15 @@
-#pragma once
+module;
+
 #include <vulkan/vulkan.h>
-#include <span>
-#include <vector>
 
 #include "CommandBuffer.h"
 #include "VideoMemoryManager.h"
 
-class Framebuffer
+export module Renderer.Framebuffer;
+
+import std;
+
+export class Framebuffer
 {
 public:
 	Framebuffer() = default;
@@ -24,17 +27,17 @@ public:
 	void StartRenderPass(CommandBuffer commandBuffer);
 
 	VkFramebuffer Get()          const { return framebuffer; }
-	VkRenderPass GetRenderPass() const { return renderPass;  }
+	VkRenderPass GetRenderPass() const { return renderPass; }
 
-	std::vector<vvm::Image>& GetImages() { return images;     }
+	std::vector<vvm::Image>& GetImages() { return images; }
 	std::vector<VkImageView>& GetViews() { return imageViews; }
 
-	uint32_t GetWidth()  const { return width;  }
+	uint32_t GetWidth()  const { return width; }
 	uint32_t GetHeight() const { return height; }
 
 	size_t GetImageCount() const { return images.size(); }
 
-	VkImageView GetDepthView()  const { return imageViews.back();   }
+	VkImageView GetDepthView()  const { return imageViews.back(); }
 	VkImage     GetDepthImage() const { return images.back().Get(); }
 
 	void SetDebugName(const char* name);
@@ -49,7 +52,7 @@ public:
 
 private:
 	void TransitionFromUndefinedToWrite(const CommandBuffer& commandBuffer);
-	 
+
 	void Destroy();
 	void Allocate();
 
@@ -66,7 +69,7 @@ private:
 	std::vector<VkImageUsageFlags> imageUsages;
 };
 
-class ObserverFramebuffer
+export class ObserverFramebuffer
 {
 public:
 	ObserverFramebuffer() = default;

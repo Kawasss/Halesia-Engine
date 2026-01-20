@@ -196,10 +196,12 @@
     <ClCompile Include="src\FileReadWrite.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\renderer\ComputePipeline.ixx" />
+    <ClCompile Include="src\renderer\Framebuffer.ixx" />
     <ClCompile Include="src\renderer\GraphicsPipeline.ixx" />
     <ClCompile Include="src\renderer\Pipeline.ixx" />
     <ClCompile Include="src\renderer\RayTracingPipeline.ixx" />
     <ClCompile Include="src\renderer\Renderer.ixx" />
+    <ClCompile Include="src\renderer\RenderPipeline.ixx" />
     <ClCompile Include="src\renderer\StorageBuffer.ixx" />
     <ClCompile Include="src\VulkanGarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
@@ -316,13 +318,11 @@
     <ClInclude Include="src\io\FwdDclCreationData.h" />
     <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\renderer\CommandBuffer.h" />
-    <ClInclude Include="src\renderer\Framebuffer.h" />
     <ClInclude Include="src\renderer\FramesInFlight.h" />
     <ClInclude Include="src\renderer\Light.h" />
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
     <ClInclude Include="src\renderer\QueryPool.h" />
-    <ClInclude Include="src\renderer\RenderPipeline.h" />
     <ClInclude Include="src\renderer\ResizableBuffer.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
     <ClInclude Include="src\renderer\Surface.h" />

@@ -1,17 +1,23 @@
-#pragma once
+module;
+
+#include <Windows.h>
 #include <vulkan/vulkan.h>
-#include <vector>
-#include <string_view>
 
 #include "CommandBuffer.h"
 
-class MeshObject;
-class Window;
-class CameraObject;
-class Renderer;
-struct Light;
+#include "../core/MeshObject.h"
 
-enum class RenderMode : int // this enum is used as a suggestion
+export module Renderer.RenderPipeline;
+
+import std;
+
+import Core.CameraObject;
+
+import System.Window;
+
+import Renderer.Framebuffer;
+
+export enum class RenderMode : int // this enum is used as a suggestion
 {
 	DontCare = 0,
 	Albedo = 1,
@@ -25,17 +31,21 @@ enum class RenderMode : int // this enum is used as a suggestion
 	ModeCount = 9, // this value is used for reflection / iteration and should never be used in code
 };
 
-extern std::string_view RenderModeToString(RenderMode mode);
+export std::string_view RenderModeToString(RenderMode mode);
 
-class RenderPipeline
+export class RenderPipeline
 {
 public:
 	struct Payload
 	{
+		Payload(const CommandBuffer& cmdBuffer, Window* pWindow, CameraObject* pCamera, Framebuffer& framebuffer, uint32_t w, uint32_t h) : commandBuffer(cmdBuffer), window(pWindow), camera(pCamera), presentationFramebuffer(framebuffer), width(w), height(h) {}
+
 		CommandBuffer commandBuffer;
-		Renderer* renderer;
 		Window* window;
 		CameraObject* camera;
+
+		Framebuffer& presentationFramebuffer;
+
 		uint32_t width;
 		uint32_t height;
 	};
@@ -68,7 +78,8 @@ public:
 
 	template<typename T> T* GetChild() { return reinterpret_cast<T*>(this); }
 
-	VkRenderPass renderPass = VK_NULL_HANDLE;
+	VkRenderPass renderPass3D = VK_NULL_HANDLE;
+	VkRenderPass renderPass2D = VK_NULL_HANDLE;
 
 	bool active = true;
 

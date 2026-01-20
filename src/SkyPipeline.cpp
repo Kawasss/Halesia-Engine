@@ -3,7 +3,6 @@ module;
 #include <vulkan/vulkan.h>
 
 #include "renderer/Vulkan.h"
-#include "renderer/RenderPipeline.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/Texture.h"
 
@@ -13,6 +12,7 @@ import std;
 
 import Renderer.VulkanGarbageManager;
 import Renderer.GraphicsPipeline;
+import Renderer.RenderPipeline;
 import Renderer;
 
 constexpr VkFormat LUT_FORMAT = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -98,7 +98,7 @@ void SkyPipeline::Render(const Payload& payload)
 
 	cmdBuffer.BeginDebugUtilsLabel("rendering");
 
-	BeginPresentationRenderPass(cmdBuffer, payload.renderer, payload.width, payload.height);
+	BeginPresentationRenderPass(cmdBuffer, payload.presentationFramebuffer, payload.width, payload.height);
 
 	atmospherePipeline->Bind(cmdBuffer);
 	cmdBuffer.Draw(6, 1, 0, 0);
@@ -142,11 +142,11 @@ void SkyPipeline::EndRenderPass(const CommandBuffer& cmdBuffer, Image& image)
 	image.TransitionTo(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, cmdBuffer);
 }
 
-void SkyPipeline::BeginPresentationRenderPass(const CommandBuffer& cmdBuffer, Renderer* renderer, uint32_t width, uint32_t height)
+void SkyPipeline::BeginPresentationRenderPass(const CommandBuffer& cmdBuffer, Framebuffer& framebuffer, uint32_t width, uint32_t height)
 {
 	VkRenderingAttachmentInfo attachInfo{};
 	attachInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	attachInfo.imageView = renderer->GetFramebuffer().GetViews()[0];
+	attachInfo.imageView = framebuffer.GetViews()[0];
 	attachInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 	attachInfo.resolveMode = VK_RESOLVE_MODE_NONE;
 	attachInfo.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
@@ -154,7 +154,7 @@ void SkyPipeline::BeginPresentationRenderPass(const CommandBuffer& cmdBuffer, Re
 
 	VkRenderingAttachmentInfo depthInfo{};
 	depthInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	depthInfo.imageView = renderer->GetFramebuffer().GetDepthView();
+	depthInfo.imageView = framebuffer.GetDepthView();
 	depthInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 	depthInfo.resolveMode = VK_RESOLVE_MODE_NONE;
 	depthInfo.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;

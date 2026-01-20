@@ -4,9 +4,7 @@ module;
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "renderer/Vulkan.h"
-#include "renderer/RenderPipeline.h"
 #include "renderer/VideoMemoryManager.h"
-#include "renderer/Framebuffer.h"
 #include "renderer/Buffer.h"
 #include "renderer/CommandBuffer.h"
 
@@ -26,6 +24,8 @@ import Renderer.VulkanGarbageManager;
 import Renderer.ComputePipeline;
 import Renderer.RayTracingPipeline;
 import Renderer.GraphicsPipeline;
+import Renderer.Framebuffer;
+import Renderer.RenderPipeline;
 import Renderer;
 
 struct DeferredPipeline::PushConstant
@@ -136,7 +136,7 @@ void DeferredPipeline::CreateAndPreparePipelines(const Payload& payload)
 		GBUFFER_GNORMAL_FORMAT,
 	};
 
-	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
+	CreatePipelines(renderPass, renderPass3D);
 
 	BindResources();
 
@@ -161,7 +161,7 @@ void DeferredPipeline::RecreatePipelines(const Payload& payload)
 	rtgiPipeline.reset();
 	taaPipeline.reset();
 
-	CreatePipelines(renderPass, payload.renderer->GetDefault3DRenderPass());
+	CreatePipelines(renderPass, renderPass3D);
 	CreateRTGIPipeline(payload);
 	BindRTGIResources();
 	BindTLAS();
@@ -615,7 +615,6 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<MeshObj
 	}
 
 	const CommandBuffer cmdBuffer = payload.commandBuffer;
-	Renderer* renderer = payload.renderer;
 
 	framebuffer.StartRenderPass(cmdBuffer);
 
@@ -727,7 +726,7 @@ void DeferredPipeline::PerformSecondDeferred(const CommandBuffer& cmdBuffer, con
 {
 	cmdBuffer.BeginDebugUtilsLabel("second deferred");
 
-	payload.renderer->StartRenderPass(payload.renderer->GetDefault3DRenderPass());
+	payload.presentationFramebuffer.StartRenderPass(cmdBuffer);
 
 	secondPipeline->Bind(cmdBuffer);
 
@@ -749,7 +748,7 @@ void DeferredPipeline::PerformSecondDeferred(const CommandBuffer& cmdBuffer, con
 void DeferredPipeline::CopyDeferredDepthToResultDepth(const CommandBuffer& cmdBuffer, const Payload& payload)
 {
 	VkImage deferredImage = framebuffer.GetDepthImage();
-	VkImage resultImage = payload.renderer->GetFramebuffer().GetDepthImage();
+	VkImage resultImage = payload.presentationFramebuffer.GetDepthImage();
 
 	ImageTransitioner deferredTrans(deferredImage);
 	deferredTrans.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;

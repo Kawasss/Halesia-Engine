@@ -5,8 +5,6 @@ module;
 #include "Vertex.h"
 #include "QueryPool.h"
 #include "Buffer.h"
-#include "RenderPipeline.h"
-#include "Framebuffer.h"
 #include "FramesInFlight.h"
 #include "CommandBuffer.h"
 #include "Swapchain.h"
@@ -26,6 +24,8 @@ import System.Window;
 import Renderer.AnimationManager;
 import Renderer.GraphicsPipeline;
 import Renderer.StorageBuffer;
+import Renderer.Framebuffer;
+import Renderer.RenderPipeline;
 
 using HANDLE = void*;
 using Handle = unsigned long long;

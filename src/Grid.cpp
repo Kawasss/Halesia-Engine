@@ -1,6 +1,6 @@
 module;
 
-#include "renderer/RenderPipeline.h"
+#include <Windows.h>
 
 #include "core/MeshObject.h"
 
@@ -9,6 +9,7 @@ module Renderer.Grid;
 import std;
 
 import Renderer.GraphicsPipeline;
+import Renderer.RenderPipeline;
 import Renderer;
 
 void GridPipeline::Start(const Payload& payload)
@@ -20,7 +21,7 @@ void GridPipeline::Execute(const Payload& payload, const std::vector<MeshObject*
 {
 	const CommandBuffer& cmdBuffer = payload.commandBuffer;
 
-	payload.renderer->StartRenderPass(renderPass);
+	payload.presentationFramebuffer.StartRenderPass(cmdBuffer);
 
 	pipeline->Bind(cmdBuffer);
 	cmdBuffer.SetCullMode(VK_CULL_MODE_NONE);
@@ -37,7 +38,7 @@ void GridPipeline::CreatePipeline()
 	createInfo.vertexShader = "shaders/uncompiled/grid.vert";
 	createInfo.fragmentShader = "shaders/uncompiled/grid.frag";
 	createInfo.noCulling = true;
-	createInfo.renderPass = renderPass;
+	createInfo.renderPass = renderPass3D;
 
 	pipeline = std::make_unique<GraphicsPipeline>(createInfo);
 }

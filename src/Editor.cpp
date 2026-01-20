@@ -8,7 +8,6 @@ module;
 #include "core/MeshObject.h"
 #include "core/Console.h"
 
-#include "renderer/RenderPipeline.h"
 #include "renderer/VideoMemoryManager.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -44,6 +43,7 @@ import System;
 import Renderer.Gui;
 import Renderer.Grid;
 import Renderer.AnimationManager;
+import Renderer.RenderPipeline;
 
 namespace fs = std::filesystem;
 

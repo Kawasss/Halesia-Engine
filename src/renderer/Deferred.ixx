@@ -2,10 +2,8 @@ module;
 
 #include <vulkan/vulkan.h>
 
-#include "RenderPipeline.h"
 #include "FramesInFlight.h"
 #include "VideoMemoryManager.h"
-#include "Framebuffer.h"
 #include "Buffer.h"
 #include "Light.h"
 
@@ -20,6 +18,8 @@ import Renderer.SkyPipeline;
 import Renderer.ComputePipeline;
 import Renderer.RayTracingPipeline;
 import Renderer.GraphicsPipeline;
+import Renderer.Framebuffer;
+import Renderer.RenderPipeline;
 
 export class DeferredPipeline : public RenderPipeline
 {
@@ -97,6 +97,8 @@ private:
 
 	uint32_t GetRTGIWidth()  const;
 	uint32_t GetRTGIHeight() const;
+
+	VkRenderPass renderPass;
 
 	Framebuffer framebuffer;
 

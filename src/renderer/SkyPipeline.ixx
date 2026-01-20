@@ -1,6 +1,5 @@
 module;
 
-#include "RenderPipeline.h"
 #include "Texture.h"
 
 export module Renderer.SkyPipeline;
@@ -8,6 +7,8 @@ export module Renderer.SkyPipeline;
 import std;
 
 import Renderer.GraphicsPipeline;
+import Renderer.RenderPipeline;
+import Renderer.Framebuffer;
 
 export class SkyPipeline : public RenderPipeline
 {
@@ -33,7 +34,7 @@ private:
 	void BeginRenderPass(const CommandBuffer& cmdBuffer, Image& image);
 	void EndRenderPass(const CommandBuffer& cmdBuffer, Image& image);
 
-	void BeginPresentationRenderPass(const CommandBuffer& cmdBuffer, Renderer* renderer, uint32_t width, uint32_t height);
+	void BeginPresentationRenderPass(const CommandBuffer& cmdBuffer, Framebuffer& framebuffer, uint32_t width, uint32_t height);
 
 	Image transmittanceLUT;
 	Image mscatteringLUT;

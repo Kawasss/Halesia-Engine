@@ -507,6 +507,12 @@
     <ClCompile Include="src\renderer\StorageBuffer.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\Framebuffer.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\RenderPipeline.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -551,16 +557,10 @@
     <ClInclude Include="src\ResourceManager.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\renderer\Framebuffer.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="src\renderer\Buffer.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\QueryPool.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\RenderPipeline.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\math\vectors.h">

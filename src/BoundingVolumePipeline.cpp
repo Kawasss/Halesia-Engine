@@ -1,6 +1,6 @@
 module;
 
-#include "renderer/RenderPipeline.h"
+#include <Windows.h>
 
 #include "core/MeshObject.h"
 
@@ -14,6 +14,7 @@ import Core.CameraObject;
 
 import Renderer.SimpleMesh;
 import Renderer.GraphicsPipeline;
+import Renderer.RenderPipeline;
 import Renderer;
 
 constexpr uint32_t BOX_LINE_COUNT = 24;
@@ -38,7 +39,7 @@ void BoundingVolumePipeline::Execute(const Payload& payload, const std::vector<M
 
 	UniformData* pData = constants.GetMappedPointer<UniformData>();
 
-	payload.renderer->StartRenderPass(renderPass);
+	payload.presentationFramebuffer.StartRenderPass(cmdBuffer);
 
 	pipeline->Bind(cmdBuffer);
 	Renderer::BindBuffersForRendering(cmdBuffer);
@@ -79,7 +80,7 @@ void BoundingVolumePipeline::CreatePipeline()
 	createInfo.fragmentShader = "shaders/uncompiled/boundingVolume.frag";
 	createInfo.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
 	createInfo.noCulling = true;
-	createInfo.renderPass = renderPass;
+	createInfo.renderPass = renderPass3D;
 
 	pipeline = std::make_unique<GraphicsPipeline>(createInfo);
 	pipeline->BindBufferToName("constants", constants);
