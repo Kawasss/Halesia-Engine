@@ -64,8 +64,8 @@ void CameraObject::CalculateProjection()
 {
 	Renderer* pRenderer = HalesiaEngine::GetInstance()->GetEngineCore().renderer;
 
-	float width  = pRenderer->GetInternalWidth();
-	float height = pRenderer->GetInternalHeight();
+	float width  = static_cast<float>(pRenderer->GetInternalWidth());
+	float height = static_cast<float>(pRenderer->GetInternalHeight());
 	
 	proj = glm::perspective(width / height, glm::radians(fov), zNear, zFar);
 	proj[1][1] *= -1.0f;

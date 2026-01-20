@@ -66,7 +66,7 @@ int Bone::GetPositionIndex()
 	for (int i = 0; i < positions.size() - 1; i++)
 		if (time < positions[i + 1].timeStamp)
 			return i;
-	return positions.size() - 2;
+	return static_cast<int>(positions.size()) - 2;
 	//throw std::runtime_error("Failed to fetch the position index of a bone");
 }
 
@@ -75,7 +75,7 @@ int Bone::GetRotationIndex()
 	for (int i = 0; i < rotations.size() - 1; i++)
 		if (time < rotations[i + 1].timeStamp)
 			return i;
-	return rotations.size() - 2;
+	return static_cast<int>(rotations.size()) - 2;
 	//throw std::runtime_error("Failed to fetch the rotation index of a bone");
 }
 
@@ -84,7 +84,7 @@ int Bone::GetScaleIndex()
 	for (int i = 0; i < scales.size() - 1; i++)
 		if (time < scales[i + 1].timeStamp)
 			return i;
-	return scales.size() - 2;
+	return static_cast<int>(scales.size()) - 2;
 	//throw std::runtime_error("Failed to fetch the scale index of a bone");
 }
 

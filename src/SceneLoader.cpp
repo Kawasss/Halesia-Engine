@@ -235,9 +235,9 @@ static std::vector<Vertex> RetrieveVertices(aiMesh* pMesh, glm::vec3& min, glm::
 static void RetrieveIndices(aiMesh* pMesh, std::vector<uint32_t>& dst, uint32_t offset)
 {
 	dst.reserve(dst.size() + pMesh->mNumFaces * 3);
-	for (int i = 0; i < pMesh->mNumFaces; i++)
+	for (unsigned int i = 0; i < pMesh->mNumFaces; i++)
 	{
-		for (int j = 0; j < pMesh->mFaces[i].mNumIndices; j++)
+		for (unsigned int j = 0; j < pMesh->mFaces[i].mNumIndices; j++)
 		{
 			uint32_t index = pMesh->mFaces[i].mIndices[j];
 			dst.push_back(offset + index);
@@ -383,14 +383,14 @@ void SceneLoader::LoadAssimpFile()
 	if (scene->HasAnimations())
 		animations.reserve(scene->mNumAnimations);
 
-	for (int i = 0; i < scene->mNumAnimations; i++)
+	for (unsigned int i = 0; i < scene->mNumAnimations; i++)
 	{
 		animations.emplace_back(scene->mAnimations[i], scene->mRootNode);
 	}
 
 	fs::path baseDir = fs::path(location).parent_path();
 
-	for (int i = 0; i < scene->mNumMaterials; i++)
+	for (unsigned int i = 0; i < scene->mNumMaterials; i++)
 	{
 		MaterialCreateInfo data{};
 
@@ -408,7 +408,7 @@ void SceneLoader::LoadAssimpFile()
 
 static aiLight* NodeAsLight(const aiScene* scene, const aiNode* node)
 {
-	for (int i = 0; i < scene->mNumLights; i++)
+	for (unsigned int i = 0; i < scene->mNumLights; i++)
 	{
 		if (node->mName == scene->mLights[i]->mName)
 			return scene->mLights[i];
@@ -461,7 +461,7 @@ ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNod
 			creationData.type = ObjectCreationData::Type::Mesh;
 		}
 
-		for (int i = 1; i < node->mNumMeshes; i++)
+		for (unsigned int i = 1; i < node->mNumMeshes; i++)
 		{
 			ObjectCreationData child{};
 			child.name = creationData.name + std::to_string(i);
@@ -477,7 +477,7 @@ ObjectCreationData SceneLoader::RetrieveObject(const aiScene* scene, const aiNod
 	if (node->mNumChildren > 0)
 		creationData.children.reserve(creationData.children.size() + node->mNumChildren);
 
-	for (int i = 0; i < node->mNumChildren; i++)
+	for (unsigned int i = 0; i < node->mNumChildren; i++)
 		creationData.children.push_back(RetrieveObject(scene, node->mChildren[i], GetMat4(node->mTransformation)));
 	
 	return creationData;
@@ -497,7 +497,7 @@ static MeshCreationData GetMeshFromAssimp(aiMesh* pMesh)
 static glm::vec3 GetExtentsFromMesh(aiMesh* pMesh)
 {
 	glm::vec3 min = glm::vec3(0), max = glm::vec3(0);
-	for (int i = 0; i < pMesh->mNumVertices; i++)
+	for (unsigned int i = 0; i < pMesh->mNumVertices; i++)
 	{
 		max.x = pMesh->mVertices[i].x > max.x ? pMesh->mVertices[i].x : max.x;
 		max.y = pMesh->mVertices[i].y > max.y ? pMesh->mVertices[i].y : max.y;

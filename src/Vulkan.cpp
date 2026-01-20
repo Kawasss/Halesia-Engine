@@ -1,4 +1,4 @@
-#define VK_USE_PLATFORM_WIN32_KHR
+//#define VK_USE_PLATFORM_WIN32_KHR
 #ifdef NDEBUG
 bool enableValidationLayers = false;
 #else
@@ -531,6 +531,7 @@ uint32_t Vulkan::GetMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags proper
             return i;
 
     CheckVulkanResult("Failed to get the memory type " + (std::string)string_VkMemoryPropertyFlags(properties) + " for the physical device " + (std::string)physicalDevice.Properties().deviceName, VK_ERROR_DEVICE_LOST);
+    return 0;
 }
 
 vvm::Image Vulkan::CreateImage(uint32_t width, uint32_t height, uint32_t mipLevels, uint32_t arrayLayers, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImageCreateFlags flags, VkImageLayout initialLayout)
@@ -874,152 +875,114 @@ std::string CreateFunctionNotActivatedError(const std::string_view& functionName
     return stream.str();
 }
 
-#ifdef _DEBUG
-#define DEBUG_ONLY(cont) cont
-#else
-#define DEBUG_ONLY(cont)
-#endif
-
 #define DEFINE_DEVICE_FUNCTION(function)   static PFN_##function p##function = reinterpret_cast<PFN_##function>(vkGetDeviceProcAddr(Vulkan::GetContext().logicalDevice, #function))
 #define DEFINE_INSTANCE_FUNCTION(function) static PFN_##function p##function = reinterpret_cast<PFN_##function>(vkGetInstanceProcAddr(instance, #function))
-
-#define CHECK_VALIDITY_DEBUG(ptr, ext) \
-DEBUG_ONLY(                            \
-if (ptr == nullptr)                    \
-    throw VulkanAPIError(CreateFunctionNotActivatedError(__FUNCTION__, ext), VK_ERROR_EXTENSION_NOT_PRESENT));
 
 #pragma region VulkanExtensionFunctionDefinitions
 VkResult vkGetSemaphoreWin32HandleKHR(VkDevice device, const VkSemaphoreGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle)
 {
     DEFINE_DEVICE_FUNCTION(vkGetSemaphoreWin32HandleKHR);
-    CHECK_VALIDITY_DEBUG(pvkGetSemaphoreWin32HandleKHR, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME);
     return pvkGetSemaphoreWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
 }
 
 VkResult vkGetMemoryWin32HandleKHR(VkDevice device, const VkMemoryGetWin32HandleInfoKHR* pGetWin32HandleInfo, HANDLE* pHandle)
 {
     DEFINE_DEVICE_FUNCTION(vkGetMemoryWin32HandleKHR);
-    CHECK_VALIDITY_DEBUG(pvkGetMemoryWin32HandleKHR, VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME)
     return pvkGetMemoryWin32HandleKHR(device, pGetWin32HandleInfo, pHandle);
 }
 
 VkDeviceAddress vkGetBufferDeviceAddressKHR(VkDevice device, const VkBufferDeviceAddressInfo* pInfo) 
 { 
     DEFINE_DEVICE_FUNCTION(vkGetBufferDeviceAddressKHR);
-    CHECK_VALIDITY_DEBUG(pvkGetBufferDeviceAddressKHR, VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
     return pvkGetBufferDeviceAddressKHR(device, pInfo); 
 }
 
 VkDeviceAddress vkGetAccelerationStructureDeviceAddressKHR(VkDevice device, const VkAccelerationStructureDeviceAddressInfoKHR* pInfo)
 {
     DEFINE_DEVICE_FUNCTION(vkGetAccelerationStructureDeviceAddressKHR);
-    CHECK_VALIDITY_DEBUG(pvkGetAccelerationStructureDeviceAddressKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     return pvkGetAccelerationStructureDeviceAddressKHR(device, pInfo);
 }
 
 VkResult vkCreateRayTracingPipelinesKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoKHR* pCreateInfos, const VkAllocationCallbacks* pAllocator, VkPipeline* pPipelines) 
 { 
     DEFINE_DEVICE_FUNCTION(vkCreateRayTracingPipelinesKHR);
-    CHECK_VALIDITY_DEBUG(pvkCreateRayTracingPipelinesKHR, VK_KHR_RAY_TRACING_PIPELINE_EXTENSION_NAME);
     return pvkCreateRayTracingPipelinesKHR(device, deferredOperation, pipelineCache, createInfoCount, pCreateInfos, pAllocator, pPipelines); 
 }
 
 VkResult vkCreateAccelerationStructureKHR(VkDevice device, const VkAccelerationStructureCreateInfoKHR* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkAccelerationStructureKHR* pAccelerationStructure)
 {
     DEFINE_DEVICE_FUNCTION(vkCreateAccelerationStructureKHR);
-    CHECK_VALIDITY_DEBUG(pvkCreateAccelerationStructureKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     return pvkCreateAccelerationStructureKHR(device, pCreateInfo, pAllocator, pAccelerationStructure);
 }
 
 VkResult vkGetRayTracingShaderGroupHandlesKHR(VkDevice device, VkPipeline pipeline, uint32_t firstGroup, uint32_t groupCount, size_t dataSize, void* pData)
 {
     DEFINE_DEVICE_FUNCTION(vkGetRayTracingShaderGroupHandlesKHR);
-    CHECK_VALIDITY_DEBUG(pvkGetRayTracingShaderGroupHandlesKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     return pvkGetRayTracingShaderGroupHandlesKHR(device, pipeline, firstGroup, groupCount, dataSize, pData);
 }
 
 void vkGetAccelerationStructureBuildSizesKHR(VkDevice device, VkAccelerationStructureBuildTypeKHR buildType, const VkAccelerationStructureBuildGeometryInfoKHR* pBuildInfo, const uint32_t* pMaxPrimitiveCounts, VkAccelerationStructureBuildSizesInfoKHR* pSizeInfo)
 {
     DEFINE_DEVICE_FUNCTION(vkGetAccelerationStructureBuildSizesKHR);
-    CHECK_VALIDITY_DEBUG(pvkGetAccelerationStructureBuildSizesKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkGetAccelerationStructureBuildSizesKHR(device, buildType, pBuildInfo, pMaxPrimitiveCounts, pSizeInfo);
 }
 
 void vkDestroyAccelerationStructureKHR(VkDevice device, VkAccelerationStructureKHR accelerationStructure, const VkAllocationCallbacks* pAllocator)
 {
     DEFINE_DEVICE_FUNCTION(vkDestroyAccelerationStructureKHR);
-    CHECK_VALIDITY_DEBUG(pvkDestroyAccelerationStructureKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkDestroyAccelerationStructureKHR(device, accelerationStructure, pAllocator);
 }
 VkResult vkBuildAccelerationStructuresKHR(VkDevice device, VkDeferredOperationKHR deferredOperation, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
 {
     DEFINE_DEVICE_FUNCTION(vkBuildAccelerationStructuresKHR);
-    CHECK_VALIDITY_DEBUG(pvkBuildAccelerationStructuresKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
-    pvkBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos);
+    return pvkBuildAccelerationStructuresKHR(device, deferredOperation, infoCount, pInfos, ppBuildRangeInfos);
 }
 
 void vkCmdBuildAccelerationStructuresKHR(VkCommandBuffer commandBuffer, uint32_t infoCount, const VkAccelerationStructureBuildGeometryInfoKHR* pInfos, const VkAccelerationStructureBuildRangeInfoKHR* const* ppBuildRangeInfos)
 {
     DEFINE_DEVICE_FUNCTION(vkCmdBuildAccelerationStructuresKHR);
-    CHECK_VALIDITY_DEBUG(pvkCmdBuildAccelerationStructuresKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkCmdBuildAccelerationStructuresKHR(commandBuffer, infoCount, pInfos, ppBuildRangeInfos);
 }
 
 void vkCmdTraceRaysKHR(VkCommandBuffer commandBuffer, const VkStridedDeviceAddressRegionKHR* pRaygenShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pMissShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pHitShaderBindingTable, const VkStridedDeviceAddressRegionKHR* pCallableShaderBindingTable, uint32_t width, uint32_t height, uint32_t depth)
 {
     DEFINE_DEVICE_FUNCTION(vkCmdTraceRaysKHR);
-    CHECK_VALIDITY_DEBUG(pvkCmdTraceRaysKHR, VK_KHR_ACCELERATION_STRUCTURE_EXTENSION_NAME);
     pvkCmdTraceRaysKHR(commandBuffer, pRaygenShaderBindingTable, pMissShaderBindingTable, pHitShaderBindingTable, pCallableShaderBindingTable, width, height, depth);
 }
 
 void vkCmdBeginDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo)
 {
-    DEBUG_ONLY(
-        DEFINE_DEVICE_FUNCTION(vkCmdBeginDebugUtilsLabelEXT);
-        CHECK_VALIDITY_DEBUG(pvkCmdBeginDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        pvkCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
-    );
+    DEFINE_DEVICE_FUNCTION(vkCmdBeginDebugUtilsLabelEXT);
+    pvkCmdBeginDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 }
 
 void vkCmdEndDebugUtilsLabelEXT(VkCommandBuffer commandBuffer)
 {
-    DEBUG_ONLY(
-        DEFINE_DEVICE_FUNCTION(vkCmdEndDebugUtilsLabelEXT);
-        CHECK_VALIDITY_DEBUG(pvkCmdEndDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        pvkCmdEndDebugUtilsLabelEXT(commandBuffer);
-    );
+    DEFINE_DEVICE_FUNCTION(vkCmdEndDebugUtilsLabelEXT);
+    pvkCmdEndDebugUtilsLabelEXT(commandBuffer);
 }
 
 void vkCmdInsertDebugUtilsLabelEXT(VkCommandBuffer commandBuffer, const VkDebugUtilsLabelEXT* pLabelInfo)
 {
-    DEBUG_ONLY(
-        DEFINE_DEVICE_FUNCTION(vkCmdInsertDebugUtilsLabelEXT);
-        CHECK_VALIDITY_DEBUG(pvkCmdInsertDebugUtilsLabelEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        pvkCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
-    );
+    DEFINE_DEVICE_FUNCTION(vkCmdInsertDebugUtilsLabelEXT);
+    pvkCmdInsertDebugUtilsLabelEXT(commandBuffer, pLabelInfo);
 }
 
 VkResult vkSetDebugUtilsObjectNameEXT(VkDevice device, const VkDebugUtilsObjectNameInfoEXT* pNameInfo)
 {
-    DEBUG_ONLY(
-        DEFINE_DEVICE_FUNCTION(vkSetDebugUtilsObjectNameEXT);
-        CHECK_VALIDITY_DEBUG(pvkSetDebugUtilsObjectNameEXT, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        return pvkSetDebugUtilsObjectNameEXT(device, pNameInfo);
-    );
-    return VK_SUCCESS;
+    DEFINE_DEVICE_FUNCTION(vkSetDebugUtilsObjectNameEXT);
+    return pvkSetDebugUtilsObjectNameEXT(device, pNameInfo);
 }
 
 void vkCmdSetCheckpointNV(VkCommandBuffer commandBuffer, const void* pCheckpointMarker)
 {
     DEFINE_DEVICE_FUNCTION(vkCmdSetCheckpointNV);
-    CHECK_VALIDITY_DEBUG(pvkCmdSetCheckpointNV, VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
     pvkCmdSetCheckpointNV(commandBuffer, pCheckpointMarker);
 }
 
 void vkGetQueueCheckpointDataNV(VkQueue queue, uint32_t* pCheckPointDataCount, VkCheckpointDataNV* pCheckpointData)
 {
     DEFINE_DEVICE_FUNCTION(vkGetQueueCheckpointDataNV);
-    CHECK_VALIDITY_DEBUG(pvkGetQueueCheckpointDataNV, VK_NV_DEVICE_DIAGNOSTIC_CHECKPOINTS_EXTENSION_NAME);
     pvkGetQueueCheckpointDataNV(queue, pCheckPointDataCount, pCheckpointData);
 }
 #pragma endregion VulkanExtensionFunctionDefinitions

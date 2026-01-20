@@ -88,7 +88,15 @@ const Texture* Material::operator[](TextureType materialTexture) const
 
 Texture*& Material::GetTexture(size_t i)
 {
-	return GetTexture(i);
+	switch (i)
+	{
+	case 0:  return albedo;
+	case 1:  return normal;
+	case 2:  return metallic;
+	case 3:  return roughness;
+	case 4:  return ambientOcclusion;
+	default: return albedo;
+	}
 }
 
 const Texture* const& Material::GetTexture(size_t i) const

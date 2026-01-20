@@ -89,7 +89,7 @@ void MeshObject::DeserializeSelf(const BinarySpan& stream)
 	creationData.indices.resize(indexCount);
 	stream.Read(reinterpret_cast<char*>(creationData.indices.data()), indexCount * sizeof(uint32_t));
 
-	creationData.faceCount = creationData.indices.size() / 3;
+	creationData.faceCount = static_cast<int>(creationData.indices.size() / 3);
 
 	mesh.Create(creationData);
 	mesh.uvScale = uvScale;

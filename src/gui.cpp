@@ -301,7 +301,7 @@ void GUI::ShowGraph(const std::vector<uint64_t>& buffer, const char* label, floa
 	std::string uid = '#' + (std::string)label;
 
 	ImPlot::BeginPlot(uid.c_str(), ImVec2(-1, 0), ImPlotFlags_NoFrame);
-	ImPlot::SetupAxisLimits(ImAxis_X1, 0, buffer.size());
+	ImPlot::SetupAxisLimits(ImAxis_X1, 0, static_cast<int>(buffer.size()));
 	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, max);
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
 	ImPlot::PlotLine(label, buffer.data(), (int)buffer.size());
@@ -319,7 +319,7 @@ void GUI::ShowGraph(const std::vector<float>& buffer, const char* label, float m
 	std::string uid = '#' + (std::string)label;
 
 	ImPlot::BeginPlot(uid.c_str(), ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);
-	ImPlot::SetupAxisLimits(ImAxis_X1, 0, buffer.size());
+	ImPlot::SetupAxisLimits(ImAxis_X1, 0, static_cast<int>(buffer.size()));
 	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, max);
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
 	ImPlot::PlotLine(label, buffer.data(), (int)buffer.size());
@@ -336,7 +336,7 @@ void GUI::ShowChartGraph(size_t item, size_t max, const char* label)
 
 	if (createWindow)
 		ImGui::Begin(label);
-	ImGui::BeginChild((uint64_t)label, {CHART_WIDTH, CHART_HEIGHT}, true);
+	ImGui::BeginChild(reinterpret_cast<ImGuiID>(label), {CHART_WIDTH, CHART_HEIGHT}, true);
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	ImVec2 pos = ImGui::GetWindowPos();
 	ImVec2 endPos = { pos.x + CHART_WIDTH, pos.y + CHART_HEIGHT };
@@ -365,7 +365,7 @@ void GUI::ShowFrameTimeGraph(const std::vector<float>& frameTime, float onePerce
 	SetImGuiColors();
 
 	ImPlot::BeginPlot("frame time (ms)", ImVec2(-1, 0), ImPlotFlags_NoInputs | ImPlotFlags_NoFrame);
-	ImPlot::SetupAxisLimits(ImAxis_X1, 0, frameTime.size());
+	ImPlot::SetupAxisLimits(ImAxis_X1, 0, static_cast<double>(frameTime.size()));
 	ImPlot::SetupAxisLimits(ImAxis_Y1, 0, 40);
 	ImPlot::SetupAxes("##x", "##y", ImPlotAxisFlags_NoTickLabels);
 	ImPlot::PlotLine("##frametime", frameTime.data(), (int)frameTime.size());

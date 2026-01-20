@@ -102,8 +102,8 @@ EditorCamera::EditorCamera(Window* pWindow) : CameraObject()
 
 void EditorCamera::Update(float delta)
 {
-	int viewportWidth  = window->GetWidth()  * VIEWPORT_WIDTH;
-	int viewportHeight = window->GetHeight() * VIEWPORT_HEIGHT;
+	int viewportWidth  = static_cast<int>(window->GetWidth()  * VIEWPORT_WIDTH);
+	int viewportHeight = static_cast<int>(window->GetHeight() * VIEWPORT_HEIGHT);
 
 	int viewportX = static_cast<int>(window->GetWidth()  * BAR_WIDTH);
 	int viewportY = static_cast<int>(window->GetHeight() * LOWER_BAR_HEIGHT);

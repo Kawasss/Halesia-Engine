@@ -141,7 +141,7 @@ void Mesh::SetMaterial(const Material& material)
 	auto it = std::find(materials.begin(), materials.end(), material);
 	if (it != materials.end())
 	{
-		materialIndex = it - materials.begin();
+		materialIndex = static_cast<std::uint32_t>(it - materials.begin());
 	}
 	else
 	{
@@ -233,7 +233,7 @@ uint32_t Mesh::FindUnusedMaterial() // a material is unused if it is not the def
 	const Material& unusedMaterialTemplate = materials.front(); // the default material (which is at the front) will compare true to an unused material
 	auto it = std::find(materials.begin() + 1, materials.end(), unusedMaterialTemplate);
 
-	return it - materials.begin();
+	return static_cast<std::uint32_t>(it - materials.begin());
 }
 
 void Mesh::UpdateMinMax(const glm::vec3& translation, const glm::vec3& scale)
