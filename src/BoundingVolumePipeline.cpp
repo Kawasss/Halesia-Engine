@@ -2,8 +2,6 @@ module;
 
 #include <Windows.h>
 
-#include "core/MeshObject.h"
-
 #include "glm.h"
 
 module Renderer.BoundingVolumePipeline;
@@ -11,6 +9,7 @@ module Renderer.BoundingVolumePipeline;
 import std;
 
 import Core.CameraObject;
+import Core.MeshObject;
 
 import Renderer.SimpleMesh;
 import Renderer.GraphicsPipeline;

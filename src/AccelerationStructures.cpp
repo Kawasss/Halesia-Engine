@@ -4,13 +4,13 @@ module;
 #include "renderer/Mesh.h"
 #include "renderer/VulkanAPIError.h"
 
-#include "core/MeshObject.h"
-
 module Renderer.AccelerationStructure;
 
 import <vulkan/vulkan.h>;
 
 import std;
+
+import Core.MeshObject;
 
 import Renderer.VulkanGarbageManager;
 import Renderer;

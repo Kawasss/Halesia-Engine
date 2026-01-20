@@ -1,12 +1,13 @@
 module;
 
 #include <Windows.h>
-
-#include "core/MeshObject.h"
+#include <vulkan/vulkan.h>
 
 module Renderer.Grid;
 
 import std;
+
+import Core.MeshObject;
 
 import Renderer.GraphicsPipeline;
 import Renderer.RenderPipeline;

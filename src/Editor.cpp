@@ -5,7 +5,6 @@ module;
 
 #include "core/Object.h"
 #include "core/Transform.h"
-#include "core/MeshObject.h"
 #include "core/Console.h"
 
 #include "renderer/VideoMemoryManager.h"
@@ -32,6 +31,7 @@ import Core.ScriptObject;
 import Core.Rigid3DObject;
 import Core.LightObject;
 import Core.EditorProject;
+import Core.MeshObject;
 
 import IO.SceneLoader;
 

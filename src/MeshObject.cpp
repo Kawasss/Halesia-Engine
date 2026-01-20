@@ -1,8 +1,16 @@
+module;
+
 #include <Windows.h>
-#include "core/MeshObject.h"
+#include "core/Object.h"
 
 #include "io/CreationData.h"
 #include "io/BinaryStream.h"
+
+#include "renderer/Vertex.h"
+
+module Core.MeshObject;
+
+import std;
 
 MeshObject::MeshObject() : Object(InheritType::Mesh)
 {

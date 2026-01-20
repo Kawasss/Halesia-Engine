@@ -11,7 +11,6 @@ module;
 
 #include "core/Console.h"
 #include "core/Object.h"
-#include "core/MeshObject.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS_IMPLEMENTED
@@ -27,6 +26,7 @@ import std;
 
 import Core.LightObject;
 import Core.CameraObject;
+import Core.MeshObject;
 
 import System.Window;
 import System;

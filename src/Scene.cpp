@@ -4,7 +4,6 @@ module;
 
 #include "core/Object.h"
 #include "core/Console.h"
-#include "core/MeshObject.h"
 
 #include "system/CriticalSection.h"
 
@@ -14,6 +13,7 @@ import Core.ScriptObject;
 import Core.Rigid3DObject;
 import Core.LightObject;
 import Core.CameraObject;
+import Core.MeshObject;
 
 import System.Window;
 

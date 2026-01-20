@@ -1,11 +1,17 @@
-#pragma once
+module;
+
+#include <Windows.h>
+
 #include "Object.h"
 
-#include "../io/FwdDclCreationData.h"
+#include "../io/CreationData.h"
+#include "../io/BinaryStream.h"
 
 #include "../renderer/Mesh.h"
 
-class MeshObject : public Object
+export module Core.MeshObject;
+
+export class MeshObject : public Object
 {
 public:
 	static MeshObject* Create(const ObjectCreationData& data);

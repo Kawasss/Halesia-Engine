@@ -5,15 +5,16 @@ module;
 #include "io/BinaryStream.h"
 
 #include "core/Object.h"
-#include "core/MeshObject.h"
 
 #include "renderer/Texture.h"
+#include "renderer/Mesh.h"
 
 module IO.SceneWriter;
 
 import std;
 
 import Core.Scene;
+import Core.MeshObject;
 
 import IO.DataArchiveFile;
 

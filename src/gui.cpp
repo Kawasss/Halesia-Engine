@@ -14,7 +14,6 @@ module;
 
 #include "core/Console.h"
 #include "core/Object.h"
-#include "core/MeshObject.h"
 #include "core/Transform.h"
 
 #include <hsl/StackMap.h>
@@ -30,6 +29,7 @@ import Core.Rigid3DObject;
 import Core.LightObject;
 import Core.CameraObject;
 import Core.Scene;
+import Core.MeshObject;
 
 import Physics.RigidBody;
 import Physics.Shapes;

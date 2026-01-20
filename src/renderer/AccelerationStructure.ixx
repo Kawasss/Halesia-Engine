@@ -5,11 +5,11 @@ module;
 #include "Buffer.h"
 #include "Mesh.h"
 
-#include "../core/MeshObject.h"
-
 export module Renderer.AccelerationStructure;
 
 import std;
+
+import Core.MeshObject;
 
 import Renderer.StorageBuffer;
 

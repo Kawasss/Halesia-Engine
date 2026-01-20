@@ -5,13 +5,12 @@ module;
 
 #include "CommandBuffer.h"
 
-#include "../core/MeshObject.h"
-
 export module Renderer.RenderPipeline;
 
 import std;
 
 import Core.CameraObject;
+import Core.MeshObject;
 
 import System.Window;
 
