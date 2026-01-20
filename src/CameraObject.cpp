@@ -1,8 +1,5 @@
 module;
 
-#include "core/Object.h"
-#include "core/Transform.h"
-
 #include "glm.h"
 
 module Core.CameraObject;
@@ -10,6 +7,8 @@ module Core.CameraObject;
 import HalesiaEngine;
 
 import Renderer;
+
+import Core.Object;
 
 CameraObject* CameraObject::Create()
 {

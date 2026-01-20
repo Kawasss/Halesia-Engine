@@ -6,14 +6,12 @@ module;
 #include <extensions/PxExtensionsAPI.h>
 #include <extensions/PxDefaultCpuDispatcher.h>
 
-#include "core/Transform.h"
-#include "core/Object.h"
-
 module Physics;
 
 import std;
 
 import Core.Rigid3DObject;
+import Core.Object;
 
 import "glm.h";
 

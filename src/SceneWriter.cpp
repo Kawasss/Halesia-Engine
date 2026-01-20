@@ -4,10 +4,10 @@ module;
 
 #include "io/BinaryStream.h"
 
-#include "core/Object.h"
-
 #include "renderer/Texture.h"
 #include "renderer/Mesh.h"
+
+#include "system/CriticalSection.h"
 
 module IO.SceneWriter;
 
@@ -15,6 +15,7 @@ import std;
 
 import Core.Scene;
 import Core.MeshObject;
+import Core.Object;
 
 import IO.DataArchiveFile;
 

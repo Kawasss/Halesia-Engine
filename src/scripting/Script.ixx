@@ -1,13 +1,11 @@
-module;
-
-#include "../core/Object.h"
-#include "../core/Transform.h"
-
 export module Scripting.Script;
+
+import <sol.hpp>;
 
 import std;
 
-import <sol.hpp>;
+import Core.Object;
+import Core.Transform;
 
 export class Script
 {

@@ -1,10 +1,12 @@
 module;
 
-#include "core/Transform.h"
-#include "core/Object.h"
+#include <cassert>
+
 #include "core/Console.h"
 
 module Scripting.Script;
+
+import Core.Object;
 
 Script::Script(const std::string& code, Object* pOwner)
 {

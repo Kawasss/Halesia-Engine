@@ -2,7 +2,6 @@ module;
 
 #include "Windows.h"
 
-#include "Object.h"
 #include "../io/CreationData.h"
 
 #include "../renderer/Light.h"
@@ -12,6 +11,8 @@ module;
 #include "../io/BinaryStream.h"
 
 export module Core.LightObject;
+
+import Core.Object;
 
 export class LightObject : public Object
 {

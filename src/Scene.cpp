@@ -2,7 +2,6 @@ module;
 
 #include "io/CreationData.h"
 
-#include "core/Object.h"
 #include "core/Console.h"
 
 #include "system/CriticalSection.h"
@@ -14,6 +13,7 @@ import Core.Rigid3DObject;
 import Core.LightObject;
 import Core.CameraObject;
 import Core.MeshObject;
+import Core.Object;
 
 import System.Window;
 
@@ -59,7 +59,7 @@ void Scene::RegisterObjectPointer(Object* pObject, Object* pParent)
 
 	flatObjects.push_back(pObject);
 
-	pObject->SetParentScene(this);
+	//pObject->SetParentScene(this);
 }
 
 static void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberToErase)
@@ -105,14 +105,14 @@ static void EraseMemberFromVector(std::vector<Object*>& vector, Object* memberTo
 	 return pObject;
  }
 
- Object* Scene::DuplicateObject(Object* pObject, std::string name)
+ /*Object* Scene::DuplicateObject(Object* pObject, std::string name)
  {
 	 Object* pCopy = pObject->CreateShallowCopy();
 	 pCopy->name = name;
 
 	 RegisterObjectPointer(pCopy, pObject->GetParent());
 	 return pCopy;
- }
+ }*/
 
 void Scene::Free(Object* pObject)
 {

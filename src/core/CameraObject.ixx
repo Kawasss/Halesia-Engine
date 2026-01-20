@@ -1,10 +1,10 @@
 module;
 
-#include "Object.h"
-
 #include "../glm.h"
 
 export module Core.CameraObject;
+
+import Core.Object;
 
 export class CameraObject : public Object
 {

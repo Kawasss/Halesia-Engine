@@ -1,11 +1,3 @@
-module;
-
-#include <Windows.h>
-
-#include "../core/Object.h"
-#include "../core/Transform.h"
-
-
 export module Renderer.Gui;
 
 import std;
@@ -18,6 +10,8 @@ import Physics.RigidBody;
 
 import Core.Profiler;
 import Core.CameraObject;
+import Core.Object;
+import Core.Transform;
 
 export class GUI
 {
@@ -30,7 +24,7 @@ public:
 	static void ShowDevConsole();
 	static void ShowDevConsoleContent();
 	static void ShowFPS(int fps);
-	static void ShowGraph(const std::vector<uint64_t>& buffer, const char* label, float max = 100.0f);
+	static void ShowGraph(const std::vector<std::uint64_t>& buffer, const char* label, float max = 100.0f);
 	static void ShowGraph(const std::vector<float>& buffer, const char* label, float max = 100.0f);
 	static void ShowPieGraph(std::vector<float>& data, const char* label = nullptr);
 	static void ShowChartGraph(size_t item, size_t max, const char* label);

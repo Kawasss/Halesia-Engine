@@ -7,7 +7,7 @@ module;
 #include "CommandBuffer.h"
 #include "Mesh.h"
 
-#include "../core/Object.h"
+#include "../system/CriticalSection.h"
 
 export module Renderer;
 
@@ -15,6 +15,7 @@ import std;
 
 import Core.CameraObject;
 import Core.LightObject;
+import Core.Object;
 
 import System.Window;
 

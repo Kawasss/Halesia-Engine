@@ -1,7 +1,6 @@
 module;
 
 #include <Windows.h>
-#include "core/Object.h"
 
 #include "io/CreationData.h"
 #include "io/BinaryStream.h"
@@ -11,6 +10,8 @@ module;
 module Core.MeshObject;
 
 import std;
+
+import Core.Object;
 
 MeshObject::MeshObject() : Object(InheritType::Mesh)
 {

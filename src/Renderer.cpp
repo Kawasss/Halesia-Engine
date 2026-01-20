@@ -10,7 +10,6 @@ module;
 #include "renderer/Light.h"
 
 #include "core/Console.h"
-#include "core/Object.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #define IMGUI_DEFINE_MATH_OPERATORS_IMPLEMENTED
@@ -27,6 +26,7 @@ import std;
 import Core.LightObject;
 import Core.CameraObject;
 import Core.MeshObject;
+import Core.Object;
 
 import System.Window;
 import System;

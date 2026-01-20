@@ -1,4 +1,6 @@
-#include "core/Transform.h"
+module Core.Transform;
+
+import "glm.h";
 
 Transform::Transform(glm::vec3 position, glm::quat rotation, glm::vec3 scale)
 {

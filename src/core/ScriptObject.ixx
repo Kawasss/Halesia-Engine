@@ -1,10 +1,8 @@
-module;
-
-#include "Object.h"
-
 export module Core.ScriptObject;
 
 import std;
+
+import Core.Object;
 
 import Scripting.Script;
 

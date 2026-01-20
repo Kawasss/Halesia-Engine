@@ -4,8 +4,6 @@ module;
 
 #include "../system/CriticalSection.h"
 
-#include "Object.h"
-
 #include "../io/CreationData.h"
 
 export module Core.Scene;
@@ -15,6 +13,7 @@ import std;
 import System.Window;
 
 import Core.CameraObject;
+import Core.Object;
 
 export class Scene
 {
@@ -27,9 +26,9 @@ public:
 	Object* AddObject(const ObjectCreationData& creationData, Object* pParent = nullptr);
 	Object* AddObject(const ObjectCreationData& creationData, Object* pParent = nullptr);
 
-	template<typename T>
-	Object* DuplicateObject(Object* pObject, std::string name); //!< UNSAFE, currently does not duplicate the appropriate class based on type
-	Object* DuplicateObject(Object* pObject, std::string name); //!< UNSAFE
+	//template<typename T>
+	//Object* DuplicateObject(Object* pObject, std::string name); //!< UNSAFE, currently does not duplicate the appropriate class based on type
+	//Object* DuplicateObject(Object* pObject, std::string name); //!< UNSAFE
 
 	void SetActiveCamera(CameraObject* pCamera);
 
@@ -92,13 +91,13 @@ template<typename T> Object* Scene::AddObject(const ObjectCreationData& creation
 	return objPtr;
 }
 
-template<typename T> Object* Scene::DuplicateObject(Object* pObject, std::string name)
-{
-	T* tPtr = new T();
-	Object* newObjPtr = tPtr;
-	Object::Duplicate(pObject, newObjPtr, name, tPtr);
-	RegisterObjectPointer(newObjPtr);
-	newObjPtr->Start();
-
-	return newObjPtr;
-}
+//template<typename T> Object* Scene::DuplicateObject(Object* pObject, std::string name)
+//{
+//	T* tPtr = new T();
+//	Object* newObjPtr = tPtr;
+//	Object::Duplicate(pObject, newObjPtr, name, tPtr);
+//	RegisterObjectPointer(newObjPtr);
+//	newObjPtr->Start();
+//
+//	return newObjPtr;
+//}

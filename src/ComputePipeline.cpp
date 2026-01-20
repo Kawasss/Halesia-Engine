@@ -1,3 +1,5 @@
+module;
+
 #include "renderer/Vulkan.h"
 #include "renderer/CommandBuffer.h"
 #include "renderer/VulkanAPIError.h"

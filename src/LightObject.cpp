@@ -5,8 +5,6 @@ module;
 #include "io/CreationData.h"
 #include "io/BinaryStream.h"
 
-#include "core/Object.h"
-
 #include "renderer/Light.h"
 
 #include "glm.h"
@@ -14,6 +12,8 @@ module;
 module Core.LightObject;
 
 import std;
+
+import Core.Object;
 
 LightObject::LightObject() : Object(InheritType::Light)
 {

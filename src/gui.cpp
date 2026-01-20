@@ -13,8 +13,6 @@ module;
 #include "renderer/Vulkan.h"
 
 #include "core/Console.h"
-#include "core/Object.h"
-#include "core/Transform.h"
 
 #include <hsl/StackMap.h>
 
@@ -30,6 +28,7 @@ import Core.LightObject;
 import Core.CameraObject;
 import Core.Scene;
 import Core.MeshObject;
+import Core.Object;
 
 import Physics.RigidBody;
 import Physics.Shapes;

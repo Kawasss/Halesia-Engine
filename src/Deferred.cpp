@@ -8,13 +8,14 @@ module;
 #include "renderer/Buffer.h"
 #include "renderer/CommandBuffer.h"
 
-#include "core/MeshObject.h"
-
 module Renderer.Deferred;
+
+import "glm.h";
 
 import std;
 
 import Core.CameraObject;
+import Core.MeshObject;
 
 import Renderer.SkyPipeline;
 import Renderer.ImageTransitioner;

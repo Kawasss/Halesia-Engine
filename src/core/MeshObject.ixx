@@ -2,14 +2,14 @@ module;
 
 #include <Windows.h>
 
-#include "Object.h"
-
 #include "../io/CreationData.h"
 #include "../io/BinaryStream.h"
 
 #include "../renderer/Mesh.h"
 
 export module Core.MeshObject;
+
+import Core.Object;
 
 export class MeshObject : public Object
 {

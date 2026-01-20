@@ -3,11 +3,11 @@ module;
 #include <PxRigidDynamic.h>
 #include <PxRigidStatic.h>
 
-#include "../core/Transform.h"
-
-#include "../glm.h"
-
 export module Physics.RigidBody;
+
+import "../glm.h";
+
+import Core.Transform;
 
 import Physics.Shapes;
 

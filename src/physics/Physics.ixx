@@ -3,13 +3,13 @@ module;
 #define PX_PHYSX_STATIC_LIB
 #include <PxPhysicsAPI.h>
 
-#include "../core/Object.h"
-
 export module Physics;
+
+import "../glm.h";
 
 import std;
 
-import "../glm.h";
+import Core.Object;
 
 class PhysXErrorHandler : public physx::PxErrorCallback
 {

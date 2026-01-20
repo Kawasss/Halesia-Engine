@@ -1,7 +1,6 @@
 #include <vulkan/vulkan.h>
 
 #include "core/Console.h"
-#include "core/Object.h"
 
 #include "renderer/Light.h"
 
@@ -11,6 +10,8 @@ import Physics.RigidBody;
 import Physics.Shapes;
 
 import Renderer.RenderPipeline;
+
+import Core.Object;
 
 std::string_view RenderModeToString(RenderMode mode)
 {

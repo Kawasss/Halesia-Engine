@@ -9,13 +9,14 @@ module;
 #include "io/creationData.h"
 
 #include "core/Console.h"
-#include "core/Object.h"
 
 module IO.SceneLoader;
 
 import std;
 
 import IO.DataArchiveFile;
+
+import Core.Object;
 
 namespace fs = std::filesystem;
 

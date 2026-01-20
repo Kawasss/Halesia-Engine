@@ -3,8 +3,6 @@ module;
 #include <Windows.h>
 #include <cstdint>
 
-#include "core/Object.h"
-#include "core/Transform.h"
 #include "core/Console.h"
 
 #include "renderer/VideoMemoryManager.h"
@@ -15,13 +13,11 @@ module;
 #include <imgui-1.91.7/ImGuizmo.h>
 #include <imgui-1.91.7/misc/cpp/imgui_stdlib.h>
 
-#include <glm/gtc/type_ptr.hpp>
-
-#include "glm.h"
-
 #include "io/CreationData.h"
 
 module Core.Editor;
+
+import "glm.h";
 
 import std;
 
@@ -32,6 +28,7 @@ import Core.Rigid3DObject;
 import Core.LightObject;
 import Core.EditorProject;
 import Core.MeshObject;
+import Core.Object;
 
 import IO.SceneLoader;
 
@@ -108,8 +105,8 @@ void EditorCamera::Update(float delta)
 	int viewportWidth  = window->GetWidth()  * VIEWPORT_WIDTH;
 	int viewportHeight = window->GetHeight() * VIEWPORT_HEIGHT;
 
-	int viewportX = window->GetWidth()  * BAR_WIDTH;
-	int viewportY = window->GetHeight() * LOWER_BAR_HEIGHT;
+	int viewportX = static_cast<int>(window->GetWidth()  * BAR_WIDTH);
+	int viewportY = static_cast<int>(window->GetHeight() * LOWER_BAR_HEIGHT);
 
 	int mouseX = 0;
 	int mouseY = 0;
@@ -236,7 +233,7 @@ void Editor::Update(float delta)
 
 	if (pObjectToCopy != nullptr)
 	{
-		pObjectToCopy->CreateShallowCopy();
+		//pObjectToCopy->CreateShallowCopy();
 		pObjectToCopy = nullptr;
 	}
 }
@@ -1202,8 +1199,8 @@ void Editor::LoadFile(const fs::path& path)
 			progressBar.Start();
 			loader.LoadScene();
 
-			const int itemsToLoad = loader.objects.size() + loader.materials.size() + loader.animations.size();
-			const float progressStep = 1.0f / itemsToLoad;
+			const size_t itemsToLoad = loader.objects.size() + loader.materials.size() + loader.animations.size();
+			const float progressStep = 1.0f / static_cast<float>(itemsToLoad);
 
 			Mesh::materials.resize(loader.materials.size() + 1); // resize the materials ahead of time, even if they arent loaded yet because the material indices of the meshes will be inaccurate
 

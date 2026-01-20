@@ -1,38 +1,37 @@
-#pragma once
-#include <string_view>
-#include <string>
-#include <vector>
-#include <future>
+module;
 
-#include "Transform.h"
+#include "../io/CreationData.h"
+#include "../io/BinaryStream.h"
 
 #include "../system/CriticalSection.h"
 
-class Scene;
-class BinaryStream;
-class BinarySpan;
-struct ObjectCreationData;
-using Handle = uint64_t;
+export module Core.Object;
 
-enum ObjectState : uint8_t
+import std;
+
+export import Core.Transform;
+
+using Handle = std::uint64_t;
+
+export enum ObjectState : std::uint8_t
 {
-		/// <summary>
-		/// The attached script is run and the object is rendered
-		/// </summary>
-		OBJECT_STATE_VISIBLE,
-		/// <summary>
-		/// The attached script is run, but the object isn't rendered
-		/// </summary>
-		OBJECT_STATE_INVISIBLE,
-		/// <summary>
-		/// The attached script isn't run and the object isn't rendered
-		/// </summary>
-		OBJECT_STATE_DISABLED
-	};
-inline extern std::string_view ObjectStateToString(ObjectState state);
-inline extern ObjectState ObjectStateFromString(const std::string_view& str);
+	/// <summary>
+	/// The attached script is run and the object is rendered
+	/// </summary>
+	OBJECT_STATE_VISIBLE,
+	/// <summary>
+	/// The attached script is run, but the object isn't rendered
+	/// </summary>
+	OBJECT_STATE_INVISIBLE,
+	/// <summary>
+	/// The attached script isn't run and the object isn't rendered
+	/// </summary>
+	OBJECT_STATE_DISABLED
+};
+export std::string_view ObjectStateToString(ObjectState state);
+export ObjectState ObjectStateFromString(const std::string_view& str);
 
-class Object
+export class Object
 {
 public:
 	enum class InheritType
@@ -65,7 +64,7 @@ public:
 	// 3. destroy any members
 	virtual ~Object();
 
-	virtual void Start()  {}
+	virtual void Start() {}
 
 	/// <summary>
 	/// only update this object, ignores its children
@@ -74,8 +73,8 @@ public:
 	void ShallowUpdate(float delta);
 
 	virtual void OnCollisionEnter(Object* object) {}
-	virtual void OnCollisionStay(Object* object)  {}
-	virtual void OnCollisionExit(Object* object)  {}
+	virtual void OnCollisionStay(Object* object) {}
+	virtual void OnCollisionExit(Object* object) {}
 
 	/// <summary>
 	/// update this object and its children
@@ -100,7 +99,7 @@ public:
 
 	void Initialize(const ObjectCreationData& creationData);
 
-	template<typename T> 
+	template<typename T>
 	Object* AddChild(const ObjectCreationData& creationData);
 	Object* AddChild(const ObjectCreationData& creationData);
 	void    AddChild(Object* object);
@@ -110,9 +109,7 @@ public:
 
 	void TransferChild(Object* child, Object* destination); // this removes the child from this objects children and adds to the destinations children
 
-	Object* CreateShallowCopy() const; // creates a copy of the object and assigns it to the same parent, but does not copy its children (also registers it to the scene)
-
-	void SetParentScene(Scene* parent) { scene = parent; }
+	//Object* CreateShallowCopy() const; // creates a copy of the object and assigns it to the same parent, but does not copy its children
 
 	std::vector<char> Serialize() const; // when serializing, the children of an object will be serialized by the object itself.
 	void Deserialize(const BinarySpan& stream); // assumes that the object is already the correct type, also assumes that the inheritType at the beginning of the stream is already read (a.k.a. 'GetInheritTypeFromStream(...)' is already called)
@@ -123,16 +120,16 @@ public:
 
 	std::vector<Object*>& GetChildren() { return children; }
 
-	const std::vector<Object*>& GetChildren() const  { return children;    }
-	win32::CriticalSection&     GetCriticalSection() { return critSection; }
-	
+	const std::vector<Object*>& GetChildren() const { return children; }
+	win32::CriticalSection& GetCriticalSection() { return critSection; }
+
 	Transform transform;
-	
+
 	ObjectState state = OBJECT_STATE_VISIBLE;
 	std::string name;
 	Handle handle = 0;
 
-	bool FinishedLoading()   const { return finishedLoading;   }
+	bool FinishedLoading()   const { return finishedLoading; }
 	bool ShouldBeDestroyed() const { return shouldBeDestroyed; }
 
 	bool HasChildren() const { return !children.empty(); }
@@ -161,8 +158,7 @@ private:
 	InheritType type = InheritType::Base;
 
 	std::future<void> generation;
-	
-	Scene* scene = nullptr;
+
 	win32::CriticalSection critSection;
 	std::vector<Object*> children;
 
@@ -191,12 +187,10 @@ protected:
 	virtual void SerializeSelf(BinaryStream& stream) const;
 	virtual void DeserializeSelf(const BinarySpan& stream);
 
-	Scene* GetParentScene() { return scene; }
-
 	bool hasScript = false;
 };
 
-template<typename T> 
+template<typename T>
 Object* Object::AddChild(const ObjectCreationData& creationData)
 {
 	static_assert(!std::is_base_of_v<T, Object>, "Cannot Create a custom object: the typename does not have Object as a base");

@@ -1,12 +1,10 @@
 module;
 
-#include <Windows.h>
-
-#include "Object.h"
-
 #include "../io/CreationData.h"
 
 export module Core.Rigid3DObject;
+
+import Core.Object;
 
 import Physics.RigidBody;
 

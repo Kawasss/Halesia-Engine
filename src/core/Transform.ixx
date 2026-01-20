@@ -1,7 +1,8 @@
-#pragma once
-#include "../glm.h"
+export module Core.Transform;
 
-class Transform
+import "../glm.h";
+
+export class Transform
 {
 public:
 	Transform() = default;

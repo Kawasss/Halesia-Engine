@@ -1,7 +1,7 @@
-#include <Windows.h>
-#include <future>
+module;
 
-#include "core/Object.h"
+#include <Windows.h>
+
 #include "core/Console.h"
 
 #include "io/CreationData.h"
@@ -9,7 +9,9 @@
 
 #include "ResourceManager.h"
 
-import Core.Scene;
+module Core.Object;
+
+import std;
 
 Object::Object(InheritType type) : type(type)
 {
@@ -109,18 +111,18 @@ void Object::TransferChild(Object* child, Object* destination)
 	child->parent = destination;
 }
 
-Object* Object::CreateShallowCopy() const
-{
-	ObjectCreationData creationData{};
-	creationData.type = static_cast<ObjectCreationData::Type>(type);
-
-	Object* pCopy = scene->AddObject(creationData, parent);
-
-	DuplicateBaseDataTo(pCopy);
-	DuplicateDataTo(pCopy);
-
-	return pCopy;
-}
+//Object* Object::CreateShallowCopy() const
+//{
+//	ObjectCreationData creationData{};
+//	creationData.type = static_cast<ObjectCreationData::Type>(type);
+//
+//	Object* pCopy = scene->AddObject(creationData, parent);
+//
+//	DuplicateBaseDataTo(pCopy);
+//	DuplicateDataTo(pCopy);
+//
+//	return pCopy;
+//}
 
 void Object::DuplicateDataTo(Object* pObject) const
 {

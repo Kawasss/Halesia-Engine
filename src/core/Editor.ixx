@@ -6,8 +6,6 @@ module;
 
 #include "../glm.h"
 
-#include "Object.h"
-
 #include "../renderer/Mesh.h"
 
 export module Core.Editor;
@@ -28,6 +26,7 @@ import Core.CameraObject;
 import Core.LightObject;
 import Core.EditorProject;
 import Core.Scene;
+import Core.Object;
 
 namespace fs = std::filesystem;
 

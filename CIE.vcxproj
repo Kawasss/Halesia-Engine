@@ -184,10 +184,12 @@
     <ClCompile Include="src\core\EditorProject.ixx" />
     <ClCompile Include="src\core\LightObject.ixx" />
     <ClCompile Include="src\core\MeshObject.ixx" />
+    <ClCompile Include="src\core\Object.ixx" />
     <ClCompile Include="src\core\Profiler.ixx" />
     <ClCompile Include="src\core\Rigid3DObject.ixx" />
     <ClCompile Include="src\core\Scene.ixx" />
     <ClCompile Include="src\core\ScriptObject.ixx" />
+    <ClCompile Include="src\core\Transform.ixx" />
     <ClCompile Include="src\DataArchiveFile.cpp" />
     <ClCompile Include="src\Deferred.cpp" />
     <ClCompile Include="src\DescriptorWriter.cpp" />
@@ -312,8 +314,6 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_textedit.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_truetype.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.h" />
-    <ClInclude Include="src\core\Object.h" />
-    <ClInclude Include="src\core\Transform.h" />
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\io\BinaryStream.h" />
     <ClInclude Include="src\io\CreationData.h" />
