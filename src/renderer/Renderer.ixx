@@ -3,7 +3,6 @@ module;
 #include "PhysicalDevice.h"
 #include "Surface.h"
 #include "Vertex.h"
-#include "QueryPool.h"
 #include "Buffer.h"
 #include "FramesInFlight.h"
 #include "CommandBuffer.h"
@@ -26,6 +25,7 @@ import Renderer.GraphicsPipeline;
 import Renderer.StorageBuffer;
 import Renderer.Framebuffer;
 import Renderer.RenderPipeline;
+import Renderer.QueryPool;
 
 using HANDLE = void*;
 using Handle = unsigned long long;

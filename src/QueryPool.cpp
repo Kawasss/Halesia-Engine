@@ -1,7 +1,12 @@
+module;
+
 #include <cassert>
 
-#include "renderer/QueryPool.h"
 #include "renderer/Vulkan.h"
+
+module Renderer.QueryPool;
+
+import std;
 
 void QueryPool::Create(VkQueryType type, uint32_t amount)
 {
@@ -30,7 +35,7 @@ QueryPool::~QueryPool()
 	Destroy();
 }
 
-void QueryPool::WriteTimeStamp(CommandBuffer commandBuffer)
+void QueryPool::WriteTimeStamp(const CommandBuffer& commandBuffer)
 {
 	assert(queryType == VK_QUERY_TYPE_TIMESTAMP);
 
@@ -39,7 +44,7 @@ void QueryPool::WriteTimeStamp(CommandBuffer commandBuffer)
 	timestampIndex++;
 }
 
-void QueryPool::BeginTimestamp(CommandBuffer commandBuffer, const std::string& label)
+void QueryPool::BeginTimestamp(const CommandBuffer& commandBuffer, const std::string& label)
 {
 	assert(queryType == VK_QUERY_TYPE_TIMESTAMP);
 
@@ -50,7 +55,7 @@ void QueryPool::BeginTimestamp(CommandBuffer commandBuffer, const std::string& l
 	timestamp.begin = &data[timestampIndex++];
 }
 
-void QueryPool::EndTimestamp(CommandBuffer commandBuffer, const std::string& label)
+void QueryPool::EndTimestamp(const CommandBuffer& commandBuffer, const std::string& label)
 {
 	assert(queryType == VK_QUERY_TYPE_TIMESTAMP);
 
@@ -80,7 +85,7 @@ void QueryPool::Fetch()
 	vkGetQueryPoolResults(ctx.logicalDevice, pool, 0, size, size * sizeof(uint64_t), data, sizeof(uint64_t), VK_QUERY_RESULT_64_BIT);
 }
 
-void QueryPool::Reset(CommandBuffer commandBuffer)
+void QueryPool::Reset(const CommandBuffer& commandBuffer)
 {
 	switch (queryType)
 	{

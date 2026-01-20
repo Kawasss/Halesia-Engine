@@ -199,6 +199,7 @@
     <ClCompile Include="src\renderer\Framebuffer.ixx" />
     <ClCompile Include="src\renderer\GraphicsPipeline.ixx" />
     <ClCompile Include="src\renderer\Pipeline.ixx" />
+    <ClCompile Include="src\renderer\QueryPool.ixx" />
     <ClCompile Include="src\renderer\RayTracingPipeline.ixx" />
     <ClCompile Include="src\renderer\Renderer.ixx" />
     <ClCompile Include="src\renderer\RenderPipeline.ixx" />
@@ -323,7 +324,6 @@
     <ClInclude Include="src\renderer\Light.h" />
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
-    <ClInclude Include="src\renderer\QueryPool.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
     <ClInclude Include="src\renderer\Surface.h" />
     <ClInclude Include="src\renderer\Swapchain.h" />
