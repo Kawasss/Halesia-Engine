@@ -1,3 +1,5 @@
+module;
+
 #include <Windows.h>
 
 //#define IMGUI_IMPLEMENTATION

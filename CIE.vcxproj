@@ -205,6 +205,8 @@
     <ClCompile Include="src\renderer\RenderPipeline.ixx" />
     <ClCompile Include="src\renderer\ResizableBuffer.ixx" />
     <ClCompile Include="src\renderer\StorageBuffer.ixx" />
+    <ClCompile Include="src\renderer\Surface.ixx" />
+    <ClCompile Include="src\renderer\Swapchain.ixx" />
     <ClCompile Include="src\VulkanGarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
     <ClCompile Include="src\Grid.cpp" />
@@ -325,8 +327,6 @@
     <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\Mesh.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
-    <ClInclude Include="src\renderer\Surface.h" />
-    <ClInclude Include="src\renderer\Swapchain.h" />
     <ClInclude Include="src\renderer\Texture.h" />
     <ClInclude Include="src\renderer\Vertex.h" />
     <ClInclude Include="src\renderer\VideoMemoryManager.h" />

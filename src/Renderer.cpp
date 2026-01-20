@@ -3,8 +3,6 @@ module;
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "renderer/Vulkan.h"
-#include "renderer/Swapchain.h"
-#include "renderer/Surface.h"
 #include "renderer/Texture.h"
 #include "renderer/Mesh.h"
 #include "renderer/VulkanAPIError.h"
@@ -40,6 +38,8 @@ import Renderer.PipelineCreator;
 import Renderer.VulkanGarbageManager;
 import Renderer.GraphicsPipeline;
 import Renderer.RenderPipeline;
+import Renderer.Swapchain;
+import Renderer.Surface;
 
 namespace fs = std::filesystem;
 

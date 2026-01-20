@@ -1,13 +1,19 @@
-#pragma once
-#include <vulkan/vulkan.h>
-#include <vector>
+module;
+
 #include "PhysicalDevice.h"
 #include "VideoMemoryManager.h"
-#include "surface.h"
 
-class Window;
+export module Renderer.Swapchain;
 
-class Swapchain
+import <vulkan/vulkan.h>;
+
+import std;
+
+import System.Window;
+
+import Renderer.Surface;
+
+export class Swapchain
 {
 public:
     Swapchain() = default;

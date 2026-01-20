@@ -1,3 +1,5 @@
+module;
+
 #include "glm.h"
 
 #include "renderer/Texture.h"

@@ -4,20 +4,19 @@ bool enableValidationLayers = false;
 #else
 bool enableValidationLayers = true;
 #endif
-#include <iostream>
-#include <algorithm>
+
 #include <cassert>
-#include <sstream>
-#include <format>
 
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "core/Console.h"
 
 #include "renderer/Vulkan.h"
-#include "renderer/Surface.h"
 #include "renderer/VideoMemoryManager.h"
 #include "renderer/VulkanAPIError.h"
+
+import std;
+import Renderer.Surface;
 
 VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 

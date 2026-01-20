@@ -1,3 +1,5 @@
+module;
+
 #include "renderer/Vulkan.h"
 
 #include "system/CriticalSection.h"

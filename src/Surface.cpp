@@ -1,7 +1,12 @@
-#define VK_USE_PLATFORM_WIN32_KHR
+module;
+
+//#define VK_USE_PLATFORM_WIN32_KHR
+#include <vulkan/vulkan.h>
+
 #include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
-#include "renderer/Surface.h"
+
+module Renderer.Surface;
 
 import System.Window;
 
@@ -16,7 +21,7 @@ Surface Surface::GenerateSurface(VkInstance instance, Window* window)
 	surfaceCreateInfo.hinstance = window->GetInstance();
 
 	VkResult result = vkCreateWin32SurfaceKHR(instance, &surfaceCreateInfo, nullptr, &lSurface.surface);
-	CheckVulkanResult("Failed to create a window surface for the current instance", result);
+	::CheckVulkanResult("Failed to create a window surface for the current instance", result);
 
 	return lSurface;
 }

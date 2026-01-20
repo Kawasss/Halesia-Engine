@@ -519,6 +519,12 @@
     <ClCompile Include="src\renderer\QueryPool.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\Swapchain.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\Surface.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -531,12 +537,6 @@
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\PhysicalDevice.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Surface.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\Swapchain.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\Texture.h">

@@ -1,7 +1,8 @@
-#include <set>
-
 #include "renderer/Vulkan.h"
-#include "renderer/Surface.h"
+
+import std;
+
+import Renderer.Surface;
 
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice physicalDevice)
 {

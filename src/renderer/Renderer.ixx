@@ -1,12 +1,10 @@
 module;
 
 #include "PhysicalDevice.h"
-#include "Surface.h"
 #include "Vertex.h"
 #include "Buffer.h"
 #include "FramesInFlight.h"
 #include "CommandBuffer.h"
-#include "Swapchain.h"
 #include "Mesh.h"
 
 #include "../core/Object.h"
@@ -26,6 +24,8 @@ import Renderer.StorageBuffer;
 import Renderer.Framebuffer;
 import Renderer.RenderPipeline;
 import Renderer.QueryPool;
+import Renderer.Swapchain;
+import Renderer.Surface;
 
 using HANDLE = void*;
 using Handle = unsigned long long;
