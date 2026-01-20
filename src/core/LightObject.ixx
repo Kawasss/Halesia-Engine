@@ -8,9 +8,9 @@ module;
 
 #include "../glm.h"
 
-#include "../io/BinaryStream.h"
-
 export module Core.LightObject;
+
+import IO.BinaryStream;
 
 import Core.Object;
 

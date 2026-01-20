@@ -3,7 +3,6 @@ module;
 #include <Windows.h>
 
 #include "io/CreationData.h"
-#include "io/BinaryStream.h"
 
 #include "renderer/Light.h"
 
@@ -12,6 +11,8 @@ module;
 module Core.LightObject;
 
 import std;
+
+import IO.BinaryStream;
 
 import Core.Object;
 

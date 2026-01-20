@@ -3,13 +3,14 @@ module;
 #include <Windows.h>
 
 #include "io/CreationData.h"
-#include "io/BinaryStream.h"
 
 #include "renderer/Vertex.h"
 
 module Core.MeshObject;
 
 import std;
+
+import IO.BinaryStream;
 
 import Core.Object;
 

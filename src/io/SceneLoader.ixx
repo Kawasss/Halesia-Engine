@@ -6,7 +6,6 @@ module;
 #include "../renderer/Material.h"
 
 #include "CreationData.h"
-#include "BinaryStream.h"
 
 export module IO.SceneLoader;
 
@@ -15,6 +14,7 @@ import <assimp/scene.h>;
 import std;
 
 import IO.DataArchiveFile;
+import IO.BinaryStream;
 
 import Renderer.Animation;
 import Renderer.Bone;

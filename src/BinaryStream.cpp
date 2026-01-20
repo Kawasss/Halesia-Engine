@@ -1,8 +1,10 @@
-#include <cassert>
-#include <algorithm>
-#include <type_traits>
+module;
 
-#include "io/BinaryStream.h"
+#include <cassert>
+
+module IO.BinaryStream;
+
+import std;
 
 template<typename T>
 concept PrimitiveOnly = std::is_fundamental_v<T>;
@@ -17,7 +19,7 @@ void WritePrimitiveToVector(std::vector<char>& vec, const T& val)
 }
 
 template<PrimitiveOnly T>
-void ReadPrimitiveFromSpan(const std::span<char const>& vec, size_t& offset, T& val)
+void ReadPrimitiveFromSpan(const std::span<char const>& vec, std::size_t& offset, T& val)
 {
 	constexpr size_t readCount = sizeof(T) / sizeof(std::vector<char>::value_type);
 	const T* pValue = reinterpret_cast<const T*>(&vec[0] + offset);
@@ -45,29 +47,29 @@ BinaryStream& BinaryStream::operator>>(type& val) \
 	return *this;                                 \
 }                                                 \
 
-DEFINE_WRITE_OPERATOR(uint64_t);
-DEFINE_WRITE_OPERATOR(uint32_t);
-DEFINE_WRITE_OPERATOR(uint16_t);
-DEFINE_WRITE_OPERATOR(uint8_t);
+DEFINE_WRITE_OPERATOR(std::uint64_t);
+DEFINE_WRITE_OPERATOR(std::uint32_t);
+DEFINE_WRITE_OPERATOR(std::uint16_t);
+DEFINE_WRITE_OPERATOR(std::uint8_t);
 
-DEFINE_WRITE_OPERATOR(int64_t);
-DEFINE_WRITE_OPERATOR(int32_t);
-DEFINE_WRITE_OPERATOR(int16_t);
-DEFINE_WRITE_OPERATOR(int8_t);
+DEFINE_WRITE_OPERATOR(std::int64_t);
+DEFINE_WRITE_OPERATOR(std::int32_t);
+DEFINE_WRITE_OPERATOR(std::int16_t);
+DEFINE_WRITE_OPERATOR(std::int8_t);
 
 DEFINE_WRITE_OPERATOR(float);
 DEFINE_WRITE_OPERATOR(bool);
 DEFINE_WRITE_OPERATOR(char);
 
-DEFINE_READ_OPERATOR(uint64_t);
-DEFINE_READ_OPERATOR(uint32_t);
-DEFINE_READ_OPERATOR(uint16_t);
-DEFINE_READ_OPERATOR(uint8_t);
+DEFINE_READ_OPERATOR(std::uint64_t);
+DEFINE_READ_OPERATOR(std::uint32_t);
+DEFINE_READ_OPERATOR(std::uint16_t);
+DEFINE_READ_OPERATOR(std::uint8_t);
 
-DEFINE_READ_OPERATOR(int64_t);
-DEFINE_READ_OPERATOR(int32_t);
-DEFINE_READ_OPERATOR(int16_t);
-DEFINE_READ_OPERATOR(int8_t);
+DEFINE_READ_OPERATOR(std::int64_t);
+DEFINE_READ_OPERATOR(std::int32_t);
+DEFINE_READ_OPERATOR(std::int16_t);
+DEFINE_READ_OPERATOR(std::int8_t);
 
 DEFINE_READ_OPERATOR(float);
 DEFINE_READ_OPERATOR(bool);
@@ -76,14 +78,14 @@ DEFINE_READ_OPERATOR(char);
 #undef DEFINE_READ_OPERATOR
 #undef DEFINE_WRITE_OPERATOR
 
-void BinaryStream::Read(char* dst, size_t count)
+void BinaryStream::Read(char* dst, std::size_t count)
 {
 	assert(offset + count <= data.size());
-	memcpy(dst, &data[offset], count);
+	std::memcpy(dst, &data[offset], count);
 	offset += count;
 }
 
-void BinaryStream::Write(const char* src, size_t count)
+void BinaryStream::Write(const char* src, std::size_t count)
 {
 	data.insert(data.end(), src, src + count);
 }
@@ -94,7 +96,7 @@ void BinaryStream::Clear()
 	offset = 0;
 }
 
-size_t BinaryStream::GetOffset() const
+std::size_t BinaryStream::GetOffset() const
 {
 	return offset;
 }
@@ -121,15 +123,15 @@ const BinarySpan& BinarySpan::operator>>(type& val) const \
 	return *this;                                   \
 }        
 
-DEFINE_READ_OPERATOR(uint64_t);
-DEFINE_READ_OPERATOR(uint32_t);
-DEFINE_READ_OPERATOR(uint16_t);
-DEFINE_READ_OPERATOR(uint8_t);
+DEFINE_READ_OPERATOR(std::uint64_t);
+DEFINE_READ_OPERATOR(std::uint32_t);
+DEFINE_READ_OPERATOR(std::uint16_t);
+DEFINE_READ_OPERATOR(std::uint8_t);
 
-DEFINE_READ_OPERATOR(int64_t);
-DEFINE_READ_OPERATOR(int32_t);
-DEFINE_READ_OPERATOR(int16_t);
-DEFINE_READ_OPERATOR(int8_t);
+DEFINE_READ_OPERATOR(std::int64_t);
+DEFINE_READ_OPERATOR(std::int32_t);
+DEFINE_READ_OPERATOR(std::int16_t);
+DEFINE_READ_OPERATOR(std::int8_t);
 
 DEFINE_READ_OPERATOR(float);
 DEFINE_READ_OPERATOR(bool);
@@ -140,7 +142,7 @@ DEFINE_READ_OPERATOR(char);
 void BinarySpan::Read(char* dst, size_t count) const
 {
 	assert(offset + count <= data.size());
-	memcpy(dst, &data[offset], count);
+	std::memcpy(dst, &data[offset], count);
 	offset += count;
 }
 

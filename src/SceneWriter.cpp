@@ -2,8 +2,6 @@ module;
 
 #include <Windows.h>
 
-#include "io/BinaryStream.h"
-
 #include "renderer/Texture.h"
 #include "renderer/Mesh.h"
 
@@ -18,6 +16,7 @@ import Core.MeshObject;
 import Core.Object;
 
 import IO.DataArchiveFile;
+import IO.BinaryStream;
 
 static void WriteNamedReferencesToStream(BinaryStream& stream, const std::vector<Object*>& objects)
 {

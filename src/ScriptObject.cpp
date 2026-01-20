@@ -1,11 +1,10 @@
-module;
-
-#include "io/BinaryStream.h"
-
 module Core.ScriptObject;
+
+import std;
 
 import Scripting.Script;
 
+import IO.BinaryStream;
 import IO;
 
 ScriptObject::ScriptObject() : Object(Object::InheritType::Script)

@@ -1,7 +1,6 @@
 module;
 
 #include "../io/CreationData.h"
-#include "../io/BinaryStream.h"
 
 #include "../system/CriticalSection.h"
 
@@ -10,6 +9,8 @@ export module Core.Object;
 import std;
 
 export import Core.Transform;
+
+import IO.BinaryStream;
 
 using Handle = std::uint64_t;
 

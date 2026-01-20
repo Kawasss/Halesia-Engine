@@ -5,13 +5,14 @@ module;
 #include "core/Console.h"
 
 #include "io/CreationData.h"
-#include "io/BinaryStream.h"
 
 #include "ResourceManager.h"
 
 module Core.Object;
 
 import std;
+
+import IO.BinaryStream;
 
 Object::Object(InheritType type) : type(type)
 {

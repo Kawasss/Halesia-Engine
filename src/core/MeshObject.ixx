@@ -3,11 +3,12 @@ module;
 #include <Windows.h>
 
 #include "../io/CreationData.h"
-#include "../io/BinaryStream.h"
 
 #include "../renderer/Mesh.h"
 
 export module Core.MeshObject;
+
+import IO.BinaryStream;
 
 import Core.Object;
 

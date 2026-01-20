@@ -3,9 +3,7 @@ module;
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
-#include <assimp/config.h>
 
-#include "io/BinaryStream.h"
 #include "io/creationData.h"
 
 #include "core/Console.h"
@@ -15,6 +13,7 @@ module IO.SceneLoader;
 import std;
 
 import IO.DataArchiveFile;
+import IO.BinaryStream;
 
 import Core.Object;
 
