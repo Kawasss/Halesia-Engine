@@ -202,6 +202,7 @@
     <ClCompile Include="src\renderer\ComputePipeline.ixx" />
     <ClCompile Include="src\renderer\Framebuffer.ixx" />
     <ClCompile Include="src\renderer\GraphicsPipeline.ixx" />
+    <ClCompile Include="src\renderer\CommandBuffer.ixx" />
     <ClCompile Include="src\renderer\Pipeline.ixx" />
     <ClCompile Include="src\renderer\QueryPool.ixx" />
     <ClCompile Include="src\renderer\RayTracingPipeline.ixx" />
@@ -211,6 +212,7 @@
     <ClCompile Include="src\renderer\StorageBuffer.ixx" />
     <ClCompile Include="src\renderer\Surface.ixx" />
     <ClCompile Include="src\renderer\Swapchain.ixx" />
+    <ClCompile Include="src\renderer\Vulkan.ixx" />
     <ClCompile Include="src\VulkanGarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
     <ClCompile Include="src\Grid.cpp" />
@@ -321,7 +323,6 @@
     <ClInclude Include="src\io\FileMaterial.h" />
     <ClInclude Include="src\io\FwdDclCreationData.h" />
     <ClInclude Include="src\math\vectors.h" />
-    <ClInclude Include="src\renderer\CommandBuffer.h" />
     <ClInclude Include="src\renderer\FramesInFlight.h" />
     <ClInclude Include="src\renderer\Light.h" />
     <ClInclude Include="src\renderer\Material.h" />
@@ -330,7 +331,6 @@
     <ClInclude Include="src\renderer\Texture.h" />
     <ClInclude Include="src\renderer\Vertex.h" />
     <ClInclude Include="src\renderer\VideoMemoryManager.h" />
-    <ClInclude Include="src\renderer\Vulkan.h" />
     <ClInclude Include="src\renderer\Buffer.h" />
     <ClInclude Include="src\renderer\VulkanAPIError.h" />
     <ClInclude Include="src\resource.h" />

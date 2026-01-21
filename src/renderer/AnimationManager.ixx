@@ -3,7 +3,6 @@ module;
 #include "../glm.h"
 
 #include "Buffer.h"
-#include "CommandBuffer.h"
 
 #include "../system/CriticalSection.h"
 
@@ -14,6 +13,7 @@ import std;
 import Renderer.Bone;
 import Renderer.Animation;
 import Renderer.ComputePipeline;
+import Renderer.CommandBuffer;
 
 export class AnimationManager
 {

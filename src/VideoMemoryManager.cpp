@@ -2,13 +2,13 @@
 
 #include "renderer/VideoMemoryManager.h"
 #include "renderer/VulkanAPIError.h"
-#include "renderer/Vulkan.h"
 
 #include "system/CriticalSection.h"
 
 import std;
 
 import Renderer.VulkanGarbageManager;
+import Renderer.Vulkan;
 
 // The video memory (vram) manager allocates large chunks of device memory and hands out parts of these chunks.
 // the memory block size is dictated by the value of 'STANDARD_MEMORY_BLOCK_SIZE'. The size of a block may be bigger than the standard size to accomodate for larger buffers, 

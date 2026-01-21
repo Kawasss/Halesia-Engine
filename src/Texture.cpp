@@ -11,7 +11,6 @@
 #include <ktx.h>
 #include <ktxvulkan.h>
 
-#include "renderer/Vulkan.h"
 #include "renderer/physicalDevice.h"
 #include "renderer/Texture.h"
 #include "renderer/Buffer.h"
@@ -23,6 +22,7 @@ import std;
 
 import Renderer.ImageTransitioner;
 import Renderer.VulkanGarbageManager;
+import Renderer.Vulkan;
 
 import IO;
 

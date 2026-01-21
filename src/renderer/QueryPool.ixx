@@ -1,12 +1,10 @@
-module;
-
-#include "CommandBuffer.h"
-
 export module Renderer.QueryPool;
 
 import <vulkan/vulkan.h>;
 
 import std;
+
+import Renderer.CommandBuffer;
 
 export class QueryPool
 {

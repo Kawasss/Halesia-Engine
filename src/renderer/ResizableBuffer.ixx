@@ -4,11 +4,12 @@ module;
 #include <vulkan/vulkan.h>
 
 #include "Buffer.h"
-#include "CommandBuffer.h"
 
 export module Renderer.ResizableBuffer;
 
 import std;
+
+import Renderer.CommandBuffer;
 
 export class ResizableBuffer // everything is in bytes
 {

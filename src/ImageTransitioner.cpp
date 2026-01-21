@@ -1,8 +1,10 @@
 module;
 
-#include "renderer/CommandBuffer.h"
+#include <vulkan/vulkan.h>
 
 module Renderer.ImageTransitioner;
+
+import Renderer.Vulkan;
 
 void ImageTransitioner::Transition(const CommandBuffer& cmdBuffer) const
 {

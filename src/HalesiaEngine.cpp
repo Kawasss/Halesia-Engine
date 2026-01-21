@@ -1,8 +1,8 @@
 module;
 
-#include <cassert>
+#include <Windows.h>
 
-#include "renderer/Vulkan.h"
+#include <cassert>
 
 #include "core/Console.h"
 
@@ -23,6 +23,7 @@ import System;
 
 import Renderer.Gui;
 import Renderer.AnimationManager;
+import Renderer.Vulkan;
 import Renderer;
 
 import IO.IniFile;

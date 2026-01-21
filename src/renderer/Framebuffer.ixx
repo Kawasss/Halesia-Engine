@@ -2,12 +2,13 @@ module;
 
 #include <vulkan/vulkan.h>
 
-#include "CommandBuffer.h"
 #include "VideoMemoryManager.h"
 
 export module Renderer.Framebuffer;
 
 import std;
+
+import Renderer.CommandBuffer;
 
 export class Framebuffer
 {

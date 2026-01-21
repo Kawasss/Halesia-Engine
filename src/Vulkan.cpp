@@ -1,22 +1,30 @@
-//#define VK_USE_PLATFORM_WIN32_KHR
-#ifdef NDEBUG
-bool enableValidationLayers = false;
-#else
-bool enableValidationLayers = true;
-#endif
+module;
 
+//#define VK_USE_PLATFORM_WIN32_KHR
 #include <cassert>
 
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "core/Console.h"
 
-#include "renderer/Vulkan.h"
 #include "renderer/VideoMemoryManager.h"
 #include "renderer/VulkanAPIError.h"
 
+#include "system/CriticalSection.h"
+
+module Renderer.Vulkan;
+
 import std;
 import Renderer.Surface;
+import Renderer.CommandBuffer;
+
+#ifdef NDEBUG
+bool enableValidationLayers = false;
+#else
+bool enableValidationLayers = true;
+#endif
+
+#undef CreateSemaphore
 
 VkMemoryAllocateFlagsInfo* Vulkan::optionalMemoryAllocationFlags = nullptr;
 

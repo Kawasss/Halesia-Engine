@@ -10,7 +10,7 @@ module;
 #include <imgui-1.91.7/misc/cpp/imgui_stdlib.h>
 
 #include "renderer/Mesh.h"
-#include "renderer/Vulkan.h"
+#include "renderer/VideoMemoryManager.h"
 
 #include "core/Console.h"
 
@@ -36,6 +36,7 @@ import Physics.Shapes;
 import System.Input;
 import System.Window;
 
+import Renderer.Vulkan;
 import Renderer;
 
 inline void InputFloat(const std::string& name, float& value, float width)
@@ -336,7 +337,10 @@ void GUI::ShowChartGraph(size_t item, size_t max, const char* label)
 
 	if (createWindow)
 		ImGui::Begin(label);
-	ImGui::BeginChild(reinterpret_cast<ImGuiID>(label), {CHART_WIDTH, CHART_HEIGHT}, true);
+
+	ImGuiID id = static_cast<ImGuiID>(reinterpret_cast<std::uintptr_t>(label));
+
+	ImGui::BeginChild(id, {CHART_WIDTH, CHART_HEIGHT}, true);
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 	ImVec2 pos = ImGui::GetWindowPos();
 	ImVec2 endPos = { pos.x + CHART_WIDTH, pos.y + CHART_HEIGHT };

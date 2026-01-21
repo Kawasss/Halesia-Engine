@@ -1,7 +1,5 @@
 module;
 
-#include "renderer/Vulkan.h"
-#include "renderer/CommandBuffer.h"
 #include "renderer/VulkanAPIError.h"
 
 module Renderer.ComputePipeline;
@@ -12,6 +10,8 @@ import Renderer.CompiledShader;
 import Renderer.ShaderCompiler;
 import Renderer.ShaderReflector;
 import Renderer.DescriptorWriter;
+import Renderer.CommandBuffer;
+import Renderer.Vulkan;
 
 ComputePipeline::ComputePipeline(const std::string_view& path)
 {

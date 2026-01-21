@@ -2,7 +2,6 @@ module;
 
 #include <vulkan/vk_enum_string_helper.h>
 
-#include "renderer/Vulkan.h"
 #include "renderer/Texture.h"
 #include "renderer/Mesh.h"
 #include "renderer/VulkanAPIError.h"
@@ -18,6 +17,10 @@ module;
 #include <imgui-1.91.7/imgui.h>
 #include <imgui-1.91.7/backends/imgui_impl_vulkan.h>
 #include <imgui-1.91.7/backends/imgui_impl_win32.h>
+
+#include "system/CriticalSection.h"
+
+#undef CreateSemaphore
 
 module Renderer;
 
@@ -40,6 +43,7 @@ import Renderer.GraphicsPipeline;
 import Renderer.RenderPipeline;
 import Renderer.Swapchain;
 import Renderer.Surface;
+import Renderer.Vulkan;
 
 namespace fs = std::filesystem;
 

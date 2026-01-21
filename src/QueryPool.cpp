@@ -2,11 +2,13 @@ module;
 
 #include <cassert>
 
-#include "renderer/Vulkan.h"
+#include <vulkan/vulkan.h>
 
 module Renderer.QueryPool;
 
 import std;
+
+import Renderer.Vulkan;
 
 void QueryPool::Create(VkQueryType type, uint32_t amount)
 {

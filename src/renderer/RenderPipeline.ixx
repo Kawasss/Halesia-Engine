@@ -3,8 +3,6 @@ module;
 #include <Windows.h>
 #include <vulkan/vulkan.h>
 
-#include "CommandBuffer.h"
-
 export module Renderer.RenderPipeline;
 
 import std;
@@ -15,6 +13,7 @@ import Core.MeshObject;
 import System.Window;
 
 import Renderer.Framebuffer;
+import Renderer.CommandBuffer;
 
 export enum class RenderMode : int // this enum is used as a suggestion
 {

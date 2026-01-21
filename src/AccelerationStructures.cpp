@@ -1,8 +1,9 @@
 module;
 
-#include "renderer/Vulkan.h"
 #include "renderer/Mesh.h"
 #include "renderer/VulkanAPIError.h"
+
+#include "system/CriticalSection.h"
 
 module Renderer.AccelerationStructure;
 
@@ -13,6 +14,7 @@ import std;
 import Core.MeshObject;
 
 import Renderer.VulkanGarbageManager;
+import Renderer.Vulkan;
 import Renderer;
 
 constexpr VkBufferUsageFlags ACCELERATION_STRUCTURE_BUFFER_BITS = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;

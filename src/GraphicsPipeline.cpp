@@ -1,6 +1,5 @@
 module;
 
-#include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
 
 module Renderer.GraphicsPipeline;
@@ -11,6 +10,7 @@ import Renderer.ShaderCompiler;
 import Renderer.CompiledShader;
 import Renderer.PipelineCreator;
 import Renderer.ShaderReflector;
+import Renderer.Vulkan;
 
 GraphicsPipeline::GraphicsPipeline(const CreateInfo& createInfo)
 {

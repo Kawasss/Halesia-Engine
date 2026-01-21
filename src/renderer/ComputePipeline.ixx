@@ -1,7 +1,5 @@
 module;
 
-#include "CommandBuffer.h"
-
 export module Renderer.ComputePipeline;
 
 import <vulkan/vulkan.h>;
@@ -9,6 +7,7 @@ import <vulkan/vulkan.h>;
 import std;
 
 import Renderer.Pipeline;
+import Renderer.CommandBuffer;
 
 export class ComputePipeline : public Pipeline
 {

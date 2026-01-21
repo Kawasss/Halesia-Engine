@@ -1,12 +1,10 @@
-module;
-
-#include "renderer/Vulkan.h"
-
 module Renderer.ResizableBuffer;
 
 import <vulkan/vulkan.h>;
 
 import std;
+
+import Renderer.Vulkan;
 
 static VkMemoryPropertyFlags GetMemoryPropertyFlags(ResizableBuffer::MemoryType memoryType)
 {

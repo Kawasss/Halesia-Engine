@@ -525,6 +525,24 @@
     <ClCompile Include="src\renderer\Surface.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\MeshObject.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Object.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Transform.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\io\BinaryStream.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\CommandBuffer.ixx">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\Vulkan.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\resource.h">
@@ -542,23 +560,14 @@
     <ClInclude Include="src\renderer\Texture.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="src\renderer\Vulkan.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="src\tools\common.h">
       <Filter>Header Files\tools</Filter>
     </ClInclude>
     <ClInclude Include="src\tools\Timer.h">
       <Filter>Header Files\tools</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\Object.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
     <ClInclude Include="src\renderer\Vertex.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\Transform.h">
-      <Filter>Header Files\core</Filter>
     </ClInclude>
     <ClInclude Include="src\ResourceManager.h">
       <Filter>Header Files\core</Filter>
@@ -574,9 +583,6 @@
     </ClInclude>
     <ClInclude Include="src\system\CriticalSection.h">
       <Filter>Header Files\system</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\CommandBuffer.h">
-      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\glm.h">
       <Filter>Header Files\math</Filter>
@@ -637,12 +643,6 @@
     </ClInclude>
     <ClInclude Include="src\renderer\VulkanAPIError.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\MeshObject.h">
-      <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\io\BinaryStream.h">
-      <Filter>Header Files\io</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\Light.h">
       <Filter>Header Files\Renderer</Filter>

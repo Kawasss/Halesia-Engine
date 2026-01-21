@@ -4,7 +4,6 @@ module;
 #include "Vertex.h"
 #include "Buffer.h"
 #include "FramesInFlight.h"
-#include "CommandBuffer.h"
 #include "Mesh.h"
 
 #include "../system/CriticalSection.h"
@@ -27,6 +26,7 @@ import Renderer.RenderPipeline;
 import Renderer.QueryPool;
 import Renderer.Swapchain;
 import Renderer.Surface;
+import Renderer.CommandBuffer;
 
 using HANDLE = void*;
 using Handle = unsigned long long;

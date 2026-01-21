@@ -1,18 +1,18 @@
 module;
 
-#include "renderer/CommandBuffer.h"
 #include "renderer/Buffer.h"
 
 #include "system/CriticalSection.h"
-
-#include "glm.h"
 
 module Renderer.AnimationManager;
 
 import <assimp/anim.h>;
 
+import "glm.h";
+
 import std;
 
+import Renderer.CommandBuffer;
 import Renderer.ComputePipeline;
 import Renderer;
 

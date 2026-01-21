@@ -1,10 +1,8 @@
-module;
-
-#include <vulkan/vulkan.h>
-
-#include "renderer/Vulkan.h"
-
 module Renderer.DescriptorWriter;
+
+import <vulkan/vulkan.h>;
+
+import Renderer.Vulkan;
 
 DescriptorWriter::GenericDescriptorInfo DescriptorWriter::infos[MAX_INFO_COUNT];
 VkWriteDescriptorSet DescriptorWriter::writeSets[MAX_INFO_COUNT];

@@ -1,9 +1,7 @@
 module;
 
-//#define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.h>
 
-#include "renderer/Vulkan.h"
 #include "renderer/PhysicalDevice.h"
 #include "renderer/VulkanAPIError.h"
 
@@ -15,6 +13,7 @@ import System.Window;
 
 import Renderer.VulkanGarbageManager;
 import Renderer.Surface;
+import Renderer.Vulkan;
 
 Swapchain::Swapchain(Surface surface, Window* window, bool vsync)
 {
@@ -151,7 +150,7 @@ void Swapchain::Recreate(bool vsync)
     if (!window->CanBeRenderedTo())
         return;
 
-    LockLogicalDevice(logicalDevice);
+    std::lock_guard<std::mutex> guard(Vulkan::FetchLogicalDeviceMutex(logicalDevice));
     vkDeviceWaitIdle(logicalDevice);
 
     Destroy();

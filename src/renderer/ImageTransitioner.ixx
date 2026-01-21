@@ -1,11 +1,10 @@
-module;
-
-#include <cstdint>
-#include <vulkan/vulkan.h>
-
-#include "CommandBuffer.h"
-
 export module Renderer.ImageTransitioner;
+
+import <vulkan/vulkan.h>;
+
+import std;
+
+import Renderer.CommandBuffer;
 
 export class ImageTransitioner
 {
@@ -14,8 +13,8 @@ public:
 
 	VkImage image = VK_NULL_HANDLE;
 
-	uint32_t width = 0;
-	uint32_t height = 0;
+	std::uint32_t width = 0;
+	std::uint32_t height = 0;
 
 	VkImageLayout oldLayout = INVALID_LAYOUT;
 	VkImageLayout newLayout = INVALID_LAYOUT;

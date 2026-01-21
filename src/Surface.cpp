@@ -3,12 +3,13 @@ module;
 //#define VK_USE_PLATFORM_WIN32_KHR
 #include <vulkan/vulkan.h>
 
-#include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
 
 module Renderer.Surface;
 
 import System.Window;
+
+import Renderer.Vulkan;
 
 Surface Surface::GenerateSurface(VkInstance instance, Window* window)
 {

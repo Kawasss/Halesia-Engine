@@ -2,8 +2,6 @@ module;
 
 #include <vulkan/vulkan.h>
 
-#include "renderer/Vulkan.h"
-#include "renderer/CommandBuffer.h"
 #include "renderer/Texture.h"
 
 module Renderer.SkyPipeline;
@@ -13,6 +11,8 @@ import std;
 import Renderer.VulkanGarbageManager;
 import Renderer.GraphicsPipeline;
 import Renderer.RenderPipeline;
+import Renderer.CommandBuffer;
+import Renderer.Vulkan;
 import Renderer;
 
 constexpr VkFormat LUT_FORMAT = VK_FORMAT_R16G16B16A16_SFLOAT;

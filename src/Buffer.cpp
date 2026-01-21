@@ -1,10 +1,10 @@
 #include "renderer/Buffer.h"
-#include "renderer/Vulkan.h"
 #include "renderer/VideoMemoryManager.h"
-#include "renderer/CommandBuffer.h"
 #include "renderer/VulkanAPIError.h"
 
 import Renderer.VulkanGarbageManager;
+import Renderer.CommandBuffer;
+import Renderer.Vulkan;
 
 void Buffer::Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {

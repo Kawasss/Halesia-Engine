@@ -1,6 +1,12 @@
-#include "renderer/CommandBuffer.h"
-#include "renderer/Vulkan.h"
+module;
+
 #include "renderer/VulkanAPIError.h"
+
+module Renderer.CommandBuffer;
+
+import <vulkan/vulkan.h>;
+
+import Renderer.Vulkan;
 
 bool CommandBuffer::IsValid() const
 {

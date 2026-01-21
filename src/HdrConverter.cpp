@@ -6,7 +6,6 @@ module;
 
 #include "renderer/VulkanAPIError.h"
 #include "renderer/Texture.h"
-#include "renderer/Vulkan.h"
 
 module Renderer.HdrConverter;
 
@@ -17,6 +16,7 @@ import Renderer.DescriptorWriter;
 import Renderer.PipelineCreator;
 import Renderer.GraphicsPipeline;
 import Renderer.Skybox;
+import Renderer.Vulkan;
 import Renderer;
 
 struct PushConstantConverter

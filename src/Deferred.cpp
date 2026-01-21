@@ -1,14 +1,13 @@
 module;
 
-#include <vulkan/vulkan.h>
 #include <vulkan/vk_enum_string_helper.h>
 
-#include "renderer/Vulkan.h"
 #include "renderer/VideoMemoryManager.h"
 #include "renderer/Buffer.h"
-#include "renderer/CommandBuffer.h"
 
 module Renderer.Deferred;
+
+import <vulkan/vulkan.h>;
 
 import "glm.h";
 
@@ -27,7 +26,11 @@ import Renderer.RayTracingPipeline;
 import Renderer.GraphicsPipeline;
 import Renderer.Framebuffer;
 import Renderer.RenderPipeline;
+import Renderer.CommandBuffer;
+import Renderer.Vulkan;
 import Renderer;
+
+#undef CreateSemaphore
 
 struct DeferredPipeline::PushConstant
 {

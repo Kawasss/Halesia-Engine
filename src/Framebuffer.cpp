@@ -1,6 +1,5 @@
 module;
 
-#include "renderer/Vulkan.h"
 #include "renderer/VulkanAPIError.h"
 
 module Renderer.Framebuffer;
@@ -8,6 +7,7 @@ module Renderer.Framebuffer;
 import std;
 
 import Renderer.VulkanGarbageManager;
+import Renderer.Vulkan;
 
 Framebuffer::Framebuffer(VkRenderPass renderPass, uint32_t imageCount, uint32_t width, uint32_t height, VkFormat format, float relativeRes)
 {

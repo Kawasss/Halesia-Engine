@@ -1,24 +1,23 @@
-#pragma once
+module;
+
 #include <vulkan/vulkan.h>
-#include <functional>
-#include <vector>
-#include <set>
-#include <mutex>
-#include <map>
-#include <span>
 
 #include "PhysicalDevice.h"
-#include "CommandBuffer.h"
 #include "VideoMemoryManager.h"
 
 #include "../system/CriticalSection.h"
 
-#define LockLogicalDevice(logicalDevice) std::lock_guard<std::mutex> logicalDeviceLockGuard(Vulkan::FetchLogicalDeviceMutex(logicalDevice)) // can't create a function for this beacuse a lock guard gets destroyed when it goes out of scope
+export module Renderer.Vulkan;
+
+import std;
+
+import Renderer.CommandBuffer;
+
 #undef CreateSemaphore
 
 using HANDLE = void*;
 
-class Vulkan
+export class Vulkan
 {
 public:
     struct Context
@@ -51,9 +50,9 @@ public:
 
     static void                               DisableValidationLayers();
 
-    static win32::CriticalSection&            GetQueueCriticalSection(VkQueue queue); // ff the queue has no critical section, it will create one
+    static win32::CriticalSection& GetQueueCriticalSection(VkQueue queue); // ff the queue has no critical section, it will create one
 
-    static std::mutex&                        FetchLogicalDeviceMutex(VkDevice logicalDevice);
+    static std::mutex& FetchLogicalDeviceMutex(VkDevice logicalDevice);
     static VkCommandPool                      FetchNewCommandPool(uint32_t queueIndex);
     static void                               YieldCommandPool(uint32_t queueFamilyIndex, VkCommandPool commandPool);
     static void                               DestroyAllCommandPools();
@@ -62,7 +61,7 @@ public:
     static PhysicalDevice                     GetBestPhysicalDevice(std::vector<PhysicalDevice> devices, Surface surface);
     static PhysicalDevice                     GetBestPhysicalDevice(VkInstance instance, Surface surface);
     static void                               ForcePhysicalDevice(const std::string& name); // forces 'GetBestPhysicalDevice' to return the GPU with the given name
-  
+
     static VkInstance                         GenerateInstance();
     static std::vector<VkExtensionProperties> GetAllInstanceExtensions();
     static std::vector<VkExtensionProperties> GetLogicalDeviceExtensions(PhysicalDevice physicalDevice);
@@ -108,7 +107,7 @@ public:
     static VkPipelineDynamicStateCreateInfo   GetDynamicStateCreateInfo();
 
     static void                               InitializeContext(Context context);
-    static const Context&                     GetContext();
+    static const Context& GetContext();
 
     static VkQueryPool                        CreateQueryPool(VkQueryType type, uint32_t amount);
     static std::vector<uint64_t>              GetQueryPoolResults(VkQueryPool queryPool, uint32_t amount, uint32_t offset = 0);
@@ -131,9 +130,9 @@ public:
     static void                               AddDynamicState(VkDynamicState state);
     static void                               RemoveDynamicState(VkDynamicState state);
 
-    static std::vector<const char*>&          GetDeviceExtensions()   { return requiredLogicalDeviceExtensions; }
-    static std::vector<const char*>&          GetInstanceExtensions() { return requiredInstanceExtensions; }
-    static std::vector<VkDynamicState>&       GetDynamicStates()      { return dynamicStates; }
+    static std::vector<const char*>& GetDeviceExtensions() { return requiredLogicalDeviceExtensions; }
+    static std::vector<const char*>& GetInstanceExtensions() { return requiredInstanceExtensions; }
+    static std::vector<VkDynamicState>& GetDynamicStates() { return dynamicStates; }
 
     static void                               ExecuteSingleTimeCommands(std::function<void(const CommandBuffer&)>&& commands);
 
@@ -248,10 +247,12 @@ inline void Vulkan::SetDebugName<VkPipelineLayout>(VkPipelineLayout object, cons
     DebugNameObject(reinterpret_cast<uint64_t>(object), VK_OBJECT_TYPE_PIPELINE_LAYOUT, name);
 }
 
+module : private;
+
 #define VULKAN_TRACK_MEMORY
 #ifdef  VULKAN_TRACK_MEMORY
 
-inline std::map<VkDeviceMemory, VkDeviceSize> memoryToSize;
+std::map<VkDeviceMemory, VkDeviceSize> memoryToSize;
 
 inline VkResult vkAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo, const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory)
 {

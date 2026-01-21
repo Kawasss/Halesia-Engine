@@ -1,12 +1,12 @@
 module;
 
-#include "renderer/Vulkan.h"
-
 #include "system/CriticalSection.h"
 
 module Renderer.VulkanGarbageManager;
 
 import std;
+
+import Renderer.Vulkan;
 
 namespace vgm
 {

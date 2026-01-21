@@ -2,10 +2,8 @@ module;
 
 #include <cassert>
 
-#include "renderer/CommandBuffer.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/Buffer.h"
-#include "renderer/Vulkan.h"
 
 #include "core/Console.h"
 
@@ -16,6 +14,8 @@ import std;
 import Renderer.DescriptorWriter;
 import Renderer.ShaderReflector;
 import Renderer.VulkanGarbageManager;
+import Renderer.CommandBuffer;
+import Renderer.Vulkan;
 
 std::vector<VkDescriptorSetLayout> Pipeline::globalSetLayouts;
 std::array<std::vector<VkDescriptorSet>, FIF::FRAME_COUNT> Pipeline::globalDescriptorSets;

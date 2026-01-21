@@ -1,13 +1,13 @@
 module;
 
 #include "Buffer.h"
-#include "CommandBuffer.h"
 
 export module Renderer.Pipeline;
 
 import std;
 
 import Renderer.ShaderReflector;
+import Renderer.CommandBuffer;
 
 export class Pipeline
 {

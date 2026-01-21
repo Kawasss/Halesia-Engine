@@ -1,7 +1,6 @@
 module;
 
 #include "Buffer.h"
-#include "CommandBuffer.h"
 
 export module Renderer.RayTracingPipeline;
 
@@ -11,6 +10,7 @@ import std;
 
 import Renderer.ShaderReflector;
 import Renderer.Pipeline;
+import Renderer.CommandBuffer;
 
 export class RayTracingPipeline : public Pipeline
 {

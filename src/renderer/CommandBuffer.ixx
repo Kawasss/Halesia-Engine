@@ -1,8 +1,8 @@
-#pragma once
-#include <vulkan/vulkan.h>
-#undef MemoryBarrier // weird winnt preprocessor stuff
+export module Renderer.CommandBuffer;
 
-class CommandBuffer
+import <vulkan/vulkan.h>;
+
+export class CommandBuffer
 {
 public:
 	CommandBuffer() = default;
@@ -19,7 +19,7 @@ public:
 	void SetScissor(const VkRect2D& scissor) const;
 
 	void SetViewport(uint32_t firstViewport, uint32_t viewportCount, const VkViewport* pViewports) const;
-	void SetScissor(uint32_t firstScissor, uint32_t scissorCount,  const VkRect2D* pScissors) const;
+	void SetScissor(uint32_t firstScissor, uint32_t scissorCount, const VkRect2D* pScissors) const;
 
 	void BeginRenderPass(const VkRenderPassBeginInfo& renderPassBegin, VkSubpassContents contents) const;
 	void EndRenderPass() const;
