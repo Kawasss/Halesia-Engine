@@ -333,17 +333,8 @@
     <ClInclude Include="src\renderer\VideoMemoryManager.h" />
     <ClInclude Include="src\renderer\Buffer.h" />
     <ClInclude Include="src\renderer\VulkanAPIError.h" />
-    <ClInclude Include="src\resource.h" />
     <ClInclude Include="src\ResourceManager.h" />
     <ClInclude Include="src\system\CriticalSection.h" />
-    <ClInclude Include="src\tools\common.h" />
-    <ClInclude Include="src\tools\Timer.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="icon1.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="src\Halesia.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cfg\engine.ini" />

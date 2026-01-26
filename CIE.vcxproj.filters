@@ -9,10 +9,6 @@
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="Shaders">
       <UniqueIdentifier>{8e5c3a8e-19e1-450a-8fa1-4ffaa7601375}</UniqueIdentifier>
     </Filter>
@@ -21,9 +17,6 @@
     </Filter>
     <Filter Include="Header Files\physics">
       <UniqueIdentifier>{879bee25-a26d-436e-9f0e-d7de56b30269}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Header Files\tools">
-      <UniqueIdentifier>{3fc72d0c-fe20-486b-9cf7-f1c7c5469c82}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\io">
       <UniqueIdentifier>{4a29cfac-c6a9-4b26-822c-68ac73b7c730}</UniqueIdentifier>
@@ -63,9 +56,6 @@
     </Filter>
     <Filter Include="Header Files\math">
       <UniqueIdentifier>{9040f3d0-3211-4f93-aed1-c50ee71e7b7f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\tools">
-      <UniqueIdentifier>{dde5520d-93a6-4ef6-b113-00774ad2cf7b}</UniqueIdentifier>
     </Filter>
     <Filter Include="Shaders\deferred">
       <UniqueIdentifier>{f731788a-6596-4f3c-a24d-763ec792d608}</UniqueIdentifier>
@@ -387,12 +377,6 @@
     <ClCompile Include="src\core\EditorProject.ixx">
       <Filter>Header Files\core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\Profiler.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\Scene.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\Rigid3DObject.ixx">
       <Filter>Header Files\core</Filter>
     </ClCompile>
@@ -525,29 +509,32 @@
     <ClCompile Include="src\renderer\Surface.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\MeshObject.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\Object.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\Transform.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\io\BinaryStream.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\renderer\CommandBuffer.ixx">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\renderer\Vulkan.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\io\BinaryStream.ixx">
+      <Filter>Header Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\CommandBuffer.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\MeshObject.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Object.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Profiler.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Scene.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\Transform.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\renderer\Material.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
@@ -559,12 +546,6 @@
     </ClInclude>
     <ClInclude Include="src\renderer\Texture.h">
       <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tools\common.h">
-      <Filter>Header Files\tools</Filter>
-    </ClInclude>
-    <ClInclude Include="src\tools\Timer.h">
-      <Filter>Header Files\tools</Filter>
     </ClInclude>
     <ClInclude Include="src\renderer\Vertex.h">
       <Filter>Header Files\Renderer</Filter>
@@ -647,16 +628,6 @@
     <ClInclude Include="src\renderer\Light.h">
       <Filter>Header Files\Renderer</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="icon1.ico">
-      <Filter>Resource Files</Filter>
-    </Image>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="src\Halesia.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\uncompiled\triangle.frag">
