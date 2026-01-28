@@ -2,12 +2,12 @@
 
 #include "renderer/Mesh.h"
 
-#include "io/CreationData.h"
-
 #include "ResourceManager.h"
 
 import Renderer.AccelerationStructure;
 import Renderer;
+
+import IO.CreationData;
 
 std::vector<Material> Mesh::materials;
 std::mutex Mesh::materialMutex;

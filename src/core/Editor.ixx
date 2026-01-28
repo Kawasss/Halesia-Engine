@@ -1,14 +1,6 @@
-module;
-
-#include <Windows.h>
-
-#include "../io/CreationData.h"
-
-#include "../glm.h"
-
-#include "../renderer/Mesh.h"
-
 export module Core.Editor;
+
+import "../glm.h";
 
 import std;
 
@@ -19,6 +11,7 @@ import Physics.RigidBody;
 import Renderer.BoundingVolumePipeline;
 import Renderer.Animation;
 import Renderer.Grid;
+import Renderer.Mesh;
 import Renderer;
 
 import Core.ScriptObject;
@@ -27,6 +20,8 @@ import Core.LightObject;
 import Core.EditorProject;
 import Core.Scene;
 import Core.Object;
+
+import IO.CreationData;
 
 namespace fs = std::filesystem;
 

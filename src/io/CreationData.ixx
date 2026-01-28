@@ -1,25 +1,26 @@
-#pragma once
-#include <string>
-#include <vector>
-#include <map>
-
-#include "../glm.h"
-
-#include "../renderer/Vertex.h"
-#include "../renderer/Light.h"
+module;
 
 #include "FileMaterial.h"
+
+export module IO.CreationData;
+
+import "../glm.h";
+
+import std;
 
 import Physics.RigidBody;
 import Physics.Shapes;
 
-using MaterialCreationData = FileMaterial;
-using ImageCreationData    = FileImage;
+import Renderer.Light;
+import Renderer.Vertex;
+
+export using MaterialCreationData = FileMaterial;
+export using ImageCreationData = FileImage;
 //using MeshCreationData     = FileMesh;
 
-struct MeshCreationData
+export struct MeshCreationData
 {
-	uint32_t materialIndex;
+	std::uint32_t materialIndex;
 
 	bool hasBones = false;
 	bool hasMaterial = false;
@@ -36,7 +37,7 @@ struct MeshCreationData
 	std::vector<uint32_t> indices;
 };
 
-struct RigidCreationData
+export struct RigidCreationData
 {
 	glm::vec3 extents = glm::vec3(0);
 
@@ -44,7 +45,7 @@ struct RigidCreationData
 	RigidBody::Type rigidType = RigidBody::Type::None;
 };
 
-struct ObjectCreationData
+export struct ObjectCreationData
 {
 	enum class Type
 	{
@@ -59,14 +60,14 @@ struct ObjectCreationData
 
 	glm::vec3 position = glm::vec3(0);
 	glm::quat rotation = glm::quat();
-	glm::vec3 scale    = glm::vec3(1);
+	glm::vec3 scale = glm::vec3(1);
 
 	RigidCreationData hitBox;
 	uint8_t state = 0;
 
 	bool hasMesh = false;
 	MeshCreationData mesh;
-	
+
 	Light lightData;
 
 	Type type = Type::Base;

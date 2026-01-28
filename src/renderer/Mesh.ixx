@@ -1,26 +1,26 @@
-#pragma once
-#include <memory>
-#include <vector>
-#include <mutex>
+module;
 
 #include "Material.h"
-#include "Vertex.h"
 
-#include "../io/FwdDclCreationData.h"
+export module Renderer.Mesh;
 
-class BottomLevelAccelerationStructure;
-struct MeshCreationData;
+import std;
 
-using StorageMemory = unsigned long long;
+import Renderer.Vertex;
+import Renderer.AccelerationStructure;
 
-enum MeshFlags : int
+import IO.CreationData;
+
+export enum MeshFlags : int
 {
 	MESH_FLAG_NONE = 0,
 	MESH_FLAG_NO_RAY_TRACING = 1 << 1,
 };
-using MeshOptionFlags = std::underlying_type_t<MeshFlags>;
+export using MeshOptionFlags = std::underlying_type_t<MeshFlags>;
 
-struct Mesh
+using StorageMemory = std::uint64_t;
+
+export struct Mesh
 {
 	static Handle AddMaterial(const Material& material); // returns the handle to the material
 	static Handle InsertMaterial(int index, const Material& material);
@@ -40,7 +40,7 @@ struct Mesh
 
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
-	
+
 	bool cullBackFaces = true;
 
 	int faceCount = 0;

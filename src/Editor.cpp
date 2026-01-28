@@ -13,8 +13,6 @@ module;
 #include <imgui-1.91.7/ImGuizmo.h>
 #include <imgui-1.91.7/misc/cpp/imgui_stdlib.h>
 
-#include "io/CreationData.h"
-
 module Core.Editor;
 
 import "glm.h";
@@ -31,6 +29,7 @@ import Core.MeshObject;
 import Core.Object;
 
 import IO.SceneLoader;
+import IO.CreationData;
 
 import System.Input;
 import System.FileDialog;

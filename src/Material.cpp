@@ -1,7 +1,7 @@
 #include "renderer/Material.h"
 #include "renderer/Texture.h"
 
-#include "io/CreationData.h"
+import IO.CreationData;
 
 std::array<TextureType, 5> Material::pbrTextures =
 {

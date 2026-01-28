@@ -1,13 +1,9 @@
-module;
-
-#include <Windows.h>
-
-#include "io/CreationData.h"
-
 module Core.Rigid3DObject;
 
 import Physics.RigidBody;
 import Physics.Shapes;
+
+import IO.CreationData;
 
 Rigid3DObject::Rigid3DObject() : Object(InheritType::Rigid3D)
 {

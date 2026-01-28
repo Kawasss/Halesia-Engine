@@ -2,8 +2,6 @@ module;
 
 #include <Windows.h>
 
-#include "io/CreationData.h"
-
 #include "renderer/Vertex.h"
 
 module Core.MeshObject;
@@ -11,6 +9,7 @@ module Core.MeshObject;
 import std;
 
 import IO.BinaryStream;
+import IO.CreationData;
 
 import Core.Object;
 

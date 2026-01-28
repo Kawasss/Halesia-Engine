@@ -1,6 +1,6 @@
 module;
 
-#include "../glm"
+#include "../glm.h"
 
 export module Renderer.Light;
 
@@ -29,7 +29,7 @@ export struct Light
 };
 
 #pragma pack(push, 1)
-struct LightGPU // the struct thats to be uploaded to the GPU
+export struct LightGPU // the struct thats to be uploaded to the GPU
 {
 	static LightGPU CreateFromLight(const Light& l)
 	{

@@ -6,7 +6,6 @@ module;
 #include "renderer/Mesh.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/FramesInFlight.h"
-#include "renderer/Light.h"
 
 #include "core/Console.h"
 
@@ -44,6 +43,7 @@ import Renderer.RenderPipeline;
 import Renderer.Swapchain;
 import Renderer.Surface;
 import Renderer.Vulkan;
+import Renderer.Light;
 
 namespace fs = std::filesystem;
 

@@ -1,16 +1,13 @@
 module;
 
-#include "Windows.h"
-
-#include "../io/CreationData.h"
-
-#include "../renderer/Light.h"
-
 #include "../glm.h"
 
 export module Core.LightObject;
 
 import IO.BinaryStream;
+import IO.CreationData;
+
+import Renderer.Light;
 
 import Core.Object;
 

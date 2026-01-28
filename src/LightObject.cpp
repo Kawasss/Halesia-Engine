@@ -1,11 +1,5 @@
 module;
 
-#include <Windows.h>
-
-#include "io/CreationData.h"
-
-#include "renderer/Light.h"
-
 #include "glm.h"
 
 module Core.LightObject;
@@ -13,8 +7,11 @@ module Core.LightObject;
 import std;
 
 import IO.BinaryStream;
+import IO.CreationData;
 
 import Core.Object;
+
+import Renderer.Light;
 
 LightObject::LightObject() : Object(InheritType::Light)
 {

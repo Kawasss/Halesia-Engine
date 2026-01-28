@@ -4,8 +4,6 @@ module;
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 
-#include "io/creationData.h"
-
 #include "core/Console.h"
 
 module IO.SceneLoader;
@@ -14,6 +12,7 @@ import std;
 
 import IO.DataArchiveFile;
 import IO.BinaryStream;
+import IO.CreationData;
 
 import Core.Object;
 

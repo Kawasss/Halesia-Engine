@@ -1,14 +1,9 @@
-module;
-
-#include <Windows.h>
-
-#include "Vertex.h"
-
 export module Renderer.SimpleMesh;
 
 import std;
 
 import Renderer.StorageBuffer;
+import Renderer.Vertex;
 
 export class SimpleMesh // a mesh with only vertices, no indices, no material
 {

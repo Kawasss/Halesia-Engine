@@ -2,14 +2,13 @@
 
 #include "core/Console.h"
 
-#include "renderer/Light.h"
-
 import HalesiaEngine;
 
 import Physics.RigidBody;
 import Physics.Shapes;
 
 import Renderer.RenderPipeline;
+import Renderer.Light;
 
 import Core.Object;
 

@@ -4,8 +4,6 @@ module;
 
 #include "../system/CriticalSection.h"
 
-#include "../io/CreationData.h"
-
 export module Core.Scene;
 
 import std;
@@ -14,6 +12,8 @@ import System.Window;
 
 import Core.CameraObject;
 import Core.Object;
+
+import IO.CreationData;
 
 export class Scene
 {

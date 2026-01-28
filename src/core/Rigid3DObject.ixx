@@ -1,8 +1,6 @@
-module;
-
-#include "../io/CreationData.h"
-
 export module Core.Rigid3DObject;
+
+import IO.CreationData;
 
 import Core.Object;
 

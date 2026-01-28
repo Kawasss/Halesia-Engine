@@ -5,7 +5,8 @@ module;
 #include "FramesInFlight.h"
 #include "VideoMemoryManager.h"
 #include "Buffer.h"
-#include "Light.h"
+
+#include "../glm.h"
 
 export module Renderer.Deferred;
 
@@ -20,6 +21,7 @@ import Renderer.RayTracingPipeline;
 import Renderer.GraphicsPipeline;
 import Renderer.Framebuffer;
 import Renderer.RenderPipeline;
+import Renderer.Light;
 
 export class DeferredPipeline : public RenderPipeline
 {

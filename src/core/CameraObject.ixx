@@ -6,6 +6,8 @@ export module Core.CameraObject;
 
 import Core.Object;
 
+import IO.CreationData;
+
 export class CameraObject : public Object
 {
 public:

@@ -1,10 +1,8 @@
 module;
 
 #include "PhysicalDevice.h"
-#include "Vertex.h"
 #include "Buffer.h"
 #include "FramesInFlight.h"
-#include "Mesh.h"
 
 #include "../system/CriticalSection.h"
 
@@ -27,6 +25,8 @@ import Renderer.QueryPool;
 import Renderer.Swapchain;
 import Renderer.Surface;
 import Renderer.CommandBuffer;
+import Renderer.Vertex;
+import Renderer.Mesh;
 
 using HANDLE = void*;
 using Handle = unsigned long long;

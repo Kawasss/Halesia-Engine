@@ -2,10 +2,7 @@ module;
 
 #include "../glm.h"
 
-#include "../renderer/Light.h"
 #include "../renderer/Material.h"
-
-#include "CreationData.h"
 
 export module IO.SceneLoader;
 
@@ -15,9 +12,11 @@ import std;
 
 import IO.DataArchiveFile;
 import IO.BinaryStream;
+import IO.CreationData;
 
 import Renderer.Animation;
 import Renderer.Bone;
+import Renderer.Light;
 
 export class SceneLoader
 {

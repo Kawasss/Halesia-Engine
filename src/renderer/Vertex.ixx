@@ -1,12 +1,14 @@
-#pragma once
-#include <vulkan/vulkan.h>
-#include <array>
+export module Renderer.Vertex;
 
-#include "../glm.h"
+import <vulkan/vulkan.h>;
 
-constexpr uint32_t MAX_BONES_PER_VERTEX = 4;
+import "../glm.h";
 
-struct Vertex
+import std;
+
+export constexpr std::uint32_t MAX_BONES_PER_VERTEX = 4;
+
+export struct Vertex
 {
 	Vertex() = default;
 	Vertex(glm::vec3 pos) : position(pos) {}

@@ -1,6 +1,6 @@
 module;
 
-#include "io/CreationData.h"
+#include <cassert>
 
 #include "core/Console.h"
 
@@ -16,6 +16,8 @@ import Core.MeshObject;
 import Core.Object;
 
 import System.Window;
+
+import IO.CreationData;
 
 CameraObject* Scene::defaultCamera = nullptr;
 
