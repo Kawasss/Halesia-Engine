@@ -34,7 +34,7 @@ void SkyPipeline::Start(const Payload& payload)
 	CreateImages(payload.commandBuffer, payload.width, payload.height);
 }
 
-void SkyPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects)
+void SkyPipeline::Execute(const Payload& payload, const std::vector<RenderableMesh>& objects)
 {
 	const CommandBuffer& cmdBuffer = payload.commandBuffer;
 

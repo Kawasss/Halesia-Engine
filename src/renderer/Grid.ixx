@@ -9,7 +9,7 @@ export class GridPipeline : public RenderPipeline
 {
 public:
 	void Start(const Payload& payload) override;
-	void Execute(const Payload& payload, const std::vector<MeshObject*>& objects) override;
+	void Execute(const Payload& payload, const std::vector<RenderableMesh>& objects) override;
 
 	void ReloadShaders(const Payload& payload) override;
 

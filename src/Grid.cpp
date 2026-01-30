@@ -7,10 +7,9 @@ module Renderer.Grid;
 
 import std;
 
-import Core.MeshObject;
-
 import Renderer.GraphicsPipeline;
 import Renderer.RenderPipeline;
+import Renderer.RenderableMesh;
 import Renderer;
 
 void GridPipeline::Start(const Payload& payload)
@@ -18,7 +17,7 @@ void GridPipeline::Start(const Payload& payload)
 	CreatePipeline();
 }
 
-void GridPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects)
+void GridPipeline::Execute(const Payload& payload, const std::vector<RenderableMesh>& objects)
 {
 	const CommandBuffer& cmdBuffer = payload.commandBuffer;
 

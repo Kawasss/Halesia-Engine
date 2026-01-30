@@ -1,9 +1,3 @@
-module;
-
-#include <Windows.h>
-
-#include "renderer/Vertex.h"
-
 module Core.MeshObject;
 
 import std;
@@ -12,6 +6,8 @@ import IO.BinaryStream;
 import IO.CreationData;
 
 import Core.Object;
+
+import Renderer.Vertex;
 
 MeshObject::MeshObject() : Object(InheritType::Mesh)
 {

@@ -47,6 +47,8 @@ public:
 
 	bool IsValid() const { return buffer.IsValid(); }
 
+	VkBufferUsageFlags GetUsageFlags() const { return usage; }
+
 private:
 	void ResizeHost(size_t newSize);
 	void ResizeDevice(size_t newSize);

@@ -1,3 +1,7 @@
+module;
+
+#include "../renderer/Material.h"
+
 export module Core.Editor;
 
 import "../glm.h";
@@ -8,7 +12,6 @@ import System.Window;
 
 import Physics.RigidBody;
 
-import Renderer.BoundingVolumePipeline;
 import Renderer.Animation;
 import Renderer.Grid;
 import Renderer.Mesh;
@@ -181,7 +184,6 @@ private:
 	Renderer* renderer;
 	Window* window = nullptr;
 
-	BoundingVolumePipeline* boundingVolumePipeline;
 	GridPipeline* gridPipeline;
 
 	int width = 0, height = 0;

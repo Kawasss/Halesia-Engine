@@ -9,7 +9,6 @@ import std;
 import "../glm.h";
 
 import Renderer.Vertex;
-import Renderer.BLAS;
 
 import IO.CreationData;
 
@@ -19,6 +18,8 @@ export enum MeshFlags : int
 	MESH_FLAG_NO_RAY_TRACING = 1 << 1,
 };
 export using MeshOptionFlags = std::underlying_type_t<MeshFlags>;
+
+using MeshHandle = std::uintptr_t;
 
 export struct Mesh
 {
@@ -32,11 +33,7 @@ export struct Mesh
 
 	void CopyFrom(const Mesh& mesh);
 
-	StorageBuffer<Vertex>::Memory vertexMemory;
-	StorageBuffer<Vertex>::Memory indexMemory;
-	StorageBuffer<std::uint32_t>::Memory defaultVertexMemory;
-
-	std::shared_ptr<BottomLevelAccelerationStructure> BLAS;
+	MeshHandle meshHandle = 0;
 
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;

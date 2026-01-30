@@ -3,7 +3,6 @@ module;
 #include <Windows.h>
 
 #include "renderer/Texture.h"
-#include "renderer/Mesh.h"
 
 #include "system/CriticalSection.h"
 
@@ -14,6 +13,8 @@ import std;
 import Core.Scene;
 import Core.MeshObject;
 import Core.Object;
+
+import Renderer.Mesh;
 
 import IO.DataArchiveFile;
 import IO.BinaryStream;

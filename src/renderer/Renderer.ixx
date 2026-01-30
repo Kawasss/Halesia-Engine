@@ -8,6 +8,8 @@ module;
 
 export module Renderer;
 
+import "../glm.h";
+
 import std;
 
 import Core.CameraObject;
@@ -15,6 +17,8 @@ import Core.LightObject;
 import Core.Object;
 
 import System.Window;
+
+import IO.CreationData;
 
 import Renderer.AnimationManager;
 import Renderer.GraphicsPipeline;
@@ -26,14 +30,18 @@ import Renderer.Swapchain;
 import Renderer.Surface;
 import Renderer.CommandBuffer;
 import Renderer.Vertex;
-import Renderer.Mesh;
+import Renderer.RenderableMesh;
 
 using HANDLE = void*;
 using Handle = unsigned long long;
+
 export using RendererFlags = std::uint32_t;
+export using MeshHandle    = std::uintptr_t;
 
 template<typename T>
 concept InheritsRenderPipeline = std::is_base_of_v<RenderPipeline, T>;
+
+class Renderer;
 
 export class Renderer
 {
@@ -102,11 +110,14 @@ public:
 	void SetRenderMode(RenderMode mode);
 	RenderMode GetRenderMode() const;
 
+	MeshHandle LoadMesh(const MeshCreationData& data);
+	MeshHandle CopyMeshHandle(const MeshHandle& handle); // returns the same value as 'handle'
+
 	void SetInternalResolutionScale(float scale);
 	static float GetInternalResolutionScale();
 
 	static void BindBuffersForRendering(CommandBuffer commandBuffer);
-	static void RenderMesh(CommandBuffer commandBuffer, const Mesh& mesh, std::uint32_t instanceCount = 1);
+	static void RenderMesh(CommandBuffer commandBuffer, const RenderableMesh& mesh, std::uint32_t instanceCount = 1);
 
 	static void SetViewport(CommandBuffer commandBuffer, VkExtent2D extent);
 	static void SetScissors(CommandBuffer commandBuffer, VkExtent2D extent);
@@ -254,7 +265,7 @@ private:
 	void CheckForInterference();
 
 	void ProcessRenderPipeline(RenderPipeline* pipeline);
-	void RunRenderPipelines(CommandBuffer commandBuffer, CameraObject* camera, const std::vector<MeshObject*>& objects);
+	void RunRenderPipelines(CommandBuffer commandBuffer, CameraObject* camera, const std::vector<RenderableMesh>& meshes);
 
 	std::uint32_t DetectExternalTools();
 
@@ -267,7 +278,7 @@ private:
 	void UpdateSceneData(CameraObject* camera);
 
 	void UpdateScreenShaderTexture(std::uint32_t currentFrame, VkImageView imageView = VK_NULL_HANDLE);
-	void RecordCommandBuffer(CommandBuffer commandBuffer, std::uint32_t imageIndex, std::vector<MeshObject*> object, CameraObject* camera);
+	void RecordCommandBuffer(CommandBuffer commandBuffer, std::uint32_t imageIndex, const std::vector<RenderableMesh>& meshes, CameraObject* camera);
 
 	void CheckForBufferResizes();
 

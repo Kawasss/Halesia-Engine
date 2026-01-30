@@ -9,7 +9,6 @@ module;
 #include <imgui-1.91.7/imgui.h>
 #include <imgui-1.91.7/misc/cpp/imgui_stdlib.h>
 
-#include "renderer/Mesh.h"
 #include "renderer/VideoMemoryManager.h"
 
 #include "core/Console.h"
@@ -17,6 +16,8 @@ module;
 #include <hsl/StackMap.h>
 
 module Renderer.Gui;
+
+import "glm.h";
 
 import std;
 

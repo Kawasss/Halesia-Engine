@@ -314,9 +314,6 @@
     <ClCompile Include="src\Grid.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="src\BoundingVolumePipeline.cpp">
-      <Filter>Source Files\Renderer</Filter>
-    </ClCompile>
     <ClCompile Include="src\SimpleMesh.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
@@ -385,9 +382,6 @@
     </ClCompile>
     <ClCompile Include="src\scripting\Script.ixx">
       <Filter>Header Files\scripting</Filter>
-    </ClCompile>
-    <ClCompile Include="src\renderer\BoundingVolumePipeline.ixx">
-      <Filter>Header Files\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\renderer\CompiledShader.ixx">
       <Filter>Header Files\Renderer</Filter>
@@ -556,6 +550,9 @@
     </ClCompile>
     <ClCompile Include="src\TLAS.cpp">
       <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\RenderableMesh.ixx">
+      <Filter>Header Files\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

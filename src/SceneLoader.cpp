@@ -6,6 +6,8 @@ module;
 
 #include "core/Console.h"
 
+#include "io/FileMaterial.h"
+
 module IO.SceneLoader;
 
 import std;

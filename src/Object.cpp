@@ -1,7 +1,5 @@
 module;
 
-#include <Windows.h>
-
 #include "core/Console.h"
 
 #include "ResourceManager.h"

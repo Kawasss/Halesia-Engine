@@ -12,12 +12,13 @@ export module Renderer.StorageBuffer;
 import std;
 
 import Renderer.ResizableBuffer;
+import Renderer.Vulkan;
 
 #define CheckHandleValidity(memory, ret)                                                                                                             \
 if (!CheckIfHandleIsValid(memory))                                                                                                                   \
 {                                                                                                                                                    \
 	Console::WriteLine("An invalid memory handle ({}) has been found in {}", Console::Severity::Error, static_cast<uint64_t>(memory), __FUNCTION__); \
-    __debugbreak();                                                                                                                                  \
+    /*__debugbreak();*/                                                                                                                                  \
 	return ret;                                                                                                                                      \
 }                                                                                                                                                    \
 
@@ -137,7 +138,26 @@ public:
 		win32::CriticalLockGuard lockGuard(readWriteSection);
 		CheckHandleValidity(memory, 0);
 
-		return memoryData[memory].offset;
+		return memoryData.at(memory).offset;
+	}
+
+	VkDeviceSize GetMemoryCount(Memory memory)
+	{
+		win32::CriticalLockGuard lockGuard(readWriteSection);
+		CheckHandleValidity(memory, 0);
+
+		return memoryData.at(memory).size;
+	}
+
+	VkDeviceAddress GetDeviceAddressOffset(Memory memory)
+	{
+		win32::CriticalLockGuard lockGuard(readWriteSection);
+		CheckHandleValidity(memory, 0);
+
+		if (!(buffer.GetUsageFlags() & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT))
+			return 0;
+
+		return Vulkan::GetDeviceAddress(GetBufferHandle()) + GetMemoryOffset(memory);
 	}
 
 	static constexpr Memory INVALID_HANDLE = 0;
@@ -147,7 +167,15 @@ public:
 	/// </summary>
 	/// <param name="memory"></param>
 	/// <returns></returns>
-	VkDeviceSize GetItemOffset(Memory memory) { return GetMemoryOffset(memory) / sizeof(T); }
+	VkDeviceSize GetItemOffset(Memory memory) 
+	{ 
+		return GetMemoryOffset(memory) / sizeof(T); 
+	}
+
+	VkDeviceSize GetItemCount(Memory memory)
+	{
+		return GetMemoryCount(memory) / sizeof(T);
+	}
 
 	VkDeviceSize GetBufferEnd() { return (VkDeviceSize)endOfBufferPointer + 1; } // not sure about the + 1
 	VkBuffer     GetBufferHandle() { return buffer.Get(); }
@@ -234,7 +262,7 @@ private:
 
 	bool CheckIfHandleIsValid(Memory memory)
 	{
-		return allCreatedMemory.find(memory) != allCreatedMemory.end();
+		return allCreatedMemory.contains(memory);
 	}
 
 	std::map<Memory, StorageMemory_t> memoryData;

@@ -1,12 +1,9 @@
-module;
-
-#include "renderer/Vertex.h"
-
 module Renderer.SimpleMesh;
 
 import std;
 
 import Renderer.StorageBuffer;
+import Renderer.Vertex;
 import Renderer;
 
 SimpleMesh SimpleMesh::Create(const std::span<const Vertex>& vertices)

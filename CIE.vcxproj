@@ -174,7 +174,6 @@
     <ClCompile Include="src\BinaryStream.cpp" />
     <ClCompile Include="src\BLAS.cpp" />
     <ClCompile Include="src\Bone.cpp" />
-    <ClCompile Include="src\BoundingVolumePipeline.cpp" />
     <ClCompile Include="src\CameraObject.cpp" />
     <ClCompile Include="src\CommandBuffer.cpp" />
     <ClCompile Include="src\ComputePipeline.cpp" />
@@ -211,6 +210,7 @@
     <ClCompile Include="src\renderer\Pipeline.ixx" />
     <ClCompile Include="src\renderer\QueryPool.ixx" />
     <ClCompile Include="src\renderer\RayTracingPipeline.ixx" />
+    <ClCompile Include="src\renderer\RenderableMesh.ixx" />
     <ClCompile Include="src\renderer\Renderer.ixx" />
     <ClCompile Include="src\renderer\RenderPipeline.ixx" />
     <ClCompile Include="src\renderer\ResizableBuffer.ixx" />
@@ -255,7 +255,6 @@
     <ClCompile Include="src\renderer\AnimationManager.ixx" />
     <ClCompile Include="src\renderer\Animator.ixx" />
     <ClCompile Include="src\renderer\Bone.ixx" />
-    <ClCompile Include="src\renderer\BoundingVolumePipeline.ixx" />
     <ClCompile Include="src\renderer\CompiledShader.ixx" />
     <ClCompile Include="src\renderer\Deferred.ixx" />
     <ClCompile Include="src\renderer\DescriptorWriter.ixx" />

@@ -14,7 +14,6 @@ import "glm.h";
 import std;
 
 import Core.CameraObject;
-import Core.MeshObject;
 
 import Renderer.SkyPipeline;
 import Renderer.ImageTransitioner;
@@ -27,6 +26,7 @@ import Renderer.GraphicsPipeline;
 import Renderer.Framebuffer;
 import Renderer.RenderPipeline;
 import Renderer.CommandBuffer;
+import Renderer.RenderableMesh;
 import Renderer.Vulkan;
 import Renderer;
 
@@ -606,23 +606,23 @@ void DeferredPipeline::PushTAAConstants(const CommandBuffer& cmdBuffer, const Ca
 	spatialPipeline->PushConstant(cmdBuffer, sConstants, VK_SHADER_STAGE_COMPUTE_BIT);
 }
 
-void DeferredPipeline::Execute(const Payload& payload, const std::vector<MeshObject*>& objects)
+void DeferredPipeline::Execute(const Payload& payload, const std::vector<RenderableMesh>& meshes)
 {
-	sky.Execute(payload, objects);
+	sky.Execute(payload, meshes);
 
 	if (Renderer::canRayTrace)
 	{
-		if (!TLAS->HasBeenBuilt() && !objects.empty())
-			TLAS->Build(objects, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
+		if (!TLAS->HasBeenBuilt() && !meshes.empty())
+			TLAS->Build(meshes, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
 		else
-			TLAS->Update(objects, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
+			TLAS->Update(meshes, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
 	}
 
 	const CommandBuffer cmdBuffer = payload.commandBuffer;
 
 	framebuffer.StartRenderPass(cmdBuffer);
 
-	PerformFirstDeferred(cmdBuffer, payload, objects);
+	PerformFirstDeferred(cmdBuffer, payload, meshes);
 
 	cmdBuffer.BeginDebugUtilsLabel("skybox");
 
@@ -630,7 +630,7 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<MeshObj
 
 	if (Renderer::canRayTrace)
 	{
-		SetInstanceData(objects);
+		SetInstanceData(meshes);
 		PerformRayTracedRendering(cmdBuffer, payload);
 	}
 
@@ -641,19 +641,17 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<MeshObj
 	sky.Render(payload);
 }
 
-void DeferredPipeline::SetInstanceData(const std::vector<MeshObject*>& objects)
+void DeferredPipeline::SetInstanceData(const std::vector<RenderableMesh>& meshes)
 {
 	std::vector<InstanceData> instances;
-	instances.reserve(objects.size());
+	instances.reserve(meshes.size());
 
-	for (MeshObject* obj : objects)
+	for (const RenderableMesh& mesh : meshes)
 	{
-		const Mesh& mesh = obj->mesh;
-
 		uint32_t vOffset = static_cast<uint32_t>(Renderer::g_vertexBuffer.GetItemOffset(mesh.vertexMemory));
 		uint32_t iOffset = static_cast<uint32_t>(Renderer::g_indexBuffer.GetItemOffset(mesh.indexMemory));
 
-		instances.emplace_back(mesh.uvScale, vOffset, iOffset, mesh.GetMaterialIndex());
+		instances.emplace_back(mesh.uvScale, vOffset, iOffset, mesh.materialIndex);
 	}
 	std::memcpy(instanceBuffer.GetMappedPointer(), instances.data(), sizeof(InstanceData) * instances.size());
 }
@@ -688,7 +686,7 @@ void DeferredPipeline::PerformRayTracedRendering(const CommandBuffer& cmdBuffer,
 	cmdBuffer.EndDebugUtilsLabel();
 }
 
-void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<MeshObject*>& objects)
+void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<RenderableMesh>& meshes)
 {
 	cmdBuffer.BeginDebugUtilsLabel("first deferred");
 
@@ -702,23 +700,23 @@ void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, cons
 	bool currentlyCulling = true; // the renderer always resets the cull mode to back faced culling when a render pipeline is called
 
 	PushConstant pushConstant{};
-	for (MeshObject* obj : objects)
+	for (const RenderableMesh& mesh : meshes)
 	{
-		if (currentlyCulling != obj->mesh.cullBackFaces)
+		if (currentlyCulling == mesh.ShouldNotCull())
 		{
-			currentlyCulling = obj->mesh.cullBackFaces;
+			currentlyCulling = !mesh.ShouldNotCull();
 			cmdBuffer.SetCullMode(currentlyCulling ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE);
 		}
 
-		glm::mat4 model = obj->transform.GetModelMatrix();
+		glm::mat4 model = mesh.transform;
 
 		pushConstant.model = model;
-		pushConstant.materialID = obj->mesh.GetMaterialIndex();
-		pushConstant.uvScale = obj->mesh.uvScale;
+		pushConstant.materialID = mesh.materialIndex;
+		pushConstant.uvScale = mesh.uvScale;
 
 		firstPipeline->PushConstant(cmdBuffer, pushConstant, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
-		Renderer::RenderMesh(cmdBuffer, obj->mesh);
+		Renderer::RenderMesh(cmdBuffer, mesh);
 	}
 
 	cmdBuffer.EndRenderPass();

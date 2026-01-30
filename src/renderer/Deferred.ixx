@@ -30,7 +30,7 @@ public:
 	~DeferredPipeline();
 
 	void Start(const Payload& payload) override;
-	void Execute(const Payload& payload, const std::vector<MeshObject*>& objects) override;
+	void Execute(const Payload& payload, const std::vector<RenderableMesh>& objects) override;
 
 	void Resize(const Payload& payload) override;
 
@@ -75,7 +75,7 @@ private:
 	void ResizeRTGI(uint32_t width, uint32_t height);
 	void BindRTGIResources();
 	void SetRTGIImageLayout();
-	void SetInstanceData(const std::vector<MeshObject*>& objects);
+	void SetInstanceData(const std::vector<RenderableMesh>& meshes);
 
 	void CopyDenoisedToRTGI(const CommandBuffer& cmdBuffer);
 
@@ -83,7 +83,7 @@ private:
 	void ResizeSky(const Payload& payload);
 
 	void PerformRayTracedRendering(const CommandBuffer& cmdBuffer, const Payload& payload);
-	void PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<MeshObject*>& objects);
+	void PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<RenderableMesh>& meshes);
 	void PerformSecondDeferred(const CommandBuffer& cmdBuffer, const Payload& payload);
 
 	void CopyDeferredDepthToResultDepth(const CommandBuffer& cmdBuffer, const Payload& payload);

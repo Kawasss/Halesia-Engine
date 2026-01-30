@@ -1,10 +1,11 @@
-#include <algorithm>
-
-#include "renderer/Mesh.h"
+module;
 
 #include "ResourceManager.h"
 
-import Renderer.AccelerationStructure;
+#include "renderer/Material.h"
+
+module Renderer.Mesh;
+
 import Renderer;
 
 import IO.CreationData;
@@ -78,19 +79,7 @@ void Mesh::Create(const MeshCreationData& creationData)
 
 void Mesh::Recreate()
 {
-	if (vertexMemory != 0)
-	{
-		Renderer::g_vertexBuffer.DestroyData(vertexMemory);
-		Renderer::g_defaultVertexBuffer.DestroyData(defaultVertexMemory);
-		Renderer::g_indexBuffer.DestroyData(indexMemory);
-	}
-
-	vertexMemory        = Renderer::g_vertexBuffer.SubmitNewData(vertices);
-	indexMemory         = Renderer::g_indexBuffer.SubmitNewData(indices);
-	defaultVertexMemory = Renderer::g_defaultVertexBuffer.SubmitNewData(vertices);
-
-	if (Renderer::canRayTrace)
-		BLAS = std::make_shared<BottomLevelAccelerationStructure>(*this);
+	//TODO: create mesh here by communicating with the renderer.
 
 	for (const Vertex& vertex : vertices) // better if this is precalculated
 	{
@@ -110,7 +99,7 @@ void Mesh::CopyFrom(const Mesh& mesh)
 	vertices = mesh.vertices;
 	indices = mesh.indices;
 
-	BLAS = mesh.BLAS;
+	meshHandle = mesh.meshHandle;
 
 	faceCount = mesh.faceCount;
 
@@ -120,13 +109,6 @@ void Mesh::CopyFrom(const Mesh& mesh)
 	extents = mesh.extents;
 
 	finished = true;
-
-	if (vertices.empty() || indices.empty())
-		return;
-
-	vertexMemory = mesh.vertexMemory;
-	indexMemory = mesh.indexMemory;
-	defaultVertexMemory = mesh.defaultVertexMemory;
 }
 
 void Mesh::ResetMaterial()
@@ -190,7 +172,7 @@ bool Mesh::IsValid() const
 
 bool Mesh::CanBeRayTraced() const
 {
-	return !(flags & MESH_FLAG_NO_RAY_TRACING) && BLAS != nullptr;
+	return !(flags & MESH_FLAG_NO_RAY_TRACING);
 }
 
 MeshOptionFlags Mesh::GetFlags() const
@@ -200,13 +182,8 @@ MeshOptionFlags Mesh::GetFlags() const
 
 void Mesh::SetFlags(MeshOptionFlags flags)
 {
-	if (this->flags == flags)
-		return;
-
-	if (flags & MESH_FLAG_NO_RAY_TRACING)
-		BLAS.reset();
-	else
-		BLAS = std::make_shared<BottomLevelAccelerationStructure>(*this);
+	//if (this->flags == flags)
+	//	return;
 
 	this->flags = flags;
 }
@@ -217,12 +194,6 @@ void Mesh::Destroy()
 		materials[materialIndex].RemoveReference();
 
 	// should also delete the material in materials here (if no other meshes are referencing that material)
-	if (vertexMemory != 0)
-		Renderer::g_vertexBuffer.DestroyData(vertexMemory);
-	if (indexMemory != 0)
-		Renderer::g_indexBuffer.DestroyData(indexMemory);
-	if (defaultVertexMemory != 0)
-		Renderer::g_defaultVertexBuffer.DestroyData(defaultVertexMemory);
 	indices.clear();
 	vertices.clear();
 	//delete this;

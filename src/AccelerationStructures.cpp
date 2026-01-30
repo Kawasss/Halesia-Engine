@@ -1,6 +1,5 @@
 module;
 
-#include "renderer/Mesh.h"
 #include "renderer/VulkanAPIError.h"
 
 #include "system/CriticalSection.h"
@@ -11,16 +10,12 @@ import <vulkan/vulkan.h>;
 
 import std;
 
-import Core.MeshObject;
-
 import Renderer.VulkanGarbageManager;
 import Renderer.Vulkan;
 import Renderer;
 
 constexpr VkBufferUsageFlags ACCELERATION_STRUCTURE_BUFFER_BITS = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 constexpr VkBufferUsageFlags SCRATCH_BUFFER_BITS = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
-
-
 
 void AccelerationStructure::CreateAS(const VkAccelerationStructureGeometryKHR* pGeometry, VkAccelerationStructureTypeKHR type, uint32_t maxPrimitiveCount)
 {

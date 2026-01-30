@@ -14,7 +14,7 @@ export class SkyPipeline : public RenderPipeline
 {
 public:
 	void Start(const Payload& payload) override;
-	void Execute(const Payload& payload, const std::vector<MeshObject*>& objects); // does not render to the screen, only calculates the LUTs
+	void Execute(const Payload& payload, const std::vector<RenderableMesh>& objects); // does not render to the screen, only calculates the LUTs
 	void Render(const Payload& payload); // renders to the screen
 
 	void ReloadShaders(const Payload& payload) override;

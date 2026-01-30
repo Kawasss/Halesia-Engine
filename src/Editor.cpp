@@ -184,7 +184,6 @@ void Editor::Start()
 	renderer = core.renderer;
 	window = core.window;
 
-	//boundingVolumePipeline = renderer->AddRenderPipeline<BoundingVolumePipeline>("boundingVolume");
 	gridPipeline = renderer->AddRenderPipeline<GridPipeline>("grid");
 
 	SetActiveCamera(new EditorCamera(core.window));
@@ -1046,7 +1045,7 @@ void Editor::ShowRigidBodyShape(RigidBody& rigid)
 
 void Editor::ShowObjectMesh(Mesh& mesh)
 {
-	ImGui::Text
+	/*ImGui::Text
 	(
 		"Memory:\n"
 		"  vertex:   %I64u\n"
@@ -1086,7 +1085,8 @@ void Editor::ShowObjectMesh(Mesh& mesh)
 	ImGui::InputFloat("##uv_input", &mesh.uvScale);
 
 	if (ImGui::Button("Change mesh"))
-		QueueMeshChange(selectedObj);
+		QueueMeshChange(selectedObj);*/
+	ImGui::Text("TODO: re-implement this");
 }
 
 void Editor::ShowAddObjectWindow()

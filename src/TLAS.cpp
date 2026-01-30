@@ -1,3 +1,6 @@
+module;
+
+#include "system/CriticalSection.h"
 module Renderer.TLAS;
 
 import <vulkan/vulkan.h>;
@@ -28,7 +31,7 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create()
 	return TLAS;
 }
 
-void TopLevelAccelerationStructure::Build(const std::vector<MeshObject*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
+void TopLevelAccelerationStructure::Build(const std::vector<RenderableMesh>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
 {
 	instanceBuffer.Reset();
 	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects, indexType); // write all of the BLAS instances to a single buffer so that vulkan can easily read all of the instances in one go
@@ -41,7 +44,7 @@ void TopLevelAccelerationStructure::Build(const std::vector<MeshObject*>& object
 	hasBeenBuilt = true;
 }
 
-void TopLevelAccelerationStructure::Update(const std::vector<MeshObject*>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
+void TopLevelAccelerationStructure::Update(const std::vector<RenderableMesh>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
 {
 	instanceBuffer.Reset();
 	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects, indexType);
@@ -63,27 +66,27 @@ void TopLevelAccelerationStructure::GetGeometry(VkAccelerationStructureGeometryK
 	geometry.geometry.instances.data = { Vulkan::GetDeviceAddress(instanceBuffer.GetBufferHandle()) };
 }
 
-std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(const std::vector<MeshObject*>& objects, InstanceIndexType indexType)
+std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(const std::vector<RenderableMesh>& objects, InstanceIndexType indexType)
 {
 	uint32_t processedAmount = 0; // add a second counter for each processed mesh. if an object is checked, but it doesnt have a mesh it will leave an empty instance custom index, which results in data missalignment
 	std::vector<VkAccelerationStructureInstanceKHR> instances;
 	instances.reserve(objects.size()); // can over allocate
 	for (int i = 0; i < objects.size(); i++)
 	{
-		win32::CriticalLockGuard lockGuard(objects[i]->GetCriticalSection());
-		if (!objects[i]->HasFinishedLoading() || objects[i]->state != OBJECT_STATE_VISIBLE || !objects[i]->mesh.IsValid() || !objects[i]->mesh.CanBeRayTraced()) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
+		const RenderableMesh& mesh = objects[i];
+		if (mesh.ShouldBeNotRayTraced()) // objects marked STATUS_INVISIBLE or STATUS_DISABLED shouldn't be rendered
 			continue;
 
 		VkAccelerationStructureInstanceKHR instance{};
-		instance.instanceCustomIndex = indexType == InstanceIndexType::Identifier ? processedAmount : objects[i]->mesh.GetMaterialIndex();
+		instance.instanceCustomIndex = indexType == InstanceIndexType::Identifier ? processedAmount : mesh.materialIndex;
 		instance.mask = 0xFF;
 
-		if (!objects[i]->mesh.cullBackFaces)
+		if (mesh.ShouldNotCull())
 			instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 
-		instance.accelerationStructureReference = objects[i]->mesh.BLAS->GetAccelerationStructureAddress();
+		instance.accelerationStructureReference = mesh.BLAS->GetAccelerationStructureAddress();
 
-		glm::mat4 transform = glm::transpose(objects[i]->transform.GetModelMatrix());
+		glm::mat4 transform = glm::transpose(mesh.transform);
 		memcpy(&instance.transform, &transform, sizeof(VkTransformMatrixKHR));											   // simply copy the contents of the glm matrix to the vulkan matrix since the contents align
 
 		instances.push_back(instance);

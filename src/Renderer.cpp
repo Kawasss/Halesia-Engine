@@ -3,9 +3,9 @@ module;
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "renderer/Texture.h"
-#include "renderer/Mesh.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/FramesInFlight.h"
+#include "renderer/Material.h"
 
 #include "core/Console.h"
 
@@ -40,10 +40,12 @@ import Renderer.PipelineCreator;
 import Renderer.VulkanGarbageManager;
 import Renderer.GraphicsPipeline;
 import Renderer.RenderPipeline;
+import Renderer.RenderableMesh;
 import Renderer.Swapchain;
 import Renderer.Surface;
 import Renderer.Vulkan;
 import Renderer.Light;
+import Renderer.Mesh;
 
 namespace fs = std::filesystem;
 
@@ -726,7 +728,7 @@ void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
 	renderPipelines.push_back(pipeline);
 }
 
-void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, std::uint32_t imageIndex, std::vector<MeshObject*> objects, CameraObject* camera)
+void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, std::uint32_t imageIndex, const std::vector<RenderableMesh>& meshes, CameraObject* camera)
 {
 	if (camera == nullptr)
 		return;
@@ -739,7 +741,7 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, std::uint32_t im
 
 	animationManager->ApplyAnimations(commandBuffer.Get()); // not good
 
-	RunRenderPipelines(commandBuffer, camera, objects);
+	RunRenderPipelines(commandBuffer, camera, meshes);
 
 	commandBuffer.BeginDebugUtilsLabel("UI");
 
@@ -778,7 +780,7 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, std::uint32_t im
 	commandBuffer.EndDebugUtilsLabel();
 }
 
-void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, CameraObject* camera, const std::vector<MeshObject*>& objects)
+void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, CameraObject* camera, const std::vector<RenderableMesh>& meshes)
 {
 	UpdateMaterialBuffer();
 	ResizeRenderPipelines();
@@ -800,7 +802,7 @@ void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, CameraObject* cam
 
 		commandBuffer.SetCullMode(VK_CULL_MODE_BACK_BIT);
 
-		renderPipeline->Execute(payload, objects);
+		renderPipeline->Execute(payload, meshes);
 		commandBuffer.EndDebugUtilsLabel();
 
 		queryPool.EndTimestamp(commandBuffer, dbgPipelineNames[renderPipeline]);
@@ -832,9 +834,9 @@ void Renderer::BindBuffersForRendering(CommandBuffer commandBuffer)
 	commandBuffer.BindIndexBuffer(g_indexBuffer.GetBufferHandle(), 0, VK_INDEX_TYPE_UINT32);
 }
 
-void Renderer::RenderMesh(CommandBuffer commandBuffer, const Mesh& mesh, std::uint32_t instanceCount)
+void Renderer::RenderMesh(CommandBuffer commandBuffer, const RenderableMesh& mesh, std::uint32_t instanceCount)
 {
-	std::uint32_t indexCount    = static_cast<std::uint32_t>(mesh.indices.size());
+	std::uint32_t indexCount    = static_cast<std::uint32_t>(g_indexBuffer.GetItemCount(mesh.indexMemory));
 	std::uint32_t firstIndex    = static_cast<std::uint32_t>(g_indexBuffer.GetItemOffset(mesh.indexMemory));
 	std::int32_t  vertexOffset  = static_cast<std::int32_t>(g_vertexBuffer.GetItemOffset(mesh.vertexMemory));
 	std::uint32_t firstInstance = 0;
@@ -993,13 +995,22 @@ void Renderer::SubmitRecording()
 	vgm::CollectGarbage();
 }
 
+static RenderableMesh GetRenderableMeshFromObject(const MeshObject* pObject)
+{
+	RenderableMesh mesh{};
+	mesh.BLAS = nullptr;
+	
+
+	return mesh;
+}
+
 static bool ObjectIsValidMesh(Object* pObject, bool checkBLAS)
 {
 	if (!pObject->IsType(Object::InheritType::Mesh))
 		return false;
 
 	MeshObject* obj = dynamic_cast<MeshObject*>(pObject);
-	return obj->MeshIsValid() && obj->mesh.HasFinishedLoading() && obj->state == OBJECT_STATE_VISIBLE;
+	return obj->MeshIsValid() && obj->state == OBJECT_STATE_VISIBLE;
 }
 
 static bool ObjectIsValidLight(Object* pObject)
@@ -1007,13 +1018,13 @@ static bool ObjectIsValidLight(Object* pObject)
 	return pObject->IsType(Object::InheritType::Light) && pObject->state == OBJECT_STATE_VISIBLE;
 }
 
-static void GetAllObjectsFromObject(std::vector<MeshObject*>& ret, std::vector<LightObject*>& lights, Object* obj, bool checkBLAS)
+static void GetAllObjectsFromObject(std::vector<RenderableMesh>& ret, std::vector<LightObject*>& lights, Object* obj, bool checkBLAS)
 {
 	if (obj->state != OBJECT_STATE_VISIBLE)
 		return;
 
 	if (::ObjectIsValidMesh(obj, checkBLAS))
-		ret.push_back(dynamic_cast<MeshObject*>(obj));
+		ret.push_back(::GetRenderableMeshFromObject(dynamic_cast<MeshObject*>(obj)));
 
 	if (::ObjectIsValidLight(obj))
 		lights.push_back(dynamic_cast<LightObject*>(obj));
@@ -1030,7 +1041,7 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, CameraObject* 
 	if (!testWindow->CanBeRenderedTo())
 		return;
 
-	std::vector<MeshObject*> activeObjects;
+	std::vector<RenderableMesh> activeObjects;
 	std::vector<LightObject*> lightObjects;
 	for (Object* object : objects)
 	{

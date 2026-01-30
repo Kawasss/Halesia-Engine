@@ -8,12 +8,12 @@ export module Renderer.RenderPipeline;
 import std;
 
 import Core.CameraObject;
-import Core.MeshObject;
 
 import System.Window;
 
 import Renderer.Framebuffer;
 import Renderer.CommandBuffer;
+import Renderer.RenderableMesh;
 
 export enum class RenderMode : int // this enum is used as a suggestion
 {
@@ -60,7 +60,7 @@ public:
 	};
 
 	virtual void Start(const Payload& payload) = 0;
-	virtual void Execute(const Payload& payload, const std::vector<MeshObject*>& objects) = 0;
+	virtual void Execute(const Payload& payload, const std::vector<RenderableMesh>& objects) = 0;
 
 	virtual ~RenderPipeline() {}
 
