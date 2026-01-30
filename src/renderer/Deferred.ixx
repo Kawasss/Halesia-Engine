@@ -14,7 +14,7 @@ import std;
 
 import Core.CameraObject;
 
-import Renderer.AccelerationStructure;
+import Renderer.TLAS;
 import Renderer.SkyPipeline;
 import Renderer.ComputePipeline;
 import Renderer.RayTracingPipeline;

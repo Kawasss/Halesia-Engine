@@ -6,8 +6,10 @@ export module Renderer.Mesh;
 
 import std;
 
+import "../glm.h";
+
 import Renderer.Vertex;
-import Renderer.AccelerationStructure;
+import Renderer.BLAS;
 
 import IO.CreationData;
 
@@ -17,8 +19,6 @@ export enum MeshFlags : int
 	MESH_FLAG_NO_RAY_TRACING = 1 << 1,
 };
 export using MeshOptionFlags = std::underlying_type_t<MeshFlags>;
-
-using StorageMemory = std::uint64_t;
 
 export struct Mesh
 {
@@ -32,9 +32,9 @@ export struct Mesh
 
 	void CopyFrom(const Mesh& mesh);
 
-	StorageMemory vertexMemory;
-	StorageMemory indexMemory;
-	StorageMemory defaultVertexMemory;
+	StorageBuffer<Vertex>::Memory vertexMemory;
+	StorageBuffer<Vertex>::Memory indexMemory;
+	StorageBuffer<std::uint32_t>::Memory defaultVertexMemory;
 
 	std::shared_ptr<BottomLevelAccelerationStructure> BLAS;
 

@@ -14,8 +14,8 @@ public:
 	SimpleMesh& operator=(SimpleMesh&& rhs) noexcept;
 	SimpleMesh(const SimpleMesh&) = delete;
 
-	StorageMemory vertexMemory = 0;
-	StorageMemory defVertexMemory = 0;
+	StorageBuffer<Vertex>::Memory vertexMemory = 0;
+	StorageBuffer<Vertex>::Memory defVertexMemory = 0;
 
 	void Destroy();
 

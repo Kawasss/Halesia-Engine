@@ -21,12 +21,12 @@ if (!CheckIfHandleIsValid(memory))                                              
 	return ret;                                                                                                                                      \
 }                                                                                                                                                    \
 
-export using StorageMemory = unsigned long long;
-
 export template<typename T>
 class StorageBuffer
 {
 public:
+	using Memory = std::uintptr_t;
+
 	StorageBuffer() = default;
 	~StorageBuffer() { Destroy(); }
 
@@ -44,7 +44,7 @@ public:
 	/// </summary>
 	/// <param name="data">data to append</param>
 	/// <returns></returns>
-	StorageMemory SubmitNewData(const std::span<const T>& data)
+	Memory SubmitNewData(const std::span<const T>& data)
 	{
 		if (data.empty())
 			return 0;
@@ -52,7 +52,7 @@ public:
 		win32::CriticalLockGuard lockGuard(readWriteSection);
 		VkDeviceSize writeSize = sizeof(T) * data.size();
 
-		StorageMemory memoryHandle = FindReusableMemory(writeSize);	// first check if there any spaces within the buffer that can be filled
+		Memory memoryHandle = FindReusableMemory(writeSize);	// first check if there any spaces within the buffer that can be filled
 		bool canReuseMemory = memoryHandle != INVALID_HANDLE;
 
 		if (canReuseMemory)											// if a space can be filled then overwrite that space
@@ -100,7 +100,7 @@ public:
 	/// </summary>
 	/// <param name="creationObject"></param>
 	/// <param name="memory"></param>
-	void EraseData(StorageMemory memory)
+	void EraseData(Memory memory)
 	{
 		win32::CriticalLockGuard lockGuard(readWriteSection);
 		CheckHandleValidity(memory, );
@@ -113,7 +113,7 @@ public:
 	/// Marks the given memory as unused. The contents won't be erased, but can be overwritten. To completely erase data EraseData must be called
 	/// </summary>
 	/// <param name="memory"></param>
-	void DestroyData(StorageMemory memory)
+	void DestroyData(Memory memory)
 	{
 		win32::CriticalLockGuard lockGuard(readWriteSection);
 		CheckHandleValidity(memory, );
@@ -132,7 +132,7 @@ public:
 	/// </summary>
 	/// <param name="memory"></param>
 	/// <returns></returns>
-	VkDeviceSize GetMemoryOffset(StorageMemory memory)
+	VkDeviceSize GetMemoryOffset(Memory memory)
 	{
 		win32::CriticalLockGuard lockGuard(readWriteSection);
 		CheckHandleValidity(memory, 0);
@@ -140,14 +140,14 @@ public:
 		return memoryData[memory].offset;
 	}
 
-	static constexpr StorageMemory INVALID_HANDLE = 0;
+	static constexpr Memory INVALID_HANDLE = 0;
 
 	/// <summary>
 	/// Gives the distance between the beginning of the buffer and the location of the memory in the size of the item (offset in bytes / sizeof(item))
 	/// </summary>
 	/// <param name="memory"></param>
 	/// <returns></returns>
-	VkDeviceSize GetItemOffset(StorageMemory memory) { return GetMemoryOffset(memory) / sizeof(T); }
+	VkDeviceSize GetItemOffset(Memory memory) { return GetMemoryOffset(memory) / sizeof(T); }
 
 	VkDeviceSize GetBufferEnd() { return (VkDeviceSize)endOfBufferPointer + 1; } // not sure about the + 1
 	VkBuffer     GetBufferHandle() { return buffer.Get(); }
@@ -193,9 +193,9 @@ private:
 	/// This looks for for any free space within used memories, reducing the need to create a bigger buffer since terminated spots can be reused
 	/// </summary>
 	/// <typeparam name="T"></typeparam>
-	StorageMemory FindReusableMemory(VkDeviceSize size)
+	Memory FindReusableMemory(VkDeviceSize size)
 	{
-		for (StorageMemory terminatedMemory : terminatedMemories)
+		for (Memory terminatedMemory : terminatedMemories)
 		{
 			if (memoryData[terminatedMemory].size < size)				// search through all of the terminated memory locations to see if theres enough space in one of them to overwrite without causing overflow
 				continue;
@@ -207,12 +207,12 @@ private:
 		return INVALID_HANDLE;
 	}
 
-	void WriteToBuffer(const std::span<const T>& data, StorageMemory memory)
+	void WriteToBuffer(const std::span<const T>& data, Memory memory)
 	{
 		buffer.Write(data, memoryData[memory].offset);
 	}
 
-	void ClearBuffer(StorageMemory memory = INVALID_HANDLE)
+	void ClearBuffer(Memory memory = INVALID_HANDLE)
 	{
 		VkDeviceSize offset = 0;
 		VkDeviceSize size = 0;
@@ -232,23 +232,23 @@ private:
 		//buffer.Fill(0, size, offset);
 	}
 
-	bool CheckIfHandleIsValid(StorageMemory memory)
+	bool CheckIfHandleIsValid(Memory memory)
 	{
-		return allCreatedMemory.count(memory) > 0;
+		return allCreatedMemory.find(memory) != allCreatedMemory.end();
 	}
 
-	std::map<StorageMemory, StorageMemory_t> memoryData;
+	std::map<Memory, StorageMemory_t> memoryData;
 
-	std::set<StorageMemory> terminatedMemories;
-	std::set<StorageMemory> allCreatedMemory;
-	std::set<StorageMemory> activeMemories;
+	std::set<Memory> terminatedMemories;
+	std::set<Memory> allCreatedMemory;
+	std::set<Memory> activeMemories;
 
 	win32::CriticalSection readWriteSection;
 	size_t size = 0;
 
 	ResizableBuffer buffer;
 
-	StorageMemory nextHandle = 1;
+	Memory nextHandle = 1;
 
 	VkDeviceSize endOfBufferPointer = 0;
 
