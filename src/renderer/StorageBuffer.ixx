@@ -18,7 +18,7 @@ import Renderer.Vulkan;
 if (!CheckIfHandleIsValid(memory))                                                                                                                   \
 {                                                                                                                                                    \
 	Console::WriteLine("An invalid memory handle ({}) has been found in {}", Console::Severity::Error, static_cast<uint64_t>(memory), __FUNCTION__); \
-    /*__debugbreak();*/                                                                                                                                  \
+    __debugbreak();                                                                                                                                  \
 	return ret;                                                                                                                                      \
 }                                                                                                                                                    \
 

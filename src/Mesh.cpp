@@ -10,6 +10,8 @@ import Renderer;
 
 import IO.CreationData;
 
+import HalesiaEngine;
+
 std::vector<Material> Mesh::materials;
 std::mutex Mesh::materialMutex;
 
@@ -80,6 +82,10 @@ void Mesh::Create(const MeshCreationData& creationData)
 void Mesh::Recreate()
 {
 	//TODO: create mesh here by communicating with the renderer.
+	std::expected<MeshHandle, bool> exMeshHandle = *HalesiaEngine::GetInstance()->GetEngineCore().renderer->LoadMesh(vertices, indices); // this has to be the ugliest code EVER
+	
+	if (exMeshHandle.has_value())
+		meshHandle = *exMeshHandle;
 
 	for (const Vertex& vertex : vertices) // better if this is precalculated
 	{
@@ -172,7 +178,7 @@ bool Mesh::IsValid() const
 
 bool Mesh::CanBeRayTraced() const
 {
-	return !(flags & MESH_FLAG_NO_RAY_TRACING);
+	return !(flags & MeshFlagNoRayTracing);
 }
 
 MeshOptionFlags Mesh::GetFlags() const
@@ -196,6 +202,9 @@ void Mesh::Destroy()
 	// should also delete the material in materials here (if no other meshes are referencing that material)
 	indices.clear();
 	vertices.clear();
+
+
+	HalesiaEngine::GetInstance()->GetEngineCore().renderer->DestroyMeshHandle(meshHandle);
 	//delete this;
 }
 

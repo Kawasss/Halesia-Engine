@@ -31,6 +31,7 @@ import Renderer.Surface;
 import Renderer.CommandBuffer;
 import Renderer.Vertex;
 import Renderer.RenderableMesh;
+import Renderer.BLAS;
 
 using HANDLE = void*;
 using Handle = unsigned long long;
@@ -40,8 +41,6 @@ export using MeshHandle    = std::uintptr_t;
 
 template<typename T>
 concept InheritsRenderPipeline = std::is_base_of_v<RenderPipeline, T>;
-
-class Renderer;
 
 export class Renderer
 {
@@ -63,6 +62,8 @@ public:
 	static constexpr std::uint32_t MATERIAL_BUFFER_BINDING   = 0;
 	static constexpr std::uint32_t LIGHT_BUFFER_BINDING      = 0;
 	static constexpr std::uint32_t SCENE_DATA_BUFFER_BINDING = 1;
+
+	static constexpr MeshHandle INVALID_MESH_HANDLE = std::numeric_limits<MeshHandle>::max();
 
 	static StorageBuffer<Vertex>        g_vertexBuffer;
 	static StorageBuffer<std::uint32_t> g_indexBuffer;
@@ -110,8 +111,9 @@ public:
 	void SetRenderMode(RenderMode mode);
 	RenderMode GetRenderMode() const;
 
-	MeshHandle LoadMesh(const MeshCreationData& data);
+	std::expected<MeshHandle, bool> LoadMesh(const std::span<const Vertex>& vertices, const std::span<const std::uint32_t>& indices);
 	MeshHandle CopyMeshHandle(const MeshHandle& handle); // returns the same value as 'handle'
+	void DestroyMeshHandle(const MeshHandle& handle);
 
 	void SetInternalResolutionScale(float scale);
 	static float GetInternalResolutionScale();
@@ -155,6 +157,20 @@ public:
 private:
 	struct LightBuffer;
 	struct SceneData;
+
+	struct GpuMeshData
+	{
+		GpuMeshData() = default;
+		GpuMeshData(StorageBuffer<Vertex>::Memory d, StorageBuffer<Vertex>::Memory v, StorageBuffer<std::uint32_t>::Memory i, const std::shared_ptr<BottomLevelAccelerationStructure>& b);
+
+		StorageBuffer<Vertex>::Memory dVertices;
+		StorageBuffer<Vertex>::Memory vertices;
+		StorageBuffer<std::uint32_t>::Memory indices;
+
+		std::shared_ptr<BottomLevelAccelerationStructure> BLAS; // probably better to make it anything but a shared_ptr
+
+		~GpuMeshData();
+	};
 
 	struct ManagedSet
 	{
@@ -202,6 +218,9 @@ private:
 	std::vector<VkSemaphore>   imageAvaibleSemaphores;
 	std::vector<VkSemaphore>   renderFinishedSemaphores;
 	std::vector<VkFence>       inFlightFences;
+
+	std::array<std::optional<GpuMeshData>, MAX_MESHES> meshDatas;
+	win32::CriticalSection meshDataCritSection;
 
 	CommandBuffer activeCmdBuffer = VK_NULL_HANDLE;
 
@@ -285,6 +304,9 @@ private:
 	std::uint32_t GetNextSwapchainImage(std::uint32_t frameIndex);
 	void PresentSwapchainImage(std::uint32_t frameIndex, std::uint32_t imageIndex);
 	void SubmitRenderingCommandBuffer(std::uint32_t frameIndex, std::uint32_t imageIndex);
+
+	std::optional<RenderableMesh> GetRenderableMeshFromObject(const Object* pObject); // assumes that the object is a MeshObject
+	void GetAllObjectsFromObject(std::vector<RenderableMesh>& ret, std::vector<LightObject*>& lights, Object* obj, bool checkBLAS);
 };
 
 template<InheritsRenderPipeline Type>

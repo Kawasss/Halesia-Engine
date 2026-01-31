@@ -46,6 +46,7 @@ import Renderer.Surface;
 import Renderer.Vulkan;
 import Renderer.Light;
 import Renderer.Mesh;
+import Renderer.BLAS;
 
 namespace fs = std::filesystem;
 
@@ -995,11 +996,89 @@ void Renderer::SubmitRecording()
 	vgm::CollectGarbage();
 }
 
-static RenderableMesh GetRenderableMeshFromObject(const MeshObject* pObject)
+Renderer::GpuMeshData::GpuMeshData(StorageBuffer<Vertex>::Memory d, StorageBuffer<Vertex>::Memory v, StorageBuffer<std::uint32_t>::Memory i, const std::shared_ptr<BottomLevelAccelerationStructure>& b) : dVertices(d), vertices(v), indices(i), BLAS(b)
 {
+
+}
+
+std::expected<MeshHandle, bool> Renderer::LoadMesh(const std::span<const Vertex>& vertices, const std::span<const std::uint32_t>& indices)
+{
+	win32::CriticalLockGuard guard(meshDataCritSection);
+
+	auto it = std::find_if(meshDatas.begin(), meshDatas.end(), [&](const std::optional<GpuMeshData>& data) { return !data.has_value(); });
+	if (it == meshDatas.end())
+	{
+		Console::WriteLine("failed to load new mesh, the buffer has reached its maximum size of {}", Console::Severity::Error, meshDatas.size());
+		return std::unexpected(false);
+	}
+
+	auto mdvertices = g_defaultVertexBuffer.SubmitNewData(vertices);
+	auto mvertices  = g_vertexBuffer.SubmitNewData(vertices);
+	auto mindices   = g_indexBuffer.SubmitNewData(indices);
+
+	it->emplace(
+		mdvertices,
+		mvertices,
+		mindices,
+		std::make_shared<BottomLevelAccelerationStructure>(mvertices, mindices)
+	);
+
+	return static_cast<MeshHandle>(it - meshDatas.begin());
+}
+
+MeshHandle Renderer::CopyMeshHandle(const MeshHandle& handle)
+{
+	return handle;
+}
+
+void Renderer::DestroyMeshHandle(const MeshHandle& handle)
+{
+	if (handle >= meshDatas.size())
+	{
+		Console::WriteLine("failed to delete mesh handle {}", Console::Severity::Error, handle);
+		return;
+	}
+
+	win32::CriticalLockGuard guard(meshDataCritSection);
+	meshDatas[handle] = std::optional<GpuMeshData>();
+}
+
+Renderer::GpuMeshData::~GpuMeshData()
+{
+	if (dVertices != 0)
+		g_defaultVertexBuffer.DestroyData(dVertices);
+	if (vertices != 0)
+		g_vertexBuffer.DestroyData(vertices);
+	if (indices != 0)
+		g_indexBuffer.DestroyData(indices);
+}
+
+std::optional<RenderableMesh> Renderer::GetRenderableMeshFromObject(const Object* pObject)
+{
+	win32::CriticalLockGuard guard(meshDataCritSection);
+
+	const MeshObject* pMeshObject = dynamic_cast<const MeshObject*>(pObject);
+
+	MeshHandle handle = pMeshObject->mesh.meshHandle;
+	if (handle >= meshDatas.size())
+		return std::optional<RenderableMesh>();
+
+	const std::optional<GpuMeshData>& optData = meshDatas[handle];
+	if (!optData.has_value())
+		return std::optional<RenderableMesh>();
+
+	const GpuMeshData& data = *optData;
+
 	RenderableMesh mesh{};
-	mesh.BLAS = nullptr;
-	
+	mesh.transform = pObject->transform.GetModelMatrix();
+	mesh.materialIndex = pMeshObject->mesh.GetMaterialIndex();
+	mesh.BLAS = data.BLAS;
+	mesh.dVertexMemory = data.dVertices;
+	mesh.vertexMemory = data.vertices;
+	mesh.indexMemory = data.indices;
+	mesh.faceCount = pMeshObject->mesh.faceCount; // these 2 could probably be removed
+	mesh.vertexCount = static_cast<std::uint32_t>(pMeshObject->mesh.vertices.size());
+	mesh.flags = 0; // TODO: translate mesh flags into the flags here
 
 	return mesh;
 }
@@ -1018,14 +1097,18 @@ static bool ObjectIsValidLight(Object* pObject)
 	return pObject->IsType(Object::InheritType::Light) && pObject->state == OBJECT_STATE_VISIBLE;
 }
 
-static void GetAllObjectsFromObject(std::vector<RenderableMesh>& ret, std::vector<LightObject*>& lights, Object* obj, bool checkBLAS)
+void Renderer::GetAllObjectsFromObject(std::vector<RenderableMesh>& ret, std::vector<LightObject*>& lights, Object* obj, bool checkBLAS)
 {
 	if (obj->state != OBJECT_STATE_VISIBLE)
 		return;
 
 	if (::ObjectIsValidMesh(obj, checkBLAS))
-		ret.push_back(::GetRenderableMeshFromObject(dynamic_cast<MeshObject*>(obj)));
-
+	{
+		std::optional<RenderableMesh> optMesh = GetRenderableMeshFromObject(obj);
+		if (optMesh.has_value())
+			ret.push_back(*optMesh);
+	}
+		
 	if (::ObjectIsValidLight(obj))
 		lights.push_back(dynamic_cast<LightObject*>(obj));
 
@@ -1045,7 +1128,7 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, CameraObject* 
 	std::vector<LightObject*> lightObjects;
 	for (Object* object : objects)
 	{
-		::GetAllObjectsFromObject(activeObjects, lightObjects, object, canRayTrace);
+		GetAllObjectsFromObject(activeObjects, lightObjects, object, canRayTrace);
 	}
 
 	receivedObjects += static_cast<std::uint32_t>(objects.size());

@@ -1,9 +1,8 @@
 module;
 
-#include "system/CriticalSection.h"
-module Renderer.TLAS;
+#include <vulkan/vulkan.h>
 
-import <vulkan/vulkan.h>;
+module Renderer.TLAS;
 
 import std;
 
@@ -48,7 +47,8 @@ void TopLevelAccelerationStructure::Update(const std::vector<RenderableMesh>& ob
 {
 	instanceBuffer.Reset();
 	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects, indexType);
-	instanceBuffer.SubmitNewData(BLASInstances);
+	if (!BLASInstances.empty())
+		instanceBuffer.SubmitNewData(BLASInstances);
 
 	VkAccelerationStructureGeometryKHR geometry{};
 	GetGeometry(geometry);

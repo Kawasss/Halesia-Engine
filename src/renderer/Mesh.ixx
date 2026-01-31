@@ -12,10 +12,11 @@ import Renderer.Vertex;
 
 import IO.CreationData;
 
-export enum MeshFlags : int
+export enum MeshFlags
 {
-	MESH_FLAG_NONE = 0,
-	MESH_FLAG_NO_RAY_TRACING = 1 << 1,
+	MeshFlagNone = 0,
+	MeshFlagNoRayTracing = 1 << 1,
+	MeshFlagCullBackFaces = 1 << 2,
 };
 export using MeshOptionFlags = std::underlying_type_t<MeshFlags>;
 
@@ -75,7 +76,7 @@ private:
 
 	uint32_t materialIndex = 0;
 
-	MeshOptionFlags flags = MESH_FLAG_NONE;
+	MeshOptionFlags flags = MeshFlagNone;
 
 	float originalAABBDistance = 0.0f;
 
