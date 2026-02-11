@@ -30,26 +30,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
+    <PlatformToolset>v145</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -106,7 +106,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions);VK_USE_PLATFORM_WIN32_KHR</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;C:\Users\wveen\source\additionalDependencies\imgui-1.91.7;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;C:\Users\wveen\source\additionalDependencies\imgui-1.91.7;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

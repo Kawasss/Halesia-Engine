@@ -134,7 +134,7 @@ public:
     static std::vector<const char*>& GetInstanceExtensions() { return requiredInstanceExtensions; }
     static std::vector<VkDynamicState>& GetDynamicStates() { return dynamicStates; }
 
-    static void                               ExecuteSingleTimeCommands(std::function<void(const CommandBuffer&)>&& commands);
+    template<class Func> static void          ExecuteSingleTimeCommands(Func&& commands);
 
     static void                               Init();
     static void                               Destroy();
@@ -162,6 +162,18 @@ private:
 
     static void                               DebugNameObject(uint64_t object, VkObjectType type, const char* name);
 };
+
+template<class Func>
+void Vulkan::ExecuteSingleTimeCommands(Func&& commands)
+{
+    VkCommandPool commandPool = FetchNewCommandPool(context.graphicsIndex);
+    CommandBuffer cmdBuffer = BeginSingleTimeCommands(commandPool);
+
+    commands(cmdBuffer);
+
+    EndSingleTimeCommands(context.graphicsQueue, cmdBuffer.Get(), commandPool);
+    YieldCommandPool(context.graphicsIndex, commandPool);
+}
 
 template<typename Type>
 void Vulkan::SetDebugName(Type object, const char* name)

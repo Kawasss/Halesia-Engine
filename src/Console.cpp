@@ -10,6 +10,8 @@
 
 #include "system/CriticalSection.h"
 
+import StrUtil;
+
 std::vector<Console::Message> Console::messages;
 
 std::map<std::string, float*> floatCVars;
@@ -138,13 +140,11 @@ void Console::InterpretCommand(std::string_view command)
 
 	float underlying = 0.0f;
 
-	try
+	std::optional<float> optVal = strutil::TryStringTo<float>(value);
+
+	if (!optVal.has_value())
 	{
-		underlying = std::stof(value.data());
-	}
-	catch (...)
-	{
-		WriteLine("Failed to interpret value", Severity::Error);
+		WriteError("Failed to interpret value \"{}\"", value);
 		return;
 	}
 

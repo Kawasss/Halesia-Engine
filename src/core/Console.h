@@ -69,6 +69,24 @@ public:
 		WriteLine(std::vformat(fmt, std::make_format_args(args...)), severity);
 	}
 
+	template<typename... Args>
+	static void WriteDebug(std::string_view fmt, Args&&... args)
+	{
+		WriteLine(std::vformat(fmt, std::make_format_args(args...)), Console::Severity::Debug);
+	}
+
+	template<typename... Args>
+	static void WriteWarning(std::string_view fmt, Args&&... args)
+	{
+		WriteLine(std::vformat(fmt, std::make_format_args(args...)), Console::Severity::Warning);
+	}
+
+	template<typename... Args>
+	static void WriteError(std::string_view fmt, Args&&... args)
+	{
+		WriteLine(std::vformat(fmt, std::make_format_args(args...)), Console::Severity::Error);
+	}
+
 private:
 	enum class DataType
 	{

@@ -122,13 +122,16 @@ EditorProject::UncheckedFile EditorProject::ProcessData(const std::string_view& 
 {
 	UncheckedFile ret{};
 
-	for (size_t i = 0; i != std::string_view::npos; i = data.find("\r\n", i))
+	for (size_t i = 0; i != std::string_view::npos && i < data.size(); i = data.find("\r\n", i))
 	{
 		if (i != 0) // skip over the \r\n
 			i += 2;
 
+		if (i == data.size())
+			break;
+
 		size_t endLine = std::min(data.find("\r\n", i), data.size()); // for loop has to find this endline twice but oh well
-		std::string_view line = data.substr(i, endLine - i);
+		std::string_view line = data.substr(i, endLine - i - 1);
 
 		size_t divider = line.find('=');
 		std::string_view identifier = line.substr(0, divider);
