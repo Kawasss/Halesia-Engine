@@ -4,9 +4,13 @@ import std;
 
 namespace IO
 {
-	void WriteFile(const std::string_view& path)
+	void WriteFile(const std::filesystem::path& path, const std::span<const char>& data)
 	{
+		std::ofstream stream(path, std::ios::beg);
+		if (!stream.good())
+			return;
 
+		stream.write(data.data(), data.size());
 	}
 
 	static std::expected<std::vector<char>, bool> ReadFromFileObject(std::ifstream& file, ReadOptions options)

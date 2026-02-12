@@ -71,17 +71,6 @@ win32::CriticalSection& Vulkan::GetQueueCriticalSection(VkQueue queue)
     return queueSections[queue];
 }
 
-void Vulkan::ExecuteSingleTimeCommands(std::function<void(const CommandBuffer&)>&& commands) // uses the graphics queue, maybe a parameter to specify the queue to use
-{
-    VkCommandPool commandPool = FetchNewCommandPool(context.graphicsIndex);
-    CommandBuffer cmdBuffer = BeginSingleTimeCommands(commandPool);
-
-    commands(cmdBuffer);
-
-    EndSingleTimeCommands(context.graphicsQueue, cmdBuffer.Get(), commandPool);
-    YieldCommandPool(context.graphicsIndex, commandPool);
-}
-
 void Vulkan::AllocateCommandBuffers(const VkCommandBufferAllocateInfo& allocationInfo, std::vector<CommandBuffer>& commandBuffers)
 {
     VkCommandBuffer* pCommandBuffers = reinterpret_cast<VkCommandBuffer*>(commandBuffers.data()); // should be safe since the CommandBuffer class only contains the VkCommandBuffer
