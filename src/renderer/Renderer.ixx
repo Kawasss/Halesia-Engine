@@ -169,6 +169,8 @@ private:
 
 		std::shared_ptr<BottomLevelAccelerationStructure> BLAS; // probably better to make it anything but a shared_ptr
 
+		int refCount;
+
 		~GpuMeshData();
 	};
 

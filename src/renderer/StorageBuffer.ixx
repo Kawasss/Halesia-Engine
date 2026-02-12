@@ -234,7 +234,7 @@ private:
 		}
 		return INVALID_HANDLE;
 	}
-
+	
 	void WriteToBuffer(const std::span<const T>& data, Memory memory)
 	{
 		buffer.Write(data, memoryData[memory].offset);

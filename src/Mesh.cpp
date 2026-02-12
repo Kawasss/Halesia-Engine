@@ -105,7 +105,7 @@ void Mesh::CopyFrom(const Mesh& mesh)
 	vertices = mesh.vertices;
 	indices = mesh.indices;
 
-	meshHandle = mesh.meshHandle;
+	meshHandle = HalesiaEngine::GetInstance()->GetEngineCore().renderer->CopyMeshHandle(mesh.meshHandle);
 
 	faceCount = mesh.faceCount;
 

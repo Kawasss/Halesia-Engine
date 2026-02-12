@@ -958,6 +958,8 @@ void Renderer::StartRecording(float delta)
 
 	CheckForVRAMOverflow();
 
+	imageIndex = GetNextSwapchainImage(currentFrame);
+
 	VkResult result = vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
 	CheckVulkanResult("Failed to wait for fences", result);
 	result = vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
@@ -966,7 +968,7 @@ void Renderer::StartRecording(float delta)
 	Vulkan::DeleteSubmittedObjects();
 	GetQueryResults();
 
-	imageIndex = GetNextSwapchainImage(currentFrame);
+	
 
 	activeCmdBuffer = commandBuffers[currentFrame];
 
@@ -996,7 +998,7 @@ void Renderer::SubmitRecording()
 	vgm::CollectGarbage();
 }
 
-Renderer::GpuMeshData::GpuMeshData(StorageBuffer<Vertex>::Memory d, StorageBuffer<Vertex>::Memory v, StorageBuffer<std::uint32_t>::Memory i, const std::shared_ptr<BottomLevelAccelerationStructure>& b) : dVertices(d), vertices(v), indices(i), BLAS(b)
+Renderer::GpuMeshData::GpuMeshData(StorageBuffer<Vertex>::Memory d, StorageBuffer<Vertex>::Memory v, StorageBuffer<std::uint32_t>::Memory i, const std::shared_ptr<BottomLevelAccelerationStructure>& b) : dVertices(d), vertices(v), indices(i), BLAS(b), refCount(1)
 {
 
 }
@@ -1028,6 +1030,17 @@ std::expected<MeshHandle, bool> Renderer::LoadMesh(const std::span<const Vertex>
 
 MeshHandle Renderer::CopyMeshHandle(const MeshHandle& handle)
 {
+	if (handle >= meshDatas.size())
+		return INVALID_MESH_HANDLE;
+
+	win32::CriticalLockGuard guard(meshDataCritSection);
+
+	std::optional<GpuMeshData>& optData = meshDatas[handle];
+	if (!optData.has_value())
+		return INVALID_MESH_HANDLE;
+
+	optData->refCount++; // maybe atomic fetch_add..?
+
 	return handle;
 }
 
@@ -1040,7 +1053,15 @@ void Renderer::DestroyMeshHandle(const MeshHandle& handle)
 	}
 
 	win32::CriticalLockGuard guard(meshDataCritSection);
-	meshDatas[handle] = std::optional<GpuMeshData>();
+
+	std::optional<GpuMeshData>& optData = meshDatas[handle];
+	if (!optData.has_value())
+		return;
+
+	if (optData->refCount <= 1)
+		optData = std::optional<GpuMeshData>();
+	else
+		optData->refCount--;
 }
 
 Renderer::GpuMeshData::~GpuMeshData()

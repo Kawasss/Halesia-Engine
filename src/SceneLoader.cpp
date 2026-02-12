@@ -8,6 +8,8 @@ module;
 
 #include "io/FileMaterial.h"
 
+#include "system/CriticalSection.h"
+
 module IO.SceneLoader;
 
 import std;
@@ -137,7 +139,7 @@ static MaterialCreationData DeserializeMaterial(const BinarySpan& data)
 	MaterialCreationData ret{};
 	ret.albedo = DeserializeImage(data);
 	ret.normal = DeserializeImage(data);
-	ret.metallic = DeserializeImage(data);
+	//ret.metallic = DeserializeImage(data);
 	ret.roughness = DeserializeImage(data);
 	ret.ambientOccl = DeserializeImage(data);
 

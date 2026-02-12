@@ -1215,7 +1215,7 @@ void Editor::LoadFile(const fs::path& path)
 
 void Editor::LoadObjectsParallel(const std::span<const ObjectCreationData>& datas, float progressStep)
 {
-	std::for_each(std::execution::par_unseq, datas.begin(), datas.end(),
+	std::for_each(/*std::execution::par_unseq, */datas.begin(), datas.end(),
 		[&](const ObjectCreationData& data)
 		{
 			AddObject(data);
@@ -1229,7 +1229,7 @@ void Editor::LoadMaterialsParallel(const std::span<const std::variant<MaterialCr
 	for (int i = 0; i < indices.size(); i++)
 		indices[i] = i;
 
-	std::for_each(std::execution::par, indices.begin(), indices.end(),
+	std::for_each(std::execution::par_unseq, indices.begin(), indices.end(),
 		[&](int i)
 		{
 			std::visit(MaterialVisitor(i + 1), datas[i]);

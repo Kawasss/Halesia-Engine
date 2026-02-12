@@ -37,7 +37,7 @@ public:
 	template<typename T>
 	void Write(const std::span<T>& values, size_t offset) // offset in byte count
 	{
-		Write(values.data(), values.size() * sizeof(T), offset);
+		Write(reinterpret_cast<const void*>(values.data()), values.size() * sizeof(T), offset);
 	}
 
 	bool Resized();
