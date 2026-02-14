@@ -66,12 +66,14 @@ void Mesh::Create(const MeshCreationData& creationData)
 	vertices      = creationData.vertices;
 	indices       = creationData.indices;
 	faceCount     = creationData.faceCount;
-	cullBackFaces = creationData.cullBackFaces;
 	center        = (creationData.min + creationData.max) * 0.5f;
 	extents       = creationData.max - center;
 	max           = extents + center;
 	min           = center * 2.f - max;
 	flags         = static_cast<MeshFlags>(creationData.flags);
+
+	if (creationData.cullBackFaces)
+		flags |= MeshFlagCullBackFaces;
 
 	SetMaterialIndex(creationData.materialIndex);
 
