@@ -10,11 +10,3 @@
 #include <glm/gtx/easing.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
-#include <string>
-#include <format>
-
-inline std::string Vec3ToString(const glm::vec3& vec)
-{
-	return std::format("{}, {}, {}", vec.x, vec.y, vec.z);
-}

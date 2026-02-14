@@ -39,8 +39,6 @@ export struct Mesh
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 
-	bool cullBackFaces = true;
-
 	int faceCount = 0;
 	glm::vec3 min, max, center, extents;
 
@@ -76,7 +74,7 @@ private:
 
 	uint32_t materialIndex = 0;
 
-	MeshOptionFlags flags = MeshFlagNone;
+	MeshOptionFlags flags = MeshFlagCullBackFaces;
 
 	float originalAABBDistance = 0.0f;
 

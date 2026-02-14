@@ -131,7 +131,7 @@ EditorProject::UncheckedFile EditorProject::ProcessData(const std::string_view& 
 			break;
 
 		size_t endLine = std::min(data.find("\r\n", i), data.size()); // for loop has to find this endline twice but oh well
-		std::string_view line = data.substr(i, endLine - i - 1);
+		std::string_view line = data.substr(i, endLine - i);
 
 		size_t divider = line.find('=');
 		std::string_view identifier = line.substr(0, divider);

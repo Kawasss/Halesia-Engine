@@ -1055,19 +1055,27 @@ void Editor::ShowObjectMesh(Mesh& mesh)
 		"face count: %i\n\n"
 		"center:     %.2f, %.2f, %.2f\n"
 		"extents:    %.2f, %.2f, %.2f\n\n",
-		mesh.vertexMemory, mesh.defaultVertexMemory, mesh.indexMemory, (uint64_t)mesh.BLAS.get(), mesh.faceCount, mesh.center.x, mesh.center.y, mesh.center.z, mesh.extents.x, mesh.extents.y, mesh.extents.z);
+		mesh.vertexMemory, mesh.defaultVertexMemory, mesh.indexMemory, (uint64_t)mesh.BLAS.get(), mesh.faceCount, mesh.center.x, mesh.center.y, mesh.center.z, mesh.extents.x, mesh.extents.y, mesh.extents.z);*/
 
-	ImGui::Checkbox("cull faces", &mesh.cullBackFaces);
+	
 
 	MeshOptionFlags flags = mesh.GetFlags();
-	bool useRayTracing = !(flags & MESH_FLAG_NO_RAY_TRACING);
+	bool useRayTracing = !(flags & MeshFlagNoRayTracing);
+	bool cullBackFaces =   flags & MeshFlagCullBackFaces;
 
+	ImGui::Checkbox("cull faces", &cullBackFaces);
 	ImGui::Checkbox("use in ray-tracing", &useRayTracing);
 
 	if (useRayTracing)
-		flags &= ~(MESH_FLAG_NO_RAY_TRACING);
+		flags &= ~(MeshFlagNoRayTracing);
 	else
-		flags |= MESH_FLAG_NO_RAY_TRACING;
+		flags |= MeshFlagNoRayTracing;
+
+	if (cullBackFaces)
+		flags |= MeshFlagCullBackFaces;
+	else
+		flags &= ~(MeshFlagCullBackFaces);
+
 
 	mesh.SetFlags(flags);
 
@@ -1085,8 +1093,8 @@ void Editor::ShowObjectMesh(Mesh& mesh)
 	ImGui::InputFloat("##uv_input", &mesh.uvScale);
 
 	if (ImGui::Button("Change mesh"))
-		QueueMeshChange(selectedObj);*/
-	ImGui::Text("TODO: re-implement this");
+		QueueMeshChange(selectedObj);
+	//ImGui::Text("TODO: re-implement this");
 }
 
 void Editor::ShowAddObjectWindow()
@@ -1215,7 +1223,7 @@ void Editor::LoadFile(const fs::path& path)
 
 void Editor::LoadObjectsParallel(const std::span<const ObjectCreationData>& datas, float progressStep)
 {
-	std::for_each(/*std::execution::par_unseq, */datas.begin(), datas.end(),
+	std::for_each(std::execution::par_unseq, datas.begin(), datas.end(),
 		[&](const ObjectCreationData& data)
 		{
 			AddObject(data);

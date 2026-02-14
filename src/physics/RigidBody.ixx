@@ -7,6 +7,8 @@ export module Physics.RigidBody;
 
 import "../glm.h";
 
+import std;
+
 import Core.Transform;
 
 import Physics.Shapes;

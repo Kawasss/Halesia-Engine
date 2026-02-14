@@ -1074,6 +1074,18 @@ Renderer::GpuMeshData::~GpuMeshData()
 		g_indexBuffer.DestroyData(indices);
 }
 
+static RenderableMeshFlags TranslateMeshFlags(MeshOptionFlags flags)
+{
+	RenderableMeshFlags ret = 0;
+
+	if (flags & MeshFlagNoRayTracing)
+		ret |= RenderableMeshFlagNoRayTracing;
+	if ((flags & MeshFlagCullBackFaces) == 0)
+		ret |= RenderableMeshFlagNoCulling;
+
+	return ret;
+}
+
 std::optional<RenderableMesh> Renderer::GetRenderableMeshFromObject(const Object* pObject)
 {
 	win32::CriticalLockGuard guard(meshDataCritSection);
@@ -1093,13 +1105,14 @@ std::optional<RenderableMesh> Renderer::GetRenderableMeshFromObject(const Object
 	RenderableMesh mesh{};
 	mesh.transform = pObject->transform.GetModelMatrix();
 	mesh.materialIndex = pMeshObject->mesh.GetMaterialIndex();
+	mesh.uvScale = pMeshObject->mesh.uvScale;
 	mesh.BLAS = data.BLAS;
 	mesh.dVertexMemory = data.dVertices;
 	mesh.vertexMemory = data.vertices;
 	mesh.indexMemory = data.indices;
 	mesh.faceCount = pMeshObject->mesh.faceCount; // these 2 could probably be removed
 	mesh.vertexCount = static_cast<std::uint32_t>(pMeshObject->mesh.vertices.size());
-	mesh.flags = 0; // TODO: translate mesh flags into the flags here
+	mesh.flags = TranslateMeshFlags(pMeshObject->mesh.GetFlags()); // TODO: translate mesh flags into the flags here
 
 	return mesh;
 }
