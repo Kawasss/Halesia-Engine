@@ -872,6 +872,30 @@ std::string CreateFunctionNotActivatedError(const std::string_view& functionName
     return stream.str();
 }
 
+std::map<VkDeviceMemory, VkDeviceSize> memoryToSize;
+
+inline VkResult vkAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo, const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory)
+{
+    static PFN_vkAllocateMemory fnPtr = (PFN_vkAllocateMemory)vkGetDeviceProcAddr(device, "vkAllocateMemory");
+
+    VkResult result = fnPtr(device, pAllocateInfo, pAllocator, pMemory);
+    memoryToSize[*pMemory] = pAllocateInfo->allocationSize;
+
+    Vulkan::allocatedMemory += pAllocateInfo->allocationSize;
+
+    return result;
+}
+
+inline void vkFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator)
+{
+    static PFN_vkFreeMemory fnPtr = (PFN_vkFreeMemory)vkGetDeviceProcAddr(device, "vkFreeMemory");
+
+    fnPtr(device, memory, pAllocator);
+
+    Vulkan::allocatedMemory -= memoryToSize[memory];
+    memoryToSize.erase(memory);
+}
+
 #define DEFINE_DEVICE_FUNCTION(function)   static PFN_##function p##function = reinterpret_cast<PFN_##function>(vkGetDeviceProcAddr(Vulkan::GetContext().logicalDevice, #function))
 #define DEFINE_INSTANCE_FUNCTION(function) static PFN_##function p##function = reinterpret_cast<PFN_##function>(vkGetInstanceProcAddr(instance, #function))
 
