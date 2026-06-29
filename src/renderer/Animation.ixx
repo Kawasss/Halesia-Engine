@@ -1,15 +1,13 @@
-module;
-
-#include "../glm.h"
-
 export module Renderer.Animation;
-
-import <assimp/cimport.h>;
-import <assimp/scene.h>;
 
 import std;
 
 import Renderer.Bone;
+
+import <assimp/cimport.h>;
+import <assimp/scene.h>;
+
+import "../glm.h";
 
 export class Animation
 {

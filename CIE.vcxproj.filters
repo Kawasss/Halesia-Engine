@@ -572,6 +572,9 @@
     <ClCompile Include="src\renderer\VideoMemoryManager.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\system\CriticalSection.ixx">
+      <Filter>Header Files\system</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ResourceManager.h">
@@ -579,9 +582,6 @@
     </ClInclude>
     <ClInclude Include="src\math\vectors.h">
       <Filter>Header Files\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\system\CriticalSection.h">
-      <Filter>Header Files\system</Filter>
     </ClInclude>
     <ClInclude Include="src\glm.h">
       <Filter>Header Files\math</Filter>

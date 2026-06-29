@@ -1,7 +1,3 @@
-module;
-
-#include "../system/CriticalSection.h"
-
 export module Renderer;
 
 import "../glm.h";
@@ -31,6 +27,8 @@ import Renderer.PhyiscalDevice;
 import Renderer.BLAS;
 import Renderer.Buffer;
 import Renderer.FramesInFlight;
+
+import System.CriticalSection;
 
 import <vulkan/vulkan.h>;
 

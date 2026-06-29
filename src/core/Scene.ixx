@@ -1,9 +1,3 @@
-module;
-
-#include <Windows.h>
-
-#include "../system/CriticalSection.h"
-
 export module Core.Scene;
 
 import std;
@@ -14,6 +8,8 @@ import Core.CameraObject;
 import Core.Object;
 
 import IO.CreationData;
+
+import System.CriticalSection;
 
 export class Scene
 {

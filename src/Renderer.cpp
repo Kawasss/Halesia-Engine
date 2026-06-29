@@ -12,8 +12,6 @@ module;
 #include <imgui-1.91.7/backends/imgui_impl_vulkan.h>
 #include <imgui-1.91.7/backends/imgui_impl_win32.h>
 
-#include "system/CriticalSection.h"
-
 #undef CreateSemaphore
 
 module Renderer;
@@ -46,6 +44,8 @@ import Renderer.Light;
 import Renderer.Mesh;
 import Renderer.BLAS;
 import Renderer.FramesInFlight;
+
+import System.CriticalSection;
 
 namespace fs = std::filesystem;
 

@@ -1,7 +1,3 @@
-module;
-
-#include "../system/CriticalSection.h"
-
 export module Renderer.Vulkan;
 
 import std;
@@ -9,6 +5,8 @@ import std;
 import Renderer.CommandBuffer;
 import Renderer.PhyiscalDevice;
 import Renderer.VideoMemoryManager;
+
+import System.CriticalSection;
 
 import <vulkan/vulkan.h>;
 

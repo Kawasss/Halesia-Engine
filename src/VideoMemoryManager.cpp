@@ -2,8 +2,6 @@ module;
 
 #include <cassert>
 
-#include "system/CriticalSection.h"
-
 module Renderer.VideoMemoryManager;
 
 import std;
@@ -11,6 +9,8 @@ import std;
 import Renderer.VulkanAPIError;
 import Renderer.VulkanGarbageManager;
 import Renderer.Vulkan;
+
+import System.CriticalSection;
 
 import <vulkan/vulkan.h>;
 

@@ -226,6 +226,7 @@
     <ClCompile Include="src\renderer\VideoMemoryManager.ixx" />
     <ClCompile Include="src\renderer\Vulkan.ixx" />
     <ClCompile Include="src\renderer\VulkanAPIError.ixx" />
+    <ClCompile Include="src\system\CriticalSection.ixx" />
     <ClCompile Include="src\TLAS.cpp" />
     <ClCompile Include="src\VulkanGarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
@@ -334,7 +335,6 @@
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\ResourceManager.h" />
-    <ClInclude Include="src\system\CriticalSection.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cfg\engine.ini" />

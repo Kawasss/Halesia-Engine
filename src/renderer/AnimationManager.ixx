@@ -1,9 +1,3 @@
-module;
-
-#include "../glm.h"
-
-#include "../system/CriticalSection.h"
-
 export module Renderer.AnimationManager;
 
 import std;
@@ -13,6 +7,10 @@ import Renderer.Animation;
 import Renderer.ComputePipeline;
 import Renderer.CommandBuffer;
 import Renderer.Buffer;
+
+import System.CriticalSection;
+
+import "../glm.h";
 
 export class AnimationManager
 {

@@ -1,9 +1,12 @@
-#pragma once
-#include <utility>
+module;
+
 #include <Windows.h>
 
+export module System.CriticalSection;
 
-namespace win32
+import std;
+
+export namespace win32
 {
 	class CriticalSection
 	{
@@ -33,13 +36,13 @@ namespace win32
 		void Lock()
 		{
 			if (valid)
-			 ::EnterCriticalSection(&section);
+				::EnterCriticalSection(&section);
 		}
 
 		void Unlock()
 		{
 			if (valid)
-			 ::LeaveCriticalSection(&section);
+				::LeaveCriticalSection(&section);
 		}
 
 	private:

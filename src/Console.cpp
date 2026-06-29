@@ -1,16 +1,10 @@
-#include <iostream>
-#include <vector>
-#include <fstream>
-#include <sstream>
-#include <chrono>
-#include <iomanip>
-#include <map>
-
 #include "core/Console.h"
 
-#include "system/CriticalSection.h"
+import std;
 
 import StrUtil;
+
+import System.CriticalSection;
 
 std::vector<Console::Message> Console::messages;
 

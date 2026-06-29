@@ -1,7 +1,3 @@
-module;
-
-#include "system/CriticalSection.h"
-
 module Renderer.AccelerationStructure;
 
 import <vulkan/vulkan.h>;
@@ -12,6 +8,8 @@ import Renderer.VulkanGarbageManager;
 import Renderer.VulkanAPIError;
 import Renderer.Vulkan;
 import Renderer;
+
+import System.CriticalSection;
 
 constexpr VkBufferUsageFlags ACCELERATION_STRUCTURE_BUFFER_BITS = VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
 constexpr VkBufferUsageFlags SCRATCH_BUFFER_BITS = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;

@@ -4,8 +4,6 @@ module;
 
 #include "core/Console.h"
 
-#include "system/CriticalSection.h"
-
 module Core.Scene;
 
 import Core.ScriptObject;
@@ -18,6 +16,8 @@ import Core.Object;
 import System.Window;
 
 import IO.CreationData;
+
+import System.CriticalSection;
 
 CameraObject* Scene::defaultCamera = nullptr;
 

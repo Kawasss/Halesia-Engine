@@ -6,8 +6,6 @@ module;
 
 #include "core/Console.h"
 
-#include "system/CriticalSection.h"
-
 module IO.SceneLoader;
 
 import std;
@@ -17,6 +15,8 @@ import IO.BinaryStream;
 import IO.CreationData;
 
 import Core.Object;
+
+import System.CriticalSection;
 
 namespace fs = std::filesystem;
 

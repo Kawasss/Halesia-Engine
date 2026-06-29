@@ -1,9 +1,3 @@
-module;
-
-#include <Windows.h>
-
-#include "system/CriticalSection.h"
-
 module IO.SceneWriter;
 
 import std;
@@ -18,14 +12,16 @@ import Renderer.Texture;
 import IO.DataArchiveFile;
 import IO.BinaryStream;
 
+import System.CriticalSection;
+
 static void WriteNamedReferencesToStream(BinaryStream& stream, const std::vector<Object*>& objects)
 {
-	uint32_t referenceCount = static_cast<uint32_t>(objects.size());
+	std::uint32_t referenceCount = static_cast<uint32_t>(objects.size());
 	stream << referenceCount;
 
 	for (const Object* pObject : objects)
 	{
-		uint32_t strLen = static_cast<uint32_t>(pObject->name.size());
+		std::uint32_t strLen = static_cast<std::uint32_t>(pObject->name.size());
 
 		stream << strLen;
 		stream.Write(pObject->name.data(), strLen);
@@ -59,13 +55,13 @@ static void WriteTextureToStream(BinaryStream& stream, const Texture* pTexture)
 static void WriteMaterialsToArchive(DataArchiveFile& file)
 {
 	BinaryStream stream;
-	uint32_t matCount = static_cast<uint32_t>(Mesh::materials.size() - 1);
+	std::uint32_t matCount = static_cast<std::uint32_t>(Mesh::materials.size() - 1);
 	stream << matCount;
 
-	for (uint32_t i = 1; i < matCount + 1; i++)
+	for (std::uint32_t i = 1; i < matCount + 1; i++)
 	{
 		std::string name = "##material" + std::to_string(i);
-		uint32_t strLen = static_cast<uint32_t>(name.size());
+		std::uint32_t strLen = static_cast<std::uint32_t>(name.size());
 		stream << strLen;
 
 		stream.Write(name.data(), strLen);

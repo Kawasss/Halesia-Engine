@@ -1,12 +1,4 @@
-module;
-
-#include "system/CriticalSection.h"
-
 module Renderer.AnimationManager;
-
-import <assimp/anim.h>;
-
-import "glm.h";
 
 import std;
 
@@ -15,7 +7,13 @@ import Renderer.ComputePipeline;
 import Renderer.Buffer;
 import Renderer;
 
+import System.CriticalSection;
+
 import <vulkan/vulkan.h>;
+
+import <assimp/anim.h>;
+
+import "glm.h";
 
 AnimationManager* AnimationManager::Get()
 {

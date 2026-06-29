@@ -1,7 +1,5 @@
 module;
 
-#include "../system/CriticalSection.h"
-
 #include "../core/Console.h"
 
 export module Renderer.StorageBuffer;
@@ -10,6 +8,8 @@ import std;
 
 import Renderer.ResizableBuffer;
 import Renderer.Vulkan;
+
+import System.CriticalSection;
 
 import <vulkan/vulkan.h>;
 
