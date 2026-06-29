@@ -2,8 +2,6 @@ module;
 
 #include "../glm.h"
 
-#include "../renderer/Material.h"
-
 export module IO.SceneLoader;
 
 import <assimp/scene.h>;
@@ -14,6 +12,7 @@ import IO.DataArchiveFile;
 import IO.BinaryStream;
 import IO.CreationData;
 
+import Renderer.Material;
 import Renderer.Animation;
 import Renderer.Bone;
 import Renderer.Light;

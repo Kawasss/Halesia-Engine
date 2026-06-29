@@ -2,7 +2,8 @@
 #include "io/FileArray.h"
 
 #include "renderer/Texture.h"
-#include "renderer/Material.h"
+
+import Renderer.Material;
 
 FileImage FileImage::CreateFrom(Texture* tex)
 {

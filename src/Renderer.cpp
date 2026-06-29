@@ -5,7 +5,6 @@ module;
 #include "renderer/Texture.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/FramesInFlight.h"
-#include "renderer/Material.h"
 
 #include "core/Console.h"
 
@@ -33,6 +32,7 @@ import Core.Object;
 import System.Window;
 import System;
 
+import Renderer.Material;
 import Renderer.HdrConverter;
 import Renderer.DescriptorWriter;
 import Renderer.AnimationManager;

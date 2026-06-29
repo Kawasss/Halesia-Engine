@@ -2,10 +2,9 @@ module;
 
 #include "ResourceManager.h"
 
-#include "renderer/Material.h"
-
 module Renderer.Mesh;
 
+import Renderer.Material;
 import Renderer;
 
 import IO.CreationData;

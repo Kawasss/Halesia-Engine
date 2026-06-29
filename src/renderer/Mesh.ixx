@@ -1,7 +1,3 @@
-module;
-
-#include "Material.h"
-
 export module Renderer.Mesh;
 
 import std;
@@ -9,6 +5,7 @@ import std;
 import "../glm.h";
 
 import Renderer.Vertex;
+import Renderer.Material;
 
 import IO.CreationData;
 

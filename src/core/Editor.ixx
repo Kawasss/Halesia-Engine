@@ -1,7 +1,3 @@
-module;
-
-#include "../renderer/Material.h"
-
 export module Core.Editor;
 
 import "../glm.h";
@@ -13,6 +9,7 @@ import System.Window;
 import Physics.RigidBody;
 
 import Renderer.Animation;
+import Renderer.Material;
 import Renderer.Grid;
 import Renderer.Mesh;
 import Renderer;

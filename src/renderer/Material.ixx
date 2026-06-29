@@ -1,13 +1,16 @@
-#pragma once
-#include <array>
-#include <string>
+module;
 
-#include "../io/FwdDclCreationData.h"
+#include "Texture.h"
 
-class Texture;
-using Handle = uint64_t;
+export module Renderer.Material;
 
-enum class TextureType
+import std;
+
+import IO.CreationData;
+
+export using Handle = uint64_t;
+
+export enum class TextureType
 {
 	Albedo = 0,
 	Normal = 1,
@@ -16,7 +19,7 @@ enum class TextureType
 	AmbientOcclusion = 4,
 };
 
-struct MaterialCreateInfo
+export struct MaterialCreateInfo
 {
 	std::string albedo = "";
 	std::string normal = "";
@@ -26,7 +29,7 @@ struct MaterialCreateInfo
 	bool isLight = false;
 };
 
-struct Material
+export struct Material
 {
 	static std::array<TextureType, 5> pbrTextures;
 
@@ -50,6 +53,9 @@ struct Material
 	const Texture* operator[](size_t i) const;
 	const Texture* operator[](TextureType materialTexture) const;
 
+	bool operator==(const Material& rhs) const;
+	bool operator!=(const Material& rhs) const;
+
 	Handle handle = 0;
 
 	// dont know if dynamically allocated is necessary since the material will always be used for the lifetime of the mesh, the class is sort of big so not so sure if copying is cheap
@@ -60,7 +66,7 @@ struct Material
 	Texture* ambientOcclusion = nullptr;
 
 	bool isLight = false;
-	
+
 private:
 	const Texture* const& GetTexture(size_t i) const;
 	Texture*& GetTexture(size_t i);
@@ -69,6 +75,3 @@ private:
 
 	int referenceCount = 0;
 };
-
-inline extern bool operator==(const Material& lMaterial, const Material& rMaterial);
-inline extern bool operator!=(const Material& lMaterial, const Material& rMaterial);

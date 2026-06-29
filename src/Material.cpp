@@ -1,5 +1,8 @@
-#include "renderer/Material.h"
+module;
+
 #include "renderer/Texture.h"
+
+module Renderer.Material;
 
 import IO.CreationData;
 
@@ -179,12 +182,12 @@ void Material::EnsurePointerSafety()
 		ambientOcclusion = Texture::placeholderAmbientOcclusion;
 }
 
-bool operator==(const Material& lMaterial, const Material& rMaterial)
+bool Material::operator==(const Material& rhs) const
 {
-	return lMaterial.handle == rMaterial.handle && lMaterial.albedo == rMaterial.albedo && lMaterial.normal == rMaterial.normal && lMaterial.metallic == rMaterial.metallic && lMaterial.roughness == rMaterial.roughness && lMaterial.ambientOcclusion == rMaterial.ambientOcclusion && lMaterial.isLight == rMaterial.isLight;
+	return handle == rhs.handle && albedo == rhs.albedo && normal == rhs.normal && metallic == rhs.metallic && roughness == rhs.roughness && ambientOcclusion == rhs.ambientOcclusion && isLight == rhs.isLight;
 }
 
-bool operator!=(const Material& lMaterial, const Material& rMaterial)
+bool Material::operator!=(const Material& rhs) const
 {
-	return !(lMaterial == rMaterial);
+	return !(*this == rhs);
 }

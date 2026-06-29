@@ -206,6 +206,7 @@
     <ClCompile Include="src\renderer\GraphicsPipeline.ixx" />
     <ClCompile Include="src\renderer\CommandBuffer.ixx" />
     <ClCompile Include="src\renderer\Light.ixx" />
+    <ClCompile Include="src\Renderer\Material.ixx" />
     <ClCompile Include="src\renderer\Mesh.ixx" />
     <ClCompile Include="src\renderer\Pipeline.ixx" />
     <ClCompile Include="src\renderer\QueryPool.ixx" />
@@ -327,10 +328,8 @@
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\io\FileArray.h" />
     <ClInclude Include="src\io\FileMaterial.h" />
-    <ClInclude Include="src\io\FwdDclCreationData.h" />
     <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\renderer\FramesInFlight.h" />
-    <ClInclude Include="src\renderer\Material.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
     <ClInclude Include="src\renderer\Texture.h" />
     <ClInclude Include="src\renderer\VideoMemoryManager.h" />
