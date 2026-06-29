@@ -1,8 +1,3 @@
-module;
-
-#include <Windows.h>
-#include <vulkan/vulkan.h>
-
 export module Renderer.RenderPipeline;
 
 import std;
@@ -14,6 +9,9 @@ import System.Window;
 import Renderer.Framebuffer;
 import Renderer.CommandBuffer;
 import Renderer.RenderableMesh;
+import Renderer.PhyiscalDevice;
+
+import <vulkan/vulkan.h>;
 
 export enum class RenderMode : int // this enum is used as a suggestion
 {

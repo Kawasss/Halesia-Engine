@@ -10,7 +10,6 @@ module;
 
 #include <ktx.h>
 
-#include "renderer/physicalDevice.h"
 #include "renderer/Buffer.h"
 #include "renderer/VulkanAPIError.h"
 
@@ -20,6 +19,7 @@ module Renderer.Texture;
 
 import std;
 
+import Renderer.PhyiscalDevice;
 import Renderer.ImageTransitioner;
 import Renderer.VulkanGarbageManager;
 import Renderer.Vulkan;

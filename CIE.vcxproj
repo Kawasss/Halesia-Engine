@@ -207,6 +207,7 @@
     <ClCompile Include="src\renderer\Light.ixx" />
     <ClCompile Include="src\Renderer\Material.ixx" />
     <ClCompile Include="src\renderer\Mesh.ixx" />
+    <ClCompile Include="src\renderer\PhyiscalDevice.ixx" />
     <ClCompile Include="src\renderer\Pipeline.ixx" />
     <ClCompile Include="src\renderer\QueryPool.ixx" />
     <ClCompile Include="src\renderer\RayTracingPipeline.ixx" />
@@ -329,7 +330,6 @@
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\renderer\FramesInFlight.h" />
-    <ClInclude Include="src\renderer\PhysicalDevice.h" />
     <ClInclude Include="src\renderer\VideoMemoryManager.h" />
     <ClInclude Include="src\renderer\Buffer.h" />
     <ClInclude Include="src\renderer\VulkanAPIError.h" />

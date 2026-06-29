@@ -2,7 +2,6 @@ module;
 
 #include <vulkan/vulkan.h>
 
-#include "renderer/PhysicalDevice.h"
 #include "renderer/VulkanAPIError.h"
 
 module Renderer.Swapchain;
@@ -12,6 +11,7 @@ import std;
 import System.Window;
 
 import Renderer.VulkanGarbageManager;
+import Renderer.PhyiscalDevice;
 import Renderer.Surface;
 import Renderer.Vulkan;
 

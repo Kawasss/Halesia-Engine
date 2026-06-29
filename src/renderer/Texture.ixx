@@ -1,6 +1,5 @@
 module;
 
-#include "PhysicalDevice.h"
 #include "VideoMemoryManager.h"
 
 export module Renderer.Texture;

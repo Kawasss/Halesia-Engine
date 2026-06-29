@@ -1,6 +1,5 @@
 module;
 
-#include "renderer/PhysicalDevice.h"
 #include "renderer/VulkanAPIError.h"
 
 module Renderer.PipelineCreator;
@@ -9,6 +8,7 @@ import std;
 
 import Renderer.Vulkan;
 import Renderer.Vertex;
+import Renderer.PhyiscalDevice;
 
 VkPipeline PipelineBuilder::Build()
 {

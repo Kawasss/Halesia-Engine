@@ -1,12 +1,11 @@
-#include <Windows.h>
-#include <vulkan/vulkan.h>
-
-#include "renderer/PhysicalDevice.h"
+module Renderer.PhyiscalDevice;
 
 import std;
 
 import Renderer.Vulkan;
 import Renderer.Surface;
+
+import <vulkan/vulkan.h>;
 
 PhysicalDevice::PhysicalDevice(VkPhysicalDevice physicalDevice)
 {

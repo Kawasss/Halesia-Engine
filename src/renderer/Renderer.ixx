@@ -1,6 +1,5 @@
 module;
 
-#include "PhysicalDevice.h"
 #include "Buffer.h"
 #include "FramesInFlight.h"
 
@@ -31,6 +30,7 @@ import Renderer.Surface;
 import Renderer.CommandBuffer;
 import Renderer.Vertex;
 import Renderer.RenderableMesh;
+import Renderer.PhyiscalDevice;
 import Renderer.BLAS;
 
 using HANDLE = void*;

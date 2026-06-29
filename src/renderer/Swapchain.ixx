@@ -1,6 +1,5 @@
 module;
 
-#include "PhysicalDevice.h"
 #include "VideoMemoryManager.h"
 
 export module Renderer.Swapchain;
@@ -12,6 +11,7 @@ import std;
 import System.Window;
 
 import Renderer.Surface;
+import Renderer.PhyiscalDevice;
 
 export class Swapchain
 {
