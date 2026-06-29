@@ -2,18 +2,13 @@ module;
 
 #include <vulkan/vk_enum_string_helper.h>
 
-#include "renderer/VideoMemoryManager.h"
-
 module Renderer.Deferred;
-
-import <vulkan/vulkan.h>;
-
-import "glm.h";
 
 import std;
 
 import Core.CameraObject;
 
+import Renderer.VideoMemoryManager;
 import Renderer.SkyPipeline;
 import Renderer.ImageTransitioner;
 import Renderer.PipelineCreator;
@@ -29,6 +24,10 @@ import Renderer.RenderableMesh;
 import Renderer.Vulkan;
 import Renderer.Buffer;
 import Renderer;
+
+import <vulkan/vulkan.h>;
+
+import "glm.h";
 
 #undef CreateSemaphore
 

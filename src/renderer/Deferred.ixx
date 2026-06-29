@@ -1,9 +1,3 @@
-module;
-
-#include "VideoMemoryManager.h"
-
-#include "../glm.h"
-
 export module Renderer.Deferred;
 
 import std;
@@ -20,7 +14,9 @@ import Renderer.RenderPipeline;
 import Renderer.Light;
 import Renderer.Buffer;
 import Renderer.FramesInFlight;
+import Renderer.VideoMemoryManager;
 
+import  "../glm.h";
 import <vulkan/vulkan.h>;
 
 export class DeferredPipeline : public RenderPipeline

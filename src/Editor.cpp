@@ -5,8 +5,6 @@ module;
 
 #include "core/Console.h"
 
-#include "renderer/VideoMemoryManager.h"
-
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui-1.91.7/implot.h>
 #include <imgui-1.91.7/imgui.h>
@@ -40,6 +38,7 @@ import Renderer.Gui;
 import Renderer.Grid;
 import Renderer.AnimationManager;
 import Renderer.RenderPipeline;
+import Renderer.VideoMemoryManager;
 
 namespace fs = std::filesystem;
 

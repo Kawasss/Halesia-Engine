@@ -1,10 +1,10 @@
-#pragma once
-#include <vulkan/vulkan.h>
+export module Renderer.VideoMemoryManager;
 
-#include <vector>
-#include <type_traits>
+import std;
 
-namespace vvm
+import <vulkan/vulkan.h>;
+
+export namespace vvm
 {
 	template<typename T>
 	concept IsPointer = std::is_pointer_v<T>;
@@ -17,7 +17,7 @@ namespace vvm
 	{
 	public:
 		using ValueType = VulkanType;
-		
+
 		static constexpr Deleter<VulkanType> destructor = deleter;
 
 		Handle() = default;
@@ -49,7 +49,7 @@ namespace vvm
 	{
 	public:
 		using HandleType = Handle<VulkanType, deleter>;
-		using SmartType  = SmartHandle<VulkanType, deleter>;
+		using SmartType = SmartHandle<VulkanType, deleter>;
 
 		SmartHandle() = default;
 		SmartHandle(const SmartHandle&) = delete;
@@ -81,7 +81,7 @@ namespace vvm
 			this->Destroy();
 		}
 	};
-	
+
 	struct Segment;
 	struct MemoryBlock;
 	struct MemoryCore;
@@ -89,10 +89,10 @@ namespace vvm
 	extern void Destroy(VkImage image);
 	extern void Destroy(VkBuffer buffer);
 
-	using Image  = Handle<VkImage,  vvm::Destroy>;
+	using Image = Handle<VkImage, vvm::Destroy>;
 	using Buffer = Handle<VkBuffer, vvm::Destroy>;
 
-	using SmartImage  = SmartHandle<Image::ValueType,  Image::destructor>;
+	using SmartImage = SmartHandle<Image::ValueType, Image::destructor>;
 	using SmartBuffer = SmartHandle<Buffer::ValueType, Buffer::destructor>;
 
 	extern Image  AllocateImage(VkImage image, VkMemoryPropertyFlags properties);

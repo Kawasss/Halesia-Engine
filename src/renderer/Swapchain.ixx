@@ -1,10 +1,4 @@
-module;
-
-#include "VideoMemoryManager.h"
-
 export module Renderer.Swapchain;
-
-import <vulkan/vulkan.h>;
 
 import std;
 
@@ -12,6 +6,9 @@ import System.Window;
 
 import Renderer.Surface;
 import Renderer.PhyiscalDevice;
+import Renderer.VideoMemoryManager;
+
+import <vulkan/vulkan.h>;
 
 export class Swapchain
 {

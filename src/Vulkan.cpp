@@ -7,8 +7,6 @@ module;
 
 #include "core/Console.h"
 
-#include "renderer/VideoMemoryManager.h"
-
 #include "system/CriticalSection.h"
 
 module Renderer.Vulkan;
@@ -18,6 +16,7 @@ import std;
 import Renderer.Surface;
 import Renderer.CommandBuffer;
 import Renderer.VulkanAPIError;
+import Renderer.VideoMemoryManager;
 
 #ifdef NDEBUG
 bool enableValidationLayers = false;

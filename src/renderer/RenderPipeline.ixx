@@ -7,9 +7,10 @@ import Core.CameraObject;
 import System.Window;
 
 import Renderer.Framebuffer;
-import Renderer.CommandBuffer;
 import Renderer.RenderableMesh;
 import Renderer.PhyiscalDevice;
+
+export import Renderer.CommandBuffer;
 
 import <vulkan/vulkan.h>;
 

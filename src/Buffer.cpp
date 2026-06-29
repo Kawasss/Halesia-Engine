@@ -1,13 +1,12 @@
-module;
-
-#include "renderer/VideoMemoryManager.h"
-
 module Renderer.Buffer;
 
+import Renderer.VideoMemoryManager;
 import Renderer.VulkanGarbageManager;
 import Renderer.CommandBuffer;
 import Renderer.VulkanAPIError;
 import Renderer.Vulkan;
+
+import <vulkan/vulkan.h>;
 
 void Buffer::Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 {

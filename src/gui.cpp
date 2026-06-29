@@ -9,8 +9,6 @@ module;
 #include <imgui-1.91.7/imgui.h>
 #include <imgui-1.91.7/misc/cpp/imgui_stdlib.h>
 
-#include "renderer/VideoMemoryManager.h"
-
 #include "core/Console.h"
 
 #include <hsl/StackMap.h>
@@ -37,6 +35,7 @@ import Physics.Shapes;
 import System.Input;
 import System.Window;
 
+import Renderer.VideoMemoryManager;
 import Renderer.Vulkan;
 import Renderer;
 

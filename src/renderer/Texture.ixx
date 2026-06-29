@@ -1,14 +1,11 @@
-module;
-
-#include "VideoMemoryManager.h"
-
 export module Renderer.Texture;
 
 import std;
 
-import <vulkan/vulkan.h>;
-
 import Renderer.CommandBuffer;
+import Renderer.VideoMemoryManager;
+
+import <vulkan/vulkan.h>;
 
 export enum class TextureUseCase
 {
