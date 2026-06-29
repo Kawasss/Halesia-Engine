@@ -1,8 +1,5 @@
 module;
 
-#include <Windows.h>
-#include <vulkan/vulkan.h>
-
 #include "../system/CriticalSection.h"
 
 #include "../core/Console.h"
@@ -13,6 +10,8 @@ import std;
 
 import Renderer.ResizableBuffer;
 import Renderer.Vulkan;
+
+import <vulkan/vulkan.h>;
 
 #define CheckHandleValidity(memory, ret)                                                                                                             \
 if (!CheckIfHandleIsValid(memory))                                                                                                                   \

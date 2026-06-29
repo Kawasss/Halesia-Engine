@@ -1,10 +1,6 @@
 module;
 
-#include <vulkan/vulkan.h>
-
-#include "FramesInFlight.h"
 #include "VideoMemoryManager.h"
-#include "Buffer.h"
 
 #include "../glm.h"
 
@@ -22,6 +18,10 @@ import Renderer.GraphicsPipeline;
 import Renderer.Framebuffer;
 import Renderer.RenderPipeline;
 import Renderer.Light;
+import Renderer.Buffer;
+import Renderer.FramesInFlight;
+
+import <vulkan/vulkan.h>;
 
 export class DeferredPipeline : public RenderPipeline
 {

@@ -1,15 +1,11 @@
-module;
-
-#include <Windows.h>
-#include <vulkan/vulkan.h>
-
-#include "Buffer.h"
-
 export module Renderer.ResizableBuffer;
 
 import std;
 
 import Renderer.CommandBuffer;
+import Renderer.Buffer;
+
+import <vulkan/vulkan.h>;
 
 export class ResizableBuffer // everything is in bytes
 {

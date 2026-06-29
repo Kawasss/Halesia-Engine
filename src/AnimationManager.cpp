@@ -1,7 +1,5 @@
 module;
 
-#include "renderer/Buffer.h"
-
 #include "system/CriticalSection.h"
 
 module Renderer.AnimationManager;
@@ -14,7 +12,10 @@ import std;
 
 import Renderer.CommandBuffer;
 import Renderer.ComputePipeline;
+import Renderer.Buffer;
 import Renderer;
+
+import <vulkan/vulkan.h>;
 
 AnimationManager* AnimationManager::Get()
 {

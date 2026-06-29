@@ -1,12 +1,10 @@
-module;
-
-#include "Buffer.h"
-
 export module Renderer.AccelerationStructure;
 
 import <vulkan/vulkan.h>;
 
 import std;
+
+import Renderer.Buffer;
 
 export class AccelerationStructure // or AS for short
 {

@@ -1,16 +1,16 @@
 #pragma once
 #include <utility>
+#include <Windows.h>
+
 
 namespace win32
 {
-	#include <Windows.h>
-
 	class CriticalSection
 	{
 	public:
 		CriticalSection()
 		{
-			InitializeCriticalSection(&section);
+			::InitializeCriticalSection(&section);
 			valid = true;
 		}
 
@@ -33,13 +33,13 @@ namespace win32
 		void Lock()
 		{
 			if (valid)
-			 EnterCriticalSection(&section);
+			 ::EnterCriticalSection(&section);
 		}
 
 		void Unlock()
 		{
 			if (valid)
-			 LeaveCriticalSection(&section);
+			 ::LeaveCriticalSection(&section);
 		}
 
 	private:
@@ -48,7 +48,7 @@ namespace win32
 			if (!valid)
 				return;
 
-			DeleteCriticalSection(&section);
+			::DeleteCriticalSection(&section);
 			valid = false;
 		}
 

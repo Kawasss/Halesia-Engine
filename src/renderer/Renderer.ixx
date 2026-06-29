@@ -1,8 +1,5 @@
 module;
 
-#include "Buffer.h"
-#include "FramesInFlight.h"
-
 #include "../system/CriticalSection.h"
 
 export module Renderer;
@@ -32,6 +29,10 @@ import Renderer.Vertex;
 import Renderer.RenderableMesh;
 import Renderer.PhyiscalDevice;
 import Renderer.BLAS;
+import Renderer.Buffer;
+import Renderer.FramesInFlight;
+
+import <vulkan/vulkan.h>;
 
 using HANDLE = void*;
 using Handle = unsigned long long;

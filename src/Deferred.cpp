@@ -3,7 +3,6 @@ module;
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "renderer/VideoMemoryManager.h"
-#include "renderer/Buffer.h"
 
 module Renderer.Deferred;
 
@@ -28,6 +27,7 @@ import Renderer.RenderPipeline;
 import Renderer.CommandBuffer;
 import Renderer.RenderableMesh;
 import Renderer.Vulkan;
+import Renderer.Buffer;
 import Renderer;
 
 #undef CreateSemaphore

@@ -560,7 +560,13 @@
     <ClCompile Include="src\renderer\PhyiscalDevice.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="VulkanAPIError.ixx">
+    <ClCompile Include="src\renderer\VulkanAPIError.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\Buffer.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\renderer\FramesInFlight.ixx">
       <Filter>Header Files\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
@@ -568,14 +574,8 @@
     <ClInclude Include="src\ResourceManager.h">
       <Filter>Header Files\core</Filter>
     </ClInclude>
-    <ClInclude Include="src\renderer\Buffer.h">
-      <Filter>Header Files\Renderer</Filter>
-    </ClInclude>
     <ClInclude Include="src\math\vectors.h">
       <Filter>Header Files\math</Filter>
-    </ClInclude>
-    <ClInclude Include="src\renderer\FramesInFlight.h">
-      <Filter>Header Files\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\system\CriticalSection.h">
       <Filter>Header Files\system</Filter>

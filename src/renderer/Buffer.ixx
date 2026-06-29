@@ -1,30 +1,34 @@
-#pragma once
-#include <vulkan/vulkan.h>
-#include <array>
+module;
 
-#include "FramesInFlight.h"
 #include "VideoMemoryManager.h"
 
-class CommandBuffer;
+export module Renderer.Buffer;
 
-class Buffer
+import std;
+
+import Renderer.CommandBuffer;
+import Renderer.FramesInFlight;
+
+import <vulkan/vulkan.h>;
+
+export class Buffer
 {
 public:
 	Buffer() = default;
 	Buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties) { Init(size, usage, properties); }
 	~Buffer() { Destroy(); }
 
-	Buffer(const Buffer&)       = delete;
+	Buffer(const Buffer&) = delete;
 	Buffer& operator=(Buffer&&) = delete;
 
 	void Init(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties);
 	void Destroy();
 
 	VkBuffer Get() const { return buffer.Get(); }
-	
+
 	void InheritFrom(Buffer& parent); // inherits the members from the parent and tells the parent to not destroy its members upon destruction (the buffer will destroy the current members first)
 
-	template<typename T> 
+	template<typename T>
 	T* Map(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE, VkMemoryMapFlags flags = 0);
 	void* Map(VkDeviceSize offset = 0, VkDeviceSize size = VK_WHOLE_SIZE, VkMemoryMapFlags flags = 0);
 	void Unmap();
@@ -41,13 +45,13 @@ private:
 	vvm::Buffer buffer;
 };
 
-template<typename T> 
-T* Buffer::Map(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags) 
-{ 
-	return static_cast<T*>(Map(offset, size, flags)); 
+template<typename T>
+T* Buffer::Map(VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags)
+{
+	return static_cast<T*>(Map(offset, size, flags));
 }
 
-namespace FIF
+export namespace FIF
 {
 	class Buffer
 	{
@@ -70,7 +74,7 @@ namespace FIF
 		void Unmap();
 
 		template<typename T>
-		T*    GetMappedPointer() const { return static_cast<T*>(GetMappedPointer()); }
+		T* GetMappedPointer() const { return static_cast<T*>(GetMappedPointer()); }
 		void* GetMappedPointer() const { return pointers[FIF::frameIndex]; }
 
 		void InheritFrom(FIF::Buffer& parent); // inherits the members from the parent and tells the parent to not destroy its members upon destruction (the buffer will destroy the current members first)
@@ -88,7 +92,7 @@ namespace FIF
 }
 
 // this buffer object does not use the garbage or memory manager
-class ImmediateBuffer
+export class ImmediateBuffer
 {
 public:
 	ImmediateBuffer() = default;

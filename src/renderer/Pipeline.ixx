@@ -1,13 +1,13 @@
-module;
-
-#include "Buffer.h"
-
 export module Renderer.Pipeline;
 
 import std;
 
 import Renderer.ShaderReflector;
 import Renderer.CommandBuffer;
+import Renderer.Buffer;
+import Renderer.FramesInFlight;
+
+import <vulkan/vulkan.h>;
 
 export class Pipeline
 {

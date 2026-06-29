@@ -2,8 +2,6 @@ module;
 
 #include <vulkan/vk_enum_string_helper.h>
 
-#include "renderer/FramesInFlight.h"
-
 #include "core/Console.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
@@ -47,6 +45,7 @@ import Renderer.Vulkan;
 import Renderer.Light;
 import Renderer.Mesh;
 import Renderer.BLAS;
+import Renderer.FramesInFlight;
 
 namespace fs = std::filesystem;
 

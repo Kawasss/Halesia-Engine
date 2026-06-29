@@ -10,8 +10,6 @@ module;
 
 #include <ktx.h>
 
-#include "renderer/Buffer.h"
-
 #include "core/Console.h"
 
 module Renderer.Texture;
@@ -23,6 +21,7 @@ import Renderer.PhyiscalDevice;
 import Renderer.ImageTransitioner;
 import Renderer.VulkanGarbageManager;
 import Renderer.Vulkan;
+import Renderer.Buffer;
 
 import IO;
 

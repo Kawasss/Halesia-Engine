@@ -1,5 +1,8 @@
-#include "renderer/Buffer.h"
+module;
+
 #include "renderer/VideoMemoryManager.h"
+
+module Renderer.Buffer;
 
 import Renderer.VulkanGarbageManager;
 import Renderer.CommandBuffer;
