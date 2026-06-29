@@ -22,13 +22,7 @@ public:
 
 	CameraObject* camera = defaultCamera;
 
-	template<typename T>
 	Object* AddObject(const ObjectCreationData& creationData, Object* pParent = nullptr);
-	Object* AddObject(const ObjectCreationData& creationData, Object* pParent = nullptr);
-
-	//template<typename T>
-	//Object* DuplicateObject(Object* pObject, std::string name); //!< UNSAFE, currently does not duplicate the appropriate class based on type
-	//Object* DuplicateObject(Object* pObject, std::string name); //!< UNSAFE
 
 	void SetActiveCamera(CameraObject* pCamera);
 
@@ -80,24 +74,3 @@ protected:
 	std::vector<Object*> flatObjects;
 	win32::CriticalSection objectCriticalSection;
 };
-
-template<typename T> Object* Scene::AddObject(const ObjectCreationData& creationData, Object* pParent)
-{
-	T* customPointer = new T();
-	Object* objPtr = customPointer;
-	RegisterObjectPointer(objPtr, pParent);
-	objPtr->Initialize(creationData, customPointer);
-
-	return objPtr;
-}
-
-//template<typename T> Object* Scene::DuplicateObject(Object* pObject, std::string name)
-//{
-//	T* tPtr = new T();
-//	Object* newObjPtr = tPtr;
-//	Object::Duplicate(pObject, newObjPtr, name, tPtr);
-//	RegisterObjectPointer(newObjPtr);
-//	newObjPtr->Start();
-//
-//	return newObjPtr;
-//}
