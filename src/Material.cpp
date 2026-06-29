@@ -61,19 +61,19 @@ Material Material::Create(const MaterialCreationData& createInfo)
 
 	ret.isLight = createInfo.isLight;
 	if (!createInfo.albedo.IsDefault())      
-		ret.albedo = Texture::LoadFromInternalFormat(createInfo.albedo.data.data, false);
+		ret.albedo = Texture::LoadFromInternalFormat(createInfo.albedo.data, false);
 
 	if (!createInfo.normal.IsDefault())      
-		ret.normal = Texture::LoadFromInternalFormat(createInfo.normal.data.data, false);
+		ret.normal = Texture::LoadFromInternalFormat(createInfo.normal.data, false);
 
 	if (!createInfo.metallic.IsDefault())    
-		ret.metallic = Texture::LoadFromInternalFormat(createInfo.metallic.data.data, false);
+		ret.metallic = Texture::LoadFromInternalFormat(createInfo.metallic.data, false);
 
 	if (!createInfo.roughness.IsDefault())   
-		ret.roughness = Texture::LoadFromInternalFormat(createInfo.roughness.data.data, false);
+		ret.roughness = Texture::LoadFromInternalFormat(createInfo.roughness.data, false);
 
 	if (!createInfo.ambientOccl.IsDefault()) 
-		ret.ambientOcclusion = Texture::LoadFromInternalFormat(createInfo.ambientOccl.data.data, false);
+		ret.ambientOcclusion = Texture::LoadFromInternalFormat(createInfo.ambientOccl.data, false);
 
 	ret.EnsurePointerSafety();
 	return ret;

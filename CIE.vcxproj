@@ -196,7 +196,6 @@
     <ClCompile Include="src\Editor.cpp" />
     <ClCompile Include="src\EditorProject.cpp" />
     <ClCompile Include="src\FileDialog.cpp" />
-    <ClCompile Include="src\FileReadWrite.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\io\BinaryStream.ixx" />
     <ClCompile Include="src\io\CreationData.ixx" />
@@ -326,8 +325,6 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_truetype.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.h" />
     <ClInclude Include="src\glm.h" />
-    <ClInclude Include="src\io\FileArray.h" />
-    <ClInclude Include="src\io\FileMaterial.h" />
     <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\renderer\FramesInFlight.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />

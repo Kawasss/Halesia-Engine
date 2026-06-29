@@ -6,8 +6,6 @@ module;
 
 #include "core/Console.h"
 
-#include "io/FileMaterial.h"
-
 #include "system/CriticalSection.h"
 
 module IO.SceneLoader;
@@ -118,9 +116,9 @@ void SceneLoader::LoadObjectsFromArchive(DataArchiveFile& file)
 	}
 }
 
-static FileImage DeserializeImage(const BinarySpan& span)
+static ImageCreationData DeserializeImage(const BinarySpan& span)
 {
-	FileImage ret{};
+	ImageCreationData ret{};
 
 	size_t size = 0;
 	span >> size;
@@ -128,8 +126,8 @@ static FileImage DeserializeImage(const BinarySpan& span)
 	if (size == 0)
 		return ret;
 
-	ret.data.data.resize(size);
-	span.Read(ret.data.data.data(), size);
+	ret.data.resize(size);
+	span.Read(ret.data.data(), size);
 
 	return ret;
 }

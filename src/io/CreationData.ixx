@@ -1,6 +1,6 @@
 module;
 
-#include "FileMaterial.h"
+#include "../renderer/Texture.h"
 
 export module IO.CreationData;
 
@@ -14,9 +14,33 @@ import Physics.Shapes;
 import Renderer.Light;
 import Renderer.Vertex;
 
-export using MaterialCreationData = FileMaterial;
-export using ImageCreationData = FileImage;
-//using MeshCreationData     = FileMesh;
+export struct ImageCreationData
+{
+	std::vector<char> data;
+
+	static ImageCreationData CreateFrom(Texture* tex);
+
+	bool IsDefault() const
+	{
+		return data.empty();
+	}
+};
+
+export struct MaterialCreationData
+{
+	bool isLight = false;
+
+	ImageCreationData albedo;
+	ImageCreationData normal;
+	ImageCreationData metallic;
+	ImageCreationData roughness;
+	ImageCreationData ambientOccl;
+
+	bool IsDefault() const
+	{
+		return !isLight && albedo.IsDefault() && normal.IsDefault() && metallic.IsDefault() && roughness.IsDefault() && ambientOccl.IsDefault();
+	}
+};
 
 export struct MeshCreationData
 {
