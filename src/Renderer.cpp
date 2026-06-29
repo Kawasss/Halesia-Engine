@@ -2,7 +2,6 @@ module;
 
 #include <vulkan/vk_enum_string_helper.h>
 
-#include "renderer/VulkanAPIError.h"
 #include "renderer/FramesInFlight.h"
 
 #include "core/Console.h"
@@ -31,6 +30,7 @@ import Core.Object;
 import System.Window;
 import System;
 
+import Renderer.VulkanAPIError;
 import Renderer.Material;
 import Renderer.HdrConverter;
 import Renderer.DescriptorWriter;

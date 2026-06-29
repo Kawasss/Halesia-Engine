@@ -1,17 +1,16 @@
-module;
-
-#include "renderer/VulkanAPIError.h"
-
 module Renderer.RayTracingPipeline;
 
 import std;
 
+import Renderer.VulkanAPIError;
 import Renderer.ShaderCompiler;
 import Renderer.CompiledShader;
 import Renderer.ShaderReflector;
 import Renderer.CommandBuffer;
 import Renderer.Vulkan;
 import Renderer;
+
+import <vulkan/vulkan.h>;
 
 constexpr std::uint32_t RT_GROUP_COUNT = 4;
 

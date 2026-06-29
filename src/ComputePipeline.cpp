@@ -1,17 +1,16 @@
-module;
-
-#include "renderer/VulkanAPIError.h"
-
 module Renderer.ComputePipeline;
 
 import std;
 
+import Renderer.VulkanAPIError;
 import Renderer.CompiledShader;
 import Renderer.ShaderCompiler;
 import Renderer.ShaderReflector;
 import Renderer.DescriptorWriter;
 import Renderer.CommandBuffer;
 import Renderer.Vulkan;
+
+import <vulkan/vulkan.h>;
 
 ComputePipeline::ComputePipeline(const std::string_view& path)
 {

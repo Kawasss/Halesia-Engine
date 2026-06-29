@@ -311,6 +311,7 @@
     <ClCompile Include="src\Buffer.cpp" />
     <ClCompile Include="src\VulkanAPIError.cpp" />
     <ClCompile Include="src\Window.cpp" />
+    <ClCompile Include="VulkanAPIError.ixx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\backends\imgui_impl_vulkan.h" />
@@ -332,7 +333,6 @@
     <ClInclude Include="src\renderer\FramesInFlight.h" />
     <ClInclude Include="src\renderer\VideoMemoryManager.h" />
     <ClInclude Include="src\renderer\Buffer.h" />
-    <ClInclude Include="src\renderer\VulkanAPIError.h" />
     <ClInclude Include="src\ResourceManager.h" />
     <ClInclude Include="src\system\CriticalSection.h" />
   </ItemGroup>

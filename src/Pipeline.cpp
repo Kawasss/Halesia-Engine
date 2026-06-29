@@ -2,7 +2,6 @@ module;
 
 #include <cassert>
 
-#include "renderer/VulkanAPIError.h"
 #include "renderer/Buffer.h"
 
 #include "core/Console.h"
@@ -11,6 +10,7 @@ module Renderer.Pipeline;
 
 import std;
 
+import Renderer.VulkanAPIError;
 import Renderer.DescriptorWriter;
 import Renderer.ShaderReflector;
 import Renderer.VulkanGarbageManager;

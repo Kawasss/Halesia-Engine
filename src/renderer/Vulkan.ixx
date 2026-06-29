@@ -1,7 +1,5 @@
 module;
 
-#include <vulkan/vulkan.h>
-
 #include "VideoMemoryManager.h"
 
 #include "../system/CriticalSection.h"
@@ -12,6 +10,8 @@ import std;
 
 import Renderer.CommandBuffer;
 import Renderer.PhyiscalDevice;
+
+import <vulkan/vulkan.h>;
 
 #undef CreateSemaphore
 

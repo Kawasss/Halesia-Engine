@@ -1,7 +1,5 @@
 module;
 
-#include "renderer/VulkanAPIError.h"
-
 #include "system/CriticalSection.h"
 
 module Renderer.AccelerationStructure;
@@ -11,6 +9,7 @@ import <vulkan/vulkan.h>;
 import std;
 
 import Renderer.VulkanGarbageManager;
+import Renderer.VulkanAPIError;
 import Renderer.Vulkan;
 import Renderer;
 

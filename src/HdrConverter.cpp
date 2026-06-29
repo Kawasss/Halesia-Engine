@@ -1,15 +1,12 @@
 module;
 
-#include <vulkan/vulkan.h>
-
 #include "glm.h"
-
-#include "renderer/VulkanAPIError.h"
 
 module Renderer.HdrConverter;
 
 import std;
 
+import Renderer.VulkanAPIError;
 import Renderer.VulkanGarbageManager;
 import Renderer.DescriptorWriter;
 import Renderer.PipelineCreator;
@@ -18,6 +15,8 @@ import Renderer.Texture;
 import Renderer.Skybox;
 import Renderer.Vulkan;
 import Renderer;
+
+import <vulkan/vulkan.h>;
 
 struct PushConstantConverter
 {

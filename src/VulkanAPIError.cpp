@@ -1,6 +1,8 @@
+module;
+
 #include <vulkan/vk_enum_string_helper.h>
 
-#include "renderer/VulkanAPIError.h"
+module Renderer.VulkanAPIError;
 
 import std;
 

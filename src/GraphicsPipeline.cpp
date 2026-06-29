@@ -1,16 +1,15 @@
-module;
-
-#include "renderer/VulkanAPIError.h"
-
 module Renderer.GraphicsPipeline;
 
 import std;
 
+import Renderer.VulkanAPIError;
 import Renderer.ShaderCompiler;
 import Renderer.CompiledShader;
 import Renderer.PipelineCreator;
 import Renderer.ShaderReflector;
 import Renderer.Vulkan;
+
+import <vulkan/vulkan.h>;
 
 GraphicsPipeline::GraphicsPipeline(const CreateInfo& createInfo)
 {

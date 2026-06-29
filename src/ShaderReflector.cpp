@@ -1,12 +1,11 @@
-module;
-
-#include "renderer/VulkanAPIError.h"
-
 module Renderer.ShaderReflector;
 
 import std;
 
+import Renderer.VulkanAPIError;
 import Renderer.Vulkan;
+
+import <vulkan/vulkan.h>;
 
 ShaderGroupReflector::ShaderGroupReflector(const std::span<char>& sourceCode)
 {

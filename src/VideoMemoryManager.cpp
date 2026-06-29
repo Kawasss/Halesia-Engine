@@ -1,12 +1,12 @@
 #include <cassert>
 
 #include "renderer/VideoMemoryManager.h"
-#include "renderer/VulkanAPIError.h"
 
 #include "system/CriticalSection.h"
 
 import std;
 
+import Renderer.VulkanAPIError;
 import Renderer.VulkanGarbageManager;
 import Renderer.Vulkan;
 

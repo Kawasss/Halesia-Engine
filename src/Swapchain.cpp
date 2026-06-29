@@ -1,19 +1,16 @@
-module;
-
-#include <vulkan/vulkan.h>
-
-#include "renderer/VulkanAPIError.h"
-
 module Renderer.Swapchain;
 
 import std;
 
 import System.Window;
 
+import Renderer.VulkanAPIError;
 import Renderer.VulkanGarbageManager;
 import Renderer.PhyiscalDevice;
 import Renderer.Surface;
 import Renderer.Vulkan;
+
+import <vulkan/vulkan.h>;
 
 Swapchain::Swapchain(Surface surface, Window* window, bool vsync)
 {
