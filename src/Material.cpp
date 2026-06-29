@@ -1,10 +1,8 @@
-module;
-
-#include "renderer/Texture.h"
-
 module Renderer.Material;
 
 import IO.CreationData;
+
+import Renderer.Texture;
 
 std::array<TextureType, 5> Material::pbrTextures =
 {

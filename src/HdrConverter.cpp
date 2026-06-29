@@ -5,7 +5,6 @@ module;
 #include "glm.h"
 
 #include "renderer/VulkanAPIError.h"
-#include "renderer/Texture.h"
 
 module Renderer.HdrConverter;
 
@@ -15,6 +14,7 @@ import Renderer.VulkanGarbageManager;
 import Renderer.DescriptorWriter;
 import Renderer.PipelineCreator;
 import Renderer.GraphicsPipeline;
+import Renderer.Texture;
 import Renderer.Skybox;
 import Renderer.Vulkan;
 import Renderer;

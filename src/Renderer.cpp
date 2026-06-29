@@ -2,7 +2,6 @@ module;
 
 #include <vulkan/vk_enum_string_helper.h>
 
-#include "renderer/Texture.h"
 #include "renderer/VulkanAPIError.h"
 #include "renderer/FramesInFlight.h"
 
@@ -42,6 +41,7 @@ import Renderer.GraphicsPipeline;
 import Renderer.RenderPipeline;
 import Renderer.RenderableMesh;
 import Renderer.Swapchain;
+import Renderer.Texture;
 import Renderer.Surface;
 import Renderer.Vulkan;
 import Renderer.Light;

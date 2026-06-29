@@ -1,10 +1,7 @@
-module;
-
-#include "Texture.h"
-
 export module Renderer.HdrConverter;
 
 import Renderer.CommandBuffer;
+import Renderer.Texture;
 
 export class HdrConverter // converts a .hdr cubemap into a six sided cubemap
 {

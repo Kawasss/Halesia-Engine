@@ -1,10 +1,6 @@
-module;
-
-#include <vulkan/vulkan.h>
-
-#include "Texture.h"
-
 export module Renderer.Skybox;
+
+import <vulkan/vulkan.h>;
 
 import std;
 
@@ -12,6 +8,7 @@ import Core.CameraObject;
 
 import Renderer.GraphicsPipeline;
 import Renderer.CommandBuffer;
+import Renderer.Texture;
 
 export class Skybox
 {

@@ -217,6 +217,7 @@
     <ClCompile Include="src\renderer\StorageBuffer.ixx" />
     <ClCompile Include="src\renderer\Surface.ixx" />
     <ClCompile Include="src\renderer\Swapchain.ixx" />
+    <ClCompile Include="src\renderer\Texture.ixx" />
     <ClCompile Include="src\renderer\TLAS.ixx" />
     <ClCompile Include="src\renderer\Vertex.ixx" />
     <ClCompile Include="src\renderer\Vulkan.ixx" />
@@ -324,11 +325,11 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_textedit.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_truetype.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="src\core\Console.h" />
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\renderer\FramesInFlight.h" />
     <ClInclude Include="src\renderer\PhysicalDevice.h" />
-    <ClInclude Include="src\renderer\Texture.h" />
     <ClInclude Include="src\renderer\VideoMemoryManager.h" />
     <ClInclude Include="src\renderer\Buffer.h" />
     <ClInclude Include="src\renderer\VulkanAPIError.h" />

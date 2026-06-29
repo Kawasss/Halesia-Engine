@@ -1,31 +1,23 @@
- #pragma once
-#include <vulkan/vulkan.h>
-#include <string>
-#include <future>
-#include <array>
-#include <span>
+module;
 
 #include "PhysicalDevice.h"
 #include "VideoMemoryManager.h"
 
-class CommandBuffer;
+export module Renderer.Texture;
 
-enum TextureUseCase
+import std;
+
+import <vulkan/vulkan.h>;
+
+import Renderer.CommandBuffer;
+
+export enum class TextureUseCase
 {
-	TEXTURE_USE_CASE_READ_ONLY = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-	TEXTURE_USE_CASE_GENERAL = VK_IMAGE_LAYOUT_GENERAL,
+	ReadOnly = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+	General = VK_IMAGE_LAYOUT_GENERAL,
 };
 
-struct Color
-{
-	explicit Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a = 255) : r(r), g(g), b(b), a(a) {}
-	explicit Color(float r, float g, float b, float a = 1.0f) : r(uint8_t(r * 255)), g(uint8_t(g * 255)), b(uint8_t(b * 255)), a(uint8_t(a * 255)) {}
-	uint8_t* GetData() const;
-
-	uint8_t r, g, b, a;
-};
-
-class Image
+export class Image
 {
 public:
 	enum Flags
@@ -93,7 +85,7 @@ private:
 	static bool FormatIsCompressed(VkFormat format);
 };
 
-class Cubemap : public Image
+export class Cubemap : public Image
 {
 public:
 	Cubemap(int width, int height);
@@ -105,7 +97,7 @@ private:
 	void CreateLayerViews();
 };
 
-class Texture : public Image // textures are only to be used for materials
+export class Texture : public Image // textures are only to be used for materials
 {
 public:
 	enum class Type
@@ -125,8 +117,8 @@ public:
 	static void GeneratePlaceholderTextures();
 	static void DestroyPlaceholderTextures();
 
-	static Texture* LoadFromForeignFormat(const std::string_view& file, Type type, bool useMipMaps = true, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
-	static Texture* LoadFromInternalFormat(const std::span<const char>& data, bool useMipMaps = true, TextureUseCase useCase = TEXTURE_USE_CASE_READ_ONLY);
+	static Texture* LoadFromForeignFormat(const std::string_view& file, Type type, bool useMipMaps = true, TextureUseCase useCase = TextureUseCase::ReadOnly);
+	static Texture* LoadFromInternalFormat(const std::span<const char>& data, bool useMipMaps = true, TextureUseCase useCase = TextureUseCase::ReadOnly);
 
 private:
 	Texture() = default;

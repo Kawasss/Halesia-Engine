@@ -1,7 +1,3 @@
-module;
-
-#include "renderer/Texture.h"
-
 module Renderer.Skybox;
 
 import std;
@@ -13,9 +9,11 @@ import Renderer.PipelineCreator;
 import Renderer.VulkanGarbageManager;
 import Renderer.GraphicsPipeline;
 import Renderer.CommandBuffer;
+import Renderer.Texture;
 import Renderer.Vulkan;
 import Renderer;
 
+import <vulkan/vulkan.h>;
 import "glm.h";
 
 struct PushConstantSkybox

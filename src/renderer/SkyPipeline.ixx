@@ -1,7 +1,3 @@
-module;
-
-#include "Texture.h"
-
 export module Renderer.SkyPipeline;
 
 import std;
@@ -9,6 +5,7 @@ import std;
 import Renderer.GraphicsPipeline;
 import Renderer.RenderPipeline;
 import Renderer.Framebuffer;
+import Renderer.Texture;
 
 export class SkyPipeline : public RenderPipeline
 {

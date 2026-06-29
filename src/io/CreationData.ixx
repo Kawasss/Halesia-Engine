@@ -1,7 +1,3 @@
-module;
-
-#include "../renderer/Texture.h"
-
 export module IO.CreationData;
 
 import "../glm.h";
@@ -17,8 +13,6 @@ import Renderer.Vertex;
 export struct ImageCreationData
 {
 	std::vector<char> data;
-
-	static ImageCreationData CreateFrom(Texture* tex);
 
 	bool IsDefault() const
 	{

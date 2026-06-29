@@ -1,14 +1,12 @@
-module;
-
-#include "Texture.h"
-
 export module Renderer.Material;
 
 import std;
 
+import Renderer.Texture;
+
 import IO.CreationData;
 
-export using Handle = uint64_t;
+export using Handle = std::uint64_t;
 
 export enum class TextureType
 {

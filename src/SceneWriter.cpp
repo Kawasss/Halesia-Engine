@@ -2,8 +2,6 @@ module;
 
 #include <Windows.h>
 
-#include "renderer/Texture.h"
-
 #include "system/CriticalSection.h"
 
 module IO.SceneWriter;
@@ -15,6 +13,7 @@ import Core.MeshObject;
 import Core.Object;
 
 import Renderer.Mesh;
+import Renderer.Texture;
 
 import IO.DataArchiveFile;
 import IO.BinaryStream;

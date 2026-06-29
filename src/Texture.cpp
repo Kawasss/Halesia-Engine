@@ -1,3 +1,5 @@
+module;
+
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb/stb_image.h"
@@ -9,11 +11,12 @@
 #include <ktx.h>
 
 #include "renderer/physicalDevice.h"
-#include "renderer/Texture.h"
 #include "renderer/Buffer.h"
 #include "renderer/VulkanAPIError.h"
 
 #include "core/Console.h"
+
+module Renderer.Texture;
 
 import std;
 
@@ -31,10 +34,6 @@ Texture* Texture::placeholderAmbientOcclusion = nullptr;
 
 constexpr VkImageUsageFlags TEXTURE_USAGE = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
-uint8_t* Color::GetData() const
-{
-	return const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(this));
-}
 
 template<typename T, void(func)(T)>
 struct GenericDeleter
@@ -45,8 +44,8 @@ struct GenericDeleter
 	}
 };
 
-using StbiDeleter = GenericDeleter<void*, free>;
-using KtxTextureDeleter = GenericDeleter<ktxTexture2*, ktxTexture2_Destroy>;
+using StbiDeleter = GenericDeleter<void*, ::free>;
+using KtxTextureDeleter = GenericDeleter<ktxTexture2*, ::ktxTexture2_Destroy>;
 
 std::vector<char> Image::Decode(const std::span<const char>& encoded, uint32_t& outWidth, uint32_t& outHeight, DecodeOptions options, float scale, int componentCount)
 {
