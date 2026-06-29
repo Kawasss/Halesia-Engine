@@ -1112,7 +1112,7 @@ std::optional<RenderableMesh> Renderer::GetRenderableMeshFromObject(const Object
 	mesh.indexMemory = data.indices;
 	mesh.faceCount = pMeshObject->mesh.faceCount; // these 2 could probably be removed
 	mesh.vertexCount = static_cast<std::uint32_t>(pMeshObject->mesh.vertices.size());
-	mesh.flags = TranslateMeshFlags(pMeshObject->mesh.GetFlags()); // TODO: translate mesh flags into the flags here
+	mesh.flags = TranslateMeshFlags(pMeshObject->mesh.GetFlags());
 
 	return mesh;
 }

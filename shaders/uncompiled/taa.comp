@@ -37,7 +37,7 @@ float GetLinearDepth(ivec2 coords, float depth)
 
 ivec2 GetPreviousCoordinates(ivec2 absCoords, ivec2 size)
 {
-	vec2 velocity = floor(texelFetch(velocityImage, absCoords, 0).rg / 2 * vec2(size) + 0.5);
+	vec2 velocity = texelFetch(velocityImage, absCoords, 0).xy * vec2(0.5, -0.5);//floor(texelFetch(velocityImage, absCoords, 0).rg / 2 * vec2(size) + 0.5);
 
 	ivec2 prevCoords = ivec2(absCoords - velocity);
 	return clamp(prevCoords, ivec2(0), size - ivec2(1));
