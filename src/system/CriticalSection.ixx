@@ -30,8 +30,17 @@ export namespace win32
 			std::swap(this->valid, c.valid);
 		}
 
+		CriticalSection& operator=(CriticalSection&& c)
+		{
+			Destroy();
+
+			std::swap(this->section, c.section);
+			std::swap(this->valid, c.valid);
+
+			return *this;
+		}
+
 		CriticalSection(const CriticalSection&) = delete;
-		CriticalSection& operator=(CriticalSection&&) = delete;
 
 		void Lock()
 		{

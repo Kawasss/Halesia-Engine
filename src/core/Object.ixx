@@ -11,6 +11,9 @@ import System.CriticalSection;
 
 using Handle = std::uint64_t;
 
+template<typename Base, typename Derived>
+concept Inherits = std::is_base_of_v<Base, Derived>;
+
 export enum ObjectState : std::uint8_t
 {
 	/// <summary>
@@ -53,6 +56,10 @@ public:
 	/// <param name="creationData"></param>
 	/// <param name="creationObject">: The objects needed to create the meshes</param>
 	static Object* Create(const ObjectCreationData& creationData);
+
+	Object(const Object&) = delete;
+	
+	Object& operator=(Object&& other);
 
 	Object(InheritType type);
 
@@ -97,8 +104,6 @@ public:
 
 	void Initialize(const ObjectCreationData& creationData);
 
-	template<typename T>
-	Object* AddChild(const ObjectCreationData& creationData);
 	Object* AddChild(const ObjectCreationData& creationData);
 	void    AddChild(Object* object);
 
@@ -106,8 +111,6 @@ public:
 	void DeleteChild(Object* child); // this does the same as RemoveChild, but also deletes the object
 
 	void TransferChild(Object* child, Object* destination); // this removes the child from this objects children and adds to the destinations children
-
-	//Object* CreateShallowCopy() const; // creates a copy of the object and assigns it to the same parent, but does not copy its children
 
 	std::vector<char> Serialize() const; // when serializing, the children of an object will be serialized by the object itself.
 	void Deserialize(const BinarySpan& stream); // assumes that the object is already the correct type, also assumes that the inheritType at the beginning of the stream is already read (a.k.a. 'GetInheritTypeFromStream(...)' is already called)
@@ -139,6 +142,9 @@ public:
 
 	static void Free(Object* pObject);
 
+	template<typename T> requires Inherits<Object, T>
+	T& As() { return dynamic_cast<T&>(*this); }
+
 private:
 	void SerializeHeader(BinaryStream& stream) const;
 	void SerializeName(BinaryStream& stream) const;
@@ -158,7 +164,7 @@ private:
 	std::future<void> generation;
 
 	win32::CriticalSection critSection;
-	std::vector<Object*> children;
+	std::vector<Object*> children; // maybe std::hive?
 
 	bool finishedLoading = true;
 	bool shouldBeDestroyed = false;
@@ -167,6 +173,12 @@ protected:
 	Object* parent = nullptr;
 
 	virtual void Update(float delta) {}
+
+	/// <summary>
+	/// "inherit" the variables from the given object, this means taking the variables of the object just before it dies.
+	/// </summary>
+	/// <param name="pObject">object to inherit from</param>
+	virtual void InheritFrom(Object&& object);
 
 	/// <summary>
 	/// instance must create a copy of all of its data into pObject. Implementations can assume that pObject is the same superclass is the instance.
@@ -187,14 +199,3 @@ protected:
 
 	bool hasScript = false;
 };
-
-template<typename T>
-Object* Object::AddChild(const ObjectCreationData& creationData)
-{
-	static_assert(!std::is_base_of_v<T, Object>, "Cannot Create a custom object: the typename does not have Object as a base");
-	T* custom = new T();
-	Object* base = custom;
-	base->Initialize(creationData, custom);
-	children.push_back(base);
-	return base;
-}

@@ -70,3 +70,15 @@ void CameraObject::CalculateProjection()
 	proj = glm::perspective(width / height, glm::radians(fov), zNear, zFar);
 	proj[1][1] *= -1.0f;
 }
+
+void CameraObject::InheritFrom(Object&& object)
+{
+	CameraObject& cameraObj = object.As<CameraObject>();
+
+	std::swap(cameraObj.zNear, zNear);
+	std::swap(cameraObj.zFar, zFar);
+	std::swap(cameraObj.view, view);
+	std::swap(cameraObj.prevView, prevView);
+	std::swap(cameraObj.proj, proj);
+	std::swap(cameraObj.prevProj, prevProj);
+}

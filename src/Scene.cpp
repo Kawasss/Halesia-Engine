@@ -55,7 +55,7 @@ void Scene::RegisterObjectPointer(Object* pObject, Object* pParent)
 	win32::CriticalLockGuard guard(objectCriticalSection);
 
 	if (pParent == nullptr) // only accept ownership of the object of noone else has ownership
-		allObjects.push_back(pObject);
+		objects.push_back(pObject);
 	else
 		pParent->AddChild(pObject);
 
@@ -133,7 +133,7 @@ void Scene::PrepareObjectsForUpdate()
 	if (!HasFinishedLoading())
 		return;
 
-	for (Object* pObject : allObjects)
+	for (Object* pObject : objects)
 	{
 		if (pObject->ShouldBeDestroyed() || pObject->state == OBJECT_STATE_DISABLED)
 			continue;
@@ -146,17 +146,17 @@ void Scene::UpdateScripts(float delta)
 	if (!HasFinishedLoading())
 		return;
 
-	for (int i = 0; i < allObjects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 	{
-		if (allObjects[i]->ShouldBeDestroyed() || allObjects[i]->state == OBJECT_STATE_DISABLED)
+		if (objects[i]->ShouldBeDestroyed() || objects[i]->state == OBJECT_STATE_DISABLED)
 			continue;
-		allObjects[i]->FullUpdate(delta); // can optimize away empty function calls here
+		objects[i]->FullUpdate(delta); // can optimize away empty function calls here
 	}
 }
 
 void Scene::CollectGarbage()
 {
-	CollectGarbageRecursive(allObjects);
+	CollectGarbageRecursive(objects);
 }
 
 void Scene::CollectGarbageRecursive(std::vector<Object*>& base)
@@ -183,15 +183,15 @@ void Scene::CollectGarbageRecursive(std::vector<Object*>& base)
 
 void Scene::TransferObjectOwnership(Object* pNewOwner, Object* pChild)
 {
-	std::vector<Object*>::iterator iter = std::find(allObjects.begin(), allObjects.end(), pChild);
-	if (iter != allObjects.end())
-		allObjects.erase(iter);
+	std::vector<Object*>::iterator iter = std::find(objects.begin(), objects.end(), pChild);
+	if (iter != objects.end())
+		objects.erase(iter);
 	pNewOwner->AddChild(pChild);
 }
 
 void Scene::DestroyAllObjects()
 {
-	for (Object* object : allObjects)
+	for (Object* object : objects)
 		Object::Free(object);
 	CollectGarbage();
 }

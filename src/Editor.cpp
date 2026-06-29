@@ -428,9 +428,9 @@ void Editor::ShowSideBars()
 	ImGui::Begin("scene graph", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse);
 	ImGui::BeginChild(1);
 
-	for (int i = 0; i < allObjects.size(); i++)
+	for (int i = 0; i < objects.size(); i++)
 	{
-		ShowObjectWithChildren(allObjects[i]);
+		ShowObjectWithChildren(objects[i]);
 	}
 	ImGui::EndChild();
 	ImGui::End();
@@ -1180,7 +1180,7 @@ void Editor::QueueMeshChange(Object* object)
 
 void Editor::DestroyCurrentScene()
 {
-	for (Object* obj : allObjects)
+	for (Object* obj : objects)
 		UIFree(obj);
 
 	for (int i = 1; i < Mesh::materials.size(); i++)

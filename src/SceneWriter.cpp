@@ -102,10 +102,10 @@ void SceneWriter::WriteSceneToArchive(const std::string& file, const Scene* scen
 		return;
 
 	BinaryStream rootReferences;
-	WriteNamedReferencesToStream(rootReferences, scene->allObjects);
+	WriteNamedReferencesToStream(rootReferences, scene->objects);
 	archive.AddData("##object_root", rootReferences.data);
 
-	for (Object* pObject : scene->allObjects)
+	for (Object* pObject : scene->objects)
 		WriteFullObjectToArchive(archive, pObject);
 
 	WriteMaterialsToArchive(archive);

@@ -452,7 +452,7 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 
 	if (ImGui::CollapsingHeader("scene"))
 	{
-		ImGui::Text("object count: %i", core.scene->allObjects.size());
+		ImGui::Text("object count: %i", core.scene->objects.size());
 		ShowCameraData(core.scene->camera);
 	}
 

@@ -100,7 +100,7 @@ void Object::RemoveChild(Object* child)
 
 void Object::TransferChild(Object* child, Object* destination)
 {
-	std::vector<Object*>::iterator iter = std::find(children.begin(), children.end(), child);
+	std::vector<Object*>::iterator iter = std::ranges::find(children, child);
 	if (iter == children.end())
 		return;
 
@@ -121,6 +121,35 @@ void Object::TransferChild(Object* child, Object* destination)
 //
 //	return pCopy;
 //}
+
+Object& Object::operator=(Object&& other)
+{
+	std::swap(type, other.type);
+	std::swap(critSection, other.critSection);
+	std::swap(generation, other.generation);
+	std::swap(children, other.children);
+	std::swap(finishedLoading, other.finishedLoading);
+	std::swap(shouldBeDestroyed, other.shouldBeDestroyed);
+	std::swap(transform, other.transform);
+	std::swap(state, other.state);
+
+
+	if (other.parent != parent)
+	{
+		Object* curr = parent;
+
+		parent->TransferChild(this, other.parent);
+		other.parent->TransferChild(&other, curr);
+	}
+
+	InheritFrom(std::move(other)); // hack
+	return *this;
+}
+
+void Object::InheritFrom(Object&& object)
+{
+	
+}
 
 void Object::DuplicateDataTo(Object* pObject) const
 {

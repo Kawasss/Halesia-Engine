@@ -53,7 +53,7 @@ public:
 	// 2. destroy all objects
 	~Scene();
 
-	std::vector<Object*> allObjects; // this vector owns the objects
+	std::vector<Object*> objects; // this vector owns the objects
 
 private:
 	void CollectGarbageRecursive(std::vector<Object*>& base);

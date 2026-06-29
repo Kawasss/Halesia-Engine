@@ -30,6 +30,8 @@ public:
 protected:
 	CameraObject();
 
+	void InheritFrom(Object&& object) override;
+
 private:
 	void CalculateView();
 	void CalculateProjection();
