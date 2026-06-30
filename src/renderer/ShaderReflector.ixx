@@ -1,7 +1,7 @@
 export module Renderer.ShaderReflector;
 
 import <vulkan/vulkan.h>;
-import <spirv-reflect/spirv_reflect.h>;
+import <SPIRV-Reflect/spirv_reflect.h>;
 
 import std;
 

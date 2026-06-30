@@ -106,7 +106,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions);VK_USE_PLATFORM_WIN32_KHR</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;C:\Users\wveen\source\additionalDependencies\imgui-1.91.7;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\wveen\source\repos\Halesia\thirdparty;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;C:\Users\wveen\source\additionalDependencies\imgui-1.91.7;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -137,7 +137,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions);VK_USE_PLATFORM_WIN32_KHR</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\wveen\source\repos\Halesia\thirdparty;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -164,7 +164,6 @@
     <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\implot_demo.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\implot_items.cpp" />
     <ClCompile Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.cpp" />
-    <ClCompile Include="..\..\additionalDependencies\spirv-reflect\spirv_reflect.cpp" />
     <ClCompile Include="src\AccelerationStructures.cpp" />
     <ClCompile Include="src\Animation.cpp" />
     <ClCompile Include="src\AnimationManager.cpp" />
@@ -317,6 +316,7 @@
     <ClCompile Include="src\Buffer.cpp" />
     <ClCompile Include="src\VulkanAPIError.cpp" />
     <ClCompile Include="src\Window.cpp" />
+    <ClCompile Include="thirdparty\SPIRV-Reflect\spirv_reflect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\backends\imgui_impl_vulkan.h" />
@@ -336,7 +336,6 @@
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\ResourceManager.h" />
-    <ClInclude Include="thirdparty\plf_colony\plf_colony.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cfg\engine.ini" />

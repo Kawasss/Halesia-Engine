@@ -81,9 +81,6 @@
     <Filter Include="Shaders\atmosphere">
       <UniqueIdentifier>{d67d536f-4b5a-4021-92ec-f1ed1c37890a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\thirdparty">
-      <UniqueIdentifier>{96190ce4-d60c-435d-aba4-7fdd1de62fa3}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\templates">
       <UniqueIdentifier>{7f6577db-62f5-4886-903f-8af07614e24d}</UniqueIdentifier>
     </Filter>
@@ -151,9 +148,6 @@
     </ClCompile>
     <ClCompile Include="src\Material.cpp">
       <Filter>Source Files\Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\additionalDependencies\spirv-reflect\spirv_reflect.cpp">
-      <Filter>external\spirvReflect</Filter>
     </ClCompile>
     <ClCompile Include="src\Audio.cpp">
       <Filter>Source Files</Filter>
@@ -584,6 +578,9 @@
     <ClCompile Include="src\templates\Colony.ixx">
       <Filter>Header Files\templates</Filter>
     </ClCompile>
+    <ClCompile Include="thirdparty\SPIRV-Reflect\spirv_reflect.cpp">
+      <Filter>external\spirvReflect</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ResourceManager.h">
@@ -636,9 +633,6 @@
     </ClInclude>
     <ClInclude Include="src\core\Console.h">
       <Filter>Header Files\core</Filter>
-    </ClInclude>
-    <ClInclude Include="thirdparty\plf_colony\plf_colony.h">
-      <Filter>Header Files\thirdparty</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
