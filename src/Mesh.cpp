@@ -83,10 +83,7 @@ void Mesh::Create(const MeshCreationData& creationData)
 void Mesh::Recreate()
 {
 	//TODO: create mesh here by communicating with the renderer.
-	std::expected<MeshHandle, bool> exMeshHandle = *HalesiaEngine::GetInstance()->GetEngineCore().renderer->LoadMesh(vertices, indices); // this has to be the ugliest code EVER
-	
-	if (exMeshHandle.has_value())
-		meshHandle = *exMeshHandle;
+	meshHandle = HalesiaEngine::GetInstance()->GetEngineCore().renderer->LoadMesh(vertices, indices); // this has to be the ugliest code EVER
 
 	for (const Vertex& vertex : vertices) // better if this is precalculated
 	{
@@ -106,7 +103,11 @@ void Mesh::CopyFrom(const Mesh& mesh)
 	vertices = mesh.vertices;
 	indices = mesh.indices;
 
-	meshHandle = HalesiaEngine::GetInstance()->GetEngineCore().renderer->CopyMeshHandle(mesh.meshHandle);
+	bool succ = HalesiaEngine::GetInstance()->GetEngineCore().renderer->CopyMeshHandle(mesh.meshHandle);
+	if (!succ)
+		return;
+
+	meshHandle = mesh.meshHandle;
 
 	faceCount = mesh.faceCount;
 

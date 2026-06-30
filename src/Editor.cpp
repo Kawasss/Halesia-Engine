@@ -323,7 +323,7 @@ void Editor::ApplyQueuedMeshChange()
 	queuedMeshChange.path = GetFile("Mesh file", SUPPORTED_FILES.data());
 	Object* obj = queuedMeshChange.object;
 
-	if (obj != nullptr)
+	if (obj == nullptr && queuedMeshChange.path.empty())
 	{
 		MeshCreationData creationData = assetImport::LoadFirstMesh(queuedMeshChange.path);
 

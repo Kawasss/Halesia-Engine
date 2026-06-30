@@ -997,80 +997,55 @@ void Renderer::SubmitRecording()
 	vgm::CollectGarbage();
 }
 
-Renderer::GpuMeshData::GpuMeshData(StorageBuffer<Vertex>::Memory d, StorageBuffer<Vertex>::Memory v, StorageBuffer<std::uint32_t>::Memory i, const std::shared_ptr<BottomLevelAccelerationStructure>& b) : dVertices(d), vertices(v), indices(i), BLAS(b), refCount(1)
+GpuMeshData::GpuMeshData(StorageBuffer<Vertex>::Memory d, StorageBuffer<Vertex>::Memory v, StorageBuffer<std::uint32_t>::Memory i, const std::shared_ptr<BottomLevelAccelerationStructure>& b) : dVertices(d), vertices(v), indices(i), BLAS(b), refCount(1)
 {
 
 }
 
-std::expected<MeshHandle, bool> Renderer::LoadMesh(const std::span<const Vertex>& vertices, const std::span<const std::uint32_t>& indices)
+MeshHandle Renderer::LoadMesh(const std::span<const Vertex>& vertices, const std::span<const std::uint32_t>& indices)
 {
 	win32::CriticalLockGuard guard(meshDataCritSection);
-
-	auto it = std::find_if(meshDatas.begin(), meshDatas.end(), [&](const std::optional<GpuMeshData>& data) { return !data.has_value(); });
-	if (it == meshDatas.end())
-	{
-		Console::WriteLine("failed to load new mesh, the buffer has reached its maximum size of {}", Console::Severity::Error, meshDatas.size());
-		return std::unexpected(false);
-	}
 
 	auto mdvertices = g_defaultVertexBuffer.SubmitNewData(vertices);
 	auto mvertices  = g_vertexBuffer.SubmitNewData(vertices);
 	auto mindices   = g_indexBuffer.SubmitNewData(indices);
+	auto blas       = std::make_shared<BottomLevelAccelerationStructure>(mvertices, mindices);
 
-	it->emplace(
-		mdvertices,
-		mvertices,
-		mindices,
-		std::make_shared<BottomLevelAccelerationStructure>(mvertices, mindices)
-	);
-
-	return static_cast<MeshHandle>(it - meshDatas.begin());
+	return meshDatas.emplace(mdvertices, mvertices, mindices, blas);
 }
 
-MeshHandle Renderer::CopyMeshHandle(const MeshHandle& handle)
+bool Renderer::CopyMeshHandle(const MeshHandle& handle)
 {
-	if (handle >= meshDatas.size())
-		return INVALID_MESH_HANDLE;
+	if (handle == MeshHandle())
+		return false;
 
 	win32::CriticalLockGuard guard(meshDataCritSection);
 
-	std::optional<GpuMeshData>& optData = meshDatas[handle];
-	if (!optData.has_value())
-		return INVALID_MESH_HANDLE;
-
-	optData->refCount++; // maybe atomic fetch_add..?
-
-	return handle;
+	handle->refCount++; // maybe atomic fetch_add..?
+	return true;
 }
 
 void Renderer::DestroyMeshHandle(const MeshHandle& handle)
 {
-	if (handle >= meshDatas.size())
-	{
-		Console::WriteLine("failed to delete mesh handle {}", Console::Severity::Error, handle);
+	if (handle == MeshHandle())
 		return;
-	}
 
 	win32::CriticalLockGuard guard(meshDataCritSection);
 
-	std::optional<GpuMeshData>& optData = meshDatas[handle];
-	if (!optData.has_value())
-		return;
-
-	if (optData->refCount <= 1)
-		optData = std::optional<GpuMeshData>();
+	if (handle->refCount <= 1)
+		meshDatas.erase(handle);
 	else
-		optData->refCount--;
+		handle->refCount--;
 }
 
-Renderer::GpuMeshData::~GpuMeshData()
+GpuMeshData::~GpuMeshData()
 {
 	if (dVertices != 0)
-		g_defaultVertexBuffer.DestroyData(dVertices);
+		Renderer::g_defaultVertexBuffer.DestroyData(dVertices);
 	if (vertices != 0)
-		g_vertexBuffer.DestroyData(vertices);
+		Renderer::g_vertexBuffer.DestroyData(vertices);
 	if (indices != 0)
-		g_indexBuffer.DestroyData(indices);
+		Renderer::g_indexBuffer.DestroyData(indices);
 }
 
 static RenderableMeshFlags TranslateMeshFlags(MeshOptionFlags flags)
@@ -1092,14 +1067,10 @@ std::optional<RenderableMesh> Renderer::GetRenderableMeshFromObject(const Object
 	const MeshObject* pMeshObject = dynamic_cast<const MeshObject*>(pObject);
 
 	MeshHandle handle = pMeshObject->mesh.meshHandle;
-	if (handle >= meshDatas.size())
+	if (handle == MeshHandle())
 		return std::optional<RenderableMesh>();
 
-	const std::optional<GpuMeshData>& optData = meshDatas[handle];
-	if (!optData.has_value())
-		return std::optional<RenderableMesh>();
-
-	const GpuMeshData& data = *optData;
+	const GpuMeshData& data = *handle;
 
 	RenderableMesh mesh{};
 	mesh.transform = pObject->transform.GetModelMatrix();

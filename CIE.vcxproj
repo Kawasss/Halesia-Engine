@@ -227,6 +227,7 @@
     <ClCompile Include="src\renderer\Vulkan.ixx" />
     <ClCompile Include="src\renderer\VulkanAPIError.ixx" />
     <ClCompile Include="src\system\CriticalSection.ixx" />
+    <ClCompile Include="src\templates\Colony.ixx" />
     <ClCompile Include="src\TLAS.cpp" />
     <ClCompile Include="src\VulkanGarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
@@ -335,6 +336,7 @@
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\math\vectors.h" />
     <ClInclude Include="src\ResourceManager.h" />
+    <ClInclude Include="thirdparty\plf_colony\plf_colony.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="cfg\engine.ini" />
