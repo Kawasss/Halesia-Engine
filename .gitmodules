@@ -1,3 +1,6 @@
 [submodule "thirdparty/plf_colony"]
 	path = thirdparty/plf_colony
 	url = https://github.com/mattreecebentley/plf_colony
+[submodule "thirdparty/SPIRV-Reflect"]
+	path = thirdparty/SPIRV-Reflect
+	url = https://github.com/KhronosGroup/SPIRV-Reflect
