@@ -53,14 +53,14 @@ void Profiler::OneSecondUpdate()
 
 void Profiler::Calculate1PLow()
 {
-	const int onePercent = static_cast<int>(frameTime.size * 0.01f);
+	const int onePercent = static_cast<int>(frameTime.GetSize() * 0.01f);
 
-	std::vector<float> sorted = frameTime.buffer;
+	std::vector<float> sorted = frameTime.GetInternalBuffer();
 	std::sort(sorted.begin(), sorted.end());
 
 	float average = 0;
 	for (int i = 0; i < onePercent; i++)
-		average += frameTime.buffer[frameTime.size - onePercent + i];
+		average += frameTime[frameTime.GetSize() - onePercent + i];
 	average /= onePercent;
 	frameTime1PLow = average;
 }

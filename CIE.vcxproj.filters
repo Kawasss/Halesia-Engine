@@ -581,6 +581,9 @@
     <ClCompile Include="thirdparty\SPIRV-Reflect\spirv_reflect.cpp">
       <Filter>external\spirvReflect</Filter>
     </ClCompile>
+    <ClCompile Include="src\templates\CircularBuffer.ixx">
+      <Filter>Header Files\templates</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ResourceManager.h">

@@ -226,6 +226,7 @@
     <ClCompile Include="src\renderer\Vulkan.ixx" />
     <ClCompile Include="src\renderer\VulkanAPIError.ixx" />
     <ClCompile Include="src\system\CriticalSection.ixx" />
+    <ClCompile Include="src\templates\CircularBuffer.ixx" />
     <ClCompile Include="src\templates\Colony.ixx" />
     <ClCompile Include="src\TLAS.cpp" />
     <ClCompile Include="src\VulkanGarbageManager.cpp" />
