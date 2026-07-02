@@ -32,8 +32,8 @@ public:
 		return *this;
 	}
 
-	void Read(char* dst, size_t count);
-	void Write(const char* src, size_t count); // appends
+	bool Read(char* dst, size_t count);
+	bool Write(const char* src, size_t count); // appends
 	void Clear();
 
 	std::vector<char> data;

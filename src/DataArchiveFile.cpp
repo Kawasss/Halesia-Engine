@@ -19,7 +19,8 @@ import std;
 
 DataArchiveFile::DataArchiveFile(const std::string& file, OpenMethod method) : stream(file, static_cast<ReadWriteFile::OpenMethod>(method))
 {
-	ReadDictionaryFromDisk();
+	if (file != IN_MEMORY)
+		ReadDictionaryFromDisk();
 }
 
 bool DataArchiveFile::IsValid() const
@@ -54,7 +55,7 @@ std::expected<std::vector<char>, DataArchiveFile::Result> DataArchiveFile::ReadD
 	if (!metadata.isOnDisk)
 		return DecompressMemory(metadata.compressed, metadata.uncompressedSize);
 
-	if (metadata.offset + metadata.size >= stream.GetFileSize() || metadata.offset == 0)
+	if (metadata.offset + metadata.size >= stream.GetSize() || metadata.offset == 0)
 		return std::unexpected(Result::InvalidReference);
 
 	return ReadFromDisk(metadata.offset, metadata.size);
@@ -65,7 +66,7 @@ std::expected<std::vector<char>, DataArchiveFile::Result>  DataArchiveFile::Read
 	if (size == 0)
 		return std::vector<char>();
 
-	ReadSession session(stream);
+	auto session = stream.CreateReadSession();
 
 	std::uint64_t uncompressedSize = 0;
 	stream.SeekG(offset, ReadWriteFile::Method::Begin);
@@ -111,7 +112,7 @@ std::vector<char> DataArchiveFile::CompressMemory(const std::span<char const>& u
 
 void DataArchiveFile::ReadDictionaryFromDisk()
 {
-	ReadSession session(stream);
+	auto session = stream.CreateReadSession();
 	stream.SeekG(0, ReadWriteFile::Method::Begin);
 
 	uint32_t entryCount = 0;
@@ -148,7 +149,7 @@ void DataArchiveFile::ClearDictionary()
 
 void DataArchiveFile::WriteToFile()
 {
-	WriteSession session(stream);
+	auto session = stream.CreateWriteSession();
 
 	WriteDictionaryToDisk();
 	WriteDataEntriesToDisk();

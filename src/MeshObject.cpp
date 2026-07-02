@@ -50,9 +50,8 @@ void MeshObject::DuplicateDataTo(Object* pObject) const
 
 void MeshObject::SerializeSelf(BinaryStream& stream) const
 {
-	throw std::runtime_error("outdated mesh serialization");
-
 	stream << mesh.uvScale;
+	stream << true; // TODO: add flags into the (de)serialisation
 	stream << mesh.GetMaterialIndex();
 
 	size_t vertexCount = mesh.vertices.size();
@@ -66,8 +65,6 @@ void MeshObject::SerializeSelf(BinaryStream& stream) const
 
 void MeshObject::DeserializeSelf(const BinarySpan& stream)
 {
-	throw std::runtime_error("outdated mesh deserialization");
-
 	float uvScale = 1.0f;
 
 	MeshCreationData creationData{};

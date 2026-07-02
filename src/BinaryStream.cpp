@@ -11,16 +11,19 @@ BinaryStream::BinaryStream(const std::vector<char>& data) : data(data)
 
 }
 
-void BinaryStream::Read(char* dst, std::size_t count)
+bool BinaryStream::Read(char* dst, std::size_t count)
 {
 	assert(offset + count <= data.size());
 	std::memcpy(dst, &data[offset], count);
 	offset += count;
+
+	return true;
 }
 
-void BinaryStream::Write(const char* src, std::size_t count)
+bool BinaryStream::Write(const char* src, std::size_t count)
 {
 	data.insert(data.end(), src, src + count);
+	return true;
 }
 
 void BinaryStream::Clear()

@@ -55,8 +55,11 @@ public:
 	ReadSession(ReadWriteFile& file);
 	~ReadSession();
 
+	ReadSession(const ReadSession&) = delete;
+	ReadSession(ReadSession&& session);
+
 private:
-	ReadWriteFile& file;
+	ReadWriteFile* pFile = nullptr;
 };
 
 export class WriteSession
@@ -65,6 +68,9 @@ public:
 	WriteSession(ReadWriteFile& file);
 	~WriteSession();
 
+	WriteSession(const WriteSession&) = delete;
+	WriteSession(WriteSession&& session);
+
 private:
-	ReadWriteFile& file;
+	ReadWriteFile* pFile = nullptr;
 };

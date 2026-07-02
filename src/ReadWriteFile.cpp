@@ -76,22 +76,34 @@ size_t ReadWriteFile::GetFileSize() const
 	return size.QuadPart;
 }
 
-ReadSession::ReadSession(ReadWriteFile& file) : file(file)
+ReadSession::ReadSession(ReadWriteFile& file) : pFile(&file)
 {
 	file.StartReading();
 }
 
 ReadSession::~ReadSession()
 {
-	file.StopReading();
+	if (pFile != nullptr)
+		pFile->StopReading();
 }
 
-WriteSession::WriteSession(ReadWriteFile& file) : file(file)
+ReadSession::ReadSession(ReadSession&& session)
+{
+	std::swap(pFile, session.pFile);
+}
+
+WriteSession::WriteSession(ReadWriteFile& file) : pFile(&file)
 {
 	file.StartWriting();
 }
 
 WriteSession::~WriteSession()
 {
-	file.StopWriting();
+	if (pFile != nullptr)
+		pFile->StopWriting();
+}
+
+WriteSession::WriteSession(WriteSession&& session)
+{
+	std::swap(pFile, session.pFile);
 }

@@ -584,6 +584,12 @@
     <ClCompile Include="src\templates\CircularBuffer.ixx">
       <Filter>Header Files\templates</Filter>
     </ClCompile>
+    <ClCompile Include="src\io\ReadWriteDevice.ixx">
+      <Filter>Header Files\io</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ReadWriteDevice.cpp">
+      <Filter>Source Files\io</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ResourceManager.h">

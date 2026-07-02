@@ -198,6 +198,8 @@
     <ClCompile Include="src\Framebuffer.cpp" />
     <ClCompile Include="src\io\BinaryStream.ixx" />
     <ClCompile Include="src\io\CreationData.ixx" />
+    <ClCompile Include="src\io\ReadWriteDevice.ixx" />
+    <ClCompile Include="src\ReadWriteDevice.cpp" />
     <ClCompile Include="src\renderer\BLAS.ixx" />
     <ClCompile Include="src\renderer\Buffer.ixx" />
     <ClCompile Include="src\renderer\ComputePipeline.ixx" />
