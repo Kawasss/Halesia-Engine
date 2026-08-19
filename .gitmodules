@@ -4,3 +4,6 @@
 [submodule "thirdparty/SPIRV-Reflect"]
 	path = thirdparty/SPIRV-Reflect
 	url = https://github.com/KhronosGroup/SPIRV-Reflect
+[submodule "thirdparty/octree-cpp"]
+	path = thirdparty/octree-cpp
+	url = https://github.com/annell/octree-cpp.git
