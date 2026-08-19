@@ -2,10 +2,12 @@ export module IO.BinaryStream;
 
 import std;
 
+import IO.BasicStream;
+
 template<typename T>
 concept PrimitiveOnly = std::is_fundamental_v<T>;
 
-export class BinaryStream
+export class BinaryStream : public BasicStream
 {
 public:
 	BinaryStream() = default;
@@ -28,20 +30,23 @@ public:
 		const T* pValue = reinterpret_cast<const T*>(&data[0] + offset);
 		val = *pValue;
 
-		offset += readCount;
+		offset += static_cast<std::int64_t>(readCount);
 		return *this;
 	}
 
-	bool Read(char* dst, size_t count);
-	bool Write(const char* src, size_t count); // appends
+	bool Read(char* dst, std::size_t count) override;
+	bool Write(const char* src, std::size_t count) override;
 	void Clear();
 
 	std::vector<char> data;
 
-	std::size_t GetOffset() const; // only returns a usable number when reading
+	std::int64_t GetG() override;
+	std::int64_t SeekG(std::int64_t index, SeekMethod method) override;
+
+	std::size_t GetSize() const override;
 
 private:
-	std::size_t offset = 0; // only used for reading
+	std::int64_t offset = 0;
 };
 
 export class BinarySpan

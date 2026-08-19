@@ -7,6 +7,8 @@ module IO.DataArchiveFile;
 
 import std;
 
+import IO.BinaryStream;
+
 // the dictionary is serialized like this:
 //
 // entry count: unsigned 32 bit
@@ -17,15 +19,33 @@ import std;
 //   uncompressed size of the data: unsigned 64 bit
 // every data block starts with a 64 bit value showing the uncompressed size
 
-DataArchiveFile::DataArchiveFile(const std::string& file, OpenMethod method) : stream(file, static_cast<ReadWriteFile::OpenMethod>(method))
+DataArchiveFile DataArchiveFile::LoadFromFile(const std::string_view& file, OpenMethod method)
 {
-	if (file != IN_MEMORY)
+	ReadWriteFile* pFile = new ReadWriteFile(file, static_cast<ReadWriteFile::OpenMethod>(method));
+	std::unique_ptr<BasicStream> ptr;
+	ptr.reset(pFile);
+
+	return DataArchiveFile(std::move(ptr));
+}
+
+DataArchiveFile DataArchiveFile::CreateInMemory()
+{
+	BinaryStream* pStream = new BinaryStream();
+	std::unique_ptr<BasicStream> ptr;
+	ptr.reset(pStream);
+
+	return DataArchiveFile(std::move(ptr));
+}
+
+DataArchiveFile::DataArchiveFile(std::unique_ptr<BasicStream>&& pStream) : stream(std::move(pStream))
+{
+	if (stream->GetSize() > 0)
 		ReadDictionaryFromDisk();
 }
 
 bool DataArchiveFile::IsValid() const
 {
-	return stream.IsValid();
+	return stream->IsValid();
 }
 
 bool DataArchiveFile::HasEntry(const std::string& identifier) const
@@ -55,7 +75,7 @@ std::expected<std::vector<char>, DataArchiveFile::Result> DataArchiveFile::ReadD
 	if (!metadata.isOnDisk)
 		return DecompressMemory(metadata.compressed, metadata.uncompressedSize);
 
-	if (metadata.offset + metadata.size >= stream.GetSize() || metadata.offset == 0)
+	if (metadata.offset + metadata.size >= stream->GetSize() || metadata.offset == 0)
 		return std::unexpected(Result::InvalidReference);
 
 	return ReadFromDisk(metadata.offset, metadata.size);
@@ -66,15 +86,15 @@ std::expected<std::vector<char>, DataArchiveFile::Result>  DataArchiveFile::Read
 	if (size == 0)
 		return std::vector<char>();
 
-	auto session = stream.CreateReadSession();
+	ReadSession session(*stream);
 
 	std::uint64_t uncompressedSize = 0;
-	stream.SeekG(offset, ReadWriteFile::Method::Begin);
-	stream.Read(reinterpret_cast<char*>(&uncompressedSize), sizeof(uncompressedSize));
+	stream->SeekG(offset, ReadWriteFile::SeekMethod::Begin);
+	stream->Read(reinterpret_cast<char*>(&uncompressedSize), sizeof(uncompressedSize));
 
 	std::vector<char> read(size);
-	stream.SeekG(offset + sizeof(uncompressedSize), ReadWriteFile::Method::Begin);
-	stream.Read(read.data(), static_cast<unsigned long>(size));
+	stream->SeekG(offset + sizeof(uncompressedSize), ReadWriteFile::SeekMethod::Begin);
+	stream->Read(read.data(), static_cast<unsigned long>(size));
 
 	return DecompressMemory(read, uncompressedSize);
 }
@@ -112,11 +132,11 @@ std::vector<char> DataArchiveFile::CompressMemory(const std::span<char const>& u
 
 void DataArchiveFile::ReadDictionaryFromDisk()
 {
-	auto session = stream.CreateReadSession();
-	stream.SeekG(0, ReadWriteFile::Method::Begin);
+	ReadSession session(*stream);
+	stream->SeekG(0, ReadWriteFile::SeekMethod::Begin);
 
 	uint32_t entryCount = 0;
-	bool notEOF = stream.Read(reinterpret_cast<char*>(&entryCount), sizeof(entryCount));
+	bool notEOF = stream->Read(reinterpret_cast<char*>(&entryCount), sizeof(entryCount));
 	if (!notEOF)
 		return;
 
@@ -128,12 +148,12 @@ void DataArchiveFile::ReadDictionaryFromDisk()
 
 		bool success = true;
 
-		success = success && stream.Read(reinterpret_cast<char*>(&stringLength), sizeof(stringLength));
+		success = success && stream->Read(reinterpret_cast<char*>(&stringLength), sizeof(stringLength));
 
 		identifier.resize(stringLength);
-		success = success && stream.Read(identifier.data(), stringLength);
-		success = success && stream.Read(reinterpret_cast<char*>(&metadata.offset), sizeof(metadata.offset));
-		success = success && stream.Read(reinterpret_cast<char*>(&metadata.size), sizeof(metadata.size));
+		success = success && stream->Read(identifier.data(), stringLength);
+		success = success && stream->Read(reinterpret_cast<char*>(&metadata.offset), sizeof(metadata.offset));
+		success = success && stream->Read(reinterpret_cast<char*>(&metadata.size), sizeof(metadata.size));
 
 		if (!success || identifier.empty())
 			return;
@@ -149,7 +169,7 @@ void DataArchiveFile::ClearDictionary()
 
 void DataArchiveFile::WriteToFile()
 {
-	auto session = stream.CreateWriteSession();
+	WriteSession session(*stream);
 
 	WriteDictionaryToDisk();
 	WriteDataEntriesToDisk();
@@ -157,15 +177,15 @@ void DataArchiveFile::WriteToFile()
 
 void DataArchiveFile::WriteDictionaryToDisk()
 {
-	if (!stream.IsValid())
+	if (!stream->IsValid())
 		return;
 
 	std::uint64_t totalOffset = GetBinarySizeOfDictionary();
 
-	stream.SeekG(0, ReadWriteFile::Method::Begin);
+	stream->SeekG(0, ReadWriteFile::SeekMethod::Begin);
 
 	std::uint32_t entryCount = static_cast<std::uint32_t>(dictionary.size());
-	stream.Write(reinterpret_cast<char*>(&entryCount), sizeof(entryCount));
+	stream->Write(reinterpret_cast<char*>(&entryCount), sizeof(entryCount));
 
 	for (auto& [identifier, metadata] : dictionary)
 	{
@@ -173,10 +193,10 @@ void DataArchiveFile::WriteDictionaryToDisk()
 
 		metadata.offset = totalOffset;
 
-		stream.Write(reinterpret_cast<char*>(&stringLength), sizeof(stringLength));
-		stream.Write(identifier.c_str(), static_cast<unsigned long>(identifier.size()));
-		stream.Write(reinterpret_cast<char*>(&metadata.offset), sizeof(metadata.offset));
-		stream.Write(reinterpret_cast<char*>(&metadata.size), sizeof(metadata.size));
+		stream->Write(reinterpret_cast<char*>(&stringLength), sizeof(stringLength));
+		stream->Write(identifier.c_str(), static_cast<unsigned long>(identifier.size()));
+		stream->Write(reinterpret_cast<char*>(&metadata.offset), sizeof(metadata.offset));
+		stream->Write(reinterpret_cast<char*>(&metadata.size), sizeof(metadata.size));
 
 		totalOffset += metadata.size + sizeof(std::uint64_t); // each entry starts with an extra 64 bits !!
 	}
@@ -184,7 +204,7 @@ void DataArchiveFile::WriteDictionaryToDisk()
 
 void DataArchiveFile::WriteDataEntriesToDisk()
 {
-	if (!stream.IsValid())
+	if (!stream->IsValid())
 		return;
 
 	for (const auto& [identifier, metadata] : dictionary)
@@ -194,9 +214,9 @@ void DataArchiveFile::WriteDataEntriesToDisk()
 
 		assert(metadata.size == metadata.compressed.size());
 
-		stream.SeekG(static_cast<std::int64_t>(metadata.offset), ReadWriteFile::Method::Begin);
-		stream.Write(reinterpret_cast<const char*>(&metadata.uncompressedSize), sizeof(metadata.uncompressedSize));
-		stream.Write(metadata.compressed.data(), static_cast<unsigned long>(metadata.size));
+		stream->SeekG(static_cast<std::int64_t>(metadata.offset), ReadWriteFile::SeekMethod::Begin);
+		stream->Write(reinterpret_cast<const char*>(&metadata.uncompressedSize), sizeof(metadata.uncompressedSize));
+		stream->Write(metadata.compressed.data(), static_cast<unsigned long>(metadata.size));
 	}
 }
 

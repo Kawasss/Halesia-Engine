@@ -2,18 +2,13 @@ export module IO.ReadWriteFile;
 
 import std;
 
+export import IO.BasicStream;
+
 using HANDLE = void*;
 
-export class ReadWriteFile
+export class ReadWriteFile : public BasicStream
 {
 public:
-	enum class Method
-	{
-		Begin = 0,
-		Current = 1,
-		End = 2,
-	};
-
 	enum class OpenMethod
 	{
 		Clear,
@@ -22,21 +17,21 @@ public:
 
 	ReadWriteFile(const std::string_view& file, OpenMethod method);
 
-	bool IsValid() const;
+	bool IsValid() const override;
 
-	bool Write(const char* src, unsigned long count) const;
-	bool Read(char* dst, unsigned long count) const; // returns false if it has read nothing but the end of the file or an error has occured, otherwise true
+	bool Write(const char* src, std::size_t count) override;
+	bool Read(char* dst, std::size_t count) override; // returns false if it has read nothing but the end of the file or an error has occured, otherwise true
 
-	void StartReading();
-	void StopReading();
+	void StartReading() override;
+	void StopReading() override;
 
-	void StartWriting();
-	void StopWriting();
+	void StartWriting() override;
+	void StopWriting() override;
 
-	std::int64_t SeekG(std::int64_t index, ReadWriteFile::Method method) const;
-	std::int64_t GetG() const;
+	std::int64_t SeekG(std::int64_t index, SeekMethod method) override;
+	std::int64_t GetG() override;
 
-	std::size_t GetFileSize() const;
+	std::size_t GetSize() const override;
 
 private:
 	struct HandleDeleter
@@ -47,30 +42,4 @@ private:
 	OpenMethod method;
 	std::string file;
 	std::unique_ptr<void, HandleDeleter> handle;
-};
-
-export class ReadSession
-{
-public:
-	ReadSession(ReadWriteFile& file);
-	~ReadSession();
-
-	ReadSession(const ReadSession&) = delete;
-	ReadSession(ReadSession&& session);
-
-private:
-	ReadWriteFile* pFile = nullptr;
-};
-
-export class WriteSession
-{
-public:
-	WriteSession(ReadWriteFile& file);
-	~WriteSession();
-
-	WriteSession(const WriteSession&) = delete;
-	WriteSession(WriteSession&& session);
-
-private:
-	ReadWriteFile* pFile = nullptr;
 };

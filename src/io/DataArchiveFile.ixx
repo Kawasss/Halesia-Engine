@@ -3,7 +3,7 @@ export module IO.DataArchiveFile;
 import std;
 
 import IO.ReadWriteFile;
-import IO.ReadWriteDevice;
+import IO.BasicStream;
 
 export class DataArchiveFile
 {
@@ -57,12 +57,8 @@ public:
 		InvalidReference, //!< the data pointing to the data associated with the identifier is not valid (i.e. out of bounds)
 	};
 
-	/// <summary>
-	/// Opens a file and expects it can be written to and read from
-	/// </summary>
-	/// <param name="file">the path to the file to open</param>
-	/// <param name="method">the attribute to open the file with</param>
-	DataArchiveFile(const std::string& file, OpenMethod method);
+	static DataArchiveFile LoadFromFile(const std::string_view& file, OpenMethod method);
+	static DataArchiveFile CreateInMemory();
 
 	/// <summary>
 	/// Adds data to the archive. This will override any data that the identifier could already be holding
@@ -90,6 +86,8 @@ public:
 	static constexpr std::string_view IN_MEMORY = "";
 
 private:
+	DataArchiveFile(std::unique_ptr<BasicStream>&& file);
+
 	// the presence of the identifier is confirmed at this point, offset should be the offset from the start of the file
 	std::expected<std::vector<char>, Result> ReadFromDisk(std::uint64_t offset, std::uint64_t size);
 	std::uint64_t GetBinarySizeOfDictionary() const;
@@ -104,5 +102,5 @@ private:
 	static std::vector<char> CompressMemory(const std::span<char const>& uncompressed);
 
 	std::map<std::string, Metadata> dictionary;
-	ReadWriteDevice stream;
+	std::unique_ptr<BasicStream> stream;
 };

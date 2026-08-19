@@ -97,7 +97,7 @@ static void WriteMaterialsToArchive(DataArchiveFile& file)
 
 void SceneWriter::WriteSceneToArchive(const std::string& file, const Scene* scene)
 {
-	DataArchiveFile archive(file, DataArchiveFile::OpenMethod::Clear);
+	DataArchiveFile archive = DataArchiveFile::LoadFromFile(file, DataArchiveFile::OpenMethod::Clear);
 	if (!archive.IsValid())
 		return;
 

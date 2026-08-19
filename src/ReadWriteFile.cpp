@@ -42,20 +42,20 @@ void ReadWriteFile::StopWriting()
 	handle.reset();
 }
 
-bool ReadWriteFile::Read(char* dst, unsigned long count) const
+bool ReadWriteFile::Read(char* dst, std::size_t count)
 {
 	DWORD readCount = 0;
-	BOOL res = ::ReadFile(handle.get(), dst, count, &readCount, nullptr);
+	BOOL res = ::ReadFile(handle.get(), dst, static_cast<DWORD>(count), &readCount, nullptr);
 
 	return res && readCount != 0;
 }
 
-bool ReadWriteFile::Write(const char* src, unsigned long count) const
+bool ReadWriteFile::Write(const char* src, std::size_t count)
 {
-	return ::WriteFile(handle.get(), src, count, nullptr, nullptr);
+	return ::WriteFile(handle.get(), src, static_cast<DWORD>(count), nullptr, nullptr);
 }
 
-int64_t ReadWriteFile::SeekG(int64_t index, ReadWriteFile::Method method) const
+std::int64_t ReadWriteFile::SeekG(std::int64_t index, SeekMethod method)
 {
 	LARGE_INTEGER g{}, ret{};
 	g.QuadPart = index;
@@ -64,46 +64,14 @@ int64_t ReadWriteFile::SeekG(int64_t index, ReadWriteFile::Method method) const
 	return ret.QuadPart;
 }
 
-int64_t ReadWriteFile::GetG() const
+std::int64_t ReadWriteFile::GetG()
 {
-	return SeekG(0, Method::Current);
+	return SeekG(0, SeekMethod::Current);
 }
 
-size_t ReadWriteFile::GetFileSize() const
+std::size_t ReadWriteFile::GetSize() const
 {
 	ULARGE_INTEGER size{};
 	size.LowPart = ::GetFileSize(handle.get(), &size.HighPart);
 	return size.QuadPart;
-}
-
-ReadSession::ReadSession(ReadWriteFile& file) : pFile(&file)
-{
-	file.StartReading();
-}
-
-ReadSession::~ReadSession()
-{
-	if (pFile != nullptr)
-		pFile->StopReading();
-}
-
-ReadSession::ReadSession(ReadSession&& session)
-{
-	std::swap(pFile, session.pFile);
-}
-
-WriteSession::WriteSession(ReadWriteFile& file) : pFile(&file)
-{
-	file.StartWriting();
-}
-
-WriteSession::~WriteSession()
-{
-	if (pFile != nullptr)
-		pFile->StopWriting();
-}
-
-WriteSession::WriteSession(WriteSession&& session)
-{
-	std::swap(pFile, session.pFile);
 }

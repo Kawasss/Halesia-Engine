@@ -185,7 +185,7 @@ void SceneLoader::LoadMaterialsFromArchive(DataArchiveFile& file)
 
 void SceneLoader::LoadCustomFile()
 {
-	DataArchiveFile file(location, DataArchiveFile::OpenMethod::Append);
+	DataArchiveFile file = DataArchiveFile::LoadFromFile(location, DataArchiveFile::OpenMethod::Append);
 
 	LoadObjectsFromArchive(file);
 	LoadMaterialsFromArchive(file);
