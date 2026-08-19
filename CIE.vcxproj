@@ -229,6 +229,7 @@
     <ClCompile Include="src\system\CriticalSection.ixx" />
     <ClCompile Include="src\templates\CircularBuffer.ixx" />
     <ClCompile Include="src\templates\Colony.ixx" />
+    <ClCompile Include="src\templates\Octree.ixx" />
     <ClCompile Include="src\TLAS.cpp" />
     <ClCompile Include="src\VulkanGarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />

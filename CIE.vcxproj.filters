@@ -587,6 +587,9 @@
     <ClCompile Include="src\io\BasicStream.ixx">
       <Filter>Header Files\io</Filter>
     </ClCompile>
+    <ClCompile Include="src\templates\Octree.ixx">
+      <Filter>Header Files\templates</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ResourceManager.h">
