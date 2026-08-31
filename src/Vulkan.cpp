@@ -874,7 +874,7 @@ std::string CreateFunctionNotActivatedError(const std::string_view& functionName
 
 std::map<VkDeviceMemory, VkDeviceSize> memoryToSize;
 
-inline VkResult vkAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo, const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory)
+VkResult vkAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pAllocateInfo, const VkAllocationCallbacks* pAllocator, VkDeviceMemory* pMemory)
 {
     static PFN_vkAllocateMemory fnPtr = (PFN_vkAllocateMemory)vkGetDeviceProcAddr(device, "vkAllocateMemory");
 
@@ -886,7 +886,7 @@ inline VkResult vkAllocateMemory(VkDevice device, const VkMemoryAllocateInfo* pA
     return result;
 }
 
-inline void vkFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator)
+void vkFreeMemory(VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks* pAllocator)
 {
     static PFN_vkFreeMemory fnPtr = (PFN_vkFreeMemory)vkGetDeviceProcAddr(device, "vkFreeMemory");
 

@@ -1244,8 +1244,13 @@ void Renderer::ResetLightBuffer()
 void Renderer::CheckForVRAMOverflow()
 {
 	static std::uint64_t max = physicalDevice.VRAM();
-	if (Vulkan::allocatedMemory > max)
-		throw VulkanAPIError("Critical error: out of VRAM");
+	static float last = 0.0f;
+
+	if (Vulkan::allocatedMemory > max && this->time - last > 1.0f)
+	{
+		Console::WriteWarning("Exceeded VRAM limit of {} mb", max / 1024 / 1024);
+		last = this->time;
+	}
 }
 
 void Renderer::SetLogicalDevice()
