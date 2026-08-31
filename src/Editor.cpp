@@ -40,6 +40,8 @@ import Renderer.AnimationManager;
 import Renderer.RenderPipeline;
 import Renderer.VideoMemoryManager;
 
+import Renderer.MeshModifier;
+
 namespace fs = std::filesystem;
 
 constexpr float BAR_WIDTH = 0.15f;
@@ -1225,6 +1227,19 @@ void Editor::LoadObjectsParallel(const std::span<const ObjectCreationData>& data
 	std::for_each(std::execution::par_unseq, datas.begin(), datas.end(),
 		[&](const ObjectCreationData& data)
 		{
+			/*if (data.type == ObjectCreationData::Type::Mesh)
+			{
+				ObjectCreationData decData = data;
+				decData.name = data.name + "_decimated";
+
+				auto decimated = meshmodifier::Decimate(data.mesh.vertices, data.mesh.indices, 100);
+
+				decData.mesh.vertices = std::get<0>(decimated);
+				decData.mesh.indices  = std::get<1>(decimated);
+
+				AddObject(decData);
+			}*/
+
 			AddObject(data);
 			progressBar.Progress(progressStep);
 		});

@@ -87,11 +87,12 @@ void main()
     geometricNormalColor = dot(normal, viewDir) > 0.0 ?  geometricNormalColor = vec4(-normal, 1.0) : vec4(normal, 1.0);
 
     vec3 N = GetNormalFromMap(uv);
+
     if (dot(N, viewDir) > 0.0)
         N = -N;
 
     positionColor = vec4(position, 1.0);
-    normalColor   = vec4(N, 1.0);
+    normalColor   = vec4(normal, 1.0);
 
     vec2 prevClip = prevPosition.xy / prevPosition.w;
     vec2 currClip = currPosition.xy / currPosition.w;

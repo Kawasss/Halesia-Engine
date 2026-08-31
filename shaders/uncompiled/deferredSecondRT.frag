@@ -130,10 +130,14 @@ void main()
     case RENDER_MODE_GLOBAL_ILLUMINATION:
         fragColor = vec4(globalIllumination, 1.0);
         return;
-
-    case RENDER_MODE_UV:
-    case RENDER_MODE_DONT_CARE:
     case RENDER_MODE_POLYGON:
+        fragColor = vec4(albedo, 1.0);
+        return;
+    case RENDER_MODE_UV:
+        fragColor = vec4(albedo, 1.0);
+        return;
+
+    case RENDER_MODE_DONT_CARE:
     default:
         break;
     }

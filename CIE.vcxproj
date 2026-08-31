@@ -103,10 +103,10 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions);VK_USE_PLATFORM_WIN32_KHR</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions);VK_USE_PLATFORM_WIN32_KHR;_SILENCE_CXX23_DENORM_DEPRECATION_WARNING</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\wveen\source\repos\Halesia\thirdparty;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;C:\Users\wveen\source\additionalDependencies\imgui-1.91.7;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\wveen\source\repos\Halesia\thirdparty;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;thirdparty/vcglib;thirdparty/vcglib/eigenlib;C:\Users\wveen\source\additionalDependencies\imgui-1.91.7;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -134,10 +134,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions);VK_USE_PLATFORM_WIN32_KHR</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions);VK_USE_PLATFORM_WIN32_KHR;_SILENCE_CXX23_DENORM_DEPRECATION_WARNING</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\wveen\source\repos\Halesia\thirdparty;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\wveen\source\repos\Halesia\thirdparty;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;thirdparty/vcglib;thirdparty/vcglib/eigenlib;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -199,6 +199,7 @@
     <ClCompile Include="src\io\BasicStream.ixx" />
     <ClCompile Include="src\io\BinaryStream.ixx" />
     <ClCompile Include="src\io\CreationData.ixx" />
+    <ClCompile Include="src\MeshModifier.cpp" />
     <ClCompile Include="src\renderer\BLAS.ixx" />
     <ClCompile Include="src\renderer\Buffer.ixx" />
     <ClCompile Include="src\renderer\ComputePipeline.ixx" />
@@ -209,6 +210,7 @@
     <ClCompile Include="src\renderer\Light.ixx" />
     <ClCompile Include="src\Renderer\Material.ixx" />
     <ClCompile Include="src\renderer\Mesh.ixx" />
+    <ClCompile Include="src\renderer\MeshModifier.ixx" />
     <ClCompile Include="src\renderer\PhyiscalDevice.ixx" />
     <ClCompile Include="src\renderer\Pipeline.ixx" />
     <ClCompile Include="src\renderer\QueryPool.ixx" />
@@ -229,7 +231,6 @@
     <ClCompile Include="src\system\CriticalSection.ixx" />
     <ClCompile Include="src\templates\CircularBuffer.ixx" />
     <ClCompile Include="src\templates\Colony.ixx" />
-    <ClCompile Include="src\templates\Octree.ixx" />
     <ClCompile Include="src\TLAS.cpp" />
     <ClCompile Include="src\VulkanGarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
@@ -335,6 +336,7 @@
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_textedit.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\imstb_truetype.h" />
     <ClInclude Include="..\..\additionalDependencies\imgui-1.91.7\misc\cpp\imgui_stdlib.h" />
+    <ClInclude Include="src\compat\VcgTypes.h" />
     <ClInclude Include="src\core\Console.h" />
     <ClInclude Include="src\glm.h" />
     <ClInclude Include="src\math\vectors.h" />

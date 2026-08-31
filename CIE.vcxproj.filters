@@ -84,6 +84,9 @@
     <Filter Include="Header Files\templates">
       <UniqueIdentifier>{7f6577db-62f5-4886-903f-8af07614e24d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\compat">
+      <UniqueIdentifier>{1e008a5e-63c5-4f51-8545-02474daae61d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\HalesiaEngine.cpp">
@@ -587,8 +590,11 @@
     <ClCompile Include="src\io\BasicStream.ixx">
       <Filter>Header Files\io</Filter>
     </ClCompile>
-    <ClCompile Include="src\templates\Octree.ixx">
-      <Filter>Header Files\templates</Filter>
+    <ClCompile Include="src\renderer\MeshModifier.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MeshModifier.cpp">
+      <Filter>Source Files\Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -642,6 +648,9 @@
     </ClInclude>
     <ClInclude Include="src\core\Console.h">
       <Filter>Header Files\core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\compat\VcgTypes.h">
+      <Filter>Header Files\compat</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
