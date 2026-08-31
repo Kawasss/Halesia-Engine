@@ -44,6 +44,7 @@ layout (push_constant) uniform Constant
     vec3 camPos;
     float padding;
     int renderMode;
+    vec3 padding1;
 } constant;
 
 float DistributionGGX(vec3 N, vec3 H, float roughness)

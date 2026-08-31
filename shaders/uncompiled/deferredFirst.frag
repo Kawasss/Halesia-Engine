@@ -1,4 +1,6 @@
 #version 460
+#extension GL_EXT_nonuniform_qualifier : enable
+
 #include "include/light.glsl"
 
 DECLARE_EXTERNAL_SET(0)
@@ -26,7 +28,7 @@ layout(push_constant) uniform constant
     float uvScale;
 } Constant;
 
-layout(set = 0, binding = material_buffer_binding) uniform sampler2D[bindless_texture_size] textures;
+layout(set = 0, binding = material_buffer_binding) uniform sampler2D[] textures;
 
 layout(set = 1, binding = light_buffer_binding) readonly buffer lightBuffer
 {
@@ -62,7 +64,7 @@ layout(set = 1, binding = scene_data_buffer_binding) uniform SceneData
 
 vec3 GetNormalFromMap(vec2 uv)
 {
-    vec3 tangentNormal = texture(textures[Constant.materialID * 5 + 1], uv).rgb * 2.0 - 1.0;
+    vec3 tangentNormal = texture(textures[nonuniformEXT(Constant.materialID * 5 + 1)], uv).rgb * 2.0 - 1.0;
 
     vec3 T = normalize(tangent);
     vec3 B = normalize(bitangent);
@@ -77,7 +79,7 @@ void main()
 {
     vec2 uv = texCoords * Constant.uvScale;
 
-	albedoColor = texture(textures[Constant.materialID * 5 + 0], uv);
+	albedoColor = texture(textures[nonuniformEXT(Constant.materialID * 5 + 0)], uv);
 
     if (albedoColor.a == 0.0)
         discard;
@@ -99,8 +101,8 @@ void main()
 
     velocityColor = vec4(currClip - prevClip, 0.0, 1.0);
 
-    metallicRoughnessAOColor.r = texture(textures[Constant.materialID * 5 + 2], uv).r;
-    metallicRoughnessAOColor.g = texture(textures[Constant.materialID * 5 + 3], uv).g;
-    metallicRoughnessAOColor.b = texture(textures[Constant.materialID * 5 + 4], uv).b;
+    metallicRoughnessAOColor.r = texture(textures[nonuniformEXT(Constant.materialID * 5 + 2)], uv).r;
+    metallicRoughnessAOColor.g = texture(textures[nonuniformEXT(Constant.materialID * 5 + 3)], uv).g;
+    metallicRoughnessAOColor.b = texture(textures[nonuniformEXT(Constant.materialID * 5 + 4)], uv).b;
     metallicRoughnessAOColor.a = 1.0;
 }

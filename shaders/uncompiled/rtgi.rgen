@@ -55,7 +55,9 @@ layout(push_constant) uniform Camera
 	uint frame;
 	int sampleCount;
 	int bounceCount;
+	int padding1;
 	vec3 position;
+	float padding2;
 } camera;
 
 layout(binding = 0, set = 0) uniform accelerationStructureEXT topLevelAS;

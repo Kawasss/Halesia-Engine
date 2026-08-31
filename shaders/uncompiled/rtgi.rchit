@@ -31,8 +31,10 @@ layout(push_constant) uniform Camera
 {
 	uint frame;
 	int sampleCount;
+	int padding1;
 	int bounceCount;
 	vec3 position;
+	float padding2;
 } camera;
 
 hitAttributeEXT vec2 hitCoordinate;

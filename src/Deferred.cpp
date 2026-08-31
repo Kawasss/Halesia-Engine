@@ -95,7 +95,7 @@ constexpr uint32_t RTGI_RESOLUTION_UPSCALE = 1;
 void DeferredPipeline::Start(const Payload& payload)
 {
 	StartSky(payload);
-
+	
 	std::array<VkFormat, GBUFFER_COUNT> formats =
 	{
 		GBUFFER_POSITION_FORMAT,

@@ -24,6 +24,7 @@ layout (push_constant) uniform Constant
 	int width;
 	int height;
 	int maxSampleCount;
+	int padding;
 } constant;
 
 float GetLinearDepth(ivec2 coords, float depth)
