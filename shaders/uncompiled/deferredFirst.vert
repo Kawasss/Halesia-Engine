@@ -47,6 +47,7 @@ layout(push_constant) uniform constant
 {
     mat4 model;
     int materialID;
+    float uvScale;
 } Constant;
 
 void main() 
