@@ -171,13 +171,14 @@ void Renderer::Destroy()
 	::vkDestroyRenderPass(logicalDevice, renderPass, nullptr);
 	::vkDestroyRenderPass(logicalDevice, GUIRenderPass, nullptr);
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-	{
-		::vkDestroySemaphore(logicalDevice, imageAvaibleSemaphores[i], nullptr);
-		::vkDestroySemaphore(logicalDevice, renderFinishedSemaphores[i], nullptr);
+	for (const VkSemaphore& sem : imageAvaibleSemaphores)
+		::vkDestroySemaphore(logicalDevice, sem, nullptr);
 
-		::vkDestroyFence(logicalDevice, inFlightFences[i], nullptr);
-	}
+	for (const VkSemaphore& sem : renderFinishedSemaphores)
+		::vkDestroySemaphore(logicalDevice, sem, nullptr);
+
+	for (const VkFence& fen : inFlightFences)
+		::vkDestroyFence(logicalDevice, fen, nullptr);
 
 	::vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
 
@@ -260,6 +261,8 @@ void Renderer::InitVulkan()
 
 	CreateSwapchain();
 
+	CreateSyncObjects();
+
 	CreateImGUI();
 
 	StartRecording(0.0f);
@@ -328,7 +331,6 @@ void Renderer::CreateDefaultObjects() // default objects are objects that are al
 
 	Create3DRenderPass();
 	CreateGlobalBuffers();
-	CreateSyncObjects();
 
 	Texture::GeneratePlaceholderTextures();
 
@@ -846,16 +848,20 @@ void Renderer::RenderMesh(CommandBuffer commandBuffer, const RenderableMesh& mes
 
 void Renderer::CreateSyncObjects()
 {
-	imageAvaibleSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+	imageAvaibleSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
 
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	for (std::size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
 		imageAvaibleSemaphores[i] = Vulkan::CreateSemaphore();
-		renderFinishedSemaphores[i] = Vulkan::CreateSemaphore();
 		inFlightFences[i] = Vulkan::CreateFence(VK_FENCE_CREATE_SIGNALED_BIT);
 	}
+
+	std::size_t swapchainSize = swapchain->images.size();
+	renderFinishedSemaphores.resize(swapchainSize);
+
+	for (std::size_t i = 0; i < swapchainSize; i++)
+		renderFinishedSemaphores[i] = Vulkan::CreateSemaphore();
 }
 
 void Renderer::OnResize()
@@ -897,7 +903,7 @@ void Renderer::PresentSwapchainImage(std::uint32_t frameIndex, std::uint32_t ima
 	VkPresentInfoKHR presentInfo{};
 	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &renderFinishedSemaphores[frameIndex];
+	presentInfo.pWaitSemaphores = &renderFinishedSemaphores[imageIndex];
 
 	presentInfo.swapchainCount = 1;
 	presentInfo.pSwapchains = &swapchain->vkSwapchain;
@@ -928,7 +934,7 @@ void Renderer::SubmitRenderingCommandBuffer(std::uint32_t frameIndex, std::uint3
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffers[frameIndex].Get();
 	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[frameIndex];
+	submitInfo.pSignalSemaphores = &renderFinishedSemaphores[imageIndex];
 
 	win32::CriticalSection& section = Vulkan::GetQueueCriticalSection(graphicsQueue);
 	section.Lock();
@@ -957,17 +963,15 @@ void Renderer::StartRecording(float delta)
 
 	CheckForVRAMOverflow();
 
-	imageIndex = GetNextSwapchainImage(currentFrame);
-
 	VkResult result = vkWaitForFences(logicalDevice, 1, &inFlightFences[currentFrame], true, UINT64_MAX);
 	CheckVulkanResult("Failed to wait for fences", result);
 	result = vkResetFences(logicalDevice, 1, &inFlightFences[currentFrame]);
 	CheckVulkanResult("Failed to reset fences", result);
 
+	imageIndex = GetNextSwapchainImage(currentFrame);
+
 	Vulkan::DeleteSubmittedObjects();
 	GetQueryResults();
-
-	
 
 	activeCmdBuffer = commandBuffers[currentFrame];
 
