@@ -7,3 +7,6 @@
 [submodule "thirdparty/octree-cpp"]
 	path = thirdparty/octree-cpp
 	url = https://github.com/annell/octree-cpp.git
+[submodule "thirdparty/vcglib"]
+	path = thirdparty/vcglib
+	url = https://github.com/cnr-isti-vclab/vcglib
