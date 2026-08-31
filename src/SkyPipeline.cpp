@@ -172,6 +172,7 @@ void SkyPipeline::BeginPresentationRenderPass(const CommandBuffer& cmdBuffer, Fr
 void SkyPipeline::ReloadShaders(const Payload& payload)
 {
 	CreatePipelines();
+	bindImagesToPipelines();
 }
 
 void SkyPipeline::Resize(const Payload& payload)
