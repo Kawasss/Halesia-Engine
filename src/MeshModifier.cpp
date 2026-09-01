@@ -1,9 +1,11 @@
 module;
 
-#include "../thirdparty/vcglib/vcg/complex/complex.h"
+#include <vcg/complex/complex.h>
 
-#include "../thirdparty/vcglib/vcg/complex/algorithms/local_optimization/tri_edge_collapse_quadric.h"
-#include "../thirdparty/vcglib/vcg/complex/algorithms/local_optimization.h"
+#include <vcg/complex/algorithms/local_optimization/tri_edge_collapse_quadric.h>
+#include <vcg/complex/algorithms/local_optimization.h>
+
+#include <vcg/complex/algorithms/clean.h>
 
 #include "compat/VcgTypes.h"
 
@@ -52,6 +54,9 @@ namespace meshmodifier
 
 			f.SetW();
 		}
+		
+		vcg::tri::Clean<MyMesh>::RemoveDuplicateVertex(mesh);
+		vcg::tri::Clean<MyMesh>::RemoveUnreferencedVertex(mesh);
 
 		//vcg::tri::UpdateBounding<MyMesh>::Box(mesh);
 		//vcg::tri::UpdateTopology<MyMesh>::VertexFace(mesh);

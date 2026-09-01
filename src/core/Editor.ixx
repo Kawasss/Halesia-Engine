@@ -5,6 +5,7 @@ import "../glm.h";
 import std;
 
 import System.Window;
+import System.FileDialog;
 
 import Physics.RigidBody;
 
@@ -142,6 +143,8 @@ private:
 	void ShowAddObjectWindow();
 
 	void DestroyCurrentScene();
+
+	std::expected<std::string, FileDialog::Failure> RequestProjectLocation();
 
 	void InitializeProject();
 	void LoadProject();

@@ -1,8 +1,8 @@
 #pragma once
-#include "../thirdparty/vcglib/vcg/complex/complex.h"
+#include <vcg/complex/complex.h>
 
-#include "../thirdparty/vcglib/vcg/complex/algorithms/local_optimization/tri_edge_collapse_quadric.h"
-#include "../thirdparty/vcglib/vcg/complex/algorithms/local_optimization.h"
+#include <vcg/complex/algorithms/local_optimization/tri_edge_collapse_quadric.h>
+#include <vcg/complex/algorithms/local_optimization.h>
 
 class MyVertex;
 class MyFace;

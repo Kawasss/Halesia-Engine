@@ -26,6 +26,7 @@ layout(push_constant) uniform constant
     mat4 model;
     int materialID;
     float uvScale;
+    vec2 padding;
 } Constant;
 
 layout(set = 0, binding = material_buffer_binding) uniform sampler2D[] textures;

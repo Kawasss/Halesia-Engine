@@ -6,11 +6,12 @@ module Core.EditorProject;
 
 import std;
 
-import Core.EditorProject;
 import Core.Scene;
 
 import IO.SceneWriter;
 import IO;
+
+import System.FileDialog;
 
 import StrUtil;
 
@@ -58,6 +59,11 @@ std::expected<EditorProject, EditorProject::Result> EditorProject::LoadFromFile(
 	return EditorProject(path, raw.workingDirectory, raw.buildDirectory);
 }
 
+EditorProject EditorProject::CreateInMemory()
+{
+	return EditorProject();
+}
+
 static std::string GetFileNameWithoutExtension(const fs::path& file)
 {
 	std::string ret = file.filename().string();
@@ -69,29 +75,71 @@ static std::string GetFileNameWithoutExtension(const fs::path& file)
 
 EditorProject::EditorProject(const fs::path& file, const fs::path& workingDir, const fs::path& buildDir)
 {
+	ConstructStorage(file, workingDir, buildDir);
+}
+
+void EditorProject::Storage::CreateBuildDirectory() const
+{
+	if (exists)
+		fs::create_directory(buildDir);
+}
+
+fs::path EditorProject::Storage::GetBuildFile() const
+{
+	return buildDir / std::format("build_{}.dat", name);
+}
+
+fs::path EditorProject::Storage::GetProjectFile() const
+{
+	return root / std::format("{}.{}", name, EXTENSION);
+}
+
+bool EditorProject::Storage::ReadyForWriting() const
+{
+	return fs::exists(GetBuildFile()) && fs::exists(GetProjectFile());
+}
+
+void EditorProject::ConstructStorage(const fs::path& file, const fs::path& workingDir, const fs::path& buildDir)
+{
 	fs::path base = file.parent_path();
 
-	fileName = GetFileNameWithoutExtension(file);
-	root = base / workingDir;
-	buildDirectory = base / buildDir;
+	storage.name = GetFileNameWithoutExtension(file);
+	storage.root = base / workingDir;
+	storage.buildDir = base / buildDir;
 
-	if (!fs::exists(buildDirectory))
-		CreateBuildDirectory();
+	if (!fs::exists(storage.buildDir))
+		storage.CreateBuildDirectory();
+
+	storage.exists = true;
 }
 
-void EditorProject::CreateBuildDirectory() const
+void EditorProject::CreateStorageInFile(const std::string_view& path)
 {
-	fs::create_directory(buildDirectory);
+	fs::path file = EnsureCorrectExtension(path);
+	std::ofstream stream(file, std::ios::beg);
+	stream
+		<< "version=" << VERSION << "\r\n"
+		<< "workingDirectory=" << "\r\n"
+		<< "buildDirectory=" << ".halesia/\r\n";
+
+	ConstructStorage(file, "", file.parent_path() / ".halesia");
 }
 
-void EditorProject::BuildScene(const Scene* scene) const
+EditorProject::SaveResult EditorProject::BuildScene(const Scene* scene) const
 {
-	SceneWriter::WriteSceneToArchive(GetBuildFile().string(), scene);
+	if (!storage.exists)
+		return SaveResult::DoesNotExist;
+
+	if (!storage.ReadyForWriting())
+		return SaveResult::BadLocation;
+
+	SceneWriter::WriteSceneToArchive(storage.GetBuildFile().string(), scene);
+	return SaveResult::Success;
 }
 
 fs::path EditorProject::GetBuildFile() const
 {
-	return buildDirectory / std::format("build_{}.dat", fileName);
+	return storage.GetBuildFile();
 }
 
 bool EditorProject::UncheckedFile::AssignValueToIdentifier(const std::string_view& identifier, const std::string_view& value)
@@ -147,15 +195,15 @@ EditorProject::UncheckedFile EditorProject::ProcessData(const std::string_view& 
 
 const fs::path& EditorProject::GetWorkingDirectory() const
 {
-	return root;
+	return storage.root;
 }
 
 std::string_view EditorProject::GetProjectName() const
 {
-	return fileName;
+	return storage.name;
 }
 
 bool EditorProject::IsValid() const
 {
-	return !root.empty();
+	return storage.exists;
 }

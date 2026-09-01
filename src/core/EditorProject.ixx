@@ -12,6 +12,13 @@ namespace fs = std::filesystem;
 export class EditorProject
 {
 public:
+	enum class SaveResult
+	{
+		Success,
+		BadLocation,
+		DoesNotExist,
+	};
+
 	enum class Result
 	{
 		Success,
@@ -35,24 +42,42 @@ public:
 	static std::expected<EditorProject, Result> CreateInFile(const std::string_view& path); // can only create a project in a file that does not exist
 	static std::expected<EditorProject, Result> LoadFromFile(const std::string_view& path);
 
+	static EditorProject CreateInMemory();
+
 	EditorProject() = default;
 
-	void BuildScene(const Scene* scene) const;
+	SaveResult BuildScene(const Scene* scene) const;
 
 	fs::path GetBuildFile() const;
 	const fs::path& GetWorkingDirectory() const;
 	std::string_view GetProjectName() const;
 
+	void CreateStorageInFile(const std::string_view& path);
+
 	bool IsValid() const;
 
 private:
-	EditorProject(const fs::path& file, const fs::path& workingDir, const fs::path& buildDir); // the build and working directory are ALWAYS relative to the project file path
+	struct Storage
+	{
+		bool exists = false;
 
-	void CreateBuildDirectory() const;
+		fs::path root;
+		fs::path buildDir;
+		std::string name;
+
+		fs::path GetBuildFile() const;
+		fs::path GetProjectFile() const;
+
+		void CreateBuildDirectory() const;
+
+		bool ReadyForWriting() const;
+	};
+
+	EditorProject(const fs::path& file, const fs::path& workingDir, const fs::path& buildDir); // the build and working directory are ALWAYS relative to the project file path
 
 	static UncheckedFile ProcessData(const std::string_view& data);
 
-	fs::path root;
-	fs::path buildDirectory;
-	std::string fileName;
+	void ConstructStorage(const fs::path& file, const fs::path& workingDir, const fs::path& buildDir);
+
+	Storage storage;
 };

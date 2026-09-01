@@ -48,6 +48,7 @@ layout(push_constant) uniform constant
     mat4 model;
     int materialID;
     float uvScale;
+    vec2 padding;
 } Constant;
 
 void main() 

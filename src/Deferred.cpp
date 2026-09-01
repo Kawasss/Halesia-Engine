@@ -712,7 +712,7 @@ void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, cons
 		pushConstant.model = model;
 		pushConstant.materialID = mesh.materialIndex;
 		pushConstant.uvScale = mesh.uvScale;
-
+		
 		firstPipeline->PushConstant(cmdBuffer, pushConstant, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT);
 
 		Renderer::RenderMesh(cmdBuffer, mesh);

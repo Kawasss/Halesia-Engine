@@ -112,7 +112,7 @@ static std::vector<std::string> RequestOpenDialog(const FileDialog::Filter& filt
 	return ret;
 }
 
-static std::string RequestSaveDialog(const FileDialog::Filter& filter, const std::string& start, FILEOPENDIALOGOPTIONS foptions, FILEOPENDIALOGOPTIONS removeOptions)
+static std::expected<std::string, FileDialog::Failure> RequestSaveDialog(const FileDialog::Filter& filter, const std::string& start, FILEOPENDIALOGOPTIONS foptions, FILEOPENDIALOGOPTIONS removeOptions)
 {
 	std::string ret;
 
@@ -158,14 +158,16 @@ static std::string RequestSaveDialog(const FileDialog::Filter& filter, const std
 	IShellItem* item = nullptr; // i dont know if i have to release these items too ??
 	hr = dialog->GetResult(&item);
 	if (!SUCCEEDED(hr) || item == nullptr)
-		return ret;
+		return std::unexpected(FileDialog::Failure::NoItem);
 
 	wchar_t* wpath = nullptr;
 	item->GetDisplayName(SIGDN_FILESYSPATH, &wpath);
 	if (wpath == nullptr)
-		return ret;
+		return std::unexpected(FileDialog::Failure::NoItem);
 
 	ret = WideToASCII(wpath);
+	if (ret.empty())
+		return std::unexpected(FileDialog::Failure::NoItem);
 
 	CoTaskMemFree(wpath);
 	CoUninitialize();
@@ -200,8 +202,7 @@ std::string FileDialog::RequestFolder(const Filter& filter, const std::string& s
 	return ret.empty() ? "" : ret[0];
 }
 
-std::string FileDialog::RequestFileSaveLocation(const Filter& filter, const std::string& start)
+std::expected<std::string, FileDialog::Failure> FileDialog::RequestFileSaveLocation(const Filter& filter, const std::string& start)
 {
-	std::string ret = RequestSaveDialog(filter, start, FOS_STRICTFILETYPES, FOS_OVERWRITEPROMPT);
-	return ret.empty() ? "" : ret;
+	return ::RequestSaveDialog(filter, start, FOS_STRICTFILETYPES, FOS_OVERWRITEPROMPT);
 }

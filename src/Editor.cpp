@@ -197,16 +197,30 @@ void Editor::Start()
 	LoadProject();
 }
 
+std::expected<std::string, FileDialog::Failure> Editor::RequestProjectLocation()
+{
+	FileDialog::Filter filter{};
+	filter.description = "project file";
+	filter.fileType = "*.hproj;";
+	
+	return FileDialog::RequestFileSaveLocation(filter);
+}
+
 void Editor::InitializeProject()
 {
 	do
 	{
-		FileDialog::Filter filter{};
-		filter.description = "project file";
-		filter.fileType = "*.hproj;";
+		std::expected<std::string, FileDialog::Failure> projectLocation = RequestProjectLocation();
+		if (!projectLocation.has_value() && projectLocation.error() == FileDialog::Failure::NoItem)
+		{
+			project = EditorProject::CreateInMemory();
+			return;
+		}
+		else if (!projectLocation.has_value())
+			continue;
 
-		std::string projectLocation = FileDialog::RequestFileSaveLocation(filter);
-		std::expected<EditorProject, EditorProject::Result> exProject = fs::exists(projectLocation) ? EditorProject::LoadFromFile(projectLocation) : EditorProject::CreateInFile(projectLocation);
+		std::string_view src = projectLocation.value();
+		std::expected<EditorProject, EditorProject::Result> exProject = fs::exists(src) ? EditorProject::LoadFromFile(src) : EditorProject::CreateInFile(src);
 
 		if (!exProject.has_value())
 		{
@@ -216,7 +230,6 @@ void Editor::InitializeProject()
 		{
 			project = *exProject;
 		}
-
 	} while (!project.IsValid());
 }
 
@@ -1192,7 +1205,8 @@ void Editor::DestroyCurrentScene()
 
 void Editor::LoadProject()
 {
-	LoadFile(project.GetBuildFile());
+	if (project.IsValid())
+		LoadFile(project.GetBuildFile());
 }
 
 std::future<void> fut;
@@ -1227,7 +1241,7 @@ void Editor::LoadObjectsParallel(const std::span<const ObjectCreationData>& data
 	std::for_each(std::execution::par_unseq, datas.begin(), datas.end(),
 		[&](const ObjectCreationData& data)
 		{
-			/*if (data.type == ObjectCreationData::Type::Mesh)
+			if (data.type == ObjectCreationData::Type::Mesh && data.hasMesh)
 			{
 				ObjectCreationData decData = data;
 				decData.name = data.name + "_decimated";
@@ -1238,7 +1252,7 @@ void Editor::LoadObjectsParallel(const std::span<const ObjectCreationData>& data
 				decData.mesh.indices  = std::get<1>(decimated);
 
 				AddObject(decData);
-			}*/
+			}
 
 			AddObject(data);
 			progressBar.Progress(progressStep);
@@ -1271,6 +1285,16 @@ void Editor::LoadAnimationsParallel(const std::span<Animation>& animations, floa
 
 void Editor::BuildProject()
 {
+	EditorProject::SaveResult res = project.BuildScene(this);
+
+	if (res != EditorProject::SaveResult::DoesNotExist)
+		return;
+	
+	std::expected<std::string, FileDialog::Failure> dst = RequestProjectLocation();
+	if (!dst.has_value() && dst.error() == FileDialog::Failure::NoItem)
+		return; // could also keep on asking the user for a file but the user probably does not want to create a file
+
+	project.CreateStorageInFile(*dst);\
 	project.BuildScene(this);
 }
 

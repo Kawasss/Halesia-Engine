@@ -5,6 +5,12 @@ import std;
 export class FileDialog
 {
 public:
+	enum class Failure
+	{
+		None,
+		NoItem,
+	};
+
 	struct Filter
 	{
 		std::string description;
@@ -19,5 +25,5 @@ public:
 	static std::string RequestFile(const Filter& filter, const std::string& start = "");
 	static std::string RequestFolder(const Filter& filter, const std::string& start = "");
 
-	static std::string RequestFileSaveLocation(const Filter& filter, const std::string& start = "");
+	static std::expected<std::string, Failure> RequestFileSaveLocation(const Filter& filter, const std::string& start = "");
 };
