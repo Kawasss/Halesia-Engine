@@ -24,12 +24,12 @@ public:
 	/// <summary>
 	/// Builds the top level acceleration structure. It uses single time commands per default, but can use an external command buffer. An external command buffer is recommended if it's being rebuild with performance in mind
 	/// </summary>
-	void Build(const std::vector<RenderableMesh>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
-	void Update(const std::vector<RenderableMesh>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer);
+	void Build(const std::vector<RenderableMesh>& objects, RenderableMesh::PreferredLevelOfDetail prefLod, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer = VK_NULL_HANDLE);
+	void Update(const std::vector<RenderableMesh>& objects, RenderableMesh::PreferredLevelOfDetail prefLod, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer);
 	bool HasBeenBuilt() const;
 
 private:
-	static std::vector<VkAccelerationStructureInstanceKHR> GetInstances(const std::vector<RenderableMesh>& objects, InstanceIndexType indexType);
+	static std::vector<VkAccelerationStructureInstanceKHR> GetInstances(const std::vector<RenderableMesh>& objects, InstanceIndexType indexType, RenderableMesh::PreferredLevelOfDetail prefLod);
 	void GetGeometry(VkAccelerationStructureGeometryKHR& geometry);
 
 	StorageBuffer<VkAccelerationStructureInstanceKHR> instanceBuffer;

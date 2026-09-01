@@ -62,14 +62,16 @@ void Mesh::ProcessMaterial(const MaterialCreationData& creationData)
 
 void Mesh::Create(const MeshCreationData& creationData)
 {
-	vertices      = creationData.vertices;
-	indices       = creationData.indices;
-	faceCount     = creationData.faceCount;
-	center        = (creationData.min + creationData.max) * 0.5f;
-	extents       = creationData.max - center;
-	max           = extents + center;
-	min           = center * 2.f - max;
-	flags         = static_cast<MeshFlags>(creationData.flags);
+	lods.resize(1); // TODO: expand
+
+	lods[0].vertices  = creationData.vertices;
+	lods[0].indices   = creationData.indices;
+	lods[0].faceCount = creationData.faceCount;
+	center            = (creationData.min + creationData.max) * 0.5f;
+	extents           = creationData.max - center;
+	max               = extents + center;
+	min               = center * 2.f - max;
+	flags             = static_cast<MeshFlags>(creationData.flags);
 
 	if (creationData.cullBackFaces)
 		flags |= MeshFlagCullBackFaces;
@@ -82,10 +84,16 @@ void Mesh::Create(const MeshCreationData& creationData)
 
 void Mesh::Recreate()
 {
-	//TODO: create mesh here by communicating with the renderer.
-	meshHandle = HalesiaEngine::GetInstance()->GetEngineCore().renderer->LoadMesh(vertices, indices); // this has to be the ugliest code EVER
+	if (lods.empty())
+		return;
 
-	for (const Vertex& vertex : vertices) // better if this is precalculated
+	//TODO: create mesh here by communicating with the renderer.
+	for (LoD& lod : lods)
+	{
+		lod.handle = HalesiaEngine::GetInstance()->GetEngineCore().renderer->LoadMesh(lod.vertices, lod.indices);
+	}
+
+	for (const Vertex& vertex : lods.back().vertices) // better if this is precalculated
 	{
 		min = glm::min(vertex.position, min);
 		max = glm::max(vertex.position, max);
@@ -100,16 +108,12 @@ void Mesh::Recreate()
 
 void Mesh::CopyFrom(const Mesh& mesh)
 {
-	vertices = mesh.vertices;
-	indices = mesh.indices;
-
-	bool succ = HalesiaEngine::GetInstance()->GetEngineCore().renderer->CopyMeshHandle(mesh.meshHandle);
-	if (!succ)
-		return;
-
-	meshHandle = mesh.meshHandle;
-
-	faceCount = mesh.faceCount;
+	for (const LoD& lod : mesh.lods)
+	{
+		bool succ = HalesiaEngine::GetInstance()->GetEngineCore().renderer->CopyMeshHandle(lod.handle);
+	}
+		
+	lods = mesh.lods;
 
 	min = mesh.min;
 	max = mesh.max;	
@@ -117,6 +121,11 @@ void Mesh::CopyFrom(const Mesh& mesh)
 	extents = mesh.extents;
 
 	finished = true;
+}
+
+const Mesh::LoD& Mesh::GetActiveLoD() const
+{
+	return lods[0]; // temp
 }
 
 void Mesh::ResetMaterial()
@@ -175,7 +184,7 @@ void Mesh::AwaitGeneration()
 
 bool Mesh::IsValid() const
 {
-	return !vertices.empty() && !indices.empty();
+	return !lods.empty();
 }
 
 bool Mesh::CanBeRayTraced() const
@@ -202,12 +211,11 @@ void Mesh::Destroy()
 		materials[materialIndex].RemoveReference();
 
 	// should also delete the material in materials here (if no other meshes are referencing that material)
-	indices.clear();
-	vertices.clear();
 
-
-	HalesiaEngine::GetInstance()->GetEngineCore().renderer->DestroyMeshHandle(meshHandle);
-	//delete this;
+	for (const LoD& lod : lods)
+		HalesiaEngine::GetInstance()->GetEngineCore().renderer->DestroyMeshHandle(lod.handle);
+	
+	lods.clear();
 }
 
 uint32_t Mesh::FindUnusedMaterial() // a material is unused if it is not the default material and all textures are the default texture

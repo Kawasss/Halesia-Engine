@@ -838,9 +838,9 @@ void Renderer::BindBuffersForRendering(CommandBuffer commandBuffer)
 
 void Renderer::RenderMesh(CommandBuffer commandBuffer, const RenderableMesh& mesh, std::uint32_t instanceCount)
 {
-	std::uint32_t indexCount    = static_cast<std::uint32_t>(g_indexBuffer.GetItemCount(mesh.indexMemory));
-	std::uint32_t firstIndex    = static_cast<std::uint32_t>(g_indexBuffer.GetItemOffset(mesh.indexMemory));
-	std::int32_t  vertexOffset  = static_cast<std::int32_t>(g_vertexBuffer.GetItemOffset(mesh.vertexMemory));
+	std::uint32_t indexCount    = static_cast<std::uint32_t>(g_indexBuffer.GetItemCount(mesh.activeLod.indexMemory));
+	std::uint32_t firstIndex    = static_cast<std::uint32_t>(g_indexBuffer.GetItemOffset(mesh.activeLod.indexMemory));
+	std::int32_t  vertexOffset  = static_cast<std::int32_t>(g_vertexBuffer.GetItemOffset(mesh.activeLod.vertexMemory));
 	std::uint32_t firstInstance = 0;
 
 	commandBuffer.DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
@@ -1064,29 +1064,42 @@ static RenderableMeshFlags TranslateMeshFlags(MeshOptionFlags flags)
 	return ret;
 }
 
+static RenderableMesh::Memory CreateRenderableLod(const Mesh::LoD& lod)
+{
+	RenderableMesh::Memory dst;
+	const GpuMeshData& src = *lod.handle;
+
+	dst.BLAS = src.BLAS;
+	dst.dVertexMemory = src.dVertices;
+	dst.vertexMemory = src.vertices;
+	dst.indexMemory = src.indices;
+	dst.faceCount = lod.faceCount;
+	dst.vertexCount = lod.faceCount * 3;
+	
+	return dst;
+}
+
 std::optional<RenderableMesh> Renderer::GetRenderableMeshFromObject(const Object* pObject)
 {
 	win32::CriticalLockGuard guard(meshDataCritSection);
 
 	const MeshObject* pMeshObject = dynamic_cast<const MeshObject*>(pObject);
 
-	MeshHandle handle = pMeshObject->mesh.meshHandle;
-	if (handle == MeshHandle())
+	if (pMeshObject->mesh.lods.empty())
 		return std::optional<RenderableMesh>();
 
-	const GpuMeshData& data = *handle;
+	const Mesh::LoD& lod = pMeshObject->mesh.GetActiveLoD();
+	const GpuMeshData& src = *lod.handle;
 
 	RenderableMesh mesh{};
 	mesh.transform = pObject->transform.GetModelMatrix();
 	mesh.materialIndex = pMeshObject->mesh.GetMaterialIndex();
 	mesh.uvScale = pMeshObject->mesh.uvScale;
-	mesh.BLAS = data.BLAS;
-	mesh.dVertexMemory = data.dVertices;
-	mesh.vertexMemory = data.vertices;
-	mesh.indexMemory = data.indices;
-	mesh.faceCount = pMeshObject->mesh.faceCount; // these 2 could probably be removed
-	mesh.vertexCount = static_cast<std::uint32_t>(pMeshObject->mesh.vertices.size());
-	mesh.flags = TranslateMeshFlags(pMeshObject->mesh.GetFlags());
+	mesh.flags = ::TranslateMeshFlags(pMeshObject->mesh.GetFlags());
+
+	mesh.activeLod  = ::CreateRenderableLod(lod);
+	mesh.highestLod = ::CreateRenderableLod(pMeshObject->mesh.lods[0]);
+	mesh.lowestLod  = ::CreateRenderableLod(pMeshObject->mesh.lods.back());
 
 	return mesh;
 }

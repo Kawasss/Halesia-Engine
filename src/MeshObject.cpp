@@ -50,17 +50,21 @@ void MeshObject::DuplicateDataTo(Object* pObject) const
 
 void MeshObject::SerializeSelf(BinaryStream& stream) const
 {
+	// TODO: adept to the LOD system
+
 	stream << mesh.uvScale;
 	stream << true; // TODO: add flags into the (de)serialisation
 	stream << mesh.GetMaterialIndex();
 
-	size_t vertexCount = mesh.vertices.size();
+	std::size_t vertexCount = mesh.lods.empty() ? 0 : mesh.GetActiveLoD().vertices.size();
 	stream << vertexCount;
-	stream.Write(reinterpret_cast<const char*>(mesh.vertices.data()), vertexCount * sizeof(Vertex));
+	if (vertexCount > 0)
+		stream.Write(reinterpret_cast<const char*>(mesh.GetActiveLoD().vertices.data()), vertexCount * sizeof(Vertex));
 
-	size_t indexCount = mesh.indices.size();
+	std::size_t indexCount = mesh.lods.empty() ? 0 : mesh.GetActiveLoD().indices.size();
 	stream << indexCount;
-	stream.Write(reinterpret_cast<const char*>(mesh.indices.data()), indexCount * sizeof(uint32_t));
+	if (indexCount > 0)
+		stream.Write(reinterpret_cast<const char*>(mesh.GetActiveLoD().indices.data()), indexCount * sizeof(uint32_t));
 }
 
 void MeshObject::DeserializeSelf(const BinarySpan& stream)

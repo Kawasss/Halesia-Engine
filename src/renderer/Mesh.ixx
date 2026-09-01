@@ -20,6 +20,16 @@ export using MeshOptionFlags = std::underlying_type_t<MeshFlags>;
 
 export struct Mesh
 {
+	struct LoD
+	{
+		MeshHandle handle;
+
+		std::vector<Vertex> vertices;
+		std::vector<uint32_t> indices;
+
+		int faceCount = 0;
+	};
+
 	static Handle AddMaterial(const Material& material); // returns the handle to the material
 	static Handle InsertMaterial(int index, const Material& material);
 
@@ -30,12 +40,10 @@ export struct Mesh
 
 	void CopyFrom(const Mesh& mesh);
 
-	MeshHandle meshHandle;
+	const LoD& GetActiveLoD() const;
 
-	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
+	std::vector<LoD> lods;
 
-	int faceCount = 0;
 	glm::vec3 min, max, center, extents;
 
 	float uvScale = 1.0f;

@@ -18,26 +18,55 @@ export using RenderableMeshFlags = std::underlying_type_t<RenderableMeshFlagBits
 
 export struct RenderableMesh
 {
+	enum class PreferredLevelOfDetail
+	{
+		Active,
+		Highest,
+		Lowest,
+	};
+
+	struct Memory
+	{
+		StorageBuffer<Vertex>::Memory dVertexMemory = 0;
+		StorageBuffer<Vertex>::Memory vertexMemory = 0;
+
+		StorageBuffer<std::uint32_t>::Memory indexMemory = 0;
+
+		std::shared_ptr<BottomLevelAccelerationStructure> BLAS;
+
+		std::uint32_t faceCount = 0;
+		std::uint32_t vertexCount = 0;
+	};
+
+	RenderableMesh() : priorityLod(activeLod) {}
+
+	Memory activeLod;
+	Memory lowestLod;
+	Memory highestLod;
+
+	const Memory& priorityLod;
+
 	glm::mat4 transform;
-
-	StorageBuffer<Vertex>::Memory dVertexMemory = 0;
-	StorageBuffer<Vertex>::Memory vertexMemory  = 0;
-
-	StorageBuffer<std::uint32_t>::Memory indexMemory = 0;
-
-	std::shared_ptr<BottomLevelAccelerationStructure> BLAS;
 
 	std::uint32_t materialIndex = 0;
 	float uvScale = 1.0f;
 
-	std::uint32_t faceCount   = 0;
-	std::uint32_t vertexCount = 0;
-
 	RenderableMeshFlags flags = RenderableMeshFlagNone;
+
+	const Memory& operator[](PreferredLevelOfDetail plod) const
+	{
+		switch (plod)
+		{
+		case PreferredLevelOfDetail::Active:  return activeLod;
+		case PreferredLevelOfDetail::Highest: return highestLod;
+		case PreferredLevelOfDetail::Lowest:  return lowestLod;
+		}
+		return activeLod;
+	}
 
 	bool ShouldBeNotRayTraced() const
 	{
-		return flags & RenderableMeshFlagNoRayTracing || BLAS == nullptr;
+		return flags & RenderableMeshFlagNoRayTracing || activeLod.BLAS == nullptr;
 	}
 
 	bool ShouldNotCull() const

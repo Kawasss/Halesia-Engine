@@ -89,6 +89,7 @@ constexpr VkFormat GBUFFER_VELOCITY_FORMAT = VK_FORMAT_R16G16_SFLOAT;
 constexpr VkFormat GBUFFER_GNORMAL_FORMAT  = GBUFFER_NORMAL_FORMAT;
 
 constexpr TopLevelAccelerationStructure::InstanceIndexType RTGI_TLAS_INDEX_TYPE = TopLevelAccelerationStructure::InstanceIndexType::Identifier;
+constexpr RenderableMesh::PreferredLevelOfDetail RTGI_TLAS_PREF_LOD = RenderableMesh::PreferredLevelOfDetail::Lowest;
 
 constexpr uint32_t RTGI_RESOLUTION_UPSCALE = 1;
 
@@ -612,9 +613,9 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Rendera
 	if (Renderer::canRayTrace)
 	{
 		if (!TLAS->HasBeenBuilt() && !meshes.empty())
-			TLAS->Build(meshes, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
+			TLAS->Build(meshes, RTGI_TLAS_PREF_LOD, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
 		else
-			TLAS->Update(meshes, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
+			TLAS->Update(meshes, RTGI_TLAS_PREF_LOD, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
 	}
 
 	const CommandBuffer cmdBuffer = payload.commandBuffer;
@@ -647,8 +648,8 @@ void DeferredPipeline::SetInstanceData(const std::vector<RenderableMesh>& meshes
 
 	for (const RenderableMesh& mesh : meshes)
 	{
-		uint32_t vOffset = static_cast<uint32_t>(Renderer::g_vertexBuffer.GetItemOffset(mesh.vertexMemory));
-		uint32_t iOffset = static_cast<uint32_t>(Renderer::g_indexBuffer.GetItemOffset(mesh.indexMemory));
+		uint32_t vOffset = static_cast<uint32_t>(Renderer::g_vertexBuffer.GetItemOffset(mesh.activeLod.vertexMemory));
+		uint32_t iOffset = static_cast<uint32_t>(Renderer::g_indexBuffer.GetItemOffset(mesh.activeLod.indexMemory));
 
 		instances.emplace_back(mesh.uvScale, vOffset, iOffset, mesh.materialIndex);
 	}

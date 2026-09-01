@@ -30,11 +30,11 @@ TopLevelAccelerationStructure* TopLevelAccelerationStructure::Create()
 	return TLAS;
 }
 
-void TopLevelAccelerationStructure::Build(const std::vector<RenderableMesh>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
+void TopLevelAccelerationStructure::Build(const std::vector<RenderableMesh>& objects, RenderableMesh::PreferredLevelOfDetail prefLod, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
 {
 	instanceBuffer.Reset();
-	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects, indexType); // write all of the BLAS instances to a single buffer so that vulkan can easily read all of the instances in one go
-	instanceBuffer.SubmitNewData(BLASInstances);										              // make it so that only the new BLASs get submitted instead of all of the BLASs (even the old ones). the code right now is a REALLY bad implementation
+	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects, indexType, prefLod); // write all of the BLAS instances to a single buffer so that vulkan can easily read all of the instances in one go
+	instanceBuffer.SubmitNewData(BLASInstances);										                       // make it so that only the new BLASs get submitted instead of all of the BLASs (even the old ones). the code right now is a REALLY bad implementation
 
 	VkAccelerationStructureGeometryKHR geometry{};
 	GetGeometry(geometry);
@@ -43,10 +43,10 @@ void TopLevelAccelerationStructure::Build(const std::vector<RenderableMesh>& obj
 	hasBeenBuilt = true;
 }
 
-void TopLevelAccelerationStructure::Update(const std::vector<RenderableMesh>& objects, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
+void TopLevelAccelerationStructure::Update(const std::vector<RenderableMesh>& objects, RenderableMesh::PreferredLevelOfDetail prefLod, InstanceIndexType indexType, VkCommandBuffer externalCommandBuffer)
 {
 	instanceBuffer.Reset();
-	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects, indexType);
+	std::vector<VkAccelerationStructureInstanceKHR> BLASInstances = GetInstances(objects, indexType, prefLod);
 	if (!BLASInstances.empty())
 		instanceBuffer.SubmitNewData(BLASInstances);
 
@@ -66,7 +66,7 @@ void TopLevelAccelerationStructure::GetGeometry(VkAccelerationStructureGeometryK
 	geometry.geometry.instances.data = { Vulkan::GetDeviceAddress(instanceBuffer.GetBufferHandle()) };
 }
 
-std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(const std::vector<RenderableMesh>& objects, InstanceIndexType indexType)
+std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::GetInstances(const std::vector<RenderableMesh>& objects, InstanceIndexType indexType, RenderableMesh::PreferredLevelOfDetail prefLod)
 {
 	uint32_t processedAmount = 0; // add a second counter for each processed mesh. if an object is checked, but it doesnt have a mesh it will leave an empty instance custom index, which results in data missalignment
 	std::vector<VkAccelerationStructureInstanceKHR> instances;
@@ -84,7 +84,7 @@ std::vector<VkAccelerationStructureInstanceKHR> TopLevelAccelerationStructure::G
 		if (mesh.ShouldNotCull())
 			instance.flags = VK_GEOMETRY_INSTANCE_TRIANGLE_FACING_CULL_DISABLE_BIT_KHR;
 
-		instance.accelerationStructureReference = mesh.BLAS->GetAccelerationStructureAddress();
+		instance.accelerationStructureReference = mesh[prefLod].BLAS->GetAccelerationStructureAddress();
 
 		glm::mat4 transform = glm::transpose(mesh.transform);
 		memcpy(&instance.transform, &transform, sizeof(VkTransformMatrixKHR));											   // simply copy the contents of the glm matrix to the vulkan matrix since the contents align
