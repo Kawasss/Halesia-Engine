@@ -73,9 +73,6 @@ static RendererFlags GetRendererFlagsFromBehavior()
 		else if (str == "-force_gpu" && Behavior::arguments.size() > i + 1)
 		{
 			std::string name = std::string(Behavior::arguments[++i]);
-			while (i < Behavior::arguments.size() - 1 && Behavior::arguments[i][0] != '-') // assemble the full name since the command args are split by spaces
-				name += ' ' + std::string(Behavior::arguments[++i]);
-
 			Vulkan::ForcePhysicalDevice(name);
 		}
 	}
@@ -111,20 +108,18 @@ HalesiaEngine* HalesiaEngine::CreateInstance(CreateInfo& createInfo)
 
 void HalesiaEngine::LogLoadingInformation()
 {
-	const Vulkan::Context& context = Vulkan::GetContext();
-	VkPhysicalDeviceProperties properties = context.physicalDevice.Properties();
-
+	Vulkan::Environment environment = Vulkan::GetContextEnvironment();
 	std::cout
 		<< "\n----------------------------------------"
 		<< "\nSystem info:"
 		<< "\n  CPU:           " << sys::GetProcessorName()
 		<< "\n  thread count:  " << std::thread::hardware_concurrency()
 		<< "\n  physical RAM:  " << sys::GetPhysicalRAMCount() / 1024 / 1024 << " MB\n"
-		<< "\n  GPU:           " << properties.deviceName
-		<< "\n  type:          " << (properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")
-		<< "\n  vulkan driver: " << properties.driverVersion
-		<< "\n  API version:   " << properties.apiVersion
-		<< "\n  heap 0 (VRAM): " << context.physicalDevice.VRAM() / (1024ull * 1024ull) << " MB"
+		<< "\n  GPU:           " << environment.name
+		<< "\n  type:          " << (environment.type == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? "discrete" : "integrated")
+		<< "\n  vulkan driver: " << environment.driver.major << '.' << environment.driver.minor << '.' << environment.driver.variant
+		<< "\n  API version:   " << environment.api.major    << '.' << environment.api.minor    << '.' << environment.api.variant
+		<< "\n  heap 0 (VRAM): " << environment.heap << " MB"
 		<< "\n----------------------------------------\n\n";
 }
 

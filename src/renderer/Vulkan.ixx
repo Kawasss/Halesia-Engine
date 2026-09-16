@@ -39,6 +39,22 @@ public:
         std::vector<VkPresentModeKHR>   presentModes;
     };
 
+    struct Version
+    {
+        std::uint32_t variant;
+        std::uint32_t major;
+        std::uint32_t minor;
+    };
+
+    struct Environment
+    {
+        std::string name;
+        VkPhysicalDeviceType type;
+        Version api;
+        Version driver;
+        std::size_t heap; // in MB
+    };
+
     static VkMemoryAllocateFlagsInfo* optionalMemoryAllocationFlags;
 
     static win32::CriticalSection graphicsQueueSection;
@@ -132,6 +148,8 @@ public:
     static std::vector<VkDynamicState>& GetDynamicStates() { return dynamicStates; }
 
     template<class Func> static void          ExecuteSingleTimeCommands(Func&& commands);
+
+    static Environment                        GetContextEnvironment();
 
     static void                               Init();
     static void                               Destroy();

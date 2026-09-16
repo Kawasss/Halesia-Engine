@@ -766,7 +766,7 @@ std::vector<PhysicalDevice> Vulkan::GetPhysicalDevices(VkInstance instance)
     std::vector<PhysicalDevice> devices;
     for (VkPhysicalDevice device : physicalDevices)
         devices.push_back(PhysicalDevice(device));
-    
+
     return devices;
 }
 
@@ -863,6 +863,58 @@ std::vector<VkExtensionProperties> Vulkan::GetLogicalDeviceExtensions(PhysicalDe
     vkEnumerateDeviceExtensionProperties(physicalDevice.Device(), nullptr, &extensionCount, extensions.data());
 
     return extensions;
+}
+
+static Vulkan::Version GetApiVersion(uint32_t version)
+{
+    Vulkan::Version ret{};
+    ret.major = (static_cast<uint32_t>(version) >> 22U) & 0x7FU;
+    ret.minor = (static_cast<uint32_t>(version) >> 12U) & 0x3FFU;
+    ret.variant = static_cast<uint32_t>(version) >> 29U;
+
+    return ret;
+}
+
+static Vulkan::Version GetDriverVersion(uint32_t version, const std::string_view& device)
+{
+    Vulkan::Version ret{};
+
+    if (device.contains("NVIDIA"))
+    {
+        ret.major = version >> 22;
+        ret.minor = (version >> 14) & 0xFF;
+        ret.variant = (version >> 6) & 0xFF;
+    }
+    else if (device.contains("AMD"))
+    {
+        ret.major = version >> 22;
+        ret.minor = 0;
+        ret.variant = version & 0x3FFFFF;
+    }
+    else if (device.contains("Intel"))
+    {
+        ret = GetApiVersion(version);
+    }
+    else
+    {
+        ret.major = ret.minor = ret.variant = 0;
+    }
+
+    return ret;
+}
+
+Vulkan::Environment Vulkan::GetContextEnvironment()
+{
+    VkPhysicalDeviceProperties properties = context.physicalDevice.Properties();
+
+    Environment ret{};
+    ret.name = properties.deviceName;
+    ret.type = properties.deviceType;
+    ret.api = GetApiVersion(properties.apiVersion);
+    ret.driver = GetDriverVersion(properties.driverVersion, ret.name);
+    ret.heap = context.physicalDevice.VRAM() / (1024ull * 1024ull);
+
+    return ret;
 }
 
 std::string CreateFunctionNotActivatedError(const std::string_view& functionName, const std::string_view& extensionName)
