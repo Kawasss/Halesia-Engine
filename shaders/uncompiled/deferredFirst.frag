@@ -24,6 +24,7 @@ layout (location = 5) out vec4 geometricNormalColor;
 layout(push_constant) uniform constant
 {
     mat4 model;
+    mat4 prevModel;
     int materialID;
     float uvScale;
     vec2 padding;

@@ -46,6 +46,7 @@ layout(set = 1, binding = scene_data_buffer_binding) uniform SceneData
 layout(push_constant) uniform constant
 {
     mat4 model;
+    mat4 prevModel;
     int materialID;
     float uvScale;
     vec2 padding;
@@ -53,8 +54,6 @@ layout(push_constant) uniform constant
 
 void main() 
 {
-    position = (Constant.model * vec4(inPosition, 1.0)).xyz;
-
     mat3 model3x3 = mat3(Constant.model);
 
     mat3 normalMatrix = transpose(inverse(model3x3));
@@ -64,7 +63,7 @@ void main()
 
     texCoords = inTexCoords;
 
-    prevPosition = sceneData.prevProj * sceneData.prevView * vec4(position, 1.0);
-    currPosition = sceneData.proj * sceneData.view * vec4(position, 1.0);
+    prevPosition = sceneData.prevProj * sceneData.prevView * Constant.model * vec4(inPosition, 1.0);
+    currPosition = sceneData.proj * sceneData.view * Constant.prevModel * vec4(inPosition, 1.0);
     gl_Position = currPosition;
 }

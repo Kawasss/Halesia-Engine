@@ -91,12 +91,12 @@ fs::path EditorProject::Storage::GetBuildFile() const
 
 fs::path EditorProject::Storage::GetProjectFile() const
 {
-	return root / std::format("{}.{}", name, EXTENSION);
+	return root / std::format("{}{}", name, EXTENSION);
 }
 
 bool EditorProject::Storage::ReadyForWriting() const
 {
-	return fs::exists(GetBuildFile()) && fs::exists(GetProjectFile());
+	return fs::exists(buildDir) && fs::exists(GetProjectFile());
 }
 
 void EditorProject::ConstructStorage(const fs::path& file, const fs::path& workingDir, const fs::path& buildDir)

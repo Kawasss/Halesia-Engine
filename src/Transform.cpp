@@ -11,12 +11,19 @@ Transform::Transform(glm::vec3 position, glm::quat rotation, glm::vec3 scale)
 
 void Transform::CalculateModelMatrix()
 {
+	prevModel = model;
+
 	glm::mat4 scaleModel = glm::scale(scale);
 	glm::mat4 translationModel = glm::translate(position);
 
 	glm::mat4 local = translationModel * glm::toMat4(rotation) * scaleModel;
 
 	model = parent == nullptr ? local : parent->GetModelMatrix() * local;
+}
+
+const glm::mat4& Transform::GetPreviousModel() const
+{
+	return prevModel;
 }
 
 glm::mat4 Transform::GetModelMatrix() const

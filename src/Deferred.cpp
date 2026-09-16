@@ -34,6 +34,7 @@ import "glm.h";
 struct DeferredPipeline::PushConstant
 {
 	glm::mat4 model;
+	glm::mat4 prevModel;
 	int materialID;
 	float uvScale;
 };
@@ -708,9 +709,8 @@ void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, cons
 			cmdBuffer.SetCullMode(currentlyCulling ? VK_CULL_MODE_BACK_BIT : VK_CULL_MODE_NONE);
 		}
 
-		glm::mat4 model = mesh.transform;
-
-		pushConstant.model = model;
+		pushConstant.model = mesh.transform;
+		pushConstant.prevModel = mesh.prevTransform;
 		pushConstant.materialID = mesh.materialIndex;
 		pushConstant.uvScale = mesh.uvScale;
 		

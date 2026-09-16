@@ -1093,6 +1093,7 @@ std::optional<RenderableMesh> Renderer::GetRenderableMeshFromObject(const Object
 
 	RenderableMesh mesh{};
 	mesh.transform = pObject->transform.GetModelMatrix();
+	mesh.prevTransform = pObject->transform.GetPreviousModel();
 	mesh.materialIndex = pMeshObject->mesh.GetMaterialIndex();
 	mesh.uvScale = pMeshObject->mesh.uvScale;
 	mesh.flags = ::TranslateMeshFlags(pMeshObject->mesh.GetFlags());

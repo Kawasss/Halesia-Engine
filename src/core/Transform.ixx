@@ -19,6 +19,8 @@ public:
 	float GetPitch() const;
 	float GetYaw() const;
 
+	const glm::mat4& GetPreviousModel() const;
+
 	void CalculateModelMatrix();
 
 	glm::vec3 position = glm::vec3(0), scale = glm::vec3(1);
@@ -27,4 +29,5 @@ public:
 
 private:
 	glm::mat4 model = glm::identity<glm::mat4>();
+	glm::mat4 prevModel = glm::identity<glm::mat4>();
 };

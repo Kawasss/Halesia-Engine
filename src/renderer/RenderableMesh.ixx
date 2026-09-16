@@ -47,6 +47,7 @@ export struct RenderableMesh
 	const Memory& priorityLod;
 
 	glm::mat4 transform;
+	glm::mat4 prevTransform;
 
 	std::uint32_t materialIndex = 0;
 	float uvScale = 1.0f;
