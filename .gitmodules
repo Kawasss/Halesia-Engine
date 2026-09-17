@@ -10,3 +10,6 @@
 [submodule "thirdparty/vcglib"]
 	path = thirdparty/vcglib
 	url = https://github.com/cnr-isti-vclab/vcglib
+[submodule "thirdparty/crc"]
+	path = thirdparty/crc
+	url = https://github.com/boostorg/crc.git
