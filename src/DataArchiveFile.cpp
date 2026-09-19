@@ -9,6 +9,8 @@ import std;
 
 import IO.BinaryStream;
 
+import <boost/crc.hpp>;
+
 // the dictionary is serialized like this:
 //
 // entry count: unsigned 32 bit
@@ -61,6 +63,11 @@ void DataArchiveFile::AddData(const std::string& identifier, const std::span<cha
 	metadata.compressed = CompressMemory(data);
 	metadata.size = metadata.compressed.size();
 	metadata.uncompressedSize = data.size();
+
+	if (metadata.flags & EntryFlags::Checksum)
+	{
+		boost::crc_32_type type;
+	}
 
 	dictionary[identifier] = metadata;
 }
@@ -142,24 +149,29 @@ void DataArchiveFile::ReadDictionaryFromDisk()
 
 	for (uint32_t i = 0; i < entryCount; i++)
 	{
-		std::uint32_t stringLength = 0;
-		std::string identifier;
-		Metadata metadata{};
-
-		bool success = true;
-
-		success = success && stream->Read(reinterpret_cast<char*>(&stringLength), sizeof(stringLength));
-
-		identifier.resize(stringLength);
-		success = success && stream->Read(identifier.data(), stringLength);
-		success = success && stream->Read(reinterpret_cast<char*>(&metadata.offset), sizeof(metadata.offset));
-		success = success && stream->Read(reinterpret_cast<char*>(&metadata.size), sizeof(metadata.size));
-
-		if (!success || identifier.empty())
-			return;
-
-		dictionary[identifier] = metadata;
+		ReadEntryFromDisk();
 	}
+}
+
+void DataArchiveFile::ReadEntryFromDisk()
+{
+	std::uint32_t stringLength = 0;
+	std::string identifier;
+	Metadata metadata{};
+
+	bool success = true;
+
+	success = success && stream->Read(reinterpret_cast<char*>(&stringLength), sizeof(stringLength));
+
+	identifier.resize(stringLength);
+	success = success && stream->Read(identifier.data(), stringLength);
+	success = success && stream->Read(reinterpret_cast<char*>(&metadata.offset), sizeof(metadata.offset));
+	success = success && stream->Read(reinterpret_cast<char*>(&metadata.size), sizeof(metadata.size));
+
+	if (!success || identifier.empty())
+		return;
+
+	dictionary[identifier] = metadata;
 }
 
 void DataArchiveFile::ClearDictionary()

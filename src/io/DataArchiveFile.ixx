@@ -7,14 +7,24 @@ import IO.BasicStream;
 
 export class DataArchiveFile
 {
+public:
+	enum EntryFlags
+	{
+		None = 0,
+		Compression = 1 << 0,
+		Checksum = 1 << 1,
+	};
+
 private:
 	struct Metadata
 	{
 		bool isOnDisk = true;
 
+		EntryFlags flags = EntryFlags::None;
 		std::uint64_t offset = 0;
 		std::uint64_t size = 0;
 		std::uint64_t uncompressedSize = 0; // this is only used for data that isnt written to the disk yet
+		std::uint32_t checksum = 0;
 		std::vector<char> compressed;
 	};
 
@@ -83,8 +93,6 @@ public:
 	Iterator begin();
 	Iterator end();
 
-	static constexpr std::string_view IN_MEMORY = "";
-
 private:
 	DataArchiveFile(std::unique_ptr<BasicStream>&& file);
 
@@ -97,6 +105,7 @@ private:
 	void WriteDataEntriesToDisk();
 
 	void ReadDictionaryFromDisk();
+	void ReadEntryFromDisk();
 
 	static std::expected<std::vector<char>, Result> DecompressMemory(const std::span<char const>& compressed, std::uint64_t uncompressedSize);
 	static std::vector<char> CompressMemory(const std::span<char const>& uncompressed);

@@ -596,6 +596,9 @@
     <ClCompile Include="src\MeshModifier.cpp">
       <Filter>Source Files\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\templates\CRC.ixx">
+      <Filter>Header Files\templates</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ResourceManager.h">
