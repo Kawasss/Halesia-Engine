@@ -87,6 +87,12 @@
     <Filter Include="Header Files\compat">
       <UniqueIdentifier>{1e008a5e-63c5-4f51-8545-02474daae61d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\vr">
+      <UniqueIdentifier>{54476bba-5ec1-4d7b-8f03-6805e5605784}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\vr">
+      <UniqueIdentifier>{bf4939e8-c953-4ba0-ad4f-50d61ae54065}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\HalesiaEngine.cpp">
@@ -598,6 +604,12 @@
     </ClCompile>
     <ClCompile Include="src\templates\CRC.ixx">
       <Filter>Header Files\templates</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vr\vr.ixx">
+      <Filter>Header Files\vr</Filter>
+    </ClCompile>
+    <ClCompile Include="src\vr.cpp">
+      <Filter>Source Files\vr</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

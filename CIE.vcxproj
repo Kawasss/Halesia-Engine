@@ -106,7 +106,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions);VK_USE_PLATFORM_WIN32_KHR;_SILENCE_CXX23_DENORM_DEPRECATION_WARNING</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\wveen\source\repos\Halesia\thirdparty;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;thirdparty/vcglib;C:\Users\wveen\source\repos\Halesia\thirdparty\crc\include;thirdparty/vcglib/eigenlib;C:\Users\wveen\source\additionalDependencies\imgui-1.91.7;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\wveen\source\repos\Halesia\thirdparty;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;thirdparty/vcglib;C:\Users\wveen\source\repos\Halesia\thirdparty\crc\include;thirdparty/openxr-sdk/include;thirdparty/vcglib/eigenlib;C:\Users\wveen\source\additionalDependencies\imgui-1.91.7;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -116,7 +116,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\wveen\source\repos\Halesia\lib;C:\Users\wveen\source\repos\Halesia\lib\debug-lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>vulkan-1.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;soloud_static.lib;lua.lib;liblz4_static.lib;ktx.lib;assimp-vc143-mtd.lib;thirdparty/openxr-sdk/build/win64/src/loader/Debug/openxr_loaderd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vulkan-1.lib;PhysXPvdSDK_static_64.lib;PhysXExtensions_static_64.lib;PhysX_static_64.lib;PhysXCooking_static_64.lib;PhysXCommon_static_64.lib;PhysXFoundation_static_64.lib;soloud_static.lib;lua.lib;liblz4_static.lib;ktx.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Lib>
       <AdditionalDependencies>optixDenoiser.lib;PhysX_static_64.lib;PhysXCommon_static_64.lib;PhysXCooking_static_64.lib;PhysXExtensions_static_64.lib;PhysXFoundation_static_64.lib;PhysXPvdSDK_static_64.lib;assimp-vc143-mt.lib;cuda.lib;cudart_static.lib;soloud_static.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -137,7 +137,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;NOMINMAX;VC_EXTRALEAN;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions);VK_USE_PLATFORM_WIN32_KHR;_SILENCE_CXX23_DENORM_DEPRECATION_WARNING</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalIncludeDirectories>C:\Users\wveen\source\repos\Halesia\thirdparty;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;thirdparty/vcglib;C:\Users\wveen\source\repos\Halesia\thirdparty\crc\include;thirdparty/vcglib/eigenlib;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\wveen\source\repos\Halesia\thirdparty;C:\Users\wveen\physx\include;C:\Users\wveen\source\additionalDependencies;C:\Users\wveen\source\additionalDependencies\assimp\include;C:\Users\wveen\source\repos\Halesia Standard Library\include;C:\Users\wveen\source\additionalDependencies\lz4\include;C:\Program Files\KTX-Software\include;thirdparty/vcglib;C:\Users\wveen\source\repos\Halesia\thirdparty\crc\include;thirdparty/openxr-sdk/include;thirdparty/vcglib/eigenlib;C:\Users\wveen\source\additionalDependencies\imgui-1.89.8;%(AdditionalIncludeDirectories);$(VK_SDK_PATH)\include;C:\Users\wveen\source\additionalDependencies\lua\src</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -233,6 +233,8 @@
     <ClCompile Include="src\templates\Colony.ixx" />
     <ClCompile Include="src\templates\CRC.ixx" />
     <ClCompile Include="src\TLAS.cpp" />
+    <ClCompile Include="src\vr.cpp" />
+    <ClCompile Include="src\vr\vr.ixx" />
     <ClCompile Include="src\VulkanGarbageManager.cpp" />
     <ClCompile Include="src\GraphicsPipeline.cpp" />
     <ClCompile Include="src\Grid.cpp" />
