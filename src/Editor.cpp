@@ -1246,10 +1246,13 @@ void Editor::LoadObjectsParallel(const std::span<const ObjectCreationData>& data
 				ObjectCreationData decData = data;
 				decData.name = data.name + "_decimated";
 
-				auto decimated = meshmodifier::Decimate(data.mesh.vertices, data.mesh.indices, 100);
+				decData.mesh.vertices = data.mesh.vertices;
+				decData.mesh.indices  = data.mesh.indices;
 
-				decData.mesh.vertices = std::get<0>(decimated);
-				decData.mesh.indices  = std::get<1>(decimated);
+				meshmodifier::AppendLevelOfDetails(decData.mesh.vertices, decData.mesh.indices, 100, 1);
+
+				decData.mesh.vertices.erase(decData.mesh.vertices.begin(), decData.mesh.vertices.begin() + data.mesh.vertices.size());
+				decData.mesh.indices.erase(decData.mesh.indices.begin(), decData.mesh.indices.begin() + data.mesh.indices.size());
 
 				AddObject(decData);
 			}

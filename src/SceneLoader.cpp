@@ -240,6 +240,9 @@ static void RetrieveIndices(aiMesh* pMesh, std::vector<uint32_t>& dst, uint32_t 
 	{
 		for (unsigned int j = 0; j < pMesh->mFaces[i].mNumIndices; j++)
 		{
+			if (pMesh->mFaces[i].mNumIndices != 3)
+				continue;
+
 			uint32_t index = pMesh->mFaces[i].mIndices[j];
 			dst.push_back(offset + index);
 		}
@@ -368,7 +371,7 @@ static std::string GetTextureFile(const aiScene* scene, aiTextureType type, int 
 
 void SceneLoader::LoadAssimpFile()
 {
-	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes);
+	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_JoinIdenticalVertices | aiProcess_FindDegenerates);
 	
 	if (scene == nullptr) // check if the file could be read
 		throw std::runtime_error("Failed to find or read file at " + location);

@@ -8,5 +8,5 @@ export namespace meshmodifier
 {
 	using VertexIndexPair = std::tuple<std::vector<Vertex>, std::vector<std::uint32_t>>;
 
-	VertexIndexPair Decimate(const std::span<const Vertex>& vertices, const std::span<const std::uint32_t>& indices, std::size_t finalSize);
+	void AppendLevelOfDetails(std::vector<Vertex>& vertices, std::vector<std::uint32_t>& indices, std::uint32_t divisor, std::uint32_t count);
 }

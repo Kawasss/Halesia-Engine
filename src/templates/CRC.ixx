@@ -13,6 +13,6 @@ export template<Fundamental T>
 std::uint64_t GetChecksum(const std::span<const T>& data)
 {
 	CrcUint64 crc;
-	crc.process_bytes(data.data(), data.size() * sizeof(T());
+	crc.process_bytes(data.data(), data.size() * sizeof(T));
 	return crc.checksum();
 }
