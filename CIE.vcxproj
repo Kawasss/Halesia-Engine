@@ -192,6 +192,7 @@
     <ClCompile Include="src\DataArchiveFile.cpp" />
     <ClCompile Include="src\Deferred.cpp" />
     <ClCompile Include="src\DescriptorWriter.cpp" />
+    <ClCompile Include="src\DynamicRendering.cpp" />
     <ClCompile Include="src\Editor.cpp" />
     <ClCompile Include="src\EditorProject.cpp" />
     <ClCompile Include="src\FileDialog.cpp" />
@@ -203,6 +204,7 @@
     <ClCompile Include="src\renderer\BLAS.ixx" />
     <ClCompile Include="src\renderer\Buffer.ixx" />
     <ClCompile Include="src\renderer\ComputePipeline.ixx" />
+    <ClCompile Include="src\renderer\DynamicRendering.ixx" />
     <ClCompile Include="src\renderer\Framebuffer.ixx" />
     <ClCompile Include="src\renderer\FramesInFlight.ixx" />
     <ClCompile Include="src\renderer\GraphicsPipeline.ixx" />

@@ -6,6 +6,7 @@ import Renderer.VulkanGarbageManager;
 import Renderer.GraphicsPipeline;
 import Renderer.RenderPipeline;
 import Renderer.CommandBuffer;
+import Renderer.DynamicRendering;
 import Renderer.Texture;
 import Renderer.Vulkan;
 import Renderer;
@@ -141,32 +142,17 @@ void SkyPipeline::EndRenderPass(const CommandBuffer& cmdBuffer, Image& image)
 
 void SkyPipeline::BeginPresentationRenderPass(const CommandBuffer& cmdBuffer, Framebuffer& framebuffer, uint32_t width, uint32_t height)
 {
-	VkRenderingAttachmentInfo attachInfo{};
-	attachInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	attachInfo.imageView = framebuffer.GetViews()[0];
-	attachInfo.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	attachInfo.resolveMode = VK_RESOLVE_MODE_NONE;
-	attachInfo.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	DynamicRender render;
+	DynamicAttachment color = render.Color(0);
+	color.View() = framebuffer.GetViews()[0];
+	color.Layout() = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-	VkRenderingAttachmentInfo depthInfo{};
-	depthInfo.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-	depthInfo.imageView = framebuffer.GetDepthView();
-	depthInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-	depthInfo.resolveMode = VK_RESOLVE_MODE_NONE;
-	depthInfo.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	depthInfo.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	DynamicAttachment depth = render.Depth();
+	depth.View() = framebuffer.GetDepthView();
+	depth.Layout() = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 
-	VkRenderingInfo renderInfo{};
-	renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-	renderInfo.colorAttachmentCount = 1;
-	renderInfo.layerCount = 1;
-	renderInfo.pColorAttachments = &attachInfo;
-	renderInfo.pDepthAttachment = &depthInfo;
-	renderInfo.pStencilAttachment = nullptr;
-	renderInfo.renderArea = { VkOffset2D{ 0, 0 }, VkExtent2D{ width, height } };
-
-	cmdBuffer.BeginRendering(renderInfo);
+	render.Extent() = { width, height };
+	render.Begin(cmdBuffer);
 }
 
 void SkyPipeline::ReloadShaders(const Payload& payload)

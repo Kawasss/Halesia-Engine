@@ -611,6 +611,12 @@
     <ClCompile Include="src\vr.cpp">
       <Filter>Source Files\vr</Filter>
     </ClCompile>
+    <ClCompile Include="src\renderer\DynamicRendering.ixx">
+      <Filter>Header Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DynamicRendering.cpp">
+      <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ResourceManager.h">
