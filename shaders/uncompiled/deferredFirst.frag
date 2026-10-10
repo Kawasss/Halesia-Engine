@@ -30,13 +30,7 @@ layout(push_constant) uniform constant
     vec2 padding;
 } Constant;
 
-layout(set = 0, binding = material_buffer_binding) uniform sampler2D[] textures;
-
-layout(set = 1, binding = light_buffer_binding) readonly buffer lightBuffer
-{
-	int count;
-	Light data[];
-} lightsBuffer;
+layout(set = 0, binding = material_buffer_binding) uniform sampler2D textures[];
 
 layout(set = 1, binding = scene_data_buffer_binding) uniform SceneData
 {

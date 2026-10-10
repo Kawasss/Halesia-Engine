@@ -2,6 +2,7 @@
 #extension GL_EXT_ray_tracing : require
 #extension GL_EXT_ray_query : require
 #extension GL_EXT_shader_16bit_storage : enable
+#extension GL_EXT_nonuniform_qualifier : enable
 
 #include "include/light.glsl"
 
@@ -73,7 +74,7 @@ layout (binding = 9, set = 0) readonly buffer InstanceDataBuffer
 	InstanceData data[];
 } instanceBuffer;
 
-layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_texture_size] textures;
+layout(set = 1, binding = material_buffer_binding) uniform sampler2D textures[];
 
 layout(set = 2, binding = light_buffer_binding) readonly buffer lightBuffer
 {
@@ -83,12 +84,12 @@ layout(set = 2, binding = light_buffer_binding) readonly buffer lightBuffer
 
 float GetRoughness(vec2 uv, int index)
 {
-	return texture(textures[index * 5 + 2], uv).r;
+	return texture(textures[nonuniformEXT(index * 5 + 2)], uv).r;
 }
 
 vec3 GetNormalFromMap(vec2 uv, vec3 normal, vec3 tangent, vec3 bitangent, int materialIndex)
 {
-	vec3 tangentNormal = texture(textures[materialIndex * 5 + 1], uv).rgb * 2.0 - 1.0;
+	vec3 tangentNormal = texture(textures[nonuniformEXT(materialIndex * 5 + 1)], uv).rgb * 2.0 - 1.0;
 
     vec3 T = normalize(tangent);
     vec3 B = normalize(bitangent);
@@ -178,7 +179,7 @@ void main()
 	payload.origin = position;
 
 	vec3 radiance = vec3(0.0);
-	vec3 color = texture(textures[instance.material * 5], vertex.textureCoordinates).rgb; // read the albedo here
+	vec3 color = texture(textures[nonuniformEXT(instance.material * 5)], vertex.textureCoordinates).rgb; // read the albedo here
 
 	payload.mixedAlbedo *= color;
 

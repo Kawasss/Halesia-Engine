@@ -63,7 +63,10 @@ void main()
 
     texCoords = inTexCoords;
 
-    prevPosition = sceneData.prevProj * sceneData.prevView * Constant.model * vec4(inPosition, 1.0);
-    currPosition = sceneData.proj * sceneData.view * Constant.prevModel * vec4(inPosition, 1.0);
+    vec4 pos = Constant.model * vec4(inPosition, 1.0);
+    position = pos.xyz;
+
+    prevPosition = sceneData.prevProj * sceneData.prevView * Constant.prevModel * vec4(inPosition, 1.0);
+    currPosition = sceneData.proj * sceneData.view * pos;
     gl_Position = currPosition;
 }

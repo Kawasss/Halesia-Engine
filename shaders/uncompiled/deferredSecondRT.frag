@@ -29,8 +29,6 @@ layout (binding = 3) uniform sampler2D metallicRoughnessAOImage;
 
 layout (binding = 4) uniform accelerationStructureEXT TLAS;
 
-layout(set = 1, binding = material_buffer_binding) uniform sampler2D[bindless_texture_size] textures;
-
 layout(set = 2, binding = light_buffer_binding) readonly buffer lightBuffer
 {
 	int count;
@@ -163,12 +161,13 @@ void main()
 
         rayQueryEXT rq;
 
-        rayQueryInitializeEXT(rq, TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, position, 0.0001, L, dist);
+        rayQueryInitializeEXT(rq, TLAS, gl_RayFlagsTerminateOnFirstHitEXT, 0xFF, position, 0.001, L, dist);
 
         rayQueryProceedEXT(rq);
 
         if (rayQueryGetIntersectionTypeEXT(rq, true) != gl_RayQueryCommittedIntersectionNoneEXT)
         {
+            //Lo = vec3(1, 0, 0);
             continue;
         }
 
@@ -193,6 +192,7 @@ void main()
         float NdotL = max(dot(N, L), 0.0);        
 
         Lo += (kD * albedo / PI + specular) * radiance * NdotL * intensity;
+        //Lo = vec3(0, 1, 0);
 	}
 
     vec3 kS = fresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness); 

@@ -1249,12 +1249,12 @@ void Editor::LoadObjectsParallel(const std::span<const ObjectCreationData>& data
 				decData.mesh.vertices = data.mesh.vertices;
 				decData.mesh.indices  = data.mesh.indices;
 
-				meshmodifier::AppendLevelOfDetails(decData.mesh.vertices, decData.mesh.indices, 100, 1);
+				//meshmodifier::AppendLevelOfDetails(decData.mesh.vertices, decData.mesh.indices, 900, 1);
 
-				decData.mesh.vertices.erase(decData.mesh.vertices.begin(), decData.mesh.vertices.begin() + data.mesh.vertices.size());
-				decData.mesh.indices.erase(decData.mesh.indices.begin(), decData.mesh.indices.begin() + data.mesh.indices.size());
+				//decData.mesh.vertices.erase(decData.mesh.vertices.begin(), decData.mesh.vertices.begin() + data.mesh.vertices.size());
+				//decData.mesh.indices.erase(decData.mesh.indices.begin(), decData.mesh.indices.begin() + data.mesh.indices.size());
 
-				AddObject(decData);
+				//AddObject(decData);
 			}
 
 			AddObject(data);
