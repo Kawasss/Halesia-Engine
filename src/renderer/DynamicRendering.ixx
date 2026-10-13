@@ -48,6 +48,18 @@ public:
 	/// <returns></returns>
 	VkAttachmentStoreOp&   StoreOp();
 
+	/// <summary>
+	/// Default value is all 0
+	/// </summary>
+	/// <returns></returns>
+	VkClearColorValue& ColorClear();
+
+	/// <summary>
+	/// Default value is all 0
+	/// </summary>
+	/// <returns></returns>
+	VkClearDepthStencilValue& DepthStencilClear();
+
 private:
 	void SetDefaultValues();
 
@@ -57,11 +69,19 @@ private:
 export class DynamicRender
 {
 public:
+	DynamicRender() = default;
+	DynamicRender(const std::span<const Image>& images);
+
 	DynamicAttachment Color(std::size_t index);
 	DynamicAttachment Depth();
 	DynamicAttachment Stencil();
 
 	VkOffset2D& Offset();
+
+	/// <summary>
+	/// When the images constructor is used, this is set to the dimensions of the given images.
+	/// </summary>
+	/// <returns></returns>
 	VkExtent2D& Extent();
 
 	bool Begin(const CommandBuffer& cmdBuffer) const;

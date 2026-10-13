@@ -8,6 +8,7 @@ import std;
 
 import Core.CameraObject;
 
+import Renderer.DynamicRendering;
 import Renderer.VideoMemoryManager;
 import Renderer.SkyPipeline;
 import Renderer.ImageTransitioner;

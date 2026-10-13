@@ -51,6 +51,28 @@ VkAttachmentStoreOp& DynamicAttachment::StoreOp()
 	return info.storeOp;
 }
 
+VkClearColorValue& DynamicAttachment::ColorClear()
+{
+	return info.clearValue.color;
+}
+
+VkClearDepthStencilValue& DynamicAttachment::DepthStencilClear()
+{
+	return info.clearValue.depthStencil;
+}
+
+DynamicRender::DynamicRender(const std::span<const Image>& images)
+{
+	if (images.empty())
+		return;
+
+	color.resize(images.size());
+	for (int i = 0; i < color.size(); i++)
+		color[i].imageView = images[i].view;
+
+	area.extent = { images[0].GetWidth(), images[0].GetHeight() };
+}
+
 DynamicAttachment DynamicRender::Color(std::size_t index)
 {
 	if (color.size() <= index)
