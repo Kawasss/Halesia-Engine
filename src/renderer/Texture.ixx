@@ -32,8 +32,10 @@ public:
 
 	//void GenerateImages(const std::vector<char>& textureData, bool useMipMaps, int amount, VkFormat format, TextureUseCase useCase);
 
-	void Create(uint32_t width, uint32_t height, uint32_t layerCount, VkFormat format, uint32_t pixelSize, VkImageUsageFlags usage, Flags flags);
+	void Create(uint32_t width, uint32_t height, uint32_t layerCount, VkFormat format, VkImageAspectFlags aspect, VkImageUsageFlags usage, Flags flags);
 	void CreateWithCustomSize(uint32_t width, uint32_t height, VkDeviceSize size, uint32_t layerCount, VkFormat format, VkImageUsageFlags usage, Flags flags);
+
+	void CreateDepth(std::uint32_t width, std::uint32_t height, VkImageUsageFlags usageFlags);
 
 	void InheritFrom(Image& other); // accepts ownership of its members, then kills it
 
@@ -55,6 +57,8 @@ public:
 	std::vector<char> GetImageData() const;
 	std::vector<char> GetAsInternalFormat() const;
 
+	void SetDebugName(const std::string_view& name);
+		
 	vvm::Image image;
 	VkImageView view = VK_NULL_HANDLE;
 	VkDeviceSize size = 0; // in bytes!

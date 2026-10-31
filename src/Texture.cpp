@@ -76,18 +76,19 @@ std::vector<char> Image::Decode(const std::span<const char>& encoded, uint32_t& 
 	return std::vector<char>(resized.data(), resized.data() + outWidth * outHeight * componentCount);
 }
 
-void Image::Create(uint32_t width, uint32_t height, uint32_t layerCount, VkFormat format, uint32_t pixelSize, VkImageUsageFlags usage, Flags flags)
+void Image::Create(uint32_t width, uint32_t height, uint32_t layerCount, VkFormat format, VkImageAspectFlags aspect, VkImageUsageFlags usage, Flags flags)
 {
-	SetAllAttributes(width, height, pixelSize * width * height * layerCount, layerCount, format, usage);
+	SetAllAttributes(width, height, 0, layerCount, format, usage);
 
 	if (flags & UseMipMaps)
 		CalculateMipLevels();
 
 	VkImageCreateFlags createFlags = layerCount == 6 ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 	image = Vulkan::CreateImage(width, height, mipLevels, layerCount, format, VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, createFlags);
+	size = Vulkan::GetImageSize(image.Get());
 
 	VkImageViewType viewType = layerCount == 6 ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
-	view = Vulkan::CreateImageView(image.Get(), viewType, mipLevels, layerCount, format, VK_IMAGE_ASPECT_COLOR_BIT);
+	view = Vulkan::CreateImageView(image.Get(), viewType, mipLevels, layerCount, format, aspect);
 }
 
 void Image::CreateWithCustomSize(uint32_t width, uint32_t height, VkDeviceSize size, uint32_t layerCount, VkFormat format, VkImageUsageFlags usage, Flags flags)
@@ -295,9 +296,20 @@ void Image::CalculateMipLevels()
 	mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
 }
 
+void Image::CreateDepth(std::uint32_t width, std::uint32_t height, VkImageUsageFlags usageFlags)
+{
+	Create(width, height, 1, Vulkan::GetContext().physicalDevice.GetDepthFormat(), VK_IMAGE_ASPECT_DEPTH_BIT, usageFlags, Image::Flags::None);
+}
+
+void Image::SetDebugName(const std::string_view& name)
+{
+	Vulkan::SetDebugName(image.Get(), name.data());
+	Vulkan::SetDebugName(view, name.data());
+}
+
 Cubemap::Cubemap(int width, int height)
 {
-	Create(width, height, 6, VK_FORMAT_R8G8B8A8_SRGB, sizeof(uint32_t), VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, None);
+	Create(width, height, 6, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, None);
 	CreateLayerViews();
 }
 

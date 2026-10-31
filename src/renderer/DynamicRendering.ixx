@@ -25,7 +25,7 @@ public:
 	VkImageView& View();
 
 	/// <summary>
-	/// Must be set manually
+	/// by default VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL or VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
 	/// </summary>
 	/// <returns></returns>
 	VkImageLayout&         Layout();
@@ -37,7 +37,7 @@ public:
 	VkResolveModeFlagBits& ResolveMode();
 
 	/// <summary>
-	/// Default value is VK_ATTACHMENT_LOAD_OP_DONT_CARE
+	/// Default value is VK_ATTACHMENT_LOAD_OP_LOAD
 	/// </summary>
 	/// <returns></returns>
 	VkAttachmentLoadOp&    LoadOp();
@@ -69,8 +69,20 @@ private:
 export class DynamicRender
 {
 public:
+	enum class DepthPosition
+	{
+		None,
+		AtTheEnd,
+	};
+
 	DynamicRender() = default;
-	DynamicRender(const std::span<const Image>& images);
+
+	/// <summary>
+	/// Sets the layout of the color attachments to VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, and the depth layout to VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
+	/// </summary>
+	/// <param name="images"></param>
+	/// <param name="depthPos"></param>
+	DynamicRender(const std::span<const Image>& images, DepthPosition depthPos);
 
 	DynamicAttachment Color(std::size_t index);
 	DynamicAttachment Depth();
@@ -92,6 +104,8 @@ private:
 
 	static bool IsValidAttachment(const std::optional<VkRenderingAttachmentInfo>& info);
 	static bool IsValidAttachment(const VkRenderingAttachmentInfo& info);
+
+	void SetToDefault(VkRenderingAttachmentInfo& info, const Image& img);
 
 	std::optional<VkRenderingInfo> GetRenderingInfo() const;
 

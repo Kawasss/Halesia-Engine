@@ -15,6 +15,7 @@ import Renderer.Light;
 import Renderer.Buffer;
 import Renderer.FramesInFlight;
 import Renderer.VideoMemoryManager;
+import Renderer.Texture;
 
 import  "../glm.h";
 import <vulkan/vulkan.h>;
@@ -36,9 +37,9 @@ public:
 
 	std::vector<IntVariable> GetIntVariables() override;
 
-private:
 	static constexpr size_t GBUFFER_COUNT = 6;
 
+private:
 	struct PushConstant;
 	struct RTGIConstants;
 	struct TAAConstants;
@@ -46,14 +47,17 @@ private:
 	struct InstanceData;
 	struct SecondConstants;
 
+	void DestroyGBuffers();
+	void CreateGBuffers(const CommandBuffer& cmdBuffer, std::uint32_t width, std::uint32_t height);
+	void ResizeGBuffers(const CommandBuffer& cmdBuffer, std::uint32_t width, std::uint32_t height);
+
 	void CreateBuffers();
 	void BindResources();
 	void BindTLAS();
 	void BindGBuffers();
 
 	void CreateAndPreparePipelines(const Payload& payload);
-	void CreateRenderPass(const std::array<VkFormat, GBUFFER_COUNT>& formats);
-	void CreatePipelines(VkRenderPass firstPass, VkRenderPass secondPass);
+	void CreatePipelines();
 
 	void CreateTAAPipeline();
 	void CreateTAAResources(uint32_t width, uint32_t height);
@@ -86,19 +90,22 @@ private:
 
 	void RecreatePipelines(const Payload& payload);
 
-	VkImageView GetPositionView() { return framebuffer.GetViews()[0]; }
-	VkImageView GetAlbedoView() { return framebuffer.GetViews()[1]; }
-	VkImageView GetNormalView() { return framebuffer.GetViews()[2]; }
-	VkImageView GetMRAOView() { return framebuffer.GetViews()[3]; }
-	VkImageView GetVelocityView() { return framebuffer.GetViews()[4]; }
-	VkImageView GetGeometricNormal() { return framebuffer.GetViews()[5]; }
+	void TransitionGBuffersFromReadToWrite(const CommandBuffer& cmdBuffer);
+	void TransitionGBuffersFromWriteToRead(const CommandBuffer& cmdBuffer);
+	void TransitionGBuffersFromUndefinedToWrite(const CommandBuffer& cmdBuffer);
+
+	VkImageView GetPositionView()    { return gbuffers[0].view; }
+	VkImageView GetAlbedoView()      { return gbuffers[1].view; }
+	VkImageView GetNormalView()      { return gbuffers[2].view; }
+	VkImageView GetMRAOView()        { return gbuffers[3].view; }
+	VkImageView GetVelocityView()    { return gbuffers[4].view; }
+	VkImageView GetGeometricNormal() { return gbuffers[5].view; }
+	VkImageView GetDepthView()       { return gbuffers[6].view; }
 
 	uint32_t GetRTGIWidth()  const;
 	uint32_t GetRTGIHeight() const;
 
-	VkRenderPass renderPass;
-
-	Framebuffer framebuffer;
+	std::array<Image, GBUFFER_COUNT + 1> gbuffers;
 
 	FIF::Buffer instanceBuffer;
 
@@ -135,6 +142,8 @@ private:
 	FIF::Buffer TAASampleBuffer;
 
 	uint32_t frame = 0;
+
+	std::uint32_t width, height;
 
 	int maxSampleCountTAA = 40;
 	int rtgiSampleCount = 2;

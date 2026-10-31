@@ -17,7 +17,7 @@ void DynamicAttachment::SetDefaultValues()
 	info.sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
 	info.imageLayout = VK_IMAGE_LAYOUT_MAX_ENUM;
 	info.resolveMode = VK_RESOLVE_MODE_NONE;
-	info.loadOp      = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	info.loadOp      = VK_ATTACHMENT_LOAD_OP_LOAD;
 	info.storeOp     = VK_ATTACHMENT_STORE_OP_STORE;
 }
 
@@ -61,14 +61,41 @@ VkClearDepthStencilValue& DynamicAttachment::DepthStencilClear()
 	return info.clearValue.depthStencil;
 }
 
-DynamicRender::DynamicRender(const std::span<const Image>& images)
+DynamicRender::DynamicRender(const std::span<const Image>& images, DepthPosition depthPos)
 {
 	if (images.empty())
 		return;
 
-	color.resize(images.size());
+	std::size_t size = images.size() - (depthPos == DepthPosition::AtTheEnd);
+
+	color.resize(size);
 	for (int i = 0; i < color.size(); i++)
+	{
+		color[i].sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+		color[i].imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		color[i].resolveMode = VK_RESOLVE_MODE_NONE;
+		color[i].loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+		color[i].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 		color[i].imageView = images[i].view;
+		color[i].clearValue.color = { 0.0f, 0.0f, 0.0f, 0.0f };
+	}
+
+	if (depthPos == DepthPosition::AtTheEnd)
+	{
+		depth = VkRenderingAttachmentInfo
+		{
+			.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+			.imageView = images.back().view,
+			.imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+			.resolveMode = VK_RESOLVE_MODE_NONE,
+			.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+			.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+			.clearValue = 
+			{
+				.depthStencil = { 1.0f, 0 }
+			},
+		};
+	}
 
 	area.extent = { images[0].GetWidth(), images[0].GetHeight() };
 }
@@ -132,6 +159,13 @@ bool DynamicRender::IsValidAttachment(const std::optional<VkRenderingAttachmentI
 bool DynamicRender::IsValidAttachment(const VkRenderingAttachmentInfo& info)
 {
 	return info.imageLayout != VK_IMAGE_LAYOUT_MAX_ENUM && info.imageView != VK_NULL_HANDLE;
+}
+
+void DynamicRender::SetToDefault(VkRenderingAttachmentInfo& info, const Image& img)
+{
+	info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+	info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	info.imageView = img.view;
 }
 
 std::optional<VkRenderingInfo> DynamicRender::GetRenderingInfo() const

@@ -16,6 +16,7 @@ import <vulkan/vulkan.h>;
 constexpr VkFormat LUT_FORMAT = VK_FORMAT_R16G16B16A16_SFLOAT;
 constexpr uint32_t LUT_FORMAT_SIZE = sizeof(uint16_t) * 4;
 constexpr VkImageUsageFlags LUT_USAGE = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+constexpr VkImageAspectFlags LUT_ASPECT = VK_IMAGE_ASPECT_COLOR_BIT;
 
 constexpr uint32_t TRANSMITTANCE_LUT_WIDTH  = 256;
 constexpr uint32_t TRANSMITTANCE_LUT_HEIGHT = 64;
@@ -172,9 +173,9 @@ void SkyPipeline::CreateImages(const CommandBuffer& cmdBuffer, uint32_t width, u
 	mscatteringLUT.Destroy();
 	latlongMap.Destroy();
 
-	transmittanceLUT.Create(width/*TRANSMITTANCE_LUT_WIDTH*/, height/*TRANSMITTANCE_LUT_HEIGHT*/, 1, LUT_FORMAT, LUT_FORMAT_SIZE, LUT_USAGE, Image::None);
-	mscatteringLUT.Create(width/*M_SCATTERING_LUT_WIDTH*/, height/*M_SCATTERING_LUT_HEIGHT*/, 1, LUT_FORMAT, LUT_FORMAT_SIZE, LUT_USAGE, Image::None);
-	latlongMap.Create(width/*LATLONG_MAP_WIDTH*/, height/*LATLONG_MAP_HEIGHT*/, 1, LUT_FORMAT, LUT_FORMAT_SIZE, LUT_USAGE, Image::None);
+	transmittanceLUT.Create(width/*TRANSMITTANCE_LUT_WIDTH*/, height/*TRANSMITTANCE_LUT_HEIGHT*/, 1, LUT_FORMAT, LUT_ASPECT, LUT_USAGE, Image::None);
+	mscatteringLUT.Create(width/*M_SCATTERING_LUT_WIDTH*/, height/*M_SCATTERING_LUT_HEIGHT*/, 1, LUT_FORMAT, LUT_ASPECT, LUT_USAGE, Image::None);
+	latlongMap.Create(width/*LATLONG_MAP_WIDTH*/, height/*LATLONG_MAP_HEIGHT*/, 1, LUT_FORMAT, LUT_ASPECT, LUT_USAGE, Image::None);
 
 	Vulkan::SetDebugName(transmittanceLUT.image.Get(), "transmittance LUT");
 	Vulkan::SetDebugName(mscatteringLUT.image.Get(), "mscattering LUT");
@@ -189,11 +190,13 @@ void SkyPipeline::CreateImages(const CommandBuffer& cmdBuffer, uint32_t width, u
 
 void SkyPipeline::CreatePipelines()
 {
+	std::array<VkFormat, 1> formats = { LUT_FORMAT };
+
 	GraphicsPipeline::CreateInfo createInfo{};
 	createInfo.vertexShader = "shaders/uncompiled/atmosphere.vert";
 	createInfo.fragmentShader = "shaders/uncompiled/transmittanceLUT.frag";
 	createInfo.renderPass = VK_NULL_HANDLE;
-	createInfo.colorFormats.push_back(LUT_FORMAT);
+	createInfo.colorFormats = formats;
 
 	transmittancePipeline = std::make_unique<GraphicsPipeline>(createInfo);
 

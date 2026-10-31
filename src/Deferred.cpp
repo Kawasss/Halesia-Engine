@@ -90,6 +90,16 @@ constexpr VkFormat GBUFFER_RTGI_FORMAT     = VK_FORMAT_R16G16B16A16_UNORM;
 constexpr VkFormat GBUFFER_VELOCITY_FORMAT = VK_FORMAT_R16G16_SFLOAT;
 constexpr VkFormat GBUFFER_GNORMAL_FORMAT  = GBUFFER_NORMAL_FORMAT;
 
+std::array<VkFormat, DeferredPipeline::GBUFFER_COUNT> formats =
+{
+	GBUFFER_POSITION_FORMAT,
+	GBUFFER_ALBEDO_FORMAT,
+	GBUFFER_NORMAL_FORMAT,
+	GBUFFER_MRAO_FORMAT,
+	GBUFFER_VELOCITY_FORMAT,
+	GBUFFER_GNORMAL_FORMAT,
+};
+
 constexpr TopLevelAccelerationStructure::InstanceIndexType RTGI_TLAS_INDEX_TYPE = TopLevelAccelerationStructure::InstanceIndexType::Identifier;
 constexpr RenderableMesh::PreferredLevelOfDetail RTGI_TLAS_PREF_LOD = RenderableMesh::PreferredLevelOfDetail::Lowest;
 
@@ -99,30 +109,22 @@ void DeferredPipeline::Start(const Payload& payload)
 {
 	StartSky(payload);
 	
-	std::array<VkFormat, GBUFFER_COUNT> formats =
-	{
-		GBUFFER_POSITION_FORMAT,
-		GBUFFER_ALBEDO_FORMAT,
-		GBUFFER_NORMAL_FORMAT,
-		GBUFFER_MRAO_FORMAT,
-		GBUFFER_VELOCITY_FORMAT,
-		GBUFFER_GNORMAL_FORMAT,
-	};
+	CreateGBuffers(payload.commandBuffer, payload.width, payload.height);
 
 	CreateBuffers();
-	CreateRenderPass(formats);
+	//CreateRenderPass(formats);
 
-	for (int i = 0; i < formats.size() + 1; i++)
-		framebuffer.SetImageUsage(i, VK_IMAGE_USAGE_SAMPLED_BIT);
+	//for (int i = 0; i < formats.size() + 1; i++)
+	//	framebuffer.SetImageUsage(i, VK_IMAGE_USAGE_SAMPLED_BIT);
 
-	framebuffer.SetImageUsage(formats.size(), VK_IMAGE_USAGE_TRANSFER_SRC_BIT); // the depth buffer is to be transferred for TAA
+	//framebuffer.SetImageUsage(formats.size(), VK_IMAGE_USAGE_TRANSFER_SRC_BIT); // the depth buffer is to be transferred for TAA
 
-	framebuffer.Init(renderPass, payload.width, payload.height, formats, 1.0f);
+	//framebuffer.Init(renderPass, payload.width, payload.height, formats, 1.0f);
 
-	Vulkan::SetDebugName(framebuffer.Get(), "deferred framebuffer");
+	//Vulkan::SetDebugName(framebuffer.Get(), "deferred framebuffer");
 
-	for (int i = 0; i < formats.size(); i++)
-		Vulkan::SetDebugName(framebuffer.GetImages()[i].Get(), (std::string("gbuffer") + std::to_string(i) + "_" + string_VkFormat(formats[i])).c_str());
+	//for (int i = 0; i < formats.size(); i++)
+	//	Vulkan::SetDebugName(framebuffer.GetImages()[i].Get(), (std::string("gbuffer") + std::to_string(i) + "_" + string_VkFormat(formats[i])).c_str());
 
 	if (Renderer::canRayTrace)
 		TLAS.reset(TopLevelAccelerationStructure::Create());
@@ -130,19 +132,37 @@ void DeferredPipeline::Start(const Payload& payload)
 	CreateAndPreparePipelines(payload);
 }
 
+void DeferredPipeline::DestroyGBuffers()
+{
+	for (Image& img : gbuffers)
+		img.Destroy();
+}
+
+void DeferredPipeline::CreateGBuffers(const CommandBuffer& cmdBuffer, std::uint32_t width, std::uint32_t height)
+{
+	this->width  = width;
+	this->height = height;
+
+	for (int i = 0; i < gbuffers.size() - 1; i++)
+	{
+		gbuffers[i].Create(width, height, 1, formats[i], VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, Image::Flags::None);
+		gbuffers[i].SetDebugName(std::format("def_gbuffer_{}", i));
+	}
+	gbuffers.back().CreateDepth(width, height, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+	gbuffers.back().SetDebugName("def_gbuffer_depth");
+
+	TransitionGBuffersFromUndefinedToWrite(cmdBuffer);
+}
+
+void DeferredPipeline::ResizeGBuffers(const CommandBuffer& cmdBuffer, std::uint32_t width, std::uint32_t height)
+{
+	DestroyGBuffers();
+	CreateGBuffers(cmdBuffer, width, height);
+}
+
 void DeferredPipeline::CreateAndPreparePipelines(const Payload& payload)
 {
-	std::array<VkFormat, GBUFFER_COUNT> formats =
-	{
-		GBUFFER_POSITION_FORMAT,
-		GBUFFER_ALBEDO_FORMAT,
-		GBUFFER_NORMAL_FORMAT,
-		GBUFFER_MRAO_FORMAT,
-		GBUFFER_VELOCITY_FORMAT,
-		GBUFFER_GNORMAL_FORMAT,
-	};
-
-	CreatePipelines(renderPass, renderPass3D);
+	CreatePipelines();
 
 	BindResources();
 
@@ -167,7 +187,7 @@ void DeferredPipeline::RecreatePipelines(const Payload& payload)
 	rtgiPipeline.reset();
 	taaPipeline.reset();
 
-	CreatePipelines(renderPass, renderPass3D);
+	CreatePipelines();
 	CreateRTGIPipeline(payload);
 	BindRTGIResources();
 	BindTLAS();
@@ -316,7 +336,6 @@ void DeferredPipeline::BindGBuffers()
 	constexpr VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 	const VkSampler& sampler = Renderer::defaultSampler;
-	const std::vector<VkImageView>& views = framebuffer.GetViews();
 
 	secondPipeline->BindImageToName("positionImage", GetPositionView(), sampler, layout);
 	secondPipeline->BindImageToName("albedoImage", GetAlbedoView(), sampler, layout);
@@ -324,33 +343,20 @@ void DeferredPipeline::BindGBuffers()
 	secondPipeline->BindImageToName("metallicRoughnessAOImage", GetMRAOView(), sampler, layout);
 }
 
-void DeferredPipeline::CreateRenderPass(const std::array<VkFormat, GBUFFER_COUNT>& formats)
-{
-	RenderPassBuilder builder(formats);
-
-	builder.SetInitialLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-	builder.SetFinalLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-	builder.ClearOnLoad(true);
-
-	renderPass = builder.Build();
-
-	Vulkan::SetDebugName(renderPass, "deferred first render pass");
-}
-
-void DeferredPipeline::CreatePipelines(VkRenderPass firstPass, VkRenderPass secondPass)
+void DeferredPipeline::CreatePipelines()
 {
 	GraphicsPipeline::CreateInfo createInfo{};
 	createInfo.vertexShader   = "shaders/uncompiled/deferredFirst.vert";
 	createInfo.fragmentShader = "shaders/uncompiled/deferredFirst.frag";
-	createInfo.renderPass = firstPass;
-	
+	createInfo.depthStencilFormat = Vulkan::GetContext().physicalDevice.GetDepthFormat();
+	createInfo.colorFormats = formats;
+
 	firstPipeline = std::make_unique<GraphicsPipeline>(createInfo);
 
 	createInfo.vertexShader   = "shaders/uncompiled/deferredSecond.vert";
 	createInfo.fragmentShader = Renderer::canRayTrace ? "shaders/uncompiled/deferredSecondRT.frag" : "shaders/spirv/deferredSecond.frag";
-	createInfo.renderPass = secondPass;
 	createInfo.noVertices = true;
+	createInfo.renderPass = renderPass3D;
 
 	secondPipeline = std::make_unique<GraphicsPipeline>(createInfo);
 }
@@ -416,7 +422,7 @@ void DeferredPipeline::CreateTAAResources(uint32_t width, uint32_t height)
 
 void DeferredPipeline::BindTAAResources()
 {
-	taaPipeline->BindImageToName("depthImage", framebuffer.GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	taaPipeline->BindImageToName("depthImage", GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	taaPipeline->BindImageToName("prevDepthImage", prevDepthView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	taaPipeline->BindImageToName("baseImage", rtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL);
 	taaPipeline->BindImageToName("prevBaseImage", prevRtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL);
@@ -425,7 +431,7 @@ void DeferredPipeline::BindTAAResources()
 	
 	taaPipeline->BindBufferToName("sampleCountBuffer", TAASampleBuffer);
 
-	spatialPipeline->BindImageToName("depthImage", framebuffer.GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	spatialPipeline->BindImageToName("depthImage", GetDepthView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	spatialPipeline->BindImageToName("inputImage", denoisedRtgiView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL); 
 	spatialPipeline->BindImageToName("normalImage", GetNormalView(), Renderer::noFilterSampler, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 	spatialPipeline->BindImageToName("outputImage", spatialDenoisedView, Renderer::noFilterSampler, VK_IMAGE_LAYOUT_GENERAL);
@@ -466,6 +472,8 @@ void DeferredPipeline::ResizeTAA(uint32_t width, uint32_t height)
 
 void DeferredPipeline::CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer)
 {
+	cmdBuffer.BeginDebugUtilsLabel(__FUNCTION__);
+
 	ImageTransitioner prevDepthTransition(prevDepthImage.Get());
 	prevDepthTransition.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
 	prevDepthTransition.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -474,10 +482,10 @@ void DeferredPipeline::CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer)
 	prevDepthTransition.dstAccess = VK_ACCESS_TRANSFER_WRITE_BIT;
 	prevDepthTransition.srcStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 	prevDepthTransition.dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-	prevDepthTransition.width = framebuffer.GetWidth();
-	prevDepthTransition.height = framebuffer.GetHeight();
+	prevDepthTransition.width = width;
+	prevDepthTransition.height = height;
 
-	VkImage currentDepth = framebuffer.GetImages().back().Get();
+	VkImage currentDepth = gbuffers.back().image.Get();
 	ImageTransitioner depthTransition(currentDepth);
 	depthTransition.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
 	depthTransition.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // already transitioned from attachment to this by the TAA
@@ -486,14 +494,14 @@ void DeferredPipeline::CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer)
 	depthTransition.dstAccess = VK_ACCESS_TRANSFER_READ_BIT;
 	depthTransition.srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	depthTransition.dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
-	depthTransition.width = framebuffer.GetWidth();
-	depthTransition.height = framebuffer.GetHeight();
+	depthTransition.width = width;
+	depthTransition.height = height;
 
 	prevDepthTransition.Transition(cmdBuffer);
 	depthTransition.Transition(cmdBuffer);
 
 	VkImageCopy copy{};
-	copy.extent = { framebuffer.GetWidth(), framebuffer.GetHeight(), 1 };
+	copy.extent = { width, height, 1 };
 	copy.srcOffset = { 0, 0, 0 };
 	copy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 	copy.srcSubresource.baseArrayLayer = 0;
@@ -518,28 +526,35 @@ void DeferredPipeline::CopyResourcesForNextTAA(const CommandBuffer& cmdBuffer)
 	rtgiCopy.dstSubresource.layerCount = 1;
 	rtgiCopy.dstSubresource.mipLevel = 0;
 
-	cmdBuffer.CopyImage(framebuffer.GetDepthImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, prevDepthImage.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+	cmdBuffer.CopyImage(gbuffers.back().image.Get(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, prevDepthImage.Get(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
 	cmdBuffer.CopyImage(spatialDenoisedImage.Get(), VK_IMAGE_LAYOUT_GENERAL, prevRtgiImage.Get(), VK_IMAGE_LAYOUT_GENERAL, 1, &rtgiCopy);
 
 	depthTransition.Detransition(cmdBuffer);
 	prevDepthTransition.Detransition(cmdBuffer);
+
+	cmdBuffer.EndDebugUtilsLabel();
 }
 
 void DeferredPipeline::TransitionResourcesFromTAA(const CommandBuffer& cmdBuffer)
 {
-	/*VkImage currentDepth = framebuffer.GetImages().back().Get();
+	cmdBuffer.BeginDebugUtilsLabel(__FUNCTION__);
+
+	Image& img = gbuffers.back();
+	VkImage currentDepth = img.image.Get();
 	ImageTransitioner depthTransition(currentDepth);
 	depthTransition.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
 	depthTransition.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	depthTransition.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthTransition.newLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 	depthTransition.srcAccess = VK_ACCESS_MEMORY_READ_BIT;
 	depthTransition.dstAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
 	depthTransition.srcStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT; VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 	depthTransition.dstStage = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT; VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	depthTransition.width = framebuffer.GetWidth();
-	depthTransition.height = framebuffer.GetHeight();
+	depthTransition.width = img.GetWidth();
+	depthTransition.height = img.GetHeight();
 
-	depthTransition.Transition(cmdBuffer);*/
+	depthTransition.Transition(cmdBuffer);
+
+	cmdBuffer.EndDebugUtilsLabel();
 }
 
 void DeferredPipeline::TransitionResourcesToTAA(const CommandBuffer& cmdBuffer)
@@ -549,19 +564,23 @@ void DeferredPipeline::TransitionResourcesToTAA(const CommandBuffer& cmdBuffer)
 	// - velocity
 	// - RTGI (never transition: VK_IMAGE_LAYOUT_GENERAL)
 
-	VkImage currentDepth = framebuffer.GetImages().back().Get();
+	cmdBuffer.BeginDebugUtilsLabel(__FUNCTION__);
+
+	VkImage currentDepth = gbuffers.back().image.Get();
 	ImageTransitioner depthTransition(currentDepth);
 	depthTransition.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
-	depthTransition.oldLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	depthTransition.oldLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 	depthTransition.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	depthTransition.srcAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
 	depthTransition.dstAccess = VK_ACCESS_MEMORY_READ_BIT;
 	depthTransition.srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	depthTransition.dstStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-	depthTransition.width = framebuffer.GetWidth();
-	depthTransition.height = framebuffer.GetHeight();
+	depthTransition.width = width;
+	depthTransition.height = height;
 
 	depthTransition.Transition(cmdBuffer);
+
+	cmdBuffer.EndDebugUtilsLabel();
 }
 
 void DeferredPipeline::CopyDenoisedToRTGI(const CommandBuffer& cmdBuffer)
@@ -620,11 +639,11 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Rendera
 			TLAS->Update(meshes, RTGI_TLAS_PREF_LOD, RTGI_TLAS_INDEX_TYPE, payload.commandBuffer.Get());
 	}
 
-	const CommandBuffer cmdBuffer = payload.commandBuffer;
-
-	framebuffer.StartRenderPass(cmdBuffer);
+	const CommandBuffer& cmdBuffer = payload.commandBuffer;
 
 	PerformFirstDeferred(cmdBuffer, payload, meshes);
+
+	TransitionGBuffersFromWriteToRead(cmdBuffer);
 
 	cmdBuffer.BeginDebugUtilsLabel("skybox");
 
@@ -638,9 +657,93 @@ void DeferredPipeline::Execute(const Payload& payload, const std::vector<Rendera
 
 	PerformSecondDeferred(cmdBuffer, payload);
 
-	framebuffer.TransitionFromReadToWrite(cmdBuffer);
+	TransitionGBuffersFromReadToWrite(cmdBuffer);
 
 	sky.Render(payload);
+}
+
+void DeferredPipeline::TransitionGBuffersFromReadToWrite(const CommandBuffer& cmdBuffer)
+{
+	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	constexpr VkAccessFlags srcAccess = VK_ACCESS_SHADER_READ_BIT;
+	constexpr VkAccessFlags dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+	for (int i = 0; i < gbuffers.size() - 1; i++)
+		Vulkan::TransitionColorImage(cmdBuffer.Get(), gbuffers[i].image.Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+
+	/*const Image& img = gbuffers.back();
+	ImageTransitioner trans(img.image.Get());
+	trans.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+	trans.srcAccess = srcAccess;
+	trans.dstAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+	trans.oldLayout = oldLayout;
+	trans.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	trans.srcStage = srcStage;
+	trans.dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+	trans.width = img.GetWidth();
+	trans.height = img.GetHeight();
+
+	trans.Transition(cmdBuffer);*/
+}
+
+void DeferredPipeline::TransitionGBuffersFromWriteToRead(const CommandBuffer& cmdBuffer)
+{
+	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; 
+	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	constexpr VkAccessFlags srcAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT; 
+	constexpr VkAccessFlags dstAccess = VK_ACCESS_SHADER_READ_BIT;
+
+	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+
+	for (int i = 0; i < gbuffers.size() - 1; i++)
+		Vulkan::TransitionColorImage(cmdBuffer.Get(), gbuffers[i].image.Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+
+	const Image& img = gbuffers.back();
+	ImageTransitioner trans(img.image.Get());
+	trans.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+	trans.srcAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+	trans.dstAccess = dstAccess;
+	trans.oldLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+	trans.newLayout = newLayout;
+	trans.srcStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+	trans.dstStage = dstStage;
+	trans.width = img.GetWidth();
+	trans.height = img.GetHeight();
+
+	trans.Transition(cmdBuffer);
+}
+
+void DeferredPipeline::TransitionGBuffersFromUndefinedToWrite(const CommandBuffer& cmdBuffer)
+{
+	constexpr VkImageLayout oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	constexpr VkImageLayout newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	constexpr VkAccessFlags srcAccess = 0;
+	constexpr VkAccessFlags dstAccess = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+	constexpr VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	constexpr VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+	for (int i = 0; i < gbuffers.size() - 1; i++)
+		Vulkan::TransitionColorImage(cmdBuffer.Get(), gbuffers[i].image.Get(), oldLayout, newLayout, srcAccess, dstAccess, srcStage, dstStage);
+
+	const Image& img = gbuffers.back();
+	ImageTransitioner trans(img.image.Get());
+	trans.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+	trans.srcAccess = 0;
+	trans.dstAccess = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+	trans.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	trans.newLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+	trans.srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	trans.dstStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+	trans.width = img.GetWidth();
+	trans.height = img.GetHeight();
+
+	trans.Transition(cmdBuffer);
 }
 
 void DeferredPipeline::SetInstanceData(const std::vector<RenderableMesh>& meshes)
@@ -675,7 +778,7 @@ void DeferredPipeline::PerformRayTracedRendering(const CommandBuffer& cmdBuffer,
 
 	cmdBuffer.BeginDebugUtilsLabel("TAA");
 
-	TransitionResourcesToTAA(cmdBuffer);
+	//TransitionResourcesToTAA(cmdBuffer);
 	PushTAAConstants(cmdBuffer, payload.camera);
 
 	taaPipeline->Execute(cmdBuffer, GetRTGIWidth() / 8, GetRTGIHeight() / 8, 1);
@@ -691,6 +794,9 @@ void DeferredPipeline::PerformRayTracedRendering(const CommandBuffer& cmdBuffer,
 void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, const Payload& payload, const std::vector<RenderableMesh>& meshes)
 {
 	cmdBuffer.BeginDebugUtilsLabel("first deferred");
+
+	DynamicRender render(gbuffers, DynamicRender::DepthPosition::AtTheEnd);
+	render.Begin(cmdBuffer);
 
 	firstPipeline->Bind(cmdBuffer);
 
@@ -720,7 +826,7 @@ void DeferredPipeline::PerformFirstDeferred(const CommandBuffer& cmdBuffer, cons
 		Renderer::RenderMesh(cmdBuffer, mesh);
 	}
 
-	cmdBuffer.EndRenderPass();
+	cmdBuffer.EndRendering();
 
 	cmdBuffer.EndDebugUtilsLabel();
 }
@@ -750,14 +856,14 @@ void DeferredPipeline::PerformSecondDeferred(const CommandBuffer& cmdBuffer, con
 
 void DeferredPipeline::CopyDeferredDepthToResultDepth(const CommandBuffer& cmdBuffer, const Payload& payload)
 {
-	VkImage deferredImage = framebuffer.GetDepthImage();
+	VkImage deferredImage = gbuffers.back().image.Get();
 	VkImage resultImage = payload.presentationFramebuffer.GetDepthImage();
 
 	ImageTransitioner deferredTrans(deferredImage);
 	deferredTrans.aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
 	deferredTrans.srcAccess = VK_ACCESS_SHADER_READ_BIT;
 	deferredTrans.dstAccess = VK_ACCESS_TRANSFER_READ_BIT;
-	deferredTrans.oldLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	deferredTrans.oldLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 	deferredTrans.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	deferredTrans.srcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	deferredTrans.dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
@@ -792,14 +898,14 @@ void DeferredPipeline::CopyDeferredDepthToResultDepth(const CommandBuffer& cmdBu
 	copy.dstSubresource.mipLevel = 0;
 	
 	cmdBuffer.CopyImage(deferredImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, resultImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
-	
+
 	resultTrans.Detransition(cmdBuffer);
 	deferredTrans.Detransition(cmdBuffer);
 }
 
 void DeferredPipeline::Resize(const Payload& payload)
 {
-	framebuffer.Resize(payload.width, payload.height);
+	ResizeGBuffers(payload.commandBuffer, payload.width, payload.height);
 
 	BindGBuffers();
 
@@ -843,17 +949,17 @@ std::vector<RenderPipeline::IntVariable> DeferredPipeline::GetIntVariables()
 
 uint32_t DeferredPipeline::GetRTGIWidth() const
 {
-	return framebuffer.GetWidth() / RTGI_RESOLUTION_UPSCALE;
+	return width / RTGI_RESOLUTION_UPSCALE;
 }
 
 uint32_t DeferredPipeline::GetRTGIHeight() const
 {
-	return framebuffer.GetHeight() / RTGI_RESOLUTION_UPSCALE;
+	return height / RTGI_RESOLUTION_UPSCALE;
 }
 
 DeferredPipeline::~DeferredPipeline()
 {
-	vgm::Delete(renderPass);
+	DestroyGBuffers();
 
 	vgm::Delete(rtgiView);
 	vgm::Delete(prevRtgiView);

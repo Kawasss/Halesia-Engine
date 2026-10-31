@@ -143,6 +143,8 @@ public:
     static void                               AddDynamicState(VkDynamicState state);
     static void                               RemoveDynamicState(VkDynamicState state);
 
+    static std::size_t                        GetImageSize(VkImage img);
+
     static std::vector<const char*>& GetDeviceExtensions() { return requiredLogicalDeviceExtensions; }
     static std::vector<const char*>& GetInstanceExtensions() { return requiredInstanceExtensions; }
     static std::vector<VkDynamicState>& GetDynamicStates() { return dynamicStates; }

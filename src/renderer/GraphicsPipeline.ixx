@@ -19,7 +19,7 @@ public:
 		VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 		// only enter when using dynamic rendering
-		std::vector<VkFormat> colorFormats;
+		std::span<VkFormat> colorFormats;
 		VkFormat depthStencilFormat = VK_FORMAT_UNDEFINED;
 
 		//maybe just flags ??

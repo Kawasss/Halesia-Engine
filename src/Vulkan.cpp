@@ -66,6 +66,13 @@ std::vector<VkDynamicState> Vulkan::dynamicStates =
 Vulkan::Context Vulkan::context{};
 std::string forcedGPU;
 
+std::size_t Vulkan::GetImageSize(VkImage img)
+{
+    VkMemoryRequirements reqs{};
+    vkGetImageMemoryRequirements(context.logicalDevice, img, &reqs);
+    return reqs.size;
+}
+
 win32::CriticalSection& Vulkan::GetQueueCriticalSection(VkQueue queue)
 {
     return queueSections[queue];
