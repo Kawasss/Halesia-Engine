@@ -4,14 +4,20 @@ namespace importing
 {
 	namespace mesh
 	{
-		Window::Window() : eui::Window("import mesh")
+		Window::Window() : eui::Window("import mesh"), 
+			divisor("divisor"), finalLodCount("lowest polycount"), ready("import")
 		{
 
 		}
 
 		void Window::UpdateSelf()
 		{
+			divisor.Update();
+			finalLodCount.Update();
+			ready.Update();
 
+			if (ready.IsPressed())
+				Close();
 		}
 
 		bool Window::IsReady() const
@@ -24,8 +30,8 @@ namespace importing
 			return CreateInfo
 			{
 				.file = file,
-				.divisor = divisor,
-				.finalLodCount = finalLodCount,
+				.divisor = divisor.GetValue(),
+				.finalLodCount = finalLodCount.GetValue(),
 			};
 		}
 	}

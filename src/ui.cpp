@@ -3,8 +3,9 @@ module;
 #include <imgui-1.91.7/imgui.h>
 #include <imgui-1.91.7/misc/cpp/imgui_stdlib.h>
 
-module Editor.UI;
+#include <cassert>
 
+module Editor.UI;
 
 namespace eui
 {
@@ -15,7 +16,9 @@ namespace eui
 
 	void NamedItem::SetName(const std::string_view& str)
 	{
-		name = str.empty() ? std::format("#{}", static_cast<void*>(this)) : str;
+		name = str.empty() ? std::format("##{}", static_cast<void*>(this)) : str;
+		if (!name.starts_with("##"))
+			name = "##" + name;
 	}
 
 	std::string_view NamedItem::GetName() const
@@ -25,6 +28,13 @@ namespace eui
 
 	const char* NamedItem::GetUIName() const
 	{
+		assert(!name.empty());
+		return name.c_str() + 2;
+	}
+
+	const char* NamedItem::GetInvisibleUIName() const
+	{
+		assert(!name.empty());
 		return name.c_str();
 	}
 
@@ -47,15 +57,30 @@ namespace eui
 		if (!IsOpen())
 			return;
 
-		ImGui::Begin(GetUIName(), &open);
+		ImGui::Begin(GetUIName(), &open, ImGuiWindowFlags_::ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_::ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_::ImGuiWindowFlags_NoResize);
 
 		UpdateSelf();
-
+		
 		ImGui::End();
 	}
 
 	bool Window::IsOpen() const
 	{
 		return open;
+	}
+
+	Button::Button(const std::string_view& str) : NamedItem(str)
+	{
+
+	}
+
+	void Button::Update()
+	{
+		val = ImGui::Button(GetUIName());
+	}
+
+	bool Button::IsPressed() const
+	{
+		return val;
 	}
 }

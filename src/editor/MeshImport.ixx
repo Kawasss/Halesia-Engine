@@ -26,10 +26,12 @@ export namespace importing
 
 		private:
 			std::string file;
-			std::uint32_t divisor;
-			std::uint32_t finalLodCount;
+
+			eui::InputField<std::uint32_t> divisor;
+			eui::InputField<std::uint32_t> finalLodCount;
 
 			bool done = false;
+			eui::Button ready;
 
 		protected:
 			void UpdateSelf() override;
