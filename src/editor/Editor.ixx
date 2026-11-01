@@ -24,6 +24,8 @@ import Core.Object;
 
 import IO.CreationData;
 
+import Editor.MeshImport;
+
 namespace fs = std::filesystem;
 
 using Handle = uint64_t;
@@ -172,6 +174,8 @@ private:
 	std::map<Handle, AdditionalMaterialData> materialToData;
 
 	EditorProject project;
+
+	importing::mesh::Window meshImportWindow;
 
 	ProgressBar progressBar{};
 	MeshChangeData queuedMeshChange{};

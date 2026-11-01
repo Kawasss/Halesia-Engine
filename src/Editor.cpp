@@ -192,9 +192,10 @@ void Editor::Start()
 	renderer->SetViewportOffsets({ BAR_WIDTH, 0.0f });
 	renderer->SetViewportModifiers({ VIEWPORT_WIDTH, VIEWPORT_HEIGHT });
 
-	
 	InitializeProject();
 	LoadProject();
+
+	meshImportWindow.Open();
 }
 
 std::expected<std::string, FileDialog::Failure> Editor::RequestProjectLocation()
@@ -259,6 +260,7 @@ void Editor::UpdateGUI(float delta)
 	height = core.window->GetHeight();
 
 	ShowUI();
+	meshImportWindow.Update();
 }
 
 void Editor::ShowGizmo()

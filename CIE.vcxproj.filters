@@ -93,6 +93,12 @@
     <Filter Include="Source Files\vr">
       <UniqueIdentifier>{bf4939e8-c953-4ba0-ad4f-50d61ae54065}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\editor">
+      <UniqueIdentifier>{debaa5a9-a9f3-4b38-904d-6a7638f5af04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\editor">
+      <UniqueIdentifier>{5d13ef1f-0c57-4070-8c2e-de698ff7f000}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\HalesiaEngine.cpp">
@@ -211,9 +217,6 @@
     </ClCompile>
     <ClCompile Include="src\Deferred.cpp">
       <Filter>Source Files\Renderer</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Editor.cpp">
-      <Filter>Source Files\core</Filter>
     </ClCompile>
     <ClCompile Include="src\Skybox.cpp">
       <Filter>Source Files\Renderer</Filter>
@@ -373,9 +376,6 @@
     </ClCompile>
     <ClCompile Include="src\system\Window.ixx">
       <Filter>Header Files\system</Filter>
-    </ClCompile>
-    <ClCompile Include="src\core\Editor.ixx">
-      <Filter>Header Files\core</Filter>
     </ClCompile>
     <ClCompile Include="src\core\EditorProject.ixx">
       <Filter>Header Files\core</Filter>
@@ -616,6 +616,24 @@
     </ClCompile>
     <ClCompile Include="src\DynamicRendering.cpp">
       <Filter>Source Files\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\editor\Editor.ixx">
+      <Filter>Header Files\editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Editor.cpp">
+      <Filter>Source Files\editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\editor\MeshImport.ixx">
+      <Filter>Header Files\editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\MeshImport.cpp">
+      <Filter>Source Files\editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\editor\ui.ixx">
+      <Filter>Header Files\editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ui.cpp">
+      <Filter>Source Files\editor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
