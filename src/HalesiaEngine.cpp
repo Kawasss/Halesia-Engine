@@ -84,10 +84,8 @@ HalesiaEngine* HalesiaEngine::CreateInstance(CreateInfo& createInfo)
 {
 	assert(instance == nullptr); // cannot create an instance after one instance is already created
 
-	std::cout << "Generating Halesia instance:"
-		<< "\n  createInfo.startingScene = 0x" << reinterpret_cast<void*>(createInfo.startingScene)
-		<< "\n  createInfo.devConsoleKey = "   << static_cast<int>(createInfo.devConsoleKey)
-		<< "\n  createInfo.playIntro     = "   << createInfo.playIntro << "\n\n";
+	std::println("Generating Halesia instace:\n  createInfo.startingScene = {}\n  createInfo.devConsoleKey = {}\ncreateInfo.playIntro = {}\n",
+		static_cast<const void*>(createInfo.startingScene.get()), static_cast<int>(createInfo.devConsoleKey), createInfo.playIntro);
 	try
 	{
 		instance = new HalesiaEngine();
@@ -129,9 +127,9 @@ HalesiaEngine* HalesiaEngine::GetInstance()
 	return instance;
 }
 
-void HalesiaEngine::LoadScene(Scene* newScene)
+void HalesiaEngine::LoadScene(const std::shared_ptr<Scene>& scene)
 {
-	core.sceneManager.Transition(newScene, )
+	core.sceneManager.Transition(scene, core::SceneManager::EnterBehavior::Continue);
 }
 
 EngineCore& HalesiaEngine::GetEngineCore()
@@ -145,11 +143,12 @@ void HalesiaEngine::UpdateScene(float delta)
 
 	std::chrono::steady_clock::time_point begin = std::chrono::high_resolution_clock::now();
 
-	core.scene->UpdateCamera(core.window, delta);
+	std::shared_ptr<Scene> scene = core.GetCurrentScene();
+	scene->UpdateCamera(core.window, delta);
 	if (!pauseGame || playOneFrame)
 	{
-		core.scene->UpdateScripts(delta);
-		core.scene->Update(delta);
+		scene->UpdateScripts(delta);
+		scene->Update(delta);
 		playOneFrame = false;
 	}
 	asyncScriptsCompletionTime = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - begin).count();
@@ -173,12 +172,13 @@ void HalesiaEngine::UpdateRenderer(float delta)
 	if (showWindowData)
 		GUI::ShowWindowData(core.window);
 
-	core.scene->UpdateGUI(delta);
+	std::shared_ptr<Scene> scene = core.GetCurrentScene();
+	scene->UpdateGUI(delta);
 
 	if (core.renderer->frameCount > 0) // the first frame is automatically recorded
 		core.renderer->StartRecording(delta);
 
-	core.renderer->RenderObjects(core.scene->objects, core.scene->camera);
+	core.renderer->RenderObjects(scene->objects, scene->camera);
 
 	core.renderer->SubmitRecording();
 
@@ -219,7 +219,8 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 
 		core.window->SetMaximized(true);
 
-		core.scene->Start();
+		std::shared_ptr<Scene> scene = core.GetCurrentScene();
+		scene->Start();
 		while (!core.window->ShouldClose())
 		{
 			uint64_t usedMemory = sys::GetMemoryUsed();
@@ -232,7 +233,7 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 			Physics::Simulate(frameDelta);
 			Physics::FetchAndUpdateObjects();
 
-			core.scene->PrepareObjectsForUpdate();
+			scene->PrepareObjectsForUpdate();
 
 			asyncScripts = std::async(&HalesiaEngine::UpdateScene, this, frameDelta);
 			asyncRenderer = std::async(&HalesiaEngine::UpdateRenderer, this, frameDelta);
@@ -243,9 +244,9 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 			Window::PollMessages();
 
 			if (core.renderer->CompletedFIFCyle())
-				core.scene->MainThreadUpdate(frameDelta);
+				scene->MainThreadUpdate(frameDelta);
 
-			core.scene->CollectGarbage();
+			scene->CollectGarbage();
 
 			WaitForTimeLimit(timeSinceLastFrame, CalculateFrameTime(core.maxFPS)); // wait untill the fps limit is reached
 
@@ -332,7 +333,7 @@ void HalesiaEngine::OnLoad(const CreateInfo& createInfo)
 	playIntro = createInfo.playIntro;
 
 	assert(createInfo.startingScene != nullptr);
-	core.scene = createInfo.startingScene;
+	core.sceneManager.Transition(createInfo.startingScene, core::SceneManager::EnterBehavior::Continue);
 
 	LoadVars();
 }
@@ -352,7 +353,6 @@ void HalesiaEngine::LoadVars()
 
 void HalesiaEngine::Destroy()
 {
-	delete core.scene;
 	delete core.renderer;
 	delete core.window;
 }

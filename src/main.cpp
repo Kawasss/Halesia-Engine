@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 	HalesiaEngine::CreateInfo createInfo{};
 	createInfo.argsCount = argc;
 	createInfo.args = argv;
-	createInfo.startingScene = new Editor(); // launch the engines built-in editor
+	createInfo.startingScene = std::make_shared<Editor>(); // launch the engines built-in editor
 	createInfo.renderFlags = Renderer::Flags::NoFilteringOnResult; // the renderer must not filter the final frame for crisp resolution scaling
 	createInfo.windowCreateInfo = windowInfo;
 

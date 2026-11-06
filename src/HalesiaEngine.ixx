@@ -23,7 +23,7 @@ export struct EngineCore
 
 	std::shared_ptr<Scene> GetCurrentScene() const
 	{
-		return sceneManager->GetCurrScene().lock();
+		return sceneManager.GetCurrScene().lock();
 	}
 };
 
@@ -42,7 +42,7 @@ export class HalesiaEngine
 public:
 	struct CreateInfo
 	{
-		Scene* startingScene = nullptr;               //!< the engine will use this scene as its entry point
+		std::shared_ptr<Scene> startingScene;         //!< the engine will use this scene as its entry point
 		Window::CreateInfo windowCreateInfo{};        //!< the engines window will be created with this information
 		VirtualKey devConsoleKey = VirtualKey::Tilde; //!< pressing this key will enable the developer console
 		bool enableDevConsole = true;                 //!< if true, the developer console can be used by pressing 'devConsoleKey'
@@ -67,7 +67,7 @@ public:
 	static HalesiaEngine* GetInstance();                          //!< returns the instance created by CreateInstance( ... )
 	EngineCore& GetEngineCore();                                  //!< returns the core components of the engine
 	ExitCode Run();                                               //!< this will run the game loop, it returns the exit code if the game was unexpectedly ended
-	void LoadScene(Scene* newScene);                              //!< this will load a new scene and replace the current scene
+	void LoadScene(const std::shared_ptr<Scene>& newScene);       //!< this will load a new scene and replace the current scene
 	void Destroy();                                               //!< this destroys the engine
 
 	bool pauseGame = false;                                  //!< if true, all game logic will stop running

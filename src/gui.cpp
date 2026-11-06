@@ -452,8 +452,9 @@ void GUI::ShowDebugWindow(Profiler* profiler)
 
 	if (ImGui::CollapsingHeader("scene"))
 	{
-		ImGui::Text("object count: %i", core.scene->objects.size());
-		ShowCameraData(core.scene->camera);
+		std::shared_ptr<Scene> scene = core.GetCurrentScene();
+		ImGui::Text("object count: %i", scene->objects.size());
+		ShowCameraData(scene->camera);
 	}
 
 	if (ImGui::CollapsingHeader("window"))
