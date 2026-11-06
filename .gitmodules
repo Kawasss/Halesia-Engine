@@ -16,3 +16,6 @@
 [submodule "thirdparty/openxr-sdk"]
 	path = thirdparty/openxr-sdk
 	url = https://github.com/KhronosGroup/OpenXR-SDK.git
+[submodule "thirdparty/imnodes"]
+	path = thirdparty/imnodes
+	url = https://github.com/Nelarius/imnodes.git
