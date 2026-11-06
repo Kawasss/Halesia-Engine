@@ -1299,7 +1299,7 @@ void Editor::BuildProject()
 	if (!dst.has_value() && dst.error() == FileDialog::Failure::NoItem)
 		return; // could also keep on asking the user for a file but the user probably does not want to create a file
 
-	project.CreateStorageInFile(*dst);\
+	project.CreateStorageInFile(*dst);
 	project.BuildScene(this);
 }
 

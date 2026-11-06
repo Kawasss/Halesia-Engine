@@ -22,7 +22,7 @@ export namespace importing
 
 			bool IsReady() const;
 
-			CreateInfo GetImport();
+			CreateInfo RetrieveImport();
 
 		private:
 			std::string file;
@@ -30,8 +30,10 @@ export namespace importing
 			eui::InputField<std::uint32_t> divisor;
 			eui::InputField<std::uint32_t> finalLodCount;
 
-			bool done = false;
+			eui::Button pickFile;
 			eui::Button ready;
+
+			bool done = false;
 
 		protected:
 			void UpdateSelf() override;
