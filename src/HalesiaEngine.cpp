@@ -131,9 +131,7 @@ HalesiaEngine* HalesiaEngine::GetInstance()
 
 void HalesiaEngine::LoadScene(Scene* newScene)
 {
-	core.scene->Destroy();
-	delete core.scene;
-	core.scene = newScene;
+	core.sceneManager.Transition(newScene, )
 }
 
 EngineCore& HalesiaEngine::GetEngineCore()

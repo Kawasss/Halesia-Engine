@@ -187,6 +187,7 @@
     <ClCompile Include="src\core\Rigid3DObject.ixx" />
     <ClCompile Include="src\core\Scene.ixx" />
     <ClCompile Include="src\core\ScriptObject.ixx" />
+    <ClCompile Include="src\core\StateManager.ixx" />
     <ClCompile Include="src\core\Transform.ixx" />
     <ClCompile Include="src\DataArchiveFile.cpp" />
     <ClCompile Include="src\Deferred.cpp" />
