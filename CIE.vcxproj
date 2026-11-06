@@ -188,6 +188,7 @@
     <ClCompile Include="src\core\Scene.ixx" />
     <ClCompile Include="src\core\ScriptObject.ixx" />
     <ClCompile Include="src\core\SceneManager.ixx" />
+    <ClCompile Include="src\core\State.ixx" />
     <ClCompile Include="src\core\Transform.ixx" />
     <ClCompile Include="src\DataArchiveFile.cpp" />
     <ClCompile Include="src\Deferred.cpp" />
@@ -197,6 +198,7 @@
     <ClCompile Include="src\EditorProject.cpp" />
     <ClCompile Include="src\editor\Editor.ixx" />
     <ClCompile Include="src\editor\MeshImport.ixx" />
+    <ClCompile Include="src\editor\ShaderEditor.ixx" />
     <ClCompile Include="src\editor\ui.ixx" />
     <ClCompile Include="src\FileDialog.cpp" />
     <ClCompile Include="src\Framebuffer.cpp" />
@@ -234,6 +236,7 @@
     <ClCompile Include="src\renderer\VideoMemoryManager.ixx" />
     <ClCompile Include="src\renderer\Vulkan.ixx" />
     <ClCompile Include="src\renderer\VulkanAPIError.ixx" />
+    <ClCompile Include="src\ShaderEditor.cpp" />
     <ClCompile Include="src\system\CriticalSection.ixx" />
     <ClCompile Include="src\templates\CircularBuffer.ixx" />
     <ClCompile Include="src\templates\Colony.ixx" />
@@ -330,6 +333,7 @@
     <ClCompile Include="src\Buffer.cpp" />
     <ClCompile Include="src\VulkanAPIError.cpp" />
     <ClCompile Include="src\Window.cpp" />
+    <ClCompile Include="thirdparty\imnodes\imnodes.cpp" />
     <ClCompile Include="thirdparty\SPIRV-Reflect\spirv_reflect.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -361,16 +365,12 @@
     <None Include="shaders\uncompiled\anim.comp" />
     <None Include="shaders\uncompiled\atmosphere.vert" />
     <None Include="shaders\uncompiled\atmosRender.frag" />
-    <None Include="shaders\uncompiled\boundingVolume.frag" />
-    <None Include="shaders\uncompiled\boundingVolume.vert" />
     <None Include="shaders\uncompiled\cubemapConv.frag" />
     <None Include="shaders\uncompiled\cubemapConv.vert" />
     <None Include="shaders\uncompiled\deferredFirst.frag" />
     <None Include="shaders\uncompiled\deferredFirst.vert" />
-    <None Include="shaders\uncompiled\deferredSecond.frag" />
     <None Include="shaders\uncompiled\deferredSecond.vert" />
     <None Include="shaders\uncompiled\deferredSecondRT.frag" />
-    <None Include="shaders\uncompiled\forwardPlus.comp" />
     <None Include="shaders\uncompiled\grid.frag" />
     <None Include="shaders\uncompiled\grid.vert" />
     <None Include="shaders\uncompiled\include\atmosCommon.glsl" />
@@ -379,13 +379,9 @@
     <None Include="shaders\uncompiled\rtgi.rchit" />
     <None Include="shaders\uncompiled\rtgi.rgen" />
     <None Include="shaders\uncompiled\rtgi.rmiss" />
-    <None Include="shaders\uncompiled\pathtracing.rgen" />
-    <None Include="shaders\uncompiled\pathtracing.rchit" />
     <None Include="shaders\uncompiled\include\light.glsl" />
-    <None Include="shaders\uncompiled\pathtracing.rmiss" />
     <None Include="shaders\uncompiled\screen.frag" />
     <None Include="shaders\uncompiled\screen.vert" />
-    <None Include="shaders\uncompiled\shadow.rmiss" />
     <None Include="shaders\uncompiled\skybox.frag" />
     <None Include="shaders\uncompiled\skybox.vert" />
     <None Include="shaders\uncompiled\spatial.comp" />
