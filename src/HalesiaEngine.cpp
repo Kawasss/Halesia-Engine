@@ -90,6 +90,7 @@ HalesiaEngine* HalesiaEngine::CreateInstance(CreateInfo& createInfo)
 	{
 		instance = new HalesiaEngine();
 		instance->OnLoad(createInfo);
+		createInfo.startingScene.reset();
 
 		LogLoadingInformation();
 	}
@@ -211,57 +212,61 @@ HalesiaEngine::ExitCode HalesiaEngine::Run()
 
 	try
 	{
-		uint64_t avaibleMemory = sys::GetPhysicalRAMCount();
-
-		float timeSinceLastDataUpdate = 0;
-		float frameDelta = 0;
-		std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
-
-		core.window->SetMaximized(true);
-
-		std::shared_ptr<Scene> scene = core.GetCurrentScene();
-		scene->Start();
-		while (!core.window->ShouldClose())
 		{
-			uint64_t usedMemory = sys::GetMemoryUsed();
-			if (usedMemory > avaibleMemory / 2)
-				Console::WriteLine("detected high memory usage: {} MB", Console::Severity::Warning, usedMemory / 1024 / 1024);
+			uint64_t avaibleMemory = sys::GetPhysicalRAMCount();
 
-			Input::FetchState();
-			CheckInput();
+			float timeSinceLastDataUpdate = 0;
+			float frameDelta = 0;
+			std::chrono::steady_clock::time_point timeSinceLastFrame = std::chrono::high_resolution_clock::now();
 
-			Physics::Simulate(frameDelta);
-			Physics::FetchAndUpdateObjects();
+			core.window->SetMaximized(true);
 
-			scene->PrepareObjectsForUpdate();
-
-			asyncScripts = std::async(&HalesiaEngine::UpdateScene, this, frameDelta);
-			asyncRenderer = std::async(&HalesiaEngine::UpdateRenderer, this, frameDelta);
-
-			asyncRenderer.get();
-			asyncScripts.get();
-
-			Window::PollMessages();
-
-			if (core.renderer->CompletedFIFCyle())
-				scene->MainThreadUpdate(frameDelta);
-
-			scene->CollectGarbage();
-
-			WaitForTimeLimit(timeSinceLastFrame, CalculateFrameTime(core.maxFPS)); // wait untill the fps limit is reached
-
-			frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();
-			timeSinceLastFrame = std::chrono::high_resolution_clock::now();
-
-			core.profiler->Update(frameDelta);
-
-			timeSinceLastDataUpdate += frameDelta;
-			if (timeSinceLastDataUpdate > 500)
+			core.GetCurrentScene()->Start();
+			while (!core.window->ShouldClose())
 			{
-				UpdateAsyncCompletionTimes(frameDelta);
-				timeSinceLastDataUpdate = 0;
+				std::shared_ptr<Scene> scene = core.GetCurrentScene();
+
+				uint64_t usedMemory = sys::GetMemoryUsed();
+				if (usedMemory > avaibleMemory / 2)
+					Console::WriteLine("detected high memory usage: {} MB", Console::Severity::Warning, usedMemory / 1024 / 1024);
+
+				Input::FetchState();
+				CheckInput();
+
+				Physics::Simulate(frameDelta);
+				Physics::FetchAndUpdateObjects();
+
+				scene->PrepareObjectsForUpdate();
+
+				asyncScripts = std::async(&HalesiaEngine::UpdateScene, this, frameDelta);
+				asyncRenderer = std::async(&HalesiaEngine::UpdateRenderer, this, frameDelta);
+
+				asyncRenderer.get();
+				asyncScripts.get();
+
+				Window::PollMessages();
+
+				if (core.renderer->CompletedFIFCyle())
+					scene->MainThreadUpdate(frameDelta);
+
+				scene->CollectGarbage();
+
+				WaitForTimeLimit(timeSinceLastFrame, CalculateFrameTime(core.maxFPS)); // wait untill the fps limit is reached
+
+				frameDelta = std::chrono::duration<float, std::chrono::milliseconds::period>(std::chrono::high_resolution_clock::now() - timeSinceLastFrame).count();
+				timeSinceLastFrame = std::chrono::high_resolution_clock::now();
+
+				core.profiler->Update(frameDelta);
+
+				timeSinceLastDataUpdate += frameDelta;
+				if (timeSinceLastDataUpdate > 500)
+				{
+					UpdateAsyncCompletionTimes(frameDelta);
+					timeSinceLastDataUpdate = 0;
+				}
 			}
 		}
+		
 		OnExit();
 		return ExitCode::Success;
 	}
@@ -333,8 +338,8 @@ void HalesiaEngine::OnLoad(const CreateInfo& createInfo)
 	playIntro = createInfo.playIntro;
 
 	assert(createInfo.startingScene != nullptr);
-	core.sceneManager.Transition(createInfo.startingScene, core::SceneManager::EnterBehavior::Continue);
-
+	core.sceneManager.Transition(std::move(createInfo.startingScene), core::SceneManager::EnterBehavior::Continue);
+	
 	LoadVars();
 }
 
@@ -353,6 +358,10 @@ void HalesiaEngine::LoadVars()
 
 void HalesiaEngine::Destroy()
 {
+	core.sceneManager.Cleanup();
+	while (!core.sceneManager.IsEmpty())
+		core.sceneManager.Pop(core::SceneManager::ExitBehavior::Destroy);
+
 	delete core.renderer;
 	delete core.window;
 }

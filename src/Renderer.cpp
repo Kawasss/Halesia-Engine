@@ -154,6 +154,12 @@ void Renderer::Destroy()
 
 	managedSet.Destroy();
 
+	if (!meshDatas.empty())
+	{
+		Console::WriteLine("not all mesh data has been destroyed at time of destruction", Console::Severity::Warning);
+		meshDatas.clear();
+	}
+
 	::ImGui_ImplVulkan_Shutdown();
 	::vkDestroyDescriptorPool(logicalDevice, imGUIDescriptorPool, nullptr);
 

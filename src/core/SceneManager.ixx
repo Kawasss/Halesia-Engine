@@ -21,6 +21,16 @@ export namespace core
 			Continue,
 		};
 
+		void Cleanup()
+		{
+			paused.clear();
+		}
+
+		bool IsEmpty() const
+		{
+			return currStates.empty();
+		}
+
 		void Transition(const std::shared_ptr<Scene>& next, EnterBehavior NextState)
 		{
 			// behavior not yet implemented
