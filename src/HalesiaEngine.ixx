@@ -7,6 +7,7 @@ import System.Input;
 
 import Core.Scene;
 import Core.Profiler;
+import Core.SceneManager;
 
 import Renderer;
 import Renderer.AnimationManager;
@@ -15,10 +16,15 @@ export struct EngineCore
 {
 	Renderer* renderer = nullptr;                 //!< the engines renderer
 	Window* window = nullptr;                 //!< the engines window
-	Scene* scene = nullptr;                 //!< the current scene, multiple scenes can exist at once, but only one is active
 	Profiler* profiler = nullptr;                 //!< the currently in use profiler
 	AnimationManager* animationManager = nullptr; //!< the renderers animation manager
+	core::SceneManager sceneManager; //!< manages which scene is active 
 	int maxFPS = -1;                              //!< determines the fps limit of the engine
+
+	std::shared_ptr<Scene> GetCurrentScene() const
+	{
+		return sceneManager->GetCurrScene().lock();
+	}
 };
 
 // an instance of the engine is created as follows:
