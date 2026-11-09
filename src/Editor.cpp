@@ -25,9 +25,11 @@ import Core.LightObject;
 import Core.EditorProject;
 import Core.MeshObject;
 import Core.Object;
+import Core.SceneManager;
 
 import IO.SceneLoader;
 import IO.CreationData;
+import IO;
 
 import System.Input;
 import System.FileDialog;
@@ -39,8 +41,9 @@ import Renderer.Grid;
 import Renderer.AnimationManager;
 import Renderer.RenderPipeline;
 import Renderer.VideoMemoryManager;
-
 import Renderer.MeshModifier;
+
+import Editor.ShaderEditor;
 
 namespace fs = std::filesystem;
 
@@ -196,6 +199,9 @@ void Editor::Start()
 	LoadProject();
 
 	meshImportWindow.Open();
+
+	shaderEditor = std::make_shared<editor::ShaderEditor>();
+	HalesiaEngine::GetInstance()->GetEngineCore().sceneManager.Transition(shaderEditor, core::SceneManager::EnterBehavior::Reset);
 }
 
 std::expected<std::string, FileDialog::Failure> Editor::RequestProjectLocation()
@@ -539,29 +545,45 @@ void Editor::ShowMaterials()
 	{
 		ImGui::Text("Albedo:    ");
 		ImGui::SameLine();
-		if (ImGui::Button(createInfo.albedo.empty() ? "Set path ##albedo_path" : createInfo.albedo.c_str()))
-			createInfo.albedo = GetFile("Image file", "*.png;*.jpg;");
+		if (ImGui::Button("Set path ##albedo_path"))
+		{
+			if (auto file = IO::ReadFile(GetFile("Image file", "*.png;*.jpg;")))
+				createInfo.albedo = *file;
+		}
+			
 
 		ImGui::Text("Normal:    ");
 		ImGui::SameLine();
-		if (ImGui::Button(createInfo.normal.empty() ? "Set path ##normal_path" : createInfo.normal.c_str()))
-			createInfo.normal = GetFile("Image file", "*.png;*.jpg;");
+		if (ImGui::Button("Set path ##normal_path"))
+		{
+			if (auto file = IO::ReadFile(GetFile("Image file", "*.png;*.jpg;")))
+				createInfo.normal = *file;
+		}
 
 		ImGui::Text("Roughness: ");
 		ImGui::SameLine();
-		if (ImGui::Button(createInfo.roughness.empty() ? "Set path ##roughness_path" : createInfo.roughness.c_str()))
-			createInfo.roughness = GetFile("Image file", "*.png;*.jpg;");
+		if (ImGui::Button("Set path ##roughness_path"))
+		{
+			if (auto file = IO::ReadFile(GetFile("Image file", "*.png;*.jpg;")))
+				createInfo.roughness = *file;
+		}
 
 		ImGui::Text("Metallic:  ");
 		ImGui::SameLine();
-		if (ImGui::Button(createInfo.metallic.empty() ? "Set path ##metallic_path" : createInfo.metallic.c_str()))
-			createInfo.metallic = GetFile("Image file", "*.png;*.jpg;");
+		if (ImGui::Button("Set path ##metallic_path"))
+		{
+			if (auto file = IO::ReadFile(GetFile("Image file", "*.png;*.jpg;")))
+				createInfo.metallic = *file;
+		}
 
 		ImGui::Text("Amb. occl.:");
 		ImGui::SameLine();
-		if (ImGui::Button(createInfo.ambientOcclusion.empty() ? "Set path ##ambient_occlusion_path" : createInfo.ambientOcclusion.c_str()))
-			createInfo.ambientOcclusion = GetFile("Image file", "*.png;*.jpg;");
-		
+		if (ImGui::Button("Set path ##ambient_occlusion_path"))
+		{
+			if (auto file = IO::ReadFile(GetFile("Image file", "*.png;*.jpg;")))
+				createInfo.ambientOcclusion = *file;
+		}
+			
 		if (ImGui::Button("create material"))
 		{
 			Handle handle = Mesh::AddMaterial(Material::Create(createInfo));
@@ -585,7 +607,7 @@ void Editor::ShowMaterials()
 		if (!ImGui::TreeNode(treeLabel.c_str()))
 			continue;
 
-		if (materialToData.contains(mat.handle))
+		/*if (materialToData.contains(mat.handle))
 		{
 			AdditionalMaterialData data = materialToData[mat.handle];
 
@@ -634,7 +656,7 @@ void Editor::ShowMaterials()
 				"roughness:  d_rougness\n"
 				"amb. occl.: d_amb_occl\n\n"
 			);
-		}
+		}*/
 		ImGui::TreePop();
 	}
 }

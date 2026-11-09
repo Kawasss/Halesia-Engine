@@ -19,11 +19,11 @@ export enum class TextureType
 
 export struct MaterialCreateInfo
 {
-	std::string albedo = "";
-	std::string normal = "";
-	std::string metallic = "";
-	std::string roughness = "";
-	std::string ambientOcclusion = "";
+	std::vector<char> albedo;
+	std::vector<char> normal;
+	std::vector<char> metallic;
+	std::vector<char> roughness;
+	std::vector<char> ambientOcclusion;
 	bool isLight = false;
 };
 

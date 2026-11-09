@@ -117,7 +117,7 @@ public:
 	static void GeneratePlaceholderTextures();
 	static void DestroyPlaceholderTextures();
 
-	static Texture* LoadFromForeignFormat(const std::string_view& file, Type type, bool useMipMaps = true, TextureUseCase useCase = TextureUseCase::ReadOnly);
+	static Texture* LoadFromForeignFormat(const std::span<const char>& read, Type type, bool useMipMaps = true, TextureUseCase useCase = TextureUseCase::ReadOnly);
 	static Texture* LoadFromInternalFormat(const std::span<const char>& data, bool useMipMaps = true, TextureUseCase useCase = TextureUseCase::ReadOnly);
 
 private:

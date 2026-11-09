@@ -471,25 +471,20 @@ static std::vector<char> GetCompressedData(const std::span<const char>& data, Vk
 	return ret;
 }
 
-Texture* Texture::LoadFromForeignFormat(const std::string_view& file, Type type, bool useMipMaps, TextureUseCase useCase)
+Texture* Texture::LoadFromForeignFormat(const std::span<const char>& read, Type type, bool useMipMaps, TextureUseCase useCase)
 {
-	Console::WriteLine("Started loading file \"{}\"", Console::Severity::Debug, file);
-
 	std::unique_ptr<Texture> pTexture(new Texture());
 	pTexture->layerCount = 1;
 
 	int componentCount = GetComponentCount(type);
 	uint32_t width = 0, height = 0;
 
-	std::expected<std::vector<char>, bool> read = IO::ReadFile(file, IO::ReadOptions::None);
-	if (!read.has_value())
+	if (read.empty())
 		return nullptr;
 
-	std::vector<char> data = Decode(*read, width, height, DecodeOptions::Flip, 1.0f, componentCount);
+	std::vector<char> data = Decode(read, width, height, DecodeOptions::Flip, 1.0f, componentCount);
 	if (data.empty())
 		return nullptr;
-
-	Console::WriteLine("Started compressing file \"{}\"", Console::Severity::Debug, file);
 
 	VkFormat format = GetVkFormatFromType(type);
 	std::vector<char> compressed = GetCompressedData(data, format, GetUncompressedFormatFromFormat(format), width, height, componentCount);
@@ -502,7 +497,6 @@ Texture* Texture::LoadFromForeignFormat(const std::string_view& file, Type type,
 	pTexture->UploadData(compressed);
 	pTexture->TransitionTo(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_NULL_HANDLE);
 
-	Console::WriteLine("Finished loading file \"{}\"", Console::Severity::Debug, file);
 	return pTexture.release();
 }
 

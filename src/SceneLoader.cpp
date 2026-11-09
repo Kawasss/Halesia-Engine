@@ -3,6 +3,7 @@ module;
 #include <assimp/cimport.h>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <assimp/material.h>
 
 #include "core/Console.h"
 
@@ -362,11 +363,11 @@ static void GetTransform(const aiMatrix4x4& mat, glm::vec3& pos, glm::quat& rot,
 	//scale /= 100;
 }
 
-static std::string GetTextureFile(const aiScene* scene, aiTextureType type, int i, int index, const fs::path& base)
+static const aiTexture* GetTextureFile(const aiScene* scene, aiTextureType type, int i, int index, const fs::path& base)
 {
 	aiString str{};
 	aiReturn res = scene->mMaterials[i]->GetTexture(type, index, &str);
-	return res == aiReturn_SUCCESS ? (base / str.C_Str()).string() : "";
+	return res == aiReturn_SUCCESS ? scene->GetEmbeddedTexture(str.C_Str()) : nullptr;
 }
 
 void SceneLoader::LoadAssimpFile()
@@ -396,7 +397,7 @@ void SceneLoader::LoadAssimpFile()
 
 	for (unsigned int i = 0; i < scene->mNumMaterials; i++)
 	{
-		MaterialCreateInfo data{};
+		/*MaterialCreateInfo data{};
 
 		data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
 		data.normal = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir);
@@ -404,7 +405,7 @@ void SceneLoader::LoadAssimpFile()
 		data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
 		data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);
 
-		materials.push_back(data);
+		materials.push_back(data);*/
 	}
 
 	aiReleaseImport(scene);

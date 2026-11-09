@@ -25,6 +25,7 @@ import Core.Object;
 import IO.CreationData;
 
 import Editor.MeshImport;
+import Editor.ShaderEditor;
 
 namespace fs = std::filesystem;
 
@@ -98,11 +99,11 @@ private:
 		AdditionalMaterialData() = default;
 		AdditionalMaterialData(const MaterialCreateInfo& createInfo);
 
-		std::string albedoSource = "d_albedo";
-		std::string normalSource = "d_normal";
-		std::string metallicSource = "d_metallic";
-		std::string roughnessSource = "d_roughness";
-		std::string ambOcclSource = "d_amb_occl";
+		std::vector<char> albedoSource;
+		std::vector<char> normalSource;
+		std::vector<char> metallicSource;
+		std::vector<char> roughnessSource;
+		std::vector<char> ambOcclSource;
 	};
 
 	void ShowUI();
@@ -189,6 +190,8 @@ private:
 	Window* window = nullptr;
 
 	GridPipeline* gridPipeline;
+
+	std::shared_ptr<editor::ShaderEditor> shaderEditor;
 
 	int width = 0, height = 0;
 };
