@@ -471,6 +471,14 @@ static std::vector<char> GetCompressedData(const std::span<const char>& data, Vk
 	return ret;
 }
 
+Texture* Texture::LoadFromForeignFormatFile(const std::string_view& read, Type type, bool useMipMaps, TextureUseCase useCase)
+{
+	if (auto data = IO::ReadFile(read, IO::ReadOptions::None))
+		return LoadFromForeignFormat(*data, type, useMipMaps, useCase);
+	else
+		return nullptr;
+}
+
 Texture* Texture::LoadFromForeignFormat(const std::span<const char>& read, Type type, bool useMipMaps, TextureUseCase useCase)
 {
 	std::unique_ptr<Texture> pTexture(new Texture());
@@ -527,11 +535,11 @@ Texture* Texture::LoadFromInternalFormat(const std::span<const char>& data, bool
 
 void Texture::GeneratePlaceholderTextures()
 {
-	placeholderAlbedo = LoadFromForeignFormat("textures/placeholderAlbedo.png", Type::Albedo, false);
-	placeholderNormal = LoadFromForeignFormat("textures/placeholderNormal.png", Type::Normal, false);
-	placeholderMetallic = LoadFromForeignFormat("textures/placeholderMetallic.png", Type::Metallic, false);
-	placeholderRoughness = LoadFromForeignFormat("textures/placeholderRoughness.png", Type::Roughness, false);
-	placeholderAmbientOcclusion = LoadFromForeignFormat("textures/white.png", Type::AmbientOcclusion, false);
+	placeholderAlbedo = LoadFromForeignFormatFile("textures/placeholderAlbedo.png", Type::Albedo, false);
+	placeholderNormal = LoadFromForeignFormatFile("textures/placeholderNormal.png", Type::Normal, false);
+	placeholderMetallic = LoadFromForeignFormatFile("textures/placeholderMetallic.png", Type::Metallic, false);
+	placeholderRoughness = LoadFromForeignFormatFile("textures/placeholderRoughness.png", Type::Roughness, false);
+	placeholderAmbientOcclusion = LoadFromForeignFormatFile("textures/white.png", Type::AmbientOcclusion, false);
 
 	placeholderAlbedo->AwaitGeneration();
 	placeholderNormal->AwaitGeneration();

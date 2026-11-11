@@ -370,6 +370,14 @@ static const aiTexture* GetTextureFile(const aiScene* scene, aiTextureType type,
 	return res == aiReturn_SUCCESS ? scene->GetEmbeddedTexture(str.C_Str()) : nullptr;
 }
 
+static std::vector<char> TextureAsBytes(const aiTexture* pData)
+{
+	std::size_t end = pData->mWidth * pData->mHeight;
+	if (pData->mHeight == 0)
+		end = pData->mWidth;
+	return std::vector<char>(reinterpret_cast<const char*>(pData->pcData), reinterpret_cast<const char*>(pData->pcData) + end);
+}
+
 void SceneLoader::LoadAssimpFile()
 {
 	const aiScene* scene = aiImportFile(location.c_str(), aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_OptimizeGraph | aiProcess_OptimizeMeshes | aiProcess_JoinIdenticalVertices | aiProcess_FindDegenerates);
@@ -397,15 +405,20 @@ void SceneLoader::LoadAssimpFile()
 
 	for (unsigned int i = 0; i < scene->mNumMaterials; i++)
 	{
-		/*MaterialCreateInfo data{};
+		MaterialCreateInfo data{};
 
-		data.albedo = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir);
-		data.normal = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir);
-		data.roughness = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir);
-		data.metallic = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir);
-		data.ambientOcclusion = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir);
+		if (auto tex = GetTextureFile(scene, aiTextureType_DIFFUSE, i, 0, baseDir))
+			data.albedo = TextureAsBytes(tex);
+		if (auto tex = GetTextureFile(scene, aiTextureType_NORMALS, i, 0, baseDir))
+			data.normal = TextureAsBytes(tex);
+		if (auto tex = GetTextureFile(scene, aiTextureType_DIFFUSE_ROUGHNESS, i, 0, baseDir))
+			data.roughness = TextureAsBytes(tex);
+		if (auto tex = GetTextureFile(scene, aiTextureType_METALNESS, i, 0, baseDir))
+			data.metallic = TextureAsBytes(tex);
+		if (auto tex = GetTextureFile(scene, aiTextureType_AMBIENT_OCCLUSION, i, 0, baseDir))
+			data.ambientOcclusion = TextureAsBytes(tex);
 
-		materials.push_back(data);*/
+		materials.push_back(data);
 	}
 
 	aiReleaseImport(scene);

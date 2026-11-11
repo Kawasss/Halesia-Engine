@@ -12,7 +12,7 @@ export namespace editor
 		void UpdateGUI(float delta) override;
 		void MainThreadUpdate(float delta) override;
 
-		~ShaderEditor();
+		void Destroy() override;
 
 	private:
 		struct Node

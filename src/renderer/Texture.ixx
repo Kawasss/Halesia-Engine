@@ -119,6 +119,7 @@ public:
 
 	static Texture* LoadFromForeignFormat(const std::span<const char>& read, Type type, bool useMipMaps = true, TextureUseCase useCase = TextureUseCase::ReadOnly);
 	static Texture* LoadFromInternalFormat(const std::span<const char>& data, bool useMipMaps = true, TextureUseCase useCase = TextureUseCase::ReadOnly);
+	static Texture* LoadFromForeignFormatFile(const std::string_view& read, Type type, bool useMipMaps = true, TextureUseCase useCase = TextureUseCase::ReadOnly);
 
 private:
 	Texture() = default;

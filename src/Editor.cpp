@@ -201,7 +201,7 @@ void Editor::Start()
 	meshImportWindow.Open();
 
 	shaderEditor = std::make_shared<editor::ShaderEditor>();
-	HalesiaEngine::GetInstance()->GetEngineCore().sceneManager.Transition(shaderEditor, core::SceneManager::EnterBehavior::Reset);
+	//HalesiaEngine::GetInstance()->GetEngineCore().sceneManager.Transition(shaderEditor, core::SceneManager::EnterBehavior::Reset);
 }
 
 std::expected<std::string, FileDialog::Failure> Editor::RequestProjectLocation()
@@ -503,6 +503,11 @@ void Editor::ShowObjectWithChildren(Object* object)
 			UIFree(object);
 		}
 
+		if (ImGui::MenuItem("save"))
+		{
+			SaveObjectAlone(object);
+		}
+
 		ImGui::EndPopup();
 	}
 
@@ -515,6 +520,25 @@ void Editor::ShowObjectWithChildren(Object* object)
 		ShowObjectWithChildren(child);
 	}
 	ImGui::TreePop();
+}
+
+void Editor::SaveObjectAlone(Object* pObject)
+{
+	FileDialog::Filter filter;
+	filter.description = "file to save to";
+	filter.fileType = "*.dat;";
+
+	auto exfile = FileDialog::RequestFileSaveLocation(filter);
+	if (!exfile)
+		return;
+
+	std::vector<char> data = pObject->Serialize();
+
+	DataArchiveFile archive = DataArchiveFile::LoadFromFile(*exfile, DataArchiveFile::OpenMethod::Clear);
+	archive.AddData(pObject->name, data);
+
+
+	IO::WriteFile(*exfile, data);
 }
 
 Editor::AdditionalMaterialData::AdditionalMaterialData(const MaterialCreateInfo& createInfo)

@@ -143,6 +143,8 @@ private:
 	void LoadMaterialsParallel(const std::span<const std::variant<MaterialCreationData, MaterialCreateInfo>>& datas, float progressStep);
 	void LoadAnimationsParallel(const std::span<Animation>& animations, float progressStep);
 
+	void SaveObjectAlone(Object* pObject);
+
 	void ShowAddObjectWindow();
 
 	void DestroyCurrentScene();

@@ -635,6 +635,18 @@
     <ClCompile Include="src\ui.cpp">
       <Filter>Source Files\editor</Filter>
     </ClCompile>
+    <ClCompile Include="src\ShaderEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="thirdparty\imnodes\imnodes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\SceneManager.ixx">
+      <Filter>Header Files\core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\editor\ShaderEditor.ixx">
+      <Filter>Header Files\editor</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ResourceManager.h">
@@ -693,12 +705,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shaders\uncompiled\triangle.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\triangle.vert">
-      <Filter>Shaders</Filter>
-    </None>
     <None Include="shaders\uncompiled\screen.frag">
       <Filter>Shaders</Filter>
     </None>
@@ -706,9 +712,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\uncompiled\anim.comp">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\forwardPlus.comp">
       <Filter>Shaders</Filter>
     </None>
     <None Include="cfg\init.cfg">
@@ -723,32 +726,11 @@
     <None Include="shaders\uncompiled\deferredFirst.vert">
       <Filter>Shaders\deferred</Filter>
     </None>
-    <None Include="shaders\uncompiled\deferredSecond.frag">
-      <Filter>Shaders\deferred</Filter>
-    </None>
     <None Include="shaders\uncompiled\deferredSecond.vert">
       <Filter>Shaders\deferred</Filter>
     </None>
     <None Include="shaders\uncompiled\deferredSecondRT.frag">
       <Filter>Shaders\deferred</Filter>
-    </None>
-    <None Include="shaders\uncompiled\pathtracing.rgen">
-      <Filter>Shaders\ray-tracing</Filter>
-    </None>
-    <None Include="shaders\uncompiled\pathtracing.rchit">
-      <Filter>Shaders\ray-tracing</Filter>
-    </None>
-    <None Include="shaders\uncompiled\intro.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\intro.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\shadow.rmiss">
-      <Filter>Shaders\ray-tracing</Filter>
-    </None>
-    <None Include="shaders\uncompiled\pathtracing.rmiss">
-      <Filter>Shaders\ray-tracing</Filter>
     </None>
     <None Include="shaders\uncompiled\skybox.frag">
       <Filter>Shaders\skybox</Filter>
@@ -793,12 +775,6 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\uncompiled\grid.vert">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\boundingVolume.frag">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="shaders\uncompiled\boundingVolume.vert">
       <Filter>Shaders</Filter>
     </None>
     <None Include="shaders\uncompiled\atmosphere.vert">

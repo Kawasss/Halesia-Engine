@@ -29,7 +29,7 @@ namespace editor
 
 	}
 
-	ShaderEditor::~ShaderEditor()
+	void ShaderEditor::Destroy()
 	{
 		ImNodes::DestroyContext();
 	}
