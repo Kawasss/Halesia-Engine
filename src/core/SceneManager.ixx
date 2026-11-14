@@ -17,8 +17,24 @@ export namespace core
 
 		enum class EnterBehavior
 		{
+			New,
 			Reset,
 			Continue,
+		};
+
+		enum class State
+		{
+			Paused,
+			New,
+		};
+
+		struct ManagedScene
+		{
+			ManagedScene() = default;
+			ManagedScene(State state, const std::shared_ptr<Scene>& scene) : state(state), scene(scene) {}
+
+			State state;
+			std::shared_ptr<Scene> scene;
 		};
 
 		void Cleanup()
@@ -31,13 +47,31 @@ export namespace core
 			return currStates.empty();
 		}
 
-		void Transition(const std::shared_ptr<Scene>& next, EnterBehavior NextState)
+		void Transition(const std::shared_ptr<Scene>& next, EnterBehavior nextState)
 		{
 			// behavior not yet implemented
 
-			auto it = std::find(paused.begin(), paused.end(), next);
+			State state = State::New;
+
+			switch (nextState)
+			{
+			case EnterBehavior::Reset:
+				next->Destroy();
+				next->Start();
+				state = State::New;
+				break;
+			case EnterBehavior::New:
+				next->Start();
+				state = State::New;
+				break;
+			default:
+				state = State::Paused;
+				break;
+			}
+
+			auto it = std::find_if(paused.begin(), paused.end(), [&](const auto& scene) { return next == scene.scene; });
 			if (it == paused.end())
-				currStates.push(next);
+				currStates.emplace(state, next);
 			else
 			{
 				currStates.push(std::move(*it));
@@ -64,11 +98,11 @@ export namespace core
 
 		std::weak_ptr<Scene> GetCurrScene() const
 		{
-			return currStates.top();
+			return currStates.top().scene;
 		}
 
 	private:
-		std::stack<std::shared_ptr<Scene>> currStates;
-		std::list<std::shared_ptr<Scene>> paused;
+		std::stack<ManagedScene> currStates;
+		std::list<ManagedScene> paused;
 	};
 }

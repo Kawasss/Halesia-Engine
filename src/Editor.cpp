@@ -27,6 +27,7 @@ import Core.MeshObject;
 import Core.Object;
 import Core.SceneManager;
 
+import IO.DataArchiveFile;
 import IO.SceneLoader;
 import IO.CreationData;
 import IO;
@@ -201,7 +202,7 @@ void Editor::Start()
 	meshImportWindow.Open();
 
 	shaderEditor = std::make_shared<editor::ShaderEditor>();
-	//HalesiaEngine::GetInstance()->GetEngineCore().sceneManager.Transition(shaderEditor, core::SceneManager::EnterBehavior::Reset);
+	HalesiaEngine::GetInstance()->GetEngineCore().sceneManager.Transition(shaderEditor, core::SceneManager::EnterBehavior::New);
 }
 
 std::expected<std::string, FileDialog::Failure> Editor::RequestProjectLocation()

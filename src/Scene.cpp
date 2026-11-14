@@ -123,6 +123,9 @@ void Scene::Free(Object* pObject)
 
 void Scene::UpdateCamera(Window* pWindow, float delta)
 {
+	if (camera == nullptr)
+		return;
+
 	camera->transform.CalculateModelMatrix();
 	camera->UpdateMatrices();
 	camera->FullUpdate(delta);

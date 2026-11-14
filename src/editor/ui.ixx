@@ -21,6 +21,8 @@ export namespace eui
 		void SetName(const std::string_view& str);
 		std::string_view GetName() const;
 		
+		bool NameIsInvisible() const;
+
 	private:
 		std::string name;
 
@@ -72,18 +74,21 @@ export namespace eui
 
 		void Update()
 		{
-			ImGui::Text(GetUIName());
-			ImGui::SameLine();
+			if (!NameIsInvisible())
+			{
+				ImGui::Text(GetUIName());
+				ImGui::SameLine();
+			}
 			ImGui::InputScalarN(GetInvisibleUIName(), AsImGuiType(), static_cast<void*>(fields.data()), n);
 		}
 
-		T GetValue()
+		T GetValue() const
 		{
 			
 			return fields[0];
 		}
 
-		T operator[](std::size_t idx)
+		T operator[](std::size_t idx) const
 		{
 			return fields[idx];
 		}
@@ -104,6 +109,6 @@ export namespace eui
 			return ImGuiDataType_::ImGuiDataType_U8;
 		}
 
-		std::array<T, n> fields;
+		std::array<T, n> fields{};
 	};
 }

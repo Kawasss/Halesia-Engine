@@ -1,6 +1,12 @@
 export module Editor.ShaderEditor;
 
+import std;
+
 import Core.Scene;
+
+import System.Window;
+
+import Editor.ShaderNodes;
 
 export namespace editor
 {
@@ -14,10 +20,12 @@ export namespace editor
 
 		void Destroy() override;
 
+		
+
 	private:
-		struct Node
-		{
-			std::string_view name;
-		};
+		Window* window;
+
+		std::list<std::unique_ptr<BasicNode>> nodes; // there may be a better structure for this, but for now this works.
+		std::unordered_set<Link> links;
 	};
 }

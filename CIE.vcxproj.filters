@@ -635,9 +635,6 @@
     <ClCompile Include="src\ui.cpp">
       <Filter>Source Files\editor</Filter>
     </ClCompile>
-    <ClCompile Include="src\ShaderEditor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="thirdparty\imnodes\imnodes.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -646,6 +643,15 @@
     </ClCompile>
     <ClCompile Include="src\editor\ShaderEditor.ixx">
       <Filter>Header Files\editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ShaderEditor.cpp">
+      <Filter>Source Files\editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\editor\ShaderNodes.ixx">
+      <Filter>Header Files\editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ShaderNodes.cpp">
+      <Filter>Source Files\editor</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

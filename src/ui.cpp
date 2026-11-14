@@ -16,7 +16,7 @@ namespace eui
 
 	void NamedItem::SetName(const std::string_view& str)
 	{
-		name = str.empty() ? std::format("##{}", static_cast<void*>(this)) : str;
+		name = str.empty() ? std::format("####{}", static_cast<void*>(this)) : str;
 		if (!name.starts_with("##"))
 			name = "##" + name;
 	}
@@ -36,6 +36,11 @@ namespace eui
 	{
 		assert(!name.empty());
 		return name.c_str();
+	}
+
+	bool NamedItem::NameIsInvisible() const
+	{
+		return name.starts_with("####");
 	}
 
 	Window::Window(const std::string_view& str) : NamedItem(str)

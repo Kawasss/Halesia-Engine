@@ -285,6 +285,8 @@ private:
 	void CheckForVRAMOverflow();
 	void CheckForInterference();
 
+	void PerformUiRenderPass(const CommandBuffer& cmdBuffer);
+
 	void ProcessRenderPipeline(RenderPipeline* pipeline);
 	void RunRenderPipelines(CommandBuffer commandBuffer, CameraObject* camera, const std::vector<RenderableMesh>& meshes);
 

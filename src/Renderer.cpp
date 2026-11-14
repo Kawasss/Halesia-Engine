@@ -473,6 +473,7 @@ void Renderer::CreateGUIRenderPass()
 
 	builder.SetInitialLayout(VK_IMAGE_LAYOUT_UNDEFINED);
 	builder.SetFinalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+	builder.ClearOnLoad(false);
 
 	GUIRenderPass = builder.Build();
 
@@ -738,23 +739,60 @@ void Renderer::ProcessRenderPipeline(RenderPipeline* pipeline)
 
 void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, std::uint32_t imageIndex, const std::vector<RenderableMesh>& meshes, CameraObject* camera)
 {
-	if (camera == nullptr)
-		return;
-
 	CheckForBufferResizes();
 
-	Vulkan::InsertDebugLabel(commandBuffer.Get(), "drawing buffer");
+	if (camera != nullptr)
+	{
+		Vulkan::InsertDebugLabel(commandBuffer.Get(), "drawing buffer");
 
-	queryPool.Reset(commandBuffer);
+		queryPool.Reset(commandBuffer);
 
-	animationManager->ApplyAnimations(commandBuffer.Get()); // not good
+		animationManager->ApplyAnimations(commandBuffer.Get()); // not good
 
-	RunRenderPipelines(commandBuffer, camera, meshes);
+		RunRenderPipelines(commandBuffer, camera, meshes);
 
-	commandBuffer.BeginDebugUtilsLabel("UI");
+		commandBuffer.BeginDebugUtilsLabel("presentation");
 
-	SetViewport(commandBuffer.Get(), swapchain->extent);
-	SetScissors(commandBuffer.Get(), swapchain->extent);
+		SetViewport(commandBuffer.Get(), swapchain->extent);
+		SetScissors(commandBuffer.Get(), swapchain->extent);
+
+		std::array<VkClearValue, 2> clearColors{};
+		clearColors[0].color = { 0, 0, 0, 1 };
+		clearColors[1].depthStencil = { 1, 0 };
+
+		VkRenderPassBeginInfo renderPassBeginInfo{};
+		renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+		renderPassBeginInfo.renderPass = GUIRenderPass;
+		renderPassBeginInfo.framebuffer = swapchain->framebuffers[imageIndex];
+		renderPassBeginInfo.renderArea.offset = { 0, 0 };
+		renderPassBeginInfo.renderArea.extent = swapchain->extent;
+		renderPassBeginInfo.clearValueCount = static_cast<std::uint32_t>(clearColors.size());
+		renderPassBeginInfo.pClearValues = clearColors.data();
+
+		commandBuffer.BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+		queryPool.BeginTimestamp(commandBuffer, "final pass");
+
+		glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, viewportTransModifiers.x, viewportTransModifiers.y);
+
+		screenPipeline->Bind(commandBuffer.Get());
+		screenPipeline->PushConstant(commandBuffer, offsets, VK_SHADER_STAGE_VERTEX_BIT);
+
+		commandBuffer.Draw(6, 1, 0, 0);
+
+		commandBuffer.EndRenderPass();
+
+		queryPool.EndTimestamp(commandBuffer, "final pass");
+
+		commandBuffer.EndDebugUtilsLabel();
+	}
+
+	PerformUiRenderPass(commandBuffer);
+}
+
+void Renderer::PerformUiRenderPass(const CommandBuffer& cmdBuffer)
+{
+	cmdBuffer.BeginDebugUtilsLabel("gui");
 
 	std::array<VkClearValue, 2> clearColors{};
 	clearColors[0].color = { 0, 0, 0, 1 };
@@ -769,23 +807,12 @@ void Renderer::RecordCommandBuffer(CommandBuffer commandBuffer, std::uint32_t im
 	renderPassBeginInfo.clearValueCount = static_cast<std::uint32_t>(clearColors.size());
 	renderPassBeginInfo.pClearValues = clearColors.data();
 
-	commandBuffer.BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+	cmdBuffer.BeginRenderPass(renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-	queryPool.BeginTimestamp(commandBuffer, "final pass");
+	RenderImGUI(cmdBuffer);
+	cmdBuffer.EndRenderPass();
 
-	glm::vec4 offsets = glm::vec4(viewportOffsets.x, viewportOffsets.y, viewportTransModifiers.x, viewportTransModifiers.y);
-	
-	screenPipeline->Bind(commandBuffer.Get());
-	screenPipeline->PushConstant(commandBuffer, offsets, VK_SHADER_STAGE_VERTEX_BIT);
-
-	commandBuffer.Draw(6, 1, 0, 0);
-
-	RenderImGUI(commandBuffer);
-	commandBuffer.EndRenderPass();
-
-	queryPool.EndTimestamp(commandBuffer, "final pass");
-
-	commandBuffer.EndDebugUtilsLabel();
+	cmdBuffer.EndDebugUtilsLabel();
 }
 
 void Renderer::RunRenderPipelines(CommandBuffer commandBuffer, CameraObject* camera, const std::vector<RenderableMesh>& meshes)
@@ -1166,7 +1193,9 @@ void Renderer::RenderObjects(const std::vector<Object*>& objects, CameraObject* 
 
 	ResetLightBuffer();
 	UpdateLightBuffer(lightObjects);
-	UpdateSceneData(camera);
+
+	if (camera)
+		UpdateSceneData(camera);
 
 	RecordCommandBuffer(commandBuffers[currentFrame], imageIndex, activeObjects, camera);
 }
